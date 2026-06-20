@@ -30,6 +30,12 @@
 - Framework: **Pest v4** (`pestphp/pest`) + plugin **`pestphp/pest-plugin-livewire`** para testear componentes Livewire (`livewire(Componente::class)->...`).
 - Sintaxis funcional: `test('...', function () { ... })` / `it(...)` con `expect()`. El `TestCase` se enlaza en `tests/Pest.php`.
 - **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés. (El código de la app y el copy de la UI siguen en español; esta regla aplica solo a la capa de tests.)
+
+## Git — mensajes de commit en INGLÉS
+
+- **Todos los mensajes de commit van en inglés** (subject + body). Imperativo, conciso (ej. `Add UI form components`, `Fix icon size prop`).
+- Identidad: `JPMG2 <jpmorenog22@gmail.com>`. Remote SSH: `git@github.com:JPMG2/Atendia.git` (rama `main`).
+- `.env` y secretos NUNCA se commitean (ya cubierto por `.gitignore`).
 - Crear tests con `php artisan make:test --pest {Nombre}` (NO `--phpunit`).
 - Correr: `docker exec -w /var/www/html atendia-app ./vendor/bin/pest --compact` (o con un filtro/archivo). Cada cambio debe quedar cubierto y verde antes de cerrar.
 
