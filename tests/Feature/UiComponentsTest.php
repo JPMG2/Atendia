@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Blade;
 | <x-ui.button>
 |--------------------------------------------------------------------------
 */
-test('the button renders a <button> with its variant and size classes', function () {
+test('the button renders a <button> with its variant and size classes', function (): void {
     $html = Blade::render('<x-ui.button variant="primary" size="lg">Go</x-ui.button>');
 
     expect($html)
@@ -19,7 +19,7 @@ test('the button renders a <button> with its variant and size classes', function
         ->toContain('Go');
 });
 
-test('the button becomes an <a> when given an href', function () {
+test('the button becomes an <a> when given an href', function (): void {
     $html = Blade::render('<x-ui.button href="/start">Go</x-ui.button>');
 
     expect($html)
@@ -28,17 +28,17 @@ test('the button becomes an <a> when given an href', function () {
         ->not->toContain('<button');
 });
 
-test('the button adds w-full when fullWidth is set', function () {
+test('the button adds w-full when fullWidth is set', function (): void {
     expect(Blade::render('<x-ui.button :fullWidth="true">Go</x-ui.button>'))->toContain('w-full');
 });
 
-test('the button renders an inline icon when given one', function () {
+test('the button renders an inline icon when given one', function (): void {
     $html = Blade::render('<x-ui.button icon="zap">Go</x-ui.button>');
 
     expect($html)->toContain('<svg')->toContain('class="lucide"');
 });
 
-test('an invalid button variant falls back to primary instead of a broken class', function () {
+test('an invalid button variant falls back to primary instead of a broken class', function (): void {
     $html = Blade::render('<x-ui.button variant="nope">Go</x-ui.button>');
 
     expect($html)->toContain('btn-primary')->not->toContain('btn-nope');
@@ -49,7 +49,7 @@ test('an invalid button variant falls back to primary instead of a broken class'
 | <x-ui.badge>
 |--------------------------------------------------------------------------
 */
-test('the badge renders its variant class and an optional dot', function () {
+test('the badge renders its variant class and an optional dot', function (): void {
     $plain = Blade::render('<x-ui.badge variant="accent">New</x-ui.badge>');
     expect($plain)->toContain('badge')->toContain('badge-accent')->toContain('New');
 
@@ -62,7 +62,7 @@ test('the badge renders its variant class and an optional dot', function () {
 | <x-ui.card>
 |--------------------------------------------------------------------------
 */
-test('the card renders the surface class and an interactive variant', function () {
+test('the card renders the surface class and an interactive variant', function (): void {
     expect(Blade::render('<x-ui.card>Hi</x-ui.card>'))
         ->toContain('class="card"');
 
@@ -70,7 +70,7 @@ test('the card renders the surface class and an interactive variant', function (
         ->toContain('card-interactive');
 });
 
-test('the card can render as a custom element', function () {
+test('the card can render as a custom element', function (): void {
     expect(Blade::render('<x-ui.card as="article">Hi</x-ui.card>'))
         ->toContain('<article')
         ->toContain('</article>');
@@ -81,7 +81,7 @@ test('the card can render as a custom element', function () {
 | <x-ui.icon-button>
 |--------------------------------------------------------------------------
 */
-test('the icon button renders an accessible button with an inline icon', function () {
+test('the icon button renders an accessible button with an inline icon', function (): void {
     $html = Blade::render('<x-ui.icon-button icon="menu" label="Open menu" />');
 
     expect($html)
@@ -91,7 +91,7 @@ test('the icon button renders an accessible button with an inline icon', functio
         ->toContain('<svg');
 });
 
-test('the icon button lets a slot override the default icon', function () {
+test('the icon button lets a slot override the default icon', function (): void {
     $html = Blade::render('<x-ui.icon-button label="Theme"><span>custom</span></x-ui.icon-button>');
 
     expect($html)->toContain('custom');
@@ -102,7 +102,7 @@ test('the icon button lets a slot override the default icon', function () {
 | Golden rule: theme-aware, no hardcoded colors
 |--------------------------------------------------------------------------
 */
-test('ui components style themselves through tokens, never hardcoded hex colors', function () {
+test('ui components style themselves through tokens, never hardcoded hex colors', function (): void {
     // Si no hay hex en el markup, light/dark salen solos desde los tokens de app.css.
     foreach ([
         '<x-ui.button>Go</x-ui.button>',

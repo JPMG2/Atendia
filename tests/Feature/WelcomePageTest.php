@@ -1,17 +1,17 @@
 <?php
 
-test('the landing page loads successfully', function () {
+test('the landing page loads successfully', function (): void {
     $this->get('/')->assertOk();
 });
 
-test('it shows the Atendia brand and hero', function () {
+test('it shows the Atendia brand and hero', function (): void {
     $this->get('/')
         ->assertSee('atendido por IA', false)
         ->assertSee('Crear mi asistente', false)
         ->assertSee('Empezar gratis', false);
 });
 
-test('it renders every marketing section', function () {
+test('it renders every marketing section', function (): void {
     $response = $this->get('/');
 
     foreach (['funciones', 'como-funciona', 'casos', 'precios', 'clientes'] as $id) {
@@ -19,7 +19,7 @@ test('it renders every marketing section', function () {
     }
 });
 
-test('it supports dark mode and is not a React prototype', function () {
+test('it supports dark mode and is not a React prototype', function (): void {
     $this->get('/')
         // The theme toggle persists in localStorage under the project key.
         ->assertSee('atendia-theme', false)
@@ -28,7 +28,7 @@ test('it supports dark mode and is not a React prototype', function () {
         ->assertDontSee('react-dom', false);
 });
 
-test('it renders icons as inline SVG, not through a JS CDN', function () {
+test('it renders icons as inline SVG, not through a JS CDN', function (): void {
     $this->get('/')
         ->assertSee('<svg', false)
         ->assertSee('class="lucide"', false)

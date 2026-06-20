@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Blade;
 
-test('the icon component renders a registered icon as inline SVG', function () {
+test('the icon component renders a registered icon as inline SVG', function (): void {
     $html = Blade::render('<x-icon name="zap" :size="32" />');
 
     expect($html)
@@ -13,17 +13,17 @@ test('the icon component renders a registered icon as inline SVG', function () {
         ->toContain('class="lucide"');
 });
 
-test('the icon component renders nothing for an unknown icon', function () {
+test('the icon component renders nothing for an unknown icon', function (): void {
     expect(trim(Blade::render('<x-icon name="does-not-exist" />')))->toBe('');
 });
 
-test('the icon component falls back to the default size of 20', function () {
+test('the icon component falls back to the default size of 20', function (): void {
     $html = Blade::render('<x-icon name="zap" />');
 
     expect($html)->toContain('width="20"')->toContain('height="20"');
 });
 
-test('the icon component respects a custom size in every prop form', function (string $template, string $expected) {
+test('the icon component respects a custom size in every prop form', function (string $template, string $expected): void {
     $html = Blade::render($template);
 
     expect($html)
@@ -37,7 +37,7 @@ test('the icon component respects a custom size in every prop form', function (s
     'large           :size=48' => ['<x-icon name="zap" :size="48" />', '48'],
 ]);
 
-test('two different sizes produce two different widths', function () {
+test('two different sizes produce two different widths', function (): void {
     $small = Blade::render('<x-icon name="zap" :size="16" />');
     $large = Blade::render('<x-icon name="zap" :size="64" />');
 
@@ -45,13 +45,13 @@ test('two different sizes produce two different widths', function () {
     expect($large)->toContain('width="64"')->not->toContain('width="16"');
 });
 
-test('the icon registry holds only non-empty SVG markup', function () {
+test('the icon registry holds only non-empty SVG markup', function (): void {
     $icons = config('icons');
 
     expect($icons)->toBeArray()->not->toBeEmpty();
 
     foreach ($icons as $name => $svg) {
         expect($svg)->toBeString()
-            ->and(trim($svg))->not->toBe('', "icon [{$name}] is empty");
+            ->and(trim((string) $svg))->not->toBe('', "icon [{$name}] is empty");
     }
 });

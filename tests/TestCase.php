@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -13,7 +15,7 @@ abstract class TestCase extends BaseTestCase
      * Producción ('atendia') queda blindada: si por cualquier motivo el
      * entorno apunta a otra base, abortamos antes de tocar un solo registro.
      */
-    private const TESTING_DATABASE = 'atendia_testing';
+    private const string TESTING_DATABASE = 'atendia_testing';
 
     protected function setUp(): void
     {
