@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Radii" subtitle="Friendly, generous rounding · 6 → pill" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px 22px; background: var(--surface-page); font-family: var(--font-sans); }
+  .row { display:flex; gap: 18px; align-items:flex-end; }
+  .col { display:flex; flex-direction:column; gap:8px; align-items:center; }
+  .box { width:72px; height:56px; background: var(--brand-soft); border:1.5px solid var(--brand); border-bottom:none; border-right:none; }
+  .n { font-family: var(--font-mono); font-size:11px; color:var(--text-strong); }
+  .v { font-family: var(--font-mono); font-size:10px; color:var(--text-muted); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-xs)"></div><span class="n">xs</span><span class="v">6px</span></div>
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-sm)"></div><span class="n">sm</span><span class="v">8px</span></div>
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-md)"></div><span class="n">md</span><span class="v">12px</span></div>
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-lg)"></div><span class="n">lg ●</span><span class="v">16px</span></div>
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-xl)"></div><span class="n">xl</span><span class="v">20px</span></div>
+    <div class="col"><div class="box" style="border-top-left-radius:var(--radius-2xl)"></div><span class="n">2xl</span><span class="v">28px</span></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-pill);width:56px"></div><span class="n">pill</span><span class="v">999px</span></div>
+  </div>
+</body></html>

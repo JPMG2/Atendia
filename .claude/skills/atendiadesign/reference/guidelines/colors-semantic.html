@@ -1,0 +1,36 @@
+<!-- @dsCard group="Colors" viewport="700x230" name="Semantic surfaces — Light & Dark" subtitle="Same tokens, both themes side by side" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-page); font-family: var(--font-sans); }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pane { background: var(--surface-page); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px; }
+  .tag { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 12px; }
+  .card { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; box-shadow: var(--shadow-sm); margin-bottom: 10px; }
+  .strong { color: var(--text-strong); font-weight: 700; font-size: 14px; }
+  .body { color: var(--text-body); font-size: 12px; }
+  .muted { color: var(--text-muted); font-size: 11px; }
+  .pill { display:inline-block; margin-top:8px; padding:4px 10px; border-radius:999px; background:var(--brand-soft); color:var(--brand-soft-text); font-size:11px; font-weight:700; }
+</style></head>
+<body>
+  <div class="panes">
+    <div class="pane">
+      <div class="tag">Light</div>
+      <div class="card">
+        <div class="strong">Turnos de hoy</div>
+        <div class="body">12 confirmados · 3 pendientes</div>
+        <div class="muted">Actualizado hace 2 min</div>
+        <span class="pill">Plan Pro</span>
+      </div>
+    </div>
+    <div class="pane" data-theme="dark">
+      <div class="tag">Dark</div>
+      <div class="card">
+        <div class="strong">Turnos de hoy</div>
+        <div class="body">12 confirmados · 3 pendientes</div>
+        <div class="muted">Actualizado hace 2 min</div>
+        <span class="pill">Plan Pro</span>
+      </div>
+    </div>
+  </div>
+</body></html>

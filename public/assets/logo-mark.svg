@@ -1,0 +1,6 @@
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Atendia">
+  <path d="M28 4C14.745 4 4 13.85 4 26c0 6.79 3.36 12.86 8.64 16.86-.43 3.2-1.64 6.04-3.42 8.13-.64.75-.13 1.93.86 1.94 4.7.05 8.86-1.27 12.2-3.5C24.1 49.8 26 50 28 50c13.255 0 24-9.85 24-22S41.255 4 28 4Z" fill="var(--brand, #0EA47A)"></path>
+  <circle cx="18.5" cy="26" r="3.4" fill="#fff"></circle>
+  <circle cx="28" cy="26" r="3.4" fill="#fff"></circle>
+  <circle cx="37.5" cy="26" r="3.9" fill="var(--accent, #FF6A4D)"></circle>
+</svg>

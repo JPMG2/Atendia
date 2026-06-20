@@ -1,0 +1,32 @@
+<!-- @dsCard group="Brand" viewport="700x220" name="Logo & lockup" subtitle="Atendia mark + wordmark · light & dark" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-page); font-family: var(--font-sans); }
+  .panes { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .pane { border:1px solid var(--border-default); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:18px; background:var(--surface-page); }
+  .lockup { display:flex; align-items:center; gap:12px; }
+  .mark { width:40px; height:40px; }
+  .word { font-family:var(--font-display); font-weight:800; font-size:26px; letter-spacing:-0.03em; color:var(--text-strong); }
+  .word .ia { color: var(--brand); }
+  .mark-only { display:flex; gap:12px; align-items:center; }
+  .tag { font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text-subtle); }
+</style></head>
+<body>
+  <div class="panes">
+    <div class="pane">
+      <span class="tag">Lockup · light</span>
+      <div class="lockup">
+        <img class="mark" src="../assets/logo-mark.svg" alt="Atendia" />
+        <span class="word">Atend<span class="ia">ia</span></span>
+      </div>
+    </div>
+    <div class="pane" data-theme="dark">
+      <span class="tag">Lockup · dark</span>
+      <div class="lockup">
+        <img class="mark" src="../assets/logo-mark.svg" alt="Atendia" />
+        <span class="word">Atend<span class="ia">ia</span></span>
+      </div>
+    </div>
+  </div>
+</body></html>

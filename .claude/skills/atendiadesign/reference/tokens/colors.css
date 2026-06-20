@@ -1,0 +1,176 @@
+/* ============================================================
+   ATENDIA — COLOR TOKENS
+   Base palettes (raw scales) + semantic aliases.
+   Light is the default :root. Dark overrides live under
+   [data-theme="dark"] and .dark so consumers can toggle either way.
+   ============================================================ */
+
+:root {
+  /* ---- Brand: Jade (sophisticated WhatsApp-adjacent green) ---- */
+  --jade-50:  #E9FBF4;
+  --jade-100: #C7F4E2;
+  --jade-200: #95EACB;
+  --jade-300: #5BDBAF;
+  --jade-400: #25C490;
+  --jade-500: #0EA47A;
+  --jade-600: #0A8765;
+  --jade-700: #0A6B50;
+  --jade-800: #0B5440;
+  --jade-900: #0A4233;
+  --jade-950: #052A21;
+
+  /* ---- Accent: Coral (warmth, energy, friendly CTAs) ---- */
+  --coral-50:  #FFF1ED;
+  --coral-100: #FFE0D6;
+  --coral-200: #FFC2AF;
+  --coral-300: #FF9C7E;
+  --coral-400: #FF7E5A;
+  --coral-500: #FF6A4D;
+  --coral-600: #ED4A2B;
+  --coral-700: #C5371C;
+  --coral-800: #9B2D18;
+  --coral-900: #7A2715;
+
+  /* ---- Neutrals: Ink (cool-warm greenish slate) ---- */
+  --ink-0:   #FFFFFF;
+  --ink-25:  #FBFCFC;
+  --ink-50:  #F6F8F8;
+  --ink-100: #EDF1F1;
+  --ink-200: #DEE5E4;
+  --ink-300: #C4CFCD;
+  --ink-400: #9AA8A6;
+  --ink-500: #6E7C7A;
+  --ink-600: #515E5C;
+  --ink-700: #3B4645;
+  --ink-800: #252D2C;
+  --ink-900: #141A19;
+  --ink-950: #0B0F0F;
+
+  /* ---- Status hues ---- */
+  --green-500:  #16A34A;
+  --green-50:   #ECFDF3;
+  --amber-500:  #F59E0B;
+  --amber-50:   #FFFAEB;
+  --red-500:    #E5484D;
+  --red-50:     #FEF1F2;
+  --blue-500:   #3B82F6;
+  --blue-50:    #EFF6FF;
+
+  /* ===========================================================
+     SEMANTIC ALIASES — LIGHT
+     =========================================================== */
+
+  /* Surfaces */
+  --surface-page:    var(--ink-25);
+  --surface-card:    var(--ink-0);
+  --surface-sunken:  var(--ink-50);
+  --surface-raised:  var(--ink-0);
+  --surface-inverse: var(--ink-900);
+  --surface-overlay: rgba(11, 15, 15, 0.45);
+
+  /* Borders */
+  --border-subtle:  var(--ink-100);
+  --border-default: var(--ink-200);
+  --border-strong:  var(--ink-300);
+
+  /* Text */
+  --text-strong:   var(--ink-900);
+  --text-body:     var(--ink-700);
+  --text-muted:    var(--ink-500);
+  --text-subtle:   var(--ink-400);
+  --text-inverse:  var(--ink-0);
+  --text-on-brand: #FFFFFF;
+
+  /* Brand */
+  --brand:          var(--jade-500);
+  --brand-hover:    var(--jade-600);
+  --brand-active:   var(--jade-700);
+  --brand-soft:     var(--jade-50);
+  --brand-soft-hover: var(--jade-100);
+  --brand-soft-text: var(--jade-700);
+  --brand-border:   var(--jade-200);
+
+  /* Accent */
+  --accent:         var(--coral-500);
+  --accent-hover:   var(--coral-600);
+  --accent-soft:    var(--coral-50);
+  --accent-soft-text: var(--coral-700);
+
+  /* Status */
+  --success:        var(--green-500);
+  --success-soft:   var(--green-50);
+  --warning:        var(--amber-500);
+  --warning-soft:   var(--amber-50);
+  --danger:         var(--red-500);
+  --danger-soft:    var(--red-50);
+  --info:           var(--blue-500);
+  --info-soft:      var(--blue-50);
+
+  /* Interaction */
+  --focus-ring:     rgba(14, 164, 122, 0.35);
+  --selection-bg:   var(--jade-100);
+
+  /* Chat bubbles (product-specific) */
+  --bubble-in:      var(--ink-0);
+  --bubble-in-text: var(--ink-800);
+  --bubble-out:     var(--jade-500);
+  --bubble-out-text:#FFFFFF;
+  --chat-canvas:    #E7EDEB;
+}
+
+/* ===========================================================
+   SEMANTIC ALIASES — DARK
+   =========================================================== */
+[data-theme="dark"],
+.dark {
+  --surface-page:    var(--ink-950);
+  --surface-card:    #141A19;
+  --surface-sunken:  #0B0F0F;
+  --surface-raised:  #1B2322;
+  --surface-inverse: var(--ink-50);
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+
+  --border-subtle:  rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.11);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+
+  --text-strong:   var(--ink-50);
+  --text-body:     var(--ink-300);
+  --text-muted:    var(--ink-400);
+  --text-subtle:   var(--ink-500);
+  --text-inverse:  var(--ink-900);
+  --text-on-brand: #052A21;
+
+  --brand:          var(--jade-400);
+  --brand-hover:    var(--jade-300);
+  --brand-active:   var(--jade-300);
+  --brand-soft:     rgba(37, 196, 144, 0.14);
+  --brand-soft-hover: rgba(37, 196, 144, 0.22);
+  --brand-soft-text: var(--jade-300);
+  --brand-border:   rgba(37, 196, 144, 0.30);
+
+  --accent:         var(--coral-400);
+  --accent-hover:   var(--coral-300);
+  --accent-soft:    rgba(255, 126, 90, 0.14);
+  --accent-soft-text: var(--coral-300);
+
+  --success:        #2BAE5E;
+  --success-soft:   rgba(43, 174, 94, 0.15);
+  --warning:        #F2B33D;
+  --warning-soft:   rgba(242, 179, 61, 0.15);
+  --danger:         #F2555A;
+  --danger-soft:    rgba(242, 85, 90, 0.15);
+  --info:           #5B9BFF;
+  --info-soft:      rgba(91, 155, 255, 0.15);
+
+  --focus-ring:     rgba(37, 196, 144, 0.45);
+  --selection-bg:   rgba(37, 196, 144, 0.30);
+
+  --bubble-in:      #1B2322;
+  --bubble-in-text: var(--ink-100);
+  --bubble-out:     var(--jade-700);
+  --bubble-out-text:#EAFBF4;
+  --chat-canvas:    #0E1413;
+}
+
+::selection { background: var(--selection-bg); }

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Elevation / Shadows" subtitle="Soft, layered, low-contrast · xs → xl" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 26px 22px; background: var(--surface-page); font-family: var(--font-sans); }
+  .row { display:flex; gap: 26px; align-items:center; }
+  .col { display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .box { width:86px; height:62px; background: var(--surface-card); border-radius: var(--radius-md); border:1px solid var(--border-subtle); }
+  .n { font-family: var(--font-mono); font-size:11px; color:var(--text-muted); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-xs)"></div><span class="n">shadow-xs</span></div>
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-sm)"></div><span class="n">shadow-sm</span></div>
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-md)"></div><span class="n">shadow-md</span></div>
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-lg)"></div><span class="n">shadow-lg</span></div>
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-xl)"></div><span class="n">shadow-xl</span></div>
+    <div class="col"><div class="box" style="box-shadow:var(--shadow-brand)"></div><span class="n">brand glow</span></div>
+  </div>
+</body></html>

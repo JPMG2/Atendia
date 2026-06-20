@@ -1,0 +1,57 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: atendia-app:latest
+    container_name: atendia-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+
+    # Codigo montado en vivo -> editas con VS Code y se refleja al instante
+    volumes:
+      - ./:/var/www/html
+
+    networks:
+      - easypanel              # red de Traefik + alcanza postgres/redis
+      - easypanel-ai_project   # red compartida de la infra (postgres/redis)
+
+    # Acceso directo opcional para pruebas: http://IP:8081
+    ports:
+      - "8081:80"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=easypanel"
+      # Router HTTP: cualquier IP pelada -> AtendIa (prioridad alta vence a EasyPanel)
+      - "traefik.http.routers.atendia-http.rule=HostRegexp(`^[0-9.]+$`)"
+      - "traefik.http.routers.atendia-http.entrypoints=http"
+      - "traefik.http.routers.atendia-http.priority=100"
+      - "traefik.http.routers.atendia-http.service=atendia-svc"
+      # Router HTTPS: misma regla, con certificado por defecto (autofirmado hasta tener dominio)
+      - "traefik.http.routers.atendia-https.rule=HostRegexp(`^[0-9.]+$`)"
+      - "traefik.http.routers.atendia-https.entrypoints=https"
+      - "traefik.http.routers.atendia-https.priority=100"
+      - "traefik.http.routers.atendia-https.tls=true"
+      - "traefik.http.routers.atendia-https.service=atendia-svc"
+      # Servicio -> puerto 80 del contenedor (nginx)
+      - "traefik.http.services.atendia-svc.loadbalancer.server.port=80"
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  easypanel:
+    external: true
+  easypanel-ai_project:
+    external: true
