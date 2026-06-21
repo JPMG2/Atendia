@@ -15,9 +15,11 @@
         "moneyphp/money": "^4.9",
         "phpoffice/phpspreadsheet": "^5.8",
         "spatie/laravel-activitylog": "^5.0",
-        "spatie/laravel-permission": "^8.0"
+        "spatie/laravel-permission": "^8.0",
+        "stevebauman/location": "^7.6"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^4.3",
         "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.4",
         "laravel/breeze": "^2.4",
