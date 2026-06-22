@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/reload-fpm-after-composer.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
