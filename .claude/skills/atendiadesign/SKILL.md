@@ -76,6 +76,7 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 ### Estados de interacción
 - **Hover:** botón primario `brightness(.95)` + mantiene sombra; card `translateY(-3px)` + borde jade; ghost/icon se rellena con `--surface-sunken`.
 - **Press:** `scale(.97)`. **Focus:** halo de `--focus-ring` + outline; **nunca** quitar el focus ring. **Disabled:** ~55% opacidad, `not-allowed`.
+- **Foco de inputs — UN SOLO anillo (regla de oro).** Un campo muestra su foco **únicamente** vía su wrapper (`.field-control:focus-within` → borde jade + halo `--focus-ring`). El `<input>` interno **nunca** dibuja anillo propio: jamás debe verse un segundo borde/glow (el azul nativo del navegador) adentro del campo. Esto ya está blindado en `app.css` (`input:focus` → `outline:none; box-shadow:none`, y el `:focus-visible` global se excluye en input/select/textarea). Si aparece un anillo doble o azul: NO es el componente, es CSS sin recompilar → `npm run build`. Autofill (Chrome/Safari) también se neutraliza ahí para que no pinte el campo de azul.
 
 ## 4. Iconografía
 

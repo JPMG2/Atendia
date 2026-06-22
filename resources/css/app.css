@@ -182,6 +182,37 @@
     outline-offset:2px;
     border-radius:var(--radius-xs);
   }
+
+  /* Los controles de formulario muestran su foco vía el wrapper
+     (.field-control:focus-within / .field-select:focus / .field-textarea:focus).
+     Sin esta exclusión, el outline global dibuja un segundo anillo
+     dentro del input. Siguen siendo accesibles: el wrapper marca el foco. */
+  input:focus,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline:none;
+  }
+
+  /* El <input> vive DENTRO de .field-control: no debe dibujar ningún
+     anillo propio — ni outline ni el glow azul nativo del navegador.
+     El único indicador de foco es el del wrapper. */
+  .field-control .field-input:focus,
+  .field-control .field-input:focus-visible {
+    outline:none;
+    box-shadow:none;
+  }
+
+  /* Autofill (Chrome/Safari, típico en el login): tapar el fondo azul
+     que pinta el navegador y mantener los colores del token. */
+  .field-input:-webkit-autofill,
+  .field-input:-webkit-autofill:hover,
+  .field-input:-webkit-autofill:focus {
+    -webkit-text-fill-color:var(--text-strong);
+    -webkit-box-shadow:0 0 0 1000px var(--surface-card) inset;
+    caret-color:var(--text-strong);
+    transition:background-color 9999s ease-in-out 0s;
+  }
 }
 
 /* ============================================================
