@@ -5,7 +5,7 @@
 <section class="w-full flex justify-center pt-2 pb-10">
     <div class="w-full px-6" style="max-width: var(--container-xl);">
         <p class="text-center text-subtle font-semibold mb-4" style="font-size: var(--text-sm);">
-            Negocios de todos los rubros ya atienden con Atendia
+            {{ __('landing.logos.title') }}
         </p>
         <div class="flex flex-wrap gap-3.5 justify-center" style="opacity:.85;">
             @foreach ($clients as $c)

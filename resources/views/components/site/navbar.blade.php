@@ -1,9 +1,9 @@
 @php
     $links = [
-        ['label' => 'Cómo funciona', 'href' => '#como-funciona'],
-        ['label' => 'Funciones', 'href' => '#funciones'],
-        ['label' => 'Casos', 'href' => '#casos'],
-        ['label' => 'Precios', 'href' => '#precios'],
+        ['label' => __('landing.nav.how'), 'href' => '#como-funciona'],
+        ['label' => __('landing.nav.features'), 'href' => '#funciones'],
+        ['label' => __('landing.nav.cases'), 'href' => '#casos'],
+        ['label' => __('landing.nav.pricing'), 'href' => '#precios'],
     ];
 @endphp
 
@@ -31,18 +31,18 @@
 
         <div class="ml-auto flex items-center gap-2.5">
             {{-- Toggle de tema (slot con los dos iconos que Alpine alterna) --}}
-            <x-ui.icon-button label="Cambiar tema" @click="toggleTheme()">
+            <x-ui.icon-button :label="__('landing.nav.toggle_theme')" @click="toggleTheme()">
                 <span x-show="!dark"><x-icon name="moon" :size="18" /></span>
                 <span x-show="dark" x-cloak><x-icon name="sun" :size="18" /></span>
             </x-ui.icon-button>
 
             <div class="hidden sm:flex gap-2.5">
-                <x-ui.button variant="ghost" size="sm" :href="Route::has('login') ? route('login') : '#'">Ingresar</x-ui.button>
-                <x-ui.button variant="primary" size="sm" :href="Route::has('register') ? route('register') : '#'">Empezar gratis</x-ui.button>
+                <x-ui.button variant="ghost" size="sm" :href="Route::has('login') ? route('login') : '#'">{{ __('landing.nav.login') }}</x-ui.button>
+                <x-ui.button variant="primary" size="sm" :href="Route::has('register') ? route('register') : '#'">{{ __('landing.nav.register') }}</x-ui.button>
             </div>
 
             {{-- Hamburguesa (mobile) --}}
-            <x-ui.icon-button icon="menu" label="Abrir menú" class="md:hidden" @click="open = true" />
+            <x-ui.icon-button icon="menu" :label="__('landing.nav.open_menu')" class="md:hidden" @click="open = true" />
         </div>
     </div>
 
@@ -64,14 +64,14 @@
         >
             <div class="flex items-center justify-between mb-4">
                 <x-site.logo :size="22" />
-                <x-ui.icon-button icon="x" size="sm" variant="ghost" label="Cerrar menú" @click="open = false" />
+                <x-ui.icon-button icon="x" size="sm" variant="ghost" :label="__('landing.nav.close_menu')" @click="open = false" />
             </div>
             @foreach ($links as $link)
                 <a href="{{ $link['href'] }}" @click="open = false" class="text-body px-3 py-2.5 rounded-lg font-semibold hover:bg-sunken transition">{{ $link['label'] }}</a>
             @endforeach
             <div class="flex flex-col gap-2.5 mt-4">
-                <x-ui.button variant="secondary" size="md" fullWidth :href="Route::has('login') ? route('login') : '#'">Ingresar</x-ui.button>
-                <x-ui.button variant="primary" size="md" fullWidth :href="Route::has('register') ? route('register') : '#'">Empezar gratis</x-ui.button>
+                <x-ui.button variant="secondary" size="md" fullWidth :href="Route::has('login') ? route('login') : '#'">{{ __('landing.nav.login') }}</x-ui.button>
+                <x-ui.button variant="primary" size="md" fullWidth :href="Route::has('register') ? route('register') : '#'">{{ __('landing.nav.register') }}</x-ui.button>
             </div>
         </div>
     </div>

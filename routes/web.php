@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'));
 
+Route::get('/idioma/{locale}', function (string $locale) {
+    if (in_array($locale, config('locales.supported'), true)) {
+        session()->put('locale', $locale);
+    }
+
+    return back();
+})->name('locale.switch');
+
 Route::get('/dashboard', fn () => view('dashboard'))->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function (): void {
