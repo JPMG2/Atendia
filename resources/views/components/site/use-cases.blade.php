@@ -1,15 +1,15 @@
 @php
     $cases = [
-        ['tint' => 'brand', 'icon' => 'stethoscope', 'who' => 'Profesionales y clínicas', 'title' => 'Dr. Luis Paz · Cardiología', 'body' => 'Define estudios, duración y capacidad por día. Atendia agenda turnos, recuerda y reprograma.', 'tags' => ['Turnos', 'Recordatorios', 'Estudios']],
-        ['tint' => 'accent', 'icon' => 'candy', 'who' => 'Comercios y emprendedoras', 'title' => 'Pastelería Mía', 'body' => 'Sube su catálogo con precios. Atendia responde por sabores, toma pedidos y comparte el menú.', 'tags' => ['Catálogo', 'Pedidos', 'Horarios']],
+        ['tint' => 'brand', 'icon' => 'stethoscope', 'who' => __('landing.cases.health.who'), 'title' => __('landing.cases.health.title'), 'body' => __('landing.cases.health.body'), 'tags' => __('landing.cases.health.tags')],
+        ['tint' => 'accent', 'icon' => 'candy', 'who' => __('landing.cases.shop.who'), 'title' => __('landing.cases.shop.title'), 'body' => __('landing.cases.shop.body'), 'tags' => __('landing.cases.shop.tags')],
     ];
 @endphp
 
 <section id="casos" class="w-full flex justify-center pt-16 pb-16">
     <div class="w-full px-6" style="max-width: var(--container-xl);">
         <div class="flex flex-col items-center text-center gap-3 mb-10">
-            <span class="eyebrow eyebrow-line">Casos reales</span>
-            <h2 class="font-display" style="font-size: var(--text-4xl); max-width:560px;">Un mismo asistente, mil negocios</h2>
+            <span class="eyebrow eyebrow-line">{{ __('landing.cases.eyebrow') }}</span>
+            <h2 class="font-display" style="font-size: var(--text-4xl); max-width:560px;">{{ __('landing.cases.title') }}</h2>
         </div>
 
         <div class="grid gap-5 grid-cols-1 md:grid-cols-2">

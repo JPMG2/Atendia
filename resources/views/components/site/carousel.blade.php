@@ -1,14 +1,5 @@
 @php
-    $testimonials = [
-        ['name' => 'Clínica Vida', 'who' => 'Centro médico', 'quote' => 'Dejamos de perder turnos por no contestar a tiempo. Ahora la agenda se llena sola.'],
-        ['name' => 'Pastelería Mía', 'who' => 'Repostería', 'quote' => 'Responde por precios y sabores aunque yo esté horneando. Vendí 30% más en un mes.'],
-        ['name' => 'Dr. Luis Paz', 'who' => 'Cardiología', 'quote' => 'Mis pacientes agendan por WhatsApp y reciben recordatorios. Cero ausencias.'],
-        ['name' => 'Kiosco Sol', 'who' => 'Comercio', 'quote' => 'Configurarlo me llevó una tarde. Atiende consultas hasta de madrugada.'],
-        ['name' => 'Estudio Lex', 'who' => 'Abogados', 'quote' => 'Filtra consultas y agenda reuniones. Llegamos solo a lo que importa.'],
-        ['name' => 'AutoFix', 'who' => 'Taller', 'quote' => 'Cotiza service y reserva el turno del auto sin que levante el teléfono.'],
-        ['name' => 'Dra. Ríos', 'who' => 'Odontología', 'quote' => 'El asistente habla como hablo yo. Los pacientes ni notan la diferencia.'],
-        ['name' => 'Glow Spa', 'who' => 'Estética', 'quote' => 'Reservas, paquetes y promos respondidas al toque. Una genialidad.'],
-    ];
+    $testimonials = __('landing.carousel.testimonials');
 
     $initials = fn (string $name) => collect(explode(' ', $name))->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('');
 
@@ -20,9 +11,9 @@
 
 <section id="clientes" class="pt-14 pb-16 overflow-hidden">
     <div class="w-full px-6 mx-auto text-center flex flex-col items-center gap-3 mb-9" style="max-width: var(--container-xl);">
-        <span class="eyebrow eyebrow-line">Clientes</span>
-        <h2 class="font-display" style="font-size: var(--text-4xl); max-width:600px;">Negocios que ya no atienden solos</h2>
-        <p class="text-muted" style="font-size: var(--text-lg);">Miles de conversaciones respondidas cada día, en todos los rubros.</p>
+        <span class="eyebrow eyebrow-line">{{ __('landing.carousel.eyebrow') }}</span>
+        <h2 class="font-display" style="font-size: var(--text-4xl); max-width:600px;">{{ __('landing.carousel.title') }}</h2>
+        <p class="text-muted" style="font-size: var(--text-lg);">{{ __('landing.carousel.subtitle') }}</p>
     </div>
 
     <div class="flex flex-col gap-4">

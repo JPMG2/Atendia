@@ -1,9 +1,9 @@
 @php
     $bubbles = [
-        ['side' => 'in',  'time' => '09:41', 'text' => 'Hola, ¿tenés turno para un electro esta semana?'],
-        ['side' => 'out', 'time' => '09:41', 'text' => '¡Hola! Sí 😊 Tengo el jueves 10:30 o el viernes 16:00. ¿Cuál te queda mejor?'],
-        ['side' => 'in',  'time' => '09:42', 'text' => 'El jueves 10:30'],
-        ['side' => 'out', 'time' => '09:42', 'text' => 'Listo, te reservé el <b>jueves 10:30</b> con el Dr. Paz. Te llega el recordatorio el día anterior 👍'],
+        ['side' => 'in',  'time' => '09:41', 'text' => __('landing.phone.b1')],
+        ['side' => 'out', 'time' => '09:41', 'text' => __('landing.phone.b2')],
+        ['side' => 'in',  'time' => '09:42', 'text' => __('landing.phone.b3')],
+        ['side' => 'out', 'time' => '09:42', 'text' => __('landing.phone.b4')],
     ];
 @endphp
 
@@ -19,9 +19,9 @@
                     <x-icon name="bot" :size="20" style="color:#fff;" />
                 </span>
                 <div style="line-height:1.2;">
-                    <div style="color:#fff;font-weight:700;font-size:14px;">Clínica Vida · Asistente</div>
+                    <div style="color:#fff;font-weight:700;font-size:14px;">{{ __('landing.phone.header') }}</div>
                     <div class="flex items-center gap-1.5" style="color:rgba(255,255,255,.8);font-size:11px;">
-                        <span style="width:7px;height:7px;border-radius:50%;background:#7CFFC4;"></span>en línea
+                        <span style="width:7px;height:7px;border-radius:50%;background:#7CFFC4;"></span>{{ __('landing.phone.online') }}
                     </div>
                 </div>
             </div>

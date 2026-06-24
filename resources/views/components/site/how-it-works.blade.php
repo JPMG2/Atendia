@@ -1,9 +1,9 @@
 @php
     $steps = [
-        ['n' => '01', 'icon' => 'message-square', 'title' => 'El cliente escribe', 'body' => 'Manda un mensaje a tu WhatsApp como siempre.', 'accent' => false],
-        ['n' => '02', 'icon' => 'workflow', 'title' => 'Atendia lo procesa', 'body' => 'El flujo automático entiende la consulta y busca la respuesta en tu configuración.', 'accent' => false],
-        ['n' => '03', 'icon' => 'sparkles', 'title' => 'Responde por vos', 'body' => 'Contesta, agenda o cotiza al instante, con tu tono y tus datos.', 'accent' => true],
-        ['n' => '04', 'icon' => 'layout-dashboard', 'title' => 'Vos supervisás', 'body' => 'Revisás todo desde el panel y tomás el control cuando quieras.', 'accent' => false],
+        ['n' => '01', 'icon' => 'message-square', 'title' => __('landing.how.step1.title'), 'body' => __('landing.how.step1.body'), 'accent' => false],
+        ['n' => '02', 'icon' => 'workflow', 'title' => __('landing.how.step2.title'), 'body' => __('landing.how.step2.body'), 'accent' => false],
+        ['n' => '03', 'icon' => 'sparkles', 'title' => __('landing.how.step3.title'), 'body' => __('landing.how.step3.body'), 'accent' => true],
+        ['n' => '04', 'icon' => 'layout-dashboard', 'title' => __('landing.how.step4.title'), 'body' => __('landing.how.step4.body'), 'accent' => false],
     ];
 @endphp
 
@@ -11,8 +11,8 @@
     <div class="w-full px-6" style="max-width: var(--container-xl);">
         <x-ui.card style="border-radius:var(--radius-2xl); padding:48px 40px;">
             <div class="flex flex-col items-center text-center gap-3 mb-10">
-                <span class="eyebrow eyebrow-line">Cómo funciona</span>
-                <h2 class="font-display" style="font-size: var(--text-4xl); max-width:560px;">De la pregunta a la respuesta, automático</h2>
+                <span class="eyebrow eyebrow-line">{{ __('landing.how.eyebrow') }}</span>
+                <h2 class="font-display" style="font-size: var(--text-4xl); max-width:560px;">{{ __('landing.how.title') }}</h2>
             </div>
 
             <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
