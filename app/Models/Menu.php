@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\MenuFactory;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,6 +19,8 @@ class Menu extends Model
 
     protected $fillable = [
         'parent_id',
+        'panel',
+        'permission',
         'label_key',
         'icon',
         'route_name',
@@ -124,21 +127,51 @@ class Menu extends Model
     }
 
     /**
-     * The full active menu tree (roots with recursive active children),
-     * ordered by sort_order. Per-request memoization is handled by the
-     * Navigation component's #[Computed]; we intentionally do NOT cache the
-     * Eloquent collection across requests (serializing models to the cache
-     * store returns __PHP_Incomplete_Class on read).
+     * Whether the item is visible to the user: sin permiso = público dentro del
+     * panel; con permiso = solo si el usuario lo tiene (el admin pasa por
+     * Gate::before). Ver arquitectura de paneles.
+     */
+    public function isVisibleTo(?Authenticatable $user): bool
+    {
+        return $this->permission === null
+            || ($user !== null && $user->can($this->permission));
+    }
+
+    /**
+     * The active menu tree for a panel (admin|client): roots with recursive
+     * active children, ordered, y filtrado por permiso para el usuario actual.
+     * La memoización por request la da el #[Computed] de Navigation; NO se
+     * cachea cross-request (serializar Eloquent al store da __PHP_Incomplete_Class).
      *
      * @return Collection<int, Menu>
      */
-    public static function tree(): Collection
+    public static function tree(string $panel = 'client'): Collection
     {
-        return self::query()
+        $roots = self::query()
             ->active()
             ->roots()
+            ->where('panel', $panel)
             ->with('childrenRecursive')
             ->orderBy('sort_order')
             ->get();
+
+        return self::filterByPermission($roots, auth()->user());
+    }
+
+    /**
+     * Recursively drop items (and their subtrees) the user may not see.
+     *
+     * @param  Collection<int, Menu>  $items
+     * @return Collection<int, Menu>
+     */
+    protected static function filterByPermission(Collection $items, ?Authenticatable $user): Collection
+    {
+        return $items
+            ->filter(fn (Menu $item): bool => $item->isVisibleTo($user))
+            ->each(fn (Menu $item) => $item->setRelation(
+                'childrenRecursive',
+                self::filterByPermission($item->childrenRecursive, $user),
+            ))
+            ->values();
     }
 }

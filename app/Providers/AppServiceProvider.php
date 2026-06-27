@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDates();
         $this->configureRequests();
         $this->configureRateLimiting();
+        $this->configureAuthorization();
         Model::preventLazyLoading(! app()->isProduction());
         Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
         Model::preventAccessingMissingAttributes(! app()->isProduction());
@@ -50,6 +53,15 @@ class AppServiceProvider extends ServiceProvider
     private function configureModels(): void
     {
         Model::shouldBeStrict();
+    }
+
+    /**
+     * Super-admin: el rol "admin" pasa cualquier gate/policy. Es lo que permite
+     * que el admin acceda también al panel cliente (ver arquitectura de paneles).
+     */
+    private function configureAuthorization(): void
+    {
+        Gate::before(fn (User $user) => $user->hasRole('admin') ? true : null);
     }
 
     private function configureDates(): void

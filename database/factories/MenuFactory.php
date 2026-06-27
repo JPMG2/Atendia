@@ -19,6 +19,8 @@ class MenuFactory extends Factory
     {
         return [
             'parent_id' => null,
+            'panel' => 'client',
+            'permission' => null,
             'label_key' => 'menu.'.$this->faker->unique()->slug(2),
             'icon' => $this->faker->randomElement(['layout-dashboard', 'message-circle', 'calendar-check', 'package']),
             'route_name' => null,
@@ -27,6 +29,14 @@ class MenuFactory extends Factory
             'sort_order' => $this->faker->numberBetween(0, 20),
             'is_active' => true,
         ];
+    }
+
+    /**
+     * Put the item in the given panel (admin | client).
+     */
+    public function panel(string $panel): static
+    {
+        return $this->state(fn (): array => ['panel' => $panel]);
     }
 
     /**

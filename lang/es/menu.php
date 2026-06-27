@@ -31,4 +31,9 @@ return [
     'metrics' => 'Métricas',
     'settings' => 'Ajustes',
     'help' => 'Ayuda',
+
+    // Panel admin (configuración)
+    'admin_home' => 'Inicio',
+    'admin_users' => 'Usuarios',
+    'admin_settings' => 'Configuración',
 ];

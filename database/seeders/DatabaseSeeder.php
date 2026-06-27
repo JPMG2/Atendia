@@ -19,11 +19,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        $this->call(RolesAndPermissionsSeeder::class);
+
+        // El UserFactory asigna el rol "client" por defecto (roles ya sembrados).
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
 
         $this->call(MenuSeeder::class);
+        $this->call(AdminUserSeeder::class);
     }
 }

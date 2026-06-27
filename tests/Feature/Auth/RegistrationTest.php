@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,6 +21,9 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        // El registro asigna el rol "client" por defecto, así que el rol debe existir.
+        $this->seed(RolesAndPermissionsSeeder::class);
+
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',

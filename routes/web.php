@@ -15,7 +15,9 @@ Route::get('/idioma/{locale}', function (string $locale) {
     return back();
 })->name('locale.switch');
 
-Route::get('/dashboard', fn () => view('dashboard'))->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', fn () => view('dashboard'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
