@@ -25,6 +25,160 @@
 
 - `bootstrap/app.php` usa `trustProxies(at: '*')`. No quitarlo: sin eso los assets se generan en http detrás del proxy https y se rompe el CSS.
 
+## Testing — Pest OBLIGATORIO (override de la regla de Boost)
+
+> ⚠️ Esto **anula** la regla de Boost que dice "usar PHPUnit y convertir Pest a PHPUnit".
+> En este proyecto los tests se escriben **siempre en Pest v4**. Nada de clases PHPUnit nuevas.
+
+- Framework: **Pest v4** (`pestphp/pest`) + plugin **`pestphp/pest-plugin-livewire`** para testear componentes Livewire (`livewire(Componente::class)->...`).
+- Sintaxis funcional: `test('...', function () { ... })` / `it(...)` con `expect()`. El `TestCase` se enlaza en `tests/Pest.php`.
+- **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés. (El código de la app y el copy de la UI siguen en español; esta regla aplica solo a la capa de tests.)
+
+## Git — mensajes de commit en INGLÉS
+
+- **Todos los mensajes de commit van en inglés** (subject + body). Imperativo, conciso (ej. `Add UI form components`, `Fix icon size prop`).
+- Identidad: `JPMG2 <jpmorenog22@gmail.com>`. Remote SSH: `git@github.com:JPMG2/Atendia.git` (rama `main`).
+- `.env` y secretos NUNCA se commitean (ya cubierto por `.gitignore`).
+- Crear tests con `php artisan make:test --pest {Nombre}` (NO `--phpunit`).
+- Correr: `docker exec -w /var/www/html atendia-app ./vendor/bin/pest --compact` (o con un filtro/archivo). Cada cambio debe quedar cubierto y verde antes de cerrar.
+
+### Base de datos de testing (Postgres real, producción blindada)
+
+- Todo corre sobre **Postgres**, también los tests. Hay una base **dedicada** `atendia_testing` (owner `atendia_user`), separada de producción `atendia`.
+- `phpunit.xml` fuerza `DB_CONNECTION=pgsql` + `DB_DATABASE=atendia_testing`; host/usuario/clave se heredan del `.env` (no se duplican secretos).
+- **Blindaje:** `tests/TestCase.php` aborta cualquier test si el entorno no es `testing` o la base no es exactamente `atendia_testing`. **Jamás** apuntar los tests a `atendia`.
+- La base `atendia_testing` se creó con el superusuario `laravel_user` del contenedor `ai_project_postgres-shared`:
+  `CREATE DATABASE atendia_testing OWNER atendia_user;`
+
+=== .ai/documentacion-y-memoria rules ===
+
+# Documentación y memoria — mantenerlas legibles
+
+> Objetivo: que las guías y memorias **siempre se puedan leer**, sin que crezcan
+> hasta el punto de "es demasiado grande, no la leo". Esa frase es un error: un
+> archivo del proyecto nunca se rechaza.
+
+## Reglas para guías (`.ai/guidelines/`) y docs del proyecto
+
+- **Un tema por archivo.** Preferir varios archivos chicos y enfocados (p. ej.
+  `api.md`, `frontend.md`) antes que un único archivo gigante.
+- **Tabla de contenidos / secciones claras** al inicio de cada guía larga, para
+  poder leer solo la parte que aplica.
+- **Enlazar, no inflar.** Si un tema ya está cubierto en otra guía, enlazarlo en
+  vez de repetir el contenido.
+
+## Reglas para la memoria automática
+
+- **Una idea por archivo de memoria.** Si una memoria se vuelve grande, partirla
+  en varias y enlazarlas con `[[nombre]]`.
+- **El índice `MEMORY.md`: una línea por entrada.** Nunca poner contenido en el
+  índice, solo el puntero con un gancho corto.
+- **Actualizar, no duplicar.** Si un dato cambia, editar la memoria existente; si
+  quedó obsoleta, borrarla.
+
+## Cómo leer archivos grandes (nunca rechazarlos)
+
+Si un archivo es grande, NO negarse a leerlo. Usar una de estas vías:
+
+- **Leerlo por tramos** (lectura parcial con offset/limit), no de una sola vez.
+- **Delegarlo a un subagente** que lo lea entero y devuelva solo el resumen
+  relevante, así el archivo grande no ocupa el contexto principal.
+
+=== .ai/migraciones-seguras rules ===
+
+# Migraciones seguras — NUNCA borrar datos de `atendia`
+
+> Incidente 2026-06-27: la base de trabajo `atendia` quedó sin datos. Regla dura
+> para que sea imposible repetirlo. La base de producción/trabajo es **`atendia`**;
+> la única base donde se testea es **`atendia_testing`**.
+
+## Prohibido sobre `atendia`
+
+- `php artisan migrate:fresh` · `migrate:refresh` · `migrate:reset` · `db:wipe`
+  → dropean tablas y **borran todos los datos**. JAMÁS sobre `atendia`.
+- Está blindado por el hook `PreToolUse` `.claude/hooks/block-destructive-db.sh`
+  (bloquea esos comandos salvo que apunten explícitamente a `atendia_testing`).
+
+## Cómo aplicar migraciones a `atendia`
+
+- **Solo las pendientes:** `php artisan migrate` (no toca tablas ya migradas, no borra data).
+- **Quirúrgico (preferido al aplicar UNA nueva):**
+  `php artisan migrate --path=database/migrations/<archivo>.php`
+  → corre **únicamente esa** migración. Ver convención del usuario.
+- Recordá el entorno Docker: `docker exec -w /var/www/html atendia-app php artisan migrate ...`
+
+## Al crear una migración nueva (flujo completo)
+
+1. Crear la migración (y modelo/seeder).
+2. **Aplicarla a `atendia` con `migrate --path`** — si no, la feature no existe en el
+   sitio real (la tabla solo viviría en `atendia_testing` vía tests).
+3. Si corresponde, sembrar datos: `php artisan db:seed --class=<Seeder>` (no usa fresh).
+4. Devolver permisos tras correr como root en el contenedor.
+
+## Testing
+
+- Los tests reales usan **RefreshDatabase** sobre `atendia_testing` (forzado en
+  `phpunit.xml` + guard en `tests/TestCase.php`). No se usan los comandos `migrate:*`
+  destructivos a mano para testear.
+
+Relacionado: la receta de enforcement de 3 capas — ver `.ai/guidelines/reglas-de-oro-enforcement.md`.
+
+=== .ai/reglas-de-oro-enforcement rules ===
+
+# Reglas de oro — receta de enforcement (convención del proyecto)
+
+> Para que una "regla de oro" se cumpla **a rajatabla** no alcanza con escribirla:
+> una guía es contexto pasivo y se puede pasar por alto. La garantía real la da
+> una verificación **determinística** que corre la herramienta, no el modelo.
+
+Toda regla de oro de este proyecto se implementa con **3 capas**. Las dos primeras
+hacen que casi siempre salga bien; la tercera lo hace **imposible de incumplir**.
+
+## Capa A — Skill con checklist de salida
+
+- Las reglas viven en un **skill** con `description` (trigger) inequívoca que
+  active al entrar al dominio (p. ej. "usar SIEMPRE al crear un formulario o un
+  componente Livewire").
+- El skill **termina con un checklist explícito** que debo verificar **antes de
+  dar la tarea por terminada**. Convierte la regla en un paso de salida, no en un
+  buen deseo.
+
+## Capa B — Garantía determinística (SIEMPRE, si es regla de oro)
+
+Elegí la herramienta según el dominio:
+- **PHP (modelos, clases)** → **arch test de Pest** (`arch()`), hecho para esto.
+- **Migraciones / markup Blade** → **test guardián**: un test Pest que recorre los
+  archivos del dominio y **falla** si encuentra un patrón prohibido.
+- Ambos corren en la suite / CI → protegen también ediciones de humanos u otras
+  herramientas. Es la red permanente.
+
+## Capa C — Hook `PostToolUse` (corrección instantánea)
+
+- Un hook en `.claude/settings.json` que matchea `Write|Edit` sobre los archivos
+  del dominio, valida el archivo recién escrito y, si viola algo, **devuelve el
+  error en el momento** (exit 2) para corregir antes de que corran los tests.
+
+## Cómo se clasifica cada regla
+
+Cuando se suma un set de reglas de oro:
+1. Separar cada regla en **verificable por patrón** (va a capa B y C) vs **de
+   criterio/UX** (queda solo en el checklist del skill, capa A).
+2. Definir un **allowlist de excepciones** explícito y comentado para no generar
+   falsos positivos (primitivos, casos legítimos, deuda pre-existente).
+3. **Ratchet:** si hay incumplimientos previos que no se arreglan ahora, se
+   congelan en el allowlist con su razón — **nunca se agrega nada nuevo a esa
+   lista**, se arregla.
+
+## Implementaciones vivas (ejemplos de esta receta)
+
+- **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
+  `tests/Feature/GoldenRulesMarkupTest.php` · hook
+  `.claude/hooks/check-blade-golden-rules.sh`.
+- **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
+  test guardián para migraciones cuando se sumen las reglas).*
+
+Ver también: [[documentacion-y-memoria]] (un tema por archivo, legibilidad).
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -36,17 +190,25 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
 - php - 8.5
+- laravel/ai (AI) - v0
 - laravel/framework (LARAVEL) - v13
 - laravel/prompts (PROMPTS) - v0
+- laravel/sanctum (SANCTUM) - v4
 - livewire/livewire (LIVEWIRE) - v4
 - laravel/boost (BOOST) - v2
 - laravel/breeze (BREEZE) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pail (PAIL) - v1
 - laravel/pint (PINT) - v1
+- pestphp/pest (PEST) - v4
 - phpunit/phpunit (PHPUNIT) - v12
+- rector/rector (RECTOR) - v2
 - alpinejs (ALPINEJS) - v3
 - tailwindcss (TAILWINDCSS) - v3
+
+## Skills Activation
+
+This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
 ## Conventions
 
@@ -160,22 +322,13 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
 
-=== phpunit/core rules ===
+=== pest/core rules ===
 
-# PHPUnit
+## Pest
 
-- This application uses PHPUnit for testing. All tests must be written as PHPUnit classes. Use `php artisan make:test --phpunit {name}` to create a new test.
-- If you see a test using "Pest", convert it to PHPUnit.
-- Every time a test has been updated, run that singular test.
-- When the tests relating to your feature are passing, ask the user if they would like to also run the entire test suite to make sure everything is still passing.
-- Tests should cover all happy paths, failure paths, and edge cases.
-- You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files; these are core to the application.
-
-## Running Tests
-
-- Run the minimal number of tests, using an appropriate filter, before finalizing.
-- To run all tests: `php artisan test --compact`.
-- To run all tests in a file: `php artisan test --compact tests/Feature/ExampleTest.php`.
-- To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).
+- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
+- The `{name}` argument should not include the test suite directory. Use `php artisan make:test --pest SomeFeatureTest` instead of `php artisan make:test --pest Feature/SomeFeatureTest`.
+- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
+- Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>

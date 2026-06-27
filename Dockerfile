@@ -31,6 +31,26 @@ RUN apk add --no-cache \
         zip \
         unzip
 
+# ============================================================
+# Browser testing (Pest 4 + Playwright) en Alpine
+# Playwright NO soporta sus navegadores (glibc) en Alpine (musl). Solución:
+# Chromium del sistema + reemplazar los binarios que Playwright espera por
+# wrappers que ejecutan /usr/bin/chromium. El cache se hornea en /root/.cache
+# (filesystem de la IMAGEN, fuera del bind-mount) para sobrevivir a recrear el
+# contenedor. PLAYWRIGHT_VERSION DEBE coincidir con "playwright" en package.json.
+# ============================================================
+ARG PLAYWRIGHT_VERSION=1.61.1
+RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont \
+    && npx --yes playwright@${PLAYWRIGHT_VERSION} install chromium \
+    && find /root/.cache/ms-playwright -type f \( -name chrome -o -name chrome-headless-shell \) | while read -r b; do \
+         rm -f "$b"; \
+         printf '#!/bin/sh\nexec /usr/bin/chromium --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage "$@"\n' > "$b"; \
+         chmod +x "$b"; \
+       done
+# Evita que `npm ci`/`install` (runtime) re-descargue navegadores glibc inútiles:
+# los browsers ya están horneados arriba.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
 # Composer 2
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

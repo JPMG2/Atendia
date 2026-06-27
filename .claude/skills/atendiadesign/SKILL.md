@@ -125,6 +125,27 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 4. Props inválidos caen al default (mapas, no concatenación cruda de clases).
 5. Llega con su test Pest (en inglés) que cubre render, variantes y la regla de oro.
 
+## ✅ Checklist de salida — formularios y componentes Livewire (NO NEGOCIABLE)
+
+> Antes de dar por terminado CUALQUIER formulario, vista Blade o componente
+> Livewire, verificá uno por uno. Estas reglas están blindadas por el test
+> guardián `tests/Feature/GoldenRulesMarkupTest.php` y el hook
+> `check-blade-golden-rules.sh` — si no las cumplís, **el build falla**.
+> (Receta: `.ai/guidelines/reglas-de-oro-enforcement.md`.)
+
+- [ ] **Campos vía `<x-ui.*>`, jamás controles crudos.** Nada de `<input>`,
+      `<select>` ni `<textarea>` sueltos: usar `<x-ui.input>`, `<x-ui.select>`,
+      `<x-ui.textarea>`, `<x-ui.switch>`, `<x-ui.checkbox>`. Es lo que garantiza el
+      foco de un solo anillo, el theming y el wiring del error por `name`.
+- [ ] **Cero color hex.** Todo color sale de un token semántico de `app.css`
+      (`var(--brand)`, helpers `text-strong`, `bg-card`, …). Ningún `#fff`/`#0EA47A`.
+- [ ] **Iconos solo con `<x-icon name=".." :size=".." />`.** Nunca `<i data-lucide>`
+      ni `lucide.createIcons()`.
+- [ ] **Reusar antes de crear.** Si ya existe el componente en la librería `<x-ui.*>`,
+      usarlo; no reinventar markup.
+- [ ] **Test Pest (en inglés)** que cubra el render y la regla relevante.
+- [ ] **Responsive + dark/light** verificados (los 3 mandatos de arriba).
+
 ## Cómo aplicarlo en este proyecto (Laravel + Blade + Livewire)
 
 - **Tokens y clases globales:** `resources/css/app.css` (ya cargado). Es la fuente de verdad.

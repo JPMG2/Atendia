@@ -459,3 +459,135 @@
 .marquee-track { display:flex; width:max-content; animation:atendia-marq linear infinite; }
 .marquee:hover .marquee-track { animation-play-state:paused; }
 @media (prefers-reduced-motion:reduce) { .marquee-track { animation:none !important; } }
+
+/* ============================================================
+   DASHBOARD — shell, sidebar, topbar y menú recursivo
+   (todo theme-aware vía tokens; dark/light salen solos)
+   ============================================================ */
+@layer components {
+
+  /* --- Shell --- */
+  .app-shell { display:flex; min-height:100vh; background:var(--surface-page); }
+  .app-main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .app-content { flex:1; width:100%; max-width:var(--container-2xl); margin:0 auto; padding:26px 24px 48px; }
+  .app-page-header { width:100%; max-width:var(--container-2xl); margin:0 auto; padding:0 24px; }
+
+  /* --- Sidebar --- */
+  .sidebar { width:var(--sidebar-w); flex-shrink:0; position:sticky; top:0; height:100vh;
+             display:flex; flex-direction:column; gap:6px; padding:18px 14px;
+             background:var(--surface-card); border-right:1px solid var(--border-subtle); z-index:80; }
+  .sidebar-header { display:flex; align-items:center; gap:10px; padding:4px 8px 16px; }
+  .sidebar-logo { width:30px; height:30px; flex-shrink:0; }
+  .sidebar-wordmark { font-family:var(--font-display); font-weight:800; font-size:21px;
+                      letter-spacing:-0.03em; color:var(--text-strong); }
+  .sidebar-wordmark span { color:var(--brand); }
+  .sidebar-scrim { display:none; }
+
+  .sidebar-nav { display:flex; flex-direction:column; gap:4px; flex:1; min-height:0; overflow-y:auto; }
+  .sidebar-nav-bottom { margin-top:auto; padding-top:8px; }
+  .menu-section { font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+                  color:var(--text-subtle); padding:8px 12px 4px; }
+
+  /* --- Menú recursivo --- */
+  .menu, .menu-children { display:flex; flex-direction:column; gap:2px; list-style:none; margin:0; padding:0; }
+  .menu-children { margin-top:2px; }
+  .menu-node { list-style:none; }
+  .menu-item { display:flex; align-items:center; gap:11px; width:100%;
+               padding:10px 12px; padding-left:calc(12px + var(--menu-depth, 0) * 16px);
+               border:none; border-radius:var(--radius-md); background:transparent;
+               color:var(--text-muted); font-family:var(--font-sans); font-size:var(--text-sm);
+               font-weight:500; text-align:left; text-decoration:none; cursor:pointer;
+               transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+  .menu-item:hover { background:var(--surface-sunken); color:var(--text-body); }
+  .menu-item:focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; }
+  .menu-item[data-current] { background:var(--brand-soft); color:var(--brand-soft-text); font-weight:700; }
+  .menu-item-icon { flex-shrink:0; }
+  .menu-item-label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .menu-caret { flex-shrink:0; color:var(--text-subtle); transition:transform var(--dur-fast) var(--ease-out); }
+  .menu-caret-open { transform:rotate(180deg); }
+  .menu-badge { flex-shrink:0; min-width:20px; text-align:center; padding:1px 8px;
+                border-radius:var(--radius-pill); background:var(--border-default); color:var(--text-muted);
+                font-family:var(--font-mono); font-size:11px; font-weight:700; }
+  .menu-item[data-current] .menu-badge { background:var(--brand); color:var(--text-on-brand); }
+
+  /* --- Topbar --- */
+  .topbar { position:sticky; top:0; z-index:50; height:var(--topbar-h);
+            display:flex; align-items:center; gap:12px; padding:0 22px;
+            background:color-mix(in srgb, var(--surface-page) 82%, transparent);
+            backdrop-filter:blur(12px); border-bottom:1px solid var(--border-subtle); }
+  .topbar-spacer { margin-left:auto; }
+  .topbar-burger { display:none; }
+  .topbar-user { display:flex; align-items:center; gap:10px; }
+  .topbar-user-meta { display:flex; flex-direction:column; line-height:1.15; }
+  .topbar-user-org { font-weight:700; color:var(--text-strong); font-size:var(--text-sm); }
+  .topbar-user-name { color:var(--text-muted); font-size:var(--text-xs); }
+
+  /* --- Encabezado de página + grilla de KPIs --- */
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+               flex-wrap:wrap; margin-bottom:24px; }
+  .page-head-title { font-family:var(--font-display); font-size:var(--text-3xl);
+                     letter-spacing:-0.02em; color:var(--text-strong); }
+  .page-head-sub { color:var(--text-muted); margin-top:4px; }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+  /* --- Responsive: sidebar → drawer --- */
+  @media (max-width:860px) {
+    .sidebar { position:fixed; left:0; top:0; transform:translateX(-100%);
+               transition:transform .26s var(--ease-out); }
+    .sidebar.sidebar-open { transform:translateX(0); box-shadow:var(--shadow-xl); }
+    .sidebar-scrim { display:block; position:fixed; inset:0; background:var(--surface-overlay); z-index:70; }
+    .topbar-burger { display:inline-flex; }
+  }
+  @media (max-width:1100px) { .stat-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px) {
+    .topbar-user-meta { display:none; }
+    .app-content { padding:20px 16px 40px; }
+    .stat-grid { grid-template-columns:1fr; }
+  }
+}
+
+/* ============================================================
+   DASHBOARD — upsell card, buscador, pill de conexión y menú de usuario
+   ============================================================ */
+@layer components {
+
+  /* Upsell card (footer del sidebar) — el "verde clarito" es brand-soft */
+  .sidebar-upsell { background:var(--brand-soft); border-radius:var(--radius-md); padding:14px; margin-top:8px; }
+  .sidebar-upsell-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:var(--brand); }
+  .sidebar-upsell-head span { font-weight:700; font-size:var(--text-sm); color:var(--brand-soft-text); }
+  .sidebar-upsell-text { font-size:var(--text-xs); color:var(--text-muted); margin-bottom:10px; }
+
+  /* Topbar: buscador + grupo de acciones */
+  .topbar-search { width:320px; max-width:40vw; }
+  .topbar-search .field { margin:0; }
+  .topbar-actions { margin-left:auto; display:flex; align-items:center; gap:12px; }
+
+  .conn-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:var(--radius-pill);
+               background:var(--success-soft); color:var(--success); font-size:var(--text-xs); font-weight:700; white-space:nowrap; }
+  .conn-dot { width:7px; height:7px; border-radius:50%; background:var(--success); flex-shrink:0; }
+
+  .topbar-notif { position:relative; }
+  .topbar-notif-dot { position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%;
+                      background:var(--accent); border:1.5px solid var(--surface-card); }
+
+  /* Menú de usuario (dropdown con cerrar sesión) */
+  .topbar-user-menu { position:relative; }
+  .topbar-user { display:flex; align-items:center; gap:9px; padding:4px 6px; border:none; background:transparent;
+                 border-radius:var(--radius-md); cursor:pointer; font-family:var(--font-sans);
+                 transition:background var(--dur-fast) var(--ease-out); }
+  .topbar-user:hover { background:var(--surface-sunken); }
+  .topbar-user-caret { color:var(--text-subtle); flex-shrink:0; }
+  .topbar-user-dropdown { position:absolute; right:0; top:calc(100% + 8px); min-width:220px; z-index:60;
+                          background:var(--surface-card); border:1px solid var(--border-subtle);
+                          border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:6px; }
+  .topbar-user-dropdown form { margin:0; }
+  .dropdown-item { display:flex; align-items:center; gap:10px; width:100%; padding:9px 10px; border:none;
+                   background:transparent; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none;
+                   color:var(--text-body); font-family:var(--font-sans); font-size:var(--text-sm); text-align:left;
+                   transition:background var(--dur-fast) var(--ease-out); }
+  .dropdown-item:hover { background:var(--surface-sunken); }
+  .dropdown-item-danger { color:var(--danger); }
+
+  @media (max-width:900px) { .conn-pill { display:none; } }
+  @media (max-width:600px) { .topbar-search { display:none; } }
+}
