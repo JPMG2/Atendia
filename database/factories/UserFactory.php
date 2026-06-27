@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
@@ -31,6 +32,19 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Rol por defecto: cliente (si ya están sembrados los roles). Refleja que
+     * todo registro es cliente; los tests que necesiten admin hacen syncRoles.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            if ($user->roles()->doesntExist() && Role::where('name', 'client')->exists()) {
+                $user->assignRole('client');
+            }
+        });
     }
 
     /**

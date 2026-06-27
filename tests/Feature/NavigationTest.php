@@ -3,6 +3,7 @@
 use App\Models\Menu;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -34,6 +35,7 @@ test('the navigation hides inactive menu items', function (): void {
 });
 
 test('the dashboard renders the sidebar navigation and skeleton for an authenticated user', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
     $user = User::factory()->create();
 
@@ -43,4 +45,43 @@ test('the dashboard renders the sidebar navigation and skeleton for an authentic
         ->assertSee('Inicio')
         ->assertSee('Conversaciones')
         ->assertSee('Crear mi asistente');
+});
+
+test('the admin panel shows the admin menu, not the client menu', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+    $admin = User::factory()->create();
+    $admin->syncRoles('admin');
+
+    $this->actingAs($admin)
+        ->get('/admin')
+        ->assertSuccessful()
+        ->assertSee('Usuarios')          // menú admin
+        ->assertSee('Configuración')
+        ->assertDontSee('Conversaciones'); // menú cliente
+});
+
+test('the admin dashboard shows the configuration skeleton tiles', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $admin = User::factory()->create();
+    $admin->syncRoles('admin');
+
+    $this->actingAs($admin)
+        ->get('/admin')
+        ->assertSuccessful()
+        ->assertSee('Configuración')
+        ->assertSee('Integraciones')
+        ->assertSee('Seguridad');
+});
+
+test('the client dashboard shows the client menu, not the admin menu', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+    $client = User::factory()->create();
+
+    $this->actingAs($client)
+        ->get(route('dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Conversaciones')
+        ->assertDontSee('Usuarios');
 });

@@ -591,3 +591,17 @@
   @media (max-width:900px) { .conn-pill { display:none; } }
   @media (max-width:600px) { .topbar-search { display:none; } }
 }
+
+/* ============================================================
+   PANEL ADMIN — grilla de configuración (tiles)
+   ============================================================ */
+@layer components {
+  .settings-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px; }
+  .settings-tile { padding:20px; }
+  .settings-tile-icon { display:inline-flex; align-items:center; justify-content:center;
+                        width:44px; height:44px; border-radius:var(--radius-md);
+                        background:var(--brand-soft); color:var(--brand); margin-bottom:12px; }
+  .settings-tile-title { font-family:var(--font-display); font-size:var(--text-lg);
+                         color:var(--text-strong); margin-bottom:4px; }
+  .settings-tile-desc { font-size:var(--text-sm); color:var(--text-muted); line-height:1.45; }
+}

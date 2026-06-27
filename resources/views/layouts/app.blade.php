@@ -33,10 +33,15 @@
         <div class="sidebar-scrim" data-testid="sidebar-scrim" x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"></div>
 
         {{-- Sidebar --}}
+        @php($onAdminPanel = request()->routeIs('admin.*'))
+
         <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
-            <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-header">
+            <a href="{{ $onAdminPanel ? route('admin.dashboard') : route('dashboard') }}" wire:navigate class="sidebar-header">
                 <img src="{{ asset('assets/logo-mark.svg') }}" alt="Atendia" class="sidebar-logo">
                 <span class="sidebar-wordmark">Atend<span>ia</span></span>
+                @if ($onAdminPanel)
+                    <x-ui.badge variant="accent">Admin</x-ui.badge>
+                @endif
             </a>
 
             <livewire:navigation />
@@ -86,6 +91,21 @@
 
                         <div class="topbar-user-dropdown" x-show="open" x-cloak x-transition
                              @click.outside="open = false">
+                            {{-- Switch de panel: solo para admin (super-admin via Gate::before).
+                                 La impersonación de un cliente PUNTUAL (ver sus datos) es una
+                                 feature aparte y futura; acá solo se cambia de panel. --}}
+                            @can('access-admin-panel')
+                                @if ($onAdminPanel)
+                                    <a href="{{ route('dashboard') }}" wire:navigate class="dropdown-item">
+                                        <x-icon name="store" :size="16" /> Ver panel cliente
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.dashboard') }}" wire:navigate class="dropdown-item">
+                                        <x-icon name="shield-check" :size="16" /> Panel admin
+                                    </a>
+                                @endif
+                            @endcan
+
                             <a href="{{ route('profile.edit') }}" wire:navigate class="dropdown-item">
                                 <x-icon name="settings" :size="16" /> {{ __('menu.settings') }}
                             </a>

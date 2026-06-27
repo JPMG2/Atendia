@@ -2,12 +2,14 @@
 
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     app()->setLocale('es');
+    $this->seed(RolesAndPermissionsSeeder::class);
 });
 
 test('the dashboard loads with no JS errors and renders the recursive menu', function (): void {

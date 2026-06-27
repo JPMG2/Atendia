@@ -7,14 +7,25 @@ use Livewire\Component;
 new class extends Component
 {
     /**
-     * The cached active menu tree (memoized per request).
+     * Panel activo (admin | client). Se fija en mount desde la ruta para que
+     * persista en los updates de Livewire (no depender del request en vivo).
+     */
+    public string $panel = 'client';
+
+    public function mount(): void
+    {
+        $this->panel = request()->routeIs('admin.*') ? 'admin' : 'client';
+    }
+
+    /**
+     * Árbol de menú del panel activo (memoizado por request).
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Menu>
      */
     #[Computed]
     public function tree()
     {
-        return Menu::tree();
+        return Menu::tree($this->panel);
     }
 };
 ?>
