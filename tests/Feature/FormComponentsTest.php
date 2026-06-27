@@ -102,6 +102,12 @@ test('the avatar renders a status dot when given a status', function (): void {
         ->toContain('var(--success)');
 });
 
+test('the avatar uses a fixed jade tint when given tint=brand, ignoring the name hash', function (): void {
+    expect(Blade::render('<x-ui.avatar name="Ana" tint="brand" />'))
+        ->toContain('var(--jade-100)')
+        ->toContain('var(--jade-700)');
+});
+
 /*
 |--------------------------------------------------------------------------
 | <x-ui.alert>

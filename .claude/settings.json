@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/block-destructive-db.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
@@ -7,6 +18,15 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/reload-fpm-after-composer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-blade-golden-rules.sh"
           }
         ]
       }
