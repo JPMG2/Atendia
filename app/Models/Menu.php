@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Database\Factories\MenuFactory;
@@ -36,8 +38,9 @@ class Menu extends Model
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'parent_id' => 'integer',
             'sort_order' => 'integer',
+            'is_active' => 'boolean',
         ];
     }
 
