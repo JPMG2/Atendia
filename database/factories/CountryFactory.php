@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Country;
+use App\Models\Currency;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +19,11 @@ class CountryFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'currency_id' => Currency::factory(),
+            'name' => $this->faker->unique()->country(),
+            'code' => strtoupper($this->faker->unique()->lexify('???')),
+            'phone_code' => (string) $this->faker->numberBetween(1, 999),
+            'is_active' => true,
         ];
     }
 }

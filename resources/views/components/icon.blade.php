@@ -5,7 +5,12 @@
 ])
 
 @php
-    $svg = config("icons.{$name}");
+    $icon = config("icons.{$name}");
+
+    // Un icono es un string (Lucide, de trazo) o un array ['filled' => true,
+    // 'path' => ...] para los logos de marca (Simple Icons, de relleno).
+    $filled = is_array($icon) && ($icon['filled'] ?? false);
+    $svg = is_array($icon) ? ($icon['path'] ?? null) : $icon;
 @endphp
 
 @if ($svg)
@@ -14,11 +19,16 @@
         width="{{ $size }}"
         height="{{ $size }}"
         viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="{{ $stroke }}"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        {{ $attributes->merge(['class' => 'lucide', 'aria-hidden' => 'true']) }}
+        @if ($filled)
+            fill="currentColor"
+            stroke="none"
+        @else
+            fill="none"
+            stroke="currentColor"
+            stroke-width="{{ $stroke }}"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        @endif
+        {{ $attributes->merge(['class' => $filled ? 'brand-icon' : 'lucide', 'aria-hidden' => 'true']) }}
     >{!! $svg !!}</svg>
 @endif

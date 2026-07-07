@@ -50,8 +50,32 @@ test('the icon registry holds only non-empty SVG markup', function (): void {
 
     expect($icons)->toBeArray()->not->toBeEmpty();
 
-    foreach ($icons as $name => $svg) {
-        expect($svg)->toBeString()
-            ->and(trim((string) $svg))->not->toBe('', "icon [{$name}] is empty");
+    foreach ($icons as $name => $icon) {
+        // An icon is either a string (Lucide, stroke) or a brand entry
+        // ['filled' => true, 'path' => ...] (Simple Icons, fill).
+        $path = is_array($icon) ? ($icon['path'] ?? null) : $icon;
+
+        expect($path)->toBeString("icon [{$name}] has no path")
+            ->and(trim((string) $path))->not->toBe('', "icon [{$name}] is empty");
     }
+});
+
+test('the icon component renders a brand icon as a filled SVG', function (): void {
+    $html = Blade::render('<x-icon name="facebook" :size="24" />');
+
+    expect($html)
+        ->toContain('<svg')
+        ->toContain('fill="currentColor"')
+        ->toContain('stroke="none"')
+        ->toContain('class="brand-icon"')
+        // The stroke styling of Lucide icons must NOT leak into a brand icon.
+        ->not->toContain('fill="none"')
+        // The raw array must never reach the markup.
+        ->not->toContain('Array');
+});
+
+test('a brand icon keeps carrying its real path, not the word Array', function (): void {
+    $html = Blade::render('<x-icon name="x-twitter" />');
+
+    expect($html)->toContain('<path d="M14.234');
 });
