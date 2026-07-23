@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Stevebauman\Location\Drivers\GeoPlugin;
 use Stevebauman\Location\Drivers\Ip2locationio;
 use Stevebauman\Location\Drivers\IpApi;

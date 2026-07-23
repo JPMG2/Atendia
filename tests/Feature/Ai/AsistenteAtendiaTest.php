@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Ai\Agents\AsistenteAtendia;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;

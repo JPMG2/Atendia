@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\TaxCondition;
 use Database\Seeders\TaxConditionSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -67,7 +70,7 @@ test('a duplicated code within the same country is rejected', function () {
     TaxCondition::factory()->create(['country_id' => $ar->id, 'code' => 'XX', 'name' => 'A']);
 
     TaxCondition::factory()->create(['country_id' => $ar->id, 'code' => 'XX', 'name' => 'B']);
-})->throws(Illuminate\Database\QueryException::class);
+})->throws(QueryException::class);
 
 test('a tax condition belongs to a country', function () {
     $condition = TaxCondition::factory()->create();

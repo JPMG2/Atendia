@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 test('the landing page loads successfully', function (): void {
     $this->get('/')->assertOk();
 });

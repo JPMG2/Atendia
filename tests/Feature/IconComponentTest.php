@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Blade;
 
 test('the icon component renders a registered icon as inline SVG', function (): void {
