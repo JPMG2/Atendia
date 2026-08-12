@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Models\Company;
+use App\Models\KnowledgeDocument;
+use Illuminate\Database\Seeder;
+
+/**
+ * Conocimiento demo (FAQs) para una empresa. NO embeddea acá: crear cada documento
+ * encola `IndexKnowledgeDocument`; el worker (queue:work) lo indexa contra la API de
+ * embeddings. Correr con el worker levantado y la OPENAI_API_KEY configurada.
+ */
+class KnowledgeSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $company = Company::query()->first() ?? Company::factory()->create();
+
+        $faqs = [
+            [
+                'title' => 'Cómo conectar WhatsApp',
+                'content' => 'Para conectar tu WhatsApp entrá a Configuración → Canales → WhatsApp y escaneá el código QR con el teléfono del negocio. La conexión queda activa mientras el teléfono tenga internet.',
+            ],
+            [
+                'title' => 'Horarios de atención del asistente',
+                'content' => 'El asistente responde las 24 horas. Podés definir un horario comercial para derivar a una persona del equipo fuera de ese rango desde Configuración → Atención.',
+            ],
+            [
+                'title' => 'Precios y planes',
+                'content' => 'AtendIa tiene un plan inicial con un canal y un plan pro con múltiples canales y más volumen de mensajes. La facturación es mensual y podés cambiar de plan cuando quieras.',
+            ],
+            [
+                'title' => 'Cómo derivar a un humano',
+                'content' => 'Cuando el asistente no puede resolver algo, ofrece derivar con una persona. También podés pedir "hablar con un agente" y la conversación pasa a la bandeja del equipo.',
+            ],
+        ];
+
+        foreach ($faqs as $faq) {
+            KnowledgeDocument::updateOrCreate(
+                ['company_id' => $company->id, 'title' => $faq['title']],
+                ['source_type' => 'faq', 'content' => $faq['content']],
+            );
+        }
+    }
+}
