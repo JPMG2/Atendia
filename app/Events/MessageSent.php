@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Prueba de vida del WebSocket.
+ * Prueba de vida del WebSocket, ahora sobre un canal PRIVADO por negocio.
  *
- * Canal PÚBLICO a propósito: alcanza para ver el circuito completo funcionando.
- * Cuando exista el aislamiento por negocio pasa a `PrivateChannel` más una
- * autorización en `routes/channels.php`; el resto no cambia.
+ * El mensaje viaja únicamente a quienes el callback de `routes/channels.php`
+ * autoriza: los usuarios de ese negocio, más el dueño.
  */
 class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public string $body) {}
+    public function __construct(public string $body, public int $businessId) {}
 
     /**
-     * @return array<int, Channel>
+     * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {
-        return [new Channel('demo')];
+        return [new PrivateChannel('business.'.$this->businessId)];
     }
 
     public function broadcastAs(): string

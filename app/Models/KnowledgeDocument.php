@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Observers\KnowledgeDocumentObserver;
+use App\Traits\BelongsToBusiness;
 use Database\Factories\KnowledgeDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class KnowledgeDocument extends Model
 {
     /** @use HasFactory<KnowledgeDocumentFactory> */
+    use BelongsToBusiness;
     use HasFactory;
 
     use SoftDeletes;
@@ -38,13 +40,6 @@ class KnowledgeDocument extends Model
         ];
     }
 
-    /**
-     * @return BelongsTo<Business, $this>
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
-    }
 
     /**
      * @return HasMany<KnowledgeChunk, $this>

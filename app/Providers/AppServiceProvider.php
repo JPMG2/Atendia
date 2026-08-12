@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,11 @@ class AppServiceProvider extends ServiceProvider
     #[\Override]
     public function register(): void
     {
-        //
+        // SINGLETON obligatorio: el scope de aislamiento y quien adopta un negocio
+        // (jobs, KnowledgeRetriever) tienen que estar mirando la MISMA instancia.
+        // Sin esto cada app(Tenant::class) devuelve una nueva, el negocio fijado se
+        // pierde y el filtro no se aplica: se leen datos de todos los negocios.
+        $this->app->singleton(Tenant::class);
     }
 
     /**
