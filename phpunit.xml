@@ -35,5 +35,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Browser tests (Pest v4 / Playwright): los browsers se guardan en el volumen
+             montado (/var/www/html) para que SOBREVIVAN a recrear el contenedor y sean
+             legibles por www-data (el tests corre como ese usuario). Ver .playwright-browsers. -->
+        <env name="PLAYWRIGHT_BROWSERS_PATH" value="/var/www/html/.playwright-browsers"/>
     </php>
 </phpunit>

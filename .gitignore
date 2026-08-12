@@ -29,3 +29,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Playwright browsers (browser tests) — binarios pesados, en el volumen para sobrevivir recreación
+.playwright-browsers/
+
+# Token de larga duracion de Claude Code (secreto, NUNCA se commitea)
+/.claude-code.env

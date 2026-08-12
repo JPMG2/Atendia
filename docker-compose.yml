@@ -11,6 +11,22 @@ services:
     # Codigo montado en vivo -> editas con VS Code y se refleja al instante
     volumes:
       - ./:/var/www/html
+      # /root PERSISTENTE: sobrevive a rebuilds y a recrear el contenedor.
+      # Adentro viven las tres cosas que antes se perdian en cada rebuild:
+      #   .codex/auth.json          -> login de Codex
+      #   .claude/ + .claude.json   -> credenciales e historial de Claude Code
+      #   .vscode-server/extensions -> extensiones de VS Code (2 GB)
+      # OJO: al ser volumen, /root queda CONGELADO respecto de la imagen. Si en
+      # el Dockerfile cambias PLAYWRIGHT_VERSION (browsers en /root/.cache) o el
+      # config.toml de Codex, hay que refrescarlo a mano dentro del volumen.
+      - root-home:/root
+
+    # Token de larga duracion de Claude Code (extension de VS Code dentro del
+    # contenedor). Archivo opcional y gitignored: si no existe, no pasa nada.
+    # Se genera con: ./docker/wire-claude-token.sh
+    env_file:
+      - path: ./.claude-code.env
+        required: false
 
     networks:
       - easypanel              # red de Traefik + alcanza postgres/redis
@@ -49,6 +65,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  root-home:
+    # Se sembro con el /root del contenedor viejo (tar) el 2026-08-12.
+    name: atendia-root-home
+    external: true
 
 networks:
   easypanel:

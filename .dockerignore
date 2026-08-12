@@ -1,0 +1,5 @@
+# El Dockerfile NO copia el código de la app (entra por el bind-mount de
+# docker-compose). Solo necesita `docker/` para las configs. Todo lo demás es
+# contexto inútil que se manda al daemon en cada build.
+*
+!docker/
