@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\File;
 
 /*
@@ -24,6 +26,7 @@ const RAW_CONTROL_ALLOWLIST = [
     'components/ui/textarea.blade.php',
     'components/ui/switch.blade.php',
     'components/ui/checkbox.blade.php',
+    'components/inputsform/input.blade.php', // form-input primitive library (inputsform)
     'components/text-input.blade.php',  // Breeze legacy primitive
     'auth/reset-password.blade.php',    // hidden token input (Breeze)
 ];
@@ -79,6 +82,31 @@ test('no view wires Lucide via data-lucide or createIcons — icons go through <
     $offenders = collect(bladeViews())
         ->filter(fn (string $html): bool => preg_match('/data-lucide|lucide\.createIcons/i', $html) === 1)
         ->keys();
+
+    expect($offenders->implode("\n"))->toBe('');
+});
+
+test('no view uses a .col-N grid class that is not defined in app.css — inputs must not overlap', function (): void {
+    // Which grid columns the design system actually defines (e.g. `.col-4`).
+    // A form using an undefined `col-N` collapses that field to one column and
+    // the inputs overlap — a layout bug the other guards cannot see.
+    preg_match_all('/\.col-(\d+)\b/', File::get(resource_path('css/app.css')), $matches);
+    $defined = array_map('intval', $matches[1]);
+
+    $offenders = collect(bladeViews())
+        ->map(function (string $html) use ($defined): array {
+            preg_match_all('/\bcol-(\d+)\b/', $html, $used);
+
+            return collect($used[1])
+                ->map(fn (string $n): int => (int) $n)
+                ->unique()
+                ->reject(fn (int $n): bool => in_array($n, $defined, true))
+                ->values()
+                ->all();
+        })
+        ->filter(fn (array $missing): bool => $missing !== [])
+        ->map(fn (array $missing, string $path): string => $path.' → col-'.implode(', col-', $missing))
+        ->values();
 
     expect($offenders->implode("\n"))->toBe('');
 });
