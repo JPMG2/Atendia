@@ -22,8 +22,9 @@
 
     <style>[x-cloak]{display:none !important;}</style>
 
-    {{-- Solo CSS por Vite: Livewire trae su propio Alpine (nada de app.js → cero doble Alpine) --}}
-    @vite(['resources/css/app.css'])
+    {{-- CSS + form-guard por Vite. NO cargamos app.js (arranca su propio Alpine): el Alpine
+         lo trae Livewire y form-guard.js se cuelga de él con alpine:init → cero doble Alpine. --}}
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js'])
     @livewireStyles
 </head>
 <body>
@@ -129,6 +130,10 @@
             </main>
         </div>
     </div>
+
+    {{-- Pila de avisos: una sola instancia para toda la app. Cualquier componente
+         la alimenta con $this->dispatchNotification(...) — ver trait HasNotifications. --}}
+    <livewire:toast />
 
     @livewireScripts
 </body>
