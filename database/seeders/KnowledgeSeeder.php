@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Company;
+use App\Models\Business;
 use App\Models\KnowledgeDocument;
 use Illuminate\Database\Seeder;
 
@@ -17,7 +17,7 @@ class KnowledgeSeeder extends Seeder
 {
     public function run(): void
     {
-        $company = Company::query()->first() ?? Company::factory()->create();
+        $business = Business::query()->first() ?? Business::factory()->create();
 
         $faqs = [
             [
@@ -40,7 +40,7 @@ class KnowledgeSeeder extends Seeder
 
         foreach ($faqs as $faq) {
             KnowledgeDocument::updateOrCreate(
-                ['company_id' => $company->id, 'title' => $faq['title']],
+                ['business_id' => $business->id, 'title' => $faq['title']],
                 ['source_type' => 'faq', 'content' => $faq['content']],
             );
         }

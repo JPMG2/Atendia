@@ -16,19 +16,19 @@ class KnowledgeRetriever
 
     /**
      * Recupera los `top_k` fragmentos más parecidos a la consulta, SIEMPRE
-     * acotados a una empresa (multi-tenant: jamás cruza `company_id`). Embeddea
+     * acotados a un negocio (multi-tenant: jamás cruza `business_id`). Embeddea
      * la consulta a mano para usar el mismo modelo/dims que el indexado.
      *
      * @return Collection<int, RetrievedChunkDto>
      */
-    public function retrieve(string $query, int $companyId, ?int $limit = null): Collection
+    public function retrieve(string $query, int $businessId, ?int $limit = null): Collection
     {
         $limit ??= (int) config('rag.retrieval.top_k');
         $vector = $this->embedder->embedOne($query);
 
         return KnowledgeChunk::query()
-            ->where('company_id', $companyId)
-            ->select(['id', 'knowledge_document_id', 'company_id', 'content'])
+            ->where('business_id', $businessId)
+            ->select(['id', 'knowledge_document_id', 'business_id', 'content'])
             ->selectVectorDistance('embedding', $vector, as: 'distance')
             ->orderByVectorDistance('embedding', $vector)
             ->with('document:id,title')
@@ -46,9 +46,9 @@ class KnowledgeRetriever
      * Arma un bloque de contexto con citas [título] para pasarle al asistente
      * como grounding. Vacío si no hay conocimiento para esa empresa.
      */
-    public function context(string $query, int $companyId, ?int $limit = null): string
+    public function context(string $query, int $businessId, ?int $limit = null): string
     {
-        return $this->retrieve($query, $companyId, $limit)
+        return $this->retrieve($query, $businessId, $limit)
             ->map(static fn (RetrievedChunkDto $chunk): string => "[{$chunk->documentTitle}] {$chunk->content}")
             ->implode("\n\n");
     }

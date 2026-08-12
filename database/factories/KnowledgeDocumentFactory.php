@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Company;
+use App\Models\Business;
 use App\Models\KnowledgeDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +21,7 @@ class KnowledgeDocumentFactory extends Factory
     public function definition(): array
     {
         return [
-            'company_id' => Company::factory(),
+            'business_id' => Business::factory(),
             'title' => fake()->unique()->sentence(3),
             'source_type' => 'manual',
             'content' => fake()->paragraphs(2, true),

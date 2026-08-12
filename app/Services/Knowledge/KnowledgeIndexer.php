@@ -30,7 +30,7 @@ class KnowledgeIndexer
 
                 foreach ($pieces as $i => $piece) {
                     $document->chunks()->create([
-                        'company_id' => $document->company_id,
+                        'business_id' => $document->business_id,
                         'chunk_index' => $i,
                         'content' => $piece['content'],
                         'token_count' => $piece['token_count'],

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Company;
+use App\Models\Business;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,7 +20,7 @@ class KnowledgeChunkFactory extends Factory
     {
         return [
             'knowledge_document_id' => KnowledgeDocument::factory(),
-            'company_id' => Company::factory(),
+            'business_id' => Business::factory(),
             'chunk_index' => 0,
             'content' => fake()->paragraph(),
             'token_count' => fake()->numberBetween(10, 200),
@@ -35,7 +35,7 @@ class KnowledgeChunkFactory extends Factory
     {
         return $this->state([
             'knowledge_document_id' => $document->id,
-            'company_id' => $document->company_id,
+            'business_id' => $document->business_id,
         ]);
     }
 

@@ -22,7 +22,7 @@ class KnowledgeDocument extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id',
+        'business_id',
         'title',
         'source_type',
         'content',
@@ -39,11 +39,11 @@ class KnowledgeDocument extends Model
     }
 
     /**
-     * @return BelongsTo<Company, $this>
+     * @return BelongsTo<Business, $this>
      */
-    public function company(): BelongsTo
+    public function business(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Business::class);
     }
 
     /**

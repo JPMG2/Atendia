@@ -16,7 +16,7 @@ class KnowledgeChunk extends Model
 
     protected $fillable = [
         'knowledge_document_id',
-        'company_id',
+        'business_id',
         'chunk_index',
         'content',
         'token_count',
@@ -41,10 +41,10 @@ class KnowledgeChunk extends Model
     }
 
     /**
-     * @return BelongsTo<Company, $this>
+     * @return BelongsTo<Business, $this>
      */
-    public function company(): BelongsTo
+    public function business(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Business::class);
     }
 }

@@ -58,7 +58,7 @@ test('the indexer builds embedded chunks and marks the document indexed', functi
 
     expect($chunk->embedding)->toBeArray()
         ->and($chunk->embedding)->toHaveCount((int) config('rag.embedding.dimensions'))
-        ->and($chunk->company_id)->toBe($document->company_id);
+        ->and($chunk->business_id)->toBe($document->business_id);
 });
 
 test('re-indexing replaces the previous chunks instead of duplicating them', function (): void {
