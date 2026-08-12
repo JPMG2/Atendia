@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,5 +25,53 @@ class Currency extends Model
             'decimal_places' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    public static function normalizeCode(string $value): string
+    {
+        return mb_strtoupper($value);
+    }
+
+    /**
+     * Los nombres de moneda son NOMBRES PROPIOS: "Dólar Estadounidense",
+     * "Franco CFA", "Real Brasileño". Acá había un ucfirst(mb_strtolower()) que
+     * los destrozaba —"Franco cfa"— y que además, por no ser multibyte, dejaba
+     * en minúscula cualquier nombre que empezara con acento o Ñ ("Ñandú" =>
+     * "ñandú"). Se respeta lo que escribe el usuario; solo se limpian espacios.
+     */
+    public static function normalizeName(string $value): string
+    {
+        return trim((string) preg_replace('/\s+/u', ' ', $value));
+    }
+
+    /**
+     * El símbolo se respeta tal cual lo escribe el usuario. Tenía un ucfirst() que
+     * lo capitalizaba arbitrariamente ("us$" => "Us$", que no es "US$") y que además
+     * no es multibyte. Solo se limpian espacios, igual que en el nombre.
+     */
+    public static function normalizeSymbol(string $value): string
+    {
+        return trim((string) preg_replace('/\s+/u', ' ', $value));
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => self::normalizeName($value),
+        );
+    }
+
+    protected function code(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => self::normalizeCode($value),
+        );
+    }
+
+    protected function symbol(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => self::normalizeSymbol($value),
+        );
     }
 }

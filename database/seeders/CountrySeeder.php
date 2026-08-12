@@ -37,7 +37,7 @@ class CountrySeeder extends Seeder
             ['name' => 'Puerto Rico', 'code' => 'PRI', 'phone_code' => '1787', 'currency' => 'USD'],
             ['name' => 'República Dominicana', 'code' => 'DOM', 'phone_code' => '1809', 'currency' => 'DOP'],
             ['name' => 'Uruguay', 'code' => 'URY', 'phone_code' => '598', 'currency' => 'UYU'],
-            ['name' => 'Venezuela', 'code' => 'VEN', 'phone_code' => '58', 'currency' => 'Bs'],
+            ['name' => 'Venezuela', 'code' => 'VEN', 'phone_code' => '58', 'currency' => 'VES'],
         ];
 
         foreach ($countries as $country) {

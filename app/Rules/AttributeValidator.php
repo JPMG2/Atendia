@@ -14,6 +14,8 @@ class AttributeValidator
 
     private const DIGIT_PATTERN = '/^([0-9\s\-\+\(\)]*)$/';
 
+    private const ALPHA_PATTERN = '/^[\p{L}\p{M}\s\'\-]+$/u';
+
     /**
      * Plain digits with an optional decimal part: no sign, no thousands separator.
      *
@@ -35,6 +37,17 @@ class AttributeValidator
             'email:rfc,dns',
             self::buildUniqueRule($model, $uniqueField, $id),
             'regex:'.self::XSS_PREVENTION_PATTERN,
+            'max:'.self::MAX_STRING_LENGTH,
+        ];
+    }
+
+    public static function uniqueAlpha(bool $required, string $length, bool $allowSpaces, string $model, string $uniqueField, ?int $id = null): array
+    {
+        return [
+            $required ? 'required' : 'sometimes',
+            self::buildUniqueRule($model, $uniqueField, $id),
+            'min:'.$length,
+            $allowSpaces ? 'regex:'.self::ALPHA_PATTERN : 'alpha',
             'max:'.self::MAX_STRING_LENGTH,
         ];
     }

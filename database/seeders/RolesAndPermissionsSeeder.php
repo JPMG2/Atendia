@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -17,7 +19,18 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        foreach (['access-admin-panel', 'access-client-app'] as $permission) {
+        // Permisos de área.
+        $areaPermissions = ['access-admin-panel', 'access-client-app'];
+
+        // Permisos finos por maestro del panel de Catálogos (namespace catalog.*).
+        // Deben coincidir con `permission_key` en CatalogFormSeeder.
+        $catalogPermissions = [
+            'catalog.country', 'catalog.province', 'catalog.region',
+            'catalog.currency', 'catalog.tax-condition',
+            'catalog.status', 'catalog.social-network',
+        ];
+
+        foreach ([...$areaPermissions, ...$catalogPermissions] as $permission) {
             Permission::findOrCreate($permission);
         }
 
@@ -25,10 +38,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $client = Role::findOrCreate('client');
 
         // El cliente entra a su panel. El admin además pasa por Gate::before
-        // (super-admin), pero le damos ambos permisos explícitos para que el
-        // middleware de permiso lo deje pasar sin depender solo del gate.
+        // (super-admin), pero le damos los permisos explícitos para que el
+        // middleware/gate lo deje pasar sin depender solo del super-admin.
         $client->givePermissionTo('access-client-app');
-        $admin->givePermissionTo(['access-admin-panel', 'access-client-app']);
+        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', ...$catalogPermissions]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

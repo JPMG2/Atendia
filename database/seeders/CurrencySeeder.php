@@ -16,7 +16,7 @@ class CurrencySeeder extends Seeder
     {
         $currencies = [
             ['code' => 'ARS', 'name' => 'Peso Argentino', 'symbol' => '$', 'decimal_places' => 2],
-            ['code' => 'Bs', 'name' => 'Bolívar', 'symbol' => 'Bs', 'decimal_places' => 2],
+            ['code' => 'VES', 'name' => 'Bolívar', 'symbol' => 'Bs', 'decimal_places' => 2],
             ['code' => 'USD', 'name' => 'Dólar Estadounidense', 'symbol' => '$', 'decimal_places' => 2],
             ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'decimal_places' => 2],
             ['code' => 'BOB', 'name' => 'Boliviano', 'symbol' => 'Bs', 'decimal_places' => 2],

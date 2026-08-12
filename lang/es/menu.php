@@ -35,5 +35,6 @@ return [
     // Panel admin (configuración)
     'admin_home' => 'Inicio',
     'admin_users' => 'Usuarios',
+    'admin_catalogs' => 'Catálogos',
     'admin_settings' => 'Configuración',
 ];
