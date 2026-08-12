@@ -35,6 +35,8 @@ services:
     # Acceso directo opcional para pruebas: http://IP:8081
     ports:
       - "8081:80"
+      # Reverb (WebSocket). El navegador se conecta directo a este puerto.
+      - "8080:8080"
 
     labels:
       - "traefik.enable=true"

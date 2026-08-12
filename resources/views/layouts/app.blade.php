@@ -24,7 +24,7 @@
 
     {{-- CSS + form-guard por Vite. NO cargamos app.js (arranca su propio Alpine): el Alpine
          lo trae Livewire y form-guard.js se cuelga de él con alpine:init → cero doble Alpine. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/echo.js'])
     @livewireStyles
 </head>
 <body>
