@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Blaze\Blaze;
+use Livewire\Livewire;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRequests();
         $this->configureRateLimiting();
         $this->configureAuthorization();
+        $this->configureLivewire();
         Model::preventLazyLoading(! app()->isProduction());
         Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
         Model::preventAccessingMissingAttributes(! app()->isProduction());
@@ -47,8 +52,17 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureCommands(): void
     {
+        // El dato de trabajo vive en 'atendia' AUNQUE APP_ENV sea 'local' (no 'production'),
+        // así que gatear por isProduction() dejaría 'atendia' DESPROTEGIDA. Bloqueamos los
+        // comandos destructivos (migrate:fresh/refresh/reset, db:wipe) SIEMPRE, salvo cuando
+        // la base activa es EXACTAMENTE la de testing. Esto cubre el CLI directo Y el
+        // RefreshDatabase (que corre migrate:fresh por dentro), en Unit o Feature, extienda
+        // o no el guard de TestCase. Ver .ai/guidelines/migraciones-seguras.md.
+        $connection = config('database.default');
+        $database = config("database.connections.{$connection}.database");
+
         DB::prohibitDestructiveCommands(
-            app()->isProduction(),
+            $database !== 'atendia_testing',
         );
     }
 
@@ -64,6 +78,23 @@ class AppServiceProvider extends ServiceProvider
     private function configureAuthorization(): void
     {
         Gate::before(fn (User $user) => $user->hasRole('admin') ? true : null);
+    }
+
+    /**
+     * En los requests que siguen (POST /livewire/update) Livewire NO re-aplica el
+     * middleware de la ruta original: solo el de su lista blanca (Authenticate,
+     * Authorize…). Los de spatie no están, así que sin esto un permiso revocado
+     * seguiría pasando hasta que el usuario recargue la página.
+     *
+     * Ver .ai/guidelines/arquitectura-paneles.md (la cerradura va en middleware/policy).
+     */
+    private function configureLivewire(): void
+    {
+        Livewire::addPersistentMiddleware([
+            PermissionMiddleware::class,
+            RoleMiddleware::class,
+            RoleOrPermissionMiddleware::class,
+        ]);
     }
 
     private function configureDates(): void

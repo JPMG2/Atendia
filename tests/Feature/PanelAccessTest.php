@@ -1,6 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
+use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -25,6 +28,32 @@ test('an admin can access the admin panel', function (): void {
     $admin->syncRoles('admin');
 
     $this->actingAs($admin)->get('/admin')->assertOk();
+});
+
+test('an admin can access the catalogs page', function (): void {
+    $admin = User::factory()->create();
+    $admin->syncRoles('admin');
+
+    // The manager is a full-page Livewire component: its own heading and #[Title] must render.
+    $this->actingAs($admin)->get('/admin/catalogs')
+        ->assertOk()
+        ->assertSee('Configuración General')
+        ->assertSee('<title>Catálogos del sistema</title>', false);
+});
+
+test('a client cannot access the catalogs page', function (): void {
+    $client = User::factory()->create();
+
+    $this->actingAs($client)->get('/admin/catalogs')->assertForbidden();
+});
+
+test('the admin menu shows the catalogs option', function (): void {
+    $admin = User::factory()->create();
+    $admin->syncRoles('admin');
+
+    $this->seed(MenuSeeder::class);
+
+    $this->actingAs($admin)->get('/admin')->assertSee('Catálogos');
 });
 
 test('a client can access the client dashboard', function (): void {
