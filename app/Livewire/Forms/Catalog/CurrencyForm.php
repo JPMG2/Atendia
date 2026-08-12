@@ -21,10 +21,6 @@ class CurrencyForm extends BaseForm
 
     public ?CurrencyDto $currencyData = null;
 
-    private ?CreateCurrency $createCurrencyAction = null;
-
-    private ?UpdateCurrency $updateCurrencyAction = null;
-
     public function setup(): void
     {
         $this->currencyData = new CurrencyDto;
@@ -36,7 +32,7 @@ class CurrencyForm extends BaseForm
 
         return $this->tryAction(function () use ($validated) {
 
-            $model = $this->createCurrencyAction()->handle($validated);
+            $model = app(CreateCurrency::class)->handle($validated);
 
             return $this->notificationService()->notificationFor($model, 'created');
 
@@ -53,7 +49,7 @@ class CurrencyForm extends BaseForm
 
         return $this->tryAction(function () use ($validated) {
 
-            $model = $this->updateCurrencyAction()->handle($this->currencyId, $validated);
+            $model = app(UpdateCurrency::class)->handle($this->currencyId, $validated);
 
             return $this->notificationService()->notificationFor($model, 'updated');
 
@@ -120,15 +116,5 @@ class CurrencyForm extends BaseForm
             'decimal_places' => config('nicename.decimal_places'),
             'is_active' => config('nicename.is_active'),
         ];
-    }
-
-    private function createCurrencyAction(): CreateCurrency
-    {
-        return $this->createCurrencyAction ??= app(CreateCurrency::class);
-    }
-
-    private function updateCurrencyAction(): UpdateCurrency
-    {
-        return $this->updateCurrencyAction ??= app(UpdateCurrency::class);
     }
 }

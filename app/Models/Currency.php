@@ -9,12 +9,33 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['code', 'name', 'symbol', 'decimal_places', 'is_active'])]
 class Currency extends Model
 {
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
+
+    use LogsActivity;
+
+    /**
+     * Auditoría del maestro: quién cambió qué y cuándo.
+     *
+     * Es un catálogo que editan administradores a mano, así que interesa el
+     * rastro. `logOnlyDirty` guarda únicamente lo que cambió de verdad, y
+     * `dontSubmitEmptyLogs` evita una entrada vacía cuando se guarda sin tocar
+     * nada. El causante (el usuario logueado) lo resuelve spatie solo.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['code', 'name', 'symbol', 'decimal_places', 'is_active'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('catalog');
+    }
 
     /**
      * @return array<string, string>
