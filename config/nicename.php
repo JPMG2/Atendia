@@ -8,4 +8,6 @@ return [
     'symbol' => 'símbolo',
     'decimal_places' => 'decimales',
     'is_active' => 'estado',
+    'phone_code' => 'código telefónico',
+    'currency_id' => 'moneda',
 ];

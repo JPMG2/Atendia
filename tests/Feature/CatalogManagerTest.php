@@ -60,6 +60,16 @@ test('opening a master compacts the rail and closing it expands again', function
         ->assertDontSeeHtml('is-collapsed');     // rail expands back on close
 });
 
+test('every rail item carries its title as a tooltip for the icon-only state', function (): void {
+    $currency = CatalogForm::where('component', 'catalog.currency')->first();
+
+    Livewire::actingAs($this->admin)
+        ->test('catalog.manager')
+        ->call('select', $currency->id)
+        ->assertSeeHtml('title="Monedas"')
+        ->assertSeeHtml('title="Países"');
+});
+
 test('masters are hidden from a user without their permission', function (): void {
     $client = User::factory()->create(); // rol client: sin permisos catalog.*
 

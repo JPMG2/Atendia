@@ -100,7 +100,8 @@ new #[Title('Catálogos del sistema')] class extends Component {
 
     <div class="catalog-hub @if ($this->current) is-collapsed @endif">
         {{-- Panel 1: riel de maestros (data-driven desde catalog_forms).
-             Se compacta a iconos cuando hay un maestro abierto; el hover lo re-expande. --}}
+             Se compacta a iconos mientras hay un maestro abierto y solo se
+             re-expande al cerrarlo (el hover no cambia el ancho). --}}
         <div class="catalog-rail-slot">
             <nav class="card catalog-list" aria-label="Maestros">
                 @forelse ($this->grouped as $group => $items)
@@ -109,6 +110,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
                         <div class="catalog-group-rule" aria-hidden="true"></div>
                         @foreach ($items as $form)
                             <button type="button" wire:click="select({{ $form->id }})" class="catalog-item"
+                                title="{{ $form->title }}"
                                 @if ($selectedId === $form->id) aria-current="true" @endif>
                                 <span class="catalog-item-icon"><x-icon :name="$form->icon ?? 'library'" :size="18" /></span>
                                 <span class="catalog-item-text">{{ $form->title }}</span>

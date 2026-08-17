@@ -34,6 +34,8 @@ components/ui/textarea.blade.php
 components/ui/switch.blade.php
 components/ui/checkbox.blade.php
 components/inputsform/input.blade.php
+components/inputsform/select.blade.php
+components/inputsform/combobox.blade.php
 components/text-input.blade.php
 auth/reset-password.blade.php
 "

@@ -26,7 +26,9 @@ const RAW_CONTROL_ALLOWLIST = [
     'components/ui/textarea.blade.php',
     'components/ui/switch.blade.php',
     'components/ui/checkbox.blade.php',
-    'components/inputsform/input.blade.php', // form-input primitive library (inputsform)
+    'components/inputsform/input.blade.php',  // form-input primitive library (inputsform)
+    'components/inputsform/select.blade.php', // idem: the select sibling of that same library
+    'components/inputsform/combobox.blade.php', // idem: autocomplete select (search input + hidden value)
     'components/text-input.blade.php',  // Breeze legacy primitive
     'auth/reset-password.blade.php',    // hidden token input (Breeze)
 ];

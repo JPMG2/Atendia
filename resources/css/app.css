@@ -363,7 +363,51 @@
   .field-select.field-lg { height:52px; }
   .field-select:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 4px var(--focus-ring); }
   .field-select.field-error { border-color:var(--danger); }
+  .field-select.field-error:focus { box-shadow:0 0 0 4px var(--danger-soft); }
+  /* Error de la validación del front: <x-inputsform.select> ata aria-invalid al
+     bag `errors` de Alpine, igual que el input ata el suyo. Sin esta regla el
+     select era el único campo que avisaba con el texto pero no con el borde. */
+  .field-select[aria-invalid="true"] { border-color:var(--danger); }
+  .field-select[aria-invalid="true"]:focus { box-shadow:0 0 0 4px var(--danger-soft); }
+  .field-select.is-disabled { background:var(--surface-sunken); opacity:.55; cursor:not-allowed; }
   .field-select-chevron { position:absolute; right:14px; pointer-events:none; color:var(--text-subtle); font-size:12px; }
+
+  /* ---- Combobox (<x-inputsform.combobox>): select con autocompletado ----
+     El campo visible es un input de texto normal, así que hereda TODO el
+     tratamiento de .field-control (un solo anillo de foco, error, disabled).
+     Lo único propio es el panel de opciones y el chevron. */
+  /* El ancla del panel es el CONTROL, no el .field: si fuera el field, el panel
+     abriría más abajo (el field incluye el hint y el error debajo del input). */
+  .combo-shell { position:relative; }
+  .combo-control { cursor:text; }
+  .combo-control.is-open { border-color:var(--brand); }
+  .combo-toggle { flex:none; display:inline-flex; align-items:center; justify-content:center;
+                  width:28px; height:28px; margin-right:-4px; border:0; background:transparent;
+                  color:var(--text-subtle); border-radius:var(--radius-sm); cursor:pointer;
+                  transition:color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+  .combo-control.is-open .combo-toggle { transform:rotate(180deg); color:var(--brand); }
+  .combo-control.is-disabled .combo-toggle { cursor:not-allowed; }
+
+  .combo-list { position:absolute; z-index:40; left:0; right:0; top:calc(100% + 6px);
+                max-height:264px; overflow-y:auto; padding:6px;
+                background:var(--surface-card); border:1px solid var(--border-default);
+                border-radius:var(--radius-md); box-shadow:var(--shadow-lg);
+                animation:combo-in var(--dur-fast) var(--ease-out) both; }
+  @keyframes combo-in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+  .combo-option { display:flex; align-items:center; justify-content:space-between; gap:10px;
+                  padding:9px 11px; border-radius:var(--radius-sm); cursor:pointer;
+                  font-size:var(--text-sm); color:var(--text-body); white-space:nowrap;
+                  overflow:hidden; text-overflow:ellipsis; }
+  .combo-option[data-active="true"] { background:var(--surface-sunken); color:var(--text-strong); }
+  .combo-option[aria-selected="true"] { color:var(--brand-soft-text); font-weight:600; }
+  .combo-tick { flex:none; display:inline-flex; color:var(--brand); }
+  .combo-empty { padding:12px 11px; font-size:var(--text-sm); color:var(--text-muted); text-align:center; }
+
+  @media (prefers-reduced-motion:reduce) {
+    .combo-list { animation:none; }
+    .combo-toggle { transition:none; }
+  }
 
   .field-textarea {
     width:100%; min-height:96px; padding:10px 14px; background:var(--surface-card); color:var(--text-strong);
@@ -671,7 +715,8 @@
   /* --- Catálogos: hub maestro-detalle (riel + editor que se reparten el ancho) ---
      Modelo: dos columnas flex que NUNCA se superponen. Al abrir un maestro el hub
      recibe .is-collapsed → el riel se achica a iconos y el editor gana ese ancho.
-     Con el riel colapsado, el hover lo expande EN SU LUGAR (empuja el editor, no flota). */
+     El riel queda compacto MIENTRAS el maestro está abierto: solo se re-expande al
+     cerrarlo. El hover no cambia el ancho (evita el reflow que mareaba). */
   .catalog-hub { display:flex; gap:20px; align-items:flex-start; }
   .catalog-rail-slot { position:sticky; top:88px; flex:0 0 272px; min-width:0;
                        transition:flex-basis var(--dur-base) var(--ease-out); }
@@ -697,13 +742,12 @@
   .catalog-item[aria-current="true"] .catalog-item-icon { color:var(--brand-soft-text); }
   .catalog-item:focus-visible { outline:2px solid var(--brand); outline-offset:-2px; }
 
-  /* Colapsado (maestro abierto) → riel angosto; el hover lo re-expande en su lugar */
+  /* Colapsado (maestro abierto) → riel angosto y estable hasta que se cierre el maestro */
   .catalog-hub.is-collapsed .catalog-rail-slot { flex-basis:76px; }
-  .catalog-hub.is-collapsed .catalog-rail-slot:hover { flex-basis:272px; }
-  .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-item-text { opacity:0; width:0; }
-  .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-group-label { opacity:0; height:0; padding:0; margin:0; }
-  .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-group-rule { display:block; }
-  .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-item { justify-content:center; padding:11px 0; gap:0; }
+  .catalog-hub.is-collapsed .catalog-item-text { opacity:0; width:0; }
+  .catalog-hub.is-collapsed .catalog-group-label { opacity:0; height:0; padding:0; margin:0; }
+  .catalog-hub.is-collapsed .catalog-group-rule { display:block; }
+  .catalog-hub.is-collapsed .catalog-item { justify-content:center; padding:11px 0; gap:0; }
 
   /* Editor: ocupa el ancho restante y se re-acomoda solo cuando el riel cambia */
   .catalog-panel { flex:1 1 auto; min-width:0; min-height:420px; overflow:hidden; }
@@ -756,12 +800,11 @@
   @media (max-width: 900px) {
     .catalog-hub { flex-direction:column; }
     .catalog-rail-slot,
-    .catalog-hub.is-collapsed .catalog-rail-slot,
-    .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) { position:static; flex-basis:auto; width:100%; }
-    .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-item-text { opacity:1; width:auto; }
-    .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-group-label { opacity:1; height:auto; padding:10px 12px 4px; }
-    .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-group-rule { display:none; }
-    .catalog-hub.is-collapsed .catalog-rail-slot:not(:hover) .catalog-item { justify-content:flex-start; padding:10px 12px; }
+    .catalog-hub.is-collapsed .catalog-rail-slot { position:static; flex-basis:auto; width:100%; }
+    .catalog-hub.is-collapsed .catalog-item-text { opacity:1; width:auto; }
+    .catalog-hub.is-collapsed .catalog-group-label { opacity:1; height:auto; padding:10px 12px 4px; }
+    .catalog-hub.is-collapsed .catalog-group-rule { display:none; }
+    .catalog-hub.is-collapsed .catalog-item { justify-content:flex-start; padding:10px 12px; }
     .catalog-form { grid-template-columns:1fr; }
   }
   /* ---- Maestro: tabla (mostrar) ⇄ formulario (crear/editar) ---- */

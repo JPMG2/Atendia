@@ -66,4 +66,45 @@ return [
         'active_desc' => 'Disponible para elegir en precios y facturación.',
     ],
 
+    'country' => [
+        'search_placeholder' => 'Buscar por código o nombre',
+        'search_label' => 'Buscar país',
+        'singular' => 'país',
+        'plural' => 'países',
+        'create' => 'Crear país',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo país',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay países que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Código',
+            'name' => 'Nombre',
+            'phone_code' => 'Cód. telefónico',
+            'currency' => 'Moneda',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        'fields' => [
+            'code' => 'Código ISO',
+            'code_hint' => '3 letras (ARG, USA)',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. República Dominicana',
+            'phone_code' => 'Código telefónico',
+            'phone_code_hint' => 'Sin el +: 54, 1809',
+            'currency' => 'Moneda',
+            // Infinitivo a propósito: "Elegí/Elige" obligaría a un override de
+            // voseo en es_AR solo por este placeholder.
+            'currency_placeholder' => 'Seleccionar moneda',
+        ],
+
+        'active_title' => 'País activo',
+        'active_desc' => 'Disponible para elegir en direcciones y datos fiscales.',
+    ],
+
 ];

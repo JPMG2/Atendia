@@ -18,17 +18,7 @@ beforeEach(function (): void {
     Currency::factory()->create(['code' => 'USD', 'name' => 'Dólar Estadounidense']);
 });
 
-/**
- * Which of the two swapped views is on screen. They are toggled with `x-show`,
- * so both live in the DOM and only the computed display tells them apart.
- */
-function visibleCatalogView(object $page): string
-{
-    $list = $page->script('getComputedStyle(document.querySelectorAll(".catalog-view")[0]).display');
-    $form = $page->script('getComputedStyle(document.querySelectorAll(".catalog-view")[1]).display');
-
-    return $form !== 'none' ? 'form' : ($list !== 'none' ? 'list' : 'none');
-}
+// visibleCatalogView() lives in tests/Pest.php: every catalog master shares it.
 
 test('clicking a table row opens the edit form with the record already loaded', function (): void {
     // The row text has to match exactly to be clickable, so assert against what was

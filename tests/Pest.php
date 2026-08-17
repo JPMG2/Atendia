@@ -48,3 +48,16 @@ function something(): void
 {
     // ..
 }
+
+/**
+ * Which of the two swapped views of a catalog master is on screen. They are
+ * toggled with `x-show`, so both live in the DOM and only the computed display
+ * tells them apart. Shared by every catalog browser test.
+ */
+function visibleCatalogView(object $page): string
+{
+    $list = $page->script('getComputedStyle(document.querySelectorAll(".catalog-view")[0]).display');
+    $form = $page->script('getComputedStyle(document.querySelectorAll(".catalog-view")[1]).display');
+
+    return $form !== 'none' ? 'form' : ($list !== 'none' ? 'list' : 'none');
+}
