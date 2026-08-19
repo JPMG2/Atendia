@@ -76,7 +76,7 @@ test('each Negocio master has its permission seeded', function (): void {
     });
 });
 
-test('the hub renders the Negocio group and falls back to the placeholder until its editors exist', function (): void {
+test('the hub renders the Negocio group and opens its own editor', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(CatalogFormSeeder::class);
 
@@ -91,5 +91,6 @@ test('the hub renders the Negocio group and falls back to the placeholder until 
         ->assertSee('Rubros')
         ->assertSee('Actividades')
         ->call('select', $sectors->id)
-        ->assertSet('editorComponent', 'catalog.placeholder');
+        // Ya no cae al placeholder: el editor del maestro existe.
+        ->assertSet('editorComponent', 'catalog.business-sector');
 });

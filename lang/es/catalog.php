@@ -304,4 +304,84 @@ return [
         ],
     ],
 
+    // --- Grupo Negocio: lo que el negocio elige al configurarse ---
+
+    'business_sector' => [
+        'search_placeholder' => 'Buscar por clave o nombre',
+        'search_label' => 'Buscar rubro',
+        'singular' => 'rubro',
+        'plural' => 'rubros',
+        'create' => 'Crear rubro',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo rubro',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay rubros que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'description' => 'Descripción',
+            'order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Sin espacios ni acentos: salud, gastronomia',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Gastronomía',
+            'description' => 'Descripción',
+            'description_placeholder' => 'Ej. Comida y bebida, para el local o para llevar',
+            'description_hint' => 'Ayuda al negocio a elegir bien su rubro',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se le ofrece al negocio',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'business_activity' => [
+        'search_placeholder' => 'Buscar por clave, nombre o rubro',
+        'search_label' => 'Buscar actividad',
+        'singular' => 'actividad',
+        'plural' => 'actividades',
+        'create' => 'Crear actividad',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva actividad',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay actividades que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'sector' => 'Rubro',
+            'order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Sin espacios ni acentos: farmacia, panaderia',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Panadería',
+            'sector' => 'Rubro',
+            'sector_placeholder' => 'Elegir rubro',
+            'description' => 'Descripción',
+            'description_placeholder' => 'Ej. Elaboración y venta de pan y facturas',
+            'description_hint' => 'Con qué palabras el negocio se reconoce en esta actividad',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se ofrece dentro del rubro',
+            'status' => 'Estado',
+        ],
+    ],
+
 ];

@@ -17,4 +17,7 @@ return [
     'icon' => 'ícono',
     'abbreviation' => 'abreviatura',
     'color' => 'color',
+    'description' => 'descripción',
+    'sort_order' => 'orden',
+    'business_sector_id' => 'rubro',
 ];

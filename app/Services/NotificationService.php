@@ -28,6 +28,8 @@ class NotificationService
             'tax_conditions' => ['entity' => __('notifications.entities.tax_condition'), 'gender' => 'female'],
             'social_networks' => ['entity' => __('notifications.entities.social_network'), 'gender' => 'female'],
             'current_statuses' => ['entity' => __('notifications.entities.status'), 'gender' => 'male'],
+            'business_sectors' => ['entity' => __('notifications.entities.business_sector'), 'gender' => 'male'],
+            'business_activities' => ['entity' => __('notifications.entities.business_activity'), 'gender' => 'female'],
             'blood_types' => ['entity' => __('notifications.entities.blood_type'), 'gender' => 'female'],
             'document_types' => ['entity' => __('notifications.entities.document_type'), 'gender' => 'male'],
             'genders' => ['entity' => __('notifications.entities.gender'), 'gender' => 'male'],

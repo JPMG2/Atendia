@@ -15,6 +15,8 @@ return [
         'tax_condition' => 'Condición fiscal',
         'social_network' => 'Red social',
         'status' => 'Estado',
+        'business_sector' => 'Rubro',
+        'business_activity' => 'Actividad',
         'blood_type' => 'Tipo sangre',
         'document_type' => 'Tipo documento',
         'gender' => 'Género',
