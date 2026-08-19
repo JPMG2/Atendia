@@ -796,8 +796,15 @@
   /* Sin `min-height`: con el formulario compactado en una sola fila, un alto
      mínimo dejaba una franja blanca muerta debajo del pie de acciones. El panel
      ya se estira solo hasta la altura del riel (son hermanos flex), y el estado
-     vacío tiene su propio min-height. */
-  .catalog-panel { flex:1 1 auto; min-width:0; overflow:hidden; }
+     vacío tiene su propio min-height.
+
+     Sin `overflow:hidden` TAMPOCO: recortaba el desplegable del combobox contra
+     el borde del card. Con el formulario compacto el panel mide poco más que el
+     form, así que la lista de opciones se salía y se veía cortada a la mitad —
+     parecía que quedaba "detrás" del formulario. Lo único que el overflow estaba
+     conteniendo era el fondo del pie de acciones, que ahora redondea sus propias
+     esquinas. */
+  .catalog-panel { flex:1 1 auto; min-width:0; }
   .catalog-panel-head { padding:20px 22px; border-bottom:1px solid var(--border-subtle);
                         display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
   .catalog-panel-head-text { min-width:0; }
@@ -954,8 +961,12 @@
   .catalog-form-title .mono { font-family:var(--font-mono); color:var(--brand-soft-text); }
 
 
+  /* Redondea sus esquinas inferiores para acompañar el radio del card: antes eso
+     lo resolvía el `overflow:hidden` del panel, que además recortaba el combobox. */
   .catalog-form-foot { display:flex; align-items:center; gap:10px; padding:16px 20px;
-                       border-top:1px solid var(--border-subtle); background:var(--surface-sunken); }
+                       border-top:1px solid var(--border-subtle); background:var(--surface-sunken);
+                       border-bottom-left-radius:var(--radius-card);
+                       border-bottom-right-radius:var(--radius-card); }
   .catalog-foot-grow { flex:1 1 auto; }
   .catalog-btn-danger { color:var(--danger); }
   .catalog-btn-danger:hover { background:var(--danger-soft); }

@@ -130,3 +130,33 @@ test('the front-end validation stops the request before it reaches the server', 
 
     $page->assertNoJavaScriptErrors();
 });
+
+test('the combobox dropdown is not clipped by the panel that holds the form', function (): void {
+    // With `overflow:hidden` on .catalog-panel the option list was cut against the
+    // bottom of the card — six countries rendered as two and a half. Measured, not
+    // eyeballed: the list is allowed to extend past the panel, and its last option
+    // has to be a real, clickable element.
+    foreach (['VEN' => 'Venezuela', 'MEX' => 'México', 'ESP' => 'España', 'COL' => 'Colombia', 'CHL' => 'Chile'] as $code => $name) {
+        Country::factory()->create(['code' => $code, 'name' => $name]);
+    }
+
+    $page = visit('/admin/catalogs');
+    $page->click('Provincias')->click('Buenos Aires');
+    $page->click('#if-country_id');
+
+    $visible = (int) $page->script(<<<'JS'
+        (() => {
+            const list = document.querySelector('.combo-list');
+            const panel = document.querySelector('.catalog-panel');
+            const clipped = getComputedStyle(panel).overflow !== 'visible'
+                && list.getBoundingClientRect().bottom > panel.getBoundingClientRect().bottom;
+
+            return clipped ? 0 : list.querySelectorAll('.combo-option').length;
+        })()
+    JS);
+
+    // Six countries: the five above plus the one the province already points at.
+    expect($visible)->toBe(6);
+
+    $page->assertNoJavaScriptErrors();
+});

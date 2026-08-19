@@ -107,6 +107,18 @@ test('a field message stays far closer to its own control than to the next row',
         ->and($betweenRows)->toBeGreaterThan($controlToMessagePx * 2);
 });
 
+test('the panel that holds the editor never clips it', function (): void {
+    // `overflow:hidden` on the panel used to cut the combobox dropdown against
+    // the bottom of the card: with a compact form the panel is barely taller than
+    // the form, so the option list was sliced in half and read as if it rendered
+    // behind the form. Only the action footer's background needed containing, and
+    // it now rounds its own corners.
+    expect(cssRule('.catalog-panel'))->not->toMatch('/overflow(-y)?\s*:\s*(hidden|clip|auto|scroll)/');
+
+    // The footer keeps the card's rounded bottom on its own.
+    expect(cssRule('.catalog-form-foot'))->toContain('border-bottom-left-radius');
+});
+
 test('no catalog editor hand-assigns a width', function (): void {
     // Hand-picked column spans (`col-4` + `col-8`) were the origin of the ragged
     // edge: sooner or later a master picks spans that do not add up.
