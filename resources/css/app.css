@@ -838,7 +838,11 @@
   .catalog-panel-head-text { min-width:0; }
   .catalog-panel-head h2 { font-family:var(--font-display); font-size:var(--text-lg); color:var(--text-strong);
                            display:flex; align-items:center; gap:10px; }
-  .catalog-panel-head p { font-size:var(--text-sm); color:var(--text-muted); margin-top:4px; max-width:52ch; }
+  /* `--text-body`, no `--text-muted`: el muted es ink-500 y sobre el wash jade
+     casi no se leía. Tampoco va en jade —el sistema reserva la marca para
+     botones, links y estados activos; el texto va en Ink— porque una descripción
+     de color de marca se lee como un enlace. */
+  .catalog-panel-head p { font-size:var(--text-sm); color:var(--text-body); margin-top:4px; max-width:52ch; }
   .catalog-panel-icon { display:inline-flex; color:var(--brand); flex:none; }
   /* Sobre el wash jade el botón mantiene el fondo del card para seguir leyéndose
      como control; el borde y el hover pasan a la familia de marca porque un gris

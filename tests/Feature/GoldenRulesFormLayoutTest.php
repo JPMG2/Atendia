@@ -129,6 +129,14 @@ test('the master header takes its colour from a brand token, never a hex', funct
 
     expect($head)->toContain('background:var(--brand-soft)')
         ->not->toMatch('/#[0-9a-fA-F]{3,6}/');
+
+    // La descripción NO puede quedar en `--text-muted`: ese token es ink-500 y
+    // sobre el wash jade casi no se lee. Tampoco en un token de marca: el sistema
+    // la reserva para botones, links y estados activos, y una descripción de ese
+    // color se lee como un enlace.
+    $description = cssRule('.catalog-panel-head p');
+
+    expect($description)->toContain('color:var(--text-body)');
 });
 
 test('no catalog editor hand-assigns a width', function (): void {
