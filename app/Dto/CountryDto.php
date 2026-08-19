@@ -50,10 +50,10 @@ class CountryDto implements Wireable
     public static function fromArray(array $data): self
     {
         return new self(
-            currency_id: self::toNullableId($data['currency_id'] ?? null),
+            currency_id: DtoCast::toNullableId($data['currency_id'] ?? null),
             name: $data['name'] ?? '',
             code: $data['code'] ?? '',
-            phone_code: self::toNullableString($data['phone_code'] ?? null),
+            phone_code: DtoCast::toNullableString($data['phone_code'] ?? null),
             is_active: $data['is_active'] ?? true,
         );
     }
@@ -67,33 +67,5 @@ class CountryDto implements Wireable
             'phone_code' => Country::normalizePhoneCode($this->phone_code),
             'is_active' => $this->is_active,
         ];
-    }
-
-    /**
-     * El `<select>` de monedas manda el id como STRING ("3"), y este archivo corre
-     * con `strict_types`: pasarlo tal cual al parámetro `?int` es un TypeError que
-     * mata el componente (419, editor en blanco). El "sin moneda" llega como '',
-     * y eso es null, no 0 — un 0 pasaría por `exists` como id inexistente.
-     */
-    private static function toNullableId(mixed $value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (int) $value;
-    }
-
-    /**
-     * El código telefónico es opcional: el input vacío llega como '' y la columna
-     * es nullable, así que se guarda null en vez de una cadena vacía.
-     */
-    private static function toNullableString(mixed $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (string) $value;
     }
 }

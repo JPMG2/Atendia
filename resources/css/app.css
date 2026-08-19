@@ -378,6 +378,13 @@
   .field-switch-state { font-size:var(--text-sm); font-weight:var(--weight-semibold);
                         color:var(--text-body); white-space:nowrap; overflow:hidden;
                         text-overflow:ellipsis; }
+  /* La palabra la elige el DOM, no un estado de JS. Con Alpine el texto se leía
+     UNA vez al inicializar y quedaba congelado cuando Livewire hacía morph al
+     abrir un registro: se veía "No" con la perilla encendida. `:has()` sigue al
+     checkbox siempre — al tocarlo y después de cualquier re-render. */
+  .field-switch .switch-word-on { display:none; }
+  .field-switch:has(input:checked) .switch-word-on { display:inline; }
+  .field-switch:has(input:checked) .switch-word-off { display:none; }
   .field-control.field-switch:has(input:checked) .field-switch-state { color:var(--brand-soft-text); }
   /* Estados */
   .field-control.is-readonly { background:var(--surface-sunken); }

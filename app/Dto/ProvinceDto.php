@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-use App\Models\SocialNetwork;
+use App\Models\Province;
 use Livewire\Wireable;
 
-class SocialNetworkDto implements Wireable
+class ProvinceDto implements Wireable
 {
     /**
      * Create a new class instance.
      */
     public function __construct(
+        public ?int $country_id = null,
         public string $name = '',
-        public string $url = '',
-        public ?string $icon = null,
-        public ?string $abbreviation = null,
         public bool $is_active = true
     ) {}
 
@@ -39,10 +37,8 @@ class SocialNetworkDto implements Wireable
     public function toArray(): array
     {
         return [
+            'country_id' => $this->country_id,
             'name' => $this->name,
-            'url' => $this->url,
-            'icon' => $this->icon,
-            'abbreviation' => $this->abbreviation,
             'is_active' => $this->is_active,
         ];
     }
@@ -50,10 +46,8 @@ class SocialNetworkDto implements Wireable
     public static function fromArray(array $data): self
     {
         return new self(
+            country_id: DtoCast::toNullableId($data['country_id'] ?? null),
             name: $data['name'] ?? '',
-            url: $data['url'] ?? '',
-            icon: DtoCast::toNullableString($data['icon'] ?? null),
-            abbreviation: DtoCast::toNullableString($data['abbreviation'] ?? null),
             is_active: $data['is_active'] ?? true,
         );
     }
@@ -61,10 +55,8 @@ class SocialNetworkDto implements Wireable
     public function toPayload(): array
     {
         return [
-            'name' => SocialNetwork::normalizeName($this->name),
-            'url' => SocialNetwork::normalizeUrl($this->url),
-            'icon' => SocialNetwork::normalizeIcon($this->icon),
-            'abbreviation' => SocialNetwork::normalizeAbbreviation($this->abbreviation),
+            'country_id' => $this->country_id,
+            'name' => Province::normalizeName($this->name),
             'is_active' => $this->is_active,
         ];
     }

@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
-use App\Models\SocialNetwork;
+use App\Models\TaxCondition;
 use Livewire\Wireable;
 
-class SocialNetworkDto implements Wireable
+class TaxConditionDto implements Wireable
 {
     /**
      * Create a new class instance.
      */
     public function __construct(
+        public ?int $country_id = null,
+        public string $code = '',
         public string $name = '',
-        public string $url = '',
-        public ?string $icon = null,
-        public ?string $abbreviation = null,
+        public bool $discriminate_tax = false,
         public bool $is_active = true
     ) {}
 
@@ -39,10 +39,10 @@ class SocialNetworkDto implements Wireable
     public function toArray(): array
     {
         return [
+            'country_id' => $this->country_id,
+            'code' => $this->code,
             'name' => $this->name,
-            'url' => $this->url,
-            'icon' => $this->icon,
-            'abbreviation' => $this->abbreviation,
+            'discriminate_tax' => $this->discriminate_tax,
             'is_active' => $this->is_active,
         ];
     }
@@ -50,10 +50,10 @@ class SocialNetworkDto implements Wireable
     public static function fromArray(array $data): self
     {
         return new self(
+            country_id: DtoCast::toNullableId($data['country_id'] ?? null),
+            code: $data['code'] ?? '',
             name: $data['name'] ?? '',
-            url: $data['url'] ?? '',
-            icon: DtoCast::toNullableString($data['icon'] ?? null),
-            abbreviation: DtoCast::toNullableString($data['abbreviation'] ?? null),
+            discriminate_tax: $data['discriminate_tax'] ?? false,
             is_active: $data['is_active'] ?? true,
         );
     }
@@ -61,10 +61,10 @@ class SocialNetworkDto implements Wireable
     public function toPayload(): array
     {
         return [
-            'name' => SocialNetwork::normalizeName($this->name),
-            'url' => SocialNetwork::normalizeUrl($this->url),
-            'icon' => SocialNetwork::normalizeIcon($this->icon),
-            'abbreviation' => SocialNetwork::normalizeAbbreviation($this->abbreviation),
+            'country_id' => $this->country_id,
+            'code' => TaxCondition::normalizeCode($this->code),
+            'name' => TaxCondition::normalizeName($this->name),
+            'discriminate_tax' => $this->discriminate_tax,
             'is_active' => $this->is_active,
         ];
     }
