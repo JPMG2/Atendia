@@ -179,7 +179,7 @@ return [
     ],
 
     'region' => [
-        'search_placeholder' => 'Buscar por nombre o provincia',
+        'search_placeholder' => 'Buscar por nombre, provincia o país',
         'search_label' => 'Buscar región',
         'singular' => 'región',
         'plural' => 'regiones',

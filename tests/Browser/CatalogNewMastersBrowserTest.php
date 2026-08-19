@@ -160,3 +160,24 @@ test('the combobox dropdown is not clipped by the panel that holds the form', fu
 
     $page->assertNoJavaScriptErrors();
 });
+
+test('typing a country name filters the region list client-side', function (): void {
+    // Two regions of a province called Córdoba, one in Argentina and one in Spain:
+    // the country is the ONLY thing that tells them apart, so it is the search
+    // that proves the column is useful and not decorative.
+    $spain = Country::factory()->create(['code' => 'ESP', 'name' => 'España']);
+    $cordobaArg = Province::factory()->create(['name' => 'Córdoba', 'country_id' => $this->country->id]);
+    $cordobaEsp = Province::factory()->create(['name' => 'Córdoba', 'country_id' => $spain->id]);
+
+    Region::factory()->create(['name' => 'Zona Sur', 'province_id' => $cordobaArg->id]);
+    Region::factory()->create(['name' => 'Sierra Morena', 'province_id' => $cordobaEsp->id]);
+
+    $page = visit('/admin/catalogs');
+    $page->click('Regiones')->assertSee('Zona Sur')->assertSee('Sierra Morena');
+
+    $page->fill('q', 'españa');
+
+    $page->assertSee('Sierra Morena')
+        ->assertDontSee('Zona Sur')
+        ->assertNoJavaScriptErrors();
+});

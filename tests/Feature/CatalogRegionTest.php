@@ -73,6 +73,15 @@ test('the country of every region is eager loaded, not queried once per row', fu
     expect($withTwentyOne)->toBe($withOne);
 });
 
+test('the search covers the country too, not just the name and the province', function (): void {
+    // The country is on screen as its own column, so the box has to filter by it:
+    // a list that shows a value you cannot search by sends the user scrolling.
+    $html = Livewire::test('catalog.region')->html();
+
+    expect(railConfig($html, 'search'))->toBe(['name', 'province', 'country'])
+        ->and($html)->toContain(__('catalog.region.search_placeholder'));
+});
+
 test('the region table shows the country as its own column', function (): void {
     expect(Livewire::test('catalog.region')->html())
         ->toContain(__('catalog.region.columns.country'))

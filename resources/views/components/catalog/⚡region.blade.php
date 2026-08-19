@@ -181,7 +181,7 @@ new class extends Component {
 
 <x-catalog.master :rows="$initialRows" path="form.regionData"
     :blank="['name' => '', 'province' => '', 'country' => '', 'active' => true]"
-    :search="['name', 'province']"
+    :search="['name', 'province', 'country']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'province_id' => ['required'],
