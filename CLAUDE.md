@@ -469,6 +469,10 @@ Cuando se suma un set de reglas de oro:
 - **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
   `tests/Feature/GoldenRulesMarkupTest.php` · hook
   `.claude/hooks/check-blade-golden-rules.sh`.
+- **No perseguir un flake** → memoria `atendia-feedback-modo-trabajo` (capa A) ·
+  hook `.claude/hooks/block-browser-suite-reruns.sh` (capa C), que bloquea la
+  TERCERA corrida de la suite de browser entera. Escrito ya había estado y se
+  incumplió igual varios días seguidos: por eso hay hook.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`.
