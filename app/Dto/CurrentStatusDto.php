@@ -13,7 +13,8 @@ class CurrentStatusDto implements Wireable
      * Create a new class instance.
      */
     public function __construct(
-        public string $name = ''
+        public string $name = '',
+        public string $color = CurrentStatus::DEFAULT_COLOR
     ) {}
 
     /**
@@ -36,6 +37,7 @@ class CurrentStatusDto implements Wireable
     {
         return [
             'name' => $this->name,
+            'color' => $this->color,
         ];
     }
 
@@ -43,6 +45,7 @@ class CurrentStatusDto implements Wireable
     {
         return new self(
             name: $data['name'] ?? '',
+            color: $data['color'] ?: CurrentStatus::DEFAULT_COLOR,
         );
     }
 
@@ -50,6 +53,7 @@ class CurrentStatusDto implements Wireable
     {
         return [
             'name' => CurrentStatus::normalizeName($this->name),
+            'color' => $this->color,
         ];
     }
 }

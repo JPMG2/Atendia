@@ -319,6 +319,24 @@
   .badge-brand  { background:var(--brand-soft); color:var(--brand-soft-text); }
   .badge-accent { background:var(--accent-soft); color:var(--accent-soft-text); }
 
+  /* ---- Tag de estado ----
+     Pinta un estado en cualquier pantalla del programa. El color NO se escribe
+     acá ni en el markup: la fila guarda la clave de un token semántico y esa
+     clave elige el par color/fondo. Por eso el mismo tag se lee bien en claro y
+     en oscuro sin una sola línea extra.
+     Las clases `is-*` se arman en runtime (`'is-' + row.color`), así que están
+     safelisteadas en tailwind.config.js — si no, el purge se las lleva. */
+  .status-tag { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-2xs);
+                font-weight:700; letter-spacing:.02em; padding:3px 9px;
+                border-radius:var(--radius-pill); white-space:nowrap; }
+  .status-tag .dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex:none; }
+  .status-tag.is-success { color:var(--success); background:var(--success-soft); }
+  .status-tag.is-info    { color:var(--info);    background:var(--info-soft); }
+  .status-tag.is-warning { color:var(--warning); background:var(--warning-soft); }
+  .status-tag.is-danger  { color:var(--danger);  background:var(--danger-soft); }
+  .status-tag.is-brand   { color:var(--brand-soft-text); background:var(--brand-soft); }
+  .status-tag.is-neutral { color:var(--text-muted); background:var(--surface-sunken); }
+
   /* ---- Chip de texto mono (log, payload, valor crudo) ----
      Texto técnico dentro de una caja suave. NO confundir con `.catalog-code`:
      ese es el código de una fila de tabla y va mono pelado, porque en una tabla

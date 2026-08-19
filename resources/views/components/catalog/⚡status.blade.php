@@ -124,7 +124,7 @@ new class extends Component {
      * El `id` viaja siempre: es la única clave estable para editar. El `name` es
      * editable por el usuario, así que no sirve para identificar la fila.
      *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string}>
+     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, color: string}>
      */
     #[Computed]
     public function statuses(): \Illuminate\Support\Collection
@@ -136,14 +136,33 @@ new class extends Component {
                 fn(CurrentStatus $status): array => [
                     'id' => $status->id,
                     'name' => $status->name,
+                    'color' => $status->color,
                 ],
             )
             ->values();
     }
+
+    /**
+     * Paleta para el combobox. Sale de `CurrentStatus::COLORS` y no de una lista
+     * escrita en el Blade: la clave que se guarda y la que el CSS sabe pintar
+     * tienen que ser la MISMA, y la validación usa esa misma constante.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    #[Computed]
+    public function colorOptions(): array
+    {
+        return collect(CurrentStatus::COLORS)
+            ->map(fn(string $color): array => [
+                'value' => $color,
+                'label' => __('catalog.status.colors.' . $color),
+            ])
+            ->all();
+    }
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.currentStatusData" :blank="['name' => '']" :search="['name']"
+<x-catalog.master :rows="$initialRows" path="form.currentStatusData" :blank="['name' => '', 'color' => \App\Models\CurrentStatus::DEFAULT_COLOR]" :search="['name']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]">
@@ -156,8 +175,16 @@ new class extends Component {
 
         <x-catalog.table :empty="__('catalog.status.empty')" :columns="[
             ['label' => __('catalog.status.columns.name'), 'class' => 'catalog-col-name'],
+            ['label' => __('catalog.status.columns.color')],
         ]">
             <td class="catalog-cell-name" x-text="row.name"></td>
+            {{-- El tag se muestra tal cual se va a ver en el resto del programa:
+                 el color no se escribe acá, sale de la clave guardada en la fila. --}}
+            <td>
+                <span class="status-tag" x-bind:class="'is-' + row.color">
+                    <span class="dot"></span><span x-text="row.name"></span>
+                </span>
+            </td>
         </x-catalog.table>
     </x-slot:list>
 
@@ -166,12 +193,17 @@ new class extends Component {
         <x-catalog.form-shell :new="__('catalog.status.new')" :new-title="__('catalog.status.new_title')"
             :edit-title="__('catalog.status.edit_title')" :create="__('catalog.status.create')">
 
-            {{-- Un solo campo: ocupa la fila entera, que es exactamente lo que
-                 pide la regla —la fila llega al borde con lo que tenga. --}}
+            {{-- Nombre y color en una fila: el nombre se lleva el sobrante. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.status.fields.name')" required name="name"
                     :placeholder="__('catalog.status.fields.name_placeholder')" alpine-error="name"
                     wire:model="form.currentStatusData.name" />
+
+                <x-inputsform.combobox span="text" :label="__('catalog.status.fields.color')" required name="color"
+                    :placeholder="__('catalog.status.fields.color_placeholder')"
+                    :hint="__('catalog.status.fields.color_hint')" :options="$this->colorOptions"
+                    :value="$form->currentStatusData?->color" alpine-error="color"
+                    wire:model="form.currentStatusData.color" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

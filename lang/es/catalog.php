@@ -266,11 +266,26 @@ return [
 
         'columns' => [
             'name' => 'Nombre',
+            'color' => 'Color',
         ],
 
         'fields' => [
             'name' => 'Nombre',
             'name_placeholder' => 'Ej. En proceso',
+            'color' => 'Color',
+            'color_placeholder' => 'Seleccionar color',
+            'color_hint' => 'Con el que se pinta este estado en todo el sistema',
+        ],
+
+        // La paleta es semántica: el nombre dice para QUÉ sirve el color, no solo
+        // qué tono es. Espeja CurrentStatus::COLORS.
+        'colors' => [
+            'success' => 'Verde (todo bien)',
+            'info' => 'Azul (informativo)',
+            'warning' => 'Ámbar (atención)',
+            'danger' => 'Rojo (problema)',
+            'brand' => 'Jade (marca)',
+            'neutral' => 'Gris (sin relevancia)',
         ],
     ],
 

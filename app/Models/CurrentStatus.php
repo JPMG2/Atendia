@@ -10,11 +10,26 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name'])]
+#[Fillable(['name', 'color'])]
 class CurrentStatus extends Model
 {
     /** @use HasFactory<CurrentStatusFactory> */
     use HasFactory;
+
+    /**
+     * Paleta de un estado: se guarda la CLAVE de un token semántico, nunca un hex.
+     *
+     * El estado se pinta en TODO el programa, así que el color tiene que responder
+     * al tema: `var(--danger)` es rojo en claro y un rojo legible en oscuro,
+     * mientras que un `#F2555A` guardado en la base se ve igual en los dos y en
+     * oscuro queda fuera de contraste. Los swatches viven acá, en PHP, no en el
+     * Blade — el markup nunca escribe un color.
+     *
+     * @var array<int, string>
+     */
+    public const COLORS = ['success', 'info', 'warning', 'danger', 'brand', 'neutral'];
+
+    public const DEFAULT_COLOR = 'neutral';
 
     /**
      * Nombre propio ("En proceso"): se respeta lo que escribe el usuario, solo

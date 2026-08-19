@@ -12,6 +12,7 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\CurrentStatus;
 use App\Rules\AttributeValidator;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 
 class CurrentStatusForm extends BaseForm
@@ -88,6 +89,11 @@ class CurrentStatusForm extends BaseForm
             // regla, un estado repetido no sería un error de campo sino un crash
             // de base atrapado por tryAction.
             'name' => AttributeValidator::uniqueIdNameLength('3', 'current_statuses', 'name', $excludeId),
+
+            // Se guarda la CLAVE de un token, no un hex. Validar contra la paleta
+            // es lo que impide que llegue un valor que el CSS no sabe pintar y el
+            // tag quede transparente sin avisar.
+            'color' => ['required', Rule::in(CurrentStatus::COLORS)],
         ];
     }
 
@@ -95,6 +101,7 @@ class CurrentStatusForm extends BaseForm
     {
         return [
             'name' => config('nicename.name'),
+            'color' => config('nicename.color'),
         ];
     }
 }

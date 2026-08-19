@@ -16,4 +16,5 @@ return [
     'url' => 'URL',
     'icon' => 'ícono',
     'abbreviation' => 'abreviatura',
+    'color' => 'color',
 ];

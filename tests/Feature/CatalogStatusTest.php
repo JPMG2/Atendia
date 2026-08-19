@@ -6,6 +6,7 @@ use App\Actions\Catalog\CreateCurrentStatus;
 use App\Livewire\Forms\Catalog\CurrentStatusForm;
 use App\Models\CurrentStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Livewire\Component;
 use Livewire\Livewire;
 use Mockery\MockInterface;
@@ -36,12 +37,90 @@ test('the status editor renders its only input', function (): void {
 });
 
 test('the status master has no active flag, because the table has no such column', function (): void {
-    // `current_statuses` only stores a name. Showing a state switch here would be
-    // inventing a field the database does not keep.
+    // `current_statuses` stores a name and a colour, nothing else. Showing a state
+    // switch here would be inventing a field the database does not keep.
     $html = Livewire::test('catalog.status')->html();
 
     expect($html)->not->toContain('is_active')
-        ->and(railConfig($html, 'blank'))->toBe(['name' => '']);
+        ->and(railConfig($html, 'blank'))->toBe(['name' => '', 'color' => CurrentStatus::DEFAULT_COLOR]);
+});
+
+test('the colour of a status is a token key, never a hex', function (): void {
+    // A stored hex renders the same in light and in dark, and several of them go
+    // unreadable on the dark theme. A token key resolves through app.css, so the
+    // same tag stays legible in both without a single extra line.
+    foreach (CurrentStatus::COLORS as $color) {
+        expect($color)->not->toStartWith('#')
+            ->and($color)->toMatch('/^[a-z]+$/');
+    }
+
+    $status = CurrentStatus::factory()->create(['name' => 'En proceso', 'color' => 'info']);
+
+    $rows = Livewire::test('catalog.status')->get('initialRows');
+
+    expect($rows[0]['color'])->toBe('info');
+});
+
+test('the table paints each status with its own tag', function (): void {
+    // The class is built at runtime from the stored key, so the colour never gets
+    // written into the markup.
+    expect(Livewire::test('catalog.status')->html())
+        ->toContain(__('catalog.status.columns.color'))
+        ->toContain('x-bind:class="\'is-\' + row.color"');
+});
+
+test('the colour palette offered by the form is the one the model allows', function (): void {
+    // The key that gets saved, the one the CSS can paint and the one validation
+    // accepts have to be the SAME list, or a status ends up with a transparent tag.
+    $options = Livewire::test('catalog.status')->instance()->colorOptions;
+
+    expect(collect($options)->pluck('value')->all())->toBe(CurrentStatus::COLORS);
+
+    foreach ($options as $option) {
+        expect($option['label'])->not->toContain('catalog.status.colors.');
+    }
+});
+
+test('every colour of the palette can actually be painted by the stylesheet', function (): void {
+    // The palette lives in PHP and the colours live in app.css. If the two drift,
+    // a status saves fine and validates fine and then renders as a transparent
+    // tag — nothing fails, it just looks broken. Same for the Tailwind safelist:
+    // the class is built at runtime, so without it the purge removes the rule.
+    $css = File::get(resource_path('css/app.css'));
+    $tailwind = File::get(base_path('tailwind.config.js'));
+
+    foreach (CurrentStatus::COLORS as $color) {
+        expect($css)->toContain(".status-tag.is-{$color}")
+            ->and($tailwind)->toContain("'is-{$color}'");
+    }
+});
+
+test('a colour outside the palette is rejected', function (): void {
+    Livewire::test('catalog.status')
+        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.currentStatusData.color', 'fucsia')
+        ->call('create')
+        ->assertHasErrors('color');
+
+    expect(CurrentStatus::query()->count())->toBe(0);
+});
+
+test('a status keeps the colour it was saved with', function (): void {
+    Livewire::test('catalog.status')
+        ->set('form.currentStatusData.name', 'Bloqueado')
+        ->set('form.currentStatusData.color', 'danger')
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect(CurrentStatus::where('name', 'Bloqueado')->value('color'))->toBe('danger');
+});
+
+test('a new status starts on the neutral colour instead of no colour at all', function (): void {
+    // The column is NOT NULL with a default; the DTO has to agree or the combobox
+    // opens empty and the first save trips the validation for no reason.
+    $component = Livewire::test('catalog.status');
+
+    expect($component->get('form.currentStatusData')->color)->toBe(CurrentStatus::DEFAULT_COLOR);
 });
 
 /*
@@ -169,12 +248,13 @@ test('every visible string comes from a lang file, so the regional variants can 
 */
 
 test('opening a row loads that record into the form', function (): void {
-    $status = CurrentStatus::factory()->create(['name' => 'En proceso']);
+    $status = CurrentStatus::factory()->create(['name' => 'En proceso', 'color' => 'info']);
 
     $component = Livewire::test('catalog.status')->call('openEdit', $status->id);
 
     expect($component->get('form.currentStatusId'))->toBe($status->id)
-        ->and($component->get('form.currentStatusData')->name)->toBe('En proceso');
+        ->and($component->get('form.currentStatusData')->name)->toBe('En proceso')
+        ->and($component->get('form.currentStatusData')->color)->toBe('info');
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {

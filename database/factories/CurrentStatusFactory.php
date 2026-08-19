@@ -23,6 +23,8 @@ class CurrentStatusFactory extends Factory
             // `name` es UNIQUE en la tabla, así que tiene que serlo acá o dos
             // estados creados en el mismo test revientan contra la constraint.
             'name' => $this->faker->unique()->word(),
+            // Una clave de CurrentStatus::COLORS; un valor libre no lo pinta el CSS.
+            'color' => $this->faker->randomElement(CurrentStatus::COLORS),
         ];
     }
 }

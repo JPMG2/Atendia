@@ -181,3 +181,22 @@ test('typing a country name filters the region list client-side', function (): v
         ->assertDontSee('Zona Sur')
         ->assertNoJavaScriptErrors();
 });
+
+test('each status renders its tag with the colour saved for it', function (): void {
+    // The colour is a token key, so the proof is the class the browser ends up
+    // with — and that the stylesheet actually resolves it to a real colour rather
+    // than leaving the tag transparent.
+    CurrentStatus::factory()->create(['name' => 'Bloqueado', 'color' => 'danger']);
+
+    $page = visit('/admin/catalogs');
+    $page->click('Estados')->assertSee('Bloqueado');
+
+    expect($page->script('document.querySelector(".status-tag").className'))
+        ->toContain('is-danger');
+
+    $background = $page->script('getComputedStyle(document.querySelector(".status-tag")).backgroundColor');
+
+    expect($background)->not->toBe('rgba(0, 0, 0, 0)');
+
+    $page->assertNoJavaScriptErrors();
+});
