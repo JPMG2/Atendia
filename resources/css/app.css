@@ -823,18 +823,31 @@
      conteniendo era el fondo del pie de acciones, que ahora redondea sus propias
      esquinas. */
   .catalog-panel { flex:1 1 auto; min-width:0; }
-  .catalog-panel-head { padding:20px 22px; border-bottom:1px solid var(--border-subtle);
+  /* Wash jade suave: le da presencia a la cabecera del maestro sin robarle
+     protagonismo al formulario. El color sale de `--brand-soft`, que en claro es
+     jade-50 y en oscuro un jade traslúcido al 14% — el mismo token se resuelve
+     distinto en cada tema, así que no hay una sola línea de dark mode acá.
+     Redondea sus esquinas superiores igual que el pie las inferiores: el panel ya
+     NO recorta con overflow (eso cortaba el desplegable del combobox), así que
+     todo fondo que toque un borde del card tiene que redondearse solo. */
+  .catalog-panel-head { padding:20px 22px; background:var(--brand-soft);
+                        border-bottom:1px solid var(--brand-border);
+                        border-top-left-radius:var(--radius-card);
+                        border-top-right-radius:var(--radius-card);
                         display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
   .catalog-panel-head-text { min-width:0; }
   .catalog-panel-head h2 { font-family:var(--font-display); font-size:var(--text-lg); color:var(--text-strong);
                            display:flex; align-items:center; gap:10px; }
   .catalog-panel-head p { font-size:var(--text-sm); color:var(--text-muted); margin-top:4px; max-width:52ch; }
   .catalog-panel-icon { display:inline-flex; color:var(--brand); flex:none; }
+  /* Sobre el wash jade el botón mantiene el fondo del card para seguir leyéndose
+     como control; el borde y el hover pasan a la familia de marca porque un gris
+     sobre jade se ve sucio. */
   .catalog-panel-close { flex:none; display:inline-flex; align-items:center; justify-content:center;
-                         width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--border-default);
+                         width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--brand-border);
                          background:var(--surface-card); color:var(--text-muted); cursor:pointer;
                          transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-  .catalog-panel-close:hover { background:var(--surface-sunken); color:var(--text-body); }
+  .catalog-panel-close:hover { background:var(--brand-soft-hover); color:var(--brand-soft-text); }
   .catalog-panel-close:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 
   /* Transición de entrada del maestro (fade + slide) */

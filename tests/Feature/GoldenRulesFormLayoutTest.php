@@ -115,8 +115,20 @@ test('the panel that holds the editor never clips it', function (): void {
     // it now rounds its own corners.
     expect(cssRule('.catalog-panel'))->not->toMatch('/overflow(-y)?\s*:\s*(hidden|clip|auto|scroll)/');
 
-    // The footer keeps the card's rounded bottom on its own.
-    expect(cssRule('.catalog-form-foot'))->toContain('border-bottom-left-radius');
+    // Y como el panel ya no recorta, TODO fondo que toque un borde del card tiene
+    // que redondear sus propias esquinas o se sale por encima del radio.
+    expect(cssRule('.catalog-form-foot'))->toContain('border-bottom-left-radius')
+        ->and(cssRule('.catalog-panel-head'))->toContain('border-top-left-radius');
+});
+
+test('the master header takes its colour from a brand token, never a hex', function (): void {
+    // The wash is what gives the header presence, and it has to resolve per theme:
+    // `--brand-soft` is jade-50 in light and a translucent jade in dark, so the
+    // same declaration covers both without a line of dark-mode CSS.
+    $head = cssRule('.catalog-panel-head');
+
+    expect($head)->toContain('background:var(--brand-soft)')
+        ->not->toMatch('/#[0-9a-fA-F]{3,6}/');
 });
 
 test('no catalog editor hand-assigns a width', function (): void {
