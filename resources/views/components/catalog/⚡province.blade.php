@@ -181,11 +181,11 @@ new class extends Component {
             :plural="__('catalog.province.plural')" :create="__('catalog.province.create')" />
 
         <x-catalog.table :empty="__('catalog.province.empty')" :columns="[
-            ['label' => __('catalog.province.columns.name'), 'class' => 'catalog-col-name'],
+            ['label' => __('catalog.province.columns.name'), 'class' => 'catalog-col-fill'],
             ['label' => __('catalog.province.columns.country')],
             ['label' => __('catalog.province.columns.status')],
         ]">
-            <td class="catalog-cell-name" x-text="row.name"></td>
+            <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td x-text="row.country"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">

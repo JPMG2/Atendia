@@ -153,6 +153,17 @@ test('the boxed mono chip lives on its own class', function () {
     expect($borrowers)->toBe([]);
 });
 
+test('exactly one column of every catalog table absorbs the leftover width', function (string $editor) {
+    // Something has to take the slack or the table stops short of the right edge;
+    // two columns taking it splits the row unevenly. It is not always the name:
+    // a two-column master stretches the SECOND one so the data sits next to the
+    // name instead of being flung to the far edge.
+    $blade = File::get(resource_path("views/components/catalog/⚡{$editor}.blade.php"));
+
+    expect(substr_count($blade, 'catalog-col-fill'))->toBe(1)
+        ->and(substr_count($blade, 'catalog-cell-fill'))->toBe(1);
+})->with(['currency', 'country', 'social-network', 'province', 'region', 'tax-condition', 'status']);
+
 test('every catalog editor renders through the shared table', function (string $editor) {
     // Antes se comprobaba que el editor CONTUVIERA `class="catalog-table"`. Ahora
     // la tabla es un componente: el editor tiene que USARLA, y no puede volver a

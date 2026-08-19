@@ -185,13 +185,13 @@ new class extends Component {
 
         <x-catalog.table :empty="__('catalog.tax_condition.empty')" :columns="[
             ['label' => __('catalog.tax_condition.columns.code')],
-            ['label' => __('catalog.tax_condition.columns.name'), 'class' => 'catalog-col-name'],
+            ['label' => __('catalog.tax_condition.columns.name'), 'class' => 'catalog-col-fill'],
             ['label' => __('catalog.tax_condition.columns.country')],
             ['label' => __('catalog.tax_condition.columns.discriminate_tax')],
             ['label' => __('catalog.tax_condition.columns.status')],
         ]">
             <td><span class="catalog-code" x-text="row.code"></span></td>
-            <td class="catalog-cell-name" x-text="row.name"></td>
+            <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td class="catalog-cell-sym" x-text="row.country"></td>
             <td x-text="row.discriminates ? {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.discriminate.yes')) }} : {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.discriminate.no')) }}"></td>
             <td>

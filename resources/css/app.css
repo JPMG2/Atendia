@@ -954,8 +954,13 @@
      se queda con todo el sobrante. Antes cada th traía un width fijo a mano y
      entre todos se comían la tabla, dejando las columnas apretadas. */
   .catalog-table tbody td { white-space:nowrap; }
-  .catalog-table .catalog-col-name,
-  .catalog-table .catalog-cell-name { width:100%; white-space:normal; }
+  /* La columna que absorbe el sobrante de la fila. Suele ser el nombre, pero no
+     siempre: en un maestro de dos columnas estirar el nombre deja un canyon en el
+     medio y el dato pegado al borde derecho — ahí conviene estirar la SEGUNDA y
+     que el dato quede junto al nombre. Mismo principio que el `span` del
+     formulario: algo tiene que llevarse el resto, y el maestro decide qué. */
+  .catalog-table .catalog-col-fill,
+  .catalog-table .catalog-cell-fill { width:100%; white-space:normal; }
   /* Selector completo a propósito: `.catalog-table tbody td` es más específico,
      así que un `.catalog-table-empty` suelto perdía y el vacío quedaba con el
      alto de una fila normal en vez de respirar. */

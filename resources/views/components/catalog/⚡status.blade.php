@@ -173,14 +173,17 @@ new class extends Component {
             :search-label="__('catalog.status.search_label')" :singular="__('catalog.status.singular')"
             :plural="__('catalog.status.plural')" :create="__('catalog.status.create')" />
 
+        {{-- Con solo dos columnas el que absorbe el sobrante es el COLOR, no el
+             nombre: así el tag queda pegado al nombre en vez de irse al borde
+             derecho dejando un hueco enorme en el medio. --}}
         <x-catalog.table :empty="__('catalog.status.empty')" :columns="[
-            ['label' => __('catalog.status.columns.name'), 'class' => 'catalog-col-name'],
-            ['label' => __('catalog.status.columns.color')],
+            ['label' => __('catalog.status.columns.name')],
+            ['label' => __('catalog.status.columns.color'), 'class' => 'catalog-col-fill'],
         ]">
             <td class="catalog-cell-name" x-text="row.name"></td>
             {{-- El tag se muestra tal cual se va a ver en el resto del programa:
                  el color no se escribe acá, sale de la clave guardada en la fila. --}}
-            <td>
+            <td class="catalog-cell-fill">
                 <span class="status-tag" x-bind:class="'is-' + row.color">
                     <span class="dot"></span><span x-text="row.name"></span>
                 </span>

@@ -178,13 +178,13 @@ new class extends Component {
             :plural="__('catalog.social_network.plural')" :create="__('catalog.social_network.create')" />
 
         <x-catalog.table :empty="__('catalog.social_network.empty')" :columns="[
-            ['label' => __('catalog.social_network.columns.name'), 'class' => 'catalog-col-name'],
+            ['label' => __('catalog.social_network.columns.name'), 'class' => 'catalog-col-fill'],
             ['label' => __('catalog.social_network.columns.abbreviation')],
             ['label' => __('catalog.social_network.columns.url')],
             ['label' => __('catalog.social_network.columns.icon')],
             ['label' => __('catalog.social_network.columns.status')],
         ]">
-            <td class="catalog-cell-name" x-text="row.name"></td>
+            <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td><span class="catalog-code" x-text="row.abbreviation"></span></td>
             <td class="catalog-cell-sym" x-text="row.url"></td>
             <td class="catalog-cell-sym" x-text="row.icon"></td>
