@@ -223,17 +223,61 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
   emoji** en la chrome. Errores útiles: *"No pudimos guardar. Revisá el email."*
   (neutro: *"Revisa el email."*).
 
-## 5. Layout / UX (criterio, no blindado)
+## 5. Layout — aprovechar el ancho (REGLA DE ORO, blindada)
 
-- **Orden lógico de los campos (regla de oro).** Los inputs se ordenan como los piensa
-  quien carga el dato, no como salieron en la tabla: identificador → nombre/descriptivo →
-  atributos de formato/visualización → estado (switches `activo` al pie). El formulario se
-  lee de arriba a abajo sin saltos.
-- **Tamaño adecuado, sin truncar (regla de oro).** Cada input tiene el ancho que su
-  contenido necesita: los descriptivos largos (nombre, dirección, URL) van **a lo ancho**
-  (`field-wide` / columna completa) para que el texto se vea entero; los cortos (código,
-  símbolo, decimales, un número) van chicos y se agrupan de a dos en una fila. Nunca un
-  campo tan angosto que oculte la info. Aplica **especialmente a los formularios maestros**.
+> Blindada por `tests/Feature/GoldenRulesFormLayoutTest.php` y el hook
+> `check-catalog-form-layout.sh`. Nació de un formulario que gastaba media pantalla:
+> cuatro campos angostos apilados y una fila entera para un switch.
+
+### 5.1 Compactar sin abreviar
+
+- **Nunca se abrevia ni se trunca un campo de un maestro.** Compactar es acomodar mejor,
+  jamás recortar: si un campo no entra, se rearman las filas, no se achica el dato.
+- El formulario **no topea su ancho**. Un `max-width` deja espacio muerto a la derecha
+  del panel. Se usa todo el contenedor.
+
+### 5.2 Las filas se DECLARAN, no las adivina el navegador
+
+- Los campos van dentro de **`<x-catalog.form-row>`**. Si el corte lo decide el wrap,
+  el mismo formulario cambia de forma según el monitor y el último campo —casi siempre
+  el estado— cae solo a una fila entera.
+- **Fila 1:** identificador corto + nombre, y el nombre se lleva todo el resto.
+  **Fila 2:** el resto de los campos repartiéndose el ancho completo, **el estado incluido**.
+- **Toda fila llega al borde derecho.** Al menos un campo de la fila tiene que poder
+  absorber el sobrante (uno descriptivo); una fila hecha solo de códigos queda corta.
+
+### 5.3 El ancho se declara por CONTENIDO, nunca en columnas
+
+- Cada campo dice **qué es**, no cuánto mide: `span="code|short|text|long|full"`.
+  Repartir a mano (`col-4` + `col-8`) es el origen del borde ragged — tarde o temprano
+  un maestro elige spans que no suman.
+- Los `flex-basis` viven en `app.css` (`.f-code`, `.f-short`, `.f-text`, `.f-long`).
+  El sobrante se lo lleva el descriptivo; un código de 3 letras no crece.
+
+### 5.4 El estado es un campo, no un bloque
+
+- El switch `activo` usa **`<x-inputsform.switch-field>`**: misma caja y misma altura que
+  un input, con la palabra del estado al lado. Entra en la fila como un control más.
+  Gastar una fila entera del formulario en un booleano es desperdiciar la pantalla.
+
+### 5.5 El error tiene que verse, y verse de quién es
+
+- Cuando un campo muestra su error **crece**, y el mensaje queda flotando entre dos filas.
+  La separación **entre filas** tiene que ser claramente mayor que la que hay entre un
+  control y su propio mensaje; si no, el error se lee como si fuera del campo de abajo.
+- No se reserva un renglón fijo bajo cada campo: eso mete aire muerto en todas las filas
+  para un error que casi nunca está.
+
+### 5.6 Cero markup repetido
+
+- El chrome del maestro (toolbar, tabla, barra del form, pie de acciones) y el riel de
+  Alpine viven **una sola vez**: `<x-catalog.*>` y `resources/js/catalog-master.js`.
+  Copiarlo hace que un arreglo en un maestro no llegue a los otros.
+
+### 5.7 Otros patrones (criterio, no blindado)
+
+- **Orden lógico de los campos.** Se ordenan como los piensa quien carga el dato:
+  identificador → nombre/descriptivo → atributos de formato/visualización → estado.
 - Patrón útil: **2 columnas** (`1fr / ~340px`), form a la izquierda y **preview sticky** a
   la derecha; colapsa a 1 col en mobile. **Tabs** si hay muchas secciones.
 - Filas "label + descripción a la izquierda / campos a la derecha", apiladas en mobile.
@@ -253,7 +297,11 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 
 - [ ] Campos 100% vía `<x-ui.*>` — cero controles crudos.
 - [ ] **Orden lógico** de los campos (identificador → nombre → formato → estado).
-- [ ] **Tamaño adecuado**: descriptivos largos a lo ancho, cortos agrupados; nada truncado.
+- [ ] **Filas declaradas** con `<x-catalog.form-row>`; ninguna queda a medias.
+- [ ] **Ancho por contenido** (`span=`), nunca `col-N`; el form no topea su ancho.
+- [ ] **El estado es un campo** (`switch-field`), no una fila entera para un booleano.
+- [ ] **Con error a la vista**: el mensaje se lee pegado a SU campo, no a la fila de abajo.
+- [ ] Nada abreviado ni truncado.
 - [ ] Cero hex de estilo en el markup (solo tokens; hex-dato vía variable si aplica).
 - [ ] Iconos solo `<x-icon>`; glifos nuevos agregados a `config/icons.php`.
 - [ ] Copy vía traducciones (`__()`), base `es` neutra + override `es_AR` si hay voseo.
@@ -274,8 +322,38 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 
 - `php artisan migrate:fresh` · `migrate:refresh` · `migrate:reset` · `db:wipe`
   → dropean tablas y **borran todos los datos**. JAMÁS sobre `atendia`.
-- Está blindado por el hook `PreToolUse` `.claude/hooks/block-destructive-db.sh`
-  (bloquea esos comandos salvo que apunten explícitamente a `atendia_testing`).
+
+## Blindaje en 4 capas (por qué es imposible perder datos)
+
+> Auditado el 2026-07-25 tras analizar cómo OTRO proyecto perdió toda su data: la
+> protección nativa de Laravel estaba atada a `isProduction()` y, como el dato real
+> vive en una base con `APP_ENV=local`, quedaba **apagada**. Acá lo cerramos.
+
+1. **`DB::prohibitDestructiveCommands()` — la capa clave (nivel comando).** En
+   `AppServiceProvider::configureCommands()`. **NO** se gatea por `app()->isProduction()`
+   (agujero: `.env` es `APP_ENV=local` y el dato vive en `atendia` → daría `false` →
+   protección apagada). Se gatea por la **base activa**: bloquea *siempre* salvo cuando
+   la base es exactamente `atendia_testing`.
+   ```php
+   $connection = config('database.default');
+   $database   = config("database.connections.{$connection}.database");
+   DB::prohibitDestructiveCommands($database !== 'atendia_testing');
+   ```
+   Cubre el CLI directo **y** `RefreshDatabase` (que corre `migrate:fresh` por dentro),
+   en Unit o Feature, **extienda o no** el guard de `TestCase`.
+2. **Hook `PreToolUse`** `.claude/hooks/block-destructive-db.sh` (registrado en
+   `.claude/settings.json`): bloquea (exit 2) cualquier Bash con esos comandos salvo que
+   apunte explícitamente a `atendia_testing`. Ojo: el hook **no ve** `RefreshDatabase`
+   (corre en PHP, no shell) → por eso la capa 1 es imprescindible.
+3. **Guard `Tests\TestCase::guardAgainstProductionDatabase()`**: aborta si el entorno no
+   es `testing` o la base no es `atendia_testing`. Agujero conocido: en `tests/Pest.php`
+   se bindea SOLO a `Feature`+`Browser`, **no a `Unit`** — hoy inocuo porque la capa 1
+   ya cubre Unit.
+4. **`phpunit.xml`** fuerza `DB_CONNECTION=pgsql` + `DB_DATABASE=atendia_testing`.
+
+Blindado con test de regresión: `tests/Feature/DestructiveCommandGuardTest.php` prueba
+(seguro, con base descartable) que los 4 comandos quedan `prohibited` cuando la base ≠
+`atendia_testing`.
 
 ## Cómo aplicar migraciones a `atendia`
 
@@ -391,6 +469,9 @@ Cuando se suma un set de reglas de oro:
 - **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
   `tests/Feature/GoldenRulesMarkupTest.php` · hook
   `.claude/hooks/check-blade-golden-rules.sh`.
+- **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
+  checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
+  hook `.claude/hooks/check-catalog-form-layout.sh`.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
@@ -404,24 +485,11 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 ## Foundational Context
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
+This application is a Laravel application running on PHP 8.5. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
 
-- php - 8.5
-- laravel/ai (AI) - v0
-- laravel/framework (LARAVEL) - v13
-- laravel/prompts (PROMPTS) - v0
-- laravel/sanctum (SANCTUM) - v4
-- livewire/livewire (LIVEWIRE) - v4
-- laravel/boost (BOOST) - v2
-- laravel/breeze (BREEZE) - v2
-- laravel/mcp (MCP) - v0
-- laravel/pail (PAIL) - v1
-- laravel/pint (PINT) - v1
-- pestphp/pest (PEST) - v4
-- phpunit/phpunit (PHPUNIT) - v12
-- rector/rector (RECTOR) - v2
-- alpinejs (ALPINEJS) - v3
-- tailwindcss (TAILWINDCSS) - v3
+Before relying on a package's API, confirm its installed version:
+- PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
+- JS packages: check `package.json` for the installed versions.
 
 ## Skills Activation
 
@@ -457,6 +525,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 === boost rules ===
 
 # Laravel Boost
+
+## Project Rules
+
+- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
 
 ## Artisan
 

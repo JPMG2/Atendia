@@ -42,6 +42,9 @@ Cuando se suma un set de reglas de oro:
 - **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
   `tests/Feature/GoldenRulesMarkupTest.php` · hook
   `.claude/hooks/check-blade-golden-rules.sh`.
+- **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
+  checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
+  hook `.claude/hooks/check-catalog-form-layout.sh`.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

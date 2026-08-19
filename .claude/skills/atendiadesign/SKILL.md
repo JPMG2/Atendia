@@ -128,9 +128,11 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 ## ✅ Checklist de salida — formularios y componentes Livewire (NO NEGOCIABLE)
 
 > Antes de dar por terminado CUALQUIER formulario, vista Blade o componente
-> Livewire, verificá uno por uno. Estas reglas están blindadas por el test
-> guardián `tests/Feature/GoldenRulesMarkupTest.php` y el hook
-> `check-blade-golden-rules.sh` — si no las cumplís, **el build falla**.
+> Livewire, verificá uno por uno. Estas reglas están blindadas por los tests
+> guardianes `tests/Feature/GoldenRulesMarkupTest.php` (markup) y
+> `tests/Feature/GoldenRulesFormLayoutTest.php` (layout), más los hooks
+> `check-blade-golden-rules.sh` y `check-catalog-form-layout.sh` — si no las
+> cumplís, **el build falla**.
 > (Receta: `.ai/guidelines/reglas-de-oro-enforcement.md`.)
 
 - [ ] **Campos vía `<x-ui.*>`, jamás controles crudos.** Nada de `<input>`,
@@ -143,6 +145,14 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
       ni `lucide.createIcons()`.
 - [ ] **Reusar antes de crear.** Si ya existe el componente en la librería `<x-ui.*>`,
       usarlo; no reinventar markup.
+- [ ] **Aprovechar el ancho, sin abreviar.** El form no topea su ancho; las filas se
+      declaran con `<x-catalog.form-row>` y **toda fila llega al borde derecho**. El
+      ancho se pide por CONTENIDO (`span="code|short|text|long"`), nunca en columnas.
+      El estado va como campo (`<x-inputsform.switch-field>`), no como una fila entera
+      para un booleano. **Jamás se abrevia ni se trunca un campo de un maestro.**
+      Detalle: `.ai/guidelines/formularios.md` §5.
+- [ ] **Mirar el formulario CON un error a la vista.** Al mostrarse, el campo crece y el
+      mensaje queda entre dos filas: tiene que leerse pegado a SU campo, no al de abajo.
 - [ ] **Test Pest (en inglés)** que cubra el render y la regla relevante.
 - [ ] **Responsive + dark/light** verificados (los 3 mandatos de arriba).
 
