@@ -49,36 +49,37 @@ test('keeping its own name while editing does not trip the scoped unique rule', 
 });
 
 test('taking a name that already belongs to another province of the same country is rejected', function (): void {
-    $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
-    Province::factory()->create(['name' => 'Córdoba', 'country_id' => $country->id]);
-    $province = Province::factory()->create(['name' => 'Santa Fe', 'country_id' => $country->id]);
+    $venezuela = Country::factory()->create(['code' => 'VEN', 'name' => 'Venezuela']);
+    Province::factory()->create(['name' => 'Mérida', 'country_id' => $venezuela->id]);
+    $province = Province::factory()->create(['name' => 'Zulia', 'country_id' => $venezuela->id]);
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.name', 'Córdoba')
+        ->set('form.provinceData.name', 'Mérida')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
 
-    expect($province->fresh()->name)->toBe('Santa Fe');
+    expect($province->fresh()->name)->toBe('Zulia');
 });
 
 test('moving a province to another country that already has that name is rejected', function (): void {
-    // The unique is scoped by country, so the clash only appears once the record
-    // lands in the other country — the rule has to read the country being SAVED,
-    // not the one the record had.
-    $argentina = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
-    $spain = Country::factory()->create(['code' => 'ESP', 'name' => 'España']);
-    Province::factory()->create(['name' => 'Córdoba', 'country_id' => $spain->id]);
-    $province = Province::factory()->create(['name' => 'Córdoba', 'country_id' => $argentina->id]);
+    // Mérida is legitimate in Venezuela, Mexico and Spain at the same time, but
+    // one country cannot hold two. The unique is scoped by country, so the clash
+    // only appears once the record lands in the other country — the rule has to
+    // read the country being SAVED, not the one the record had.
+    $venezuela = Country::factory()->create(['code' => 'VEN', 'name' => 'Venezuela']);
+    $mexico = Country::factory()->create(['code' => 'MEX', 'name' => 'México']);
+    Province::factory()->create(['name' => 'Mérida', 'country_id' => $mexico->id]);
+    $province = Province::factory()->create(['name' => 'Mérida', 'country_id' => $venezuela->id]);
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.country_id', $spain->id)
+        ->set('form.provinceData.country_id', $mexico->id)
         ->call('update')
         ->assertHasErrors('name');
 
-    expect($province->fresh()->country_id)->toBe($argentina->id);
+    expect($province->fresh()->country_id)->toBe($venezuela->id);
 });
 
 test('the country id posted by the combobox as a string is stored as the right integer', function (): void {

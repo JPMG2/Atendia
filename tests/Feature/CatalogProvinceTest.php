@@ -121,33 +121,36 @@ test('a country id that does not exist is rejected', function (): void {
 });
 
 test('the same province name is rejected inside one country', function (): void {
-    $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
-    Province::factory()->create(['name' => 'Córdoba', 'country_id' => $country->id]);
+    $venezuela = Country::factory()->create(['code' => 'VEN', 'name' => 'Venezuela']);
+    Province::factory()->create(['name' => 'Mérida', 'country_id' => $venezuela->id]);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', 'Córdoba')
+        ->set('form.provinceData.country_id', $venezuela->id)
+        ->set('form.provinceData.name', 'Mérida')
         ->call('create')
         ->assertHasErrors('name');
 
     expect(Province::query()->count())->toBe(1);
 });
 
-test('the same province name IS accepted in another country', function (): void {
-    // This is why the unique rule is scoped by country: Córdoba exists in
-    // Argentina and in Spain, and both are legitimate. A global unique would
-    // reject the second one.
-    $argentina = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
-    $spain = Country::factory()->create(['code' => 'ESP', 'name' => 'España']);
-    Province::factory()->create(['name' => 'Córdoba', 'country_id' => $argentina->id]);
+test('the same province name IS accepted in every other country', function (): void {
+    // This is why the unique rule is scoped by country instead of being global:
+    // Mérida is a real province of Venezuela, of Mexico AND of Spain. A global
+    // unique would reject the second and the third; no rule at all would let
+    // Venezuela hold two Méridas. The uniqueness lives in the validation layer,
+    // not in a database constraint — the index on (country_id, name) is plain.
+    $countries = collect(['VEN' => 'Venezuela', 'MEX' => 'México', 'ESP' => 'España'])
+        ->map(fn (string $name, string $code) => Country::factory()->create(['code' => $code, 'name' => $name]));
 
-    Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $spain->id)
-        ->set('form.provinceData.name', 'Córdoba')
-        ->call('create')
-        ->assertHasNoErrors();
+    foreach ($countries as $country) {
+        Livewire::test('catalog.province')
+            ->set('form.provinceData.country_id', $country->id)
+            ->set('form.provinceData.name', 'Mérida')
+            ->call('create')
+            ->assertHasNoErrors();
+    }
 
-    expect(Province::where('name', 'Córdoba')->count())->toBe(2);
+    expect(Province::where('name', 'Mérida')->count())->toBe(3);
 });
 
 test('a name with markup is rejected', function (): void {
