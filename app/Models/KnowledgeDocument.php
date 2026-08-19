@@ -10,7 +10,6 @@ use Database\Factories\KnowledgeDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -19,8 +18,8 @@ class KnowledgeDocument extends Model
 {
     /** @use HasFactory<KnowledgeDocumentFactory> */
     use BelongsToBusiness;
-    use HasFactory;
 
+    use HasFactory;
     use SoftDeletes;
 
     protected $fillable = [
@@ -39,7 +38,6 @@ class KnowledgeDocument extends Model
             'indexed_at' => 'datetime',
         ];
     }
-
 
     /**
      * @return HasMany<KnowledgeChunk, $this>

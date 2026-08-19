@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TracksUserActions;
 use Database\Factories\CountryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['currency_id', 'name', 'code', 'phone_code', 'is_active'])]
 class Country extends Model
 {
     /** @use HasFactory<CountryFactory> */
     use HasFactory;
+
+    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    use SoftDeletes;
+    use TracksUserActions;
 
     /**
      * @return array<string, string>

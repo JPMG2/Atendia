@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TracksUserActions;
 use Database\Factories\RegionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['province_id', 'name', 'is_active'])]
 class Region extends Model
 {
     /** @use HasFactory<RegionFactory> */
     use HasFactory;
+
+    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    use SoftDeletes;
+    use TracksUserActions;
 
     /**
      * Provincia a la que pertenece la región (FK obligatoria en la tabla).

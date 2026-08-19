@@ -14,6 +14,7 @@ class KnowledgeChunk extends Model
 {
     /** @use HasFactory<KnowledgeChunkFactory> */
     use BelongsToBusiness;
+
     use HasFactory;
 
     protected $fillable = [
@@ -41,5 +42,4 @@ class KnowledgeChunk extends Model
     {
         return $this->belongsTo(KnowledgeDocument::class, 'knowledge_document_id');
     }
-
 }

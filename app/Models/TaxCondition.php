@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TracksUserActions;
 use Database\Factories\TaxConditionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['country_id', 'name', 'code', 'discriminate_tax', 'is_active'])]
 class TaxCondition extends Model
 {
     /** @use HasFactory<TaxConditionFactory> */
     use HasFactory;
+
+    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    use SoftDeletes;
+    use TracksUserActions;
 
     /**
      * @return BelongsTo<Country, $this>

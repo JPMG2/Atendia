@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TracksUserActions;
 use Database\Factories\CurrentStatusFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'color'])]
 class CurrentStatus extends Model
 {
     /** @use HasFactory<CurrentStatusFactory> */
     use HasFactory;
+
+    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    use SoftDeletes;
+    use TracksUserActions;
 
     /**
      * Paleta de un estado: se guarda la CLAVE de un token semántico, nunca un hex.

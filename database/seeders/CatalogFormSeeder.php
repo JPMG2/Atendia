@@ -28,9 +28,13 @@ class CatalogFormSeeder extends Seeder
             ['group' => 'Facturación', 'title' => 'Monedas', 'description' => 'Divisas ISO 4217 disponibles para precios y facturación.', 'component' => 'catalog.currency', 'permission_key' => 'catalog.currency', 'icon' => 'star', 'order' => 4],
             ['group' => 'Facturación', 'title' => 'Condiciones fiscales', 'description' => 'Definidas por país (responsable inscripto, monotributo…).', 'component' => 'catalog.tax-condition', 'permission_key' => 'catalog.tax-condition', 'icon' => 'shield-check', 'order' => 5],
 
+            // Negocio (lo que el negocio elige al configurarse)
+            ['group' => 'Negocio', 'title' => 'Rubros', 'description' => 'Agrupación mayor del negocio: Salud, Gastronomía, Belleza…', 'component' => 'catalog.business-sector', 'permission_key' => 'catalog.business-sector', 'icon' => 'store', 'order' => 6],
+            ['group' => 'Negocio', 'title' => 'Actividades', 'description' => 'El oficio concreto dentro del rubro. Define cómo atiende el asistente.', 'component' => 'catalog.business-activity', 'permission_key' => 'catalog.business-activity', 'icon' => 'workflow', 'order' => 7],
+
             // Sistema
-            ['group' => 'Sistema', 'title' => 'Estados', 'description' => 'Estados genéricos reutilizables por el sistema.', 'component' => 'catalog.status', 'permission_key' => 'catalog.status', 'icon' => 'check', 'order' => 6],
-            ['group' => 'Sistema', 'title' => 'Redes sociales', 'description' => 'Catálogo de redes con su URL base e ícono.', 'component' => 'catalog.social-network', 'permission_key' => 'catalog.social-network', 'icon' => 'message-circle', 'order' => 7],
+            ['group' => 'Sistema', 'title' => 'Estados', 'description' => 'Estados genéricos reutilizables por el sistema.', 'component' => 'catalog.status', 'permission_key' => 'catalog.status', 'icon' => 'check', 'order' => 8],
+            ['group' => 'Sistema', 'title' => 'Redes sociales', 'description' => 'Catálogo de redes con su URL base e ícono.', 'component' => 'catalog.social-network', 'permission_key' => 'catalog.social-network', 'icon' => 'message-circle', 'order' => 9],
         ];
 
         foreach ($catalogs as $catalog) {

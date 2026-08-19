@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TracksUserActions;
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -19,6 +21,9 @@ class Currency extends Model
     use HasFactory;
 
     use LogsActivity;
+    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    use SoftDeletes;
+    use TracksUserActions;
 
     /**
      * Auditoría del maestro: quién cambió qué y cuándo.
