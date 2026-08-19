@@ -37,7 +37,7 @@ test('an admin can access the catalogs page', function (): void {
     // The manager is a full-page Livewire component: its own heading and #[Title] must render.
     $this->actingAs($admin)->get('/admin/catalogs')
         ->assertOk()
-        ->assertSee('Configuración General')
+        ->assertSee(__('catalog.hub.title'))
         ->assertSee('<title>Catálogos del sistema</title>', false);
 });
 

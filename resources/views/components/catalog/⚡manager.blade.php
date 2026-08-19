@@ -93,8 +93,8 @@ new #[Title('Catálogos del sistema')] class extends Component {
 <div>
     <div class="page-head">
         <div>
-            <h1 class="page-head-title">Configuración General</h1>
-            <p class="page-head-sub">Elegí un maestro a la izquierda y configuralo a la derecha.</p>
+            <h1 class="page-head-title">{{ __('catalog.hub.title') }}</h1>
+            <p class="page-head-sub">{{ __('catalog.hub.subtitle') }}</p>
         </div>
     </div>
 
@@ -103,7 +103,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
              Se compacta a iconos mientras hay un maestro abierto y solo se
              re-expande al cerrarlo (el hover no cambia el ancho). --}}
         <div class="catalog-rail-slot">
-            <nav class="card catalog-list" aria-label="Maestros">
+            <nav class="card catalog-list" aria-label="{{ __('catalog.hub.rail_label') }}">
                 @forelse ($this->grouped as $group => $items)
                     <div class="catalog-group">
                         <p class="catalog-group-label">{{ $group }}</p>
@@ -118,7 +118,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
                         @endforeach
                     </div>
                 @empty
-                    <p class="catalog-group-label">Sin catálogos disponibles.</p>
+                    <p class="catalog-group-label">{{ __('catalog.hub.none') }}</p>
                 @endforelse
             </nav>
         </div>
@@ -134,7 +134,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
                         </h2>
                         <p>{{ $this->current->description }}</p>
                     </div>
-                    <button type="button" class="catalog-panel-close" wire:click="close" aria-label="Cerrar maestro">
+                    <button type="button" class="catalog-panel-close" wire:click="close" aria-label="{{ __('catalog.hub.close') }}">
                         <x-icon name="x" :size="18" />
                     </button>
                 </div>
@@ -142,8 +142,9 @@ new #[Title('Catálogos del sistema')] class extends Component {
                 <livewire:dynamic-component :is="$this->editorComponent" :wire:key="'editor-'.$this->current->id" lazy />
             @else
                 <div class="catalog-empty">
-                    <x-icon name="library" :size="34" />
-                    <p>Elegí un maestro para configurarlo.</p>
+                    <x-icon name="library" :size="32" />
+                    <p class="catalog-empty-title">{{ __('catalog.hub.empty_title') }}</p>
+                    <p class="catalog-empty-body">{{ __('catalog.hub.empty_body') }}</p>
                 </div>
             @endif
         </section>

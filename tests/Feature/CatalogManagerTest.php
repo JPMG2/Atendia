@@ -33,7 +33,10 @@ test('the hub shows the empty state with no master open by default', function ()
     Livewire::actingAs($this->admin)
         ->test('catalog.manager')
         ->assertSet('selectedId', null)
-        ->assertSee('Elegí un maestro para configurarlo.')
+        ->assertSee(__('catalog.hub.empty_title'))
+        // El vacío explica QUÉ es un catálogo, no repite la instrucción del
+        // encabezado: es lo primero que ve quien entra por primera vez.
+        ->assertSee(__('catalog.hub.empty_body'))
         ->assertDontSeeHtml('is-collapsed'); // rail expanded until a master is opened
 });
 
@@ -75,6 +78,6 @@ test('masters are hidden from a user without their permission', function (): voi
 
     Livewire::actingAs($client)
         ->test('catalog.manager')
-        ->assertSee('Sin catálogos disponibles.')
+        ->assertSee(__('catalog.hub.none'))
         ->assertDontSee('Monedas');
 });
