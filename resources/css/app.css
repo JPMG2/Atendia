@@ -830,25 +830,29 @@
      Redondea sus esquinas superiores igual que el pie las inferiores: el panel ya
      NO recorta con overflow (eso cortaba el desplegable del combobox), así que
      todo fondo que toque un borde del card tiene que redondearse solo. */
-  .catalog-panel-head { padding:20px 22px; background:var(--brand-soft);
+  .catalog-panel-head { padding:12px 20px; background:var(--brand-soft);
                         border-bottom:1px solid var(--brand-border);
                         border-top-left-radius:var(--radius-card);
                         border-top-right-radius:var(--radius-card);
                         display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
   .catalog-panel-head-text { min-width:0; }
-  .catalog-panel-head h2 { font-family:var(--font-display); font-size:var(--text-lg); color:var(--text-strong);
-                           display:flex; align-items:center; gap:10px; }
+  /* Compacta: son dos líneas de texto y un botón, no una portada. El interlineado
+     ajustado es lo que más baja el alto sin achicar la tipografía por debajo del
+     mínimo del sistema (14px para la descripción). */
+  .catalog-panel-head h2 { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong);
+                           line-height:var(--leading-snug); display:flex; align-items:center; gap:9px; }
   /* `--text-body`, no `--text-muted`: el muted es ink-500 y sobre el wash jade
      casi no se leía. Tampoco va en jade —el sistema reserva la marca para
      botones, links y estados activos; el texto va en Ink— porque una descripción
      de color de marca se lee como un enlace. */
-  .catalog-panel-head p { font-size:var(--text-sm); color:var(--text-body); margin-top:4px; max-width:52ch; }
+  .catalog-panel-head p { font-size:var(--text-sm); color:var(--text-body); line-height:var(--leading-snug);
+                          margin-top:2px; max-width:52ch; }
   .catalog-panel-icon { display:inline-flex; color:var(--brand); flex:none; }
   /* Sobre el wash jade el botón mantiene el fondo del card para seguir leyéndose
      como control; el borde y el hover pasan a la familia de marca porque un gris
      sobre jade se ve sucio. */
   .catalog-panel-close { flex:none; display:inline-flex; align-items:center; justify-content:center;
-                         width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--brand-border);
+                         width:30px; height:30px; border-radius:var(--radius-sm); border:1px solid var(--brand-border);
                          background:var(--surface-card); color:var(--text-muted); cursor:pointer;
                          transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
   .catalog-panel-close:hover { background:var(--brand-soft-hover); color:var(--brand-soft-text); }

@@ -136,7 +136,11 @@ test('the master header takes its colour from a brand token, never a hex', funct
     // color se lee como un enlace.
     $description = cssRule('.catalog-panel-head p');
 
-    expect($description)->toContain('color:var(--text-body)');
+    expect($description)->toContain('color:var(--text-body)')
+        // La cabecera se compactó bajando padding e interlineado, NO el cuerpo de
+        // letra: 14px (--text-sm) es el piso de UI del sistema de diseño. El
+        // próximo apretón tiene que salir del espacio, no del texto.
+        ->toContain('font-size:var(--text-sm)');
 });
 
 test('no catalog editor hand-assigns a width', function (): void {

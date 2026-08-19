@@ -129,7 +129,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
                 <div class="catalog-panel-head">
                     <div class="catalog-panel-head-text">
                         <h2>
-                            <span class="catalog-panel-icon"><x-icon :name="$this->current->icon ?? 'library'" :size="20" /></span>
+                            <span class="catalog-panel-icon"><x-icon :name="$this->current->icon ?? 'library'" :size="18" /></span>
                             {{ $this->current->title }}
                         </h2>
                         <p>{{ $this->current->description }}</p>
