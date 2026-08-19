@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\SocialNetworks;
+use App\Models\SocialNetwork;
 use Illuminate\Database\Seeder;
 
-class SocialNetworksSeeder extends Seeder
+class SocialNetworkSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -108,7 +108,7 @@ class SocialNetworksSeeder extends Seeder
         ];
 
         foreach ($networks as $network) {
-            SocialNetworks::query()->firstOrCreate(
+            SocialNetwork::query()->firstOrCreate(
                 ['name' => $network['name']],
                 [
                     'url' => $network['url'],

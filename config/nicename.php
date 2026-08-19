@@ -10,4 +10,7 @@ return [
     'is_active' => 'estado',
     'phone_code' => 'código telefónico',
     'currency_id' => 'moneda',
+    'url' => 'URL',
+    'icon' => 'ícono',
+    'abbreviation' => 'abreviatura',
 ];

@@ -107,4 +107,46 @@ return [
         'active_desc' => 'Disponible para elegir en direcciones y datos fiscales.',
     ],
 
+    'social_network' => [
+        'search_placeholder' => 'Buscar por nombre o abreviatura',
+        'search_label' => 'Buscar red social',
+        'singular' => 'red social',
+        'plural' => 'redes sociales',
+        'create' => 'Crear red social',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva red social',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay redes sociales que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'abbreviation' => 'Abrev.',
+            'url' => 'URL',
+            'icon' => 'Ícono',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Instagram',
+            'abbreviation' => 'Abreviatura',
+            'abbreviation_hint' => 'Corta: IG, FB, WA',
+            'url' => 'URL base',
+            'url_hint' => 'Con https://, la página principal de la red',
+            'icon' => 'Ícono',
+            // Infinitivo a propósito: "Elegí/Elige" obligaría a un override de
+            // voseo en es_AR solo por este placeholder.
+            'icon_placeholder' => 'Seleccionar ícono',
+            'icon_hint' => 'Glifos disponibles en el sistema',
+        ],
+
+        'active_title' => 'Red activa',
+        'active_desc' => 'Disponible para elegir en los datos de contacto del negocio.',
+    ],
+
 ];
