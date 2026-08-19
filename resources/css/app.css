@@ -82,6 +82,20 @@
   --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem; --space-12:3rem; --space-16:4rem;
   --space-20:5rem; --space-24:6rem; --space-32:8rem;
 
+  /* ---- Densidad — tablas y listas de datos ----
+     Escala única para todo el panel: tocar acá cambia TODAS las tablas.
+     `--row-h` es un alto MÍNIMO (una celda que envuelve crece sola); la
+     variante densa se pide con `.is-compact` sobre la tabla.
+     El texto de datos nunca baja de 14px (--text-sm): la densidad la dan el
+     alto de fila y el interlineado, no achicar la fuente. */
+  --row-h:36px; --row-h-compact:30px; --row-px:16px;
+  --table-head-h:32px;
+  /* Alto máximo del cuerpo de tabla antes de scrollear con el encabezado fijo.
+     Techo en px para que en un monitor grande la tabla no se estire sola. */
+  --table-scroll-h:clamp(280px, 56vh, 560px);
+  --table-text:var(--text-sm); --table-head-text:var(--text-2xs);
+  --table-leading:var(--leading-snug);
+
   /* ---- Radios ---- */
   --radius-xs:6px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px;
   --radius-2xl:28px; --radius-3xl:36px; --radius-pill:999px; --radius-card:var(--radius-lg);
@@ -304,6 +318,15 @@
   }
   .badge-brand  { background:var(--brand-soft); color:var(--brand-soft-text); }
   .badge-accent { background:var(--accent-soft); color:var(--accent-soft-text); }
+
+  /* ---- Chip de texto mono (log, payload, valor crudo) ----
+     Texto técnico dentro de una caja suave. NO confundir con `.catalog-code`:
+     ese es el código de una fila de tabla y va mono pelado, porque en una tabla
+     sin grilla una columna de cajitas se convierte en la grilla nueva. */
+  .code-chip { font-family:var(--font-mono); font-size:var(--text-xs); font-weight:600;
+               letter-spacing:.02em; color:var(--text-strong); background:var(--surface-sunken);
+               border:1px solid var(--border-subtle); border-radius:var(--radius-sm);
+               padding:6px 10px; }
 
   /* ---- Eyebrow con barrita ---- */
   .eyebrow-line { display:inline-flex; align-items:center; gap:.5rem; }
@@ -817,23 +840,37 @@
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
   .catalog-count b { color:var(--text-body); font-weight:700; }
 
-  .catalog-table-wrap { overflow-x:auto; }
-  .catalog-table { width:100%; border-collapse:collapse; min-width:560px; }
-  .catalog-table thead th { font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em;
+  /* Tabla "cell-less": SIN grilla. La estructura la dan la alineación de las
+     columnas y el hover de la fila, no las líneas. La única hairline es la que
+     separa el encabezado de los datos; abajo cierra el borde del card. Menos
+     tinta = menos carga visual con muchas filas (200 países se leen de un saque). */
+  /* El cuerpo scrollea DENTRO del card (no la página): así la barra de búsqueda,
+     el contador y el botón de alta quedan siempre a la vista con 200 países. */
+  .catalog-table-wrap { max-height:var(--table-scroll-h); overflow:auto; }
+  .catalog-table { width:100%; border-collapse:collapse; min-width:560px;
+                   font-size:var(--table-text); line-height:var(--table-leading);
+                   font-variant-numeric:tabular-nums; }
+  /* Encabezado fijo. La hairline va por `box-shadow` y no por `border-bottom`:
+     con `border-collapse:collapse` el borde de una celda sticky se queda pegado
+     arriba y desaparece apenas scrolleás. El fondo opaco es obligatorio, si no
+     las filas se ven pasar por debajo del texto de las columnas. */
+  .catalog-table thead th { font-size:var(--table-head-text); font-weight:700; letter-spacing:.06em;
                             text-transform:uppercase; color:var(--text-subtle); text-align:left;
-                            padding:6px 16px; border-bottom:1px solid var(--border-subtle);
-                            background:var(--surface-sunken); white-space:nowrap; }
+                            height:var(--table-head-h); padding:0 var(--row-px);
+                            position:sticky; top:0; z-index:1; background:var(--surface-card);
+                            box-shadow:inset 0 -1px 0 var(--border-subtle); white-space:nowrap; }
   .catalog-table thead th.is-num { text-align:right; }
-  .catalog-table tbody td { padding:6px 16px; border-bottom:1px solid var(--border-subtle);
-                            vertical-align:middle; }
+  /* `height` en una celda = alto MÍNIMO: la fila que envuelve el nombre crece sola. */
+  .catalog-table tbody td { height:var(--row-h); padding:0 var(--row-px); vertical-align:middle; }
+  .catalog-table.is-compact tbody td { height:var(--row-h-compact); }
   .catalog-table tbody tr { cursor:pointer; transition:background var(--dur-fast) var(--ease-out); }
   .catalog-table tbody tr:hover { background:var(--surface-sunken); }
   .catalog-table tbody tr:hover .catalog-row-go { opacity:1; transform:none; }
-  .catalog-table tbody tr:hover .catalog-code { background:var(--surface-card); }
+  /* Mono pelado, sin caja: en una tabla sin grilla el chip con borde se
+     convertía en la grilla nueva — una escalera de cajitas que pesaba más que
+     el dato. El mono ya distingue al código del nombre; no hace falta encerrarlo. */
   .catalog-code { font-family:var(--font-mono); font-size:var(--text-xs); font-weight:600;
-                  letter-spacing:.02em; color:var(--text-strong); background:var(--surface-sunken);
-                  border:1px solid var(--border-subtle); border-radius:var(--radius-sm);
-                  padding:2px 9px; display:inline-block; }
+                  letter-spacing:.04em; color:var(--text-strong); }
   .catalog-cell-name { color:var(--text-strong); font-weight:600; }
   .catalog-cell-sym { font-family:var(--font-mono); color:var(--text-body); }
   .catalog-cell-num { text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
@@ -854,7 +891,12 @@
   .catalog-table tbody td { white-space:nowrap; }
   .catalog-table .catalog-col-name,
   .catalog-table .catalog-cell-name { width:100%; white-space:normal; }
-  .catalog-table-empty { text-align:center; color:var(--text-muted); padding:24px 16px; }
+  /* Selector completo a propósito: `.catalog-table tbody td` es más específico,
+     así que un `.catalog-table-empty` suelto perdía y el vacío quedaba con el
+     alto de una fila normal en vez de respirar. */
+  .catalog-table tbody td.catalog-table-empty { height:auto; padding:28px var(--row-px);
+                                                text-align:center; color:var(--text-muted); }
+  .catalog-table tbody tr:has(.catalog-table-empty) { cursor:default; background:none; }
 
   .catalog-formbar { display:flex; align-items:center; gap:12px; padding:14px 20px;
                      border-bottom:1px solid var(--border-subtle); }

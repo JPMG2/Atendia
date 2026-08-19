@@ -84,7 +84,7 @@ new class extends Component {
 
         <ul style="display:flex; flex-direction:column; gap:6px">
             @forelse ($messages as $message)
-                <li class="catalog-code">{{ $message }}</li>
+                <li class="code-chip">{{ $message }}</li>
             @empty
                 <li class="field-hint">Todavía no llegó nada.</li>
             @endforelse
