@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\Province;
 use App\Models\Region;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\Livewire;
 use Mockery\MockInterface;
@@ -31,14 +32,51 @@ test('the region table hands its rows to Alpine so the search filters client-sid
         ->toContain($region->name);
 });
 
-test('every row carries its id and its province name', function (): void {
-    $province = Province::factory()->create(['name' => 'Buenos Aires']);
+test('every row carries its id, its province AND its country', function (): void {
+    // A region hangs off a province and the province off a country. Without the
+    // country in the row you have to know by heart which country each province
+    // belongs to in order to read the list.
+    $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
+    $province = Province::factory()->create(['name' => 'Buenos Aires', 'country_id' => $country->id]);
     $region = Region::factory()->create(['name' => 'Zona Norte', 'province_id' => $province->id]);
 
     $rows = Livewire::test('catalog.region')->get('initialRows');
 
     expect($rows[0]['id'])->toBe($region->id)
-        ->and($rows[0]['province'])->toBe('Buenos Aires');
+        ->and($rows[0]['province'])->toBe('Buenos Aires')
+        ->and($rows[0]['country'])->toBe('Argentina');
+});
+
+test('the country of every region is eager loaded, not queried once per row', function (): void {
+    // The country reaches the row through province.country. Resolved lazily that
+    // would be extra queries PER REGION, and this master lists hundreds of them.
+    // The count is compared between one region and many instead of pinned to a
+    // number, so the combobox that also queries provinces does not distort it.
+    $province = Province::factory()->create(['name' => 'Buenos Aires']);
+
+    $countQueries = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        Livewire::test('catalog.region')->get('initialRows');
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
+    };
+
+    Region::factory()->create(['province_id' => $province->id]);
+    $withOne = $countQueries();
+
+    Region::factory()->count(20)->create(['province_id' => $province->id]);
+    $withTwentyOne = $countQueries();
+
+    expect($withTwentyOne)->toBe($withOne);
+});
+
+test('the region table shows the country as its own column', function (): void {
+    expect(Livewire::test('catalog.region')->html())
+        ->toContain(__('catalog.region.columns.country'))
+        ->toContain('x-text="row.country"');
 });
 
 test('the region editor renders its real inputs', function (): void {

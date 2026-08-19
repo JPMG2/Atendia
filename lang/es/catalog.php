@@ -192,6 +192,7 @@ return [
         'columns' => [
             'name' => 'Nombre',
             'province' => 'Provincia',
+            'country' => 'País',
             'status' => 'Estado',
         ],
 

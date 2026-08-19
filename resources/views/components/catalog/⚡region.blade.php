@@ -121,13 +121,20 @@ new class extends Component {
      * El `id` viaja siempre: es la única clave estable para editar. El `name` es
      * editable por el usuario, así que no sirve para identificar la fila.
      *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, province: string, active: bool}>
+     * La región cuelga de una provincia y la provincia de un país. El país viaja
+     * en la fila —y no solo la provincia— porque si no hay que saberse de memoria
+     * a qué país pertenece cada provincia para entender la lista.
+     *
+     * `country_id` va en el select de la provincia a propósito: sin esa columna
+     * Eloquent no puede resolver el `belongsTo` al país y `country` volvería vacío.
+     *
+     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, province: string, country: string, active: bool}>
      */
     #[Computed]
     public function regions(): \Illuminate\Support\Collection
     {
         return Region::query()
-            ->with('province:id,name')
+            ->with(['province:id,name,country_id', 'province.country:id,name'])
             ->orderBy('name')
             ->get()
             ->map(
@@ -135,6 +142,7 @@ new class extends Component {
                     'id' => $region->id,
                     'name' => $region->name,
                     'province' => $region->province?->name ?? '',
+                    'country' => $region->province?->country?->name ?? '',
                     'active' => $region->is_active,
                 ],
             )
@@ -172,7 +180,7 @@ new class extends Component {
 ?>
 
 <x-catalog.master :rows="$initialRows" path="form.regionData"
-    :blank="['name' => '', 'province' => '', 'active' => true]"
+    :blank="['name' => '', 'province' => '', 'country' => '', 'active' => true]"
     :search="['name', 'province']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -188,10 +196,12 @@ new class extends Component {
         <x-catalog.table :empty="__('catalog.region.empty')" :columns="[
             ['label' => __('catalog.region.columns.name'), 'class' => 'catalog-col-name'],
             ['label' => __('catalog.region.columns.province')],
+            ['label' => __('catalog.region.columns.country')],
             ['label' => __('catalog.region.columns.status')],
         ]">
             <td class="catalog-cell-name" x-text="row.name"></td>
             <td x-text="row.province"></td>
+            <td x-text="row.country"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
                     <span class="dot"></span><span
