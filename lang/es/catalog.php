@@ -147,4 +147,130 @@ return [
         ],
     ],
 
+    'province' => [
+        'search_placeholder' => 'Buscar por nombre o país',
+        'search_label' => 'Buscar provincia',
+        'singular' => 'provincia',
+        'plural' => 'provincias',
+        'create' => 'Crear provincia',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva provincia',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay provincias que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'country' => 'País',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Buenos Aires',
+            'country' => 'País',
+            'country_placeholder' => 'Seleccionar país',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'region' => [
+        'search_placeholder' => 'Buscar por nombre o provincia',
+        'search_label' => 'Buscar región',
+        'singular' => 'región',
+        'plural' => 'regiones',
+        'create' => 'Crear región',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva región',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay regiones que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'province' => 'Provincia',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Zona Norte',
+            'province' => 'Provincia',
+            'province_placeholder' => 'Seleccionar provincia',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'tax_condition' => [
+        'search_placeholder' => 'Buscar por código o nombre',
+        'search_label' => 'Buscar condición fiscal',
+        'singular' => 'condición fiscal',
+        'plural' => 'condiciones fiscales',
+        'create' => 'Crear condición',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva condición fiscal',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay condiciones fiscales que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Código',
+            'name' => 'Nombre',
+            'country' => 'País',
+            'discriminate_tax' => 'Discrimina',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        // Sí/No para el switch de discriminación: no es un estado de alta/baja,
+        // es una característica de la condición fiscal.
+        'discriminate' => [
+            'yes' => 'Sí',
+            'no' => 'No',
+        ],
+
+        'fields' => [
+            'code' => 'Código',
+            'code_hint' => 'Corto: RI, MT, EX',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Responsable Inscripto',
+            'country' => 'País',
+            'country_placeholder' => 'Seleccionar país',
+            'discriminate_tax' => 'Discrimina impuesto',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'status' => [
+        'search_placeholder' => 'Buscar por nombre',
+        'search_label' => 'Buscar estado',
+        'singular' => 'estado',
+        'plural' => 'estados',
+        'create' => 'Crear estado',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo estado',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay estados que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Nombre',
+        ],
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. En proceso',
+        ],
+    ],
+
 ];

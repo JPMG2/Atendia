@@ -162,4 +162,4 @@ test('every catalog editor renders through the shared table', function (string $
 
     expect($blade)->toContain('<x-catalog.table')
         ->not->toContain('class="catalog-table"');
-})->with(['currency', 'country', 'social-network']);
+})->with(['currency', 'country', 'social-network', 'province', 'region', 'tax-condition', 'status']);

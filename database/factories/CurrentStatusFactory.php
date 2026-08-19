@@ -20,7 +20,9 @@ class CurrentStatusFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            // `name` es UNIQUE en la tabla, así que tiene que serlo acá o dos
+            // estados creados en el mismo test revientan contra la constraint.
+            'name' => $this->faker->unique()->word(),
         ];
     }
 }

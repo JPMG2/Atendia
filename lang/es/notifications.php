@@ -14,6 +14,7 @@ return [
         'region' => 'Región',
         'tax_condition' => 'Condición fiscal',
         'social_network' => 'Red social',
+        'status' => 'Estado',
         'blood_type' => 'Tipo sangre',
         'document_type' => 'Tipo documento',
         'gender' => 'Género',
