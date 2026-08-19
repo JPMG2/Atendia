@@ -264,6 +264,17 @@ test('creating a social network hands the refreshed rows back to Alpine', functi
         );
 });
 
+test('the success toast names the entity instead of saying "Registro"', function (): void {
+    // NotificationService maps the TABLE to its Spanish name and gender. A master
+    // whose table is missing from that map still saves fine and still shows a green
+    // toast — it just calls the record "Registro", and nothing else catches it.
+    Livewire::test('catalog.social-network')
+        ->set('form.socialNetworkData.name', 'Instagram')
+        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->call('create')
+        ->assertDispatched('notify', type: 'success', message: 'Red social creada correctamente');
+});
+
 test('the table listens for the refreshed rows event', function (): void {
     expect(Livewire::test('catalog.social-network')->html())
         ->toContain('x-on:social-networks-refreshed="items = $event.detail.socialNetworks"');

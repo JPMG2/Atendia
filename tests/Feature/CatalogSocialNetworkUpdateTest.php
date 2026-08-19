@@ -150,6 +150,18 @@ test('asking to update with no record loaded warns instead of throwing a TypeErr
         ->assertDispatched('notify', type: 'error', message: __('notifications.not_found'));
 });
 
+test('the update toast is announced in the feminine', function (): void {
+    // "Red social" is feminine: the map has to say so, or the toast reads
+    // "Red social actualizado correctamente".
+    $network = SocialNetwork::factory()->create(['name' => 'Instagram']);
+
+    Livewire::test('catalog.social-network')
+        ->call('openEdit', $network->id)
+        ->set('form.socialNetworkData.name', 'Threads')
+        ->call('update')
+        ->assertDispatched('notify', type: 'success', message: 'Red social actualizada correctamente');
+});
+
 test('updating a network hands the refreshed rows back to Alpine', function (): void {
     $network = SocialNetwork::factory()->create(['name' => 'Instagram']);
 

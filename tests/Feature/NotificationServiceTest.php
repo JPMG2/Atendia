@@ -21,6 +21,12 @@ class FeminineFake extends Model
     protected $table = 'provinces';
 }
 
+/** Every catalog master needs its own row in the table map, or the toast says "Registro". */
+class SocialNetworkFake extends Model
+{
+    protected $table = 'social_networks';
+}
+
 /** Build a model that reports itself as changed, without touching the database. */
 function changedModel(string $class): Model
 {
@@ -104,4 +110,34 @@ test('notificationFor routes delete-style actions to the deleted handler', funct
 test('notificationFor throws for a disallowed action', function (): void {
     expect(fn () => (new NotificationService)->notificationFor(new MasculineFake, 'explode'))
         ->toThrow(InvalidArgumentException::class, 'Acción no permitida: explode');
+});
+
+// --- table map coverage -----------------------------------------------------
+
+test('a table missing from the map falls back to the generic record', function (): void {
+    // This is the failure mode the map exists to prevent: a new master whose
+    // table was never mapped announces itself as "Registro creado correctamente"
+    // instead of naming the entity, and nothing fails to warn about it.
+    $unmapped = new class extends Model
+    {
+        protected $table = 'widgets';
+    };
+    $unmapped->wasRecentlyCreated = true;
+
+    expect((new NotificationService)->created($unmapped))
+        ->toEqual(new NotificationDto('Registro creado correctamente', NotificationType::Success));
+});
+
+test('social networks are announced by name, in the feminine', function (): void {
+    $model = new SocialNetworkFake;
+    $model->wasRecentlyCreated = true;
+
+    expect((new NotificationService)->created($model))
+        ->toEqual(new NotificationDto('Red social creada correctamente', NotificationType::Success));
+
+    expect((new NotificationService)->updated(changedModel(SocialNetworkFake::class)))
+        ->toEqual(new NotificationDto('Red social actualizada correctamente', NotificationType::Success));
+
+    expect((new NotificationService)->deleted(new SocialNetworkFake))
+        ->toEqual(new NotificationDto('Red social eliminada correctamente', NotificationType::Success));
 });
