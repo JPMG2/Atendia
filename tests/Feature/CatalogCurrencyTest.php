@@ -35,8 +35,8 @@ test('the currency table hands its rows to Alpine so the search filters client-s
     // the search box filters without a round-trip to the server.
     $html = Livewire::test('catalog.currency')->html();
 
-    expect($html)->toContain('x-for="c in filtered()"')
-        ->toContain('x-data="currencyMaster(')
+    expect($html)->toContain('x-for="row in filtered()"')
+        ->toContain('x-data="catalogMaster(')
         ->toContain($currency->name);
 });
 
@@ -47,10 +47,10 @@ test('every row carries its id, because the code is user-editable and cannot ide
     // reference to the row it came from.
     $html = Livewire::test('catalog.currency')->html();
 
-    expect($html)->toContain(':key="c.id"');
+    expect($html)->toContain(':key="row.id"');
 
     // @js escapes the payload for a JS string literal, so unwrap it before asserting.
-    preg_match("/currencyMaster\(JSON\.parse\('(.*?)'\)\)/", $html, $matches);
+    preg_match("/items: JSON\.parse\('(.*?)'\)/", $html, $matches);
     $payload = json_decode(json_decode('"'.$matches[1].'"'), true);
 
     expect($payload)->toHaveCount(1)
@@ -70,16 +70,16 @@ test('the currency editor renders its real inputs', function (): void {
         ->assertSee('Nombre')
         ->assertSee('Símbolo')
         ->assertSee('Decimales')
-        ->assertSee('Moneda activa');
+        ->assertSee('Estado');
 });
 
 test('the currency maqueta seeds its editor with sensible defaults', function (): void {
-    // Defaults now live in the CurrencyDto / Alpine maqueta state, not on the
-    // component: a new row starts with 2 decimals and active on.
-    $html = Livewire::test('catalog.currency')->html();
+    // Los defaults del alta ya no son literales sueltos en el @script de cada
+    // editor: viajan en la config `blank` que se le pasa al riel compartido.
+    $blank = railConfig(Livewire::test('catalog.currency')->html(), 'blank');
 
-    expect($html)->toContain('decimals: 2')
-        ->toContain('active: true');
+    expect($blank['decimals'])->toBe(2)
+        ->and($blank['active'])->toBeTrue();
 });
 
 test('the currency form wires the front-end validation (Alpine component + per-input error)', function (): void {
@@ -182,8 +182,8 @@ test('creating a currency hands the refreshed rows back to Alpine', function ():
         ->set('form.currencyData.is_active', true)
         ->call('create')
         ->assertDispatched(
-            'currencies-refreshed',
-            fn (string $event, array $params): bool => collect($params['currencies'])
+            'catalog-rows-refreshed',
+            fn (string $event, array $params): bool => collect($params['rows'])
                 ->pluck('code')
                 ->all() === ['ARS', 'USD'],
         );
@@ -191,7 +191,7 @@ test('creating a currency hands the refreshed rows back to Alpine', function ():
 
 test('the table listens for the refreshed rows event', function (): void {
     expect(Livewire::test('catalog.currency')->html())
-        ->toContain('x-on:currencies-refreshed="items = $event.detail.currencies"');
+        ->toContain('x-on:catalog-rows-refreshed="items = $event.detail.rows"');
 });
 
 test('a failed save keeps what the user typed instead of wiping the form', function (): void {
@@ -210,7 +210,7 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         // Nothing was saved, so the table must not be reloaded either.
-        ->assertNotDispatched('currencies-refreshed')
+        ->assertNotDispatched('catalog-rows-refreshed')
         ->assertSet('form.currencyData.code', 'USD')
         ->assertSet('form.currencyData.name', 'Dólar Estadounidense')
         ->assertSet('form.currencyData.symbol', 'US$');
@@ -241,13 +241,13 @@ test('every visible string comes from a lang file, so the regional variants can 
 });
 
 test('the Alpine ternaries get their copy from lang too, not from hardcoded JS literals', function (): void {
-    // Checked on the SOURCE, not on the output: @js(__('...')) renders to 'Editando',
-    // byte for byte the same as the hardcoded literal, so the HTML cannot tell them
-    // apart. x-text expressions are the easiest place to leave copy behind.
+    // Checked on the SOURCE, not on the output: Js::from(__('...')) renders to
+    // 'Activa', byte for byte the same as the hardcoded literal, so the HTML cannot
+    // tell them apart. x-text expressions are the easiest place to leave copy behind.
+    // The chrome copy ("Editando", "Guardar cambios") moved to the shared
+    // <x-catalog.form-shell> and is covered by CatalogComponentsTest.
     $source = file_get_contents(resource_path('views/components/catalog/⚡currency.blade.php'));
 
-    expect($source)->not->toContain("? 'Editando' : 'Nueva'")
-        ->not->toContain("? 'Activa' : 'Inactiva'")
-        ->not->toContain("? 'Guardar cambios' : 'Crear moneda'")
-        ->toContain("@js(__('catalog.common.editing'))");
+    expect($source)->not->toContain("? 'Activa' : 'Inactiva'")
+        ->toContain("Js::from(__('catalog.currency.status.active'))");
 });

@@ -170,8 +170,8 @@ test('updating a network hands the refreshed rows back to Alpine', function (): 
         ->set('form.socialNetworkData.name', 'Threads')
         ->call('update')
         ->assertDispatched(
-            'social-networks-refreshed',
-            fn (string $event, array $params): bool => collect($params['socialNetworks'])
+            'catalog-rows-refreshed',
+            fn (string $event, array $params): bool => collect($params['rows'])
                 ->pluck('name')
                 ->all() === ['Threads'],
         );

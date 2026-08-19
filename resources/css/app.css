@@ -366,6 +366,19 @@
 
   /* inputsform: la descripción y el error coexisten apilados (nunca se solapan) */
   .field-meta { display:flex; flex-direction:column; gap:.1875rem; }
+
+  /* ---- Switch con forma de campo ----
+     El estado ("Moneda activa") vivía en un bloque a lo ancho al pie del form:
+     ocupaba una fila entera para un booleano y empujaba todo lo demás hacia
+     arriba, angosto. Con la misma caja y la misma altura que un input, el
+     estado entra en la fila como un control más y cierra la línea en vez de
+     partirla. La palabra a la izquierda dice el valor SIN tener que leer la
+     perilla — y es la misma que muestra la columna Estado de la tabla. */
+  .field-control.field-switch { justify-content:space-between; gap:.75rem; }
+  .field-switch-state { font-size:var(--text-sm); font-weight:var(--weight-semibold);
+                        color:var(--text-body); white-space:nowrap; overflow:hidden;
+                        text-overflow:ellipsis; }
+  .field-control.field-switch:has(input:checked) .field-switch-state { color:var(--brand-soft-text); }
   /* Estados */
   .field-control.is-readonly { background:var(--surface-sunken); }
   .field-control.is-disabled { background:var(--surface-sunken); opacity:.55; cursor:not-allowed; }
@@ -773,7 +786,11 @@
   .catalog-hub.is-collapsed .catalog-item { justify-content:center; padding:11px 0; gap:0; }
 
   /* Editor: ocupa el ancho restante y se re-acomoda solo cuando el riel cambia */
-  .catalog-panel { flex:1 1 auto; min-width:0; min-height:420px; overflow:hidden; }
+  /* Sin `min-height`: con el formulario compactado en una sola fila, un alto
+     mínimo dejaba una franja blanca muerta debajo del pie de acciones. El panel
+     ya se estira solo hasta la altura del riel (son hermanos flex), y el estado
+     vacío tiene su propio min-height. */
+  .catalog-panel { flex:1 1 auto; min-width:0; overflow:hidden; }
   .catalog-panel-head { padding:20px 22px; border-bottom:1px solid var(--border-subtle);
                         display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
   .catalog-panel-head-text { min-width:0; }
@@ -794,27 +811,44 @@
   .catalog-form,
   .catalog-empty { animation:catalog-panel-in var(--dur-base) var(--ease-out) both; }
 
-  .catalog-form { padding:24px; display:grid; grid-template-columns:repeat(12, minmax(0,1fr));
-                  gap:18px 20px; align-items:start; }
-  .catalog-form .col-1  { grid-column:span 1; }
-  .catalog-form .col-2  { grid-column:span 2; }
-  .catalog-form .col-3  { grid-column:span 3; }
-  .catalog-form .col-4  { grid-column:span 4; }
-  .catalog-form .col-5  { grid-column:span 5; }
-  .catalog-form .col-6  { grid-column:span 6; }
-  .catalog-form .col-7  { grid-column:span 7; }
-  .catalog-form .col-8  { grid-column:span 8; }
-  .catalog-form .col-9  { grid-column:span 9; }
-  .catalog-form .col-10 { grid-column:span 10; }
-  .catalog-form .col-11 { grid-column:span 11; }
-  .catalog-form .col-12 { grid-column:1 / -1; }
-  .catalog-form .field-wide { grid-column:1 / -1; }
-  .catalog-form-actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:10px;
-                          margin-top:6px; padding-top:18px; border-top:1px solid var(--border-subtle); }
+  /* ---- Formulario de maestro: filas DECLARADAS, no adivinadas ----
+     Las filas las arma el autor con `.form-row`, no el wrap del navegador. Con
+     wrap automático el corte dependía del ancho de la pantalla: en un monitor
+     grande entraba todo en una línea y en un notebook el último campo —casi
+     siempre el estado— caía solo a una fila entera. Un formulario no puede
+     cambiar de forma según quién lo mire.
+     Dentro de la fila el ancho NO se reparte en columnas: cada campo declara
+     cuánto CONTENIDO necesita y el sobrante se lo lleva el descriptivo, así que
+     la fila siempre cierra contra el borde derecho. */
+  .catalog-form { padding:24px; display:flex; flex-direction:column; gap:26px; }
+  .catalog-form .form-row { display:flex; flex-wrap:wrap; gap:18px 20px; align-items:flex-start; }
+  .catalog-form .form-row > * { min-width:0; }
+
+  /* La separación ENTRE filas (26px) es mayor que la que hay entre un control y
+     su propio mensaje (6px) y que la de una fila que envuelve (18px). No es
+     estética: cuando un campo muestra su error, el campo crece y el mensaje
+     queda flotando entre dos filas. Si las tres distancias son parecidas, el
+     ojo no sabe a qué campo pertenece el error. Por proximidad, el mensaje
+     tiene que estar SIEMPRE mucho más cerca de su input que de la fila de
+     abajo. Por eso tampoco se reserva un renglón fijo bajo cada campo: eso
+     agregaría aire muerto en todas las filas para un error que casi nunca está. */
+
+  /* Vocabulario de tamaño POR CONTENIDO. Un maestro elige qué ES el campo (un
+     código, un nombre, una URL), nunca cuánto mide. El `grow` decide quién se
+     queda con el sobrante de la fila: el nombre sí, el código de 3 letras no. */
+  .catalog-form .f-code  { flex:0 1 150px; }  /* ARS · +54 · 2 decimales · IG */
+  .catalog-form .f-short { flex:1 1 160px; }  /* estado, enteros cortos */
+  .catalog-form .f-text  { flex:5 1 220px; }  /* nombre, moneda, select descriptivo */
+  .catalog-form .f-long  { flex:8 1 280px; }  /* URL, dirección, texto largo */
+  .catalog-form .f-full  { flex:1 1 100%; }   /* fuerza línea propia (textarea) */
+
+  /* En mobile cada campo toma la fila entera: apilar es más legible que exprimir
+     cinco controles en 360px. */
   @media (max-width:680px) {
-    .catalog-form { grid-template-columns:1fr; padding:20px; }
-    .catalog-form > * { grid-column:1 / -1; }
+    .catalog-form { padding:20px; }
+    .catalog-form .form-row > * { flex-basis:100%; }
   }
+
   .catalog-empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
                    gap:12px; padding:56px 22px; text-align:center; color:var(--text-muted);
                    min-height:280px; }
@@ -828,7 +862,6 @@
     .catalog-hub.is-collapsed .catalog-group-label { opacity:1; height:auto; padding:10px 12px 4px; }
     .catalog-hub.is-collapsed .catalog-group-rule { display:none; }
     .catalog-hub.is-collapsed .catalog-item { justify-content:flex-start; padding:10px 12px; }
-    .catalog-form { grid-template-columns:1fr; }
   }
   /* ---- Maestro: tabla (mostrar) ⇄ formulario (crear/editar) ---- */
   .catalog-view { animation:catalog-panel-in var(--dur-base) var(--ease-out) both; }
@@ -913,22 +946,12 @@
                         font-weight:700; }
   .catalog-form-title .mono { font-family:var(--font-mono); color:var(--brand-soft-text); }
 
-  .catalog-master .catalog-form { max-width:680px; }
-  .catalog-switch-row { display:flex; align-items:center; justify-content:space-between; gap:14px;
-                        padding:14px 16px; border:1px solid var(--border-subtle);
-                        border-radius:var(--radius-md); background:var(--surface-sunken); }
-  .catalog-switch-title { color:var(--text-strong); font-weight:600; }
-  .catalog-switch-desc { font-size:var(--text-2xs); color:var(--text-muted); margin-top:1px; }
 
   .catalog-form-foot { display:flex; align-items:center; gap:10px; padding:16px 20px;
                        border-top:1px solid var(--border-subtle); background:var(--surface-sunken); }
   .catalog-foot-grow { flex:1 1 auto; }
   .catalog-btn-danger { color:var(--danger); }
   .catalog-btn-danger:hover { background:var(--danger-soft); }
-
-  @media (max-width:680px) {
-    .catalog-master .catalog-form { max-width:none; }
-  }
 
   @media (prefers-reduced-motion:reduce) {
     .catalog-rail-slot { transition:none; }

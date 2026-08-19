@@ -10,6 +10,7 @@
     'value' => null,       // opción preseleccionada (su `value`)
     'placeholder' => null,
     'empty' => null,       // texto cuando la búsqueda no encuentra nada
+    'span' => 'text',      // ancho POR CONTENIDO: code | short | text | long | full
 ])
 
 @php
@@ -49,9 +50,15 @@
     $errId = $id ? $id.'-err' : null;
     $listId = $id ? $id.'-list' : null;
     $describedBy = trim(($error && $errId ? $errId.' ' : '').($hint && $descId ? $descId : '')) ?: null;
+
+    // El ancho de un campo se declara por lo que el campo ES, nunca en columnas:
+    // `.catalog-form` reparte el sobrante y así ninguna fila queda ragged a la
+    // derecha. Mapa (no concatenación) para que un valor inválido caiga al default.
+    $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
+        'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp
 
-<div class="field combo" x-data="inputsformCombobox({ options: {{ \Illuminate\Support\Js::from($normalizedOptions) }}, initial: {{ \Illuminate\Support\Js::from($value) }} })"
+<div class="field combo {{ $spanClass }}" x-data="inputsformCombobox({ options: {{ \Illuminate\Support\Js::from($normalizedOptions) }}, initial: {{ \Illuminate\Support\Js::from($value) }} })"
     x-on:keydown.escape.stop="closePanel()" x-on:click.outside="closePanel()">
     @if ($label)
         <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>

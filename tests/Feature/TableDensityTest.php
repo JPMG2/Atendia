@@ -154,7 +154,12 @@ test('the boxed mono chip lives on its own class', function () {
 });
 
 test('every catalog editor renders through the shared table', function (string $editor) {
+    // Antes se comprobaba que el editor CONTUVIERA `class="catalog-table"`. Ahora
+    // la tabla es un componente: el editor tiene que USARLA, y no puede volver a
+    // declarar la suya — que es lo que hacía que un arreglo en una no llegara a
+    // las otras dos.
     $blade = File::get(resource_path("views/components/catalog/⚡{$editor}.blade.php"));
 
-    expect($blade)->toContain('class="catalog-table"');
+    expect($blade)->toContain('<x-catalog.table')
+        ->not->toContain('class="catalog-table"');
 })->with(['currency', 'country', 'social-network']);

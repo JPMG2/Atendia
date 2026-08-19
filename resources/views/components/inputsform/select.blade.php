@@ -8,6 +8,7 @@
     'size' => 'm',         // s | m | l
     'options' => [],       // ['a' => 'Label'] | ['a','b'] | [['value'=>..,'label'=>..]]
     'placeholder' => null,
+    'span' => 'text',      // ancho POR CONTENIDO: code | short | text | long | full
 ])
 
 @php
@@ -34,9 +35,15 @@
     $descId = $id ? $id.'-desc' : null;
     $errId = $id ? $id.'-err' : null;
     $describedBy = trim(($error && $errId ? $errId.' ' : '').($hint && $descId ? $descId : '')) ?: null;
+
+    // El ancho de un campo se declara por lo que el campo ES, nunca en columnas:
+    // `.catalog-form` reparte el sobrante y así ninguna fila queda ragged a la
+    // derecha. Mapa (no concatenación) para que un valor inválido caiga al default.
+    $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
+        'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp
 
-<div class="field">
+<div class="field {{ $spanClass }}">
     @if ($label)
         <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
     @endif

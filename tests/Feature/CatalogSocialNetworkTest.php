@@ -34,8 +34,8 @@ test('the social network table hands its rows to Alpine so the search filters cl
     // the search box filters without a round-trip to the server.
     $html = Livewire::test('catalog.social-network')->html();
 
-    expect($html)->toContain('x-for="n in filtered()"')
-        ->toContain('x-data="socialNetworkMaster(')
+    expect($html)->toContain('x-for="row in filtered()"')
+        ->toContain('x-data="catalogMaster(')
         ->toContain($network->name);
 });
 
@@ -46,10 +46,10 @@ test('every row carries its id, because the name is user-editable and cannot ide
     // stable reference to the row it came from.
     $html = Livewire::test('catalog.social-network')->html();
 
-    expect($html)->toContain(':key="n.id"');
+    expect($html)->toContain(':key="row.id"');
 
-    // @js escapes the payload for a JS string literal, so unwrap it before asserting.
-    preg_match("/socialNetworkMaster\(JSON\.parse\('(.*?)'\)\)/", $html, $matches);
+    // Js::from escapes the payload for a JS string literal, so unwrap it before asserting.
+    preg_match("/items: JSON\.parse\('(.*?)'\)/", $html, $matches);
     $payload = json_decode(json_decode('"'.$matches[1].'"'), true);
 
     expect($payload)->toHaveCount(1)
@@ -80,7 +80,7 @@ test('the social network editor renders its real inputs', function (): void {
         ->assertSee('Abreviatura')
         ->assertSee('URL base')
         ->assertSee('Ícono')
-        ->assertSee('Red activa');
+        ->assertSee('Estado');
 });
 
 test('the icon combobox offers the glyphs registered in config/icons.php', function (): void {
@@ -97,9 +97,8 @@ test('the social network editor seeds itself with sensible defaults', function (
     // with no icon picked yet.
     $component = Livewire::test('catalog.social-network');
 
-    // Quotes are HTML-escaped inside the @script payload, so the Alpine default is
-    // asserted on the only literal that survives verbatim.
-    expect($component->html())->toContain('active: true');
+    // El default del alta viaja en la config `blank` del riel compartido.
+    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue();
 
     expect($component->get('form.socialNetworkData')->is_active)->toBeTrue()
         ->and($component->get('form.socialNetworkData')->icon)->toBeNull();
@@ -257,8 +256,8 @@ test('creating a social network hands the refreshed rows back to Alpine', functi
         ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertDispatched(
-            'social-networks-refreshed',
-            fn (string $event, array $params): bool => collect($params['socialNetworks'])
+            'catalog-rows-refreshed',
+            fn (string $event, array $params): bool => collect($params['rows'])
                 ->pluck('name')
                 ->all() === ['Facebook', 'Instagram'],
         );
@@ -277,7 +276,7 @@ test('the success toast names the entity instead of saying "Registro"', function
 
 test('the table listens for the refreshed rows event', function (): void {
     expect(Livewire::test('catalog.social-network')->html())
-        ->toContain('x-on:social-networks-refreshed="items = $event.detail.socialNetworks"');
+        ->toContain('x-on:catalog-rows-refreshed="items = $event.detail.rows"');
 });
 
 test('a failed save keeps what the user typed instead of wiping the form', function (): void {
@@ -295,7 +294,7 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         // Nothing was saved, so the table must not be reloaded either.
-        ->assertNotDispatched('social-networks-refreshed')
+        ->assertNotDispatched('catalog-rows-refreshed')
         ->assertSet('form.socialNetworkData.name', 'Instagram')
         ->assertSet('form.socialNetworkData.url', 'https://www.instagram.com/')
         ->assertSet('form.socialNetworkData.abbreviation', 'IG');
@@ -326,13 +325,13 @@ test('every visible string comes from a lang file, so the regional variants can 
 });
 
 test('the Alpine ternaries get their copy from lang too, not from hardcoded JS literals', function (): void {
-    // Checked on the SOURCE, not on the output: @js(__('...')) renders to 'Editando',
-    // byte for byte the same as the hardcoded literal, so the HTML cannot tell them
-    // apart. x-text expressions are the easiest place to leave copy behind.
+    // Checked on the SOURCE, not on the output: Js::from(__('...')) renders to
+    // 'Activa', byte for byte the same as the hardcoded literal, so the HTML cannot
+    // tell them apart. x-text expressions are the easiest place to leave copy behind.
+    // The chrome copy ("Editando", "Guardar cambios") moved to the shared
+    // <x-catalog.form-shell> and is covered by CatalogComponentsTest.
     $source = file_get_contents(resource_path('views/components/catalog/⚡social-network.blade.php'));
 
-    expect($source)->not->toContain("? 'Editando' : 'Nueva'")
-        ->not->toContain("? 'Activa' : 'Inactiva'")
-        ->not->toContain("? 'Guardar cambios' : 'Crear red social'")
-        ->toContain("@js(__('catalog.common.editing'))");
+    expect($source)->not->toContain("? 'Activa' : 'Inactiva'")
+        ->toContain("Js::from(__('catalog.social_network.status.active'))");
 });

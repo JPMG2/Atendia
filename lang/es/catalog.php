@@ -26,6 +26,10 @@ return [
         'save' => 'Guardar cambios',
         'delete' => 'Eliminar',
         'editing' => 'Editando',
+        // Default del <x-inputsform.switch-field>. Cada maestro pasa su propio
+        // par para que concuerde el género ("Activa" en moneda, "Activo" en país).
+        'on' => 'Activo',
+        'off' => 'Inactivo',
     ],
 
     'currency' => [
@@ -60,10 +64,8 @@ return [
             'symbol' => 'Símbolo',
             'symbol_hint' => 'Cómo se muestra: $, US$, €',
             'decimals' => 'Decimales',
+            'status' => 'Estado',
         ],
-
-        'active_title' => 'Moneda activa',
-        'active_desc' => 'Disponible para elegir en precios y facturación.',
     ],
 
     'country' => [
@@ -101,10 +103,8 @@ return [
             // Infinitivo a propósito: "Elegí/Elige" obligaría a un override de
             // voseo en es_AR solo por este placeholder.
             'currency_placeholder' => 'Seleccionar moneda',
+            'status' => 'Estado',
         ],
-
-        'active_title' => 'País activo',
-        'active_desc' => 'Disponible para elegir en direcciones y datos fiscales.',
     ],
 
     'social_network' => [
@@ -143,10 +143,8 @@ return [
             // voseo en es_AR solo por este placeholder.
             'icon_placeholder' => 'Seleccionar ícono',
             'icon_hint' => 'Glifos disponibles en el sistema',
+            'status' => 'Estado',
         ],
-
-        'active_title' => 'Red activa',
-        'active_desc' => 'Disponible para elegir en los datos de contacto del negocio.',
     ],
 
 ];
