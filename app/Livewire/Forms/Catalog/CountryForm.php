@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateCountry;
 use App\Dto\CountryDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\Country;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class CountryForm extends BaseForm
+class CountryForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $countryId = null;
@@ -26,7 +25,7 @@ class CountryForm extends BaseForm
         $this->countryData = new CountryDto;
     }
 
-    public function storeCountry(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class CountryForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateCountry(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->countryId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class CountryForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadCountryData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findCountryData($id);
 

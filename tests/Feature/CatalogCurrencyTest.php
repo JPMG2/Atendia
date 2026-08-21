@@ -195,7 +195,7 @@ test('the table listens for the refreshed rows event', function (): void {
 });
 
 test('a failed save keeps what the user typed instead of wiping the form', function (): void {
-    // Force the action to blow up so storeCurrency() returns an error DTO
+    // Force the action to blow up so store() returns an error DTO
     // (a validation failure would throw earlier and never reach this branch).
     $this->mock(
         CreateCurrency::class,

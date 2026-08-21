@@ -9,13 +9,12 @@ use App\Actions\Catalog\UpdateSocialNetwork;
 use App\Dto\NotificationDto;
 use App\Dto\SocialNetworkDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\SocialNetwork;
 use App\Rules\AttributeValidator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 
-class SocialNetworkForm extends BaseForm
+class SocialNetworkForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $socialNetworkId = null;
@@ -27,7 +26,7 @@ class SocialNetworkForm extends BaseForm
         $this->socialNetworkData = new SocialNetworkDto;
     }
 
-    public function storeSocialNetwork(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -40,7 +39,7 @@ class SocialNetworkForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateSocialNetwork(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->socialNetworkId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -57,7 +56,7 @@ class SocialNetworkForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadSocialNetworkData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findSocialNetworkData($id);
 

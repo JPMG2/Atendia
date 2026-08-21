@@ -1,13 +1,12 @@
 <?php
 
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
+use App\Interfaces\Catalog\DataTable;
+use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\CountryForm;
 use App\Models\Country;
 use App\Models\Currency;
-use App\Traits\HasNotifications;
+use App\Traits\InteractsWithCatalogEditor;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -18,112 +17,18 @@ use Livewire\Component;
  * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
  */
 new class extends Component {
-    use HasNotifications;
+    use InteractsWithCatalogEditor;
 
     public CountryForm $form;
 
-    /**
-     * Semilla del riel de Alpine, CONGELADA al montar. Ver el comentario de
-     * `<x-catalog.master>`: si cambiara, Alpine re-inicializaría el editor.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    #[Locked]
-    public array $initialRows = [];
-
-    public function mount(): void
+    protected function catalogForm(): BaseCatalogForm
     {
-        $this->form->setup();
-
-        $this->initialRows = $this->countries->all();
+        return $this->form;
     }
 
-    /**
-     * Devuelve si se guardó, para que Alpine sepa si volver a la lista o dejar
-     * al usuario en el formulario con lo que escribió. Sin este booleano el
-     * front no distinguía éxito de error y quedaba en un form ya vaciado.
-     */
-    public function create(): bool
+    protected function catalogModel(): DataTable
     {
-        $notification = $this->form->storeCountry();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    public function update(): bool
-    {
-        $notification = $this->form->updateCountry();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    /**
-     * Devuelve si se pudo abrir. Si el país ya no existe avisa y el front se
-     * queda en la lista, en vez de mostrar un formulario vacío o un 404 crudo.
-     */
-    public function openEdit(int $countryId): bool
-    {
-        if (!$this->form->loadCountryData($countryId)) {
-            $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Un alta arranca en blanco. Vaciar el estado de Alpine no alcanza: el form
-     * del server sigue con el país que se abrió antes, así que "Nuevo país"
-     * aparecía con los datos de ese otro (y su `countryId`).
-     */
-    public function openCreate(): void
-    {
-        $this->resetForm();
-    }
-
-    protected function resetForm(): void
-    {
-        $this->form->reset();
-
-        $this->form->setup();
-    }
-
-    protected function reloadTable(): void
-    {
-        unset($this->countries);
-
-        $this->dispatch('catalog-rows-refreshed', rows: $this->countries);
-    }
-
-    /**
-     * Países para el riel de Alpine. Se entregan una sola vez al montar: el
-     * buscador y el contador filtran client-side, sin request al server.
-     */
-    #[Computed]
-    public function countries(): \Illuminate\Support\Collection
-    {
-        return new Country()->catalogRows();
+        return new Country;
     }
 
     /**

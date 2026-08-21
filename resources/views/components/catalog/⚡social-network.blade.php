@@ -1,12 +1,11 @@
 <?php
 
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
+use App\Interfaces\Catalog\DataTable;
+use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\SocialNetworkForm;
 use App\Models\SocialNetwork;
-use App\Traits\HasNotifications;
+use App\Traits\InteractsWithCatalogEditor;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -17,110 +16,18 @@ use Livewire\Component;
  * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
  */
 new class extends Component {
-    use HasNotifications;
+    use InteractsWithCatalogEditor;
 
     public SocialNetworkForm $form;
 
-    /**
-     * Semilla del riel de Alpine, CONGELADA al montar. Ver el comentario de
-     * `<x-catalog.master>`: si cambiara, Alpine re-inicializaría el editor.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    #[Locked]
-    public array $initialRows = [];
-
-    public function mount(): void
+    protected function catalogForm(): BaseCatalogForm
     {
-        $this->form->setup();
-
-        $this->initialRows = $this->socialNetworks->all();
+        return $this->form;
     }
 
-    /**
-     * Devuelve si se guardó, para que Alpine sepa si volver a la lista o dejar
-     * al usuario en el formulario con lo que escribió.
-     */
-    public function create(): bool
+    protected function catalogModel(): DataTable
     {
-        $notification = $this->form->storeSocialNetwork();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    public function update(): bool
-    {
-        $notification = $this->form->updateSocialNetwork();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    /**
-     * Devuelve si se pudo abrir. Si la red ya no existe avisa y el front se queda
-     * en la lista, en vez de mostrar un formulario vacío o un 404 crudo.
-     */
-    public function openEdit(int $socialNetworkId): bool
-    {
-        if (!$this->form->loadSocialNetworkData($socialNetworkId)) {
-            $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Un alta arranca en blanco: vaciar el estado de Alpine no alcanza, el form
-     * del server sigue con la red que se abrió antes.
-     */
-    public function openCreate(): void
-    {
-        $this->resetForm();
-    }
-
-    protected function resetForm(): void
-    {
-        $this->form->reset();
-
-        $this->form->setup();
-    }
-
-    protected function reloadTable(): void
-    {
-        unset($this->socialNetworks);
-
-        $this->dispatch('catalog-rows-refreshed', rows: $this->socialNetworks);
-    }
-
-    /**
-     * Redes para el riel de Alpine. Se entregan una sola vez al montar: el buscador
-     * y el contador filtran client-side, sin request al server.
-     */
-    #[Computed]
-    public function socialNetworks(): \Illuminate\Support\Collection
-    {
-        return new SocialNetwork()->catalogRows();
+        return new SocialNetwork;
     }
 
     /**

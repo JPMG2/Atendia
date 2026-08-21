@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateBusinessActivity;
 use App\Dto\BusinessActivityDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\BusinessActivity;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class BusinessActivityForm extends BaseForm
+class BusinessActivityForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $businessActivityId = null;
@@ -26,7 +25,7 @@ class BusinessActivityForm extends BaseForm
         $this->businessActivityData = new BusinessActivityDto;
     }
 
-    public function storeBusinessActivity(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class BusinessActivityForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateBusinessActivity(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->businessActivityId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class BusinessActivityForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadBusinessActivityData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findBusinessActivityData($id);
 

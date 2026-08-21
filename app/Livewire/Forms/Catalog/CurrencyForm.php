@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateCurrency;
 use App\Dto\CurrencyDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\Currency;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class CurrencyForm extends BaseForm
+class CurrencyForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $currencyId = null;
@@ -26,7 +25,7 @@ class CurrencyForm extends BaseForm
         $this->currencyData = new CurrencyDto;
     }
 
-    public function storeCurrency(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class CurrencyForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateCurrency(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->currencyId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class CurrencyForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadCurrencyData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findCurrencyData($id);
 

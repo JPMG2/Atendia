@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateRegion;
 use App\Dto\NotificationDto;
 use App\Dto\RegionDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\Region;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class RegionForm extends BaseForm
+class RegionForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $regionId = null;
@@ -26,7 +25,7 @@ class RegionForm extends BaseForm
         $this->regionData = new RegionDto;
     }
 
-    public function storeRegion(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class RegionForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateRegion(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->regionId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class RegionForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadRegionData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findRegionData($id);
 

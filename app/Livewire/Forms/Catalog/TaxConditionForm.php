@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateTaxCondition;
 use App\Dto\NotificationDto;
 use App\Dto\TaxConditionDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\TaxCondition;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class TaxConditionForm extends BaseForm
+class TaxConditionForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $taxConditionId = null;
@@ -26,7 +25,7 @@ class TaxConditionForm extends BaseForm
         $this->taxConditionData = new TaxConditionDto;
     }
 
-    public function storeTaxCondition(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class TaxConditionForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateTaxCondition(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->taxConditionId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class TaxConditionForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadTaxConditionData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findTaxConditionData($id);
 

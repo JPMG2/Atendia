@@ -1,12 +1,10 @@
 <?php
 
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
+use App\Interfaces\Catalog\DataTable;
+use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\CurrencyForm;
 use App\Models\Currency;
-use App\Traits\HasNotifications;
-use Livewire\Attributes\Computed;
-use Livewire\Attributes\Locked;
+use App\Traits\InteractsWithCatalogEditor;
 use Livewire\Component;
 
 /**
@@ -17,114 +15,18 @@ use Livewire\Component;
  * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
  */
 new class extends Component {
-    use HasNotifications;
+    use InteractsWithCatalogEditor;
 
     public CurrencyForm $form;
 
-    /**
-     * Semilla del riel de Alpine, CONGELADA al montar. Ver el comentario de
-     * `<x-catalog.master>`: si cambiara, Alpine re-inicializaría el editor.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    #[Locked]
-    public array $initialRows = [];
-
-    public function mount(): void
+    protected function catalogForm(): BaseCatalogForm
     {
-        $this->form->setup();
-
-        $this->initialRows = $this->currencies->all();
+        return $this->form;
     }
 
-    /**
-     * Devuelve si se guardó, para que Alpine sepa si volver a la lista o dejar
-     * al usuario en el formulario con lo que escribió. Sin este booleano el
-     * front no distinguía éxito de error y quedaba en un form ya vaciado.
-     */
-    public function create(): bool
+    protected function catalogModel(): DataTable
     {
-        $notification = $this->form->storeCurrency();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    public function update(): bool
-    {
-        $notification = $this->form->updateCurrency();
-
-        $this->dispatchNotification($notification);
-
-        if ($notification->type !== NotificationType::Success) {
-            return false;
-        }
-
-        $this->resetForm();
-
-        $this->reloadTable();
-
-        return true;
-    }
-
-    /**
-     * Devuelve si se pudo abrir. Si la moneda ya no existe avisa y el front se
-     * queda en la lista, en vez de mostrar un formulario vacío o un 404 crudo.
-     */
-    public function openEdit(int $currencyId): bool
-    {
-        if (! $this->form->loadCurrencyData($currencyId)) {
-            $this->dispatchNotification(
-                new NotificationDto(__('notifications.not_found'), NotificationType::Error),
-            );
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Un alta arranca en blanco. Vaciar el estado de Alpine no alcanza: el form
-     * del server sigue con la moneda que se abrió antes, así que "Nueva moneda"
-     * aparecía con los datos de esa otra (y su `currencyId`).
-     */
-    public function openCreate(): void
-    {
-        $this->resetForm();
-    }
-
-    protected function resetForm(): void
-    {
-        $this->form->reset();
-
-        $this->form->setup();
-    }
-
-    protected function reloadTable(): void
-    {
-        unset($this->currencies);
-
-        $this->dispatch('catalog-rows-refreshed', rows: $this->currencies);
-    }
-
-    /**
-     * Monedas para el riel de Alpine. Se entregan una sola vez al montar: el
-     * buscador y el contador filtran client-side, sin request al server.
-     */
-    #[Computed]
-    public function currencies(): \Illuminate\Support\Collection
-    {
-        return new Currency()->catalogRows();
+        return new Currency;
     }
 };
 ?>

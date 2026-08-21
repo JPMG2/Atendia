@@ -9,12 +9,11 @@ use App\Actions\Catalog\UpdateProvince;
 use App\Dto\NotificationDto;
 use App\Dto\ProvinceDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\Province;
 use App\Rules\AttributeValidator;
 use Livewire\Attributes\Locked;
 
-class ProvinceForm extends BaseForm
+class ProvinceForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $provinceId = null;
@@ -26,7 +25,7 @@ class ProvinceForm extends BaseForm
         $this->provinceData = new ProvinceDto;
     }
 
-    public function storeProvince(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -39,7 +38,7 @@ class ProvinceForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateProvince(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->provinceId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,7 +55,7 @@ class ProvinceForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadProvinceData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findProvinceData($id);
 

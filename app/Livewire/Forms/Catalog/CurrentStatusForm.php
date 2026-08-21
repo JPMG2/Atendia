@@ -9,13 +9,12 @@ use App\Actions\Catalog\UpdateCurrentStatus;
 use App\Dto\CurrentStatusDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\BaseForm;
 use App\Models\CurrentStatus;
 use App\Rules\AttributeValidator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 
-class CurrentStatusForm extends BaseForm
+class CurrentStatusForm extends BaseCatalogForm
 {
     #[Locked]
     public ?int $currentStatusId = null;
@@ -27,7 +26,7 @@ class CurrentStatusForm extends BaseForm
         $this->currentStatusData = new CurrentStatusDto;
     }
 
-    public function storeCurrentStatus(): NotificationDto
+    public function store(): NotificationDto
     {
         $validated = $this->validateServiceData();
 
@@ -40,7 +39,7 @@ class CurrentStatusForm extends BaseForm
         }, __('notifications.not_created'));
     }
 
-    public function updateCurrentStatus(): NotificationDto
+    public function update(): NotificationDto
     {
         if ($this->currentStatusId === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -57,7 +56,7 @@ class CurrentStatusForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    public function loadCurrentStatusData(int $id): bool
+    public function loadData(int $id): bool
     {
         $data = $this->findCurrentStatusData($id);
 
