@@ -117,34 +117,11 @@ new class extends Component {
     /**
      * Actividades para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * Se agrupan por rubro y dentro de cada uno por su orden, que es como el
-     * negocio las va a ver al elegir.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, code: string, name: string, sector: string, order: int, active: bool}>
      */
     #[Computed]
     public function businessActivities(): \Illuminate\Support\Collection
     {
-        return BusinessActivity::query()
-            ->with('sector:id,name,sort_order')
-            ->get()
-            ->sortBy([
-                fn(BusinessActivity $a, BusinessActivity $b): int => ($a->sector?->sort_order ?? 0) <=> ($b->sector?->sort_order ?? 0),
-                fn(BusinessActivity $a, BusinessActivity $b): int => $a->sort_order <=> $b->sort_order,
-                fn(BusinessActivity $a, BusinessActivity $b): int => strcmp($a->name, $b->name),
-            ])
-            ->map(
-                fn(BusinessActivity $activity): array => [
-                    'id' => $activity->id,
-                    'code' => $activity->code,
-                    'name' => $activity->name,
-                    'sector' => $activity->sector?->name ?? '',
-                    'order' => $activity->sort_order,
-                    'active' => $activity->is_active,
-                ],
-            )
-            ->values();
+        return new BusinessActivity()->catalogRows();
     }
 
     /**
@@ -173,9 +150,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.businessActivityData"
-    :blank="['code' => '', 'name' => '', 'sector' => '', 'order' => 0, 'active' => true]"
-    :search="['code', 'name', 'sector']"
+<x-catalog.master :rows="$initialRows" path="form.businessActivityData" :blank="['code' => '', 'name' => '', 'sector' => '', 'order' => 0, 'active' => true]" :search="['code', 'name', 'sector']"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 40], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -185,10 +160,7 @@ new class extends Component {
 
     {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
     <x-slot:list>
-        <x-catalog.toolbar :search-placeholder="__('catalog.business_activity.search_placeholder')"
-            :search-label="__('catalog.business_activity.search_label')"
-            :singular="__('catalog.business_activity.singular')" :plural="__('catalog.business_activity.plural')"
-            :create="__('catalog.business_activity.create')" />
+        <x-catalog.toolbar :search-placeholder="__('catalog.business_activity.search_placeholder')" :search-label="__('catalog.business_activity.search_label')" :singular="__('catalog.business_activity.singular')" :plural="__('catalog.business_activity.plural')" :create="__('catalog.business_activity.create')" />
 
         <x-catalog.table :empty="__('catalog.business_activity.empty')" :columns="[
             ['label' => __('catalog.business_activity.columns.code')],
@@ -212,43 +184,35 @@ new class extends Component {
 
     {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
     <x-slot:form>
-        <x-catalog.form-shell :new="__('catalog.business_activity.new')"
-            :new-title="__('catalog.business_activity.new_title')"
-            :edit-title="__('catalog.business_activity.edit_title')"
-            :create="__('catalog.business_activity.create')" title-key="name">
+        <x-catalog.form-shell :new="__('catalog.business_activity.new')" :new-title="__('catalog.business_activity.new_title')" :edit-title="__('catalog.business_activity.edit_title')" :create="__('catalog.business_activity.create')"
+            title-key="name">
 
             {{-- Fila 1: la clave corta y el nombre, que se lleva todo el resto. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.code')" required
-                    name="code" :hint="__('catalog.business_activity.fields.code_hint')" maxlength="40"
-                    alpine-error="code" wire:model="form.businessActivityData.code" />
+                <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.code')" required name="code" :hint="__('catalog.business_activity.fields.code_hint')"
+                    maxlength="40" alpine-error="code" wire:model="form.businessActivityData.code" />
 
-                <x-inputsform.input span="text" :label="__('catalog.business_activity.fields.name')" required
-                    name="name" :placeholder="__('catalog.business_activity.fields.name_placeholder')"
+                <x-inputsform.input span="text" :label="__('catalog.business_activity.fields.name')" required name="name" :placeholder="__('catalog.business_activity.fields.name_placeholder')"
                     alpine-error="name" wire:model="form.businessActivityData.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el rubro del que cuelga, la descripción que absorbe el
                  sobrante, y el orden y el estado cerrando la línea. --}}
             <x-catalog.form-row>
-                <x-inputsform.combobox span="text" :label="__('catalog.business_activity.fields.sector')" required
-                    name="business_sector_id" :placeholder="__('catalog.business_activity.fields.sector_placeholder')"
-                    :options="$this->sectorOptions" :value="$form->businessActivityData?->business_sector_id"
-                    alpine-error="business_sector_id" wire:model="form.businessActivityData.business_sector_id" />
+                <x-inputsform.combobox span="text" :label="__('catalog.business_activity.fields.sector')" required name="business_sector_id"
+                    :placeholder="__('catalog.business_activity.fields.sector_placeholder')" :options="$this->sectorOptions" :value="$form->businessActivityData?->business_sector_id" alpine-error="business_sector_id"
+                    wire:model="form.businessActivityData.business_sector_id" />
 
-                <x-inputsform.input span="long" :label="__('catalog.business_activity.fields.description')"
-                    name="description" :placeholder="__('catalog.business_activity.fields.description_placeholder')"
-                    :hint="__('catalog.business_activity.fields.description_hint')" maxlength="255"
-                    alpine-error="description" wire:model="form.businessActivityData.description" />
+                <x-inputsform.input span="long" :label="__('catalog.business_activity.fields.description')" name="description" :placeholder="__('catalog.business_activity.fields.description_placeholder')"
+                    :hint="__('catalog.business_activity.fields.description_hint')" maxlength="255" alpine-error="description"
+                    wire:model="form.businessActivityData.description" />
 
-                <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.order')" name="sort_order"
-                    type="number" min="0" max="32767" :hint="__('catalog.business_activity.fields.order_hint')"
-                    alpine-error="sort_order" wire:model="form.businessActivityData.sort_order" />
+                <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.order')" name="sort_order" type="number" min="0"
+                    max="32767" :hint="__('catalog.business_activity.fields.order_hint')" alpine-error="sort_order"
+                    wire:model="form.businessActivityData.sort_order" />
 
-                <x-inputsform.switch-field span="short" :label="__('catalog.business_activity.fields.status')"
-                    name="is_active" :on="__('catalog.business_activity.status.active')"
-                    :off="__('catalog.business_activity.status.inactive')"
-                    wire:model="form.businessActivityData.is_active" />
+                <x-inputsform.switch-field span="short" :label="__('catalog.business_activity.fields.status')" name="is_active" :on="__('catalog.business_activity.status.active')"
+                    :off="__('catalog.business_activity.status.inactive')" wire:model="form.businessActivityData.is_active" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

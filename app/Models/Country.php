@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\CountryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,9 +13,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 #[Fillable(['currency_id', 'name', 'code', 'phone_code', 'is_active'])]
-class Country extends Model
+class Country extends Model implements DataTable
 {
     /** @use HasFactory<CountryFactory> */
     use HasFactory;
@@ -90,5 +92,30 @@ class Country extends Model
         return Attribute::make(
             set: fn (?string $value): ?string => self::normalizePhoneCode($value),
         );
+    }
+
+    /**
+     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
+     * editable por el usuario, así que no sirve para identificar la fila.
+     *
+     * @return Collection<int, array{id: int, code: string, name: string, phone_code: string|null, currency: string, active: bool}>
+     */
+    public function catalogRows(): Collection
+    {
+        return $this->newQuery()
+            ->with('currency:id,code')
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $country): array => [
+                    'id' => $country->id,
+                    'code' => $country->code,
+                    'name' => $country->name,
+                    'phone_code' => $country->phone_code,
+                    'currency' => $country->currency?->code ?? '',
+                    'active' => $country->is_active,
+                ],
+            )
+            ->values();
     }
 }

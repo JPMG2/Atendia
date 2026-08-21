@@ -116,31 +116,11 @@ new class extends Component {
     /**
      * Redes para el riel de Alpine. Se entregan una sola vez al montar: el buscador
      * y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, url: string, icon: string, abbreviation: string, active: bool}>
      */
     #[Computed]
     public function socialNetworks(): \Illuminate\Support\Collection
     {
-        return SocialNetwork::query()
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(SocialNetwork $network): array => [
-                    'id' => $network->id,
-                    'name' => $network->name,
-                    'url' => $network->url,
-                    // Las columnas son nullable y Alpine pinta el valor crudo: un
-                    // null saldría como "null" en la celda, así que viaja vacío.
-                    'icon' => $network->icon ?? '',
-                    'abbreviation' => $network->abbreviation ?? '',
-                    'active' => $network->is_active,
-                ],
-            )
-            ->values();
+        return new SocialNetwork()->catalogRows();
     }
 
     /**

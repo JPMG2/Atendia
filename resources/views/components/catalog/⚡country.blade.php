@@ -119,30 +119,11 @@ new class extends Component {
     /**
      * Países para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, code: string, name: string, phone_code: string|null, currency: string, active: bool}>
      */
     #[Computed]
     public function countries(): \Illuminate\Support\Collection
     {
-        return Country::query()
-            ->with('currency:id,code')
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(Country $country): array => [
-                    'id' => $country->id,
-                    'code' => $country->code,
-                    'name' => $country->name,
-                    'phone_code' => $country->phone_code,
-                    'currency' => $country->currency?->code ?? '',
-                    'active' => $country->is_active,
-                ],
-            )
-            ->values();
+        return new Country()->catalogRows();
     }
 
     /**

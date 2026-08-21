@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\TaxConditionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,9 +13,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 #[Fillable(['country_id', 'name', 'code', 'discriminate_tax', 'is_active'])]
-class TaxCondition extends Model
+class TaxCondition extends Model implements DataTable
 {
     /** @use HasFactory<TaxConditionFactory> */
     use HasFactory;
@@ -69,5 +71,30 @@ class TaxCondition extends Model
         return Attribute::make(
             set: fn (string $value): string => self::normalizeName($value),
         );
+    }
+
+    /**
+     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
+     * editable por el usuario, así que no sirve para identificar la fila.
+     *
+     * @return Collection<int, array{id: int, code: string, name: string, country: string, discriminates: bool, active: bool}>
+     */
+    public function catalogRows(): Collection
+    {
+        return $this->newQuery()
+            ->with('country:id,code')
+            ->orderBy('code')
+            ->get()
+            ->map(
+                fn (self $condition): array => [
+                    'id' => $condition->id,
+                    'code' => $condition->code,
+                    'name' => $condition->name,
+                    'country' => $condition->country?->code ?? '',
+                    'discriminates' => $condition->discriminate_tax,
+                    'active' => $condition->is_active,
+                ],
+            )
+            ->values();
     }
 }

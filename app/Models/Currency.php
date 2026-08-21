@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,16 +12,18 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['code', 'name', 'symbol', 'decimal_places', 'is_active'])]
-class Currency extends Model
+class Currency extends Model implements DataTable
 {
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
 
     use LogsActivity;
+
     // Un maestro no se borra: lo que lo referencia quedaría colgando.
     use SoftDeletes;
     use TracksUserActions;
@@ -99,5 +102,29 @@ class Currency extends Model
         return Attribute::make(
             set: fn (string $value): string => self::normalizeSymbol($value),
         );
+    }
+
+    /**
+     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
+     * editable por el usuario, así que no sirve para identificar la fila.
+     *
+     * @return Collection<int, array{id: int, code: string, name: string, symbol: string, decimals: int, active: bool}>
+     */
+    public function catalogRows(): Collection
+    {
+        return $this->newQuery()
+            ->orderBy('code')
+            ->get()
+            ->map(
+                fn (self $currency): array => [
+                    'id' => $currency->id,
+                    'code' => $currency->code,
+                    'name' => $currency->name,
+                    'symbol' => $currency->symbol,
+                    'decimals' => $currency->decimal_places,
+                    'active' => $currency->is_active,
+                ],
+            )
+            ->values();
     }
 }

@@ -120,26 +120,11 @@ new class extends Component {
     /**
      * Estados para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, color: string}>
      */
     #[Computed]
     public function statuses(): \Illuminate\Support\Collection
     {
-        return CurrentStatus::query()
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(CurrentStatus $status): array => [
-                    'id' => $status->id,
-                    'name' => $status->name,
-                    'color' => $status->color,
-                ],
-            )
-            ->values();
+        return new CurrentStatus()->catalogRows();
     }
 
     /**

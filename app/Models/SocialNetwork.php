@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\SocialNetworkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,9 +12,10 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'url', 'icon', 'abbreviation', 'is_active'])]
-class SocialNetwork extends Model
+class SocialNetwork extends Model implements DataTable
 {
     /** @use HasFactory<SocialNetworkFactory> */
     use HasFactory;
@@ -102,5 +104,31 @@ class SocialNetwork extends Model
         return Attribute::make(
             set: fn (?string $value): ?string => self::normalizeAbbreviation($value),
         );
+    }
+
+    /**
+     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
+     * editable por el usuario, así que no sirve para identificar la fila.
+     *
+     * @return Collection<int, array{id: int, name: string, url: string, icon: string, abbreviation: string, active: bool}>
+     */
+    public function catalogRows(): Collection
+    {
+        return $this->newQuery()
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $network): array => [
+                    'id' => $network->id,
+                    'name' => $network->name,
+                    'url' => $network->url,
+                    // Las columnas son nullable y Alpine pinta el valor crudo: un
+                    // null saldría como "null" en la celda, así que viaja vacío.
+                    'icon' => $network->icon ?? '',
+                    'abbreviation' => $network->abbreviation ?? '',
+                    'active' => $network->is_active,
+                ],
+            )
+            ->values();
     }
 }

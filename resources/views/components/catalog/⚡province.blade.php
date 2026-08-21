@@ -117,28 +117,11 @@ new class extends Component {
     /**
      * Provincias para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, country: string, active: bool}>
      */
     #[Computed]
     public function provinces(): \Illuminate\Support\Collection
     {
-        return Province::query()
-            ->with('country:id,name')
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(Province $province): array => [
-                    'id' => $province->id,
-                    'name' => $province->name,
-                    'country' => $province->country?->name ?? '',
-                    'active' => $province->is_active,
-                ],
-            )
-            ->values();
+        return new Province()->catalogRows();
     }
 
     /**

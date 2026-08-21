@@ -116,30 +116,11 @@ new class extends Component {
     /**
      * Rubros para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * Se ordenan por `sort_order` y no por nombre: el orden es justamente lo que
-     * el admin decide acá para que el negocio lo vea así al elegir.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, code: string, name: string, description: string, order: int, active: bool}>
      */
     #[Computed]
     public function businessSectors(): \Illuminate\Support\Collection
     {
-        return BusinessSector::query()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(BusinessSector $sector): array => [
-                    'id' => $sector->id,
-                    'code' => $sector->code,
-                    'name' => $sector->name,
-                    'description' => $sector->description ?? '',
-                    'order' => $sector->sort_order,
-                    'active' => $sector->is_active,
-                ],
-            )
-            ->values();
+        return new BusinessSector()->catalogRows();
     }
 };
 ?>

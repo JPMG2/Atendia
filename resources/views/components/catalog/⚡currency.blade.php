@@ -120,29 +120,11 @@ new class extends Component {
     /**
      * Monedas para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, code: string, name: string, symbol: string, decimals: int, active: bool}>
      */
     #[Computed]
     public function currencies(): \Illuminate\Support\Collection
     {
-        return Currency::query()
-            ->orderBy('code')
-            ->get()
-            ->map(
-                fn(Currency $currency): array => [
-                    'id' => $currency->id,
-                    'code' => $currency->code,
-                    'name' => $currency->name,
-                    'symbol' => $currency->symbol,
-                    'decimals' => $currency->decimal_places,
-                    'active' => $currency->is_active,
-                ],
-            )
-            ->values();
+        return new Currency()->catalogRows();
     }
 };
 ?>

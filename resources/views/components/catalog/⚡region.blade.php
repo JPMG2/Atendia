@@ -117,36 +117,11 @@ new class extends Component {
     /**
      * Regiones para el riel de Alpine. Se entregan una sola vez al montar: el
      * buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * La región cuelga de una provincia y la provincia de un país. El país viaja
-     * en la fila —y no solo la provincia— porque si no hay que saberse de memoria
-     * a qué país pertenece cada provincia para entender la lista.
-     *
-     * `country_id` va en el select de la provincia a propósito: sin esa columna
-     * Eloquent no puede resolver el `belongsTo` al país y `country` volvería vacío.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, province: string, country: string, active: bool}>
      */
     #[Computed]
     public function regions(): \Illuminate\Support\Collection
     {
-        return Region::query()
-            ->with(['province:id,name,country_id', 'province.country:id,name'])
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(Region $region): array => [
-                    'id' => $region->id,
-                    'name' => $region->name,
-                    'province' => $region->province?->name ?? '',
-                    'country' => $region->province?->country?->name ?? '',
-                    'active' => $region->is_active,
-                ],
-            )
-            ->values();
+        return new Region()->catalogRows();
     }
 
     /**

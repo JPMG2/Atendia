@@ -117,30 +117,11 @@ new class extends Component {
     /**
      * Condiciones fiscales para el riel de Alpine. Se entregan una sola vez al
      * montar: el buscador y el contador filtran client-side, sin request al server.
-     *
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, code: string, name: string, country: string, discriminates: bool, active: bool}>
      */
     #[Computed]
     public function taxConditions(): \Illuminate\Support\Collection
     {
-        return TaxCondition::query()
-            ->with('country:id,code')
-            ->orderBy('code')
-            ->get()
-            ->map(
-                fn(TaxCondition $condition): array => [
-                    'id' => $condition->id,
-                    'code' => $condition->code,
-                    'name' => $condition->name,
-                    'country' => $condition->country?->code ?? '',
-                    'discriminates' => $condition->discriminate_tax,
-                    'active' => $condition->is_active,
-                ],
-            )
-            ->values();
+        return new TaxCondition()->catalogRows();
     }
 
     /**
