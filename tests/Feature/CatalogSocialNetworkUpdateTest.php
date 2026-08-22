@@ -18,11 +18,11 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.social-network')->call('openEdit', $network->id);
 
-    expect($component->get('form.socialNetworkId'))->toBe($network->id)
-        ->and($component->get('form.socialNetworkData')->name)->toBe('Instagram')
-        ->and($component->get('form.socialNetworkData')->url)->toBe('https://www.instagram.com/')
-        ->and($component->get('form.socialNetworkData')->icon)->toBe('instagram')
-        ->and($component->get('form.socialNetworkData')->abbreviation)->toBe('IG');
+    expect($component->get('form.recordId'))->toBe($network->id)
+        ->and($component->get('form.data')->name)->toBe('Instagram')
+        ->and($component->get('form.data')->url)->toBe('https://www.instagram.com/')
+        ->and($component->get('form.data')->icon)->toBe('instagram')
+        ->and($component->get('form.data')->abbreviation)->toBe('IG');
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -30,7 +30,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.name', 'X (Twitter)')
+        ->set('form.data.name', 'X (Twitter)')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -46,7 +46,7 @@ test('keeping its own name while editing does not trip the unique rule', functio
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.abbreviation', 'INSTA')
+        ->set('form.data.abbreviation', 'INSTA')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -59,7 +59,7 @@ test('taking a name that already belongs to another network is rejected', functi
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.name', 'Facebook')
+        ->set('form.data.name', 'Facebook')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -72,7 +72,7 @@ test('deactivating a network is saved', function (): void {
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -86,7 +86,7 @@ test('clearing the icon stores null instead of an empty string', function (): vo
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.icon', '')
+        ->set('form.data.icon', '')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -102,17 +102,17 @@ test('starting a new network clears the record left over from an edit', function
         ->call('openEdit', $network->id)
         ->call('openCreate');
 
-    expect($component->get('form.socialNetworkId'))->toBeNull()
-        ->and($component->get('form.socialNetworkData')->name)->toBe('')
-        ->and($component->get('form.socialNetworkData')->url)->toBe('')
-        ->and($component->get('form.socialNetworkData')->icon)->toBeNull()
-        ->and($component->get('form.socialNetworkData')->abbreviation)->toBeNull();
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->url)->toBe('')
+        ->and($component->get('form.data')->icon)->toBeNull()
+        ->and($component->get('form.data')->abbreviation)->toBeNull();
 });
 
 test('a save that fails reports it back so the front keeps the user on the form', function (): void {
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertReturned(true);
 });
@@ -134,10 +134,10 @@ test('a failed open leaves the form untouched instead of half-loading a record',
         ->call('openEdit', $network->id)
         ->call('openEdit', 999999);
 
-    // The network that WAS open must survive: socialNetworkId cannot end up pointing
+    // The network that WAS open must survive: recordId cannot end up pointing
     // at a row that does not exist, or the next save would target nothing.
-    expect($component->get('form.socialNetworkId'))->toBe($network->id)
-        ->and($component->get('form.socialNetworkData')->name)->toBe('Instagram');
+    expect($component->get('form.recordId'))->toBe($network->id)
+        ->and($component->get('form.data')->name)->toBe('Instagram');
 });
 
 test('asking to update with no record loaded warns instead of throwing a TypeError', function (): void {
@@ -157,7 +157,7 @@ test('the update toast is announced in the feminine', function (): void {
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.name', 'Threads')
+        ->set('form.data.name', 'Threads')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Red social actualizada correctamente');
 });
@@ -167,7 +167,7 @@ test('updating a network hands the refreshed rows back to Alpine', function (): 
 
     Livewire::test('catalog.social-network')
         ->call('openEdit', $network->id)
-        ->set('form.socialNetworkData.name', 'Threads')
+        ->set('form.data.name', 'Threads')
         ->call('update')
         ->assertDispatched(
             'catalog-rows-refreshed',

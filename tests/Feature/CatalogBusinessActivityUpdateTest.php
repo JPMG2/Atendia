@@ -20,12 +20,12 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.business-activity')->call('openEdit', $activity->id);
 
-    expect($component->get('form.businessActivityId'))->toBe($activity->id)
-        ->and($component->get('form.businessActivityData')->business_sector_id)->toBe($sector->id)
-        ->and($component->get('form.businessActivityData')->code)->toBe('panaderia')
-        ->and($component->get('form.businessActivityData')->name)->toBe('Panadería')
-        ->and($component->get('form.businessActivityData')->description)->toBe('Pan y facturas')
-        ->and($component->get('form.businessActivityData')->sort_order)->toBe(3);
+    expect($component->get('form.recordId'))->toBe($activity->id)
+        ->and($component->get('form.data')->business_sector_id)->toBe($sector->id)
+        ->and($component->get('form.data')->code)->toBe('panaderia')
+        ->and($component->get('form.data')->name)->toBe('Panadería')
+        ->and($component->get('form.data')->description)->toBe('Pan y facturas')
+        ->and($component->get('form.data')->sort_order)->toBe(3);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -33,7 +33,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.name', 'Panadería y pastelería')
+        ->set('form.data.name', 'Panadería y pastelería')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -47,7 +47,7 @@ test('keeping its own code and name while editing does not trip the unique rules
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -61,7 +61,7 @@ test('taking a name that already belongs to another activity of the same sector 
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.name', 'Panadería')
+        ->set('form.data.name', 'Panadería')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -81,7 +81,7 @@ test('moving an activity to another sector that already has that name is rejecte
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.business_sector_id', $beauty->id)
+        ->set('form.data.business_sector_id', $beauty->id)
         ->call('update')
         ->assertHasErrors('name');
 
@@ -94,7 +94,7 @@ test('taking a code that already belongs to another activity is rejected', funct
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.code', 'panaderia')
+        ->set('form.data.code', 'panaderia')
         ->call('update')
         ->assertHasErrors('code');
 
@@ -107,7 +107,7 @@ test('the sector id posted by the combobox as a string is stored as the right in
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.business_sector_id', (string) $other->id)
+        ->set('form.data.business_sector_id', (string) $other->id)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -120,7 +120,7 @@ test('clearing the sector reports a validation error instead of killing the comp
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.business_sector_id', '')
+        ->set('form.data.business_sector_id', '')
         ->call('update')
         ->assertHasErrors('business_sector_id');
 
@@ -134,9 +134,9 @@ test('starting a new activity clears the record left over from an edit', functio
         ->call('openEdit', $activity->id)
         ->call('openCreate');
 
-    expect($component->get('form.businessActivityId'))->toBeNull()
-        ->and($component->get('form.businessActivityData')->code)->toBe('')
-        ->and($component->get('form.businessActivityData')->business_sector_id)->toBeNull();
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->code)->toBe('')
+        ->and($component->get('form.data')->business_sector_id)->toBeNull();
 });
 
 test('opening an activity that no longer exists warns instead of blowing up', function (): void {
@@ -158,7 +158,7 @@ test('the update toast is announced in the feminine', function (): void {
 
     Livewire::test('catalog.business-activity')
         ->call('openEdit', $activity->id)
-        ->set('form.businessActivityData.name', 'Panadería y pastelería')
+        ->set('form.data.name', 'Panadería y pastelería')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Actividad actualizada correctamente');
 });

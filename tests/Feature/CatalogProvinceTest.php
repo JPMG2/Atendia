@@ -16,13 +16,13 @@ use Mockery\MockInterface;
 uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `provinceData` starts null; `setup()` (run from mount) turns it into a
-    // real ProvinceDto. Without that, a `wire:model="form.provinceData.name"` update
+    // The form's `data` starts null; `setup()` (run from mount) turns it into a
+    // real ProvinceDto. Without that, a `wire:model="form.data.name"` update
     // throws "Cannot assign array to property" because Livewire cannot recurse into null.
     Livewire::test('catalog.province')
-        ->assertSet('form.provinceData.name', '')
-        ->set('form.provinceData.name', 'Buenos Aires')
-        ->assertSet('form.provinceData.name', 'Buenos Aires');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'Buenos Aires')
+        ->assertSet('form.data.name', 'Buenos Aires');
 });
 
 test('the province table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -77,8 +77,8 @@ test('the province editor seeds a new record as active', function (): void {
     $component = Livewire::test('catalog.province');
 
     expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.provinceData')->is_active)->toBeTrue()
-        ->and($component->get('form.provinceData')->country_id)->toBeNull();
+        ->and($component->get('form.data')->is_active)->toBeTrue()
+        ->and($component->get('form.data')->country_id)->toBeNull();
 });
 
 /*
@@ -91,8 +91,8 @@ test('a province is created with its country', function (): void {
     $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', 'Buenos Aires')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.name', 'Buenos Aires')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -103,7 +103,7 @@ test('a province with no country is rejected as a field error, not as a foreign 
     // The FK is `constrained()`: without the rule this would blow up inside
     // tryAction and surface as a vague toast instead of an error on the combobox.
     Livewire::test('catalog.province')
-        ->set('form.provinceData.name', 'Buenos Aires')
+        ->set('form.data.name', 'Buenos Aires')
         ->call('create')
         ->assertHasErrors('country_id');
 
@@ -112,8 +112,8 @@ test('a province with no country is rejected as a field error, not as a foreign 
 
 test('a country id that does not exist is rejected', function (): void {
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', 999999)
-        ->set('form.provinceData.name', 'Buenos Aires')
+        ->set('form.data.country_id', 999999)
+        ->set('form.data.name', 'Buenos Aires')
         ->call('create')
         ->assertHasErrors('country_id');
 
@@ -125,8 +125,8 @@ test('the same province name is rejected inside one country', function (): void 
     Province::factory()->create(['name' => 'Mérida', 'country_id' => $venezuela->id]);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $venezuela->id)
-        ->set('form.provinceData.name', 'Mérida')
+        ->set('form.data.country_id', $venezuela->id)
+        ->set('form.data.name', 'Mérida')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -144,8 +144,8 @@ test('the same province name IS accepted in every other country', function (): v
 
     foreach ($countries as $country) {
         Livewire::test('catalog.province')
-            ->set('form.provinceData.country_id', $country->id)
-            ->set('form.provinceData.name', 'Mérida')
+            ->set('form.data.country_id', $country->id)
+            ->set('form.data.name', 'Mérida')
             ->call('create')
             ->assertHasNoErrors();
     }
@@ -157,8 +157,8 @@ test('a name with markup is rejected', function (): void {
     $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', '<script>alert(1)</script>')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.name', '<script>alert(1)</script>')
         ->call('create')
         ->assertHasErrors('name');
 });
@@ -189,8 +189,8 @@ test('creating a province hands the refreshed rows back to Alpine', function ():
     Province::factory()->create(['name' => 'Buenos Aires', 'country_id' => $country->id]);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', 'Catamarca')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.name', 'Catamarca')
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -206,8 +206,8 @@ test('the success toast names the entity in the feminine', function (): void {
     $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', 'Buenos Aires')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.name', 'Buenos Aires')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Provincia creada correctamente');
 });
@@ -221,12 +221,12 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.province')
-        ->set('form.provinceData.country_id', $country->id)
-        ->set('form.provinceData.name', 'Buenos Aires')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.name', 'Buenos Aires')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.provinceData.name', 'Buenos Aires');
+        ->assertSet('form.data.name', 'Buenos Aires');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

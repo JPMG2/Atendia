@@ -57,7 +57,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.businessActivityData" :blank="['code' => '', 'name' => '', 'sector' => '', 'order' => 0, 'active' => true]" :search="['code', 'name', 'sector']"
+<x-catalog.master :rows="$initialRows" :blank="['code' => '', 'name' => '', 'sector' => '', 'order' => 0, 'active' => true]" :search="['code', 'name', 'sector']"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 40], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -97,29 +97,29 @@ new class extends Component {
             {{-- Fila 1: la clave corta y el nombre, que se lleva todo el resto. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.code')" required name="code" :hint="__('catalog.business_activity.fields.code_hint')"
-                    maxlength="40" alpine-error="code" wire:model="form.businessActivityData.code" />
+                    maxlength="40" alpine-error="code" wire:model="form.data.code" />
 
                 <x-inputsform.input span="text" :label="__('catalog.business_activity.fields.name')" required name="name" :placeholder="__('catalog.business_activity.fields.name_placeholder')"
-                    alpine-error="name" wire:model="form.businessActivityData.name" />
+                    alpine-error="name" wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el rubro del que cuelga, la descripción que absorbe el
                  sobrante, y el orden y el estado cerrando la línea. --}}
             <x-catalog.form-row>
                 <x-inputsform.combobox span="text" :label="__('catalog.business_activity.fields.sector')" required name="business_sector_id"
-                    :placeholder="__('catalog.business_activity.fields.sector_placeholder')" :options="$this->sectorOptions" :value="$form->businessActivityData?->business_sector_id" alpine-error="business_sector_id"
-                    wire:model="form.businessActivityData.business_sector_id" />
+                    :placeholder="__('catalog.business_activity.fields.sector_placeholder')" :options="$this->sectorOptions" :value="$form->data?->business_sector_id" alpine-error="business_sector_id"
+                    wire:model="form.data.business_sector_id" />
 
                 <x-inputsform.input span="long" :label="__('catalog.business_activity.fields.description')" name="description" :placeholder="__('catalog.business_activity.fields.description_placeholder')"
                     :hint="__('catalog.business_activity.fields.description_hint')" maxlength="255" alpine-error="description"
-                    wire:model="form.businessActivityData.description" />
+                    wire:model="form.data.description" />
 
                 <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.order')" name="sort_order" type="number" min="0"
                     max="32767" :hint="__('catalog.business_activity.fields.order_hint')" alpine-error="sort_order"
-                    wire:model="form.businessActivityData.sort_order" />
+                    wire:model="form.data.sort_order" />
 
                 <x-inputsform.switch-field span="short" :label="__('catalog.business_activity.fields.status')" name="is_active" :on="__('catalog.business_activity.status.active')"
-                    :off="__('catalog.business_activity.status.inactive')" wire:model="form.businessActivityData.is_active" />
+                    :off="__('catalog.business_activity.status.inactive')" wire:model="form.data.is_active" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

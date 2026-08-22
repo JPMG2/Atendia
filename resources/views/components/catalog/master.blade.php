@@ -1,6 +1,6 @@
 @props([
     'rows' => [],        // semilla del riel, CONGELADA (ver el #[Locked] del editor)
-    'path' => null,      // "form.currencyData" — dónde vive el DTO en el server
+    'path' => 'form.data', // dónde vive el DTO en el server: SIEMPRE `$data` de BaseCatalogForm
     'blank' => [],       // estado de `f` para un alta
     'search' => [],      // claves de la fila por las que filtra el buscador
     'rules' => [],       // espejo de getValidationRules() para form-guard.js

@@ -15,9 +15,9 @@ uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
     Livewire::test('catalog.tax-condition')
-        ->assertSet('form.taxConditionData.code', '')
-        ->set('form.taxConditionData.code', 'RI')
-        ->assertSet('form.taxConditionData.code', 'RI');
+        ->assertSet('form.data.code', '')
+        ->set('form.data.code', 'RI')
+        ->assertSet('form.data.code', 'RI');
 });
 
 test('the tax condition table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -60,7 +60,7 @@ test('the editor seeds a new record as active and not discriminating', function 
 
     expect($blank['active'])->toBeTrue()
         ->and($blank['discriminates'])->toBeFalse()
-        ->and($component->get('form.taxConditionData')->discriminate_tax)->toBeFalse();
+        ->and($component->get('form.data')->discriminate_tax)->toBeFalse();
 });
 
 /*
@@ -73,10 +73,10 @@ test('a tax condition is created with its country, code and discrimination flag'
     $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
-        ->set('form.taxConditionData.discriminate_tax', true)
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
+        ->set('form.data.discriminate_tax', true)
         ->call('create')
         ->assertHasNoErrors();
 
@@ -88,8 +88,8 @@ test('a tax condition is created with its country, code and discrimination flag'
 
 test('a tax condition with no country is rejected as a field error, not as a foreign key crash', function (): void {
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertHasErrors('country_id');
 
@@ -103,9 +103,9 @@ test('a duplicate code inside one country is caught as a field error, not as a d
     TaxCondition::factory()->create(['code' => 'RI', 'name' => 'Responsable Inscripto', 'country_id' => $country->id]);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Otro nombre')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Otro nombre')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -117,9 +117,9 @@ test('a duplicate name inside one country is caught as a field error too', funct
     TaxCondition::factory()->create(['code' => 'RI', 'name' => 'Responsable Inscripto', 'country_id' => $country->id]);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'XX')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'XX')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -134,9 +134,9 @@ test('the same code IS accepted in another country', function (): void {
     TaxCondition::factory()->create(['code' => 'RI', 'name' => 'Responsable Inscripto', 'country_id' => $argentina->id]);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $uruguay->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.country_id', $uruguay->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -151,9 +151,9 @@ test('a duplicate code typed in lowercase is caught as a field error, not as a d
     TaxCondition::factory()->create(['code' => 'RI', 'name' => 'Responsable Inscripto', 'country_id' => $country->id]);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'ri')
-        ->set('form.taxConditionData.name', 'Otro nombre')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'ri')
+        ->set('form.data.name', 'Otro nombre')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -186,9 +186,9 @@ test('creating a tax condition hands the refreshed rows back to Alpine', functio
     TaxCondition::factory()->create(['code' => 'EX', 'name' => 'IVA Exento', 'country_id' => $country->id]);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -202,9 +202,9 @@ test('the success toast names the entity in the feminine', function (): void {
     $country = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Condición fiscal creada correctamente');
 });
@@ -218,13 +218,13 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.tax-condition')
-        ->set('form.taxConditionData.country_id', $country->id)
-        ->set('form.taxConditionData.code', 'RI')
-        ->set('form.taxConditionData.name', 'Responsable Inscripto')
+        ->set('form.data.country_id', $country->id)
+        ->set('form.data.code', 'RI')
+        ->set('form.data.name', 'Responsable Inscripto')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.taxConditionData.code', 'RI');
+        ->assertSet('form.data.code', 'RI');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

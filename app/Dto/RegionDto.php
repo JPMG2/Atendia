@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\Region;
-use Livewire\Wireable;
 
-class RegionDto implements Wireable
+class RegionDto implements FormData
 {
     /**
      * Create a new class instance.

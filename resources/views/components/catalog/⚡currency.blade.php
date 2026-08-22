@@ -31,7 +31,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.currencyData"
+<x-catalog.master :rows="$initialRows"
     :blank="['code' => '', 'name' => '', 'symbol' => '', 'decimals' => 2, 'active' => true]"
     :search="['code', 'name']"
     :rules="[
@@ -76,26 +76,26 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.currency.fields.code')" required name="code"
                     :hint="__('catalog.currency.fields.code_hint')" maxlength="3" alpine-error="code" x-mask="aaa"
-                    style="text-transform:uppercase" wire:model="form.currencyData.code" />
+                    style="text-transform:uppercase" wire:model="form.data.code" />
 
                 <x-inputsform.input span="text" :label="__('catalog.currency.fields.name')" required name="name"
                     :placeholder="__('catalog.currency.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.currencyData.name" />
+                    wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.currency.fields.symbol')" required name="symbol"
                     :hint="__('catalog.currency.fields.symbol_hint')" maxlength="5" alpine-error="symbol"
-                    wire:model="form.currencyData.symbol" />
+                    wire:model="form.data.symbol" />
 
                 <x-inputsform.input span="text" :label="__('catalog.currency.fields.decimals')" name="decimal_places"
                     type="number" min="0" max="2" alpine-error="decimal_places"
-                    wire:model="form.currencyData.decimal_places" />
+                    wire:model="form.data.decimal_places" />
 
                 <x-inputsform.switch-field span="text" :label="__('catalog.currency.fields.status')" name="is_active"
                     :on="__('catalog.currency.status.active')" :off="__('catalog.currency.status.inactive')"
-                    wire:model="form.currencyData.is_active" />
+                    wire:model="form.data.is_active" />
             </x-catalog.form-row>
 
         </x-catalog.form-shell>

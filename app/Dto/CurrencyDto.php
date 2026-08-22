@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\Currency;
-use Livewire\Wireable;
 
-class CurrencyDto implements Wireable
+class CurrencyDto implements FormData
 {
     /**
      * Create a new class instance.

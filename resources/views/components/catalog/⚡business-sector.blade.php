@@ -31,7 +31,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.businessSectorData"
+<x-catalog.master :rows="$initialRows"
     :blank="['code' => '', 'name' => '', 'description' => '', 'order' => 0, 'active' => true]"
     :search="['code', 'name', 'description']"
     :rules="[
@@ -77,11 +77,11 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.business_sector.fields.code')" required name="code"
                     :hint="__('catalog.business_sector.fields.code_hint')" maxlength="30" alpine-error="code"
-                    wire:model="form.businessSectorData.code" />
+                    wire:model="form.data.code" />
 
                 <x-inputsform.input span="text" :label="__('catalog.business_sector.fields.name')" required name="name"
                     :placeholder="__('catalog.business_sector.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.businessSectorData.name" />
+                    wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: la descripción absorbe el sobrante y el estado cierra la
@@ -90,16 +90,16 @@ new class extends Component {
                 <x-inputsform.input span="long" :label="__('catalog.business_sector.fields.description')"
                     name="description" :placeholder="__('catalog.business_sector.fields.description_placeholder')"
                     :hint="__('catalog.business_sector.fields.description_hint')" maxlength="255"
-                    alpine-error="description" wire:model="form.businessSectorData.description" />
+                    alpine-error="description" wire:model="form.data.description" />
 
                 <x-inputsform.input span="code" :label="__('catalog.business_sector.fields.order')" name="sort_order"
                     type="number" min="0" max="32767" :hint="__('catalog.business_sector.fields.order_hint')"
-                    alpine-error="sort_order" wire:model="form.businessSectorData.sort_order" />
+                    alpine-error="sort_order" wire:model="form.data.sort_order" />
 
                 <x-inputsform.switch-field span="short" :label="__('catalog.business_sector.fields.status')"
                     name="is_active" :on="__('catalog.business_sector.status.active')"
                     :off="__('catalog.business_sector.status.inactive')"
-                    wire:model="form.businessSectorData.is_active" />
+                    wire:model="form.data.is_active" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

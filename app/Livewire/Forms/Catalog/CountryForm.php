@@ -7,76 +7,19 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateCountry;
 use App\Actions\Catalog\UpdateCountry;
 use App\Dto\CountryDto;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
 use App\Models\Country;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class CountryForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $countryId = null;
-
-    public ?CountryDto $countryData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->countryData = new CountryDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateCountry::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->countryId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->countryId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateCountry::class)->handle($this->countryId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findCountryData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->countryId = $id;
-        $this->countryData = CountryDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findCountryData(int $id): ?Country
-    {
-        return Country::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->countryData->toPayload();
+        return new CatalogWiring(
+            dto: CountryDto::class,
+            model: Country::class,
+            create: CreateCountry::class,
+            update: UpdateCountry::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array

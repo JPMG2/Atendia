@@ -54,7 +54,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.currentStatusData" :blank="['name' => '', 'color' => \App\Models\CurrentStatus::DEFAULT_COLOR]" :search="['name']"
+<x-catalog.master :rows="$initialRows" :blank="['name' => '', 'color' => \App\Models\CurrentStatus::DEFAULT_COLOR]" :search="['name']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]">
@@ -92,13 +92,13 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.status.fields.name')" required name="name"
                     :placeholder="__('catalog.status.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.currentStatusData.name" />
+                    wire:model="form.data.name" />
 
                 <x-inputsform.combobox span="text" :label="__('catalog.status.fields.color')" required name="color"
                     :placeholder="__('catalog.status.fields.color_placeholder')"
                     :hint="__('catalog.status.fields.color_hint')" :options="$this->colorOptions"
-                    :value="$form->currentStatusData?->color" alpine-error="color"
-                    wire:model="form.currentStatusData.color" />
+                    :value="$form->data?->color" alpine-error="color"
+                    wire:model="form.data.color" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

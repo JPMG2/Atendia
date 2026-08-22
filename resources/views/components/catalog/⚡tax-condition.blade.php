@@ -56,7 +56,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.taxConditionData"
+<x-catalog.master :rows="$initialRows"
     :blank="['code' => '', 'name' => '', 'country' => '', 'discriminates' => false, 'active' => true]"
     :search="['code', 'name', 'country']"
     :rules="[
@@ -101,11 +101,11 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.tax_condition.fields.code')" required name="code"
                     :hint="__('catalog.tax_condition.fields.code_hint')" maxlength="10" alpine-error="code"
-                    style="text-transform:uppercase" wire:model="form.taxConditionData.code" />
+                    style="text-transform:uppercase" wire:model="form.data.code" />
 
                 <x-inputsform.input span="text" :label="__('catalog.tax_condition.fields.name')" required name="name"
                     :placeholder="__('catalog.tax_condition.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.taxConditionData.name" />
+                    wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el resto repartiéndose el ancho completo, los dos
@@ -113,17 +113,17 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.combobox span="text" :label="__('catalog.tax_condition.fields.country')" required
                     name="country_id" :placeholder="__('catalog.tax_condition.fields.country_placeholder')"
-                    :options="$this->countryOptions" :value="$form->taxConditionData?->country_id"
-                    alpine-error="country_id" wire:model="form.taxConditionData.country_id" />
+                    :options="$this->countryOptions" :value="$form->data?->country_id"
+                    alpine-error="country_id" wire:model="form.data.country_id" />
 
                 <x-inputsform.switch-field span="short" :label="__('catalog.tax_condition.fields.discriminate_tax')"
                     name="discriminate_tax" :on="__('catalog.tax_condition.discriminate.yes')"
                     :off="__('catalog.tax_condition.discriminate.no')"
-                    wire:model="form.taxConditionData.discriminate_tax" />
+                    wire:model="form.data.discriminate_tax" />
 
                 <x-inputsform.switch-field span="short" :label="__('catalog.tax_condition.fields.status')"
                     name="is_active" :on="__('catalog.tax_condition.status.active')"
-                    :off="__('catalog.tax_condition.status.inactive')" wire:model="form.taxConditionData.is_active" />
+                    :off="__('catalog.tax_condition.status.inactive')" wire:model="form.data.is_active" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

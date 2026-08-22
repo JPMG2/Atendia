@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\CurrentStatus;
-use Livewire\Wireable;
 
-class CurrentStatusDto implements Wireable
+class CurrentStatusDto implements FormData
 {
     /**
      * Create a new class instance.

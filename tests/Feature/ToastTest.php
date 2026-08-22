@@ -6,6 +6,7 @@ use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Models\Currency;
 use App\Models\User;
+use App\Traits\HasNotifications;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Component;
 use Livewire\Livewire;
@@ -53,7 +54,7 @@ test('any component can raise a toast through the HasNotifications trait', funct
     // `notify` event the toast listens for.
     $component = new class extends Component
     {
-        use App\Traits\HasNotifications;
+        use HasNotifications;
 
         public function notifyNow(): void
         {
@@ -77,11 +78,11 @@ test('creating a currency dispatches a success toast', function (): void {
     $this->actingAs(User::factory()->create());
 
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'USD')
-        ->set('form.currencyData.name', 'Dólar Estadounidense')
-        ->set('form.currencyData.symbol', 'US$')
-        ->set('form.currencyData.decimal_places', 2)
-        ->set('form.currencyData.is_active', true)
+        ->set('form.data.code', 'USD')
+        ->set('form.data.name', 'Dólar Estadounidense')
+        ->set('form.data.symbol', 'US$')
+        ->set('form.data.decimal_places', 2)
+        ->set('form.data.is_active', true)
         ->call('create')
         ->assertDispatched('notify', type: 'success');
 
@@ -96,11 +97,11 @@ test('a failed creation dispatches an error toast instead of a success one', fun
     Currency::factory()->create(['code' => 'EUR']);
 
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'EUR')
-        ->set('form.currencyData.name', 'Euro')
-        ->set('form.currencyData.symbol', '€')
-        ->set('form.currencyData.decimal_places', 2)
-        ->set('form.currencyData.is_active', true)
+        ->set('form.data.code', 'EUR')
+        ->set('form.data.name', 'Euro')
+        ->set('form.data.symbol', '€')
+        ->set('form.data.decimal_places', 2)
+        ->set('form.data.is_active', true)
         ->call('create')
         ->assertHasErrors('code');
 });

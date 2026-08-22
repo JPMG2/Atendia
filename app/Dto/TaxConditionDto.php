@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\TaxCondition;
-use Livewire\Wireable;
 
-class TaxConditionDto implements Wireable
+class TaxConditionDto implements FormData
 {
     /**
      * Create a new class instance.

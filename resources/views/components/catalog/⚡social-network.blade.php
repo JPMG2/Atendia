@@ -49,7 +49,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.socialNetworkData"
+<x-catalog.master :rows="$initialRows"
     :blank="['name' => '', 'url' => '', 'icon' => '', 'abbreviation' => '', 'active' => true]"
     :search="['name', 'abbreviation']"
     :rules="[
@@ -93,29 +93,29 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.social_network.fields.abbreviation')"
                     name="abbreviation" :hint="__('catalog.social_network.fields.abbreviation_hint')" maxlength="10"
-                    alpine-error="abbreviation" wire:model="form.socialNetworkData.abbreviation" />
+                    alpine-error="abbreviation" wire:model="form.data.abbreviation" />
 
                 <x-inputsform.input span="text" :label="__('catalog.social_network.fields.name')" required name="name"
                     :placeholder="__('catalog.social_network.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.socialNetworkData.name" />
+                    wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="long" :label="__('catalog.social_network.fields.url')" required name="url"
                     type="url" :hint="__('catalog.social_network.fields.url_hint')" maxlength="255" alpine-error="url"
-                    wire:model="form.socialNetworkData.url" />
+                    wire:model="form.data.url" />
 
                 <x-inputsform.combobox span="text" :label="__('catalog.social_network.fields.icon')" name="icon"
                     :placeholder="__('catalog.social_network.fields.icon_placeholder')"
                     :hint="__('catalog.social_network.fields.icon_hint')" :options="$this->iconOptions"
-                    :value="$form->socialNetworkData?->icon" alpine-error="icon"
-                    wire:model="form.socialNetworkData.icon" />
+                    :value="$form->data?->icon" alpine-error="icon"
+                    wire:model="form.data.icon" />
 
                 <x-inputsform.switch-field span="text" :label="__('catalog.social_network.fields.status')"
                     name="is_active" :on="__('catalog.social_network.status.active')"
                     :off="__('catalog.social_network.status.inactive')"
-                    wire:model="form.socialNetworkData.is_active" />
+                    wire:model="form.data.is_active" />
             </x-catalog.form-row>
 
         </x-catalog.form-shell>

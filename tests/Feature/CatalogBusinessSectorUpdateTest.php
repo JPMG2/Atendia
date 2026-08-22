@@ -18,11 +18,11 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.business-sector')->call('openEdit', $sector->id);
 
-    expect($component->get('form.businessSectorId'))->toBe($sector->id)
-        ->and($component->get('form.businessSectorData')->code)->toBe('salud')
-        ->and($component->get('form.businessSectorData')->name)->toBe('Salud')
-        ->and($component->get('form.businessSectorData')->description)->toBe('Atención de la salud')
-        ->and($component->get('form.businessSectorData')->sort_order)->toBe(2);
+    expect($component->get('form.recordId'))->toBe($sector->id)
+        ->and($component->get('form.data')->code)->toBe('salud')
+        ->and($component->get('form.data')->name)->toBe('Salud')
+        ->and($component->get('form.data')->description)->toBe('Atención de la salud')
+        ->and($component->get('form.data')->sort_order)->toBe(2);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -30,7 +30,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.name', 'Salud y bienestar')
+        ->set('form.data.name', 'Salud y bienestar')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -46,7 +46,7 @@ test('keeping its own code and name while editing does not trip the unique rules
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -59,7 +59,7 @@ test('taking a code that already belongs to another sector is rejected', functio
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.code', 'salud')
+        ->set('form.data.code', 'salud')
         ->call('update')
         ->assertHasErrors('code')
         ->assertReturned(false);
@@ -73,7 +73,7 @@ test('taking a name that already belongs to another sector is rejected', functio
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.name', 'Salud')
+        ->set('form.data.name', 'Salud')
         ->call('update')
         ->assertHasErrors('name');
 
@@ -85,7 +85,7 @@ test('clearing the description on an edit stores null instead of an empty string
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.description', '')
+        ->set('form.data.description', '')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -99,9 +99,9 @@ test('starting a new sector clears the record left over from an edit', function 
         ->call('openEdit', $sector->id)
         ->call('openCreate');
 
-    expect($component->get('form.businessSectorId'))->toBeNull()
-        ->and($component->get('form.businessSectorData')->code)->toBe('')
-        ->and($component->get('form.businessSectorData')->name)->toBe('');
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->code)->toBe('')
+        ->and($component->get('form.data')->name)->toBe('');
 });
 
 test('opening a sector that no longer exists warns instead of blowing up', function (): void {
@@ -123,7 +123,7 @@ test('the update toast is announced in the masculine', function (): void {
 
     Livewire::test('catalog.business-sector')
         ->call('openEdit', $sector->id)
-        ->set('form.businessSectorData.name', 'Salud y bienestar')
+        ->set('form.data.name', 'Salud y bienestar')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Rubro actualizado correctamente');
 });

@@ -17,11 +17,11 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.tax-condition')->call('openEdit', $condition->id);
 
-    expect($component->get('form.taxConditionId'))->toBe($condition->id)
-        ->and($component->get('form.taxConditionData')->code)->toBe('RI')
-        ->and($component->get('form.taxConditionData')->name)->toBe('Responsable Inscripto')
-        ->and($component->get('form.taxConditionData')->country_id)->toBe($country->id)
-        ->and($component->get('form.taxConditionData')->discriminate_tax)->toBeTrue();
+    expect($component->get('form.recordId'))->toBe($condition->id)
+        ->and($component->get('form.data')->code)->toBe('RI')
+        ->and($component->get('form.data')->name)->toBe('Responsable Inscripto')
+        ->and($component->get('form.data')->country_id)->toBe($country->id)
+        ->and($component->get('form.data')->discriminate_tax)->toBeTrue();
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -29,7 +29,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.name', 'Resp. Inscripto')
+        ->set('form.data.name', 'Resp. Inscripto')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -45,7 +45,7 @@ test('turning the discrimination flag off is saved', function (): void {
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.discriminate_tax', false)
+        ->set('form.data.discriminate_tax', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -57,7 +57,7 @@ test('keeping its own code while editing does not trip the scoped unique rule', 
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -71,7 +71,7 @@ test('taking a code that already belongs to another condition of the same countr
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.code', 'EX')
+        ->set('form.data.code', 'EX')
         ->call('update')
         ->assertHasErrors('code')
         ->assertReturned(false);
@@ -89,7 +89,7 @@ test('moving a condition to a country that already has that code is rejected', f
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.country_id', $uruguay->id)
+        ->set('form.data.country_id', $uruguay->id)
         ->call('update')
         ->assertHasErrors('code');
 
@@ -103,12 +103,12 @@ test('starting a new condition clears the record left over from an edit', functi
         ->call('openEdit', $condition->id)
         ->call('openCreate');
 
-    expect($component->get('form.taxConditionId'))->toBeNull()
-        ->and($component->get('form.taxConditionData')->code)->toBe('')
-        ->and($component->get('form.taxConditionData')->name)->toBe('')
-        ->and($component->get('form.taxConditionData')->country_id)->toBeNull()
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->code)->toBe('')
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->country_id)->toBeNull()
         // The flag has to reset too, or the new record inherits the previous tick.
-        ->and($component->get('form.taxConditionData')->discriminate_tax)->toBeFalse();
+        ->and($component->get('form.data')->discriminate_tax)->toBeFalse();
 });
 
 test('opening a condition that no longer exists warns instead of blowing up', function (): void {
@@ -130,7 +130,7 @@ test('the update toast is announced in the feminine', function (): void {
 
     Livewire::test('catalog.tax-condition')
         ->call('openEdit', $condition->id)
-        ->set('form.taxConditionData.name', 'Resp. Inscripto')
+        ->set('form.data.name', 'Resp. Inscripto')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Condición fiscal actualizada correctamente');
 });

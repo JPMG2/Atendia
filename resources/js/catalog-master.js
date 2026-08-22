@@ -8,7 +8,7 @@
  *
  *   catalogMaster({
  *     items:  [...],                       // filas, entregadas una sola vez al montar
- *     path:   'form.currencyData',         // dónde vive el DTO en el componente Livewire
+ *     path:   'form.data',                 // dónde vive el DTO en el componente Livewire
  *     blank:  { code:'', name:'' },        // estado de `f` para un alta
  *     search: ['code', 'name'],            // claves por las que filtra el buscador
  *     rules:  { code: ['required', ...] }, // espejo de getValidationRules()

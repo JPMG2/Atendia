@@ -7,80 +7,26 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateBusinessActivity;
 use App\Actions\Catalog\UpdateBusinessActivity;
 use App\Dto\BusinessActivityDto;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
 use App\Models\BusinessActivity;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class BusinessActivityForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $businessActivityId = null;
-
-    public ?BusinessActivityDto $businessActivityData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->businessActivityData = new BusinessActivityDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateBusinessActivity::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->businessActivityId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->businessActivityId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateBusinessActivity::class)->handle($this->businessActivityId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findBusinessActivityData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->businessActivityId = $id;
-        $this->businessActivityData = BusinessActivityDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findBusinessActivityData(int $id): ?BusinessActivity
-    {
-        return BusinessActivity::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->businessActivityData->toPayload();
+        return new CatalogWiring(
+            dto: BusinessActivityDto::class,
+            model: BusinessActivity::class,
+            create: CreateBusinessActivity::class,
+            update: UpdateBusinessActivity::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        /** @var BusinessActivityDto|null $data */
+        $data = $this->data;
+
         return [
 
             // La FK es obligatoria en la tabla (`constrained()`): sin `required`
@@ -102,7 +48,7 @@ class BusinessActivityForm extends BaseCatalogForm
                 'business_activities',
                 'name',
                 'business_sector_id',
-                $this->businessActivityData?->business_sector_id,
+                $data?->business_sector_id,
                 $excludeId,
             ),
 

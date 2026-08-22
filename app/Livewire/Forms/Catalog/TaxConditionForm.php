@@ -6,82 +6,28 @@ namespace App\Livewire\Forms\Catalog;
 
 use App\Actions\Catalog\CreateTaxCondition;
 use App\Actions\Catalog\UpdateTaxCondition;
-use App\Dto\NotificationDto;
 use App\Dto\TaxConditionDto;
-use App\Enums\NotificationType;
 use App\Models\TaxCondition;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class TaxConditionForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $taxConditionId = null;
-
-    public ?TaxConditionDto $taxConditionData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->taxConditionData = new TaxConditionDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateTaxCondition::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->taxConditionId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->taxConditionId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateTaxCondition::class)->handle($this->taxConditionId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findTaxConditionData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->taxConditionId = $id;
-        $this->taxConditionData = TaxConditionDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findTaxConditionData(int $id): ?TaxCondition
-    {
-        return TaxCondition::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->taxConditionData->toPayload();
+        return new CatalogWiring(
+            dto: TaxConditionDto::class,
+            model: TaxCondition::class,
+            create: CreateTaxCondition::class,
+            update: UpdateTaxCondition::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $countryId = $this->taxConditionData?->country_id;
+        /** @var TaxConditionDto|null $data */
+        $data = $this->data;
+
+        $countryId = $data?->country_id;
 
         return [
 

@@ -61,7 +61,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.regionData"
+<x-catalog.master :rows="$initialRows"
     :blank="['name' => '', 'province' => '', 'country' => '', 'active' => true]"
     :search="['name', 'province', 'country']"
     :rules="[
@@ -103,16 +103,16 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.region.fields.name')" required name="name"
                     :placeholder="__('catalog.region.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.regionData.name" />
+                    wire:model="form.data.name" />
 
                 <x-inputsform.combobox span="text" :label="__('catalog.region.fields.province')" required
                     name="province_id" :placeholder="__('catalog.region.fields.province_placeholder')"
-                    :options="$this->provinceOptions" :value="$form->regionData?->province_id"
-                    alpine-error="province_id" wire:model="form.regionData.province_id" />
+                    :options="$this->provinceOptions" :value="$form->data?->province_id"
+                    alpine-error="province_id" wire:model="form.data.province_id" />
 
                 <x-inputsform.switch-field span="short" :label="__('catalog.region.fields.status')" name="is_active"
                     :on="__('catalog.region.status.active')" :off="__('catalog.region.status.inactive')"
-                    wire:model="form.regionData.is_active" />
+                    wire:model="form.data.is_active" />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

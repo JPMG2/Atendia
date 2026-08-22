@@ -15,16 +15,16 @@ use Mockery\MockInterface;
 uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `socialNetworkData` starts null; `setup()` (run from mount) turns it
-    // into a real SocialNetworkDto. Without that, a `wire:model="form.socialNetworkData.name"`
+    // The form's `data` starts null; `setup()` (run from mount) turns it
+    // into a real SocialNetworkDto. Without that, a `wire:model="form.data.name"`
     // update throws "Cannot assign array to property ...SocialNetworkDto" because
     // Livewire cannot recurse into null.
     Livewire::test('catalog.social-network')
-        ->assertSet('form.socialNetworkData.name', '')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->assertSet('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
-        ->assertSet('form.socialNetworkData.url', 'https://www.instagram.com/');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'Instagram')
+        ->assertSet('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
+        ->assertSet('form.data.url', 'https://www.instagram.com/');
 });
 
 test('the social network table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -100,8 +100,8 @@ test('the social network editor seeds itself with sensible defaults', function (
     // El default del alta viaja en la config `blank` del riel compartido.
     expect(railConfig($component->html(), 'blank')['active'])->toBeTrue();
 
-    expect($component->get('form.socialNetworkData')->is_active)->toBeTrue()
-        ->and($component->get('form.socialNetworkData')->icon)->toBeNull();
+    expect($component->get('form.data')->is_active)->toBeTrue()
+        ->and($component->get('form.data')->icon)->toBeNull();
 });
 
 /*
@@ -114,10 +114,10 @@ test('the social network editor seeds itself with sensible defaults', function (
 
 test('a social network is created with its url, icon and abbreviation', function (): void {
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
-        ->set('form.socialNetworkData.icon', 'instagram')
-        ->set('form.socialNetworkData.abbreviation', 'IG')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
+        ->set('form.data.icon', 'instagram')
+        ->set('form.data.abbreviation', 'IG')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -130,10 +130,10 @@ test('a social network is created with its url, icon and abbreviation', function
 
 test('a social network without icon or abbreviation is accepted, because both columns are nullable', function (): void {
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Threads')
-        ->set('form.socialNetworkData.url', 'https://www.threads.net/')
-        ->set('form.socialNetworkData.icon', '')
-        ->set('form.socialNetworkData.abbreviation', '')
+        ->set('form.data.name', 'Threads')
+        ->set('form.data.url', 'https://www.threads.net/')
+        ->set('form.data.icon', '')
+        ->set('form.data.abbreviation', '')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -148,7 +148,7 @@ test('a social network with no url is rejected as a field error', function (): v
     // The column is NOT NULL: without the rule this would blow up inside tryAction
     // and surface as a vague toast instead of an error on the field.
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
+        ->set('form.data.name', 'Instagram')
         ->call('create')
         ->assertHasErrors('url');
 
@@ -157,8 +157,8 @@ test('a social network with no url is rejected as a field error', function (): v
 
 test('something that is not a url is rejected', function (): void {
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'instagram')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'instagram')
         ->call('create')
         ->assertHasErrors('url');
 
@@ -169,9 +169,9 @@ test('an icon that is not registered in config/icons.php is rejected', function 
     // <x-icon name="myspace"> renders nothing, so the row would end up with an
     // invisible icon and no explanation.
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'MySpace')
-        ->set('form.socialNetworkData.url', 'https://myspace.com/')
-        ->set('form.socialNetworkData.icon', 'myspace')
+        ->set('form.data.name', 'MySpace')
+        ->set('form.data.url', 'https://myspace.com/')
+        ->set('form.data.icon', 'myspace')
         ->call('create')
         ->assertHasErrors('icon');
 
@@ -182,9 +182,9 @@ test('an abbreviation longer than the column allows is rejected by validation, n
     // The column is string(10) and the input caps at 10, so the rule has to cap at
     // 10 too instead of letting the generic max:255 through.
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
-        ->set('form.socialNetworkData.abbreviation', 'ABCDEFGHIJK')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
+        ->set('form.data.abbreviation', 'ABCDEFGHIJK')
         ->call('create')
         ->assertHasErrors('abbreviation');
 
@@ -193,8 +193,8 @@ test('an abbreviation longer than the column allows is rejected by validation, n
 
 test('a name with markup is rejected', function (): void {
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', '<script>alert(1)</script>')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->set('form.data.name', '<script>alert(1)</script>')
+        ->set('form.data.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertHasErrors('name');
 });
@@ -203,8 +203,8 @@ test('a duplicate name is caught as a field error, not as a database crash', fun
     SocialNetwork::factory()->create(['name' => 'Instagram']);
 
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -215,8 +215,8 @@ test('a url pasted with stray spaces is stored clean', function (): void {
     // Copying the address from a browser drags a trailing space along; the `url`
     // rule would reject it and the user would not understand why.
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', ' https://www.instagram.com/ ')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', ' https://www.instagram.com/ ')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -252,8 +252,8 @@ test('creating a social network hands the refreshed rows back to Alpine', functi
     SocialNetwork::factory()->create(['name' => 'Facebook']);
 
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -268,8 +268,8 @@ test('the success toast names the entity instead of saying "Registro"', function
     // whose table is missing from that map still saves fine and still shows a green
     // toast — it just calls the record "Registro", and nothing else catches it.
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Red social creada correctamente');
 });
@@ -288,16 +288,16 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.social-network')
-        ->set('form.socialNetworkData.name', 'Instagram')
-        ->set('form.socialNetworkData.url', 'https://www.instagram.com/')
-        ->set('form.socialNetworkData.abbreviation', 'IG')
+        ->set('form.data.name', 'Instagram')
+        ->set('form.data.url', 'https://www.instagram.com/')
+        ->set('form.data.abbreviation', 'IG')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         // Nothing was saved, so the table must not be reloaded either.
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.socialNetworkData.name', 'Instagram')
-        ->assertSet('form.socialNetworkData.url', 'https://www.instagram.com/')
-        ->assertSet('form.socialNetworkData.abbreviation', 'IG');
+        ->assertSet('form.data.name', 'Instagram')
+        ->assertSet('form.data.url', 'https://www.instagram.com/')
+        ->assertSet('form.data.abbreviation', 'IG');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

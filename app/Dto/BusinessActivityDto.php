@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\BusinessSector;
-use Livewire\Wireable;
 
-class BusinessActivityDto implements Wireable
+class BusinessActivityDto implements FormData
 {
     /**
      * Create a new class instance.

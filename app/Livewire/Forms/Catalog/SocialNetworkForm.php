@@ -6,78 +6,21 @@ namespace App\Livewire\Forms\Catalog;
 
 use App\Actions\Catalog\CreateSocialNetwork;
 use App\Actions\Catalog\UpdateSocialNetwork;
-use App\Dto\NotificationDto;
 use App\Dto\SocialNetworkDto;
-use App\Enums\NotificationType;
 use App\Models\SocialNetwork;
 use App\Rules\AttributeValidator;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Locked;
 
 class SocialNetworkForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $socialNetworkId = null;
-
-    public ?SocialNetworkDto $socialNetworkData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->socialNetworkData = new SocialNetworkDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateSocialNetwork::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->socialNetworkId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->socialNetworkId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateSocialNetwork::class)->handle($this->socialNetworkId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findSocialNetworkData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->socialNetworkId = $id;
-        $this->socialNetworkData = SocialNetworkDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findSocialNetworkData(int $id): ?SocialNetwork
-    {
-        return SocialNetwork::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->socialNetworkData->toPayload();
+        return new CatalogWiring(
+            dto: SocialNetworkDto::class,
+            model: SocialNetwork::class,
+            create: CreateSocialNetwork::class,
+            update: UpdateSocialNetwork::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array

@@ -15,9 +15,9 @@ uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
     Livewire::test('catalog.status')
-        ->assertSet('form.currentStatusData.name', '')
-        ->set('form.currentStatusData.name', 'En proceso')
-        ->assertSet('form.currentStatusData.name', 'En proceso');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'En proceso')
+        ->assertSet('form.data.name', 'En proceso');
 });
 
 test('the status table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -97,8 +97,8 @@ test('every colour of the palette can actually be painted by the stylesheet', fu
 
 test('a colour outside the palette is rejected', function (): void {
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
-        ->set('form.currentStatusData.color', 'fucsia')
+        ->set('form.data.name', 'En proceso')
+        ->set('form.data.color', 'fucsia')
         ->call('create')
         ->assertHasErrors('color');
 
@@ -107,8 +107,8 @@ test('a colour outside the palette is rejected', function (): void {
 
 test('a status keeps the colour it was saved with', function (): void {
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'Bloqueado')
-        ->set('form.currentStatusData.color', 'danger')
+        ->set('form.data.name', 'Bloqueado')
+        ->set('form.data.color', 'danger')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -120,7 +120,7 @@ test('a new status starts on the neutral colour instead of no colour at all', fu
     // opens empty and the first save trips the validation for no reason.
     $component = Livewire::test('catalog.status');
 
-    expect($component->get('form.currentStatusData')->color)->toBe(CurrentStatus::DEFAULT_COLOR);
+    expect($component->get('form.data')->color)->toBe(CurrentStatus::DEFAULT_COLOR);
 });
 
 /*
@@ -131,7 +131,7 @@ test('a new status starts on the neutral colour instead of no colour at all', fu
 
 test('a status is created', function (): void {
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -144,7 +144,7 @@ test('a duplicate name is caught as a field error, not as a database crash', fun
     CurrentStatus::factory()->create(['name' => 'En proceso']);
 
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -153,14 +153,14 @@ test('a duplicate name is caught as a field error, not as a database crash', fun
 
 test('a name with markup is rejected', function (): void {
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', '<script>alert(1)</script>')
+        ->set('form.data.name', '<script>alert(1)</script>')
         ->call('create')
         ->assertHasErrors('name');
 });
 
 test('a name pasted with stray spaces is stored clean', function (): void {
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', '  En   proceso  ')
+        ->set('form.data.name', '  En   proceso  ')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -190,7 +190,7 @@ test('creating a status hands the refreshed rows back to Alpine', function (): v
     CurrentStatus::factory()->create(['name' => 'Activo']);
 
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -204,7 +204,7 @@ test('the success toast names the entity in the masculine', function (): void {
     // "Estado" is masculine: the map has to say so, or the toast reads
     // "Estado creada correctamente".
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Estado creado correctamente');
 });
@@ -216,11 +216,11 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.status')
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.currentStatusData.name', 'En proceso');
+        ->assertSet('form.data.name', 'En proceso');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {
@@ -252,9 +252,9 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.status')->call('openEdit', $status->id);
 
-    expect($component->get('form.currentStatusId'))->toBe($status->id)
-        ->and($component->get('form.currentStatusData')->name)->toBe('En proceso')
-        ->and($component->get('form.currentStatusData')->color)->toBe('info');
+    expect($component->get('form.recordId'))->toBe($status->id)
+        ->and($component->get('form.data')->name)->toBe('En proceso')
+        ->and($component->get('form.data')->color)->toBe('info');
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -262,7 +262,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.status')
         ->call('openEdit', $status->id)
-        ->set('form.currentStatusData.name', 'En curso')
+        ->set('form.data.name', 'En curso')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -276,7 +276,7 @@ test('keeping its own name while editing does not trip the unique rule', functio
 
     Livewire::test('catalog.status')
         ->call('openEdit', $status->id)
-        ->set('form.currentStatusData.name', 'En proceso')
+        ->set('form.data.name', 'En proceso')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -289,7 +289,7 @@ test('taking a name that already belongs to another status is rejected', functio
 
     Livewire::test('catalog.status')
         ->call('openEdit', $status->id)
-        ->set('form.currentStatusData.name', 'Activo')
+        ->set('form.data.name', 'Activo')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -304,8 +304,8 @@ test('starting a new status clears the record left over from an edit', function 
         ->call('openEdit', $status->id)
         ->call('openCreate');
 
-    expect($component->get('form.currentStatusId'))->toBeNull()
-        ->and($component->get('form.currentStatusData')->name)->toBe('');
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->name)->toBe('');
 });
 
 test('opening a status that no longer exists warns instead of blowing up', function (): void {
@@ -327,7 +327,7 @@ test('the update toast is announced in the masculine', function (): void {
 
     Livewire::test('catalog.status')
         ->call('openEdit', $status->id)
-        ->set('form.currentStatusData.name', 'En curso')
+        ->set('form.data.name', 'En curso')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Estado actualizado correctamente');
 });

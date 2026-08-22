@@ -17,11 +17,11 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.country')->call('openEdit', $country->id);
 
-    expect($component->get('form.countryId'))->toBe($country->id)
-        ->and($component->get('form.countryData')->code)->toBe('ARG')
-        ->and($component->get('form.countryData')->name)->toBe($country->name)
-        ->and($component->get('form.countryData')->phone_code)->toBe('54')
-        ->and($component->get('form.countryData')->currency_id)->toBe($currency->id);
+    expect($component->get('form.recordId'))->toBe($country->id)
+        ->and($component->get('form.data')->code)->toBe('ARG')
+        ->and($component->get('form.data')->name)->toBe($country->name)
+        ->and($component->get('form.data')->phone_code)->toBe('54')
+        ->and($component->get('form.data')->currency_id)->toBe($currency->id);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -29,7 +29,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.name', 'República Argentina')
+        ->set('form.data.name', 'República Argentina')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -45,7 +45,7 @@ test('keeping its own code while editing does not trip the unique rule', functio
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.phone_code', '540')
+        ->set('form.data.phone_code', '540')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -58,7 +58,7 @@ test('taking a code that already belongs to another country is rejected', functi
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.code', 'BOL')
+        ->set('form.data.code', 'BOL')
         ->call('update')
         ->assertHasErrors('code')
         ->assertReturned(false);
@@ -74,7 +74,7 @@ test('taking a name that already belongs to another country is rejected as a fie
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.name', 'Bolivia')
+        ->set('form.data.name', 'Bolivia')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -87,7 +87,7 @@ test('keeping its own name while editing does not trip the unique rule either', 
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -102,7 +102,7 @@ test('clearing the currency reports a validation error instead of killing the co
 
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
-        ->set('form.countryData.currency_id', '')
+        ->set('form.data.currency_id', '')
         ->call('update')
         ->assertHasErrors('currency_id');
 
@@ -116,7 +116,7 @@ test('the currency id posted by the select as a string is stored as the right in
     Livewire::test('catalog.country')
         ->call('openEdit', $country->id)
         // A real <select> posts the id as a string, never as an int.
-        ->set('form.countryData.currency_id', (string) $other->id)
+        ->set('form.data.currency_id', (string) $other->id)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -132,21 +132,21 @@ test('starting a new country clears the record left over from an edit', function
         ->call('openEdit', $country->id)
         ->call('openCreate');
 
-    expect($component->get('form.countryId'))->toBeNull()
-        ->and($component->get('form.countryData')->code)->toBe('')
-        ->and($component->get('form.countryData')->name)->toBe('')
-        ->and($component->get('form.countryData')->phone_code)->toBeNull()
-        ->and($component->get('form.countryData')->currency_id)->toBeNull();
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->code)->toBe('')
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->phone_code)->toBeNull()
+        ->and($component->get('form.data')->currency_id)->toBeNull();
 });
 
 test('a save that fails reports it back so the front keeps the user on the form', function (): void {
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->set('form.countryData.phone_code', '54')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->set('form.data.phone_code', '54')
         ->call('create')
         ->assertReturned(true);
 });
@@ -168,10 +168,10 @@ test('a failed open leaves the form untouched instead of half-loading a record',
         ->call('openEdit', $country->id)
         ->call('openEdit', 999999);
 
-    // The country that WAS open must survive: countryId cannot end up pointing at
+    // The country that WAS open must survive: recordId cannot end up pointing at
     // a row that does not exist, or the next save would target nothing.
-    expect($component->get('form.countryId'))->toBe($country->id)
-        ->and($component->get('form.countryData')->code)->toBe('ARG');
+    expect($component->get('form.recordId'))->toBe($country->id)
+        ->and($component->get('form.data')->code)->toBe('ARG');
 });
 
 test('a duplicate code typed in lowercase is caught as a field error, not as a database crash', function (): void {
@@ -183,9 +183,9 @@ test('a duplicate code typed in lowercase is caught as a field error, not as a d
     Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina', 'currency_id' => $currency->id]);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'arg')
-        ->set('form.countryData.name', 'Argentina bis')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'arg')
+        ->set('form.data.name', 'Argentina bis')
         ->call('create')
         ->assertHasErrors('code');
 

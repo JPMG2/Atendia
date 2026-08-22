@@ -13,9 +13,9 @@ uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
     Livewire::test('catalog.business-activity')
-        ->assertSet('form.businessActivityData.name', '')
-        ->set('form.businessActivityData.name', 'Panadería')
-        ->assertSet('form.businessActivityData.name', 'Panadería');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'Panadería')
+        ->assertSet('form.data.name', 'Panadería');
 });
 
 test('the activity table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -75,8 +75,8 @@ test('the activity editor seeds a new record as active with no sector chosen', f
     $component = Livewire::test('catalog.business-activity');
 
     expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.businessActivityData')->is_active)->toBeTrue()
-        ->and($component->get('form.businessActivityData')->business_sector_id)->toBeNull();
+        ->and($component->get('form.data')->is_active)->toBeTrue()
+        ->and($component->get('form.data')->business_sector_id)->toBeNull();
 });
 
 /*
@@ -89,10 +89,10 @@ test('an activity is created under its sector', function (): void {
     $sector = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $sector->id)
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', 'Panadería')
-        ->set('form.businessActivityData.description', 'Pan y facturas')
+        ->set('form.data.business_sector_id', $sector->id)
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', 'Panadería')
+        ->set('form.data.description', 'Pan y facturas')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -107,8 +107,8 @@ test('an activity with no sector is rejected as a field error, not as a foreign 
     // The FK is `constrained()`: without the rule this would blow up inside
     // tryAction and surface as a vague toast instead of an error on the combobox.
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', 'Panadería')
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', 'Panadería')
         ->call('create')
         ->assertHasErrors('business_sector_id');
 
@@ -117,9 +117,9 @@ test('an activity with no sector is rejected as a field error, not as a foreign 
 
 test('a sector id that does not exist is rejected', function (): void {
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', 999999)
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', 'Panadería')
+        ->set('form.data.business_sector_id', 999999)
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', 'Panadería')
         ->call('create')
         ->assertHasErrors('business_sector_id');
 
@@ -131,9 +131,9 @@ test('the same activity name is rejected inside one sector', function (): void {
     BusinessActivity::factory()->for($sector, 'sector')->create(['code' => 'estetica', 'name' => 'Estética']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $sector->id)
-        ->set('form.businessActivityData.code', 'estetica-2')
-        ->set('form.businessActivityData.name', 'Estética')
+        ->set('form.data.business_sector_id', $sector->id)
+        ->set('form.data.code', 'estetica-2')
+        ->set('form.data.name', 'Estética')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -149,9 +149,9 @@ test('the same activity name IS accepted in another sector', function (): void {
     BusinessActivity::factory()->for($beauty, 'sector')->create(['code' => 'estetica', 'name' => 'Estética']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $services->id)
-        ->set('form.businessActivityData.code', 'estetica-servicios')
-        ->set('form.businessActivityData.name', 'Estética')
+        ->set('form.data.business_sector_id', $services->id)
+        ->set('form.data.code', 'estetica-servicios')
+        ->set('form.data.name', 'Estética')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -166,9 +166,9 @@ test('a code already used by another sector is rejected, because it keys the ass
     BusinessActivity::factory()->for($beauty, 'sector')->create(['code' => 'estetica', 'name' => 'Estética']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $services->id)
-        ->set('form.businessActivityData.code', 'estetica')
-        ->set('form.businessActivityData.name', 'Estética corporal')
+        ->set('form.data.business_sector_id', $services->id)
+        ->set('form.data.code', 'estetica')
+        ->set('form.data.name', 'Estética corporal')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -180,9 +180,9 @@ test('the sector id posted by the combobox as a string is stored as the right in
 
     Livewire::test('catalog.business-activity')
         // A real combobox posts the id as a string, never as an int.
-        ->set('form.businessActivityData.business_sector_id', (string) $sector->id)
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', 'Panadería')
+        ->set('form.data.business_sector_id', (string) $sector->id)
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', 'Panadería')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -193,9 +193,9 @@ test('a name with markup is rejected', function (): void {
     $sector = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $sector->id)
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', '<script>alert(1)</script>')
+        ->set('form.data.business_sector_id', $sector->id)
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', '<script>alert(1)</script>')
         ->call('create')
         ->assertHasErrors('name');
 });
@@ -224,10 +224,10 @@ test('creating an activity hands the refreshed rows back to Alpine', function ()
     BusinessActivity::factory()->for($sector, 'sector')->create(['code' => 'panaderia', 'name' => 'Panadería', 'sort_order' => 1]);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $sector->id)
-        ->set('form.businessActivityData.code', 'restaurante')
-        ->set('form.businessActivityData.name', 'Restaurante')
-        ->set('form.businessActivityData.sort_order', 2)
+        ->set('form.data.business_sector_id', $sector->id)
+        ->set('form.data.code', 'restaurante')
+        ->set('form.data.name', 'Restaurante')
+        ->set('form.data.sort_order', 2)
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -241,9 +241,9 @@ test('the create toast is announced in the feminine', function (): void {
     $sector = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
 
     Livewire::test('catalog.business-activity')
-        ->set('form.businessActivityData.business_sector_id', $sector->id)
-        ->set('form.businessActivityData.code', 'panaderia')
-        ->set('form.businessActivityData.name', 'Panadería')
+        ->set('form.data.business_sector_id', $sector->id)
+        ->set('form.data.code', 'panaderia')
+        ->set('form.data.name', 'Panadería')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Actividad creada correctamente');
 });

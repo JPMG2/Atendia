@@ -32,13 +32,13 @@ test('the real value travels in a hidden input, so wire:model binds to the id an
     // The visible field is a search box: if it carried the name, a submit would
     // send "ARS — Peso Argentino" instead of the id.
     $html = $this->blade(
-        '<x-inputsform.combobox name="currency_id" :options="$options" wire:model="form.countryData.currency_id" />',
+        '<x-inputsform.combobox name="currency_id" :options="$options" wire:model="form.data.currency_id" />',
         ['options' => comboboxOptions()],
     )->__toString();
 
     expect($html)->toContain('type="hidden"')
         ->toContain('name="currency_id"')
-        ->toContain('wire:model="form.countryData.currency_id"');
+        ->toContain('wire:model="form.data.currency_id"');
 
     // The wire:model belongs to the hidden field, never to the search box.
     preg_match('/<input\s+type="text"(.*?)\/>/s', $html, $search);

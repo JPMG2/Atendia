@@ -7,77 +7,20 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateCurrentStatus;
 use App\Actions\Catalog\UpdateCurrentStatus;
 use App\Dto\CurrentStatusDto;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
 use App\Models\CurrentStatus;
 use App\Rules\AttributeValidator;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Locked;
 
 class CurrentStatusForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $currentStatusId = null;
-
-    public ?CurrentStatusDto $currentStatusData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->currentStatusData = new CurrentStatusDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateCurrentStatus::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->currentStatusId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->currentStatusId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateCurrentStatus::class)->handle($this->currentStatusId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findCurrentStatusData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->currentStatusId = $id;
-        $this->currentStatusData = CurrentStatusDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findCurrentStatusData(int $id): ?CurrentStatus
-    {
-        return CurrentStatus::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->currentStatusData->toPayload();
+        return new CatalogWiring(
+            dto: CurrentStatusDto::class,
+            model: CurrentStatus::class,
+            create: CreateCurrentStatus::class,
+            update: UpdateCurrentStatus::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array

@@ -17,7 +17,7 @@ beforeEach(function (): void {
 
 test('submitting an empty code shows the client-side required error', function (): void {
     // This is the regression that cost a full session: the Alpine submit() reads the value
-    // via $wire.get('form.currencyData.code'). If the DTO is not initialized (null), the read
+    // via $wire.get('form.data.code'). If the DTO is not initialized (null), the read
     // is undefined and no error paints. This asserts the whole client-side path works.
     $admin = User::factory()->create();
     $admin->syncRoles('admin');

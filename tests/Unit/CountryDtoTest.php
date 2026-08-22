@@ -16,7 +16,7 @@ test('a fresh dto carries the maestro defaults', function (): void {
 });
 
 test('the dto never carries an id, so the record identity cannot be rewritten from the browser', function (): void {
-    // The id lives in CountryForm::$countryId, which is #[Locked]. An id on this
+    // The id lives in BaseCatalogForm::$recordId, which is #[Locked]. An id on this
     // DTO would be a second, client-writable copy of the same identity — exactly
     // what the lock exists to prevent.
     $dto = CountryDto::fromArray(['id' => 7, 'code' => 'ARG']);

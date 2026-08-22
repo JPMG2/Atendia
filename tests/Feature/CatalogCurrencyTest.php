@@ -15,15 +15,15 @@ use Mockery\MockInterface;
 uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `currencyData` starts null; `setup()` (run from mount) turns it into a
-    // real CurrencyDto. Without that, a `wire:model="form.currencyData.code"` update throws
+    // The form's `data` starts null; `setup()` (run from mount) turns it into a
+    // real CurrencyDto. Without that, a `wire:model="form.data.code"` update throws
     // "Cannot assign array to property ...CurrencyDto" because Livewire cannot recurse into null.
     Livewire::test('catalog.currency')
-        ->assertSet('form.currencyData.code', '')
-        ->set('form.currencyData.code', 'USD')
-        ->assertSet('form.currencyData.code', 'USD')
-        ->set('form.currencyData.name', 'Dólar Estadounidense')
-        ->assertSet('form.currencyData.name', 'Dólar Estadounidense');
+        ->assertSet('form.data.code', '')
+        ->set('form.data.code', 'USD')
+        ->assertSet('form.data.code', 'USD')
+        ->set('form.data.name', 'Dólar Estadounidense')
+        ->assertSet('form.data.name', 'Dólar Estadounidense');
 });
 
 test('the currency table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -99,10 +99,10 @@ test('the currency form wires the front-end validation (Alpine component + per-i
 
 test('a one-character symbol is accepted, because $ and € are single glyphs', function (): void {
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'USD')
-        ->set('form.currencyData.name', 'Dólar estadounidense')
-        ->set('form.currencyData.symbol', '$')
-        ->set('form.currencyData.decimal_places', 2)
+        ->set('form.data.code', 'USD')
+        ->set('form.data.name', 'Dólar estadounidense')
+        ->set('form.data.symbol', '$')
+        ->set('form.data.decimal_places', 2)
         ->call('create')
         ->assertHasNoErrors();
 
@@ -111,10 +111,10 @@ test('a one-character symbol is accepted, because $ and € are single glyphs', 
 
 test('a three-letter name is accepted, because "Yen" is a real currency name', function (): void {
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'JPY')
-        ->set('form.currencyData.name', 'Yen')
-        ->set('form.currencyData.symbol', '¥')
-        ->set('form.currencyData.decimal_places', 0)
+        ->set('form.data.code', 'JPY')
+        ->set('form.data.name', 'Yen')
+        ->set('form.data.symbol', '¥')
+        ->set('form.data.decimal_places', 0)
         ->call('create')
         ->assertHasNoErrors();
 
@@ -123,9 +123,9 @@ test('a three-letter name is accepted, because "Yen" is a real currency name', f
 
 test('a code longer than three letters is rejected, since the maxlength attribute is client-side only', function (): void {
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'ABCDEFGHIJ')
-        ->set('form.currencyData.name', 'Código larguísimo')
-        ->set('form.currencyData.symbol', 'X')
+        ->set('form.data.code', 'ABCDEFGHIJ')
+        ->set('form.data.name', 'Código larguísimo')
+        ->set('form.data.symbol', 'X')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -136,10 +136,10 @@ test('decimal_places is validated, so a crafted request cannot store an absurd p
     // This used to persist 9999: the field had no rule and the payload was
     // re-transformed after validation instead of being taken from it.
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'ZZZ')
-        ->set('form.currencyData.name', 'Moneda de prueba')
-        ->set('form.currencyData.symbol', 'Z')
-        ->set('form.currencyData.decimal_places', 9999)
+        ->set('form.data.code', 'ZZZ')
+        ->set('form.data.name', 'Moneda de prueba')
+        ->set('form.data.symbol', 'Z')
+        ->set('form.data.decimal_places', 9999)
         ->call('create')
         ->assertHasErrors('decimal_places');
 
@@ -175,11 +175,11 @@ test('creating a currency hands the refreshed rows back to Alpine', function ():
     Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'USD')
-        ->set('form.currencyData.name', 'Dólar Estadounidense')
-        ->set('form.currencyData.symbol', 'US$')
-        ->set('form.currencyData.decimal_places', 2)
-        ->set('form.currencyData.is_active', true)
+        ->set('form.data.code', 'USD')
+        ->set('form.data.name', 'Dólar Estadounidense')
+        ->set('form.data.symbol', 'US$')
+        ->set('form.data.decimal_places', 2)
+        ->set('form.data.is_active', true)
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -203,17 +203,17 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'USD')
-        ->set('form.currencyData.name', 'Dólar Estadounidense')
-        ->set('form.currencyData.symbol', 'US$')
-        ->set('form.currencyData.decimal_places', 2)
+        ->set('form.data.code', 'USD')
+        ->set('form.data.name', 'Dólar Estadounidense')
+        ->set('form.data.symbol', 'US$')
+        ->set('form.data.decimal_places', 2)
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         // Nothing was saved, so the table must not be reloaded either.
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.currencyData.code', 'USD')
-        ->assertSet('form.currencyData.name', 'Dólar Estadounidense')
-        ->assertSet('form.currencyData.symbol', 'US$');
+        ->assertSet('form.data.code', 'USD')
+        ->assertSet('form.data.name', 'Dólar Estadounidense')
+        ->assertSet('form.data.symbol', 'US$');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

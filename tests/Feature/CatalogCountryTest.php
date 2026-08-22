@@ -16,15 +16,15 @@ use Mockery\MockInterface;
 uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `countryData` starts null; `setup()` (run from mount) turns it into a
-    // real CountryDto. Without that, a `wire:model="form.countryData.code"` update throws
+    // The form's `data` starts null; `setup()` (run from mount) turns it into a
+    // real CountryDto. Without that, a `wire:model="form.data.code"` update throws
     // "Cannot assign array to property ...CountryDto" because Livewire cannot recurse into null.
     Livewire::test('catalog.country')
-        ->assertSet('form.countryData.code', '')
-        ->set('form.countryData.code', 'ARG')
-        ->assertSet('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->assertSet('form.countryData.name', 'Argentina');
+        ->assertSet('form.data.code', '')
+        ->set('form.data.code', 'ARG')
+        ->assertSet('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->assertSet('form.data.name', 'Argentina');
 });
 
 test('the country table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -100,8 +100,8 @@ test('the country maqueta seeds its editor with sensible defaults', function ():
     // El default del alta viaja en la config `blank` del riel compartido.
     expect(railConfig($component->html(), 'blank')['active'])->toBeTrue();
 
-    expect($component->get('form.countryData')->is_active)->toBeTrue()
-        ->and($component->get('form.countryData')->currency_id)->toBeNull();
+    expect($component->get('form.data')->is_active)->toBeTrue()
+        ->and($component->get('form.data')->currency_id)->toBeNull();
 });
 
 /*
@@ -116,10 +116,10 @@ test('a country is created with its currency, code and phone code', function ():
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->set('form.countryData.phone_code', '54')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->set('form.data.phone_code', '54')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -130,10 +130,10 @@ test('a country without a phone code is accepted, because the column is nullable
     $currency = Currency::factory()->create(['code' => 'USD', 'name' => 'Dólar Estadounidense']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'USA')
-        ->set('form.countryData.name', 'Estados Unidos')
-        ->set('form.countryData.phone_code', '')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'USA')
+        ->set('form.data.name', 'Estados Unidos')
+        ->set('form.data.phone_code', '')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -144,8 +144,8 @@ test('a country with no currency is rejected as a field error, not as a foreign 
     // The FK is `constrained()`: without the rule this would blow up inside
     // tryAction and surface as a vague toast instead of an error on the select.
     Livewire::test('catalog.country')
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
         ->call('create')
         ->assertHasErrors('currency_id');
 
@@ -154,9 +154,9 @@ test('a country with no currency is rejected as a field error, not as a foreign 
 
 test('a currency id that does not exist is rejected', function (): void {
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', 999999)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
+        ->set('form.data.currency_id', 999999)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
         ->call('create')
         ->assertHasErrors('currency_id');
 
@@ -167,9 +167,9 @@ test('a code longer than three letters is rejected, since the maxlength attribut
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ABCDEFGHIJ')
-        ->set('form.countryData.name', 'Código larguísimo')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ABCDEFGHIJ')
+        ->set('form.data.name', 'Código larguísimo')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -182,10 +182,10 @@ test('a phone code longer than the form allows is rejected by validation, not by
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->set('form.countryData.phone_code', '123456789')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->set('form.data.phone_code', '123456789')
         ->call('create')
         ->assertHasErrors('phone_code');
 
@@ -196,10 +196,10 @@ test('a phone code with letters is rejected', function (): void {
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->set('form.countryData.phone_code', 'AB12')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->set('form.data.phone_code', 'AB12')
         ->call('create')
         ->assertHasErrors('phone_code');
 });
@@ -234,11 +234,11 @@ test('creating a country hands the refreshed rows back to Alpine', function (): 
     Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina', 'currency_id' => $currency->id]);
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'BOL')
-        ->set('form.countryData.name', 'Bolivia')
-        ->set('form.countryData.phone_code', '591')
-        ->set('form.countryData.is_active', true)
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'BOL')
+        ->set('form.data.name', 'Bolivia')
+        ->set('form.data.phone_code', '591')
+        ->set('form.data.is_active', true)
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -264,17 +264,17 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.country')
-        ->set('form.countryData.currency_id', $currency->id)
-        ->set('form.countryData.code', 'ARG')
-        ->set('form.countryData.name', 'Argentina')
-        ->set('form.countryData.phone_code', '54')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.name', 'Argentina')
+        ->set('form.data.phone_code', '54')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         // Nothing was saved, so the table must not be reloaded either.
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.countryData.code', 'ARG')
-        ->assertSet('form.countryData.name', 'Argentina')
-        ->assertSet('form.countryData.phone_code', '54');
+        ->assertSet('form.data.code', 'ARG')
+        ->assertSet('form.data.name', 'Argentina')
+        ->assertSet('form.data.phone_code', '54');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

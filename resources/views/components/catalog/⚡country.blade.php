@@ -56,7 +56,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" path="form.countryData"
+<x-catalog.master :rows="$initialRows"
     :blank="['code' => '', 'name' => '', 'phone_code' => '', 'currency' => '', 'active' => true]"
     :search="['code', 'name']"
     :rules="[
@@ -101,27 +101,27 @@ new class extends Component {
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.country.fields.code')" required name="code"
                     :hint="__('catalog.country.fields.code_hint')" maxlength="3" alpine-error="code" x-mask="aaa"
-                    style="text-transform:uppercase" wire:model="form.countryData.code" />
+                    style="text-transform:uppercase" wire:model="form.data.code" />
 
                 <x-inputsform.input span="text" :label="__('catalog.country.fields.name')" required name="name"
                     :placeholder="__('catalog.country.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.countryData.name" />
+                    wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.country.fields.phone_code')" name="phone_code"
                     :hint="__('catalog.country.fields.phone_code_hint')" maxlength="6" alpine-error="phone_code"
-                    wire:model="form.countryData.phone_code" />
+                    wire:model="form.data.phone_code" />
 
                 <x-inputsform.combobox span="text" :label="__('catalog.country.fields.currency')" required
                     name="currency_id" :placeholder="__('catalog.country.fields.currency_placeholder')"
-                    :options="$this->currencyOptions" :value="$form->countryData?->currency_id"
-                    alpine-error="currency_id" wire:model="form.countryData.currency_id" />
+                    :options="$this->currencyOptions" :value="$form->data?->currency_id"
+                    alpine-error="currency_id" wire:model="form.data.currency_id" />
 
                 <x-inputsform.switch-field span="text" :label="__('catalog.country.fields.status')" name="is_active"
                     :on="__('catalog.country.status.active')" :off="__('catalog.country.status.inactive')"
-                    wire:model="form.countryData.is_active" />
+                    wire:model="form.data.is_active" />
             </x-catalog.form-row>
 
         </x-catalog.form-shell>

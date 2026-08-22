@@ -15,9 +15,9 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.region')->call('openEdit', $region->id);
 
-    expect($component->get('form.regionId'))->toBe($region->id)
-        ->and($component->get('form.regionData')->name)->toBe('Zona Norte')
-        ->and($component->get('form.regionData')->province_id)->toBe($province->id);
+    expect($component->get('form.recordId'))->toBe($region->id)
+        ->and($component->get('form.data')->name)->toBe('Zona Norte')
+        ->and($component->get('form.data')->province_id)->toBe($province->id);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -25,7 +25,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.name', 'Zona Noroeste')
+        ->set('form.data.name', 'Zona Noroeste')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -39,7 +39,7 @@ test('keeping its own name while editing does not trip the scoped unique rule', 
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -53,7 +53,7 @@ test('taking a name that already belongs to another region of the same province 
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.name', 'Zona Norte')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -69,7 +69,7 @@ test('moving a region to another province that already has that name is rejected
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.province_id', $santaFe->id)
+        ->set('form.data.province_id', $santaFe->id)
         ->call('update')
         ->assertHasErrors('name');
 
@@ -82,7 +82,7 @@ test('the province id posted by the combobox as a string is stored as the right 
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.province_id', (string) $other->id)
+        ->set('form.data.province_id', (string) $other->id)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -95,7 +95,7 @@ test('clearing the province reports a validation error instead of killing the co
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.province_id', '')
+        ->set('form.data.province_id', '')
         ->call('update')
         ->assertHasErrors('province_id');
 
@@ -109,9 +109,9 @@ test('starting a new region clears the record left over from an edit', function 
         ->call('openEdit', $region->id)
         ->call('openCreate');
 
-    expect($component->get('form.regionId'))->toBeNull()
-        ->and($component->get('form.regionData')->name)->toBe('')
-        ->and($component->get('form.regionData')->province_id)->toBeNull();
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->province_id)->toBeNull();
 });
 
 test('opening a region that no longer exists warns instead of blowing up', function (): void {
@@ -133,7 +133,7 @@ test('the update toast is announced in the feminine', function (): void {
 
     Livewire::test('catalog.region')
         ->call('openEdit', $region->id)
-        ->set('form.regionData.name', 'Zona Noroeste')
+        ->set('form.data.name', 'Zona Noroeste')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Región actualizada correctamente');
 });

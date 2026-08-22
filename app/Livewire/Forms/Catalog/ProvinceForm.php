@@ -6,81 +6,27 @@ namespace App\Livewire\Forms\Catalog;
 
 use App\Actions\Catalog\CreateProvince;
 use App\Actions\Catalog\UpdateProvince;
-use App\Dto\NotificationDto;
 use App\Dto\ProvinceDto;
-use App\Enums\NotificationType;
 use App\Models\Province;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class ProvinceForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $provinceId = null;
-
-    public ?ProvinceDto $provinceData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->provinceData = new ProvinceDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateProvince::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->provinceId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->provinceId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateProvince::class)->handle($this->provinceId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findProvinceData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->provinceId = $id;
-        $this->provinceData = ProvinceDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findProvinceData(int $id): ?Province
-    {
-        return Province::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->provinceData->toPayload();
+        return new CatalogWiring(
+            dto: ProvinceDto::class,
+            model: Province::class,
+            create: CreateProvince::class,
+            update: UpdateProvince::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        /** @var ProvinceDto|null $data */
+        $data = $this->data;
+
         return [
 
             // La FK es obligatoria en la tabla (`constrained()`), así que sin
@@ -96,7 +42,7 @@ class ProvinceForm extends BaseCatalogForm
                 'provinces',
                 'name',
                 'country_id',
-                $this->provinceData?->country_id,
+                $data?->country_id,
                 $excludeId,
             ),
 

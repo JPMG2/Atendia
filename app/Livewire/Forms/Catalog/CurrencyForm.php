@@ -7,76 +7,19 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateCurrency;
 use App\Actions\Catalog\UpdateCurrency;
 use App\Dto\CurrencyDto;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
 use App\Models\Currency;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class CurrencyForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $currencyId = null;
-
-    public ?CurrencyDto $currencyData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->currencyData = new CurrencyDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateCurrency::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->currencyId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->currencyId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateCurrency::class)->handle($this->currencyId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findCurrencyData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->currencyId = $id;
-        $this->currencyData = CurrencyDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findCurrencyData(int $id): ?Currency
-    {
-        return Currency::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->currencyData->toPayload();
+        return new CatalogWiring(
+            dto: CurrencyDto::class,
+            model: Currency::class,
+            create: CreateCurrency::class,
+            update: UpdateCurrency::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array

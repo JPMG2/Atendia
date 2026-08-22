@@ -17,9 +17,9 @@ uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
     Livewire::test('catalog.region')
-        ->assertSet('form.regionData.name', '')
-        ->set('form.regionData.name', 'Zona Norte')
-        ->assertSet('form.regionData.name', 'Zona Norte');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'Zona Norte')
+        ->assertSet('form.data.name', 'Zona Norte');
 });
 
 test('the region table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -126,8 +126,8 @@ test('a region is created with its province', function (): void {
     $province = Province::factory()->create(['name' => 'Buenos Aires']);
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $province->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $province->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -136,7 +136,7 @@ test('a region is created with its province', function (): void {
 
 test('a region with no province is rejected as a field error, not as a foreign key crash', function (): void {
     Livewire::test('catalog.region')
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertHasErrors('province_id');
 
@@ -145,8 +145,8 @@ test('a region with no province is rejected as a field error, not as a foreign k
 
 test('a province id that does not exist is rejected', function (): void {
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', 999999)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', 999999)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertHasErrors('province_id');
 
@@ -158,8 +158,8 @@ test('the same region name is rejected inside one province', function (): void {
     Region::factory()->create(['name' => 'Zona Norte', 'province_id' => $province->id]);
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $province->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $province->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -174,8 +174,8 @@ test('the same region name IS accepted in another province', function (): void {
     Region::factory()->create(['name' => 'Zona Norte', 'province_id' => $buenosAires->id]);
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $santaFe->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $santaFe->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -206,8 +206,8 @@ test('creating a region hands the refreshed rows back to Alpine', function (): v
     Region::factory()->create(['name' => 'Zona Este', 'province_id' => $province->id]);
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $province->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $province->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -221,8 +221,8 @@ test('the success toast names the entity in the feminine', function (): void {
     $province = Province::factory()->create(['name' => 'Buenos Aires']);
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $province->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $province->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Región creada correctamente');
 });
@@ -236,12 +236,12 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     );
 
     Livewire::test('catalog.region')
-        ->set('form.regionData.province_id', $province->id)
-        ->set('form.regionData.name', 'Zona Norte')
+        ->set('form.data.province_id', $province->id)
+        ->set('form.data.name', 'Zona Norte')
         ->call('create')
         ->assertDispatched('notify', type: 'error')
         ->assertNotDispatched('catalog-rows-refreshed')
-        ->assertSet('form.regionData.name', 'Zona Norte');
+        ->assertSet('form.data.name', 'Zona Norte');
 });
 
 test('only the actions the view calls are reachable from the browser', function (): void {

@@ -15,11 +15,11 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.currency')->call('openEdit', $currency->id);
 
-    expect($component->get('form.currencyId'))->toBe($currency->id)
-        ->and($component->get('form.currencyData')->code)->toBe('ARS')
-        ->and($component->get('form.currencyData')->name)->toBe($currency->name)
-        ->and($component->get('form.currencyData')->symbol)->toBe('$')
-        ->and($component->get('form.currencyData')->decimal_places)->toBe(2);
+    expect($component->get('form.recordId'))->toBe($currency->id)
+        ->and($component->get('form.data')->code)->toBe('ARS')
+        ->and($component->get('form.data')->name)->toBe($currency->name)
+        ->and($component->get('form.data')->symbol)->toBe('$')
+        ->and($component->get('form.data')->decimal_places)->toBe(2);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -27,7 +27,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.currency')
         ->call('openEdit', $currency->id)
-        ->set('form.currencyData.name', 'Peso rioplatense')
+        ->set('form.data.name', 'Peso rioplatense')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -43,7 +43,7 @@ test('keeping its own code while editing does not trip the unique rule', functio
 
     Livewire::test('catalog.currency')
         ->call('openEdit', $currency->id)
-        ->set('form.currencyData.symbol', 'AR$')
+        ->set('form.data.symbol', 'AR$')
         ->call('update')
         ->assertHasNoErrors();
 
@@ -56,7 +56,7 @@ test('taking a code that already belongs to another currency is rejected', funct
 
     Livewire::test('catalog.currency')
         ->call('openEdit', $currency->id)
-        ->set('form.currencyData.code', 'USD')
+        ->set('form.data.code', 'USD')
         ->call('update')
         ->assertHasErrors('code')
         ->assertReturned(false);
@@ -72,7 +72,7 @@ test('clearing the decimals field reports a validation error instead of killing 
 
     Livewire::test('catalog.currency')
         ->call('openEdit', $currency->id)
-        ->set('form.currencyData.decimal_places', null)
+        ->set('form.data.decimal_places', null)
         ->call('update')
         ->assertHasErrors('decimal_places');
 
@@ -81,9 +81,9 @@ test('clearing the decimals field reports a validation error instead of killing 
 
 test('an emptied decimals field stays empty instead of silently showing a 2 the user never typed', function (): void {
     $component = Livewire::test('catalog.currency')
-        ->set('form.currencyData.decimal_places', null);
+        ->set('form.data.decimal_places', null);
 
-    expect($component->get('form.currencyData')->decimal_places)->toBeNull();
+    expect($component->get('form.data')->decimal_places)->toBeNull();
 });
 
 test('starting a new currency clears the record left over from an edit', function (): void {
@@ -95,19 +95,19 @@ test('starting a new currency clears the record left over from an edit', functio
         ->call('openEdit', $currency->id)
         ->call('openCreate');
 
-    expect($component->get('form.currencyId'))->toBeNull()
-        ->and($component->get('form.currencyData')->code)->toBe('')
-        ->and($component->get('form.currencyData')->name)->toBe('')
-        ->and($component->get('form.currencyData')->symbol)->toBe('')
-        ->and($component->get('form.currencyData')->decimal_places)->toBe(2);
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->code)->toBe('')
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->symbol)->toBe('')
+        ->and($component->get('form.data')->decimal_places)->toBe(2);
 });
 
 test('a save that fails reports it back so the front keeps the user on the form', function (): void {
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'ARS')
-        ->set('form.currencyData.name', 'Peso argentino')
-        ->set('form.currencyData.symbol', '$')
-        ->set('form.currencyData.decimal_places', 2)
+        ->set('form.data.code', 'ARS')
+        ->set('form.data.name', 'Peso argentino')
+        ->set('form.data.symbol', '$')
+        ->set('form.data.decimal_places', 2)
         ->call('create')
         ->assertReturned(true);
 });
@@ -129,20 +129,20 @@ test('a failed open leaves the form untouched instead of half-loading a record',
         ->call('openEdit', $currency->id)
         ->call('openEdit', 999999);
 
-    // The currency that WAS open must survive: currencyId cannot end up pointing at
+    // The currency that WAS open must survive: recordId cannot end up pointing at
     // a row that does not exist, or the next save would target nothing.
-    expect($component->get('form.currencyId'))->toBe($currency->id)
-        ->and($component->get('form.currencyData')->code)->toBe('ARS');
+    expect($component->get('form.recordId'))->toBe($currency->id)
+        ->and($component->get('form.data')->code)->toBe('ARS');
 });
 
 test('a symbol longer than the form allows is rejected by validation, not by Postgres', function (): void {
     // The column is varchar(10) and the input caps at 5, but the rule said max:255:
     // anything in between sailed past validation and blew up in the database.
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'ZZZ')
-        ->set('form.currencyData.name', 'Moneda de prueba')
-        ->set('form.currencyData.symbol', 'ABCDEFGH')
-        ->set('form.currencyData.decimal_places', 2)
+        ->set('form.data.code', 'ZZZ')
+        ->set('form.data.name', 'Moneda de prueba')
+        ->set('form.data.symbol', 'ABCDEFGH')
+        ->set('form.data.decimal_places', 2)
         ->call('create')
         ->assertHasErrors('symbol');
 
@@ -157,10 +157,10 @@ test('a duplicate code typed in lowercase is caught as a field error, not as a d
     Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.currency')
-        ->set('form.currencyData.code', 'ars')
-        ->set('form.currencyData.name', 'Peso argentino bis')
-        ->set('form.currencyData.symbol', '$')
-        ->set('form.currencyData.decimal_places', 2)
+        ->set('form.data.code', 'ars')
+        ->set('form.data.name', 'Peso argentino bis')
+        ->set('form.data.symbol', '$')
+        ->set('form.data.decimal_places', 2)
         ->call('create')
         ->assertHasErrors('code');
 

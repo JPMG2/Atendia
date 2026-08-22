@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Interfaces\Catalog\FormData;
 use App\Models\SocialNetwork;
-use Livewire\Wireable;
 
-class SocialNetworkDto implements Wireable
+class SocialNetworkDto implements FormData
 {
     /**
      * Create a new class instance.

@@ -7,76 +7,19 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateBusinessSector;
 use App\Actions\Catalog\UpdateBusinessSector;
 use App\Dto\BusinessSectorDto;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
 use App\Models\BusinessSector;
 use App\Rules\AttributeValidator;
-use Livewire\Attributes\Locked;
 
 class BusinessSectorForm extends BaseCatalogForm
 {
-    #[Locked]
-    public ?int $businessSectorId = null;
-
-    public ?BusinessSectorDto $businessSectorData = null;
-
-    public function setup(): void
+    protected function catalog(): CatalogWiring
     {
-        $this->businessSectorData = new BusinessSectorDto;
-    }
-
-    public function store(): NotificationDto
-    {
-        $validated = $this->validateServiceData();
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(CreateBusinessSector::class)->handle($validated);
-
-            return $this->notificationService()->notificationFor($model, 'created');
-
-        }, __('notifications.not_created'));
-    }
-
-    public function update(): NotificationDto
-    {
-        if ($this->businessSectorId === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        $validated = $this->validateServiceData($this->businessSectorId);
-
-        return $this->tryAction(function () use ($validated) {
-
-            $model = app(UpdateBusinessSector::class)->handle($this->businessSectorId, $validated);
-
-            return $this->notificationService()->notificationFor($model, 'updated');
-
-        }, __('notifications.not_updated'));
-    }
-
-    public function loadData(int $id): bool
-    {
-        $data = $this->findBusinessSectorData($id);
-
-        if ($data === null) {
-            return false;
-        }
-
-        $this->businessSectorId = $id;
-        $this->businessSectorData = BusinessSectorDto::fromArray($data->toArray());
-
-        return true;
-    }
-
-    public function findBusinessSectorData(int $id): ?BusinessSector
-    {
-        return BusinessSector::query()->find($id);
-    }
-
-    protected function transformServiceData(): array
-    {
-        return $this->businessSectorData->toPayload();
+        return new CatalogWiring(
+            dto: BusinessSectorDto::class,
+            model: BusinessSector::class,
+            create: CreateBusinessSector::class,
+            update: UpdateBusinessSector::class,
+        );
     }
 
     protected function getValidationRules(?int $excludeId = null): array

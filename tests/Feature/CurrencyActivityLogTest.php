@@ -18,7 +18,7 @@ test('editing a currency records who changed what', function (): void {
 
     Livewire::test('catalog.currency')
         ->call('openEdit', $currency->id)
-        ->set('form.currencyData.symbol', 'AR$')
+        ->set('form.data.symbol', 'AR$')
         ->call('update')
         ->assertHasNoErrors();
 

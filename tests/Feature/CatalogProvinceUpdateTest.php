@@ -15,9 +15,9 @@ test('opening a row loads that record into the form', function (): void {
 
     $component = Livewire::test('catalog.province')->call('openEdit', $province->id);
 
-    expect($component->get('form.provinceId'))->toBe($province->id)
-        ->and($component->get('form.provinceData')->name)->toBe('Buenos Aires')
-        ->and($component->get('form.provinceData')->country_id)->toBe($country->id);
+    expect($component->get('form.recordId'))->toBe($province->id)
+        ->and($component->get('form.data')->name)->toBe('Buenos Aires')
+        ->and($component->get('form.data')->country_id)->toBe($country->id);
 });
 
 test('editing a record updates it instead of creating a second one', function (): void {
@@ -25,7 +25,7 @@ test('editing a record updates it instead of creating a second one', function ()
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.name', 'Gran Buenos Aires')
+        ->set('form.data.name', 'Gran Buenos Aires')
         ->call('update')
         ->assertHasNoErrors()
         ->assertReturned(true);
@@ -41,7 +41,7 @@ test('keeping its own name while editing does not trip the scoped unique rule', 
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.is_active', false)
+        ->set('form.data.is_active', false)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -55,7 +55,7 @@ test('taking a name that already belongs to another province of the same country
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.name', 'Mérida')
+        ->set('form.data.name', 'Mérida')
         ->call('update')
         ->assertHasErrors('name')
         ->assertReturned(false);
@@ -75,7 +75,7 @@ test('moving a province to another country that already has that name is rejecte
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.country_id', $mexico->id)
+        ->set('form.data.country_id', $mexico->id)
         ->call('update')
         ->assertHasErrors('name');
 
@@ -89,7 +89,7 @@ test('the country id posted by the combobox as a string is stored as the right i
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
         // A real combobox posts the id as a string, never as an int.
-        ->set('form.provinceData.country_id', (string) $other->id)
+        ->set('form.data.country_id', (string) $other->id)
         ->call('update')
         ->assertHasNoErrors();
 
@@ -102,7 +102,7 @@ test('clearing the country reports a validation error instead of killing the com
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.country_id', '')
+        ->set('form.data.country_id', '')
         ->call('update')
         ->assertHasErrors('country_id');
 
@@ -116,9 +116,9 @@ test('starting a new province clears the record left over from an edit', functio
         ->call('openEdit', $province->id)
         ->call('openCreate');
 
-    expect($component->get('form.provinceId'))->toBeNull()
-        ->and($component->get('form.provinceData')->name)->toBe('')
-        ->and($component->get('form.provinceData')->country_id)->toBeNull();
+    expect($component->get('form.recordId'))->toBeNull()
+        ->and($component->get('form.data')->name)->toBe('')
+        ->and($component->get('form.data')->country_id)->toBeNull();
 });
 
 test('opening a province that no longer exists warns instead of blowing up', function (): void {
@@ -140,7 +140,7 @@ test('the update toast is announced in the feminine', function (): void {
 
     Livewire::test('catalog.province')
         ->call('openEdit', $province->id)
-        ->set('form.provinceData.name', 'Gran Buenos Aires')
+        ->set('form.data.name', 'Gran Buenos Aires')
         ->call('update')
         ->assertDispatched('notify', type: 'success', message: 'Provincia actualizada correctamente');
 });

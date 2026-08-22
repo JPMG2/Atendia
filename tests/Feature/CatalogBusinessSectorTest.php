@@ -13,13 +13,13 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `businessSectorData` starts null; `setup()` (run from mount) turns it
+    // The form's `data` starts null; `setup()` (run from mount) turns it
     // into a real BusinessSectorDto. Without that, a wire:model update throws
     // "Cannot assign array to property" because Livewire cannot recurse into null.
     Livewire::test('catalog.business-sector')
-        ->assertSet('form.businessSectorData.name', '')
-        ->set('form.businessSectorData.name', 'Gastronomía')
-        ->assertSet('form.businessSectorData.name', 'Gastronomía');
+        ->assertSet('form.data.name', '')
+        ->set('form.data.name', 'Gastronomía')
+        ->assertSet('form.data.name', 'Gastronomía');
 });
 
 test('the sector table hands its rows to Alpine so the search filters client-side', function (): void {
@@ -67,9 +67,9 @@ test('the sector editor seeds a new record as active and first in line', functio
     $component = Livewire::test('catalog.business-sector');
 
     expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.businessSectorData')->is_active)->toBeTrue()
-        ->and($component->get('form.businessSectorData')->sort_order)->toBe(0)
-        ->and($component->get('form.businessSectorData')->description)->toBeNull();
+        ->and($component->get('form.data')->is_active)->toBeTrue()
+        ->and($component->get('form.data')->sort_order)->toBe(0)
+        ->and($component->get('form.data')->description)->toBeNull();
 });
 
 /*
@@ -80,10 +80,10 @@ test('the sector editor seeds a new record as active and first in line', functio
 
 test('a sector is created with all of its attributes', function (): void {
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', 'Gastronomía')
-        ->set('form.businessSectorData.description', 'Comida y bebida')
-        ->set('form.businessSectorData.sort_order', 3)
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', 'Gastronomía')
+        ->set('form.data.description', 'Comida y bebida')
+        ->set('form.data.sort_order', 3)
         ->call('create')
         ->assertHasNoErrors();
 
@@ -101,8 +101,8 @@ test('the code is normalized before the unique rule runs, not after', function (
     BusinessSector::factory()->create(['code' => 'salud', 'name' => 'Salud']);
 
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'SALUD')
-        ->set('form.businessSectorData.name', 'Salud Integral')
+        ->set('form.data.code', 'SALUD')
+        ->set('form.data.name', 'Salud Integral')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -113,8 +113,8 @@ test('a repeated sector name is rejected as a field error, not as a database cra
     BusinessSector::factory()->create(['code' => 'salud', 'name' => 'Salud']);
 
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'salud-mental')
-        ->set('form.businessSectorData.name', 'Salud')
+        ->set('form.data.code', 'salud-mental')
+        ->set('form.data.name', 'Salud')
         ->call('create')
         ->assertHasErrors('name');
 
@@ -123,7 +123,7 @@ test('a repeated sector name is rejected as a field error, not as a database cra
 
 test('a sector with no code is rejected', function (): void {
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.name', 'Gastronomía')
+        ->set('form.data.name', 'Gastronomía')
         ->call('create')
         ->assertHasErrors('code');
 
@@ -133,16 +133,16 @@ test('a sector with no code is rejected', function (): void {
 test('a code longer than its column is rejected instead of blowing up on save', function (): void {
     // The column is varchar(30); the max:255 that the helper brings is not enough.
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', str_repeat('a', 31))
-        ->set('form.businessSectorData.name', 'Gastronomía')
+        ->set('form.data.code', str_repeat('a', 31))
+        ->set('form.data.name', 'Gastronomía')
         ->call('create')
         ->assertHasErrors('code');
 });
 
 test('a name with markup is rejected', function (): void {
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', '<script>alert(1)</script>')
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', '<script>alert(1)</script>')
         ->call('create')
         ->assertHasErrors('name');
 });
@@ -150,9 +150,9 @@ test('a name with markup is rejected', function (): void {
 test('an empty description is stored as null, not as an empty string', function (): void {
     // Half a table of "present but empty" values is what whereNull never finds.
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', 'Gastronomía')
-        ->set('form.businessSectorData.description', '')
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', 'Gastronomía')
+        ->set('form.data.description', '')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -161,10 +161,10 @@ test('an empty description is stored as null, not as an empty string', function 
 
 test('the order posted by the number input as a string is stored as the right integer', function (): void {
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', 'Gastronomía')
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', 'Gastronomía')
         // A real input posts the number as a string, never as an int.
-        ->set('form.businessSectorData.sort_order', '7')
+        ->set('form.data.sort_order', '7')
         ->call('create')
         ->assertHasNoErrors();
 
@@ -174,9 +174,9 @@ test('the order posted by the number input as a string is stored as the right in
 test('an order above what the column holds is rejected', function (): void {
     // smallint tops out at 32767: without the explicit bound this reaches Postgres.
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', 'Gastronomía')
-        ->set('form.businessSectorData.sort_order', 40000)
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', 'Gastronomía')
+        ->set('form.data.sort_order', 40000)
         ->call('create')
         ->assertHasErrors('sort_order');
 });
@@ -206,9 +206,9 @@ test('creating a sector hands the refreshed rows back to Alpine', function (): v
     BusinessSector::factory()->create(['code' => 'salud', 'name' => 'Salud', 'sort_order' => 1]);
 
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'belleza')
-        ->set('form.businessSectorData.name', 'Belleza')
-        ->set('form.businessSectorData.sort_order', 2)
+        ->set('form.data.code', 'belleza')
+        ->set('form.data.name', 'Belleza')
+        ->set('form.data.sort_order', 2)
         ->call('create')
         ->assertDispatched(
             'catalog-rows-refreshed',
@@ -220,8 +220,8 @@ test('creating a sector hands the refreshed rows back to Alpine', function (): v
 
 test('the create toast is announced in the masculine', function (): void {
     Livewire::test('catalog.business-sector')
-        ->set('form.businessSectorData.code', 'gastronomia')
-        ->set('form.businessSectorData.name', 'Gastronomía')
+        ->set('form.data.code', 'gastronomia')
+        ->set('form.data.name', 'Gastronomía')
         ->call('create')
         ->assertDispatched('notify', type: 'success', message: 'Rubro creado correctamente');
 });
