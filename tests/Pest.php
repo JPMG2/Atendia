@@ -62,7 +62,7 @@ function visibleCatalogView(object $page): string
     return $form !== 'none' ? 'form' : ($list !== 'none' ? 'list' : 'none');
 }
 
-/** Config that the editor hands to the shared Alpine rail, e.g. `blank` or `search`. */
+/** Config that the editor hands to the shared Alpine rail, e.g. `items` or `search`. */
 function railConfig(string $html, string $key): array
 {
     preg_match("/{$key}: JSON\.parse\('(.*?)'\)/", $html, $matches);

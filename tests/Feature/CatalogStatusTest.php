@@ -39,10 +39,12 @@ test('the status editor renders its only input', function (): void {
 test('the status master has no active flag, because the table has no such column', function (): void {
     // `current_statuses` stores a name and a colour, nothing else. Showing a state
     // switch here would be inventing a field the database does not keep.
-    $html = Livewire::test('catalog.status')->html();
+    $component = Livewire::test('catalog.status');
 
-    expect($html)->not->toContain('is_active')
-        ->and(railConfig($html, 'blank'))->toBe(['name' => '', 'color' => CurrentStatus::DEFAULT_COLOR]);
+    // El DTO es el estado del formulario: si tuviera un estado, estaría acá.
+    expect($component->html())->not->toContain('is_active')
+        ->and($component->get('form.data')->toArray())
+        ->toBe(['name' => '', 'color' => CurrentStatus::DEFAULT_COLOR]);
 });
 
 test('the colour of a status is a token key, never a hex', function (): void {

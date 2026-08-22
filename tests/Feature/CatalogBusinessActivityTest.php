@@ -74,8 +74,7 @@ test('the sector combobox lists every sector, so an activity on a disabled secto
 test('the activity editor seeds a new record as active with no sector chosen', function (): void {
     $component = Livewire::test('catalog.business-activity');
 
-    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.data')->is_active)->toBeTrue()
+    expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->business_sector_id)->toBeNull();
 });
 

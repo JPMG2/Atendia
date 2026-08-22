@@ -50,7 +50,6 @@ new class extends Component {
 ?>
 
 <x-catalog.master :rows="$initialRows"
-    :blank="['name' => '', 'url' => '', 'icon' => '', 'abbreviation' => '', 'active' => true]"
     :search="['name', 'abbreviation']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],

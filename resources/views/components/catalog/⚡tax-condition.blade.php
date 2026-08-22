@@ -57,7 +57,6 @@ new class extends Component {
 ?>
 
 <x-catalog.master :rows="$initialRows"
-    :blank="['code' => '', 'name' => '', 'country' => '', 'discriminates' => false, 'active' => true]"
     :search="['code', 'name', 'country']"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 255], 'noMarkup'],

@@ -66,8 +66,7 @@ test('the sectors are listed in the order the admin chose, not alphabetically', 
 test('the sector editor seeds a new record as active and first in line', function (): void {
     $component = Livewire::test('catalog.business-sector');
 
-    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.data')->is_active)->toBeTrue()
+    expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->sort_order)->toBe(0)
         ->and($component->get('form.data')->description)->toBeNull();
 });

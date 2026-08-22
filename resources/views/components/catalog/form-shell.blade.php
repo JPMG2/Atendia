@@ -3,7 +3,7 @@
     'newTitle' => null,   // "Nueva red social"
     'editTitle' => null,  // "Editar" — al lado va el identificador de la fila
     'create' => null,     // texto del botón de alta
-    'titleKey' => 'name', // campo de `f` que se muestra junto a "Editar"
+    'titleKey' => 'name', // campo de la fila en curso que se muestra junto a "Editar"
 ])
 
 {{--
@@ -21,7 +21,7 @@
 
     <span class="catalog-form-title">
         <template x-if="mode === 'edit'">
-            <span>{{ $editTitle }} <span class="mono" x-text="f.{{ $titleKey }}"></span></span>
+            <span>{{ $editTitle }} <span class="mono" x-text="current.{{ $titleKey }}"></span></span>
         </template>
         <template x-if="mode === 'create'"><span>{{ $newTitle }}</span></template>
     </span>

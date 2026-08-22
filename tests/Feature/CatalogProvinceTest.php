@@ -76,8 +76,7 @@ test('the country combobox lists every country, so a province on a disabled coun
 test('the province editor seeds a new record as active', function (): void {
     $component = Livewire::test('catalog.province');
 
-    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue()
-        ->and($component->get('form.data')->is_active)->toBeTrue()
+    expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->country_id)->toBeNull();
 });
 

@@ -2,14 +2,13 @@
  * catalogMaster — el riel de Alpine de CUALQUIER maestro del hub de catálogos.
  *
  * Los tres editores (monedas, países, redes sociales) tenían este mismo bloque
- * copiado con los nombres cambiados: mismo view/mode/f/errors, mismo filtered(),
+ * copiado con los nombres cambiados: mismo view/mode/errors, mismo filtered(),
  * mismo openCreate/openEdit, mismo submit. Un bug arreglado en uno seguía vivo
  * en los otros dos. Acá vive una sola vez y cada maestro pasa su config:
  *
  *   catalogMaster({
  *     items:  [...],                       // filas, entregadas una sola vez al montar
  *     path:   'form.data',                 // dónde vive el DTO en el componente Livewire
- *     blank:  { code:'', name:'' },        // estado de `f` para un alta
  *     search: ['code', 'name'],            // claves por las que filtra el buscador
  *     rules:  { code: ['required', ...] }, // espejo de getValidationRules()
  *   })
@@ -17,7 +16,7 @@
  * Depende de la función madre global `validate()` (form-guard.js), que ya se
  * carga en el layout del dashboard.
  */
-export function catalogMaster({ items = [], path = '', blank = {}, search = [], rules = {} } = {}) {
+export function catalogMaster({ items = [], path = '', search = [], rules = {} } = {}) {
     return {
         view: 'list',
         mode: 'create',
@@ -25,9 +24,10 @@ export function catalogMaster({ items = [], path = '', blank = {}, search = [], 
         errors: {},
         items,
 
-        // id === null => alta. Con id => edición de ESA fila, pase lo que pase
-        // con el código o el nombre (los dos son editables por el usuario).
-        f: { id: null, ...blank },
+        // La fila que se está editando, SOLO para que el encabezado pueda decir
+        // "Editar ARS". Los campos no salen de acá: van por wire:model contra el
+        // DTO del server, que es el único estado del formulario.
+        current: null,
 
         filtered() {
             const q = this.q.trim().toLowerCase();
@@ -41,7 +41,7 @@ export function catalogMaster({ items = [], path = '', blank = {}, search = [], 
         async openCreate() {
             this.mode = 'create';
             this.errors = {};
-            this.f = { id: null, ...blank };
+            this.current = null;
 
             // El server también tiene que arrancar en blanco, si no el alta
             // hereda los datos y el id del registro que se editó antes.
@@ -50,15 +50,15 @@ export function catalogMaster({ items = [], path = '', blank = {}, search = [], 
         },
 
         async openEdit(row) {
-            // OJO con el orden: `mode` y `f` se setean YA, antes del await, igual
-            // que en openCreate(). Si se setean después, entre el click y la
+            // OJO con el orden: `mode` y `current` se setean YA, antes del await,
+            // igual que en openCreate(). Si se setean después, entre el click y la
             // respuesta del server queda una ventana con el mode de la vez
             // anterior — y si venías de "Crear", el form abre diciendo "Nueva".
             // Lo único que espera al server es `view`, para no mostrar el
             // formulario de un registro que ya no existe.
             this.mode = 'edit';
             this.errors = {};
-            this.f = { ...row };
+            this.current = row;
 
             if (!(await this.$wire.openEdit(row.id))) {
                 return;

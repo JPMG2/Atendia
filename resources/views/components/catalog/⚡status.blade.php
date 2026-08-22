@@ -54,7 +54,7 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows" :blank="['name' => '', 'color' => \App\Models\CurrentStatus::DEFAULT_COLOR]" :search="['name']"
+<x-catalog.master :rows="$initialRows" :search="['name']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]">

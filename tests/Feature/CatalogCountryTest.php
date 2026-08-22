@@ -93,12 +93,9 @@ test('the currency select lists every currency, so a country on a disabled curre
 });
 
 test('the country maqueta seeds its editor with sensible defaults', function (): void {
-    // Defaults live in the CountryDto / Alpine state: a new row starts active
-    // with no currency picked yet.
+    // Defaults live in the CountryDto: a new row starts active with no currency
+    // picked yet. The form has no state of its own on the Alpine side.
     $component = Livewire::test('catalog.country');
-
-    // El default del alta viaja en la config `blank` del riel compartido.
-    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue();
 
     expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->currency_id)->toBeNull();

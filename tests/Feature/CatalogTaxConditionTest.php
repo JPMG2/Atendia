@@ -56,10 +56,8 @@ test('the editor seeds a new record as active and not discriminating', function 
     // `discriminate_tax` defaults to false in the table; the DTO has to agree or
     // a brand new condition would arrive at the form already ticked.
     $component = Livewire::test('catalog.tax-condition');
-    $blank = railConfig($component->html(), 'blank');
 
-    expect($blank['active'])->toBeTrue()
-        ->and($blank['discriminates'])->toBeFalse()
+    expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->discriminate_tax)->toBeFalse();
 });
 

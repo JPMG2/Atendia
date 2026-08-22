@@ -93,12 +93,9 @@ test('the icon combobox offers the glyphs registered in config/icons.php', funct
 });
 
 test('the social network editor seeds itself with sensible defaults', function (): void {
-    // Defaults live in the SocialNetworkDto / Alpine state: a new row starts active
-    // with no icon picked yet.
+    // Defaults live in the SocialNetworkDto: a new row starts active with no icon
+    // picked yet. The form has no state of its own on the Alpine side.
     $component = Livewire::test('catalog.social-network');
-
-    // El default del alta viaja en la config `blank` del riel compartido.
-    expect(railConfig($component->html(), 'blank')['active'])->toBeTrue();
 
     expect($component->get('form.data')->is_active)->toBeTrue()
         ->and($component->get('form.data')->icon)->toBeNull();

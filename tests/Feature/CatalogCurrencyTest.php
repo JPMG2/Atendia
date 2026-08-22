@@ -74,12 +74,12 @@ test('the currency editor renders its real inputs', function (): void {
 });
 
 test('the currency maqueta seeds its editor with sensible defaults', function (): void {
-    // Los defaults del alta ya no son literales sueltos en el @script de cada
-    // editor: viajan en la config `blank` que se le pasa al riel compartido.
-    $blank = railConfig(Livewire::test('catalog.currency')->html(), 'blank');
+    // Los defaults del alta viven en el DTO, que es el único estado del
+    // formulario: los campos van por wire:model contra él, no contra Alpine.
+    $data = Livewire::test('catalog.currency')->get('form.data');
 
-    expect($blank['decimals'])->toBe(2)
-        ->and($blank['active'])->toBeTrue();
+    expect($data->decimal_places)->toBe(2)
+        ->and($data->is_active)->toBeTrue();
 });
 
 test('the currency form wires the front-end validation (Alpine component + per-input error)', function (): void {
