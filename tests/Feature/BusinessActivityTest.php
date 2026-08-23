@@ -19,20 +19,24 @@ test('an activity belongs to a sector and a sector lists its activities', functi
         ->and($sector->activities->pluck('name')->all())->toBe(['Farmacia']);
 });
 
-test('a business declares one activity and the sector is reached through it', function (): void {
+test('a business declares a primary activity and the sector is reached through it', function (): void {
     $activity = BusinessActivity::factory()
         ->for(BusinessSector::factory()->create(['name' => 'Gastronomía']), 'sector')
         ->create(['name' => 'Panadería']);
 
-    $business = Business::factory()->create(['business_activity_id' => $activity->id]);
+    $business = Business::factory()->create();
+    $business->syncActivities($activity->id);
 
-    expect($business->activity->name)->toBe('Panadería')
-        ->and($business->activity->sector->name)->toBe('Gastronomía')
+    expect($business->primaryActivity()->name)->toBe('Panadería')
+        ->and($business->primaryActivity()->sector->name)->toBe('Gastronomía')
         ->and($activity->businesses)->toHaveCount(1);
 });
 
-test('a business can exist without an activity', function (): void {
-    expect(Business::factory()->create()->business_activity_id)->toBeNull();
+test('a business can exist without any activity', function (): void {
+    $business = Business::factory()->create();
+
+    expect($business->activities)->toBeEmpty()
+        ->and($business->primaryActivity())->toBeNull();
 });
 
 test('the same activity name can repeat across sectors but not inside one', function (): void {
@@ -86,7 +90,7 @@ test('soft deleting a sector with activities passes the database and needs an ap
 
 test('an activity used by a business cannot be wiped from the database', function (): void {
     $activity = BusinessActivity::factory()->create();
-    Business::factory()->create(['business_activity_id' => $activity->id]);
+    Business::factory()->create()->syncActivities($activity->id);
 
     expect(fn () => $activity->forceDelete())->toThrow(QueryException::class);
 });

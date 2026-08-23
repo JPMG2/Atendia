@@ -29,6 +29,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.currency', 'catalog.tax-condition',
             'catalog.status', 'catalog.social-network',
             'catalog.business-sector', 'catalog.business-activity',
+            'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
         ];
 
         foreach ([...$areaPermissions, ...$catalogPermissions] as $permission) {

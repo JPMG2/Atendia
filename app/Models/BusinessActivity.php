@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
@@ -42,11 +42,35 @@ class BusinessActivity extends Model implements DataTable
     }
 
     /**
-     * @return HasMany<Business, $this>
+     * @return BelongsToMany<Business, $this>
      */
-    public function businesses(): HasMany
+    /**
+     * Los tipos de servicio que se le SUGIEREN a esta actividad.
+     *
+     * Sugerir no es permitir en exclusiva: un negocio puede adoptar un tipo que
+     * no está acá (la panadería que decide poner mesas). La ausencia de una fila
+     * significa "no se lo muestro arriba", nunca "no puede".
+     *
+     * @return BelongsToMany<ServiceType, $this>
+     */
+    public function suggestedServiceTypes(): BelongsToMany
     {
-        return $this->hasMany(Business::class);
+        return $this->belongsToMany(ServiceType::class, 'activity_service_type')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderBy('activity_service_type.sort_order');
+    }
+
+    /**
+     * Los negocios que declararon esta actividad, principal o secundaria.
+     *
+     * @return BelongsToMany<Business, $this>
+     */
+    public function businesses(): BelongsToMany
+    {
+        return $this->belongsToMany(Business::class, 'activity_business')
+            ->withPivot(['is_primary', 'sort_order'])
+            ->withTimestamps();
     }
 
     /**

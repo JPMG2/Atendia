@@ -103,23 +103,46 @@ new #[Title('Catálogos del sistema')] class extends Component {
              Se compacta a iconos mientras hay un maestro abierto y solo se
              re-expande al cerrarlo (el hover no cambia el ancho). --}}
         <div class="catalog-rail-slot">
-            <nav class="card catalog-list" aria-label="{{ __('catalog.hub.rail_label') }}">
-                @forelse ($this->grouped as $group => $items)
-                    <div class="catalog-group">
-                        <p class="catalog-group-label">{{ $group }}</p>
-                        <div class="catalog-group-rule" aria-hidden="true"></div>
-                        @foreach ($items as $form)
-                            <button type="button" wire:click="select({{ $form->id }})" class="catalog-item"
-                                title="{{ $form->title }}"
-                                @if ($selectedId === $form->id) aria-current="true" @endif>
-                                <span class="catalog-item-icon"><x-icon :name="$form->icon ?? 'library'" :size="18" /></span>
-                                <span class="catalog-item-text">{{ $form->title }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                @empty
-                    <p class="catalog-group-label">{{ __('catalog.hub.none') }}</p>
-                @endforelse
+            <nav class="card catalog-list" aria-label="{{ __('catalog.hub.rail_label') }}"
+                x-data="catalogRail({ titles: {{ \Illuminate\Support\Js::from($this->forms->pluck('title')->all()) }} })">
+
+                {{-- Cabecera fija: el buscador no se va con el scroll de la lista.
+                     Filtra client-side (los maestros ya están renderizados), así que
+                     tipear no dispara un request. Con un maestro abierto el riel se
+                     colapsa a iconos y esta cabecera se esconde por CSS. --}}
+                <div class="catalog-rail-search">
+                    <x-inputsform.input name="catalog-search" size="s" icon="search"
+                        :placeholder="__('catalog.hub.search_placeholder')"
+                        :aria-label="__('catalog.hub.search_label')" x-model="q" />
+                </div>
+
+                {{-- Cuerpo: alto acotado por --rail-scroll-h, con su propio scroll.
+                     Antes el riel crecía con la cantidad de maestros y estiraba la
+                     pantalla entera. --}}
+                <div class="catalog-rail-body">
+                    @forelse ($this->grouped as $group => $items)
+                        <div class="catalog-group"
+                            x-show="groupVisible({{ \Illuminate\Support\Js::from($items->pluck('title')->all()) }})">
+                            <p class="catalog-group-label">{{ $group }}</p>
+                            <div class="catalog-group-rule" aria-hidden="true"></div>
+                            @foreach ($items as $form)
+                                <button type="button" wire:click="select({{ $form->id }})"
+                                    x-on:click="clearSearch()" class="catalog-item" title="{{ $form->title }}"
+                                    x-show="matches({{ \Illuminate\Support\Js::from($form->title) }})"
+                                    @if ($selectedId === $form->id) aria-current="true" @endif>
+                                    <span class="catalog-item-icon"><x-icon :name="$form->icon ?? 'library'" :size="18" /></span>
+                                    <span class="catalog-item-text">{{ $form->title }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @empty
+                        <p class="catalog-group-label">{{ __('catalog.hub.none') }}</p>
+                    @endforelse
+
+                    <p class="catalog-rail-empty" x-show="!hasResults()" x-cloak>
+                        {{ __('catalog.hub.no_matches') }}
+                    </p>
+                </div>
             </nav>
         </div>
 

@@ -29,6 +29,16 @@ test('the hub lists the seeded masters grouped from catalog_forms', function ():
         ->assertSee('Redes sociales');
 });
 
+test('the rail has a search box and its own scrollable body', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('catalog.manager')
+        ->assertSeeHtml('catalogRail(')          // the Alpine rail is mounted
+        ->assertSeeHtml('catalog-rail-search')   // fixed head, does not scroll away
+        ->assertSeeHtml('catalog-rail-body')     // bounded height + own scroll
+        ->assertSeeHtml('groupVisible(')         // a group hides when it has no match left
+        ->assertSee(__('catalog.hub.search_placeholder'));
+});
+
 test('the hub shows the empty state with no master open by default', function (): void {
     Livewire::actingAs($this->admin)
         ->test('catalog.manager')

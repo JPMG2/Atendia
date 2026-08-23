@@ -25,6 +25,9 @@ return [
         'title' => 'Configuración general',
         'subtitle' => 'Elige un catálogo de la izquierda y configúralo a la derecha.',
         'rail_label' => 'Catálogos',
+        'search_placeholder' => 'Busca un catálogo',
+        'search_label' => 'Buscar catálogo',
+        'no_matches' => 'Ningún catálogo coincide con la búsqueda.',
         'none' => 'No hay catálogos disponibles.',
         'close' => 'Cerrar catálogo',
 
@@ -305,6 +308,147 @@ return [
     ],
 
     // --- Grupo Negocio: lo que el negocio elige al configurarse ---
+
+    'service_type' => [
+        'search_placeholder' => 'Buscar por clave, nombre, modalidad o atributo',
+        'search_label' => 'Buscar tipo de servicio',
+        'singular' => 'tipo de servicio',
+        'plural' => 'tipos de servicio',
+        'create' => 'Crear tipo',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo tipo de servicio',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay tipos de servicio que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Tipo de servicio',
+            'modality' => 'Modalidad',
+            'sector' => 'Rubro',
+            'attributes' => 'Atributos',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Sin espacios ni acentos: consulta, pedido-llevar',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Consulta',
+            'modality' => 'Modalidad',
+            'modality_placeholder' => 'Elegí cómo se ofrece',
+            'modality_hint' => 'Una sola: decide qué pregunta el asistente',
+            'description' => 'Descripción',
+            'description_placeholder' => 'Ej. Atención con turno, uno a la vez',
+            'description_hint' => 'Ayuda al negocio a saber si es lo que ofrece',
+            'sector' => 'Rubro',
+            'sector_placeholder' => 'Sin rubro',
+            'sector_hint' => 'Solo agrupa esta pantalla; a quién se le ofrece lo deciden las actividades',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se le sugiere al negocio',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'service_modality' => [
+        'search_placeholder' => 'Buscar por clave, nombre o descripción',
+        'search_label' => 'Buscar modalidad',
+        'singular' => 'modalidad',
+        'plural' => 'modalidades',
+        'create' => 'Crear modalidad',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva modalidad',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay modalidades que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'description' => 'Qué pide y qué recuerda',
+            'order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Es a lo que se engancha el sistema: cita, reserva, alquiler',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Cita / Turno',
+            'description' => 'Descripción',
+            'description_placeholder' => 'Ej. Fecha, hora y duración con un profesional',
+            'description_hint' => 'Qué le pregunta el asistente y qué recuerda el sistema',
+            'icon' => 'Ícono',
+            'icon_placeholder' => 'Elegí un glifo',
+            'icon_hint' => 'Con el que se muestra en el chip de la modalidad',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se le ofrece al negocio',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'service_attribute' => [
+        'search_placeholder' => 'Buscar por clave, nombre o tipo',
+        'search_label' => 'Buscar atributo',
+        'singular' => 'atributo',
+        'plural' => 'atributos',
+        'create' => 'Crear atributo',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo atributo',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay atributos que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'type' => 'Tipo de dato',
+            'description' => 'Descripción',
+            'options' => 'Opciones',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        // Cardinalidad: "Obra social" no es una sola (OSDE, Swiss Medical…).
+        'multiple' => [
+            'on' => 'Varios',
+            'off' => 'Uno',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Sin espacios ni acentos: obra_social, apto_celiaco',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Duración',
+            'data_type' => 'Tipo de dato',
+            'data_type_placeholder' => 'Elegí el tipo',
+            'data_type_hint' => 'Decide con qué campo se carga el valor',
+            'description' => 'Descripción',
+            'description_placeholder' => 'Ej. Cuánto lleva la atención',
+            'description_hint' => 'Ayuda al negocio a completarlo bien',
+            'unit' => 'Unidad',
+            'unit_placeholder' => 'Ej. min',
+            'unit_hint' => 'Se muestra junto al valor',
+            'multiple' => 'Valores',
+            'options' => 'Opciones de la lista',
+            'options_placeholder' => 'Ej. Chico, Mediano, Grande',
+            'options_hint' => 'Separadas por coma. Solo se usan si el tipo de dato es una lista.',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se ofrece al armar un tipo de servicio',
+            'status' => 'Estado',
+        ],
+    ],
 
     'business_sector' => [
         'search_placeholder' => 'Buscar por clave o nombre',

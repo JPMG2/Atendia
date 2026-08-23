@@ -20,4 +20,10 @@ return [
     'description' => 'descripción',
     'sort_order' => 'orden',
     'business_sector_id' => 'rubro',
+    'data_type' => 'tipo de dato',
+    'unit' => 'unidad',
+    'options' => 'opciones',
+    'is_multiple' => 'varios valores',
+    'is_required' => 'obligatorio',
+    'service_modality_id' => 'modalidad',
 ];
