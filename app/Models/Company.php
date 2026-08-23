@@ -19,11 +19,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'legal_name',
     'tax_id',
+    'region_id',
     'tax_condition_id',
     'address',
     'email',
     'phone',
+    'web',
     'logo_path',
+    'text_copyright',
+    'tagline',
 ])]
 class Company extends Model
 {
@@ -36,6 +40,16 @@ class Company extends Model
     public static function issuer(): ?self
     {
         return self::query()->first();
+    }
+
+    /**
+     * Región del emisor.
+     *
+     * @return BelongsTo<Region, $this>
+     */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
     }
 
     /**
