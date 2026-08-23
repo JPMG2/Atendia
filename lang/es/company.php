@@ -1,0 +1,110 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+|--------------------------------------------------------------------------
+| Pantalla de la Compañía (panel admin)
+|--------------------------------------------------------------------------
+|
+| Los datos de Atendia — UN solo registro, no los negocios que contratan el
+| servicio. Base neutra (tuteo); lang/es_AR/company.php solo sobreescribe el
+| voseo.
+*/
+
+return [
+    'title' => 'Compañía',
+    'subtitle' => 'Los datos de Atendia: encabezan la factura y se muestran en la web.',
+
+    'discard' => 'Descartar',
+    'save' => 'Guardar cambios',
+
+    'tabs' => [
+        'data' => 'Datos de la empresa',
+        'contact' => 'Contactos y redes',
+    ],
+
+    'identity' => [
+        'title' => 'Identidad',
+        'desc' => 'Cómo se llama la empresa y la frase que la acompaña. Aparece en la web, el panel y la factura.',
+    ],
+
+    'tax' => [
+        'title' => 'Datos fiscales',
+        'desc' => 'Lo que exige la factura: el número que identifica a la empresa y su condición frente al impuesto.',
+    ],
+
+    'address' => [
+        'title' => 'Domicilio',
+        'desc' => 'Dónde está la empresa. El país es el que manda: de él dependen la condición fiscal y el formato del número.',
+    ],
+
+    'logo' => [
+        'title' => 'Logotipo',
+        'desc' => 'SVG o PNG con fondo transparente. Se usa una versión para el tema claro y otra para el oscuro.',
+        'light' => 'Logo para fondo claro',
+        'dark' => 'Logo para fondo oscuro',
+        'upload' => 'Subir archivo',
+        'hint' => 'SVG o PNG, hasta 1 MB.',
+    ],
+
+    'footer' => [
+        'title' => 'Pie de la factura',
+        'desc' => 'La línea que cierra cada factura emitida.',
+    ],
+
+    'contact' => [
+        'title' => 'Contacto público',
+        'desc' => 'Se muestran en la web, el pie de página y los mensajes automáticos.',
+    ],
+
+    'social' => [
+        'title' => 'Redes sociales',
+        'desc' => 'Agrega las redes donde está la empresa. El orden es el que se ve en el pie de página.',
+        'add' => 'Agregar red',
+        'remove' => 'Quitar esta red',
+        'network' => 'Red',
+        'network_placeholder' => 'Elige una red',
+        'url' => 'Enlace o usuario',
+        'url_placeholder' => 'https://instagram.com/atendia',
+    ],
+
+    'fields' => [
+        'legal_name' => 'Razón social',
+        'legal_name_placeholder' => 'Atendia S.A.',
+
+        'tagline' => 'Tagline',
+        'tagline_hint' => 'Frase corta bajo el logo.',
+        'tagline_placeholder' => 'Tu negocio, atendido por IA',
+
+        'tax_id' => 'Identificación fiscal',
+        'tax_id_hint' => 'RIF o CUIT, sin puntos ni guiones.',
+
+        'tax_condition' => 'Condición fiscal',
+        'tax_condition_placeholder' => 'Elige la condición',
+
+        'region' => 'Región',
+        'region_placeholder' => 'Elige la región',
+
+        'country' => 'País',
+        'country_placeholder' => 'Elige el país',
+
+        'province' => 'Provincia',
+        'province_placeholder' => 'Elige la provincia',
+
+        'address' => 'Dirección',
+        'address_placeholder' => 'Av. Siempre Viva 742, piso 3',
+
+        'copyright' => 'Texto del pie',
+        'copyright_placeholder' => '© Atendia. Todos los derechos reservados.',
+
+        'email' => 'Email de soporte',
+        'email_placeholder' => 'hola@atendia.app',
+
+        'phone' => 'WhatsApp / teléfono',
+        'phone_placeholder' => '+54 9 11 5555-1234',
+
+        'web' => 'Sitio web',
+        'web_placeholder' => 'https://atendia.app',
+    ],
+];

@@ -36,5 +36,6 @@ return [
     'admin_home' => 'Inicio',
     'admin_users' => 'Usuarios',
     'admin_catalogs' => 'Catálogos',
+    'admin_company' => 'Compañía',
     'admin_settings' => 'Configuración',
 ];

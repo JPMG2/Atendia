@@ -1133,3 +1133,95 @@
     .catalog-panel-head, .catalog-form, .catalog-empty, .catalog-view { animation:none; }
   }
 }
+
+/* ============================================================
+   PANEL ADMIN — Compañía (los datos de Atendia)
+   ============================================================ */
+@layer components {
+  /* La barra de acciones acompaña el scroll: en un formulario largo, tener que
+     volver arriba para guardar es lo que hace que la gente no guarde. Se pega
+     justo debajo del topbar. */
+  .config-actions { position:sticky; top:var(--topbar-h); z-index:20;
+                    display:flex; align-items:center; justify-content:flex-end; gap:10px;
+                    padding:12px 0 16px; background:var(--surface-page); }
+
+  /* Un bloque = de qué se trata (izquierda) + los campos (derecha). El texto
+     explica una vez para todo el grupo, así ningún campo necesita un hint que
+     repita lo mismo. En mobile la explicación va arriba y los campos abajo. */
+  /* El aire vertical sale del PADDING del bloque, no de la separación entre
+     filas: esa se queda en los 26px de `.catalog-form` porque es lo que hace que
+     un mensaje de error se lea pegado a SU campo y no al de la fila de abajo. */
+  .config-block { display:grid; grid-template-columns:minmax(0,208px) minmax(0,1fr);
+                  gap:18px 32px; padding:18px 24px; }
+  /* La línea entre bloques no es un borde plano: es un hilo teñido de marca que
+     se apaga en los extremos —así no choca contra el borde del card— con un
+     segundo hilo hundido debajo. Esos 2px hacen que el corte se lea como un
+     relieve y no como una raya. Ambos colores salen de tokens: el jade cambia de
+     intensidad y el hundido invierte su sentido solo en oscuro. */
+  .config-block + .config-block { position:relative; }
+  .config-block + .config-block::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px; pointer-events:none;
+    background:linear-gradient(90deg,
+      transparent 0%,
+      var(--border-subtle) 4%,
+      color-mix(in srgb, var(--brand) 42%, transparent) 50%,
+      var(--border-subtle) 96%,
+      transparent 100%);
+    box-shadow:0 1px 0 var(--surface-sunken);
+  }
+  .config-block-title { font-family:var(--font-display); font-size:var(--text-base);
+                        font-weight:700; color:var(--text-strong); margin-bottom:6px; }
+  .config-block-desc { font-size:var(--text-sm); color:var(--text-muted);
+                       line-height:var(--leading-normal); }
+
+  /* Los campos reusan la geometría del formulario de maestro (`.catalog-form`):
+     filas declaradas con `.form-row` y ancho por CONTENIDO (`.f-*`). No se
+     duplican esos valores acá; solo se le saca el padding, que ya lo pone el
+     bloque. */
+  .config-fields.catalog-form { padding:0; animation:none; }
+
+  /* Los dos logos comparten fila mientras entren, y cada uno cae entero antes
+     de encogerse a una miniatura ilegible. */
+  .config-logo-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(212px,1fr));
+                      gap:18px; }
+  .config-drop { display:flex; flex-direction:column; align-items:center; justify-content:center;
+                 gap:8px; min-height:136px; padding:22px 16px; text-align:center;
+                 border:1.5px dashed var(--border-default); border-radius:var(--radius-md);
+                 background:var(--surface-sunken); color:var(--text-muted);
+                 font:inherit; font-size:var(--text-sm); cursor:pointer;
+                 transition:border-color var(--dur-fast) var(--ease-out),
+                            background var(--dur-fast) var(--ease-out),
+                            color var(--dur-fast) var(--ease-out); }
+  .config-drop:hover { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
+  .config-drop:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  .config-drop-icon { color:var(--brand); }
+  .config-drop-hint { font-size:var(--text-xs); color:var(--text-subtle); }
+
+  /* Cada red es una fila que se agrega y se quita. Alinea abajo para que el
+     botón de quitar quede a la altura del control y no del label. */
+  .config-social { display:flex; flex-direction:column; gap:14px; }
+  .config-social-row { display:flex; flex-wrap:wrap; gap:12px 16px; align-items:flex-end; }
+  /* Los nombres de columna se escriben UNA vez arriba: repetir el label en cada
+     fila duplica el mismo id y llena la lista de texto que ya se leyó. Los anchos
+     los toma de los mismos `.f-*` que usan los controles, así el encabezado cae
+     justo sobre su columna. */
+  .config-social-head { padding-bottom:2px; }
+  .config-social-spacer { flex:none; width:96px; }
+
+  .config-social-remove { flex:none; color:var(--danger); }
+  .config-social-remove:hover { background:var(--danger-soft); }
+  .config-social-add { flex:none; color:var(--brand); }
+  .config-social-add:hover { background:var(--brand-soft); }
+  .config-social-remove[disabled] { opacity:.45; cursor:not-allowed; }
+  .config-social-remove[disabled]:hover { background:none; }
+
+  @media (max-width:900px) {
+    .config-block { grid-template-columns:1fr; gap:14px; padding:18px 20px; }
+  }
+  @media (max-width:680px) {
+    .config-social-row > *:not(.config-social-remove):not(.config-social-add) { flex-basis:100%; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .config-drop { transition:none; }
+  }
+}

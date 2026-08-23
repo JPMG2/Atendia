@@ -21,5 +21,9 @@ Route::get('/', fn () => view('admin.dashboard'))->name('dashboard');
 // maestro se cablea en su momento. La opción ya vive en el menú admin.
 Route::livewire('/catalogs', 'catalog.manager')->name('catalogs');
 
+// Compañía: los datos de Atendia (un único registro). Por ahora es solo la
+// maqueta del formulario, sin cablear.
+Route::livewire('/company', 'configuration.company')->name('company');
+
 // Prueba de vida del WebSocket. Se borra cuando exista el chat real.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
