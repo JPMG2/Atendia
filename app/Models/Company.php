@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\CompanyFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,23 +15,39 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * No confundir con {@see Business}, que es el negocio del cliente (el tenant).
  * Acá viven los datos que encabezan una factura emitida por AtendIa.
  */
-#[Fillable([
-    'legal_name',
-    'tax_id',
-    'region_id',
-    'tax_condition_id',
-    'address',
-    'email',
-    'phone',
-    'web',
-    'logo_path',
-    'text_copyright',
-    'tagline',
-])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'legal_name',
+        'tax_id',
+        'region_id',
+        'tax_condition_id',
+        'address',
+        'email',
+        'phone',
+        'web',
+        'logo_path_light',
+        'logo_path_dark',
+        'text_copyright',
+        'tagline',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'region_id' => 'integer',
+            'tax_condition_id' => 'integer',
+        ];
+    }
 
     /**
      * El emisor, o null si todavía no se cargaron los datos de facturación.

@@ -28,7 +28,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('phone', 30)->nullable();
             $table->string('web')->nullable();
-            $table->string('logo_path')->nullable()->comment('Para el encabezado de la factura');
+            $table->string('logo_path_light')->nullable()->comment('Versión del logo para fondo claro');
+            $table->string('logo_path_dark')->nullable()->comment('Versión del logo para fondo oscuro');
             $table->string('text_copyright')->nullable()->comment('Texto que va al pie de la factura');
             $table->string('tagline')->nullable()->comment('Texto que va al encabezado de la factura');
             $table->timestamps();
