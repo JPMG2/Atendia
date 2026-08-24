@@ -47,12 +47,7 @@ new class extends Component {
     #[Computed]
     public function modalityOptions(): array
     {
-        return ServiceModality::query()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn(ServiceModality $modality): array => ['value' => $modality->id, 'label' => $modality->name])
-            ->all();
+        return ServiceModality::options();
     }
 
     /**
@@ -63,12 +58,7 @@ new class extends Component {
     #[Computed]
     public function sectorOptions(): array
     {
-        return BusinessSector::query()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn(BusinessSector $sector): array => ['value' => $sector->id, 'label' => $sector->name])
-            ->all();
+        return BusinessSector::options();
     }
 };
 ?>

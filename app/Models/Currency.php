@@ -8,6 +8,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -126,5 +127,35 @@ class Currency extends Model implements DataTable
                 ],
             )
             ->values();
+    }
+
+    /**
+     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
+     * porque el combobox resuelve la opción elegida buscando su id dentro de
+     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
+     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     *
+     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function options(array $states = []): array
+    {
+        /** @var Builder<self> $query */
+        $query = self::query();
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        return $query
+            ->orderBy('code')
+            ->get()
+            ->map(
+                fn (self $currency): array => [
+                    'value' => $currency->id,
+                    'label' => $currency->code.' — '.$currency->name,
+                ],
+            )
+            ->all();
     }
 }

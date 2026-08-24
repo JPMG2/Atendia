@@ -42,17 +42,7 @@ new class extends Component {
     #[Computed]
     public function sectorOptions(): array
     {
-        return BusinessSector::query()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(BusinessSector $sector): array => [
-                    'value' => $sector->id,
-                    'label' => $sector->name,
-                ],
-            )
-            ->all();
+        return BusinessSector::options();
     }
 };
 ?>

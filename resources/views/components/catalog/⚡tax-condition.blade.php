@@ -42,16 +42,7 @@ new class extends Component {
     #[Computed]
     public function countryOptions(): array
     {
-        return Country::query()
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(Country $country): array => [
-                    'value' => $country->id,
-                    'label' => $country->code . ' — ' . $country->name,
-                ],
-            )
-            ->all();
+        return Country::options();
     }
 };
 ?>

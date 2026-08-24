@@ -46,17 +46,7 @@ new class extends Component {
     #[Computed]
     public function provinceOptions(): array
     {
-        return Province::query()
-            ->with('country:id,code')
-            ->orderBy('name')
-            ->get()
-            ->map(
-                fn(Province $province): array => [
-                    'value' => $province->id,
-                    'label' => $province->name . ' — ' . ($province->country?->code ?? '—'),
-                ],
-            )
-            ->all();
+        return Province::options();
     }
 };
 ?>

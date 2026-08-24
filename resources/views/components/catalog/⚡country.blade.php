@@ -28,7 +28,7 @@ new class extends Component {
 
     protected function catalogModel(): DataTable
     {
-        return new Country;
+        return new Country();
     }
 
     /**
@@ -42,34 +42,21 @@ new class extends Component {
     #[Computed]
     public function currencyOptions(): array
     {
-        return Currency::query()
-            ->orderBy('code')
-            ->get()
-            ->map(
-                fn(Currency $currency): array => [
-                    'value' => $currency->id,
-                    'label' => $currency->code . ' — ' . $currency->name,
-                ],
-            )
-            ->all();
+        return Currency::options();
     }
 };
 ?>
 
-<x-catalog.master :rows="$initialRows"
-    :search="['code', 'name']"
-    :rules="[
-        'code' => ['required', 'alpha', ['length', 3]],
-        'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
-        'phone_code' => [['maxLength', 6]],
-        'currency_id' => ['required'],
-    ]">
+<x-catalog.master :rows="$initialRows" :search="['code', 'name']" :rules="[
+    'code' => ['required', 'alpha', ['length', 3]],
+    'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
+    'phone_code' => [['maxLength', 6]],
+    'currency_id' => ['required'],
+]">
 
     {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
     <x-slot:list>
-        <x-catalog.toolbar :search-placeholder="__('catalog.country.search_placeholder')"
-            :search-label="__('catalog.country.search_label')" :singular="__('catalog.country.singular')"
-            :plural="__('catalog.country.plural')" :create="__('catalog.country.create')" />
+        <x-catalog.toolbar :search-placeholder="__('catalog.country.search_placeholder')" :search-label="__('catalog.country.search_label')" :singular="__('catalog.country.singular')" :plural="__('catalog.country.plural')" :create="__('catalog.country.create')" />
 
         <x-catalog.table :empty="__('catalog.country.empty')" :columns="[
             ['label' => __('catalog.country.columns.code')],
@@ -93,34 +80,30 @@ new class extends Component {
 
     {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
     <x-slot:form>
-        <x-catalog.form-shell :new="__('catalog.country.new')" :new-title="__('catalog.country.new_title')"
-            :edit-title="__('catalog.country.edit_title')" :create="__('catalog.country.create')" title-key="code">
+        <x-catalog.form-shell :new="__('catalog.country.new')" :new-title="__('catalog.country.new_title')" :edit-title="__('catalog.country.edit_title')" :create="__('catalog.country.create')"
+            title-key="code">
 
             {{-- Fila 1: el identificador corto y el nombre, que se lleva todo el resto. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="code" :label="__('catalog.country.fields.code')" required name="code"
-                    :hint="__('catalog.country.fields.code_hint')" maxlength="3" alpine-error="code" x-mask="aaa"
-                    style="text-transform:uppercase" wire:model="form.data.code" />
+                <x-inputsform.input span="code" :label="__('catalog.country.fields.code')" required name="code" :hint="__('catalog.country.fields.code_hint')"
+                    maxlength="3" alpine-error="code" x-mask="aaa" style="text-transform:uppercase"
+                    wire:model="form.data.code" />
 
-                <x-inputsform.input span="text" :label="__('catalog.country.fields.name')" required name="name"
-                    :placeholder="__('catalog.country.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.data.name" />
+                <x-inputsform.input span="text" :label="__('catalog.country.fields.name')" required name="name" :placeholder="__('catalog.country.fields.name_placeholder')"
+                    alpine-error="name" wire:model="form.data.name" />
             </x-catalog.form-row>
 
             {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="text" :label="__('catalog.country.fields.phone_code')" name="phone_code"
-                    :hint="__('catalog.country.fields.phone_code_hint')" maxlength="6" alpine-error="phone_code"
-                    wire:model="form.data.phone_code" />
+                <x-inputsform.input span="text" :label="__('catalog.country.fields.phone_code')" name="phone_code" :hint="__('catalog.country.fields.phone_code_hint')"
+                    maxlength="6" alpine-error="phone_code" wire:model="form.data.phone_code" />
 
-                <x-inputsform.combobox span="text" :label="__('catalog.country.fields.currency')" required
-                    name="currency_id" :placeholder="__('catalog.country.fields.currency_placeholder')"
-                    :options="$this->currencyOptions" :value="$form->data?->currency_id"
-                    alpine-error="currency_id" wire:model="form.data.currency_id" />
+                <x-inputsform.combobox span="text" :label="__('catalog.country.fields.currency')" required name="currency_id" :placeholder="__('catalog.country.fields.currency_placeholder')"
+                    :options="$this->currencyOptions" :value="$form->data?->currency_id" alpine-error="currency_id"
+                    wire:model="form.data.currency_id" />
 
-                <x-inputsform.switch-field span="text" :label="__('catalog.country.fields.status')" name="is_active"
-                    :on="__('catalog.country.status.active')" :off="__('catalog.country.status.inactive')"
-                    wire:model="form.data.is_active" />
+                <x-inputsform.switch-field span="text" :label="__('catalog.country.fields.status')" name="is_active" :on="__('catalog.country.status.active')"
+                    :off="__('catalog.country.status.inactive')" wire:model="form.data.is_active" />
             </x-catalog.form-row>
 
         </x-catalog.form-shell>
