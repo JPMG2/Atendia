@@ -21,33 +21,31 @@ new #[Title('Compañía')] class extends Component
     /**
      * Países activos para el combobox.
      *
+     * El catálogo antepone el código ("ARG — Argentina") para poder buscar por
+     * él; acá el país se elige por su nombre, así que la pantalla pasa su
+     * propio label en vez de arrastrar un código que nadie va a tipear.
+     *
      * @return array<int, array{value: int, label: string}>
      */
     #[Computed]
     public function countryOptions(): array
     {
-        return Country::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Country $country): array => ['value' => $country->id, 'label' => $country->name])
-            ->all();
+        return Country::options(states: [true], label: fn (Country $country): string => $country->name);
     }
 
     /**
      * Provincias activas para el combobox.
+     *
+     * Mismo criterio que el país: el catálogo cuelga el código del país para
+     * distinguir dos provincias homónimas, y acá alcanza con el nombre porque
+     * el país ya quedó elegido en el campo de arriba.
      *
      * @return array<int, array{value: int, label: string}>
      */
     #[Computed]
     public function provinceOptions(): array
     {
-        return Province::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Province $province): array => ['value' => $province->id, 'label' => $province->name])
-            ->all();
+        return Province::options(states: [true], label: fn (Province $province): string => $province->name);
     }
 
     /**
@@ -58,12 +56,7 @@ new #[Title('Compañía')] class extends Component
     #[Computed]
     public function regionOptions(): array
     {
-        return Region::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Region $region): array => ['value' => $region->id, 'label' => $region->name])
-            ->all();
+        return Region::options(states: [true]);
     }
 
     /**
@@ -74,12 +67,7 @@ new #[Title('Compañía')] class extends Component
     #[Computed]
     public function taxConditionOptions(): array
     {
-        return TaxCondition::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (TaxCondition $condition): array => ['value' => $condition->id, 'label' => $condition->name])
-            ->all();
+        return TaxCondition::options(states: [true]);
     }
 
     /**
@@ -90,12 +78,7 @@ new #[Title('Compañía')] class extends Component
     #[Computed]
     public function socialOptions(): array
     {
-        return SocialNetwork::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (SocialNetwork $network): array => ['value' => $network->id, 'label' => $network->name])
-            ->all();
+        return SocialNetwork::options(states: [true]);
     }
 };
 ?>

@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\RegionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -91,5 +93,44 @@ class Region extends Model implements DataTable
                 ],
             )
             ->values();
+    }
+
+    /**
+     * Opciones para el combobox de región.
+     *
+     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
+     * porque el combobox resuelve la opción elegida buscando su id dentro de
+     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
+     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     *
+     * El default es el nombre pelado porque hoy la región se elige después de
+     * la provincia, que ya acotó la lista. Una pantalla que la muestre suelta
+     * puede pasar su propio `label` con la provincia, sin tocar a nadie más.
+     *
+     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function options(array $states = [], ?Closure $label = null): array
+    {
+        /** @var Builder<self> $query */
+        $query = self::query();
+
+        $label ??= fn (self $region): string => $region->name;
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        return $query
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $region): array => [
+                    'value' => $region->id,
+                    'label' => $label($region),
+                ],
+            )
+            ->all();
     }
 }

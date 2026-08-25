@@ -6,7 +6,10 @@ use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\ServiceModality;
+use App\Models\SocialNetwork;
+use App\Models\TaxCondition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // RefreshDatabase is commented out globally in tests/Pest.php, so these tests would
@@ -89,8 +92,60 @@ test('sector and modality options are sorted by sort_order before name', functio
         ->and(array_column(ServiceModality::options(), 'label'))->toBe(['Turno', 'Abono']);
 });
 
+// The three masters the company screen picks from are chosen by name, so their
+// default label is the bare name — no code, no parent, nothing to disambiguate.
+test('region, tax condition and social network options carry the bare name', function (): void {
+    Region::factory()->create(['name' => 'Zona Sur']);
+    Region::factory()->create(['name' => 'Centro']);
+
+    TaxCondition::factory()->create(['code' => 'RI', 'name' => 'Responsable Inscripto']);
+    TaxCondition::factory()->create(['code' => 'MT', 'name' => 'Monotributista']);
+
+    SocialNetwork::factory()->create(['name' => 'Instagram', 'abbreviation' => 'IG']);
+    SocialNetwork::factory()->create(['name' => 'Facebook', 'abbreviation' => 'FB']);
+
+    expect(array_column(Region::options(), 'label'))->toBe(['Centro', 'Zona Sur'])
+        ->and(array_column(TaxCondition::options(), 'label'))->toBe(['Monotributista', 'Responsable Inscripto'])
+        ->and(array_column(SocialNetwork::options(), 'label'))->toBe(['Facebook', 'Instagram']);
+});
+
+// The whole point of the label being a parameter: a screen that wants a different
+// text says so at the call site, and nobody else has to be visited.
+test('a caller can pass its own label without disturbing the default', function (): void {
+    $argentina = Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
+    Province::factory()->create(['name' => 'Buenos Aires', 'country_id' => $argentina->id]);
+
+    $plainName = fn (Country $country): string => $country->name;
+
+    expect(array_column(Country::options(label: $plainName), 'label'))->toBe(['Argentina'])
+        ->and(array_column(Province::options(label: fn (Province $p): string => $p->name), 'label'))
+        ->toBe(['Buenos Aires'])
+        // The default is untouched by the call above: the catalog keeps its code.
+        ->and(array_column(Country::options(), 'label'))->toBe(['ARG — Argentina'])
+        ->and(array_column(Province::options(), 'label'))->toBe(['Buenos Aires — ARG']);
+});
+
+// The company screen asks for the active rows only, and it does so through the
+// same states filter every other caller uses.
+test('a custom label still honours the states filter', function (): void {
+    Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina']);
+    Country::factory()->create(['code' => 'XXA', 'name' => 'País Dado de Baja', 'is_active' => false]);
+
+    expect(array_column(Country::options(states: [true], label: fn (Country $c): string => $c->name), 'label'))
+        ->toBe(['Argentina']);
+});
+
 test('every catalog options() takes the same states filter', function (): void {
-    $models = [Currency::class, Country::class, Province::class, BusinessSector::class, ServiceModality::class];
+    $models = [
+        Currency::class,
+        Country::class,
+        Province::class,
+        Region::class,
+        TaxCondition::class,
+        SocialNetwork::class,
+        BusinessSector::class,
+        ServiceModality::class,
+    ];
 
     foreach ($models as $model) {
         $model::factory()->create(['is_active' => false]);
@@ -99,5 +154,25 @@ test('every catalog options() takes the same states filter', function (): void {
         expect($model::options())->toHaveCount(2, $model)
             ->and($model::options([false]))->toHaveCount(1, $model)
             ->and($model::options([true]))->toHaveCount(1, $model);
+    }
+});
+
+// The masters whose label already varies between screens take it the same way,
+// so a caller never has to check which one it is talking to. Currency, sector and
+// modality are left out on purpose: no screen asks them for a second text yet.
+test('the masters that accept a label all take it the same way', function (): void {
+    $models = [
+        Country::class,
+        Province::class,
+        Region::class,
+        TaxCondition::class,
+        SocialNetwork::class,
+    ];
+
+    foreach ($models as $model) {
+        $model::factory()->create(['name' => 'Fijo']);
+
+        expect(array_column($model::options(label: fn ($record): string => 'X'.$record->id), 'label'))
+            ->toBe(['X'.$model::query()->value('id')], $model);
     }
 });

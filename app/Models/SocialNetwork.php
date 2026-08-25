@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\SocialNetworkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -130,5 +132,44 @@ class SocialNetwork extends Model implements DataTable
                 ],
             )
             ->values();
+    }
+
+    /**
+     * Opciones para el combobox de red social.
+     *
+     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
+     * porque el combobox resuelve la opción elegida buscando su id dentro de
+     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
+     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     *
+     * El default es el nombre pelado ("Instagram"): la abreviatura es opcional
+     * en la tabla, así que anteponerla dejaría la mitad de la lista con un
+     * guión colgando. Una pantalla que la quiera pasa su propio `label`.
+     *
+     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function options(array $states = [], ?Closure $label = null): array
+    {
+        /** @var Builder<self> $query */
+        $query = self::query();
+
+        $label ??= fn (self $network): string => $network->name;
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        return $query
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $network): array => [
+                    'value' => $network->id,
+                    'label' => $label($network),
+                ],
+            )
+            ->all();
     }
 }

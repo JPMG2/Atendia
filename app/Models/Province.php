@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\ProvinceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -94,13 +95,21 @@ class Province extends Model implements DataTable
      * `options` (resources/js/combobox.js): si una fila dada de baja quedara
      * fuera, editar un registro que la referencia mostraría el campo vacío.
      *
+     * El `label` lo decide quien llama: el catálogo necesita el código del país
+     * para distinguir dos provincias homónimas, un formulario de negocio no.
+     * Sin argumento sale el texto de siempre, así que sumar una variante no
+     * obliga a recorrer los llamadores existentes.
+     *
      * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
      * @return array<int, array{value: int, label: string}>
      */
-    public static function options(array $states = []): array
+    public static function options(array $states = [], ?Closure $label = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
+
+        $label ??= fn (self $province): string => $province->name.' — '.($province->country?->code ?? '—');
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
@@ -113,7 +122,7 @@ class Province extends Model implements DataTable
             ->map(
                 fn (self $province): array => [
                     'value' => $province->id,
-                    'label' => $province->name.' — '.($province->country?->code ?? '—'),
+                    'label' => $label($province),
                 ],
             )
             ->all();

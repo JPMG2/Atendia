@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\CountryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -126,13 +127,21 @@ class Country extends Model implements DataTable
      * `options` (resources/js/combobox.js): si una fila dada de baja quedara
      * fuera, editar un registro que la referencia mostraría el campo vacío.
      *
+     * El `label` lo decide quien llama: el catálogo antepone el código para
+     * poder buscar por él, un formulario de negocio quiere el nombre pelado.
+     * Sin argumento sale el texto de siempre, así que sumar una variante no
+     * obliga a recorrer los llamadores existentes.
+     *
      * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
      * @return array<int, array{value: int, label: string}>
      */
-    public static function options(array $states = []): array
+    public static function options(array $states = [], ?Closure $label = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
+
+        $label ??= fn (self $country): string => $country->code.' — '.$country->name;
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
@@ -144,7 +153,7 @@ class Country extends Model implements DataTable
             ->map(
                 fn (self $country): array => [
                     'value' => $country->id,
-                    'label' => $country->code.' — '.$country->name,
+                    'label' => $label($country),
                 ],
             )
             ->all();
