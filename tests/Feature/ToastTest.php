@@ -41,6 +41,19 @@ test('the toast animates in and out through the app.css transition classes', fun
         ->toContain('x-transition:leave-end="toast-off"');
 });
 
+test('the toast stack sits in the bottom right corner so it never covers the save button', function (): void {
+    // The stack is positioned entirely from app.css, so guard the rule itself:
+    // anchoring it to the top hid the confirmation from anyone saving a form,
+    // because the save button lives at the bottom of the screen.
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)->toMatch('/\.toast-stack\s*\{[^}]*bottom:var\(--space-4\)[^}]*right:var\(--space-4\)/')
+        ->not->toMatch('/\.toast-stack\s*\{[^}]*top:/')
+        // Anchored at the bottom, column-reverse keeps the toasts already on
+        // screen still while a new one enters above them.
+        ->toMatch('/\.toast-stack\s*\{[^}]*flex-direction:column-reverse/');
+});
+
 test('an unknown notification type falls back to info instead of losing the message', function (): void {
     // The @script block travels HTML-escaped inside wire:effects, so decode it
     // before looking for the JavaScript.

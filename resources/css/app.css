@@ -589,11 +589,14 @@
 
   /* ---- Toast ----
      Pila global de avisos. Vive una sola vez en el layout y escucha el evento
-     `notify` (type + message del NotificationDto). Desktop: arriba a la derecha;
-     mobile: barra al pie, a lo ancho. */
+     `notify` (type + message del NotificationDto). Desktop: abajo a la derecha,
+     pegado a la esquina (el botón de guardar vive al pie del form y el aviso
+     arriba pasaba desapercibido); mobile: barra al pie, a lo ancho. Apila con
+     column-reverse: el aviso nuevo entra arriba y los que ya estaban no se
+     mueven de la esquina. */
   .toast-stack {
-    position:fixed; top:calc(var(--topbar-h) + 12px); right:var(--space-5); z-index:var(--z-toast);
-    display:flex; flex-direction:column; gap:10px; width:min(380px, calc(100vw - var(--space-5) * 2));
+    position:fixed; bottom:var(--space-4); right:var(--space-4); z-index:var(--z-toast);
+    display:flex; flex-direction:column-reverse; gap:10px; width:min(380px, calc(100vw - var(--space-4) * 2));
     pointer-events:none;
   }
   .toast {
@@ -622,15 +625,13 @@
 
   /* Transición de entrada/salida (Alpine aplica las clases) */
   .toast-trans { transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
-  .toast-off { opacity:0; transform:translateX(20px) scale(.96); }
-  .toast-on  { opacity:1; transform:translateX(0) scale(1); }
+  .toast-off { opacity:0; transform:translateY(16px) scale(.96); }
+  .toast-on  { opacity:1; transform:translateY(0) scale(1); }
 
   @media (max-width:640px) {
     .toast-stack {
-      top:auto; bottom:var(--space-4); right:var(--space-4); left:var(--space-4); width:auto;
+      left:var(--space-4); width:auto;
     }
-    .toast-off { transform:translateY(16px) scale(.96); }
-    .toast-on  { transform:translateY(0) scale(1); }
   }
 
   @media (prefers-reduced-motion:reduce) {
