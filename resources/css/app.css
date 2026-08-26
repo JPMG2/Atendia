@@ -464,6 +464,26 @@
   .combo-control.is-open .combo-toggle { transform:rotate(180deg); color:var(--brand); }
   .combo-control.is-disabled .combo-toggle { cursor:not-allowed; }
 
+  /* La 'x' es secundaria respecto del chevron: apagada hasta que se la mira, y
+     nunca más grande que él. Al hover toma el coral, que en el sistema es la
+     acción que quita. */
+  .combo-clear { flex:none; display:inline-flex; align-items:center; justify-content:center;
+                 width:24px; height:24px; border:0; background:transparent;
+                 color:var(--text-subtle); border-radius:var(--radius-sm); cursor:pointer;
+                 transition:color var(--dur-fast) var(--ease-out); }
+  .combo-clear:hover { color:var(--accent); }
+  .combo-control.is-disabled .combo-clear,
+  .combo-control.is-loading .combo-clear { cursor:not-allowed; }
+
+  /* Esperando la lista de la que depende: mismo apagado que `is-disabled`, para
+     que "no lo toques todavía" se lea igual venga de donde venga. */
+  .combo-control.is-loading { background:var(--surface-sunken); opacity:.55; cursor:wait; }
+  .combo-control.is-loading .field-input,
+  .combo-control.is-loading .combo-toggle { cursor:wait; }
+  .combo-spinner { display:inline-flex; color:var(--brand);
+                   animation:combo-spin 900ms linear infinite; }
+  @keyframes combo-spin { to { transform:rotate(360deg); } }
+
   .combo-list { position:absolute; z-index:40; left:0; right:0; top:calc(100% + 6px);
                 max-height:264px; overflow-y:auto; padding:6px;
                 background:var(--surface-card); border:1px solid var(--border-default);
@@ -483,6 +503,7 @@
   @media (prefers-reduced-motion:reduce) {
     .combo-list { animation:none; }
     .combo-toggle { transition:none; }
+    .combo-spinner { animation:none; }
   }
 
   .field-textarea {

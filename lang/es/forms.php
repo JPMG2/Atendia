@@ -17,6 +17,8 @@ return [
 
     'combobox' => [
         'empty' => 'No hay resultados para esa búsqueda.',
+        'loading' => 'Cargando opciones…',
+        'clear' => 'Limpiar la selección',
     ],
 
 ];

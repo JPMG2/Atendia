@@ -90,6 +90,18 @@ function comboboxData({ options = [], initial = null } = {}) {
             this.scrollToHighlighted();
         },
 
+        /**
+         * Vacía el campo de un golpe y lo deja listo para escribir: borrar a mano
+         * la etiqueta entera para volver a buscar es el motivo por el que existe
+         * este botón. Reusa commit() para que el hidden y Livewire se enteren.
+         */
+        clear() {
+            this.commit(null);
+            this.query = '';
+            this.$refs.search.focus();
+            this.openPanel();
+        },
+
         choose(option) {
             this.commit(option);
             this.query = option.label;

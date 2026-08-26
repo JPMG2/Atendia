@@ -10,6 +10,8 @@
     'value' => null,       // opción preseleccionada (su `value`)
     'placeholder' => null,
     'empty' => null,       // texto cuando la búsqueda no encuentra nada
+    'loading' => null,     // propiedad Livewire de la que depende la lista (ej. "form.data.country_id"):
+                           // mientras ese request viaja el campo queda bloqueado con un spinner
     'span' => 'text',      // ancho POR CONTENIDO: code | short | text | long | full
 ])
 
@@ -46,6 +48,12 @@
         .($error ? ' field-error' : '')
         .($isDisabled ? ' is-disabled' : ''));
 
+    // Una lista que depende de otro campo NO se puede tocar mientras la está
+    // esperando: elegir sobre la lista vieja guarda un valor que el server ya
+    // descartó. `wire:target` acota el bloqueo a ESE campo, así cualquier otro
+    // request de la pantalla no congela el combobox de rebote.
+    $loadingAttributes = $loading !== null ? 'wire:target="'.$loading.'"' : '';
+
     $descId = $id ? $id.'-desc' : null;
     $errId = $id ? $id.'-err' : null;
     $listId = $id ? $id.'-list' : null;
@@ -65,7 +73,8 @@
     @endif
 
     <div class="combo-shell">
-        <div class="{{ $controlClasses }}" x-bind:class="open && 'is-open'">
+        <div class="{{ $controlClasses }}" x-bind:class="open && 'is-open'"
+            @if ($loading) wire:loading.class="is-loading" {!! $loadingAttributes !!} @endif>
             <input
                 type="text"
                 role="combobox"
@@ -89,13 +98,34 @@
                 x-on:keydown.arrow-up.prevent="move(-1)"
                 x-on:keydown.enter.prevent="chooseHighlighted()"
                 x-on:keydown.tab="closePanel()"
+                @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
                 class="field-input"
             />
 
+            {{-- Limpiar de un golpe. Aparece solo cuando hay algo que limpiar: una
+                 'x' fija sobre un campo vacío es ruido, y encima invita a hacer
+                 click en algo que no hace nada. `mousedown.prevent` porque el
+                 blur del buscador cierra el panel y se comería el click. --}}
+            <button type="button" class="combo-clear" tabindex="-1"
+                x-show="selected || query" x-cloak
+                aria-label="{{ __('forms.combobox.clear') }}"
+                @if ($isDisabled) disabled @endif
+                @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
+                x-on:mousedown.prevent="clear()">
+                <x-icon name="x" :size="$iconSize - 2" />
+            </button>
+
             <button type="button" class="combo-toggle" tabindex="-1" aria-hidden="true"
                 @if ($isDisabled) disabled @endif
+                @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
                 x-on:mousedown.prevent="open ? closePanel() : $refs.search.focus()">
-                <x-icon name="chevron-down" :size="$iconSize" />
+                @if ($loading)
+                    <span wire:loading.remove {!! $loadingAttributes !!}><x-icon name="chevron-down" :size="$iconSize" /></span>
+                    <span class="combo-spinner" wire:loading {!! $loadingAttributes !!} role="status"
+                        aria-label="{{ __('forms.combobox.loading') }}"><x-icon name="loader-circle" :size="$iconSize" /></span>
+                @else
+                    <x-icon name="chevron-down" :size="$iconSize" />
+                @endif
             </button>
 
             {{-- El valor real: es el que lleva el wire:model y el que viaja al server. --}}

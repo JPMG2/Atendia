@@ -139,3 +139,91 @@ test('it never hardcodes a colour and uses only x-icon for its glyphs', function
         ->toContain('<x-icon name="chevron-down"')
         ->toContain('<x-icon name="check"');
 });
+
+test('a combobox with no loading target renders no wire:loading at all', function (): void {
+    // The blocking is opt-in: a standalone combobox must not gain a spinner or a
+    // wire:target that would freeze it on any request of the screen.
+    $html = $this->blade(
+        '<x-inputsform.combobox name="currency_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->not->toContain('wire:loading')
+        ->not->toContain('wire:target')
+        ->not->toContain('combo-spinner')
+        // The chevron is still there, just without the loading pair around it.
+        ->toContain('combo-toggle');
+});
+
+test('a combobox that depends on another field blocks itself while that field is in flight', function (): void {
+    // Picking from the stale list saves a value the server already dropped, so
+    // the field has to be unusable until its own list has landed.
+    $html = $this->blade(
+        '<x-inputsform.combobox name="province_id" loading="form.data.country_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->toContain('wire:loading.attr="disabled"')
+        ->toContain('wire:loading.class="is-loading"')
+        // Scoped to that one property: any other request on the screen must not
+        // freeze this combobox by accident.
+        ->toContain('wire:target="form.data.country_id"')
+        ->not->toContain('wire:target="form.data.province_id"');
+});
+
+test('the loading combobox swaps its chevron for a labelled spinner', function (): void {
+    $html = $this->blade(
+        '<x-inputsform.combobox name="province_id" loading="form.data.country_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->toContain('combo-spinner')
+        ->toContain('wire:loading.remove')
+        ->toContain('role="status"')
+        // Copy comes from the translation files, never hardcoded in the markup.
+        ->toContain(__('forms.combobox.loading'));
+});
+
+test('the spinner glyph is registered, or the icon draws nothing', function (): void {
+    expect(config('icons.loader-circle'))->not->toBeNull();
+});
+
+test('the combobox carries a clear button, so wiping a picked option is one click', function (): void {
+    // Without it, changing your mind means selecting the whole label and deleting
+    // it by hand before you can search again.
+    $html = $this->blade(
+        '<x-inputsform.combobox name="currency_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->toContain('combo-clear')
+        ->toContain('clear()')
+        ->toContain(__('forms.combobox.clear'))
+        // Only when there is something to clear: a fixed 'x' over an empty field
+        // is noise, and invites a click that does nothing.
+        ->toContain('x-show="selected || query"');
+});
+
+test('the clear button is out of the tab order and never submits', function (): void {
+    // It is a shortcut for the mouse; the keyboard already clears by emptying the
+    // field. And an unnamed <button> inside a form defaults to type=submit.
+    $html = $this->blade(
+        '<x-inputsform.combobox name="currency_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->toContain('<button type="button" class="combo-clear" tabindex="-1"');
+});
+
+test('a loading combobox cannot be cleared either', function (): void {
+    // Clearing mid-flight would push a null the incoming response is about to
+    // overwrite, leaving the field and the server disagreeing.
+    $html = $this->blade(
+        '<x-inputsform.combobox name="province_id" loading="form.data.country_id" :options="$options" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    $clearButton = substr($html, strpos($html, 'combo-clear'), 400);
+
+    expect($clearButton)->toContain('wire:loading.attr="disabled"');
+});
