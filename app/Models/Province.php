@@ -100,11 +100,16 @@ class Province extends Model implements DataTable
      * Sin argumento sale el texto de siempre, así que sumar una variante no
      * obliga a recorrer los llamadores existentes.
      *
+     * `countryId` acota la lista al país elegido, para la cascada país →
+     * provincia. Es null por default —o sea, sin filtro— por lo mismo que
+     * `states`: mientras no haya país elegido tienen que estar todas.
+     *
      * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
      * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @param  int|null  $countryId  país al que acotar; null = todos
      * @return array<int, array{value: int, label: string}>
      */
-    public static function options(array $states = [], ?Closure $label = null): array
+    public static function options(array $states = [], ?Closure $label = null, ?int $countryId = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
@@ -113,6 +118,10 @@ class Province extends Model implements DataTable
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
+        }
+
+        if ($countryId !== null) {
+            $query->where('country_id', $countryId);
         }
 
         return $query

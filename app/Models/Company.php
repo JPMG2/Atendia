@@ -50,14 +50,6 @@ class Company extends Model
     }
 
     /**
-     * El emisor, o null si todavía no se cargaron los datos de facturación.
-     */
-    public static function issuer(): ?self
-    {
-        return self::query()->first();
-    }
-
-    /**
      * Región del emisor.
      *
      * @return BelongsTo<Region, $this>

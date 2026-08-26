@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Forms\Configuration\CompanyForm;
 use App\Models\Country;
 use App\Models\Province;
 use App\Models\Region;
@@ -12,12 +13,25 @@ use Livewire\Component;
 /**
  * Compañía: los datos de AtendIa — UN solo registro, no los negocios clientes.
  *
- * MAQUETA. La pantalla todavía no carga ni guarda nada: lo único que consulta
- * son las opciones de los combobox, porque un desplegable vacío no se puede
- * mirar. El cableado (Form, validación, persistencia) viene después.
+ * Los campos ya están cableados al `CompanyForm` y su DTO; falta la validación
+ * y el guardado. Las redes sociales siguen siendo maqueta: todavía no existe la
+ * tabla que las relacione con la compañía.
  */
-new #[Title('Compañía')] class extends Component
-{
+new #[Title('Compañía')] class extends Component {
+    public CompanyForm $form;
+
+    /**
+     * Deja el DTO cargado ANTES del primer render.
+     *
+     * `setup()` no es un hook de Livewire Form: si no se lo llama desde acá, el
+     * DTO queda en null y el primer `wire:model` explota con "Cannot assign
+     * array to property".
+     */
+    public function mount(): void
+    {
+        $this->form->setup();
+    }
+
     /**
      * Países activos para el combobox.
      *
@@ -30,22 +44,26 @@ new #[Title('Compañía')] class extends Component
     #[Computed]
     public function countryOptions(): array
     {
-        return Country::options(states: [true], label: fn (Country $country): string => $country->name);
+        return Country::options(states: [true], label: fn(Country $country): string => $country->name);
     }
 
     /**
-     * Provincias activas para el combobox.
+     * Provincias del país elegido.
      *
-     * Mismo criterio que el país: el catálogo cuelga el código del país para
-     * distinguir dos provincias homónimas, y acá alcanza con el nombre porque
-     * el país ya quedó elegido en el campo de arriba.
+     * No hace falta recargarla desde ningún hook: la computed LEE
+     * `form.data.country_id`, así que al cambiar el país el próximo render ya
+     * sale con la lista nueva. Sin país elegido salen todas.
+     *
+     * Mismo criterio de etiqueta que el país: el catálogo cuelga el código del
+     * país para distinguir dos provincias homónimas, y acá alcanza con el
+     * nombre porque el país ya quedó elegido en el campo de arriba.
      *
      * @return array<int, array{value: int, label: string}>
      */
     #[Computed]
     public function provinceOptions(): array
     {
-        return Province::options(states: [true], label: fn (Province $province): string => $province->name);
+        return $this->form->data?->country_id ? Province::options(states: [true], label: fn(Province $province): string => $province->name, countryId: $this->form->data?->country_id) : [];
     }
 
     /**
@@ -56,7 +74,7 @@ new #[Title('Compañía')] class extends Component
     #[Computed]
     public function regionOptions(): array
     {
-        return Region::options(states: [true]);
+        return $this->form->data?->province_id ? Region::options(states: [true], provinceId: $this->form->data?->province_id) : [];
     }
 
     /**
@@ -116,12 +134,11 @@ new #[Title('Compañía')] class extends Component
 
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.input span="text" name="legal_name" :label="__('company.fields.legal_name')"
-                            :placeholder="__('company.fields.legal_name_placeholder')" />
+                        <x-inputsform.input span="text" name="legal_name" :label="__('company.fields.legal_name')" :placeholder="__('company.fields.legal_name_placeholder')"
+                            wire:model="form.data.legal_name" />
 
-                        <x-inputsform.input span="long" name="tagline" :label="__('company.fields.tagline')"
-                            :placeholder="__('company.fields.tagline_placeholder')"
-                            :hint="__('company.fields.tagline_hint')" />
+                        <x-inputsform.input span="long" name="tagline" :label="__('company.fields.tagline')" :placeholder="__('company.fields.tagline_placeholder')"
+                            :hint="__('company.fields.tagline_hint')" wire:model="form.data.tagline" />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -137,22 +154,21 @@ new #[Title('Compañía')] class extends Component
                      todo lo demás, la condición fiscal incluida. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="country_id" :label="__('company.fields.country')"
-                            :placeholder="__('company.fields.country_placeholder')"
-                            :options="$this->countryOptions" />
+                        <x-inputsform.combobox span="text" name="country_id" :label="__('company.fields.country')" :placeholder="__('company.fields.country_placeholder')"
+                            :options="$this->countryOptions" :value="$form->data?->country_id" wire:model.live="form.data.country_id" />
 
-                        <x-inputsform.combobox span="text" name="province_id" :label="__('company.fields.province')"
-                            :placeholder="__('company.fields.province_placeholder')"
-                            :options="$this->provinceOptions" />
+                        <x-inputsform.combobox span="text" name="province_id" :label="__('company.fields.province')" :placeholder="__('company.fields.province_placeholder')"
+                            :options="$this->provinceOptions" :value="$form->data?->province_id"
+                            loading="form.data.country_id" wire:model.live="form.data.province_id" />
                     </x-catalog.form-row>
 
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="region_id" :label="__('company.fields.region')"
-                            :placeholder="__('company.fields.region_placeholder')"
-                            :options="$this->regionOptions" />
+                        <x-inputsform.combobox span="text" name="region_id" :label="__('company.fields.region')" :placeholder="__('company.fields.region_placeholder')"
+                            :options="$this->regionOptions" :value="$form->data?->region_id"
+                            loading="form.data.province_id" wire:model="form.data.region_id" />
 
-                        <x-inputsform.input span="long" name="address" :label="__('company.fields.address')"
-                            :placeholder="__('company.fields.address_placeholder')" maxlength="255" />
+                        <x-inputsform.input span="long" name="address" :label="__('company.fields.address')" :placeholder="__('company.fields.address_placeholder')"
+                            maxlength="255" wire:model="form.data.address" />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -167,14 +183,12 @@ new #[Title('Compañía')] class extends Component
                      cargar, no al revés. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="tax_condition_id"
-                            :label="__('company.fields.tax_condition')"
-                            :placeholder="__('company.fields.tax_condition_placeholder')"
-                            :options="$this->taxConditionOptions" />
+                        <x-inputsform.combobox span="text" name="tax_condition_id" :label="__('company.fields.tax_condition')"
+                            :placeholder="__('company.fields.tax_condition_placeholder')" :options="$this->taxConditionOptions" :value="$form->data?->tax_condition_id"
+                            wire:model="form.data.tax_condition_id" />
 
-                        <x-inputsform.input span="long" name="tax_id" class="font-mono"
-                            :label="__('company.fields.tax_id')" :hint="__('company.fields.tax_id_hint')"
-                            maxlength="20" />
+                        <x-inputsform.input span="long" name="tax_id" class="font-mono" :label="__('company.fields.tax_id')"
+                            :hint="__('company.fields.tax_id_hint')" maxlength="20" wire:model="form.data.tax_id" />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -187,15 +201,13 @@ new #[Title('Compañía')] class extends Component
                 </div>
 
                 <div class="config-logo-grid">
-                    @foreach ([
-                        ['name' => 'logo_path_light', 'label' => __('company.logo.light')],
-                        ['name' => 'logo_path_dark', 'label' => __('company.logo.dark')],
-                    ] as $logo)
+                    @foreach ([['name' => 'logo_path_light', 'label' => __('company.logo.light')], ['name' => 'logo_path_dark', 'label' => __('company.logo.dark')]] as $logo)
                         <div class="field">
-                            <x-ui.label :for="'if-'.$logo['name']">{{ $logo['label'] }}</x-ui.label>
+                            <x-ui.label :for="'if-' . $logo['name']">{{ $logo['label'] }}</x-ui.label>
 
-                            {{-- Maqueta: la zona de carga todavía no recibe archivos.
-                                 El control real va a ser un <x-ui.*> con su test. --}}
+                            {{-- Sin cablear: la zona de carga todavía no recibe archivos.
+                                 El control real va a ser un <x-ui.*> con su test, y
+                                 recién ahí se ata a form.data.logo_path_*. --}}
                             <button type="button" class="config-drop" id="if-{{ $logo['name'] }}">
                                 <span class="config-drop-icon"><x-icon name="upload" :size="22" /></span>
                                 <span>{{ __('company.logo.upload') }}</span>
@@ -214,9 +226,8 @@ new #[Title('Compañía')] class extends Component
 
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.input span="full" name="text_copyright"
-                            :label="__('company.fields.copyright')"
-                            :placeholder="__('company.fields.copyright_placeholder')" maxlength="255" />
+                        <x-inputsform.input span="full" name="text_copyright" :label="__('company.fields.copyright')" :placeholder="__('company.fields.copyright_placeholder')"
+                            maxlength="255" wire:model="form.data.text_copyright" />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -236,18 +247,15 @@ new #[Title('Compañía')] class extends Component
                          necesita su ancho y truncar un dato no es compactar. --}}
                     <x-catalog.form-row>
                         <x-inputsform.input span="text" name="email" type="email" icon="mail"
-                            :label="__('company.fields.email')"
-                            :placeholder="__('company.fields.email_placeholder')" />
+                            :label="__('company.fields.email')" :placeholder="__('company.fields.email_placeholder')" wire:model="form.data.email" />
 
                         <x-inputsform.input span="text" name="phone" icon="phone" class="font-mono"
-                            :label="__('company.fields.phone')"
-                            :placeholder="__('company.fields.phone_placeholder')" maxlength="30" />
+                            :label="__('company.fields.phone')" :placeholder="__('company.fields.phone_placeholder')" maxlength="30" wire:model="form.data.phone" />
                     </x-catalog.form-row>
 
                     <x-catalog.form-row>
                         <x-inputsform.input span="long" name="web" type="url" icon="globe"
-                            :label="__('company.fields.web')"
-                            :placeholder="__('company.fields.web_placeholder')" />
+                            :label="__('company.fields.web')" :placeholder="__('company.fields.web_placeholder')" wire:model="form.data.web" />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -275,22 +283,18 @@ new #[Title('Compañía')] class extends Component
                              volver a empezar. --}}
                         <template x-for="(row, index) in rows" :key="row">
                             <div class="config-social-row">
-                                <x-inputsform.combobox span="text" :aria-label="__('company.social.network')"
-                                    :placeholder="__('company.social.network_placeholder')"
+                                <x-inputsform.combobox span="text" :aria-label="__('company.social.network')" :placeholder="__('company.social.network_placeholder')"
                                     :options="$this->socialOptions" />
 
-                                <x-inputsform.input span="long" icon="link"
-                                    :aria-label="__('company.social.url')"
+                                <x-inputsform.input span="long" icon="link" :aria-label="__('company.social.url')"
                                     :placeholder="__('company.social.url_placeholder')" />
 
-                                <x-ui.icon-button icon="trash-2" variant="ghost"
-                                    class="config-social-remove" :label="__('company.social.remove')"
-                                    x-bind:disabled="rows.length === 1"
+                                <x-ui.icon-button icon="trash-2" variant="ghost" class="config-social-remove"
+                                    :label="__('company.social.remove')" x-bind:disabled="rows.length === 1"
                                     x-on:click="rows.splice(index, 1)" />
 
-                                <x-ui.icon-button icon="plus" variant="ghost"
-                                    class="config-social-add" :label="__('company.social.add')"
-                                    data-testid="social-add"
+                                <x-ui.icon-button icon="plus" variant="ghost" class="config-social-add"
+                                    :label="__('company.social.add')" data-testid="social-add"
                                     x-on:click="rows.splice(index + 1, 0, next++)" />
                             </div>
                         </template>

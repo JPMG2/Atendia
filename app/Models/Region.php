@@ -111,7 +111,7 @@ class Region extends Model implements DataTable
      * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
      * @return array<int, array{value: int, label: string}>
      */
-    public static function options(array $states = [], ?Closure $label = null): array
+    public static function options(array $states = [], ?Closure $label = null, ?int $provinceId = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
@@ -120,6 +120,10 @@ class Region extends Model implements DataTable
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
+        }
+
+        if ($provinceId !== null) {
+            $query->where('province_id', $provinceId);
         }
 
         return $query
