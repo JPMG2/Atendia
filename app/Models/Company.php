@@ -8,6 +8,7 @@ use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * AtendIa: el emisor de la factura. Un ÚNICO registro, para siempre.
@@ -67,5 +68,18 @@ class Company extends Model
     public function taxCondition(): BelongsTo
     {
         return $this->belongsTo(TaxCondition::class);
+    }
+
+    /**
+     * Las redes donde está la cuenta, en el orden en que se muestran.
+     *
+     * La relación es polimórfica: la misma tabla guarda las redes de la compañía
+     * y las de cada negocio (ver {@see SocialLink}).
+     *
+     * @return MorphMany<SocialLink, $this>
+     */
+    public function socialLinks(): MorphMany
+    {
+        return $this->morphMany(SocialLink::class, 'linkable')->orderBy('sort_order');
     }
 }

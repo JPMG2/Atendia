@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -179,5 +180,18 @@ class Business extends Model
     public function knowledgeDocuments(): HasMany
     {
         return $this->hasMany(KnowledgeDocument::class);
+    }
+
+    /**
+     * Las redes donde está la cuenta, en el orden en que se muestran.
+     *
+     * La relación es polimórfica: la misma tabla guarda las redes de la compañía
+     * y las de cada negocio (ver {@see SocialLink}).
+     *
+     * @return MorphMany<SocialLink, $this>
+     */
+    public function socialLinks(): MorphMany
+    {
+        return $this->morphMany(SocialLink::class, 'linkable')->orderBy('sort_order');
     }
 }
