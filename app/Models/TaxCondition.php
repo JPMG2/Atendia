@@ -117,9 +117,10 @@ class TaxCondition extends Model implements DataTable
      *
      * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
      * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @param  int|null  $countryId  ID del país a filtrar; null = todos
      * @return array<int, array{value: int, label: string}>
      */
-    public static function options(array $states = [], ?Closure $label = null): array
+    public static function options(array $states = [], ?Closure $label = null, ?int $countryId = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
@@ -128,6 +129,10 @@ class TaxCondition extends Model implements DataTable
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
+        }
+
+        if ($countryId !== null) {
+            $query->where('country_id', $countryId);
         }
 
         return $query

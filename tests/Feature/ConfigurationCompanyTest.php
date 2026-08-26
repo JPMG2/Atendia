@@ -355,3 +355,62 @@ test('the reset itself does not cascade twice', function (): void {
         ->assertSet('form.data.province_id', $region->province_id)
         ->assertSet('form.data.country_id', $region->province->country_id);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Front-end validation
+|--------------------------------------------------------------------------
+| Same recipe as the catalog masters: the global validate() from form-guard.js
+| plus a per-component Alpine bag, so an incomplete form never costs a request.
+*/
+
+test('the company screen mounts the Alpine component that guards the save button', function (): void {
+    $html = $this->actingAs(companyAdmin())->get('/admin/company')->getContent();
+
+    expect($html)->toContain('x-data="companyForm"')     // the errors bag, one for the whole screen
+        ->toContain('x-on:click="submit()"')             // save goes through validate() first
+        ->toContain('errors.legal_name')                 // per-input Alpine error binding
+        ->toContain('x-bind:aria-invalid');              // red border driven by that bag
+});
+
+test('every field the company screen marks as required is covered by the front validation', function (): void {
+    // The asterisk and the rule have to say the same thing: a required field with
+    // no rule does nothing when the user hits save, and shows no error either.
+    $blade = file_get_contents(
+        resource_path('views/components/configuration/⚡company.blade.php')
+    );
+
+    // Read the tags whole, so the check does not depend on the order the
+    // attributes happen to be written in.
+    preg_match_all('/<x-inputsform\.[\w.-]+\b(.*?)\/>/s', $blade, $tags);
+
+    $required = [];
+
+    foreach ($tags[1] as $attributes) {
+        if (preg_match('/(^|\s)required(\s|$)/', $attributes) && preg_match('/\bname="(\w+)"/', $attributes, $match)) {
+            $required[] = $match[1];
+        }
+    }
+
+    expect($required)->toEqualCanonicalizing([
+        'legal_name', 'country_id', 'province_id', 'region_id', 'address', 'tax_condition_id',
+    ]);
+
+    foreach ($required as $field) {
+        expect($blade)->toMatch("/\b{$field}: \[\s*'required'/")   // the rule exists
+            ->toContain("alpine-error=\"{$field}\"");              // and the field shows it
+    }
+});
+
+test('the actions close the screen at the bottom, with the same foot as the catalog masters', function (): void {
+    // They used to sit above the tabs: on a form this long the save button was
+    // already off screen by the time the user finished filling it in.
+    $blade = file_get_contents(
+        resource_path('views/components/configuration/⚡company.blade.php')
+    );
+
+    expect($blade)->toContain('class="catalog-form-foot config-foot"')
+        ->not->toContain('config-actions');
+
+    expect(strpos($blade, 'catalog-form-foot'))->toBeGreaterThan(strpos($blade, '</x-ui.tabs>'));
+});

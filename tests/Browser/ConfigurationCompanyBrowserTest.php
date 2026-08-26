@@ -108,3 +108,14 @@ test('the clear button empties a picked combobox in one click', function (): voi
     // And the field is left ready to type, which is the whole point.
     expect($page->script('document.activeElement.id'))->toBe('if-country_id');
 });
+
+test('saving with the required fields empty shows the errors instead of costing a request', function (): void {
+    // The front validation only exists if Alpine really resolved `companyForm`:
+    // a registration that arrives late throws an expression error and the save
+    // button quietly does nothing.
+    $page = visit('/admin/company');
+
+    $page->click('Guardar cambios')
+        ->assertNoJavaScriptErrors()
+        ->assertSee('Este campo es obligatorio.');
+});

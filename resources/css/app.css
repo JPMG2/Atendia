@@ -1163,9 +1163,11 @@
   /* La barra de acciones acompaña el scroll: en un formulario largo, tener que
      volver arriba para guardar es lo que hace que la gente no guarde. Se pega
      justo debajo del topbar. */
-  .config-actions { position:sticky; top:var(--topbar-h); z-index:20;
-                    display:flex; align-items:center; justify-content:flex-end; gap:10px;
-                    padding:12px 0 16px; background:var(--surface-page); }
+  /* El pie de acciones es el MISMO de los maestros (.catalog-form-foot): mismo
+     orden, mismo alto, mismo color. Acá no cierra una tarjeta sino la pantalla,
+     así que se le cierra el borde y el radio por los cuatro costados. */
+  .config-foot { margin-top:var(--space-4); border:1px solid var(--border-subtle);
+                 border-radius:var(--radius-card); }
 
   /* Un bloque = de qué se trata (izquierda) + los campos (derecha). El texto
      explica una vez para todo el grupo, así ningún campo necesita un hint que

@@ -13,9 +13,10 @@ use Livewire\Component;
 /**
  * Compañía: los datos de AtendIa — UN solo registro, no los negocios clientes.
  *
- * Los campos ya están cableados al `CompanyForm` y su DTO; falta la validación
- * y el guardado. Las redes sociales siguen siendo maqueta: todavía no existe la
- * tabla que las relacione con la compañía.
+ * Los campos ya están cableados al `CompanyForm` y su DTO, y el botón de guardar
+ * pasa por la validación del front (el `@script` del pie); faltan la validación
+ * del server y el guardado. Las redes sociales siguen siendo maqueta: todavía no
+ * existe la tabla que las relacione con la compañía.
  */
 new #[Title('Compañía')] class extends Component {
     public CompanyForm $form;
@@ -85,7 +86,7 @@ new #[Title('Compañía')] class extends Component {
     #[Computed]
     public function taxConditionOptions(): array
     {
-        return TaxCondition::options(states: [true]);
+        return $this->form->data?->country_id ? TaxCondition::options(states: [true], countryId: $this->form->data?->country_id) : [];
     }
 
     /**
@@ -101,19 +102,12 @@ new #[Title('Compañía')] class extends Component {
 };
 ?>
 
-<div>
+<div x-data="companyForm">
     <div class="page-head">
         <div>
             <h1 class="page-head-title">{{ __('company.title') }}</h1>
             <p class="page-head-sub">{{ __('company.subtitle') }}</p>
         </div>
-    </div>
-
-    {{-- Las acciones acompañan el scroll: el formulario es largo y volver arriba
-         para guardar es lo que hace que la gente no guarde. --}}
-    <div class="config-actions">
-        <x-ui.button variant="ghost">{{ __('company.discard') }}</x-ui.button>
-        <x-ui.button variant="primary" icon="check">{{ __('company.save') }}</x-ui.button>
     </div>
 
     <x-ui.tabs default="data" :tabs="[
@@ -134,8 +128,8 @@ new #[Title('Compañía')] class extends Component {
 
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.input span="text" name="legal_name" :label="__('company.fields.legal_name')" :placeholder="__('company.fields.legal_name_placeholder')"
-                            wire:model="form.data.legal_name" />
+                        <x-inputsform.input span="text" required name="legal_name" alpine-error="legal_name" :label="__('company.fields.legal_name')"
+                            :placeholder="__('company.fields.legal_name_placeholder')" wire:model="form.data.legal_name" />
 
                         <x-inputsform.input span="long" name="tagline" :label="__('company.fields.tagline')" :placeholder="__('company.fields.tagline_placeholder')"
                             :hint="__('company.fields.tagline_hint')" wire:model="form.data.tagline" />
@@ -154,20 +148,21 @@ new #[Title('Compañía')] class extends Component {
                      todo lo demás, la condición fiscal incluida. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="country_id" :label="__('company.fields.country')" :placeholder="__('company.fields.country_placeholder')"
-                            :options="$this->countryOptions" :value="$form->data?->country_id" wire:model.live="form.data.country_id" />
+                        <x-inputsform.combobox span="text" required name="country_id" alpine-error="country_id" :label="__('company.fields.country')"
+                            :placeholder="__('company.fields.country_placeholder')" :options="$this->countryOptions" :value="$form->data?->country_id"
+                            wire:model.live="form.data.country_id" />
 
-                        <x-inputsform.combobox span="text" name="province_id" :label="__('company.fields.province')" :placeholder="__('company.fields.province_placeholder')"
-                            :options="$this->provinceOptions" :value="$form->data?->province_id"
-                            loading="form.data.country_id" wire:model.live="form.data.province_id" />
+                        <x-inputsform.combobox span="text" required name="province_id" alpine-error="province_id" :label="__('company.fields.province')"
+                            :placeholder="__('company.fields.province_placeholder')" :options="$this->provinceOptions" :value="$form->data?->province_id" loading="form.data.country_id"
+                            wire:model.live="form.data.province_id" />
                     </x-catalog.form-row>
 
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="region_id" :label="__('company.fields.region')" :placeholder="__('company.fields.region_placeholder')"
-                            :options="$this->regionOptions" :value="$form->data?->region_id"
-                            loading="form.data.province_id" wire:model="form.data.region_id" />
+                        <x-inputsform.combobox span="text" required name="region_id" alpine-error="region_id" :label="__('company.fields.region')"
+                            :placeholder="__('company.fields.region_placeholder')" :options="$this->regionOptions" :value="$form->data?->region_id" loading="form.data.province_id"
+                            wire:model="form.data.region_id" />
 
-                        <x-inputsform.input span="long" name="address" :label="__('company.fields.address')" :placeholder="__('company.fields.address_placeholder')"
+                        <x-inputsform.input span="long" required name="address" alpine-error="address" :label="__('company.fields.address')" :placeholder="__('company.fields.address_placeholder')"
                             maxlength="255" wire:model="form.data.address" />
                     </x-catalog.form-row>
                 </div>
@@ -183,7 +178,7 @@ new #[Title('Compañía')] class extends Component {
                      cargar, no al revés. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" name="tax_condition_id" :label="__('company.fields.tax_condition')"
+                        <x-inputsform.combobox span="text" required name="tax_condition_id" alpine-error="tax_condition_id" :label="__('company.fields.tax_condition')"
                             :placeholder="__('company.fields.tax_condition_placeholder')" :options="$this->taxConditionOptions" :value="$form->data?->tax_condition_id"
                             wire:model="form.data.tax_condition_id" />
 
@@ -303,4 +298,63 @@ new #[Title('Compañía')] class extends Component {
             </div>
         </x-ui.card>
     </x-ui.tabs>
+
+    {{-- Las acciones cierran la pantalla, igual que el pie de los maestros: el
+         guardar se busca al final del formulario, no arriba de todo. Va una sola
+         vez, fuera de los tabs: es el mismo formulario, no uno por solapa. --}}
+    <div class="catalog-form-foot config-foot">
+        <span class="catalog-foot-grow"></span>
+        <x-ui.button variant="ghost">{{ __('company.discard') }}</x-ui.button>
+        <x-ui.button variant="primary" icon="check" x-on:click="submit()">{{ __('company.save') }}</x-ui.button>
+    </div>
 </div>
+
+@script
+    <script>
+        /*
+         * Validación en el FRONT de la pantalla Compañía.
+         *
+         * Mismo criterio que los maestros del catálogo: las reglas espejan lo que
+         * la pantalla marca con asterisco, y el guardado no sale hasta que estén
+         * completas. Lo que NO se puede replicar acá es lo que necesita la base
+         * (`exists` de los combobox): ese rebote sigue viniendo del server.
+         *
+         * Se apoya en la función madre global `validate()` (form-guard.js), que
+         * ya viene cargada en el layout del dashboard.
+         */
+        Alpine.data('companyForm', () => ({
+            errors: {},
+
+            // Dónde vive el DTO en el server. Los valores se leen de ahí y no de
+            // Alpine: los campos van por wire:model contra el DTO, que es el
+            // único estado del formulario.
+            path: 'form.data',
+
+            rules: {
+                legal_name: ['required', ['maxLength', 255], 'noMarkup'],
+                country_id: ['required'],
+                province_id: ['required'],
+                region_id: ['required'],
+                address: ['required', ['maxLength', 255], 'noMarkup'],
+                tax_condition_id: ['required'],
+            },
+
+            submit() {
+                const values = {};
+
+                for (const field in this.rules) {
+                    values[field] = this.$wire.get(`${this.path}.${field}`);
+                }
+
+                this.errors = validate(values, this.rules);
+
+                if (Object.keys(this.errors).length > 0) {
+                    return;
+                }
+
+                // Acá se engancha el guardado del server el día que la acción
+                // exista: la pantalla todavía no persiste nada.
+            },
+        }));
+    </script>
+@endscript
