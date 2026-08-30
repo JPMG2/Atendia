@@ -7,20 +7,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Atributos: la biblioteca GLOBAL de campos que puede llevar un tipo de servicio.
+ * Attributes: the GLOBAL library of fields a service type can carry.
  *
- * El atributo se define UNA vez y se reutiliza: `Precio` es el mismo atributo en
- * Plato y en Combo, `Duración` el mismo en Consulta, Estudio y Control. Qué
- * atributos lleva cada tipo —y si ahí son obligatorios y en qué orden— vive en el
- * pivot, no acá: el mismo atributo puede ser obligatorio en un tipo y opcional en
- * otro. Es el "attribute set" de Magento.
- *
- * `data_type` decide cómo se pinta el campo y cómo se valida el valor que carga
- * el negocio. Sus valores salen de `config/attribute_types.php` y NO de una
- * tabla: agregar un tipo de dato siempre necesita un renderer en código, así que
- * una tabla dejaría crear un tipo que no sabe dibujarse. Un tipo desconocido cae
- * a texto. Si algún día conviene moverlo a tabla, la columna ya es un string:
- * el cambio no cuesta una migración.
+ * An attribute is defined ONCE and reused; which types carry it and how lives
+ * in the pivot, since the same one can be required in one and optional in
+ * another. `data_type` comes from config and not a table: a new type needs a
+ * renderer in code, so a table would allow one that cannot draw itself.
  */
 return new class extends Migration
 {

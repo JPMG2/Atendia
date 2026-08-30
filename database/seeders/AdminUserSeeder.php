@@ -10,10 +10,9 @@ use Illuminate\Database\Seeder;
 class AdminUserSeeder extends Seeder
 {
     /**
-     * Promueve al usuario de ADMIN_EMAIL al rol "admin" y degrada a cualquier
-     * otro admin a "client" (solo el email configurado queda admin). Idempotente.
-     * Requiere que el rol admin exista (RolesAndPermissionsSeeder primero) y que
-     * el usuario ya esté registrado.
+     * Promotes the ADMIN_EMAIL user to "admin" and demotes any other admin to
+     * "client", so only the configured address stays admin. Idempotent. Needs the
+     * role to exist and the user to be registered already.
      */
     public function run(): void
     {
@@ -33,7 +32,7 @@ class AdminUserSeeder extends Seeder
             return;
         }
 
-        // Degradar a cualquier admin previo distinto del configurado.
+        // Demote any previous admin other than the configured one.
         User::role('admin')
             ->where('id', '!=', $admin->id)
             ->get()

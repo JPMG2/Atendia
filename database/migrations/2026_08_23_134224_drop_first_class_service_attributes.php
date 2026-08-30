@@ -6,20 +6,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Saca `precio`, `stock` y `duracion` de la biblioteca de atributos.
+ * Takes price, stock and duration out of the attribute library.
  *
- * Decisión del 2026-08-23 tras el estudio: son campos de PRIMERA CLASE de lo que
- * adopta el negocio, no atributos genéricos. La razón es práctica y es la misma
- * por la que commercetools los pone en la variante y no en los atributos: se
- * consultan, ordenan, filtran y actualizan en masa todo el tiempo, y necesitan
- * moneda, impuesto e historial. Metidos en un jsonb genérico, "todos los platos
- * de menos de $5.000" o "subir 10% la carta" no se pueden resolver.
- *
- * `stock` además necesita transacciones y reservas concurrentes, y `duracion` la
- * consulta la agenda en cada slot.
- *
- * Se borran de verdad (no soft delete): son filas de semilla que todavía no
- * referencia nadie. Si alguna ya estuviera en uso, la baja se haría desactivando.
+ * They are FIRST-CLASS fields of what a business adopts: queried, sorted,
+ * filtered and bulk-updated constantly, and they need currency, tax and
+ * history. Buried in a generic jsonb, "raise the menu 10%" cannot be answered.
+ * Really deleted: they are seed rows nobody references yet.
  */
 return new class extends Migration
 {
@@ -32,8 +24,8 @@ return new class extends Migration
     }
 
     /**
-     * Irreversible a propósito: volver a crearlas es correr el seeder de una
-     * versión anterior, no deshacer un DELETE sin datos que restaurar.
+     * Irreversible on purpose: recreating them means running an older seeder, not
+     * undoing a DELETE with nothing to restore.
      */
     public function down(): void {}
 };

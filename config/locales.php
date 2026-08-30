@@ -34,7 +34,7 @@ return [
     'country_map' => [
         'AR' => 'es_AR', // Argentina  → voseo
         'UY' => 'es_AR', // Uruguay    → voseo
-        'VE' => 'es_VE', // Venezuela  → neutro + guiños
+        'VE' => 'es_VE', // Venezuela: neutral, with local touches.
     ],
 
     /*

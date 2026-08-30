@@ -9,21 +9,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Qué atributos lleva cada tipo de servicio. Es el "attribute set" de Magento.
+ * Which attributes each service type carries — Magento's "attribute set".
  *
- * El atributo se define UNA vez y se reutiliza; lo que cambia de un tipo a otro
- * vive acá. Drupal Field API es la referencia: separa el *storage* global (tipo
- * de dato, cardinalidad, que NO se pueden tocar desde la instancia) de la
- * *instancia* en cada bundle, que sí puede sobrescribir **etiqueta y ayuda**.
- *
- * Ese override no es un lujo: el atributo global se llama "Duración", pero en
- * Mesa tiene que decir "Tiempo de reserva" y en Consulta "Duración del turno".
- * Sin las dos columnas, el admin termina creando tres atributos distintos para
- * el mismo dato y la biblioteca deja de ser reutilizable.
- *
- * `restrictOnDelete` en los dos lados: un atributo o un tipo en uso NO se borra,
- * se desactiva. Los maestros usan SoftDeletes, y un soft delete es un UPDATE que
- * el FK ni ve — así que la protección real es que nunca haya un delete duro.
+ * The attribute is defined ONCE; what changes per type lives here. Following
+ * Drupal's Field API, global storage stays untouchable from the instance,
+ * which can still override label and help text — without that, an admin ends
+ * up creating three attributes for one fact.
  */
 return new class extends Migration
 {
@@ -47,7 +38,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Un atributo no puede estar dos veces en el mismo tipo.
+            // An attribute cannot sit twice on the same type.
             $table->unique(['service_type_id', 'service_attribute_id'], 'service_type_attribute_unique');
         });
     }

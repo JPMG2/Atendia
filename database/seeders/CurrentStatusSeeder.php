@@ -14,9 +14,9 @@ class CurrentStatusSeeder extends Seeder
      */
     public function run(): void
     {
-        // El color es la CLAVE de un token semántico (ver CurrentStatus::COLORS):
-        // verde lo que está bien, ámbar lo que espera, rojo lo que se frenó,
-        // gris lo que ya no cuenta.
+        // The colour is a semantic token KEY (see CurrentStatus::COLORS): green
+        // for fine, amber for waiting, red for stopped, grey for no longer
+        // counting.
         $statuses = [
             ['name' => 'Activo', 'color' => 'success'],
             ['name' => 'Finalizado', 'color' => 'success'],
@@ -29,8 +29,8 @@ class CurrentStatusSeeder extends Seeder
             ['name' => 'Eliminado', 'color' => 'neutral'],
         ];
 
-        // `updateOrCreate` y no `firstOrCreate`: los 9 estados ya existían sin
-        // color, así que un firstOrCreate los habría dejado a todos en gris.
+        // `updateOrCreate` and not `firstOrCreate`: the nine statuses already
+        // existed without a colour, and firstOrCreate would have left them grey.
         foreach ($statuses as $status) {
             CurrentStatus::query()->updateOrCreate(
                 ['name' => $status['name']],

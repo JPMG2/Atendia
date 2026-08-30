@@ -27,7 +27,7 @@ return [
     'is_required' => 'obligatorio',
     'service_modality_id' => 'modalidad',
 
-    // Compañía (el emisor de la factura).
+    // Company: the invoice issuer.
     'legal_name' => 'razón social',
     'tagline' => 'tagline',
     'address' => 'dirección',

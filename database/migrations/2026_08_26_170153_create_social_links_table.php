@@ -8,18 +8,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Las redes donde está una cuenta: la de AtendIa (`companies`) y la de cada
- * negocio cliente (`businesses`).
+ * The networks an account is on: AtendIa's and every customer business's.
  *
- * Es POLIMÓRFICA a propósito. Un link social no cambia de forma según de quién
- * sea —siempre es "qué red" + "el enlace"—, así que dos tablas gemelas
- * (`company_social_network` y `business_social_network`) serían el mismo esquema
- * escrito dos veces, y sumar mañana una sucursal sería una tercera. Es el caso en
- * el que los morphs sí pagan (mismo criterio que direcciones y teléfonos), a
- * diferencia del eje negocio↔rubro, donde se descartaron.
- *
- * `social_networks` sigue siendo el CATÁLOGO (qué redes existen, con su ícono y
- * su url base); acá vive la CUENTA.
+ * POLYMORPHIC on purpose. A social link does not change shape with its owner —
+ * always a network plus a link — so twin tables would be one schema written
+ * twice, and a branch tomorrow would make three. This is where morphs pay off,
+ * unlike the business-to-sector axis where they were dropped.
  */
 return new class extends Migration
 {
@@ -28,22 +22,22 @@ return new class extends Migration
         Schema::create('social_links', function (Blueprint $table): void {
             $table->id();
 
-            // La red se comparte entre todas las cuentas: no se borra en duro.
+            // The network is shared by every account, so it is never hard-deleted.
             $table->foreignIdFor(SocialNetwork::class)->constrained()->restrictOnDelete();
 
-            // El dueño del link: Company | Business (mañana, lo que sea).
+            // The link's owner: a Company or a Business, or whatever comes next.
             $table->morphs('linkable');
 
             $table->string('url')->comment('Enlace o usuario de la cuenta en esa red');
 
-            // El pie de página promete mostrarlas en el orden que se cargaron:
-            // sin columna, ese orden lo elegiría el motor de la base.
+            // The footer promises to show them in the order they were added: with no
+            // column, the database engine would pick that order.
             $table->unsignedSmallInteger('sort_order')->default(0);
 
             $table->timestamps();
 
-            // Una sola cuenta por red y por dueño: cargar Instagram dos veces es
-            // un error de carga, no un caso de uso.
+            // One account per network per owner: adding the same one twice is a
+            // mistake, not a use case.
             $table->unique(['linkable_type', 'linkable_id', 'social_network_id'], 'social_links_owner_network_unique');
         });
     }

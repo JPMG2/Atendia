@@ -11,14 +11,12 @@ use Illuminate\Database\Seeder;
 class BusinessActivitySeeder extends Seeder
 {
     /**
-     * El oficio concreto del negocio, agrupado por rubro (ver
-     * {@see BusinessSectorSeeder}, que hay que correr antes).
+     * The concrete trade, grouped by sector ({@see BusinessSectorSeeder}, which
+     * has to run first).
      *
-     * Es el nivel que después le habla al asistente: de este `code` van a
-     * colgar el tono, qué datos pide para atender y el conocimiento semilla
-     * del oficio. Por eso la clave es única en toda la tabla.
-     *
-     * Idempotente: keyed por `code`.
+     * This is the level that talks to the assistant: the tone, what it asks for
+     * and the trade's seed knowledge all hang off this `code`, which is why it is
+     * unique across the table. Idempotent, keyed by `code`.
      */
     public function run(): void
     {

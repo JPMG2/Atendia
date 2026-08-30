@@ -20,7 +20,7 @@ class BusinessFactory extends Factory
     {
         return [
             'name' => fake()->company(),
-            // El país se declara al registrarse, así que nunca puede faltar.
+            // The country is declared on sign-up, so it can never be missing.
             'country_id' => Country::query()->inRandomOrder()->value('id') ?? Country::factory(),
             'billing_email' => fake()->unique()->safeEmail(),
             'is_active' => true,

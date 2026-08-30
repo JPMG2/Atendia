@@ -1,20 +1,18 @@
 /*
- * catalogRail — el buscador del riel de maestros del hub de catálogos.
+ * catalogRail — the search box of the catalog hub's master rail.
  *
- * El riel crecía con la cantidad de maestros: cada catálogo nuevo estiraba la
- * pantalla entera y encontrar uno era bajar con la vista. Ahora el riel tiene
- * alto fijo con scroll propio (`.catalog-rail-body`) y arriba un buscador que
- * filtra CLIENT-SIDE, sin request: los maestros ya vienen renderizados.
+ * The rail grew with the number of masters. It now has a fixed height with its
+ * own scroll and a search box filtering CLIENT-SIDE, with no request.
  *
- *   catalogRail({ titles: ['Países', 'Monedas', ...] })   // para el "sin resultados"
+ *   catalogRail({ titles: ['Countries', 'Currencies', ...] })  // empty state
  *
- * Se registra sobre el Alpine que trae Livewire (`alpine:init`), NUNCA importando
- * Alpine acá: importarlo arrancaría un segundo Alpine y rompería el dashboard.
+ * It registers on the Alpine that Livewire brings, NEVER by importing Alpine
+ * here: a second Alpine would break the dashboard.
  */
 
 /**
- * Normaliza para comparar: minúsculas y SIN acentos, así "facturacion" encuentra
- * "Facturación" y "paises" encuentra "Países". Mismo criterio que el combobox.
+ * Normalised for comparison: lowercase and WITHOUT accents, so a query typed
+ * flat still finds an accented title. Same criterion as the combobox.
  */
 function fold(value) {
     return String(value ?? '')
@@ -27,7 +25,7 @@ export function catalogRail({ titles = [] } = {}) {
     return {
         q: '',
 
-        /** ¿Este maestro entra en lo que se está buscando? */
+        /** Does this master match what is being searched for? */
         matches(title) {
             const needle = fold(this.q).trim();
 
@@ -35,8 +33,8 @@ export function catalogRail({ titles = [] } = {}) {
         },
 
         /**
-         * Un grupo se muestra solo si le queda al menos un maestro visible: si no,
-         * el encabezado "Ubicaciones" quedaría solo, sin nada debajo.
+         * A group only shows while it has at least one visible master, or its
+         * heading would sit there with nothing underneath.
          */
         groupVisible(groupTitles) {
             return groupTitles.some((title) => this.matches(title));
@@ -47,9 +45,9 @@ export function catalogRail({ titles = [] } = {}) {
         },
 
         /**
-         * Al abrir un maestro el riel se colapsa a iconos y el buscador se
-         * esconde. Si el filtro quedara puesto se verían dos o tres iconos sueltos
-         * sin ninguna caja a la vista que explique por qué faltan los demás.
+         * Opening a master collapses the rail to icons and hides the search box.
+         * A filter left on would show two or three loose icons with nothing on
+         * screen explaining where the rest went.
          */
         clearSearch() {
             this.q = '';

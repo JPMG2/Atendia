@@ -14,10 +14,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('current_statuses', function (Blueprint $table): void {
-            // Guarda la CLAVE de un token semántico ('success', 'danger'…), nunca
-            // un hex: un color fijo se ve igual en claro y en oscuro, y varios
-            // quedan ilegibles en el tema oscuro. El token se adapta solo.
-            // La paleta permitida vive en CurrentStatus::COLORS.
+            // Stores a semantic token KEY, never a hex: a fixed colour looks the
+            // same in light and dark and several go unreadable there. The allowed
+            // palette lives in CurrentStatus::COLORS.
             $table->string('color', 20)->default('neutral')->after('name');
         });
     }

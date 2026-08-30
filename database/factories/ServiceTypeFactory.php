@@ -18,8 +18,8 @@ class ServiceTypeFactory extends Factory
      */
     public function definition(): array
     {
-        // `code` y `name` son únicos globales en la tabla. El rubro queda null:
-        // es solo agrupación de la pantalla y un tipo puede no tener ninguno.
+        // `code` and `name` are globally unique. The sector stays null: it only
+        // groups the screen, and a type may have none.
         return [
             'code' => $this->faker->unique()->lexify('tipo-????'),
             'name' => $this->faker->unique()->words(2, true),

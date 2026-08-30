@@ -18,109 +18,93 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
 
 /**
- * El formulario de la Compañía: UN solo registro, para siempre.
+ * The company form: ONE row, forever.
  *
- * No hay alta ni baja — o el registro ya existe y se edita, o todavía no se
- * cargó y el formulario arranca en blanco. Por eso NO hereda de
- * `BaseCatalogForm`: no hay tabla que listar, ni id que elegir en un riel, ni
- * `CatalogWiring` con Actions de alta y edición. Hereda del piso de abajo,
- * `BaseForm`, que es lo genérico de cualquier formulario: validar un payload y
- * envolver la acción en `tryAction()`.
- *
- * Tampoco pasa por una Action: en catálogos la Action existe porque es el punto
- * de enchufe que hace genérica a la base de los 9 maestros. Acá hay un solo
- * llamador y la operación es escribir una fila; una Action sería una
- * indirección con una sola entrada y una sola salida.
+ * It does not extend `BaseCatalogForm`: no table to list, no id to pick from
+ * a rail, no wiring. It has no Action either — in the catalog an Action is the
+ * socket that makes the base generic, and here a single caller writes a single
+ * row.
  */
 class CompanyForm extends BaseForm
 {
     /**
-     * Los pasos de la pantalla.
+     * The steps of the screen.
      *
-     * Cada uno valida y guarda SOLO sus columnas. Son las mismas claves que usa
-     * el bag de reglas del front (`rules.main` / `rules.commercial`): que se
-     * llamen igual de los dos lados es lo que deja leer "qué exige cada paso"
-     * sin traducir.
+     * Each validates and saves ONLY its own columns, under the same keys the
+     * front's rule bag uses. Naming them alike on both sides is what lets you
+     * read what a step demands without translating.
      */
     public const STEP_MAIN = 'main';
 
     public const STEP_COMMERCIAL = 'commercial';
 
     /**
-     * Campos del paso principal que NO son columnas de `companies`.
+     * Fields of the main step that are NOT columns of `companies`.
      *
-     * El país y la provincia se derivan de la región y viven en el DTO como
-     * estado de pantalla. Descartar tiene que devolverlos también: si no, la
-     * cascada sigue mostrando el domicilio que el usuario acaba de descartar.
+     * Country and province are derived from the region and live in the DTO as
+     * screen state. Discarding has to put them back too, or the cascade keeps
+     * showing the address that was just discarded.
      *
      * @var list<string>
      */
     private const MAIN_SCREEN_STATE = ['country_id', 'province_id'];
 
     /**
-     * Columnas de `companies` que escribe el paso comercial.
+     * Columns of `companies` the commercial step writes.
      *
-     * Acá SÍ hace falta la lista aparte: las reglas del paso incluyen las de las
-     * redes (`social.*.…`), que no son columnas de esta tabla. En el paso 1 las
-     * claves de las reglas ya son exactamente sus columnas.
+     * The separate list is needed here: the step's rules include the networks',
+     * which are not columns of this table. In step one the rule keys already are
+     * exactly its columns.
      *
      * @var list<string>
      */
     private const COMMERCIAL_COLUMNS = ['email', 'phone', 'web'];
 
     /**
-     * El registro cargado. `null` = todavía no se cargaron los datos.
+     * The loaded record; `null` means nothing has been loaded yet.
      *
-     * Va `#[Locked]` porque nunca lo elige el front: lo asigna `setup()` en el
-     * server a partir del único registro de la tabla, o `saveMain()` cuando lo
-     * acaba de crear.
+     * `#[Locked]` because the front never picks it: `setup()` assigns it from the
+     * table's only row, or `saveMain()` right after creating it.
      */
     #[Locked]
     public ?int $recordId = null;
 
     /**
-     * El DTO con el estado del formulario.
+     * The DTO holding the form state.
      *
-     * Tiene que quedar inicializado (no null) antes del primer render o un
-     * `wire:model="form.data.legal_name"` revienta con "Cannot assign array to
-     * property": Livewire no puede recursar dentro de un null.
+     * It has to be initialised before the first render or a nested `wire:model`
+     * dies with "Cannot assign array to property": Livewire cannot recurse into
+     * a null.
      */
     public ?CompanyDto $data = null;
 
     /**
-     * Las redes de la compañía, como filas editables.
+     * The company's networks, as editable rows.
      *
-     * Cada fila es `['key' => int, 'id' => ?int, 'social_network_id' => ?int,
-     * 'url' => ?string]`. `key` identifica a la FILA (no a la red ni al registro):
-     * es lo que va en el `wire:key`, para que quitar una del medio mueva el nodo
-     * correcto en vez de repintar el que quedó en ese índice. `id` es el registro
-     * de `social_links` cuando la fila YA está guardada, y es lo que distingue
-     * quitar una fila en blanco de borrar un enlace de verdad.
-     *
-     * Viven acá y no en el DTO porque no son columnas de `companies`: son filas
-     * de `social_links`, y el dueño es polimórfico.
+     * `key` identifies the ROW and goes in the `wire:key`, so removing one from
+     * the middle moves the right node. `id` is the `social_links` record once the
+     * row is saved, and tells dropping a blank row from deleting a real link.
+     * They are not in the DTO because they are not columns of `companies`.
      *
      * @var array<int, array{key: int, id: int|null, social_network_id: int|null, url: string|null}>
      */
     public array $social = [];
 
-    /** Próxima clave de fila. Nunca la elige el front. */
+    /** Next row key. Never picked by the front. */
     #[Locked]
     public int $nextSocialKey = 1;
 
     /**
-     * Carga el emisor en el formulario, o lo deja en blanco si no existe.
+     * Loads the issuer into the form, or leaves it blank when there is none.
      *
-     * `setup()` NO es un hook de Livewire Form: lo llama el `mount()` del
-     * componente, igual que en los editores de catálogo.
+     * `setup()` is NOT a Livewire Form hook: the component's `mount()` calls it,
+     * same as in the catalog editors.
      */
     public function setup(): void
     {
-        // La tabla tiene un solo registro: el primero ES la compañía.
-        // El país no se trae: lo único que se lee de él es su id, y ese vive en
-        // `provinces.country_id`. Sumar `.country` es una consulta que nadie usa.
-        // Las redes SÍ: son las filas del paso 2, y pedirlas después sería la
-        // misma consulta hecha tarde.
+        // The table holds one row: the first one IS the company. The country is
+        // not fetched — its id already lives on the province. The networks are,
+        // since asking for them later is the same query made late.
         $company = Company::with(['region.province', 'socialLinks'])->first();
 
         if ($company === null) {
@@ -136,12 +120,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Suma una fila de red vacía debajo de la indicada.
+     * Adds a blank network row below the given one.
      *
-     * Agregar y quitar cuestan un request: las filas son estado del SERVER, que
-     * es la única forma de que lo tipeado sobreviva al guardado. Lo que el
-     * usuario venía escribiendo viaja con este mismo request, así que no se
-     * pierde.
+     * Adding and removing cost a request: the rows are SERVER state, the only way
+     * what was typed survives a save. Whatever was being written travels with
+     * this same request, so nothing is lost.
      */
     public function addSocialRow(int $after): void
     {
@@ -149,17 +132,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Quita una fila y, si esa red ya estaba guardada, la BORRA en el momento.
-     *
-     * La baja no espera al botón de guardar: por eso la pantalla pide
-     * confirmación antes de llamar acá, y por eso `SocialLink` deja rastro en el
-     * activity log —no hay papelera de la cual sacarla—.
-     *
-     * Siempre queda una fila: si se pudieran borrar todas, no habría dónde
-     * volver a empezar. Borrar la última deja la fila en blanco.
-     *
-     * Devuelve el aviso del borrado, o null si solo se quitó una fila que nunca
-     * llegó a guardarse (ahí no pasó nada que contar).
+     * Removes a row and, when that network was already saved, DELETES it there
+     * and then. It does not wait for the save button, which is why the screen
+     * confirms first and why `SocialLink` leaves a trail — there is no bin to
+     * pull it back from. One row always remains: deleting the last one leaves it
+     * blank, or there would be nowhere to start again.
      */
     public function removeSocialRow(int $index): ?NotificationDto
     {
@@ -185,11 +162,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Borra un enlace de ESTA compañía.
+     * Deletes a link belonging to THIS company.
      *
-     * Se busca por la relación y no por `SocialLink::find()`: `$social` es
-     * estado público del formulario, así que un id llegado del front tiene que
-     * poder ser solo de su propio dueño.
+     * Looked up through the relation and not by `SocialLink::find()`: `$social`
+     * is public form state, so an id arriving from the front must only ever be
+     * able to reach its own owner.
      */
     private function deleteSocialLink(int $id): NotificationDto
     {
@@ -199,19 +176,18 @@ class CompanyForm extends BaseForm
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
         }
 
-        // spatie registra la baja sola (LogsActivity en el modelo).
+        // spatie logs the delete on its own (LogsActivity on the model).
         $link->delete();
 
         return $this->notificationService()->notificationFor($link, 'deleted');
     }
 
     /**
-     * Guarda el paso principal: identidad, domicilio, datos fiscales, logo y pie.
+     * Saves the main step: identity, address, tax data, logo and footer.
      *
-     * Es un upsert, no un alta: si el registro ya existe lo actualiza. Lo que se
-     * escribe son las columnas del paso 1 y NADA más — `validate()` devuelve
-     * solo los atributos que tienen regla, así que el contacto y las redes del
-     * paso 2 no se pisan con lo que hubiera en memoria.
+     * An upsert, not a create: an existing row is updated. It writes the step's
+     * columns and NOTHING else — `validate()` returns only attributes that have a
+     * rule, so step two's contact and networks are never overwritten.
      */
     public function saveMain(): NotificationDto
     {
@@ -221,10 +197,9 @@ class CompanyForm extends BaseForm
 
         return $this->tryAction(function () use ($validated): NotificationDto {
 
-            // La tabla tiene UN registro: si ya existe se actualiza, aunque este
-            // formulario haya montado cuando todavía no estaba (otra pestaña
-            // abierta, doble click). Sin ese `first()` de respaldo, el segundo
-            // guardado crearía una segunda compañía.
+            // The table holds ONE row: an existing one is updated even if this form
+            // mounted before it was there (another tab, a double click). Without the
+            // `first()` fallback a second save would create a second company.
             $company = Company::query()->find($this->recordId)
                 ?? Company::query()->first()
                 ?? new Company;
@@ -242,11 +217,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Guarda el paso comercial: el contacto público y las redes.
+     * Saves the commercial step: the public contact and the networks.
      *
-     * Nunca crea la compañía —para eso está el paso 1, y el 2 ni siquiera se
-     * abre hasta que existe—; si el registro no está, avisa en vez de inventar
-     * uno a medias.
+     * It never creates the company — step one does, and step two does not even
+     * open until it exists. With no record it warns instead of inventing a
+     * half-made one.
      */
     public function saveCommercial(): NotificationDto
     {
@@ -256,11 +231,11 @@ class CompanyForm extends BaseForm
 
         $validated = $this->validateStep(self::STEP_COMMERCIAL);
 
-        // El registro sale del closure por referencia porque el correo se manda
-        // AFUERA: `tryAction()` solo puede devolver la notificación de pantalla.
+        // The record leaves the closure by reference because the mail goes out
+        // OUTSIDE it: `tryAction()` can only return the screen notification.
         $company = null;
 
-        // Si ya tenía email, este guardado no es el que lo estrena.
+        // If it already had an address, this save is not the one giving it one.
         $hadEmail = false;
 
         $notification = $this->tryAction(function () use ($validated, &$company, &$hadEmail): NotificationDto {
@@ -273,9 +248,9 @@ class CompanyForm extends BaseForm
 
             $linksChanged = $this->syncSocialLinks($company, $validated['social'] ?? []);
 
-            // Si SOLO cambiaron las redes, la fila de `companies` quedó igual y
-            // `notificationFor()` diría "no se realizaron cambios" con las redes
-            // recién guardadas ahí a la vista.
+            // If ONLY the networks changed, the `companies` row is untouched and
+            // `notificationFor()` would say "nothing changed" with the networks
+            // freshly saved in plain sight.
             if ($linksChanged && ! $company->wasChanged()) {
                 return new NotificationDto(
                     __('notifications.updated.female', ['entity' => __('notifications.entities.company')]),
@@ -287,19 +262,13 @@ class CompanyForm extends BaseForm
 
         }, __('notifications.not_updated'));
 
-        // El correo va FUERA del `tryAction()` y DESPUÉS de que la fila esté
-        // escrita, por dos razones:
-        //
-        // 1. Adentro, cualquier problema del envío caería en el catch y
-        //    convertiría un guardado que salió bien en un toast de error. El
-        //    correo es una consecuencia del guardado, no parte de él.
-        // 2. Si el `save()` tira, el closure corta antes y no hay a quién
-        //    escribirle: el email que la persona tipeó no llegó a la base.
-        //
-        // Se manda UNA vez: cuando la compañía estrena su correo. `wasChanged()`
-        // solo dice la verdad después de un `save()` exitoso, y `$hadEmail`
-        // distingue estrenarlo de corregirlo — un cambio de dirección no es una
-        // bienvenida.
+        // AFTER the row is written and OUTSIDE `tryAction()`: inside, a failed
+        // send would turn a save that worked into an error toast, and a `save()`
+        // that throws leaves nobody to write to.
+
+        // Sent ONCE, when the company gets its first address. `wasChanged()` only
+        // tells the truth after a successful save, and `$hadEmail` separates
+        // getting an address from correcting one.
         if ($company !== null && ! $hadEmail && $company->wasChanged('email') && filled($company->email)) {
             (new Email($company, [$company->email], NewCompany::class))->send();
         }
@@ -308,7 +277,7 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Devuelve el paso comercial al último estado guardado, redes incluidas.
+     * Puts the commercial step back to the last saved state, networks included.
      */
     public function discardCommercial(): void
     {
@@ -330,14 +299,12 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Devuelve el paso principal al último estado guardado.
+     * Puts the main step back to the last saved state.
      *
-     * Sin compañía cargada, ese estado es el formulario en blanco. Toca SOLO los
-     * campos del paso: lo que el usuario escribió en el paso 2 y todavía no
-     * guardó no tiene por qué perderse porque descartó el 1.
-     *
-     * Las asignaciones son del server, así que no disparan `updatedData*`: la
-     * región restaurada no se borra a sí misma al reponer el país.
+     * With no company loaded that state is the blank form. It touches ONLY this
+     * step's fields: what was typed into step two and not yet saved has no reason
+     * to be lost. The assignments come from the server, so they do not fire
+     * `updatedData*` and the restored region does not wipe itself.
      */
     public function discardMain(): void
     {
@@ -351,23 +318,20 @@ class CompanyForm extends BaseForm
             ? CompanyDto::fromArray($this->stateFrom($company))
             : new CompanyDto;
 
-        // Las claves de las reglas del paso SON sus columnas: una sola lista
-        // para lo que se valida, lo que se guarda y lo que se descarta.
+        // The step's rule keys ARE its columns: one list for what is validated,
+        // what is saved and what is discarded.
         foreach ([...array_keys($this->rulesFor(self::STEP_MAIN)), ...self::MAIN_SCREEN_STATE] as $field) {
             $this->data->{$field} = $saved->{$field};
         }
     }
 
     /**
-     * Cambiar el país invalida todo lo que cuelga de él.
+     * Changing the country invalidates everything hanging off it.
      *
-     * Sin esto la provincia vieja sobrevive al cambio: desaparece de la lista
-     * —que ya está acotada al país nuevo— pero sigue en el DTO, y lo que se
-     * guardaría es una región de otro país.
-     *
-     * Solo corre cuando el cambio viene del front. Las asignaciones del server
-     * (`setup()`, o el reset de acá abajo) no disparan el hook, así que cargar
-     * una compañía existente no se borra a sí misma.
+     * Otherwise the old province survives: it vanishes from the list, already
+     * narrowed to the new country, but stays in the DTO — and what would be saved
+     * is a region of another country. Only front-driven changes fire the hook, so
+     * loading an existing company does not wipe itself.
      */
     public function updatedDataCountryId(): void
     {
@@ -380,8 +344,8 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Cambiar la provincia invalida la región, y solo la región: el país sigue
-     * siendo válido porque la provincia nueva cuelga de él.
+     * Changing the province invalidates the region, and only the region: the
+     * country stays valid because the new province hangs off it.
      */
     public function updatedDataProvinceId(): void
     {
@@ -393,12 +357,12 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Contrato de `BaseForm`: las reglas del formulario ENTERO.
+     * `BaseForm`'s contract: the rules of the WHOLE form.
      *
-     * El guardado no usa este método: cada paso valida con las suyas
-     * ({@see self::validateStep()}). Validar el paso parado contra las reglas
-     * del otro pintaría el error en un panel oculto, que para el usuario es el
-     * botón que "no hace nada".
+     * Saving does not use it — each step validates with its own
+     * ({@see self::validateStep()}). Judging the open step by the other one's
+     * rules would paint the error in a hidden panel, which reads as a button
+     * that does nothing.
      *
      * @return array<string, mixed>
      */
@@ -428,7 +392,7 @@ class CompanyForm extends BaseForm
             'email' => config('nicename.email'),
             'phone' => config('nicename.phone'),
             'web' => config('nicename.web'),
-            // Laravel resuelve `social.0.url` contra la clave con comodín.
+            // Laravel resolves `social.0.url` against the wildcard key.
             'social.*.social_network_id' => config('nicename.social_network_id'),
             'social.*.url' => config('nicename.url'),
         ];
@@ -443,11 +407,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Las filas de red que el usuario realmente cargó.
+     * The network rows that were actually filled in.
      *
-     * La pantalla siempre muestra una fila vacía para poder empezar; esa fila no
-     * es un error de carga, simplemente no es una red. Una a medias (enlace sin
-     * red, o al revés) SÍ pasa: ahí hay que avisar, no descartar en silencio.
+     * The screen always shows a blank row to start from; that row is not a
+     * mistake, it simply is not a network. A half-filled one DOES go through —
+     * that deserves a warning, not a silent drop.
      *
      * @return array<int, array{key: int, id: int|null, social_network_id: int|null, url: string|null}>
      */
@@ -460,9 +424,9 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Deja las redes guardadas exactamente como las dejó la pantalla.
+     * Leaves the stored networks exactly as the screen left them.
      *
-     * Devuelve si algo cambió, que es lo que decide el mensaje del toast.
+     * Returns whether anything changed, which is what picks the toast's message.
      *
      * @param  array<int, array{social_network_id: int, url: string}>  $rows
      */
@@ -472,8 +436,8 @@ class CompanyForm extends BaseForm
         $kept = [];
 
         foreach (array_values($rows) as $index => $row) {
-            // La red es la clave: es lo que la tabla tiene como unique por dueño,
-            // así que reordenar o corregir un enlace edita la fila, no la duplica.
+            // The network is the key — it is what the table holds unique per owner —
+            // so reordering or fixing a link edits the row instead of duplicating it.
             $link = $company->socialLinks()->updateOrCreate(
                 ['social_network_id' => $row['social_network_id']],
                 ['url' => $row['url'], 'sort_order' => $index],
@@ -483,15 +447,15 @@ class CompanyForm extends BaseForm
             $kept[] = $link->id;
         }
 
-        // Lo que ya no está en pantalla se va: una fila borrada no puede
-        // sobrevivir en la base esperando al próximo render.
+        // Whatever left the screen leaves the table: a removed row cannot sit in
+        // the database waiting for the next render.
         $removed = $company->socialLinks()->whereNotIn('id', $kept)->delete();
 
         return $changed || $removed > 0;
     }
 
     /**
-     * Las redes guardadas, como filas de pantalla y en su orden.
+     * The stored networks as screen rows, in their order.
      *
      * @return array<int, array{key: int, id: int|null, social_network_id: int|null, url: string|null}>
      */
@@ -506,8 +470,8 @@ class CompanyForm extends BaseForm
             ])
             ->all();
 
-        // Sin ninguna cargada queda la fila en blanco: la pantalla nunca muestra
-        // la sección vacía, porque no habría dónde escribir la primera.
+        // With none stored the blank row stays: the section is never shown empty,
+        // or there would be nowhere to write the first one.
         return $rows === [] ? [$this->blankSocialRow()] : $rows;
     }
 
@@ -520,12 +484,11 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Las reglas de UN paso.
+     * The rules of ONE step.
      *
-     * Es también la lista de columnas que ese paso escribe: `validate()`
-     * devuelve únicamente los atributos que tienen regla, así que un campo del
-     * paso sin regla acá no se guardaría nunca —se perdería en silencio, que es
-     * peor que un error.
+     * It doubles as the list of columns that step writes: `validate()` returns
+     * only attributes that have a rule, so a field missing from here would never
+     * be saved — lost in silence, which is worse than an error.
      *
      * @return array<string, mixed>
      */
@@ -535,30 +498,30 @@ class CompanyForm extends BaseForm
 
             self::STEP_MAIN => [
 
-                // El nombre con el que se emite la factura. Sin `unique`: la
-                // tabla tiene un solo registro, no hay con quién chocar.
+                // The name the invoice is issued under. No `unique`: the table
+                // holds one row, there is nobody to clash with.
                 'legal_name' => AttributeValidator::stringValid(true, '3'),
 
-                // Opcional (la columna es nullable): sin el `nullable`, una
-                // compañía sin tagline rebotaría contra el `min` de stringValid().
+                // Optional, as the column is nullable: without it a company with
+                // no tagline would bounce off the `min` in stringValid().
                 'tagline' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
 
-                // La tabla guarda SOLO la región; el país y la provincia de la
-                // pantalla se derivan de ella y no son columnas.
+                // The table stores ONLY the region; the country and province on
+                // screen are derived from it and are not columns.
                 'region_id' => AttributeValidator::requireAndExists('regions', 'id', 'region_id', true),
 
                 'address' => AttributeValidator::stringValid(true, '3'),
 
                 'tax_condition_id' => AttributeValidator::requireAndExists('tax_conditions', 'id', 'tax_condition_id', true),
 
-                // La columna es varchar(20) y el input pone maxlength=20: sin
-                // este tope, el max:255 de stringValid dejaba pasar un número
-                // que después revienta en Postgres.
+                // The column is varchar(20) and the input caps at 20: without
+                // this the max:255 in stringValid let through a number that
+                // then blew up in Postgres.
                 'tax_id' => [...AttributeValidator::stringValid(true, '3'), 'max:20'],
 
-                // Todavía no se suben —la zona de carga es maqueta—, pero las
-                // reglas van igual: son columnas del paso, y lo que no tiene
-                // regla no se guarda.
+                // Nothing is uploaded yet — the drop zone is a mockup — but the
+                // rules go in anyway: they are the step's columns, and what has
+                // no rule is never saved.
                 'logo_path_light' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
                 'logo_path_dark' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
 
@@ -567,29 +530,29 @@ class CompanyForm extends BaseForm
 
             self::STEP_COMMERCIAL => [
 
-                // Los tres son opcionales (las columnas son nullable): la empresa
-                // puede no publicar un teléfono.
+                // All three are optional, as the columns are nullable: a company
+                // may publish no phone at all.
                 'email' => ['nullable', 'email:rfc', 'max:255'],
 
-                // La columna es varchar(30); digitValid deja pasar los separadores
-                // que la gente escribe de verdad ("+54 9 11 5555-1234").
+                // The column is varchar(30); digitValid lets through the
+                // separators people actually type.
                 'phone' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
 
-                // NO se usa webValid(): ese helper suma `active_url`, que resuelve
-                // DNS en cada guardado — el sitio de la empresa no puede tener que
-                // estar online para poder guardar su ficha.
+                // webValid() is NOT used: it adds `active_url`, which resolves DNS
+                // on every save — a company's site cannot have to be online for
+                // its details to be saved.
                 'web' => ['nullable', 'url:http,https', 'max:255'],
 
                 'social' => ['array', 'max:20'],
 
-                // `distinct` es la mitad en pantalla del unique (dueño + red) de la
-                // tabla: sin él, dos filas con la misma red no serían un error de
-                // campo sino un crash de base atrapado por tryAction.
+                // `distinct` is the on-screen half of the table's unique per owner:
+                // without it two rows on the same network would be a database
+                // crash caught by tryAction, not a field error.
                 'social.*.social_network_id' => ['required', 'integer', 'distinct', 'exists:social_networks,id'],
 
-                // El campo se llama "Enlace o usuario" y eso es lo que acepta: pedir
-                // una URL completa haría rebotar un "@atendia" que la propia
-                // pantalla ofrece escribir.
+                // The field is called "link or handle" and that is what it takes:
+                // demanding a full URL would bounce the handle the screen itself
+                // invites people to type.
                 'social.*.url' => [...AttributeValidator::stringValid(true, '3'), 'max:255'],
             ],
 
@@ -598,7 +561,7 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * Valida el payload contra las reglas de UN paso, y devuelve solo esas claves.
+     * Validates the payload against ONE step's rules and returns only those keys.
      *
      * @return array<string, mixed>
      */
@@ -613,18 +576,17 @@ class CompanyForm extends BaseForm
     }
 
     /**
-     * El registro más el país y la provincia, que no son columnas suyas.
+     * The record plus the country and province, which are not its columns.
      *
-     * La tabla guarda solo la región; el domicilio se muestra de lo general a lo
-     * puntual, así que los dos combobox de arriba se derivan subiendo por la
-     * cadena región → provincia → país.
+     * The table stores only the region; the address is shown from broad to
+     * narrow, so the two comboboxes above it are derived by walking up the chain.
      *
      * @return array<string, mixed>
      */
     private function stateFrom(Company $company): array
     {
-        // Ya vienen cargadas desde `setup()`: pedirlas con `region()->...` sería
-        // volver a consultarlas y tirar el eager load.
+        // Already loaded in `setup()`: going through `region()->...` would query
+        // them again and throw the eager load away.
         $region = $company->region;
 
         return [

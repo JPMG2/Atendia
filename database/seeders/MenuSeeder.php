@@ -10,11 +10,10 @@ use Illuminate\Database\Seeder;
 class MenuSeeder extends Seeder
 {
     /**
-     * Seed the temporary dashboard navigation.
+     * Seeds the temporary dashboard navigation.
      *
-     * Skeleton menu: options will change as the product grows. Includes a
-     * nested branch (Productos → Categorías → Activas) to exercise the
-     * recursive, arbitrary-depth tree.
+     * A skeleton: the options will change as the product grows. It includes a
+     * nested branch to exercise the recursive, arbitrary-depth tree.
      */
     public function run(): void
     {
@@ -22,7 +21,7 @@ class MenuSeeder extends Seeder
         // (children cascade on delete). Safe — menus is seed data, not user data.
         Menu::query()->delete();
 
-        // Main navigation group (iconos según Claude Design).
+        // Main navigation group.
         Menu::create(['label_key' => 'menu.home', 'icon' => 'layout-dashboard', 'route_name' => 'dashboard', 'sort_order' => 1]);
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'badge' => '3', 'sort_order' => 2]);
         Menu::create(['label_key' => 'menu.agenda', 'icon' => 'calendar', 'badge' => '12', 'sort_order' => 3]);
@@ -35,15 +34,15 @@ class MenuSeeder extends Seeder
 
         Menu::create(['label_key' => 'menu.metrics', 'icon' => 'bar-chart-3', 'sort_order' => 5]);
 
-        // Bottom navigation group. (Los ítems del cliente usan panel 'client' por defecto.)
+        // Bottom navigation group. Client items default to the 'client' panel.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'profile.edit', 'placement' => 'bottom', 'sort_order' => 1]);
         Menu::create(['label_key' => 'menu.help', 'icon' => 'life-buoy', 'placement' => 'bottom', 'sort_order' => 2]);
 
-        // --- Panel ADMIN (configuración) — skeleton; rutas se completan en Fase 4. ---
+        // --- ADMIN panel (configuration) — skeleton; routes come later. ---
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_home', 'icon' => 'layout-dashboard', 'route_name' => 'admin.dashboard', 'sort_order' => 1]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_users', 'icon' => 'users', 'sort_order' => 2]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'sort_order' => 3]);
-        // Compañía cuelga de Configuración: son los datos de AtendIa, no un área aparte.
+        // Company hangs off Configuration: it is AtendIa's own data, not an area.
         $settings = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'settings', 'sort_order' => 4]);
         Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);
     }

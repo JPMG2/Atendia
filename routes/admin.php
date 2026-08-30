@@ -17,13 +17,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('admin.dashboard'))->name('dashboard');
 
-// Catálogos (maestros del sistema). Hub maestro-detalle; el CRUD de cada
-// maestro se cablea en su momento. La opción ya vive en el menú admin.
+// Catalogs, the system masters: a master-detail hub. Each master's CRUD is
+// wired when its turn comes.
 Route::livewire('/catalogs', 'catalog.manager')->name('catalogs');
 
-// Compañía: los datos de Atendia (un único registro). Por ahora es solo la
-// maqueta del formulario, sin cablear.
+// Company: AtendIa's own data, a single row.
 Route::livewire('/company', 'configuration.company')->name('company');
 
-// Prueba de vida del WebSocket. Se borra cuando exista el chat real.
+// Proof of life for the WebSocket. It goes when the real chat exists.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');

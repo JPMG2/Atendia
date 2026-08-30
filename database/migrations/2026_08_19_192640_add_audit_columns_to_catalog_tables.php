@@ -7,15 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Auditoría y control de cambios en los maestros del panel de Catálogos.
+ * Audit columns for the catalog masters.
  *
- * Los maestros los editan administradores a mano, así que interesa quién tocó
- * qué. Las columnas dejan mostrar el autor en la grilla sin cruzar el log
- * (`activity_log` sigue guardando el detalle de los valores).
- *
- * `softDeletes` porque un maestro NO se borra de verdad: si se borrara la fila,
- * todo lo que la referencia —un país con provincias, una actividad con
- * negocios— quedaría colgando. `regions` ya tenía la columna.
+ * Admins edit them by hand, so who touched what matters. The columns let the
+ * author show in a grid without joining the log. `softDeletes` because a
+ * master is not really deleted: everything referencing the row would dangle.
  */
 return new class extends Migration
 {
@@ -36,7 +32,7 @@ return new class extends Migration
     {
         foreach ($this->tables as $table) {
             Schema::table($table, function (Blueprint $blueprint) use ($table): void {
-                // Si se borra el usuario, el maestro queda: solo se pierde el autor.
+                // Deleting the user leaves the master row: only the author is lost.
                 $blueprint->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
                 $blueprint->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
                 $blueprint->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
@@ -56,7 +52,7 @@ return new class extends Migration
                 $blueprint->dropConstrainedForeignId('updated_by');
                 $blueprint->dropConstrainedForeignId('deleted_by');
 
-                // `regions` traía la columna de antes de esta migración.
+                // `regions` already carried the column before this migration.
                 if ($table !== 'regions') {
                     $blueprint->dropSoftDeletes();
                 }

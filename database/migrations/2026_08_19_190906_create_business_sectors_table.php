@@ -7,11 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Rubros: la agrupación mayor de un negocio (Salud, Gastronomía, Belleza…).
+ * Sectors: a business's broadest grouping.
  *
- * Maestro del panel admin: lo carga el dueño de AtendIa, el negocio solo elige.
- * Sirve para agrupar y reportar; lo que después maneja al asistente es la
- * ACTIVIDAD, que cuelga de acá (ver `business_activities`).
+ * An admin-panel master: AtendIa's owner fills it in, the business only picks
+ * from it. It groups and reports; what drives the assistant is the ACTIVITY
+ * hanging off it.
  */
 return new class extends Migration
 {

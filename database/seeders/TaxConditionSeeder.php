@@ -11,13 +11,13 @@ use Illuminate\Database\Seeder;
 class TaxConditionSeeder extends Seeder
 {
     /**
-     * Condiciones fiscales por país, indexadas por el `code` del país
-     * (ver CountrySeeder). Cada condición es única DENTRO de su país.
+     * Tax standings per country, keyed by the country's `code`. Each one is unique
+     * WITHIN its country.
      *
      * @var array<string, list<array{name: string, code: string, discriminate_tax: bool}>>
      */
     private array $conditionsByCountry = [
-        // Argentina — condición frente al IVA (AFIP).
+        // Argentina: standing before VAT (AFIP).
         'ARG' => [
             ['name' => 'Responsable Inscripto', 'code' => 'RI', 'discriminate_tax' => true],
             ['name' => 'IVA Exento', 'code' => 'EX', 'discriminate_tax' => false],
@@ -26,8 +26,8 @@ class TaxConditionSeeder extends Seeder
             ['name' => 'Consumidor Final', 'code' => 'CF', 'discriminate_tax' => false],
         ],
 
-        // Venezuela — categoría del contribuyente (SENIAT).
-        // IVA/ISLR son impuestos, no condiciones: no van acá.
+        // Venezuela: taxpayer category (SENIAT). VAT and income tax are taxes,
+        // not standings, so they do not belong here.
         'VEN' => [
             ['name' => 'Contribuyente Ordinario', 'code' => 'CO', 'discriminate_tax' => true],
             ['name' => 'Contribuyente Especial', 'code' => 'CE', 'discriminate_tax' => true],

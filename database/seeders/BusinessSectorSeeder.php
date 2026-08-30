@@ -10,11 +10,9 @@ use Illuminate\Database\Seeder;
 class BusinessSectorSeeder extends Seeder
 {
     /**
-     * Rubros con los que arranca el maestro. Es la agrupación mayor que ve el
-     * negocio al elegir a qué se dedica; el oficio concreto vive en
-     * {@see BusinessActivitySeeder}.
-     *
-     * Idempotente: keyed por `code`, que es la clave estable del rubro.
+     * The sectors the master starts with: the broad grouping a business sees when
+     * saying what it does. The concrete trade lives in
+     * {@see BusinessActivitySeeder}. Idempotent, keyed by `code`.
      */
     public function run(): void
     {

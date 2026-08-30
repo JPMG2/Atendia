@@ -24,7 +24,7 @@ class CompanyFactory extends Factory
         return [
             'legal_name' => $this->faker->company(),
             'tax_id' => (string) $this->faker->unique()->numberBetween(20000000000, 29999999999),
-            // La FK es obligatoria en la tabla; la condición fiscal no.
+            // The FK is required on the table; the tax standing is not.
             'region_id' => Region::factory(),
             'tax_condition_id' => TaxCondition::factory(),
             'address' => $this->faker->streetAddress(),

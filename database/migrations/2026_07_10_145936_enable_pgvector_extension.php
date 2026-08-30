@@ -8,13 +8,10 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
-     *
-     * The "vector" extension is not trusted, so creating it requires a
-     * superuser. The app connects as a non-superuser role, therefore the
-     * extension is provisioned once per database by a superuser (already done
-     * for "atendia" and "atendia_testing"). With the extension present this
-     * statement is a privilege-free no-op, keeping the migration idempotent.
+     * The "vector" extension is not trusted, so creating it needs a superuser and
+     * the app connects as a plain role. It is provisioned once per database by a
+     * superuser; with it present this statement is a privilege-free no-op, which
+     * keeps the migration idempotent.
      */
     public function up(): void
     {

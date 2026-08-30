@@ -17,7 +17,7 @@ class BusinessSectorFactory extends Factory
      */
     public function definition(): array
     {
-        // `code` y `name` son únicos globales en la tabla.
+        // `code` and `name` are globally unique on the table.
         return [
             'code' => $this->faker->unique()->lexify('rubro-????'),
             'name' => $this->faker->unique()->words(2, true),

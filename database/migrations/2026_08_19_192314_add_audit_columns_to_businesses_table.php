@@ -7,20 +7,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Auditoría y control de cambios del negocio.
+ * Audit columns for a business.
  *
- * Complementa a spatie/activitylog (que guarda el rastro completo en
- * `activity_log`): estas columnas dejan mostrar quién creó o tocó el registro
- * sin salir a cruzar el log, y sobreviven a una purga del log.
- *
- * Un negocio NUNCA se borra de verdad: se da de baja. Por eso `softDeletes`.
+ * They complement spatie/activitylog, which keeps the full trail: these let
+ * the author show in a grid without joining the log, and survive its purge. A
+ * business is NEVER really deleted, only deactivated — hence `softDeletes`.
  */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('businesses', function (Blueprint $table): void {
-            // Si se borra el usuario, el negocio queda: solo se pierde el autor.
+            // Deleting the user leaves the business: only the author is lost.
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();

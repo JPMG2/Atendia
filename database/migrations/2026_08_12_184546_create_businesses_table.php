@@ -7,14 +7,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * `businesses` son los negocios que contratan AtendIa: el TENANT.
+ * `businesses` are the ones hiring AtendIa: the TENANT.
  *
- * Todo dato operativo (conversaciones, mensajes, documentos de conocimiento)
- * cuelga de acá y se aísla por `business_id`. Un usuario pertenece a un solo
- * negocio; el admin (el dueño de AtendIa) no pertenece a ninguno.
- *
- * El país se DECLARA al registrarse. La geolocalización por IP solo pre-completa
- * el campo: sirve para elegir el idioma, no para respaldar una factura.
+ * Every operational record hangs off here and is isolated by `business_id`. A
+ * user belongs to one business; the admin belongs to none. The country is
+ * DECLARED on sign-up — geolocation only pre-fills the field, which is good
+ * enough to pick a language and not to back an invoice.
  */
 return new class extends Migration
 {

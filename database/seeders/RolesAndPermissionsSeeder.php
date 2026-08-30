@@ -12,18 +12,18 @@ use Spatie\Permission\PermissionRegistrar;
 class RolesAndPermissionsSeeder extends Seeder
 {
     /**
-     * Roles y permisos de la arquitectura de paneles (admin / cliente).
-     * Permisos de ÁREA por ahora; los finos se suman por feature.
+     * Roles and permissions of the two-panel architecture. AREA permissions for
+     * now; the fine-grained ones arrive with their feature.
      */
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // Permisos de área.
+        // Area permissions.
         $areaPermissions = ['access-admin-panel', 'access-client-app'];
 
-        // Permisos finos por maestro del panel de Catálogos (namespace catalog.*).
-        // Deben coincidir con `permission_key` en CatalogFormSeeder.
+        // Fine-grained permissions per catalog master. They have to match
+        // `permission_key` in CatalogFormSeeder.
         $catalogPermissions = [
             'catalog.country', 'catalog.province', 'catalog.region',
             'catalog.currency', 'catalog.tax-condition',
@@ -39,9 +39,9 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin = Role::findOrCreate('admin');
         $client = Role::findOrCreate('client');
 
-        // El cliente entra a su panel. El admin además pasa por Gate::before
-        // (super-admin), pero le damos los permisos explícitos para que el
-        // middleware/gate lo deje pasar sin depender solo del super-admin.
+        // The client reaches its own panel. The admin also passes through
+        // Gate::before, but gets the permissions explicitly so the middleware
+        // lets it through without leaning on super-admin alone.
         $client->givePermissionTo('access-client-app');
         $admin->givePermissionTo(['access-admin-panel', 'access-client-app', ...$catalogPermissions]);
 

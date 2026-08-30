@@ -20,7 +20,7 @@ class BusinessActivityFactory extends Factory
     {
         return [
             'business_sector_id' => BusinessSector::factory(),
-            // `code` es único global; `name` es único dentro del rubro.
+            // `code` is globally unique; `name` is unique within the sector.
             'code' => $this->faker->unique()->lexify('actividad-????'),
             'name' => $this->faker->unique()->words(2, true),
             'description' => $this->faker->sentence(),

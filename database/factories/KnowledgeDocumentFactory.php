@@ -16,7 +16,7 @@ class KnowledgeDocumentFactory extends Factory
     protected $model = KnowledgeDocument::class;
 
     /**
-     * `status` y `content_hash` los completa el observer al guardar; no se setean acá.
+     * `status` and `content_hash` are filled by the observer on save, not here.
      */
     public function definition(): array
     {

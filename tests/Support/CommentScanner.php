@@ -72,13 +72,20 @@ final class CommentScanner
         }
 
         if (str_ends_with($path, '.js')) {
-            preg_match_all('#(?:^|\s)//(.*)$|/\*(.*?)\*/#ms', $contents, $matches);
+            // Two passes on purpose: one regex with the `s` flag would let a
+            // `//` line swallow the rest of the file.
+            preg_match_all('#/\*(.*?)\*/#s', $contents, $blocks);
+            preg_match_all('#^\s*//(.*)$#m', $contents, $lines);
 
-            return array_values(array_filter(array_map(
-                fn (string $a, string $b): string => trim($a.$b),
-                $matches[1],
-                $matches[2],
-            )));
+            $comments = array_map(fn (string $b): string => '/*'.$b.'*/', $blocks[1]);
+
+            foreach ($lines[1] as $line) {
+                if (trim($line) !== '') {
+                    $comments[] = '//'.$line;
+                }
+            }
+
+            return array_values($comments);
         }
 
         $sourceLines = preg_split('/\R/', $contents) ?: [];
@@ -209,20 +216,31 @@ final class CommentScanner
     {
         $lines = preg_split('/\R/', trim($comment)) ?: [];
 
-        if (! str_starts_with(trim($comment), '/**')) {
+        if (! str_starts_with(trim($comment), '/*')) {
             return count($lines) > self::MAX_INLINE_LINES;
         }
 
         $prose = [];
 
         foreach ($lines as $line) {
-            $line = trim(ltrim(trim($line), '*/ '));
+            // The `*` and the ONE space after it go; whatever indentation is
+            // left marks a code sample apart from prose.
+            $line = rtrim(trim($line), '*/');
+            $line = ltrim($line, '*');
+            $line = rtrim($line);
 
-            if (str_starts_with($line, '@')) {
+            if (str_starts_with($line, ' ')) {
+                $line = substr($line, 1);
+                $isSample = str_starts_with($line, ' ');
+            } else {
+                $isSample = false;
+            }
+
+            if (str_starts_with(ltrim($line), '@')) {
                 break;
             }
 
-            if ($line !== '') {
+            if ($line !== '' && ! $isSample) {
                 $prose[] = $line;
             }
         }

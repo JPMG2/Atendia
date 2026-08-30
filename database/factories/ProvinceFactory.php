@@ -22,8 +22,8 @@ class ProvinceFactory extends Factory
     {
         return [
             'country_id' => Country::factory(),
-            // `(country_id, name)` se valida como único por país, así que dos
-            // provincias del mismo país no pueden compartir nombre.
+            // `(country_id, name)` is validated as unique per country, so two
+            // provinces of one country cannot share a name.
             'name' => $this->faker->unique()->city(),
             'is_active' => true,
         ];

@@ -20,10 +20,10 @@ class CurrentStatusFactory extends Factory
     public function definition(): array
     {
         return [
-            // `name` es UNIQUE en la tabla, así que tiene que serlo acá o dos
-            // estados creados en el mismo test revientan contra la constraint.
+            // `name` is UNIQUE on the table, so it has to be unique here too or two
+            // statuses built in one test blow up against the constraint.
             'name' => $this->faker->unique()->word(),
-            // Una clave de CurrentStatus::COLORS; un valor libre no lo pinta el CSS.
+            // A key from CurrentStatus::COLORS; a free value the CSS cannot paint.
             'color' => $this->faker->randomElement(CurrentStatus::COLORS),
         ];
     }

@@ -7,16 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Las tablas del RAG nacieron con `company_id` significando "el negocio del
- * cliente". Ahora `Company` es el emisor de la factura (AtendIa) y el tenant es
- * `Business`, así que esa columna apuntaba al concepto equivocado.
- *
- * Se renombra con una migración nueva en vez de editar las originales: editarlas
- * no tendría efecto sobre `atendia`, donde ya corrieron.
- *
- * RENAME de verdad, no drop + add. Hoy ambas tablas están en cero registros, así
- * que daría lo mismo — pero una migración que borra una columna con datos es una
- * trampa esperando a otro entorno. Renombrar conserva lo que haya.
+ * The RAG tables were born with `company_id` meaning the customer's business.
+ * `Company` is now the invoice issuer and the tenant is `Business`, so it
+ * pointed at the wrong concept. A new migration and not an edit of the
+ * originals, which already ran — and a real RENAME, since a migration that
+ * drops a column holding data is a trap waiting for another environment.
  */
 return new class extends Migration
 {

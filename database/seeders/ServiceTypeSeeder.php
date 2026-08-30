@@ -14,15 +14,11 @@ use Illuminate\Database\Seeder;
 class ServiceTypeSeeder extends Seeder
 {
     /**
-     * Tipos de servicio con sus atributos y a qué actividades se les sugieren.
+     * Service types with their attributes and the activities they are suggested to.
      *
-     * Fijate en la panadería: se le sugieren "Producto de mostrador" y "Pedido
-     * para llevar", pero NO "Mesa" — no es lo típico de una panadería. Y sin
-     * embargo la panadería que pone mesas puede adoptar "Mesa" igual, porque
-     * `activity_service_type` es una SUGERENCIA y no un permiso. Ese es el caso
-     * que ordenó todo el diseño.
-     *
-     * Idempotente: keyed por `code`, y los dos pivots se sincronizan.
+     * Look at the bakery: it is suggested counter products and takeaway orders but
+     * NOT tables, and it can still adopt tables, because the pivot is a SUGGESTION
+     * and not a permission. Idempotent, keyed by `code`, both pivots synced.
      */
     public function run(): void
     {
@@ -97,8 +93,8 @@ class ServiceTypeSeeder extends Seeder
                 'name' => 'Mesa', 'description' => 'Lugar en el salón para una franja horaria.',
                 'modality' => 'reserva', 'sector' => 'gastronomia', 'sort_order' => 12,
                 'attributes' => [
-                    // El override es justamente para esto: el atributo global se
-                    // llama "Personas", pero en una mesa se dice "Comensales".
+                    // This is exactly what the override is for: the global attribute is
+                    // named one way, and a table calls the same thing another.
                     'personas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Comensales'],
                     'zona' => ['sort_order' => 2, 'label_override' => 'Sector del salón'],
                 ],

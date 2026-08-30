@@ -9,9 +9,9 @@ use App\Models\KnowledgeDocument;
 use Illuminate\Database\Seeder;
 
 /**
- * Conocimiento demo (FAQs) para una empresa. NO embeddea acá: crear cada documento
- * encola `IndexKnowledgeDocument`; el worker (queue:work) lo indexa contra la API de
- * embeddings. Correr con el worker levantado y la OPENAI_API_KEY configurada.
+ * Demo knowledge for a company. It does NOT embed here: creating a document
+ * queues `IndexKnowledgeDocument` and the worker indexes it against the
+ * embeddings API. Run it with the worker up and the API key set.
  */
 class KnowledgeSeeder extends Seeder
 {

@@ -22,13 +22,12 @@ class RegionFactory extends Factory
     {
         return [
             'province_id' => Province::factory(),
-            // Único dentro de la provincia: el mismo nombre puede repetirse entre
-            // provincias distintas, pero no dentro de una.
-            //
-            // El número sale de un espacio grande a propósito. Encadenar
-            // `unique()->citySuffix()` agotaba el pool de faker (son un puñado de
-            // sufijos) y a la vigésima región el factory tiraba OverflowException,
-            // que en un test se lee como un bug del código y no de los datos.
+            // Unique within the province: the same name may repeat across provinces
+            // but not inside one.
+
+            // The number comes from a large space on purpose: chaining
+            // `unique()->citySuffix()` drained faker's pool and the factory threw an
+            // OverflowException, which reads in a test like a bug in the code.
             'name' => 'Zona '.$this->faker->unique()->numberBetween(1, 100000),
             'is_active' => true,
         ];

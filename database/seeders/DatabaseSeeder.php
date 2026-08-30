@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(RolesAndPermissionsSeeder::class);
 
-        // El UserFactory asigna el rol "client" por defecto (roles ya sembrados).
+        // UserFactory assigns the "client" role by default, roles being seeded.
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

@@ -1,30 +1,24 @@
 /*
- * validate — función madre de validación en el front (evita requests innecesarios).
- *
- * Global y reutilizable. CADA componente decide, en su propio @script, qué valores
- * validar (leídos de $wire) y con qué reglas. Uso:
+ * validate — the front's validation entry point, so a doomed request is never
+ * sent. EACH component decides in its own @script what to check.
  *
  *   this.errors = validate(
  *     { code: this.$wire.code, name: this.$wire.name },
- *     { code: ['required', 'alpha', ['length', 3]], name: ['required', ['minLength', 3]] }
+ *     { code: ['required', 'alpha', ['length', 3]], name: ['required'] }
  *   );
  *   if (Object.keys(this.errors).length === 0) this.$wire.save();
  *
- * Cada regla es un string ('required', 'email', 'numeric', 'integer', 'date',
- * 'alpha', 'alphaSpaces', 'alphanum', 'noMarkup') o un array [nombre, ...params]
- * (['minLength', 3], ['maxLength', 10], ['length', 3], ['min', 0], ['max', 8],
- * ['between', 0, 8]).
- *
- * NO se importa Alpine acá: en el dashboard el Alpine lo trae Livewire.
+ * A rule is a string ('required', 'email', 'noMarkup'…) or an array of
+ * [name, ...params]. Alpine is NOT imported here: Livewire brings it.
  */
 
 /*
- * Los patrones espejan EXACTAMENTE los del server, o el front deja pasar algo que
- * el server rechaza (o al revés) y el usuario come un rebote que no se explica:
+ * The patterns mirror the server's EXACTLY, or the front lets through what the
+ * server rejects and the person eats a bounce nobody can explain:
  *
- *   alpha       -> regla `alpha` de Laravel: SOLO letras y marcas, sin espacios.
- *   alphaSpaces -> AttributeValidator::ALPHA_PATTERN (letras + espacios ' -).
- *   noMarkup    -> AttributeValidator::XSS_PREVENTION_PATTERN (sin < ni >).
+ *   alpha       -> Laravel's `alpha`: letters and marks only, no spaces.
+ *   alphaSpaces -> AttributeValidator::ALPHA_PATTERN.
+ *   noMarkup    -> AttributeValidator::XSS_PREVENTION_PATTERN.
  */
 const RE = {
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -34,7 +28,7 @@ const RE = {
     noMarkup: /^[^<>]*$/,
 };
 
-// Cada check devuelve `true` si pasa, o el mensaje de error (string) si falla.
+// Each check returns `true` when it passes, or the error message when it fails.
 const CHECKS = {
     required: (v) => v !== '' || 'Este campo es obligatorio.',
     email: (v) => RE.email.test(v) || 'Ingresá un email válido.',
@@ -54,7 +48,8 @@ const CHECKS = {
 };
 
 /**
- * Valida `values` contra `rules` y devuelve { campo: primerMensaje }. Vacío = todo ok.
+ * Checks `values` against `rules` and returns { field: firstMessage }. Empty
+ * means everything passed.
  */
 function validate(values, rules) {
     const errors = {};
@@ -65,7 +60,7 @@ function validate(values, rules) {
         for (const spec of rules[field]) {
             const [name, ...params] = Array.isArray(spec) ? spec : [spec];
 
-            // Las reglas que no son 'required' no se evalúan sobre un campo vacío (opcional).
+            // Rules other than 'required' are not run against an empty field.
             if (name !== 'required' && value === '') {
                 continue;
             }

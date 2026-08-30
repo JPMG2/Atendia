@@ -9,10 +9,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * `companies` es AtendIa: los datos de MI compañía. Un ÚNICO registro, para siempre.
+ * `companies` is AtendIa itself. A SINGLE row, forever.
  *
- * No confundir con `businesses`, que son los negocios que contratan el servicio.
- * Acá vive lo que encabeza una factura emitida por AtendIa.
+ * Not to be confused with `businesses`, the ones hiring the service. What
+ * heads an invoice issued by AtendIa lives here.
  */
 return new class extends Migration
 {

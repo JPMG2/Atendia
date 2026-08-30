@@ -1,27 +1,22 @@
 /*
- * dialog — la ÚNICA forma de avisar, advertir, confirmar o pedir un reintento.
+ * dialog — the ONLY way to notify, warn, confirm or offer a retry.
  *
- * REGLA DE ORO: en AtendIa no existe ningún aviso nativo del navegador. Nada de
- * `alert`, `confirm` ni `prompt`: no se pueden tematizar, no respetan la
- * tipografía ni el idioma de la app, bloquean el hilo y en el panel del cliente
- * se ven como un error del sistema. Todo pasa por acá.
- * (Guía: .ai/guidelines/avisos-y-modales.md — blindada con test guardián y hook.)
+ * GOLDEN RULE: AtendIa has no native browser alerts — they cannot be themed,
+ * ignore the app's language and read as a system error. It is global and
+ * returns a PROMISE, so a caller reads as ordinary code:
  *
- * Es global y devuelve una PROMESA, así el que llama lee como código normal:
- *
- *   if (! await dialog.confirm({ title: '¿Eliminar la red?', message: '...' })) {
+ *   if (! await dialog.confirm({ title: '...', message: '...' })) {
  *       return;
  *   }
  *
- * La ventana en sí la dibuja <livewire:dialog />, montada UNA vez en el layout
- * (igual que el toast). Abrirla no cuesta un request: es 100% Alpine.
+ * The window is drawn by <livewire:dialog />, mounted ONCE in the layout.
  */
 
 /**
- * Encola un diálogo y espera la respuesta del usuario.
+ * Queues a dialog and waits for the answer.
  *
- * El `resolve` viaja en el detalle del evento: es la forma de que una promesa
- * cruce hasta el componente de Alpine que dibuja la ventana.
+ * The `resolve` travels in the event detail: that is how a promise reaches
+ * the Alpine component drawing the window.
  */
 function open(options) {
     return new Promise((resolve) => {
@@ -30,26 +25,25 @@ function open(options) {
 }
 
 window.dialog = {
-    /** Un aviso: un solo botón, no hay nada que decidir. */
+    /** A notice: one button, nothing to decide. */
     notify: (options = {}) => open({ mode: 'notify', type: 'info', ...options }),
 
-    /** Una pregunta: cancelar o aceptar. `type: 'danger'` para lo que no se deshace. */
+    /** A question: cancel or accept. `type: 'danger'` for what cannot be undone. */
     confirm: (options = {}) => open({ mode: 'confirm', type: 'warning', ...options }),
 
     /**
-     * Algo falló y se puede volver a intentar.
+     * Something failed and can be tried again.
      *
-     * Tipo `warning` y no `danger`: reintentar no destruye nada, y un botón rojo
-     * ahí se lee como "esto rompe algo" justo cuando hay que animarse a tocarlo.
+     * `warning` and not `danger`: retrying destroys nothing, and a red button
+     * there reads as "this breaks something" right when it has to be pressed.
      */
     retry: (options = {}) => open({ mode: 'retry', type: 'warning', ...options }),
 };
 
 /**
- * El anfitrión: guarda la cola y resuelve la promesa del diálogo en pantalla.
- *
- * Hay cola porque dos avisos simultáneos son posibles (un guardado que falla
- * mientras algo más avisa) y perder el segundo es peor que hacerlo esperar.
+ * The host: it keeps the queue and resolves the promise of the dialog on
+ * screen. There is a queue because two notices can overlap, and losing the
+ * second is worse than making it wait.
  */
 export function dialogHost({ labels = {} } = {}) {
     return {
@@ -68,20 +62,20 @@ export function dialogHost({ labels = {} } = {}) {
         show() {
             this.current = this.queue.shift() ?? null;
 
-            // El fondo no se scrollea detrás de la ventana: perseguir el scroll
-            // de la página con un diálogo abierto es marearse.
+            // The page behind does not scroll: chasing it with a dialog open is
+            // disorienting.
             document.body.classList.toggle('has-dialog', this.current !== null);
 
             if (this.current === null) {
                 return;
             }
 
-            // El foco arranca en la acción, no en el fondo: así Enter responde y
-            // el lector de pantalla anuncia de qué se trata.
+            // Focus starts on the action, not behind: Enter answers and the screen
+            // reader announces what this is about.
             this.$nextTick(() => this.$refs.accept?.focus());
         },
 
-        /** Rótulo de la acción: el que pidió quien abre, o el del modo. */
+        /** The action's label: whatever the caller asked for, or the mode's. */
         acceptLabel() {
             if (this.current?.accept) {
                 return this.current.accept;
@@ -101,7 +95,7 @@ export function dialogHost({ labels = {} } = {}) {
             this.answer(true);
         },
 
-        /** Escape, click afuera y el botón de cancelar son lo mismo: que no. */
+        /** Escape, a click outside and the cancel button all mean the same: no. */
         cancel() {
             this.answer(false);
         },

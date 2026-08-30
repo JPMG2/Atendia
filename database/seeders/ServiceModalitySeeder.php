@@ -10,14 +10,11 @@ use Illuminate\Database\Seeder;
 class ServiceModalitySeeder extends Seeder
 {
     /**
-     * Las modalidades con las que arranca el maestro.
+     * The modalities the master starts with.
      *
-     * El filtro para que algo entre acá y no sea un TIPO de servicio: ¿cambia lo
-     * que el asistente PREGUNTA y lo que el sistema tiene que RECORDAR? Si solo
-     * cambia la palabra, es un tipo. "Consulta", "Estudio" y "Control" no están
-     * acá porque las tres son lo mismo para el sistema: una cita.
-     *
-     * Idempotente: keyed por `code`, que es la bisagra con el código.
+     * What earns a place here rather than being a service TYPE: does it change
+     * what the assistant ASKS and what the system has to REMEMBER? If only the
+     * word changes, it is a type. Idempotent, keyed by `code`.
      */
     public function run(): void
     {

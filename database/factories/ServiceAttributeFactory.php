@@ -17,7 +17,7 @@ class ServiceAttributeFactory extends Factory
      */
     public function definition(): array
     {
-        // `code` y `name` son únicos globales en la tabla.
+        // `code` and `name` are globally unique on the table.
         return [
             'code' => $this->faker->unique()->lexify('atributo-????'),
             'name' => $this->faker->unique()->words(2, true),
@@ -30,7 +30,7 @@ class ServiceAttributeFactory extends Factory
         ];
     }
 
-    /** Atributo de lista, el único tipo que usa la columna `options`. */
+    /** A list attribute, the only type that uses the `options` column. */
     public function list(): self
     {
         return $this->state(fn (): array => [

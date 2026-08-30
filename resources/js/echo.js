@@ -3,19 +3,19 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
-// El WebSocket entra por el MISMO origen que la pagina: nginx proxea /app/ y
-// /apps/ a Reverb (ver docker/nginx/conf.d/laravel.conf). Por eso el default es
-// location.hostname y el puerto del navegador, no la IP ni el 8080 cableados:
-// el dia que haya dominio, esto sigue andando sin tocar nada.
+// The WebSocket comes in through the SAME origin as the page: nginx proxies
+// /app/ and /apps/ to Reverb. Hence the browser's hostname and port as the
+// default, not a hardcoded IP — the day there is a domain, this keeps
+// working untouched.
 const scheme = import.meta.env.VITE_REVERB_SCHEME || window.location.protocol.replace(':', '');
 const forceTLS = scheme === 'https';
 
-// El puerto del navegador: 443 cuando entra por Traefik (https, sin puerto en la
-// URL) y 8081 cuando se prueba el acceso directo al contenedor.
+// The browser's port: 443 through Traefik, and 8081 when testing the
+// container directly.
 const port = Number(import.meta.env.VITE_REVERB_PORT || window.location.port || (forceTLS ? 443 : 80));
 
-// Canal privado (business.{id}): pusher-js pega en /broadcasting/auth con su
-// propio XHR, que no pasa por Livewire ni por axios. Sin el X-CSRF-TOKEN a mano
+// Private channel: pusher-js hits /broadcasting/auth with its own XHR, which
+// goes through neither Livewire nor axios. Without the CSRF token by hand
 // Laravel responde 419 y no se entra a ningun canal.
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 

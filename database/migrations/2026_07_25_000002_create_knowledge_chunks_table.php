@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Fragmentos embeddados de un documento: lo que se busca por similitud.
-     * `company_id` va DENORMALIZADO para filtrar por tenant sin join. La columna
-     * `vector(1536)` con `->index()` genera un índice HNSW + vector_cosine_ops
-     * automáticamente (Laravel 13). La extensión `vector` ya se crea en su propia
-     * migración (2026_07_10_enable_pgvector_extension).
+     * A document's embedded chunks: what similarity search runs against.
+     *
+     * The tenant column is DENORMALISED so filtering needs no join, and the
+     * `vector` column with `->index()` builds an HNSW index automatically. The
+     * extension itself is created in its own migration.
      */
     public function up(): void
     {

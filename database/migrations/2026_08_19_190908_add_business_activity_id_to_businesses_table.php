@@ -8,13 +8,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * El negocio declara SU actividad. La flecha va del negocio a la actividad:
- * una actividad tiene muchos negocios, un negocio tiene una sola.
+ * The business declares ITS activity: one activity has many businesses, a
+ * business has one.
  *
- * No se guarda el rubro aparte: la actividad ya sabe a cuál pertenece, y tener
- * las dos columnas abre la puerta a que se contradigan.
- *
- * Nullable porque los negocios ya cargados todavía no eligieron actividad.
+ * The sector is not stored alongside — the activity already knows its own, and
+ * two columns would open the door to them contradicting each other. Nullable
+ * because the businesses already on file have not picked one yet.
  */
 return new class extends Migration
 {

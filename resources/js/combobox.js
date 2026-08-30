@@ -1,18 +1,15 @@
 /*
- * inputsformCombobox — comportamiento del <x-inputsform.combobox>.
+ * inputsformCombobox — the behaviour behind <x-inputsform.combobox>.
  *
- * Select con autocompletado: filtra al tipear, se navega con el teclado y no usa
- * un <select> nativo (que no se puede tematizar ni filtrar). El valor real vive
- * en un <input type="hidden"> que lleva el `wire:model`, así Livewire lo recibe
- * exactamente igual que en cualquier otro campo.
- *
- * Se registra sobre el Alpine que trae Livewire (`alpine:init`), NUNCA importando
- * Alpine acá: importarlo arrancaría un segundo Alpine y rompería todo el dashboard.
+ * An autocompleting select: it filters as you type, with no native <select>,
+ * which can be neither themed nor filtered. The real value lives in a hidden
+ * input carrying the `wire:model`. It registers on the Alpine that Livewire
+ * brings, NEVER by importing Alpine here.
  */
 
 /**
- * Normaliza para comparar: minúsculas y SIN acentos, así "peru" encuentra "Perú"
- * y "dolar" encuentra "Dólar". Sin esto el buscador es inútil en español.
+ * Normalised for comparison: lowercase and WITHOUT accents, so a query typed
+ * flat finds the accented option. Without it the search is useless in Spanish.
  */
 function fold(value) {
     return String(value ?? '')
@@ -26,7 +23,7 @@ function comboboxData({ options = [], initial = null } = {}) {
         options,
         open: false,
         query: '',
-        // Opción elegida (objeto completo) o null. El hidden guarda solo su value.
+        // The chosen option as a whole object, or null. The hidden input keeps only its value.
         selected: options.find((option) => String(option.value) === String(initial)) ?? null,
         highlighted: 0,
 
@@ -34,13 +31,13 @@ function comboboxData({ options = [], initial = null } = {}) {
             this.query = this.selected ? this.selected.label : '';
         },
 
-        /** Lo que se ve en el input: mientras está abierto manda lo que se tipea. */
+        /** What the input shows: while open, whatever is being typed wins. */
         filtered() {
             const needle = fold(this.query).trim();
 
-            // Con el panel recién abierto y el texto igual a la opción elegida, no
-            // se filtra: si no, abrir el campo mostraría UNA sola opción (la actual)
-            // y no se podría cambiar sin borrar a mano.
+            // Just opened, with the text still equal to the chosen option, nothing
+            // is filtered: otherwise opening the field would show that one option
+            // and there would be no way to change it without erasing by hand.
             if (needle === '' || (this.selected && needle === fold(this.selected.label))) {
                 return this.options;
             }
@@ -62,8 +59,8 @@ function comboboxData({ options = [], initial = null } = {}) {
 
         closePanel() {
             this.open = false;
-            // Un texto a medio tipear que no eligió nada no puede quedar en pantalla
-            // haciéndose pasar por un valor: se restaura la etiqueta de lo elegido.
+            // Half-typed text that chose nothing cannot stay on screen posing as a
+            // value: the chosen option's label is put back.
             this.query = this.selected ? this.selected.label : '';
         },
 
@@ -71,8 +68,8 @@ function comboboxData({ options = [], initial = null } = {}) {
             this.openPanel();
             this.highlighted = 0;
 
-            // Vaciar el campo es la forma de deseleccionar: el hidden queda en ''
-            // y la validación (front o server) reporta el requerido como corresponde.
+            // Emptying the field is how you deselect: the hidden input goes to ''
+            // and validation reports the required field as it should.
             if (this.query === '' && this.selected !== null) {
                 this.commit(null);
             }
@@ -91,9 +88,9 @@ function comboboxData({ options = [], initial = null } = {}) {
         },
 
         /**
-         * Vacía el campo de un golpe y lo deja listo para escribir: borrar a mano
-         * la etiqueta entera para volver a buscar es el motivo por el que existe
-         * este botón. Reusa commit() para que el hidden y Livewire se enteren.
+         * Empties the field in one go and leaves it ready to type: having to erase
+         * the whole label by hand is why this button exists. It reuses commit() so
+         * the hidden input and Livewire find out.
          */
         clear() {
             this.commit(null);
@@ -117,9 +114,9 @@ function comboboxData({ options = [], initial = null } = {}) {
         },
 
         /**
-         * Escribe el valor en el hidden y avisa con un evento `input`: Livewire
-         * escucha el evento, no la propiedad, así que asignar `.value` a secas
-         * dejaría el server sin enterarse del cambio.
+         * Writes the value into the hidden input and fires an `input` event:
+         * Livewire listens for the event and not the property, so assigning
+         * `.value` alone would leave the server unaware.
          */
         commit(option) {
             this.selected = option;
@@ -136,7 +133,7 @@ function comboboxData({ options = [], initial = null } = {}) {
             });
         },
 
-        /** ¿Esta opción es la elegida? (para el tilde de la lista) */
+        /** Is this the chosen option? Used for the tick in the list. */
         isSelected(option) {
             return this.selected !== null && String(option.value) === String(this.selected.value);
         },

@@ -18,11 +18,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
-    // Públicas
+    // Public.
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:auth');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
 
-    // Protegidas por token Bearer
+    // Behind a bearer token.
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);

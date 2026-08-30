@@ -10,24 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Las actividades que declara un negocio: UNA principal + las que sume.
+ * The activities a business declares: ONE primary plus whatever it adds.
  *
- * Es el mecanismo que destraba el caso que ordenó todo el diseño: la panadería
- * que pone mesas agrega "Cafetería" como actividad secundaria y ahí sí se le
- * empiezan a sugerir Mesa y los tipos del salón. Es exactamente lo que hace
- * Google Business Profile con su categoría principal + hasta nueve secundarias:
- * lo que te ofrecen depende de tus categorías, y las categorías las elegís vos.
- *
- * Antes esto era `businesses.business_activity_id`, una sola. La columna se va en
- * la migración siguiente: el negocio NO puede tener su actividad en dos lugares
- * distintos, por el mismo motivo por el que el rubro no se guarda aparte de la
- * actividad — dos fuentes de verdad terminan contradiciéndose.
- *
- * `is_primary` no es una columna decorativa: la principal es la que manda para el
- * tono del asistente, el paquete de conocimiento del oficio y los reportes. Por
- * eso hay un índice único PARCIAL que garantiza una sola principal por negocio —
- * un `unique(business_id, is_primary)` no serviría: prohibiría tener dos
- * secundarias.
+ * This unlocks the case the whole design was arranged around: a bakery that
+ * puts out tables adds a second activity and starts being suggested the room's
+ * types. The primary one drives the assistant's tone and the reports, and a
+ * PARTIAL unique index guarantees a single one per business.
  */
 return new class extends Migration
 {
@@ -36,10 +24,10 @@ return new class extends Migration
         Schema::create('activity_business', function (Blueprint $table): void {
             $table->id();
 
-            // Si el negocio se borra, sus declaraciones no significan nada.
+            // With the business gone, its declarations mean nothing.
             $table->foreignIdFor(Business::class)->constrained()->cascadeOnDelete();
 
-            // La actividad se comparte entre negocios: no se borra en duro.
+            // The activity is shared across businesses, so it is never hard-deleted.
             $table->foreignIdFor(BusinessActivity::class)->constrained()->restrictOnDelete();
 
             $table->boolean('is_primary')->default(false)
@@ -51,8 +39,8 @@ return new class extends Migration
             $table->unique(['business_id', 'business_activity_id'], 'activity_business_unique');
         });
 
-        // Una sola principal por negocio. Índice PARCIAL de Postgres: solo indexa
-        // las filas con is_primary, así las secundarias pueden ser muchas.
+        // One primary per business. A PARTIAL Postgres index: it only covers the
+        // primary rows, so there can be many secondary ones.
         DB::statement('CREATE UNIQUE INDEX activity_business_one_primary ON activity_business (business_id) WHERE is_primary');
     }
 

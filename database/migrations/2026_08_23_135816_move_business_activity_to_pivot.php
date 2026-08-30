@@ -9,20 +9,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Muda la actividad del negocio a `activity_business` y saca la columna.
+ * Moves the business's activity into the pivot and drops the column.
  *
- * La que estaba en `businesses.business_activity_id` pasa a ser la PRINCIPAL. La
- * columna se va: dejarla como "la principal" y el pivot para "las demás" serían
- * dos fuentes de verdad, y tarde o temprano se contradicen.
- *
- * Se hace ahora, antes de que haya negocios cargados: es la migración cara de
- * esta feature y el momento más barato para pagarla.
+ * The one on `businesses` becomes the PRIMARY. Keeping the column for "the
+ * main one" and the pivot for "the rest" would be two sources of truth, and
+ * they contradict each other sooner or later. Done now, before there are
+ * businesses on file: the expensive migration at its cheapest moment.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // Backfill primero: si la columna se fuera antes, el dato se perdería.
+        // Backfill first: dropping the column ahead of it would lose the data.
         $rows = DB::table('businesses')
             ->whereNotNull('business_activity_id')
             ->get(['id', 'business_activity_id']);
@@ -53,7 +51,7 @@ return new class extends Migration
                 ->restrictOnDelete();
         });
 
-        // Vuelve solo la principal: la columna no puede guardar las secundarias.
+        // Only the primary comes back: the column cannot hold the secondary ones.
         $primaries = DB::table('activity_business')->where('is_primary', true)->get();
 
         foreach ($primaries as $primary) {

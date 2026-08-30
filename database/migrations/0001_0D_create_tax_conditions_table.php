@@ -23,8 +23,8 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            // La condición fiscal es única DENTRO de cada país, no a nivel global:
-            // el mismo código/nombre puede existir en más de un país.
+            // A tax standing is unique WITHIN a country, not globally: the same code
+            // or name can exist in more than one.
             $table->unique(['country_id', 'code']);
             $table->unique(['country_id', 'name']);
         });

@@ -7,14 +7,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Cardinalidad del atributo: ¿admite un valor o varios?
+ * The attribute's cardinality: one value or many?
  *
- * "Obra social" no es una: un consultorio acepta OSDE, Swiss Medical y Galeno.
- * "Zona de cobertura" tampoco. Sin esto el negocio los escribe apretados en un
- * string y el asistente no puede filtrar por cobertura.
- *
- * Es una columna booleana HOY y migrar todos los valores cargados MAÑANA, así que
- * entra antes de que exista el primer valor. Drupal la llama `cardinality`.
+ * A practice accepts several health insurers, and a service covers several
+ * areas. Without this the business crams them into one string and the
+ * assistant cannot filter. It is a boolean column TODAY and a migration of
+ * every stored value TOMORROW, so it lands before the first value exists.
  */
 return new class extends Migration
 {

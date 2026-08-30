@@ -37,8 +37,8 @@ class UserFactory extends Factory
     }
 
     /**
-     * Rol por defecto: cliente (si ya están sembrados los roles). Refleja que
-     * todo registro es cliente; los tests que necesiten admin hacen syncRoles.
+     * Default role is client, when the roles are already seeded. It mirrors that
+     * every sign-up is a client; a test needing admin calls syncRoles.
      */
     public function configure(): static
     {

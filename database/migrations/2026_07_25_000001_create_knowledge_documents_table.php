@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Documentos de conocimiento: la unidad que gestiona el usuario (una FAQ, una
-     * política, un instructivo). Es la fuente; se fragmenta y embeddea en
-     * `knowledge_chunks`. Siempre scoping por `company_id` (multi-tenant).
+     * Knowledge documents: the unit a user manages — an FAQ, a policy, a guide.
+     * It is the source, split and embedded into `knowledge_chunks`, and always
+     * scoped by tenant.
      */
     public function up(): void
     {
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('source_type')->default('manual'); // manual | faq | file | url
             $table->longText('content');
-            $table->string('content_hash', 64)->nullable(); // re-indexar solo si cambió
+            $table->string('content_hash', 64)->nullable(); // re-index only when it changed
             $table->string('status')->default('pending');    // pending | indexed | failed
             $table->timestamp('indexed_at')->nullable();
             $table->timestamps();

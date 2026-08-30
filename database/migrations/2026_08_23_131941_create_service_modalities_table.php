@@ -7,18 +7,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Modalidades: CÓMO se ofrece un servicio, no qué se ofrece.
+ * Modalities: HOW a service is offered, not what.
  *
- * Es la capa que hace que AtendIa sirva a cualquier oficio sin tocar código. Un
- * tipo de servicio hereda UNA modalidad, y la modalidad es la que decide qué le
- * pregunta el asistente y qué tiene que recordar el sistema: un turno necesita
- * agenda, una reserva necesita capacidad, un alquiler necesita devolución.
- *
- * `code` es la bisagra con el código: la lógica se engancha ahí, NO al id ni al
- * nombre (que el admin puede editar). Una modalidad con un `code` que el sistema
- * todavía no conoce degrada a comportamiento base en vez de romper — por eso
- * esto es una tabla y no un enum: nombrar, describir, ordenar y activar no
- * necesitan un programador.
+ * The layer that lets AtendIa serve any trade without touching code. A service
+ * type inherits ONE, and the modality decides what the assistant asks. `code`
+ * is the hinge the logic hooks onto, not the id or the editable name; an
+ * unknown one degrades instead of breaking, which is why this is a table.
  */
 return new class extends Migration
 {
@@ -33,13 +27,13 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
 
-            // Si se borra el usuario, el maestro queda: solo se pierde el autor.
+            // Deleting the user leaves the master row: only the author is lost.
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
-            // Un maestro no se borra: los tipos de servicio quedarían colgando.
+            // A master row is never deleted: the service types would dangle.
             $table->softDeletes();
 
             $table->index(['is_active', 'sort_order']);

@@ -1,20 +1,17 @@
 /*
- * catalogMaster — el riel de Alpine de CUALQUIER maestro del hub de catálogos.
+ * catalogMaster — the Alpine rail of ANY master in the catalog hub.
  *
- * Los tres editores (monedas, países, redes sociales) tenían este mismo bloque
- * copiado con los nombres cambiados: mismo view/mode/errors, mismo filtered(),
- * mismo openCreate/openEdit, mismo submit. Un bug arreglado en uno seguía vivo
- * en los otros dos. Acá vive una sola vez y cada maestro pasa su config:
+ * Every editor carried this block with the names changed, so a fix in one
+ * stayed broken in the others. Each master passes its own config:
  *
  *   catalogMaster({
- *     items:  [...],                       // filas, entregadas una sola vez al montar
- *     path:   'form.data',                 // dónde vive el DTO en el componente Livewire
- *     search: ['code', 'name'],            // claves por las que filtra el buscador
- *     rules:  { code: ['required', ...] }, // espejo de getValidationRules()
+ *     items:  [...],                       // rows, handed over once at mount
+ *     path:   'form.data',                 // where the DTO lives in the component
+ *     search: ['code', 'name'],            // keys the search box filters by
+ *     rules:  { code: ['required', ...] }, // mirror of getValidationRules()
  *   })
  *
- * Depende de la función madre global `validate()` (form-guard.js), que ya se
- * carga en el layout del dashboard.
+ * It needs the global `validate()` from form-guard.js.
  */
 export function catalogMaster({ items = [], path = '', search = [], rules = {} } = {}) {
     return {
@@ -24,9 +21,9 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
         errors: {},
         items,
 
-        // La fila que se está editando, SOLO para que el encabezado pueda decir
-        // "Editar ARS". Los campos no salen de acá: van por wire:model contra el
-        // DTO del server, que es el único estado del formulario.
+        // The row being edited, ONLY so the header can name it. The fields do
+        // not come from here: they go through wire:model against the server's
+        // DTO, which is the form's only state.
         current: null,
 
         filtered() {
@@ -43,19 +40,17 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
             this.errors = {};
             this.current = null;
 
-            // El server también tiene que arrancar en blanco, si no el alta
-            // hereda los datos y el id del registro que se editó antes.
+            // The server has to start blank too, or a new record inherits the
+            // data and the id of the one edited before.
             await this.$wire.openCreate();
             this.view = 'form';
         },
 
         async openEdit(row) {
-            // OJO con el orden: `mode` y `current` se setean YA, antes del await,
-            // igual que en openCreate(). Si se setean después, entre el click y la
-            // respuesta del server queda una ventana con el mode de la vez
-            // anterior — y si venías de "Crear", el form abre diciendo "Nueva".
-            // Lo único que espera al server es `view`, para no mostrar el
-            // formulario de un registro que ya no existe.
+            // Mind the order: `mode` and `current` are set BEFORE the await. Set
+            // after, the window between the click and the response still holds the
+            // previous mode, and a form opened from "new" says the wrong thing.
+            // Only `view` waits for the server.
             this.mode = 'edit';
             this.errors = {};
             this.current = row;
@@ -72,9 +67,9 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
         },
 
         async submit() {
-            // Espejo de getValidationRules() del Form. Lo que NO se puede
-            // replicar acá es lo que necesita la base (`unique`, `exists`, `in`
-            // contra un catálogo): ese rebote sigue viniendo del server.
+            // Mirror of the Form's getValidationRules(). What cannot be
+            // replicated here is whatever needs the database — that bounce still
+            // comes from the server.
             const values = {};
             for (const field in rules) {
                 values[field] = this.$wire.get(`${path}.${field}`);
@@ -86,9 +81,9 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
                 return;
             }
 
-            // Si guardó, el server ya vació el form: hay que volver a la lista o
-            // el usuario se queda mirando un formulario en blanco que todavía
-            // dice "Editar ARS". Si no guardó, se queda con lo que escribió.
+            // On a save the server already blanked the form, so going back to the
+            // list is the only option — otherwise the person stares at an empty
+            // form still titled "edit". On a failure they keep what they typed.
             const saved = this.mode === 'edit' ? await this.$wire.update() : await this.$wire.create();
 
             if (saved) {
@@ -97,7 +92,7 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
         },
 
         remove() {
-            // La baja todavía no está cableada en ningún maestro.
+            // Deleting is not wired into any master yet.
             this.backToList();
         },
     };

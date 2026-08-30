@@ -7,11 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * A qué negocio pertenece el usuario.
+ * Which business the user belongs to.
  *
- * NULLABLE a propósito: el admin (el dueño de AtendIa) no pertenece a ningún
- * negocio. "Sin business_id" es exactamente lo que distingue al admin de un
- * cliente, y es el caso que el scope de aislamiento tiene que contemplar.
+ * NULLABLE on purpose: the admin belongs to none, and "no business_id" is
+ * exactly what tells an admin from a client — the case the isolation scope has
+ * to allow for.
  */
 return new class extends Migration
 {

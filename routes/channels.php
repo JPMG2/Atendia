@@ -16,16 +16,14 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-// OJO con el tipo: el parámetro sale del NOMBRE del canal, así que llega string
-// ("1"). Con `declare(strict_types=1)` un `int $businessId` tira TypeError, el
-// broadcaster lo traga y responde 403 — nadie entra a ningún canal y no se ve
-// el error por ningún lado.
+// Mind the type: the parameter comes from the channel NAME, so it arrives as
+// a string. Under strict_types an `int` throws a TypeError, the broadcaster
+// swallows it and answers 403 — nobody joins and the error shows nowhere.
 Broadcast::channel('business.{businessId}', function (User $user, int|string $businessId): bool {
     $businessId = (int) $businessId;
 
-    // El dueño de AtendIa no pertenece a ningún negocio (business_id null) y
-    // puede escuchar cualquiera, que es lo que le permite dar soporte. Un
-    // cliente, únicamente el suyo.
+    // AtendIa's owner belongs to no business and may listen to any, which is
+    // what lets them support a customer. A client hears only its own.
     if ($user->business_id === null) {
         return $user->hasRole('admin');
     }

@@ -10,11 +10,9 @@ use Illuminate\Database\Seeder;
 class CatalogFormSeeder extends Seeder
 {
     /**
-     * Maestros del panel de Catálogos. Cada fila es un maestro que el hub
-     * (`⚡catalogs-hub`) lista a la izquierda y cuyo editor renderiza con
-     * `<livewire:is :component="...">`. Sumar un maestro = una fila más.
-     *
-     * Idempotente: keyed por `component` (único por maestro).
+     * The masters of the catalog panel. Each row is one the hub lists on the left
+     * and renders with `<livewire:is>`. Adding a master is one more row.
+     * Idempotent, keyed by `component`.
      */
     public function run(): void
     {
@@ -24,11 +22,11 @@ class CatalogFormSeeder extends Seeder
             ['group' => 'Ubicaciones', 'title' => 'Provincias', 'description' => 'Se agrupan por país.', 'component' => 'catalog.province', 'permission_key' => 'catalog.province', 'icon' => 'globe', 'order' => 2],
             ['group' => 'Ubicaciones', 'title' => 'Regiones', 'description' => 'Cuelgan de cada provincia.', 'component' => 'catalog.region', 'permission_key' => 'catalog.region', 'icon' => 'globe', 'order' => 3],
 
-            // Facturación
+            // Invoicing.
             ['group' => 'Facturación', 'title' => 'Monedas', 'description' => 'Divisas ISO 4217 disponibles para precios y facturación.', 'component' => 'catalog.currency', 'permission_key' => 'catalog.currency', 'icon' => 'star', 'order' => 4],
             ['group' => 'Facturación', 'title' => 'Condiciones fiscales', 'description' => 'Definidas por país (responsable inscripto, monotributo…).', 'component' => 'catalog.tax-condition', 'permission_key' => 'catalog.tax-condition', 'icon' => 'shield-check', 'order' => 5],
 
-            // Negocio (lo que el negocio elige al configurarse)
+            // Business: what it picks while setting itself up.
             ['group' => 'Negocio', 'title' => 'Rubros', 'description' => 'Agrupación mayor del negocio: Salud, Gastronomía, Belleza…', 'component' => 'catalog.business-sector', 'permission_key' => 'catalog.business-sector', 'icon' => 'store', 'order' => 6],
             ['group' => 'Negocio', 'title' => 'Actividades', 'description' => 'El oficio concreto dentro del rubro. Define cómo atiende el asistente.', 'component' => 'catalog.business-activity', 'permission_key' => 'catalog.business-activity', 'icon' => 'workflow', 'order' => 7],
             ['group' => 'Servicios', 'title' => 'Tipos de servicio', 'description' => 'QUÉ ofrece un negocio: Consulta, Plato, Mesa. Hereda una modalidad y lleva atributos.', 'component' => 'catalog.service-type', 'permission_key' => 'catalog.service-type', 'icon' => 'library', 'order' => 8],
