@@ -35,7 +35,7 @@ test('it seeds tax conditions for argentina and venezuela', function () {
     expect(TaxCondition::where('country_id', $ar)->count())->toBe(5);
     expect(TaxCondition::where('country_id', $ve)->count())->toBe(5);
 
-    // Venezuela: contribuyentes que discriminan IVA.
+    // Venezuela: taxpayers that itemise VAT.
     expect(
         TaxCondition::where('country_id', $ve)->where('code', 'CO')->value('discriminate_tax')
     )->toBeTrue();

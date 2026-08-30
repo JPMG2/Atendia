@@ -104,10 +104,9 @@ test('deleting a network asks first, through the system dialog', function (): vo
 });
 
 test('a social network is picked, saved and still there after a reload', function (): void {
-    // The rows are dynamic and now live on the server: what matters is that what
-    // the user typed into a row it created survives the save.
-    // Instagram already comes from SocialNetworkSeeder (see beforeEach): creating
-    // it again would hit the unique name of the catalog.
+    // The rows are dynamic and live on the server: what matters is that what was
+    // typed into a row survives the save. The network already comes from the
+    // seeder, so creating it again would hit the catalog's unique name.
     $company = Company::factory()->create();
 
     $page = visit('/admin/company');

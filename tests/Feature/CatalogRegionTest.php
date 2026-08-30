@@ -48,10 +48,9 @@ test('every row carries its id, its province AND its country', function (): void
 });
 
 test('the country of every region is eager loaded, not queried once per row', function (): void {
-    // The country reaches the row through province.country. Resolved lazily that
-    // would be extra queries PER REGION, and this master lists hundreds of them.
-    // The count is compared between one region and many instead of pinned to a
-    // number, so the combobox that also queries provinces does not distort it.
+    // The country reaches the row through province.country, which resolved lazily
+    // is extra queries PER REGION. The count is compared between one region and
+    // many rather than pinned, so the combobox does not distort it.
     $province = Province::factory()->create(['name' => 'Buenos Aires']);
 
     $countQueries = function (): int {

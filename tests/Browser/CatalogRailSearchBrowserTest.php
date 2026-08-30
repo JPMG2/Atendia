@@ -26,10 +26,9 @@ test('the rail search filters the masters without a request', function (): void 
 
     $page->fill('catalog-search', 'moned')->assertNoJavaScriptErrors();
 
-    // Asserted on what is actually VISIBLE, not on the page text: the filtered
-    // masters stay in the DOM (Alpine only hides them), and the hub's empty
-    // state mentions "países" in its own copy. These two retry until Alpine has
-    // reacted, so they do not race the keystroke.
+    // Asserted on what is VISIBLE, not on the page text: filtered masters stay
+    // in the DOM and the empty state names one of them in its own copy. These
+    // retry until Alpine has reacted, so they do not race the keystroke.
     $page->assertVisible('.catalog-item[title="Monedas"]')
         ->assertMissing('.catalog-item[title="Países"]')
         // A group with no match left hides its heading too, instead of leaving

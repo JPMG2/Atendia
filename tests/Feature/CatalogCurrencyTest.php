@@ -74,8 +74,8 @@ test('the currency editor renders its real inputs', function (): void {
 });
 
 test('the currency maqueta seeds its editor with sensible defaults', function (): void {
-    // Los defaults del alta viven en el DTO, que es el único estado del
-    // formulario: los campos van por wire:model contra él, no contra Alpine.
+    // The defaults of a new record live in the DTO, the form's only state: the
+    // fields bind against it, not against Alpine.
     $data = Livewire::test('catalog.currency')->get('form.data');
 
     expect($data->decimal_places)->toBe(2)
@@ -241,11 +241,9 @@ test('every visible string comes from a lang file, so the regional variants can 
 });
 
 test('the Alpine ternaries get their copy from lang too, not from hardcoded JS literals', function (): void {
-    // Checked on the SOURCE, not on the output: Js::from(__('...')) renders to
-    // 'Activa', byte for byte the same as the hardcoded literal, so the HTML cannot
-    // tell them apart. x-text expressions are the easiest place to leave copy behind.
-    // The chrome copy ("Editando", "Guardar cambios") moved to the shared
-    // <x-catalog.form-shell> and is covered by CatalogComponentsTest.
+    // Checked on the SOURCE and not the output: a translated string renders byte
+    // for byte like the hardcoded literal, so the HTML cannot tell them apart.
+    // x-text expressions are the easiest place to leave copy behind.
     $source = file_get_contents(resource_path('views/components/catalog/⚡currency.blade.php'));
 
     expect($source)->not->toContain("? 'Activa' : 'Inactiva'")

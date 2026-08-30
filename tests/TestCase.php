@@ -11,9 +11,9 @@ use RuntimeException;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Nombre de la ÚNICA base de datos donde se permite testear.
-     * Producción ('atendia') queda blindada: si por cualquier motivo el
-     * entorno apunta a otra base, abortamos antes de tocar un solo registro.
+     * The ONLY database testing is allowed to touch. The working one is shielded:
+     * if the environment ever points elsewhere, this aborts before a single row
+     * is touched.
      */
     private const string TESTING_DATABASE = 'atendia_testing';
 

@@ -21,7 +21,7 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
-        // El registro asigna el rol "client" por defecto, así que el rol debe existir.
+        // Signing up assigns the client role by default, so the role has to exist.
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $response = $this->post('/register', [

@@ -155,10 +155,9 @@ test('the front-end validation now mirrors the server and stops the request', fu
 });
 
 test('editing after having opened the create form still says Editando', function (): void {
-    // Regression: `mode` was set AFTER awaiting the server, so between the click and
-    // the response it still held the previous value. Coming from "Crear moneda", the
-    // form opened announcing "Nueva". It only looked fine on a freshly loaded page,
-    // where the previous value happened to be the right one.
+    // Regression: `mode` was set AFTER awaiting the server, so between the click
+    // and the response it still held the previous value and the form opened
+    // announcing the wrong thing. It only looked fine on a freshly loaded page.
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     $admin = User::factory()->create();

@@ -63,11 +63,9 @@ test('the row hover is actually visible, not a 1% tint', function (): void {
         .'[rule.style.background || rule.style.backgroundColor, rule.style.boxShadow]'
     );
 
-    // Asserted on the RULE, not on the exact shade. Two things must hold:
-    // the background is the NEUTRAL row token — a semantic colour there fights
-    // whatever the row shows (the jade wash went green-on-green with the "Activo"
-    // pill) — and the brand lives in the left-edge bar, which is the anchor that
-    // makes the jump visible without saturating the row.
+    // Asserted on the RULE, not the exact shade: the background is the NEUTRAL
+    // row token, since a semantic colour there fights whatever the row shows,
+    // and the brand lives in the left-edge bar.
     expect($hover[0])->toContain('row-hover')
         ->not->toContain('surface-sunken')
         ->and($hover[1])->toContain('inset')

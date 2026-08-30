@@ -52,7 +52,7 @@ test('changes to a business are logged under the business log name', function ()
     $logged = Activity::inLog('business')->where('subject_id', $business->id)->latest('id')->first();
 
     expect($logged)->not->toBeNull()
-        // En la v5 los cambios viven en `attribute_changes`, no en `properties`.
+        // In v5 the changes live in `attribute_changes`, not in `properties`.
         ->and($logged->attribute_changes['attributes']['name'])->toBe('Panadería del Centro')
         ->and($logged->attribute_changes['old']['name'])->toBe('Panadería La Esquina');
 });

@@ -7,11 +7,9 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-// The nine editors no longer declare `path`: since every form keeps its DTO in
-// BaseCatalogForm::$data, the value is the same for all of them and lives once as
-// the default of <x-catalog.master>. If that default ever breaks, Alpine's submit()
-// reads `$wire.get('.code')` instead of `$wire.get('form.data.code')` and front-end
-// validation silently passes everything to the server — no error, just a lost guard.
+// The nine editors no longer declare `path`: it lives once as the component's
+// default. Break it and Alpine reads the wrong path, front-end validation
+// passes everything through, and the guard is lost with no error to show.
 test('every catalog editor seeds Alpine with the shared DTO path', function (string $component): void {
     $html = Livewire::test($component)->html();
 

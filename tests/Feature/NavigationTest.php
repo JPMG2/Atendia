@@ -58,9 +58,9 @@ test('the admin panel shows the admin menu, not the client menu', function (): v
     $this->actingAs($admin)
         ->get('/admin')
         ->assertSuccessful()
-        ->assertSee('Usuarios')          // menú admin
+        ->assertSee('Usuarios')          // admin menu
         ->assertSee('Configuración')
-        ->assertDontSee('Conversaciones'); // menú cliente
+        ->assertDontSee('Conversaciones'); // client menu
 });
 
 test('the admin dashboard shows the configuration skeleton tiles', function (): void {

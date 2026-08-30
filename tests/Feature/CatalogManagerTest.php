@@ -44,8 +44,8 @@ test('the hub shows the empty state with no master open by default', function ()
         ->test('catalog.manager')
         ->assertSet('selectedId', null)
         ->assertSee(__('catalog.hub.empty_title'))
-        // El vacío explica QUÉ es un catálogo, no repite la instrucción del
-        // encabezado: es lo primero que ve quien entra por primera vez.
+        // The empty state explains WHAT a catalog is instead of repeating the
+        // heading: it is the first thing a newcomer reads.
         ->assertSee(__('catalog.hub.empty_body'))
         ->assertDontSeeHtml('is-collapsed'); // rail expanded until a master is opened
 });

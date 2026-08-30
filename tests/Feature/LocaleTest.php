@@ -6,15 +6,15 @@ use Stevebauman\Location\Facades\Location;
 use Stevebauman\Location\Position;
 
 /**
- * El @vite del layout de marketing necesita el manifest del build; lo
- * stubeamos para poder renderizar la landing sin compilar assets.
+ * The marketing layout's @vite needs the build manifest; it is stubbed so the
+ * landing renders without compiling assets.
  */
 beforeEach(function (): void {
     $this->withoutVite();
 });
 
 /**
- * Devuelve una Position falsa para el país dado, lista para mockear Location.
+ * A fake Position for the given country, ready to mock Location with.
  */
 function fakePosition(string $countryCode): Position
 {
@@ -25,7 +25,7 @@ function fakePosition(string $countryCode): Position
 }
 
 it('prioriza la elección guardada en sesión por sobre la geolocalización', function (): void {
-    // Si el usuario ya eligió, ni siquiera geolocalizamos.
+    // Once someone has chosen, no lookup happens at all.
     Location::shouldReceive('get')->never();
 
     $this->withSession(['locale' => 'es_VE'])->get('/')->assertOk();
@@ -47,7 +47,7 @@ it('sirve neutro (es_VE) a una visita desde Venezuela', function (): void {
 
     $response = $this->withServerVariables(['REMOTE_ADDR' => '190.202.0.1'])->get('/');
 
-    // es_VE no tiene overrides todavía: cae al neutro en tuteo.
+    // es_VE has no overrides yet: it falls back to the neutral variant.
     $response->assertOk()->assertSee('por ti');
     expect(app()->getLocale())->toBe('es_VE');
 });
@@ -64,7 +64,7 @@ it('cae al neutro (es) para un país sin mapeo', function (): void {
 it('cae al neutro cuando la IP es local y no geolocaliza', function (): void {
     Location::shouldReceive('get')->never();
 
-    // REMOTE_ADDR por defecto en tests es 127.0.0.1.
+    // REMOTE_ADDR defaults to 127.0.0.1 in tests.
     $this->get('/')->assertOk();
 
     expect(app()->getLocale())->toBe('es');

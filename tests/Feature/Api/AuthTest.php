@@ -7,8 +7,8 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 
-// La base de testing está pre-migrada y no usa RefreshDatabase global;
-// envolvemos cada test en una transacción para aislar los datos.
+// The testing database is pre-migrated and does not use a global
+// RefreshDatabase, so each test is wrapped in a transaction.
 uses(DatabaseTransactions::class);
 
 it('registra un usuario y devuelve un token de acceso', function (): void {

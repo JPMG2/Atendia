@@ -23,7 +23,7 @@ test('the seeders load sectors with their activities', function (): void {
     expect(BusinessSector::count())->toBe(10)
         ->and(BusinessActivity::count())->toBe(68);
 
-    // Los ejemplos que tiene que cubrir el maestro desde el día uno.
+    // The examples the master has to cover from day one.
     expect(BusinessActivity::where('code', 'panaderia')->sole()->sector->name)->toBe('Gastronomía')
         ->and(BusinessActivity::where('code', 'farmacia')->sole()->sector->name)->toBe('Salud')
         ->and(BusinessActivity::where('code', 'peluqueria')->sole()->sector->name)->toBe('Belleza y estética')
@@ -91,6 +91,6 @@ test('the hub renders the Negocio group and opens its own editor', function (): 
         ->assertSee('Rubros')
         ->assertSee('Actividades')
         ->call('select', $sectors->id)
-        // Ya no cae al placeholder: el editor del maestro existe.
+        // No longer falls back to the placeholder: the editor exists.
         ->assertSet('editorComponent', 'catalog.business-sector');
 });

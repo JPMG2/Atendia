@@ -173,6 +173,20 @@ final class CommentScanner
     }
 
     /**
+     * The part of a comment that is actually prose.
+     *
+     * A URL and a quoted fragment are data being referred to, not writing: an
+     * English comment quoting the Spanish copy on screen, or a place name, is
+     * still an English comment.
+     */
+    private static function proseOf(string $comment): string
+    {
+        $prose = preg_replace('#\bhttps?://\S+#i', ' ', $comment) ?? $comment;
+
+        return preg_replace('/"[^"]*"|\x27[^\x27]*\x27/u', ' ', $prose) ?? $prose;
+    }
+
+    /**
      * Whether a file is judged on comment length.
      *
      * Published config is vendor text — Laravel's and spatie's — rewritten on
@@ -187,13 +201,11 @@ final class CommentScanner
     /** Whether a comment reads as Spanish. */
     public static function isSpanish(string $comment): bool
     {
-        if (preg_match('/[áéíóúÁÉÍÓÚñÑ¿¡]/u', $comment) === 1) {
+        $prose = self::proseOf($comment);
+
+        if (preg_match('/[áéíóúÁÉÍÓÚñÑ¿¡]/u', $prose) === 1) {
             return true;
         }
-
-        // A URL is not prose: "docs.example.org/en/stable" would read as the
-        // Spanish "en" and drag the whole comment with it.
-        $prose = preg_replace('#\bhttps?://\S+#i', ' ', $comment) ?? $comment;
 
         $words = preg_split('/[^a-z]+/', mb_strtolower($prose)) ?: [];
 

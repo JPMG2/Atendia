@@ -92,10 +92,9 @@ test('with the company already saved both steps are open', function (): void {
 });
 
 test('the step the user is standing on survives a re-render', function (): void {
-    // `isRegistered` seeds the stepper's x-data and is #[Locked] on purpose: if
-    // that embedded JSON changed between renders, Livewire would rewrite the
-    // attribute and Alpine would re-initialize the stepper, throwing the user
-    // back to step one mid-typing.
+    // `isRegistered` seeds the stepper's x-data and is #[Locked] on purpose: were
+    // that embedded JSON to change between renders, Alpine would re-initialise
+    // the stepper and throw the person back to step one mid-typing.
     $this->actingAs(companyAdmin());
 
     $html = Livewire::test('configuration.company')
@@ -131,7 +130,7 @@ test('the company screen uses no raw form control', function (): void {
 
 test('the company option hangs from the settings item of the admin menu', function (): void {
     // It is not an area of its own: these are AtendIa's own data, so the option
-    // lives inside Configuración and not next to it.
+    // lives inside the configuration branch and not next to it.
     $this->seed(MenuSeeder::class);
 
     $settings = Menu::query()->where('label_key', 'menu.admin_settings')->sole();
@@ -149,10 +148,9 @@ test('the company option hangs from the settings item of the admin menu', functi
 });
 
 test('mount initializes the DTO so wire:model can bind into the nested form object', function (): void {
-    // The form's `data` starts null; `setup()` (run from mount) turns it into a real
-    // CompanyDto. Without it, a `wire:model="form.data.legal_name"` update throws
-    // "Cannot assign array to property ...CompanyDto" because Livewire cannot
-    // recurse into null.
+    // The form's `data` starts null and `setup()` turns it into a real DTO.
+    // Without it, a nested `wire:model` update throws "Cannot assign array to
+    // property", because Livewire cannot recurse into null.
     $this->actingAs(companyAdmin());
 
     Livewire::test('configuration.company')
@@ -387,10 +385,9 @@ test('loading a saved company does not clear its own cascade', function (): void
 });
 
 test('the reset itself does not cascade twice', function (): void {
-    // Clearing province_id from updatedDataCountryId is a server assignment, so it
-    // must not re-enter updatedDataProvinceId. The region is already null here, so
-    // what this pins down is that a country change leaves the form usable rather
-    // than looping.
+    // Clearing the province from the country hook is a server assignment, so it
+    // must not re-enter the province hook. What this pins down is that a country
+    // change leaves the form usable rather than looping.
     $region = Region::factory()->create();
 
     $this->actingAs(companyAdmin());
@@ -869,10 +866,9 @@ test('discarding clears the errors of the rejected attempt', function (): void {
 });
 
 test('discarding rebuilds the panel instead of trusting the diff', function (): void {
-    // The fields are deferred: what the user typed never reached the server, so
-    // restoring a value the server already held renders identical HTML and
-    // Livewire patches nothing — the typed text would survive on screen. The key
-    // change is what forces the panel to come back from the server.
+    // The fields are deferred, so what was typed never reached the server and
+    // restoring a value it already held renders identical HTML — the typed text
+    // would survive on screen. The key change forces the panel back.
     Company::factory()->create();
 
     $this->actingAs(companyAdmin());

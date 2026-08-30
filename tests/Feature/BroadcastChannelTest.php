@@ -13,15 +13,9 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     test()->seed(RolesAndPermissionsSeeder::class);
 
-    // Two traps here, and each one alone makes this file test nothing.
-    //
-    // 1. phpunit.xml pins BROADCAST_CONNECTION to "null", and NullBroadcaster::auth()
-    //    is an empty method: every request answers 200 and the callback never runs.
-    //    A guaranteed false green.
-    // 2. Broadcast::channel() registers on the driver instance that exists when
-    //    routes/channels.php is loaded, at boot — the null one. Swapping the config
-    //    afterwards builds a fresh broadcaster with NO channels, and every request
-    //    is denied before reaching the callback. Hence the reload below.
+    // Two traps, either one alone making this file test nothing: the pinned null
+    // broadcaster answers 200 without running the callback, and channels register
+    // on the driver alive at boot. Hence the reload below.
     config(['broadcasting.default' => 'reverb']);
     require base_path('routes/channels.php');
 });

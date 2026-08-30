@@ -106,8 +106,9 @@ test('the status master saves a new record from an empty form', function (): voi
     $page->click('Estados')->click('Crear estado');
 
     $page->fill('name', 'En proceso');
-    // Por CSS y no por texto: "Crear estado" es a la vez el botón de alta del
-    // toolbar y el de guardar del pie, y click() por texto no sabe cuál es cuál.
+    // By CSS and not by text: the same wording is both the toolbar's create
+    // button and the footer's save button, and a text click cannot tell them
+    // apart.
     $page->click('.catalog-form-foot .btn-primary');
 
     $page->assertSee('En proceso')->assertNoJavaScriptErrors();
@@ -132,10 +133,9 @@ test('the front-end validation stops the request before it reaches the server', 
 });
 
 test('the combobox dropdown is not clipped by the panel that holds the form', function (): void {
-    // With `overflow:hidden` on .catalog-panel the option list was cut against the
-    // bottom of the card — six countries rendered as two and a half. Measured, not
-    // eyeballed: the list is allowed to extend past the panel, and its last option
-    // has to be a real, clickable element.
+    // With `overflow:hidden` on the panel the option list was cut against the
+    // bottom of the card — six countries rendered as two and a half. Measured,
+    // not eyeballed: the last option has to be a real, clickable element.
     foreach (['VEN' => 'Venezuela', 'MEX' => 'México', 'ESP' => 'España', 'COL' => 'Colombia', 'CHL' => 'Chile'] as $code => $name) {
         Country::factory()->create(['code' => $code, 'name' => $name]);
     }
@@ -162,9 +162,9 @@ test('the combobox dropdown is not clipped by the panel that holds the form', fu
 });
 
 test('typing a country name filters the region list client-side', function (): void {
-    // Two regions of a province called Córdoba, one in Argentina and one in Spain:
-    // the country is the ONLY thing that tells them apart, so it is the search
-    // that proves the column is useful and not decorative.
+    // Two regions of a same-named province, one per country: the country is the
+    // ONLY thing telling them apart, so the search is what proves the column is
+    // useful and not decorative.
     $spain = Country::factory()->create(['code' => 'ESP', 'name' => 'España']);
     $cordobaArg = Province::factory()->create(['name' => 'Córdoba', 'country_id' => $this->country->id]);
     $cordobaEsp = Province::factory()->create(['name' => 'Córdoba', 'country_id' => $spain->id]);

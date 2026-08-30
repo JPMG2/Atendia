@@ -70,7 +70,7 @@ test('a sector with activities cannot be wiped from the database', function (): 
     $sector = BusinessSector::factory()->create();
     BusinessActivity::factory()->for($sector, 'sector')->create();
 
-    // El FK restrictivo protege el borrado REAL de la fila.
+    // The restrictive FK protects the REAL deletion of the row.
     expect(fn () => $sector->forceDelete())->toThrow(QueryException::class);
 });
 
@@ -78,10 +78,9 @@ test('soft deleting a sector with activities passes the database and needs an ap
     $sector = BusinessSector::factory()->create();
     BusinessActivity::factory()->for($sector, 'sector')->create();
 
-    // Una baja lógica es un UPDATE: no toca el FK. Que un rubro con actividades
-    // no se pueda dar de baja es una regla de la aplicación, todavía no escrita
-    // (la baja de maestros quedó para el final). Este test fija el estado real
-    // para que quede a la vista cuando se programe.
+    // A soft delete is an UPDATE and never touches the FK. Stopping a sector
+    // with activities from being deactivated is an application rule, not yet
+    // written; this test pins the real behaviour until it is.
     $sector->delete();
 
     expect($sector->fresh()->trashed())->toBeTrue()

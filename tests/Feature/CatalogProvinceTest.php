@@ -133,11 +133,9 @@ test('the same province name is rejected inside one country', function (): void 
 });
 
 test('the same province name IS accepted in every other country', function (): void {
-    // This is why the unique rule is scoped by country instead of being global:
-    // Mérida is a real province of Venezuela, of Mexico AND of Spain. A global
-    // unique would reject the second and the third; no rule at all would let
-    // Venezuela hold two Méridas. The uniqueness lives in the validation layer,
-    // not in a database constraint — the index on (country_id, name) is plain.
+    // Why the unique rule is scoped by country: one province name is real in
+    // three countries at once, and a global unique would reject two of them. The
+    // uniqueness lives in validation, not in a database constraint.
     $countries = collect(['VEN' => 'Venezuela', 'MEX' => 'México', 'ESP' => 'España'])
         ->map(fn (string $name, string $code) => Country::factory()->create(['code' => $code, 'name' => $name]));
 

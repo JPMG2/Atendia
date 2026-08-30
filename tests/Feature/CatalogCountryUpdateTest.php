@@ -175,10 +175,9 @@ test('a failed open leaves the form untouched instead of half-loading a record',
 });
 
 test('a duplicate code typed in lowercase is caught as a field error, not as a database crash', function (): void {
-    // This is why toPayload() has to normalize BEFORE validation: `unique` would
-    // compare "arg" against the stored "ARG", find nothing, let it through, and the
-    // clash would surface as a Postgres error inside tryAction — a vague toast
-    // instead of an error on the field.
+    // This is why toPayload() normalises BEFORE validation: `unique` would
+    // compare the lowercase input against the stored uppercase code, find
+    // nothing, and the clash would surface as a Postgres error.
     $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
     Country::factory()->create(['code' => 'ARG', 'name' => 'Argentina', 'currency_id' => $currency->id]);
 

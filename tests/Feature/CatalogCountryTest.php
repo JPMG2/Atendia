@@ -299,11 +299,9 @@ test('every visible string comes from a lang file, so the regional variants can 
 });
 
 test('the Alpine ternaries get their copy from lang too, not from hardcoded JS literals', function (): void {
-    // Checked on the SOURCE, not on the output: Js::from(__('...')) renders to
-    // 'Activa', byte for byte the same as the hardcoded literal, so the HTML cannot
-    // tell them apart. x-text expressions are the easiest place to leave copy behind.
-    // The chrome copy ("Editando", "Guardar cambios") moved to the shared
-    // <x-catalog.form-shell> and is covered by CatalogComponentsTest.
+    // Checked on the SOURCE and not the output: a translated string renders byte
+    // for byte like the hardcoded literal, so the HTML cannot tell them apart.
+    // x-text expressions are the easiest place to leave copy behind.
     $source = file_get_contents(resource_path('views/components/catalog/⚡country.blade.php'));
 
     expect($source)->not->toContain("? 'Activo' : 'Inactivo'")

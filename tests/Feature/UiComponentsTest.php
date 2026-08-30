@@ -56,7 +56,7 @@ test('the badge renders its variant class and an optional dot', function (): voi
     expect($plain)->toContain('badge')->toContain('badge-accent')->toContain('New');
 
     $withDot = Blade::render('<x-ui.badge dot>New</x-ui.badge>');
-    expect($withDot)->toContain('var(--brand)'); // el punto usa el token de marca
+    expect($withDot)->toContain('var(--brand)'); // the dot uses the brand token
 });
 
 /*
@@ -105,7 +105,7 @@ test('the icon button lets a slot override the default icon', function (): void 
 |--------------------------------------------------------------------------
 */
 test('ui components style themselves through tokens, never hardcoded hex colors', function (): void {
-    // Si no hay hex en el markup, light/dark salen solos desde los tokens de app.css.
+    // With no hex in the markup, light and dark come out of the tokens on their own.
     foreach ([
         '<x-ui.button>Go</x-ui.button>',
         '<x-ui.card interactive>Hi</x-ui.card>',

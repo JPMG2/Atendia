@@ -41,7 +41,7 @@ test('the status master has no active flag, because the table has no such column
     // switch here would be inventing a field the database does not keep.
     $component = Livewire::test('catalog.status');
 
-    // El DTO es el estado del formulario: si tuviera un estado, estaría acá.
+    // The DTO is the form's state: were there a status, it would be here.
     expect($component->html())->not->toContain('is_active')
         ->and($component->get('form.data')->toArray())
         ->toBe(['name' => '', 'color' => CurrentStatus::DEFAULT_COLOR]);
@@ -84,10 +84,9 @@ test('the colour palette offered by the form is the one the model allows', funct
 });
 
 test('every colour of the palette can actually be painted by the stylesheet', function (): void {
-    // The palette lives in PHP and the colours live in app.css. If the two drift,
-    // a status saves fine and validates fine and then renders as a transparent
-    // tag — nothing fails, it just looks broken. Same for the Tailwind safelist:
-    // the class is built at runtime, so without it the purge removes the rule.
+    // The palette lives in PHP and the colours in app.css: if they drift, a
+    // status saves and validates fine and renders as a transparent tag. Same for
+    // the safelist, since the class is built at runtime.
     $css = File::get(resource_path('css/app.css'));
     $tailwind = File::get(base_path('tailwind.config.js'));
 

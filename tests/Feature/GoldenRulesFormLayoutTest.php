@@ -108,15 +108,13 @@ test('a field message stays far closer to its own control than to the next row',
 });
 
 test('the panel that holds the editor never clips it', function (): void {
-    // `overflow:hidden` on the panel used to cut the combobox dropdown against
-    // the bottom of the card: with a compact form the panel is barely taller than
-    // the form, so the option list was sliced in half and read as if it rendered
-    // behind the form. Only the action footer's background needed containing, and
-    // it now rounds its own corners.
+    // `overflow:hidden` on the panel used to cut the dropdown against the bottom
+    // of the card, so the list read as if it rendered behind the form. Only the
+    // footer's background needed containing, and it rounds its own corners now.
     expect(cssRule('.catalog-panel'))->not->toMatch('/overflow(-y)?\s*:\s*(hidden|clip|auto|scroll)/');
 
-    // Y como el panel ya no recorta, TODO fondo que toque un borde del card tiene
-    // que redondear sus propias esquinas o se sale por encima del radio.
+    // And since the panel no longer clips, ANY background touching an edge of
+    // the card has to round its own corners or it spills past the radius.
     expect(cssRule('.catalog-form-foot'))->toContain('border-bottom-left-radius')
         ->and(cssRule('.catalog-panel-head'))->toContain('border-top-left-radius');
 });
@@ -130,16 +128,15 @@ test('the master header takes its colour from a brand token, never a hex', funct
     expect($head)->toContain('background:var(--brand-soft)')
         ->not->toMatch('/#[0-9a-fA-F]{3,6}/');
 
-    // La descripción NO puede quedar en `--text-muted`: ese token es ink-500 y
-    // sobre el wash jade casi no se lee. Tampoco en un token de marca: el sistema
-    // la reserva para botones, links y estados activos, y una descripción de ese
-    // color se lee como un enlace.
+    // The description cannot use the muted token: on the jade wash it is barely
+    // readable. Nor a brand token, which the system reserves for buttons, links
+    // and active states — a description in that colour reads as a link.
     $description = cssRule('.catalog-panel-head p');
 
     expect($description)->toContain('color:var(--text-body)')
-        // La cabecera se compactó bajando padding e interlineado, NO el cuerpo de
-        // letra: 14px (--text-sm) es el piso de UI del sistema de diseño. El
-        // próximo apretón tiene que salir del espacio, no del texto.
+        // The header was compacted by cutting padding and leading, NOT the type
+        // size: 14px is the design system's UI floor. The next squeeze has to come
+        // out of the space, not the text.
         ->toContain('font-size:var(--text-sm)');
 });
 

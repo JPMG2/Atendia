@@ -8,21 +8,21 @@ test('the login screen renders with the Atendia design system', function (): voi
     $response = $this->get('/login');
 
     $response->assertStatus(200)
-        // Marca y copy en español rioplatense (sentence case, verbo cercano)
+        // Brand and copy in regional Spanish: sentence case, verb up front.
         ->assertSee('Hola de nuevo')
         ->assertSee('Ingresar')
         ->assertSee('¿Olvidaste tu contraseña?')
-        // Usa los componentes del design system, no el markup crudo de Breeze
+        // It uses the design system components, not Breeze's raw markup.
         ->assertSee('btn-primary', false)
         ->assertSee('field-input', false)
-        // El logo de marca apunta al home
+        // The brand logo points home.
         ->assertSee('Atend', false);
 });
 
 test('the login screen has no hardcoded Breeze indigo/gray colors', function (): void {
     $html = $this->get('/login')->getContent();
 
-    // Regla de oro: jamás hardcodear color; todo sale de tokens (jade + coral)
+    // Golden rule: never hardcode a colour, it all comes from tokens.
     expect($html)
         ->not->toContain('text-indigo')
         ->not->toContain('focus:ring-indigo')
@@ -33,7 +33,7 @@ test('the login screen has no hardcoded Breeze indigo/gray colors', function ():
 test('the login screen ships the theme toggle for light and dark', function (): void {
     $html = $this->get('/login')->getContent();
 
-    // Mandato no negociable: tema claro/oscuro con persistencia anti-flash
+    // Non-negotiable: light and dark theme, persisted against the flash.
     expect($html)
         ->toContain('atendia-theme')
         ->toContain('toggleTheme')

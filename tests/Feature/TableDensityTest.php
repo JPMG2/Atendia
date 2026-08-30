@@ -139,10 +139,9 @@ test('the boxed mono chip lives on its own class', function () {
     // borrows the table class inherits a restyle it never asked for.
     expect($this->css)->toContain('.code-chip {');
 
-    // Scoped by DIRECTORY, not by filename: `components/catalog/` IS the catalog
-    // table, so every editor living there is a legitimate owner of the class.
-    // Enumerating the editors one by one made this guard go red on every new
-    // master for doing exactly what the pattern asks.
+    // Scoped by DIRECTORY and not by filename: every editor living there is a
+    // legitimate owner of the class. Enumerating them made this guard go red on
+    // every new master for doing exactly what the pattern asks.
     $borrowers = collect(File::allFiles(resource_path('views')))
         ->map(fn ($file): string => str_replace('\\', '/', $file->getRelativePathname()))
         ->reject(fn (string $path): bool => str_starts_with($path, 'components/catalog/'))
@@ -154,10 +153,9 @@ test('the boxed mono chip lives on its own class', function () {
 });
 
 test('exactly one column of every catalog table absorbs the leftover width', function (string $editor) {
-    // Something has to take the slack or the table stops short of the right edge;
-    // two columns taking it splits the row unevenly. It is not always the name:
-    // a two-column master stretches the SECOND one so the data sits next to the
-    // name instead of being flung to the far edge.
+    // Something has to take the slack or the table stops short of the right
+    // edge, and two columns taking it split the row unevenly. It is not always
+    // the name: a two-column master stretches the SECOND one.
     $blade = File::get(resource_path("views/components/catalog/⚡{$editor}.blade.php"));
 
     expect(substr_count($blade, 'catalog-col-fill'))->toBe(1)
@@ -165,10 +163,9 @@ test('exactly one column of every catalog table absorbs the leftover width', fun
 })->with(['currency', 'country', 'social-network', 'province', 'region', 'tax-condition', 'status']);
 
 test('every catalog editor renders through the shared table', function (string $editor) {
-    // Antes se comprobaba que el editor CONTUVIERA `class="catalog-table"`. Ahora
-    // la tabla es un componente: el editor tiene que USARLA, y no puede volver a
-    // declarar la suya — que es lo que hacía que un arreglo en una no llegara a
-    // las otras dos.
+    // It used to check that an editor CONTAINED the class. The table is a
+    // component now: an editor has to USE it and cannot declare its own, which
+    // is what kept a fix in one from reaching the others.
     $blade = File::get(resource_path("views/components/catalog/⚡{$editor}.blade.php"));
 
     expect($blade)->toContain('<x-catalog.table')

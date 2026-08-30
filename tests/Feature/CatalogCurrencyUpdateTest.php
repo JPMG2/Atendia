@@ -150,10 +150,9 @@ test('a symbol longer than the form allows is rejected by validation, not by Pos
 });
 
 test('a duplicate code typed in lowercase is caught as a field error, not as a database crash', function (): void {
-    // This is why toPayload() has to normalize BEFORE validation: `unique` would
-    // compare "ars" against the stored "ARS", find nothing, let it through, and the
-    // clash would surface as a Postgres error inside tryAction — a vague toast
-    // instead of an error on the field.
+    // This is why toPayload() normalises BEFORE validation: `unique` would
+    // compare the lowercase input against the stored uppercase code, find
+    // nothing, and the clash would surface as a Postgres error.
     Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
 
     Livewire::test('catalog.currency')

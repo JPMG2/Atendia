@@ -70,9 +70,8 @@ test('taking a name that already belongs to another activity of the same sector 
 });
 
 test('moving an activity to another sector that already has that name is rejected', function (): void {
-    // "Estética" is legitimate in Belleza and in Servicios at the same time, but
-    // one sector cannot hold two. The unique is scoped by sector, so the clash
-    // only appears once the record lands in the other sector — the rule has to
+    // One name is legitimate under two sectors at once, but a single sector
+    // cannot hold it twice. The unique is scoped by sector, so the rule has to
     // read the sector being SAVED, not the one the record had.
     $beauty = BusinessSector::factory()->create(['code' => 'belleza', 'name' => 'Belleza']);
     $services = BusinessSector::factory()->create(['code' => 'servicios', 'name' => 'Servicios']);

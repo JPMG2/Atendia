@@ -73,11 +73,9 @@ function adminPageSnapshot(User $user): array
     return $snapshot;
 }
 
-// Control: proves the crafted request is well formed, so the 403 in the next test
-// means "middleware rejected it" and not "malformed payload".
-// Note both cases live in separate tests on purpose: PersistentMiddleware caches
-// `middlewareAppliedFor` per route, and in tests every request shares one app
-// instance, so a second update in the same test would skip the middleware.
+// Control: proves the crafted request is well formed, so the 403 next door
+// means the middleware rejected it. The two cases live in separate tests
+// because the middleware caches per route.
 test('a livewire update on an admin page succeeds while the permission is held', function (): void {
     $admin = User::factory()->create();
     $admin->syncRoles('admin');

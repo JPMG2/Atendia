@@ -64,9 +64,8 @@ test('taking a name that already belongs to another province of the same country
 });
 
 test('moving a province to another country that already has that name is rejected', function (): void {
-    // Mérida is legitimate in Venezuela, Mexico and Spain at the same time, but
-    // one country cannot hold two. The unique is scoped by country, so the clash
-    // only appears once the record lands in the other country — the rule has to
+    // One name is legitimate in three countries at once, but a single country
+    // cannot hold it twice. The unique is scoped by country, so the rule has to
     // read the country being SAVED, not the one the record had.
     $venezuela = Country::factory()->create(['code' => 'VEN', 'name' => 'Venezuela']);
     $mexico = Country::factory()->create(['code' => 'MEX', 'name' => 'México']);

@@ -149,7 +149,7 @@ test('the attribute column shows the label of this type, not the global one', fu
 
     $rows = Livewire::test('catalog.service-type')->get('initialRows');
 
-    // Lista, no un string con comas: la celda las pinta como pastillas.
+    // A list and not a comma string: the cell paints them as pills.
     expect($rows[0]['attributes'])->toBe(['Comensales', 'Zona']);
 });
 

@@ -28,10 +28,9 @@ test('editing a currency records who changed what', function (): void {
         ->and($activity->causer_id)->toBe($editor->id)
         ->and($activity->subject_id)->toBe($currency->id)
         ->and($activity->log_name)->toBe('catalog')
-        // OJO: en la v5 los cambios viven en `attribute_changes`, NO en `properties`,
-        // que quedó para datos extra que uno agregue a mano. Mirar la columna
-        // equivocada hace parecer que la auditoría no guarda nada.
-        // logOnlyDirty: solo lo que cambió de verdad, no el registro entero.
+        // In v5 the changes live in `attribute_changes` and NOT in `properties`,
+        // which is now for extra data added by hand. Reading the wrong column makes
+        // the audit look like it stores nothing.
         ->and($activity->attribute_changes['attributes'])->toBe(['symbol' => 'AR$'])
         ->and($activity->attribute_changes['old'])->toBe(['symbol' => '$']);
 });

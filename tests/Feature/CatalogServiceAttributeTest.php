@@ -179,10 +179,9 @@ test('the seeded library is shared across trades, not copied per vertical', func
 });
 
 test('price, stock and duration are not in the library, they are first-class fields', function (): void {
-    // They are queried, sorted, filtered and bulk-updated all the time, and they
-    // need currency, transactions and a calendar. Inside a generic jsonb blob
-    // none of that can be resolved, so they live as columns of what the business
-    // adopts. Same reason commercetools puts them on the variant.
+    // They are queried, sorted and bulk-updated all the time, and need currency,
+    // transactions and a calendar — none of which a generic jsonb blob can
+    // resolve. Same reason commercetools puts them on the variant.
     $this->seed(ServiceAttributeSeeder::class);
 
     expect(ServiceAttribute::query()->whereIn('code', ['precio', 'stock', 'duracion'])->count())->toBe(0);

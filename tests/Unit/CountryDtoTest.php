@@ -70,10 +70,9 @@ test('fromArray falls back to defaults for missing keys', function (): void {
 });
 
 test('the currency id arrives from the select as a string and is cast, instead of killing the component', function (): void {
-    // A <select> posts "3", and CountryDto runs under strict_types: handing that
-    // string straight to the `?int` parameter is a TypeError, which is an Error
-    // and not an Exception, so tryAction would never catch it — Livewire answers
-    // 419 and the whole editor disappears.
+    // A select posts a string and the DTO runs under strict_types: handing it to
+    // the `?int` parameter is a TypeError, which is an Error and not an
+    // Exception, so tryAction never catches it and the editor disappears.
     expect(CountryDto::fromArray(['currency_id' => '3'])->currency_id)->toBe(3);
 });
 

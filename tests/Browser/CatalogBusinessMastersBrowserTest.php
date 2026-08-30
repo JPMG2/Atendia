@@ -84,8 +84,8 @@ test('the activity editor loads its row with the sector already picked in the co
 test('a sector is rejected up front when its key is missing, without a round trip', function (): void {
     // The front mirror of the rules has to catch this before the request leaves.
     $page = visit('/admin/catalogs');
-    // Por selector y no por texto: "Crear rubro" está dos veces en la pantalla
-    // (el botón de la toolbar y el de guardar del pie cuando es un alta).
+    // By selector and not by text: the same wording sits on the toolbar button
+    // and on the footer's save button when creating.
     $page->click('Rubros')
         ->click('.catalog-toolbar .btn-primary')
         ->fill('name', 'Turismo')
@@ -100,15 +100,15 @@ test('a sector is rejected up front when its key is missing, without a round tri
 });
 
 test('the sector search filters the list client-side', function (): void {
-    // El nombre del segundo rubro tiene que ser uno que NO aparezca en la
-    // descripción del propio catálogo: ahí ya se leen "Salud" y "Gastronomía".
+    // The second sector's name has to be one that does NOT appear in the
+    // catalog's own description, which already names two of them.
     BusinessSector::factory()->create(['code' => 'zapateria', 'name' => 'Zapatería', 'sort_order' => 2]);
 
     $page = visit('/admin/catalogs');
     $page->click('Rubros')->assertSee('Zapatería');
 
-    // Encadenado a propósito: la página es awaitable, así que un fill en su
-    // propia sentencia no garantiza haber llegado antes de la assertion.
+    // Chained on purpose: the page is awaitable, so a fill in its own statement
+    // does not guarantee it landed before the assertion.
     $page->fill('q', 'gastro')
         ->assertSee('Gastronomía')
         ->assertDontSee('Zapatería')

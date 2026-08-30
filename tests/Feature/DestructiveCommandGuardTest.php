@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 use Symfony\Component\Process\Process;
 
-// Regression guard for the catastrophe that wiped another project: a process pointed at a
-// NON-testing database must have migrate:fresh/refresh/reset & db:wipe blocked by Laravel
-// (DB::prohibitDestructiveCommands), regardless of test base class (Unit/Feature) or of
-// whether it comes from the CLI or from RefreshDatabase's internal migrate:fresh.
-//
-// This is SAFE: the prohibition throws BEFORE touching the database, and we point the
-// probe at a throwaway name that is neither 'atendia' nor 'atendia_testing'.
+// Regression guard for the catastrophe that wiped another project: pointed at
+// a NON-testing database, the destructive commands have to be blocked by
+// Laravel, whatever the base class and wherever they come from.
+
+// SAFE: the prohibition throws BEFORE touching anything, and the probe points
+// at a throwaway name that is neither the working nor the testing database.
 
 test('destructive db commands are prohibited whenever the target DB is not the testing DB', function (string $command): void {
     $process = Process::fromShellCommandline(

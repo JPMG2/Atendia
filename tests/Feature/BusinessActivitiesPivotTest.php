@@ -142,8 +142,8 @@ test('adding a second activity unlocks its types, with no code exception anywher
 });
 
 test('the suggestion is a union across activities, never an intersection', function (): void {
-    // An intersection would leave the bakery-café with only what both trades
-    // share, which is the opposite of what declaring a second activity means.
+    // An intersection would leave the bakery that also serves coffee with only
+    // what both trades share, the opposite of what a second activity means.
     seedBusinessCatalog();
 
     $business = Business::factory()->create();
