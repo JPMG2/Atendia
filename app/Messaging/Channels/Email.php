@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Messaging\Channels;
 
 use App\Messaging\Channel;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
 
 class Email extends Channel
 {
+    /** Por este canal solo sale un Mailable: cualquier otra clase se rechaza al construir. */
+    protected const MESSAGE_CONTRACT = Mailable::class;
+
     /**
      * Arma el Mailable declarado en `$message` y lo pone en el correo.
      *

@@ -81,6 +81,34 @@ test('the channel keeps a single abstract method, so a new channel is a subclass
     expect($abstract)->toHaveCount(1);
 });
 
+test('a message class that does not exist is rejected on the spot', function (): void {
+    $company = Company::factory()->create();
+
+    // A typo used to survive until somebody saved the form in production, and by
+    // then the try/catch of send() swallowed it.
+    expect(fn () => new Email($company, ['hola@atendia.app'], 'App\\Mail\\NoExiste'))
+        ->toThrow(InvalidArgumentException::class, 'no existe la clase de mensaje');
+});
+
+test('the email channel refuses a message that is not a mailable', function (): void {
+    $company = Company::factory()->create();
+
+    // Company::class builds fine on its own: without the guard the failure would
+    // surface inside Mail, far from the line that caused it.
+    expect(fn () => new Email($company, ['hola@atendia.app'], Company::class))
+        ->toThrow(InvalidArgumentException::class, 'tiene que ser un');
+});
+
+test('a channel with no contract takes any class that exists', function (): void {
+    $company = Company::factory()->create();
+
+    // The base class only guarantees the class is there: what a message has to
+    // BE is each channel's business, and a channel may not care.
+    (new SpyChannel($company, ['hola@atendia.app'], Company::class))->send();
+
+    expect(SpyChannel::$locale)->not->toBeNull();
+});
+
 test('the email channel builds the message and queues it for its recipients', function (): void {
     Mail::fake();
 
