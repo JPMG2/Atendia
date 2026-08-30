@@ -301,6 +301,11 @@
   .btn-ghost:hover { background:var(--surface-sunken); }
   .btn-accent    { background:var(--accent); color:#fff; border-color:var(--accent); }
   .btn-accent:hover { filter:brightness(.95); }
+  /* Destructivo: lo que confirma un borrado no puede verse igual que un guardar.
+     Doble clase para que gane cuando se pinta encima de .btn-primary desde
+     Alpine (el diálogo elige el color por el TIPO del aviso, en caliente). */
+  .btn.btn-danger { background:var(--danger); color:var(--text-on-brand); border-color:var(--danger); }
+  .btn.btn-danger:hover { filter:brightness(.95); }
 
   /* ---- Botones de icono (cuadrados) ---- */
   .icon-btn {
@@ -572,6 +577,74 @@
   }
   .tab-active .tab-badge { background:var(--brand-soft); color:var(--brand-soft-text); }
 
+  /* ---- Stepper (asistente por pasos) ---- */
+  /* Un paso NO es una solapa: además de cambiar de panel dice en qué punto de la
+     carga está el usuario y cuál todavía no puede abrir. Por eso ocupa el ancho
+     y lleva la descripción al lado del número — acompaña, no decora. */
+  .stepper { display:flex; align-items:center; gap:4px; width:100%; margin:0; padding:8px;
+             list-style:none; background:var(--surface-card);
+             border:1px solid var(--border-subtle); border-radius:var(--radius-card);
+             box-shadow:var(--shadow-xs); }
+  .stepper-item { flex:1 1 0; min-width:0; display:flex; }
+  .stepper-step { display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px;
+                  border:1px solid transparent; border-radius:var(--radius-md);
+                  background:transparent; font:inherit; text-align:left; cursor:pointer;
+                  transition:background var(--dur-fast) var(--ease-out),
+                             border-color var(--dur-fast) var(--ease-out); }
+  .stepper-step:hover:not(.is-locked) { background:var(--surface-sunken); }
+  .stepper-step:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  /* El paso abierto se lee por el wash de marca, no por un borde de color: el
+     mismo criterio que la solapa activa. */
+  .stepper-step.is-current { background:var(--brand-soft);
+                             border-color:color-mix(in srgb, var(--brand) 30%, transparent); }
+  .stepper-step.is-locked { cursor:not-allowed; }
+
+  /* El disco: hueco mientras el paso falta, jade lleno cuando quedó guardado,
+     punteado y hundido el que todavía no se puede abrir. */
+  .stepper-mark { flex:none; display:grid; place-items:center; width:34px; height:34px;
+                  border-radius:var(--radius-pill); border:1.5px solid var(--border-default);
+                  background:var(--surface-card); color:var(--text-muted);
+                  font-family:var(--font-mono); font-size:var(--text-sm);
+                  font-weight:var(--weight-bold); line-height:1;
+                  transition:background var(--dur-base) var(--ease-out),
+                             border-color var(--dur-base) var(--ease-out),
+                             color var(--dur-base) var(--ease-out); }
+  .stepper-step.is-current .stepper-mark { border-color:var(--brand); color:var(--brand);
+                                           box-shadow:0 0 0 4px var(--focus-ring); }
+  .stepper-step.is-done .stepper-mark { border-color:var(--brand); background:var(--brand);
+                                        color:var(--text-on-brand); box-shadow:none; }
+  .stepper-step.is-locked .stepper-mark { border-style:dashed; background:var(--surface-sunken);
+                                          color:var(--text-subtle); }
+
+  .stepper-text { min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .stepper-label { font-size:var(--text-sm); font-weight:var(--weight-semibold);
+                   color:var(--text-strong); }
+  .stepper-step.is-locked .stepper-label { color:var(--text-muted); }
+  .stepper-desc { font-size:var(--text-xs); color:var(--text-muted);
+                  line-height:var(--leading-normal); }
+  /* La pista del bloqueo no se apaga tanto como la descripción: es la que dice
+     qué hay que hacer para abrir el paso. */
+  .stepper-hint { font-size:var(--text-xs); font-weight:var(--weight-medium);
+                  color:var(--brand-soft-text); line-height:var(--leading-normal); }
+
+  .stepper-link { flex:0 1 56px; min-width:16px; height:2px; border-radius:2px;
+                  background:var(--border-default);
+                  transition:background var(--dur-base) var(--ease-out); }
+  .stepper-link.is-done { background:var(--brand); }
+
+  /* En angosto los pasos se apilan y el hilo se para: el paso sigue leyéndose
+     entero, con su descripción, en vez de encogerse a un número suelto. */
+  @media (max-width:760px) {
+    .stepper { flex-direction:column; align-items:stretch; }
+    /* De pie el hilo cambia de eje: hay que soltarle el `flex-basis` y el
+       `min-width` de la fila o el navegador lo dibuja como un cuadrado. Cae bajo
+       el centro del disco (8px de padding + 14px del paso + medio disco). */
+    .stepper-link { flex:none; width:2px; min-width:0; height:14px; margin-left:30px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .stepper-step, .stepper-mark, .stepper-link { transition:none; }
+  }
+
   /* ---- Alert ---- */
   .alert {
     display:flex; gap:12px; align-items:flex-start; padding:14px 16px;
@@ -594,6 +667,61 @@
      arriba pasaba desapercibido); mobile: barra al pie, a lo ancho. Apila con
      column-reverse: el aviso nuevo entra arriba y los que ya estaban no se
      mueven de la esquina. */
+  /* ---- Diálogo del sistema (avisos, advertencias, confirmaciones) ---- */
+  /* La ÚNICA ventana de avisos: en AtendIa no hay `alert()` ni `confirm()` del
+     navegador. La usan los dos paneles, así que se tematiza sola por tokens.
+     Ver .ai/guidelines/avisos-y-modales.md. */
+  .dialog-backdrop {
+    position:fixed; inset:0; z-index:var(--z-modal);
+    display:flex; align-items:center; justify-content:center; padding:var(--space-4);
+    /* El fondo se apaga y se desenfoca: la pantalla sigue ahí —el usuario no
+       pierde el contexto de lo que estaba haciendo— pero deja de competir. */
+    background:color-mix(in srgb, var(--ink-900) 55%, transparent);
+    backdrop-filter:blur(6px);
+    transition:opacity var(--dur-base) var(--ease-out);
+  }
+  .dialog {
+    width:min(430px, 100%); padding:26px 26px 20px;
+    display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 16px;
+    background:var(--surface-card); border:1px solid var(--border-subtle);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow-xl);
+    transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+  }
+  /* Estado de entrada/salida: sube apenas y crece desde el 96%, sin rebote. */
+  .dialog-off { opacity:0; transform:translateY(10px) scale(.96); }
+
+  .dialog-icon {
+    grid-row:1 / span 2; width:44px; height:44px; border-radius:var(--radius-pill);
+    display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .dialog-icon-info    { background:var(--info-soft);    color:var(--info); }
+  .dialog-icon-success { background:var(--success-soft); color:var(--success); }
+  .dialog-icon-warning { background:var(--warning-soft); color:var(--warning); }
+  .dialog-icon-danger  { background:var(--danger-soft);  color:var(--danger); }
+
+  .dialog-body { min-width:0; padding-top:2px; }
+  .dialog-title { font-family:var(--font-display); font-size:var(--text-lg); font-weight:700;
+                  letter-spacing:-0.01em; color:var(--text-strong); }
+  .dialog-message { margin-top:6px; font-size:var(--text-sm); line-height:var(--leading-normal);
+                    color:var(--text-muted); word-break:break-word; }
+
+  /* El pie arranca en la columna del texto, no bajo el ícono: así la acción cae
+     alineada con el título y el bloque se lee como una sola cosa. */
+  .dialog-foot { grid-column:2; display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+
+  /* Con un aviso abierto, el fondo no se scrollea. */
+  body.has-dialog { overflow:hidden; }
+
+  @media (max-width:520px) {
+    .dialog { grid-template-columns:1fr; gap:14px; padding:22px; }
+    .dialog-icon { grid-row:auto; }
+    .dialog-foot { grid-column:1; flex-direction:column-reverse; }
+    .dialog-foot .btn { width:100%; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .dialog, .dialog-backdrop { transition:none; }
+  }
+
   .toast-stack {
     position:fixed; bottom:var(--space-4); right:var(--space-4); z-index:var(--z-toast);
     display:flex; flex-direction:column-reverse; gap:10px; width:min(380px, calc(100vw - var(--space-4) * 2));

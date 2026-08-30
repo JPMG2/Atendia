@@ -26,4 +26,19 @@ return [
     'is_multiple' => 'varios valores',
     'is_required' => 'obligatorio',
     'service_modality_id' => 'modalidad',
+
+    // Compañía (el emisor de la factura).
+    'legal_name' => 'razón social',
+    'tagline' => 'tagline',
+    'address' => 'dirección',
+    'region_id' => 'región',
+    'tax_id' => 'identificación fiscal',
+    'tax_condition_id' => 'condición fiscal',
+    'logo_path_light' => 'logo para fondo claro',
+    'logo_path_dark' => 'logo para fondo oscuro',
+    'text_copyright' => 'texto del pie',
+    'email' => 'email',
+    'phone' => 'teléfono',
+    'web' => 'sitio web',
+    'social_network_id' => 'red',
 ];

@@ -39,6 +39,10 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/check-catalog-form-layout.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-no-native-alerts.sh"
           }
         ]
       }

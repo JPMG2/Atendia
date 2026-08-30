@@ -1,5 +1,5 @@
 @props([
-    'variant' => 'primary',   // primary | secondary | ghost | accent
+    'variant' => 'primary',   // primary | secondary | ghost | accent | danger
     'size' => 'md',           // sm | md | lg
     'href' => null,           // si se pasa, renderiza <a>; si no, <button>
     'type' => 'button',
@@ -11,7 +11,7 @@
 @php
     // Mapas blindados: una variante/tamaño inválido cae en el default,
     // nunca genera una clase rota. Todo el color sale de tokens → dark/light solos.
-    $variants = ['primary' => 'btn-primary', 'secondary' => 'btn-secondary', 'ghost' => 'btn-ghost', 'accent' => 'btn-accent'];
+    $variants = ['primary' => 'btn-primary', 'secondary' => 'btn-secondary', 'ghost' => 'btn-ghost', 'accent' => 'btn-accent', 'danger' => 'btn-danger'];
     $sizes = ['sm' => 'btn-sm', 'md' => 'btn-md', 'lg' => 'btn-lg'];
 
     $classes = 'btn '

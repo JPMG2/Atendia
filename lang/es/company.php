@@ -18,10 +18,25 @@ return [
 
     'discard' => 'Descartar',
     'save' => 'Guardar cambios',
+    // Sin compañía cargada, guardar el paso 1 es lo que abre el 2: el botón lo dice.
+    'save_continue' => 'Guardar y continuar',
 
-    'tabs' => [
-        'data' => 'Datos de la empresa',
-        'contact' => 'Contactos y redes',
+    /*
+     * Los dos pasos de la carga. El segundo se abre recién cuando la compañía
+     * existe, así que el copy del bloqueo tiene que decir qué lo destraba.
+     */
+    'steps' => [
+        'locked_hint' => 'Guarda la configuración principal para abrir este paso.',
+
+        'main' => [
+            'label' => 'Configuración principal',
+            'desc' => 'Identidad, domicilio, datos fiscales y logo.',
+        ],
+
+        'commercial' => [
+            'label' => 'Datos comerciales',
+            'desc' => 'Contacto público y redes sociales.',
+        ],
     ],
 
     'identity' => [
@@ -63,6 +78,14 @@ return [
         'desc' => 'Agrega las redes donde está la empresa. El orden es el que se ve en el pie de página.',
         'add' => 'Agregar red',
         'remove' => 'Quitar esta red',
+
+        // La baja es inmediata y no hay papelera: el aviso dice la consecuencia,
+        // y el botón nombra la acción en vez de un "Aceptar" genérico.
+        'remove_confirm' => [
+            'title' => '¿Eliminar esta red?',
+            'message' => 'Se quita del pie de página y de la web. No se puede deshacer.',
+            'accept' => 'Eliminar la red',
+        ],
         'network' => 'Red',
         'network_placeholder' => 'Elige una red',
         'url' => 'Enlace o usuario',

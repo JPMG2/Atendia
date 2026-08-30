@@ -24,7 +24,7 @@
 
     {{-- CSS + form-guard por Vite. NO cargamos app.js (arranca su propio Alpine): el Alpine
          lo trae Livewire y form-guard.js se cuelga de él con alpine:init → cero doble Alpine. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/combobox.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js'])
     @livewireStyles
 </head>
 <body>
@@ -134,6 +134,11 @@
     {{-- Pila de avisos: una sola instancia para toda la app. Cualquier componente
          la alimenta con $this->dispatchNotification(...) — ver trait HasNotifications. --}}
     <livewire:toast />
+
+    {{-- La ventana de avisos del sistema: se monta UNA vez y la usa cualquier
+         componente por `dialog.*`. En AtendIa no hay avisos nativos del
+         navegador — ver .ai/guidelines/avisos-y-modales.md. --}}
+    <livewire:dialog />
 
     @livewireScripts
 </body>

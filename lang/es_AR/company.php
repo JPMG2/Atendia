@@ -12,6 +12,10 @@ declare(strict_types=1);
 */
 
 return [
+    'steps' => [
+        'locked_hint' => 'Guardá la configuración principal para abrir este paso.',
+    ],
+
     'social' => [
         'desc' => 'Agregá las redes donde está la empresa. El orden es el que se ve en el pie de página.',
         'network_placeholder' => 'Elegí una red',

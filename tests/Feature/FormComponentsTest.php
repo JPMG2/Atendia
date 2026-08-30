@@ -164,6 +164,58 @@ test('the tabs render a button per tab and start on the default', function (): v
 
 /*
 |--------------------------------------------------------------------------
+| <x-ui.stepper>
+|--------------------------------------------------------------------------
+*/
+test('the stepper renders a step per entry and starts on the default', function (): void {
+    $html = Blade::render('<x-ui.stepper :steps="$steps" default="main" />', [
+        'steps' => [
+            ['value' => 'main', 'label' => 'Configuración principal', 'desc' => 'Identidad y domicilio'],
+            ['value' => 'commercial', 'label' => 'Datos comerciales', 'desc' => 'Contacto y redes'],
+        ],
+    ]);
+
+    expect($html)
+        ->toContain('class="stepper"')
+        ->toContain('Configuración principal')
+        ->toContain('Datos comerciales')
+        ->toContain('Identidad y domicilio')
+        ->toContain("step: 'main'")
+        ->toContain('stepper-link');   // the thread that says one step leads to the other
+});
+
+test('a locked stepper keeps every step but the first shut, and says what opens it', function (): void {
+    $html = Blade::render('<x-ui.stepper :steps="$steps" lockedHint="Guarda primero" />', [
+        'steps' => [['value' => 'main', 'label' => 'Uno'], ['value' => 'commercial', 'label' => 'Dos']],
+    ]);
+
+    // Locking is the default: a step is only opened once the record exists.
+    expect($html)
+        ->toContain('unlocked: false')
+        ->toContain('isLocked(1)')
+        ->toContain('Guarda primero');
+});
+
+test('an unlocked stepper opens every step and marks the first as done', function (): void {
+    $html = Blade::render('<x-ui.stepper :steps="$steps" :unlocked="true" />', [
+        'steps' => [['value' => 'main', 'label' => 'Uno'], ['value' => 'commercial', 'label' => 'Dos']],
+    ]);
+
+    expect($html)
+        ->toContain('unlocked: true')
+        ->toContain('isDone(0)');
+});
+
+test('the stepper themes itself through tokens, with no hardcoded hex', function (): void {
+    $html = Blade::render('<x-ui.stepper :steps="$steps" />', [
+        'steps' => [['value' => 'main', 'label' => 'Uno']],
+    ]);
+
+    expect($html)->not->toContain('#');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Golden rule: theme-aware, no hardcoded hex (checkbox's white tick aside)
 |--------------------------------------------------------------------------
 */

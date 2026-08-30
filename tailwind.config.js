@@ -17,6 +17,14 @@ export default {
         'is-danger',
         'is-brand',
         'is-neutral',
+
+        // Mismo caso: el diálogo del sistema tiñe su ícono según el TIPO del
+        // aviso, que llega en runtime (`'dialog-icon-' + current.type`). Sin esto
+        // el disco sale sin color y el aviso pierde justo lo que se lee primero.
+        'dialog-icon-info',
+        'dialog-icon-success',
+        'dialog-icon-warning',
+        'dialog-icon-danger',
     ],
 
     content: [

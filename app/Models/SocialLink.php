@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * La cuenta de alguien en una red social.
@@ -23,6 +25,26 @@ class SocialLink extends Model
 {
     /** @use HasFactory<SocialLinkFactory> */
     use HasFactory;
+
+    use LogsActivity;
+
+    /**
+     * Auditoría del enlace: quién lo cargó, lo corrigió o lo borró, y cuándo.
+     *
+     * Acá el rastro pesa más que en un maestro: la baja es INMEDIATA —el tacho
+     * borra la fila en el momento, no al guardar— y no hay papelera. Sin log, un
+     * enlace que desaparece no deja forma de saber quién lo sacó.
+     *
+     * El causante (el usuario logueado) lo resuelve spatie solo.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['social_network_id', 'url', 'sort_order'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('social');
+    }
 
     /**
      * @return array<string, string>

@@ -14,6 +14,7 @@ return [
         'region' => 'Región',
         'tax_condition' => 'Condición fiscal',
         'social_network' => 'Red social',
+        'social_link' => 'Red',
         'status' => 'Estado',
         'business_sector' => 'Rubro',
         'business_activity' => 'Actividad',
