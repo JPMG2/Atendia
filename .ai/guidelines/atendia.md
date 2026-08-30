@@ -29,7 +29,16 @@
 
 - Framework: **Pest v4** (`pestphp/pest`) + plugin **`pestphp/pest-plugin-livewire`** para testear componentes Livewire (`livewire(Componente::class)->...`).
 - Sintaxis funcional: `test('...', function () { ... })` / `it(...)` con `expect()`. El `TestCase` se enlaza en `tests/Pest.php`.
-- **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés. (El código de la app y el copy de la UI siguen en español; esta regla aplica solo a la capa de tests.)
+- **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés.
+
+## Idioma del código — INGLÉS (regla de oro)
+
+- **Comentarios, PHPDoc y mensajes de excepción/log van en inglés**, en TODO el
+  proyecto (`app/`, `database/`, `tests/`, `routes/`, `config/`, los `{{-- --}}`
+  de los Blade y `resources/js`). Cortos y explicando el PORQUÉ.
+- **Lo único que sigue en español es lo que lee el cliente:** `lang/es*/*.php` y
+  el texto visible de las vistas — tiene variantes regionales y no se toca.
+- Regla completa, ejemplos y la lista de deuda: `.ai/guidelines/comentarios.md`.
 
 ## Git — mensajes de commit en INGLÉS
 

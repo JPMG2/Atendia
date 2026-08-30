@@ -93,7 +93,16 @@ Memoria relacionada: `atendia-paneles-roles`. Receta de enforcement (tests/hooks
 
 - Framework: **Pest v4** (`pestphp/pest`) + plugin **`pestphp/pest-plugin-livewire`** para testear componentes Livewire (`livewire(Componente::class)->...`).
 - Sintaxis funcional: `test('...', function () { ... })` / `it(...)` con `expect()`. El `TestCase` se enlaza en `tests/Pest.php`.
-- **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés. (El código de la app y el copy de la UI siguen en español; esta regla aplica solo a la capa de tests.)
+- **Todo el testing en INGLÉS:** descripciones de `test()`/`it()`, comentarios dentro de los tests, nombres de archivos, helpers y datasets van en inglés.
+
+## Idioma del código — INGLÉS (regla de oro)
+
+- **Comentarios, PHPDoc y mensajes de excepción/log van en inglés**, en TODO el
+  proyecto (`app/`, `database/`, `tests/`, `routes/`, `config/`, los `{{-- --}}`
+  de los Blade y `resources/js`). Cortos y explicando el PORQUÉ.
+- **Lo único que sigue en español es lo que lee el cliente:** `lang/es*/*.php` y
+  el texto visible de las vistas — tiene variantes regionales y no se toca.
+- Regla completa, ejemplos y la lista de deuda: `.ai/guidelines/comentarios.md`.
 
 ## Git — mensajes de commit en INGLÉS
 
@@ -110,6 +119,175 @@ Memoria relacionada: `atendia-paneles-roles`. Receta de enforcement (tests/hooks
 - **Blindaje:** `tests/TestCase.php` aborta cualquier test si el entorno no es `testing` o la base no es exactamente `atendia_testing`. **Jamás** apuntar los tests a `atendia`.
 - La base `atendia_testing` se creó con el superusuario `laravel_user` del contenedor `ai_project_postgres-shared`:
   `CREATE DATABASE atendia_testing OWNER atendia_user;`
+
+=== .ai/avisos-y-modales rules ===
+
+# Avisos y modales — REGLA DE ORO: cero avisos nativos
+
+> En AtendIa **no existe ningún aviso del navegador**. Ni uno. Nada de `alert()`,
+> `confirm()` ni `prompt()`, ni en el panel admin ni en el del cliente. **Todos**
+> los avisos, advertencias, confirmaciones y reintentos salen de la misma
+> ventana del sistema.
+
+Un tema por archivo: acá va el *cómo* del aviso. El sistema de diseño vive en el
+skill `atendiadesign`, los formularios en `formularios.md`, y el enforcement de
+3 capas en `reglas-de-oro-enforcement.md`. Enlazamos, no repetimos.
+
+Esta regla está **blindada**: el test guardián `tests/Feature/GoldenRulesDialogTest.php`
+y el hook `check-no-native-alerts.sh` fallan el build si aparece un aviso nativo.
+
+## Por qué
+
+- Un `confirm()` **no se puede tematizar**: rompe la marca, ignora los tokens, la
+  tipografía y el modo oscuro. En el panel del cliente se lee como un error del
+  sistema, no como parte del producto.
+- Su texto lo escribe el **navegador**, no nosotros: los botones salen en el idioma
+  del sistema operativo y se saltean las variantes regionales del español.
+- **Bloquea el hilo**: nada se puede animar ni cancelar mientras está abierto, y en
+  móvil algunos navegadores directamente lo suprimen — el aviso no aparece nunca.
+- No se puede testear en el navegador: Playwright lo tiene que interceptar aparte.
+
+## Cómo se avisa
+
+La ventana la dibuja `<livewire:dialog />`, montada **una sola vez** en el layout
+del dashboard (igual que el toast). Se abre con la función global `dialog.*`
+(`resources/js/dialog.js`), que devuelve una **promesa**, así el que llama lee
+como código normal:
+
+```js
+// Una pregunta. Devuelve true/false.
+if (! await dialog.confirm({
+    title: '¿Eliminar la red?',
+    message: 'Se quita de la web y del pie de página.',
+    accept: 'Eliminar',
+    type: 'danger',        // info | success | warning (default) | danger
+})) {
+    return;
+}
+
+// Un aviso: un solo botón, no hay nada que decidir.
+await dialog.notify({ title: 'Listo', message: '…', type: 'success' });
+
+// Algo falló y se puede volver a intentar.
+if (await dialog.retry({ title: 'No pudimos guardar', message: '…' })) { … }
+```
+
+- `type` elige el color y el glifo (tokens semánticos, dark/light solos).
+- `accept` / `cancel` permiten **nombrar la acción** ("Eliminar la red") en vez de
+  un "Aceptar" genérico: un botón que dice qué hace se entiende sin releer.
+- Abrir un aviso **no cuesta un request**: es 100% Alpine.
+- Escape, el click afuera y Cancelar son lo mismo: **no**. Nunca conviene que la
+  vía de escape ejecute la acción.
+
+## Aviso vs. toast — cuál va
+
+- **Toast** (`HasNotifications` → `dispatchNotification()`): el resultado de algo
+  que **ya pasó** y no requiere respuesta. "Compañía actualizada".
+- **Diálogo** (`dialog.*`): cuando hace falta una **respuesta** antes de seguir, o
+  cuando el aviso es tan importante que no puede pasar de largo.
+- Si no hay nada que decidir y el usuario no necesita detenerse, es un toast.
+  Un diálogo que solo informa algo trivial es una interrupción gratuita.
+
+## Copy (se aplica lo de `formularios.md` §4)
+
+- Todo el texto sale de traducciones (`__()`), base neutra en `lang/es/` y override
+  de voseo en `lang/es_AR/` solo si el verbo cambia. Los rótulos por defecto de los
+  botones viven en `lang/es/dialog.php`.
+- **Título en pregunta** cuando hay que decidir ("¿Eliminar la red?"), y el mensaje
+  dice la **consecuencia**, no repite el título. Sentence case, sin emoji.
+
+## Checklist de salida
+
+- [ ] Cero `alert()` / `confirm()` / `prompt()` (ni `window.*`) en Blade y en JS.
+- [ ] El aviso sale por `dialog.*`; nada de una ventana propia hecha a mano.
+- [ ] `type` acorde: `danger` **solo** para lo que no se deshace.
+- [ ] El botón de acción nombra la acción; cancelar no ejecuta nada.
+- [ ] Copy por traducciones, con la consecuencia en el mensaje.
+- [ ] ¿Hacía falta detener al usuario? Si no, es un toast.
+- [ ] Test Pest (en inglés) + `view:clear` y `npm run build` corridos.
+
+=== .ai/comentarios rules ===
+
+# Comentarios y PHPDoc — regla de oro
+
+> Los comentarios de este proyecto se escriben **en inglés**, son **cortos** y
+> explican **por qué**, nunca qué. Muchos comentarios no significan que esté todo
+> bien: casi siempre significan que el código no se explica solo, o que alguien
+> narró lo que la línea de abajo ya dice.
+
+Esta regla está **blindada**: el test guardián `tests/Feature/GoldenRulesCommentsTest.php`
+y el hook `check-comment-golden-rules.sh` fallan si un archivo la viola. La receta de
+las 3 capas está en `reglas-de-oro-enforcement.md`.
+
+## Las 5 reglas
+
+1. **Inglés.** Comentarios, PHPDoc, y los mensajes de excepción y de log.
+2. **El porqué, no el qué.** Si el comentario describe lo que el código ya dice,
+   se borra. Sirve lo que el código NO puede contar: la razón, la trampa, el
+   descarte.
+3. **Corto.** Hasta **3 líneas** seguidas de `//`, y hasta **5 líneas de prosa**
+   en un docblock (los `@tag` no cuentan). Si necesitás más, o el código está mal
+   escrito, o eso es documentación y va a `.ai/guidelines/`.
+4. **Cero PHPDoc redundante.** Nada de `@param string $name The name`. Solo lo
+   que el tipo de PHP no puede expresar: array shapes, generics,
+   `class-string<T>`, `@throws`.
+5. **Nada de decoración ni código comentado.** Sin banners de sección, sin
+   bloques comentados "por las dudas" — para eso está git.
+
+## Qué NO alcanza esta regla
+
+- **`lang/es*/*.php` y el texto visible de las vistas** siguen en **español**: es
+  el copy que lee el cliente, y tiene variantes regionales. Ver
+  `.ai/guidelines/formularios.md` §4.
+- Los `.md` de `.ai/guidelines/` y las memorias siguen en español: los leés vos.
+- Los banners `|-----|` que trae Laravel en `config/` son del framework.
+
+## Ejemplos
+
+```php
+// ❌ narra lo que el código ya dice
+// Guarda la compañía y devuelve la notificación
+$company->save();
+
+// ✅ cuenta lo que el código no puede
+// The table holds a single row: without this fallback a second save would
+// create a second company when the form mounted before the record existed.
+$company = Company::query()->find($this->recordId) ?? Company::query()->first();
+```
+
+```php
+// ❌ PHPDoc que repite la firma
+/**
+ * Send the message.
+ *
+ * @param  string  $locale  The locale
+ */
+
+// ✅ solo lo que el tipo no expresa
+/** @param  array<int, string>  $recipients */
+```
+
+## La deuda (`tests/Feature/comment_debt.php`)
+
+Cuando la regla nació había **229 archivos** con comentarios viejos. Están
+congelados en esa lista, que es una **lista de pendientes, no una excepción**:
+
+- El guardián solo tolera lo que está ahí; cualquier archivo fuera de la lista se
+  exige completo.
+- **Nunca se agrega un path.** Si un archivo nuevo falla, se arregla el archivo.
+- Al limpiar un archivo hay que **sacarlo de la lista** — hay un test que falla si
+  quedó adentro estando limpio, porque si no dejaría de estar protegido.
+- La meta es que el archivo llegue a `[]` y se borre.
+
+## Checklist de salida
+
+- [ ] Todo comentario y PHPDoc en inglés.
+- [ ] Ningún comentario describe lo que la línea de abajo ya dice.
+- [ ] Ninguno pasa de 3 líneas (`//`) o 5 de prosa (docblock).
+- [ ] Sin `@param` que repita el tipo; sí los array shapes y `@throws`.
+- [ ] Sin código comentado ni banners decorativos.
+- [ ] Si limpiaste un archivo, lo sacaste de `comment_debt.php`.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesComments` en verde.
 
 === .ai/documentacion-y-memoria rules ===
 
@@ -476,6 +654,12 @@ Cuando se suma un set de reglas de oro:
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`.
+- **Comentarios / PHPDoc en inglés y cortos** → `.ai/guidelines/comentarios.md` ·
+  test guardián `tests/Feature/GoldenRulesCommentsTest.php` · hook
+  `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
+  MISMO scanner (`tests/Support/CommentScanner.php`), así que no pueden divergir
+  —a diferencia de los allowlists espejados de la regla de markup, que hay que
+  tocar de a dos—. Ratchet en `tests/Feature/comment_debt.php`.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

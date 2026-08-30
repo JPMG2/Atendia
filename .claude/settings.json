@@ -43,6 +43,10 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/check-no-native-alerts.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-comment-golden-rules.sh"
           }
         ]
       }

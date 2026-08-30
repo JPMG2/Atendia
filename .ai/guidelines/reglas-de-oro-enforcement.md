@@ -49,6 +49,12 @@ Cuando se suma un set de reglas de oro:
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`.
+- **Comentarios / PHPDoc en inglés y cortos** → `.ai/guidelines/comentarios.md` ·
+  test guardián `tests/Feature/GoldenRulesCommentsTest.php` · hook
+  `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
+  MISMO scanner (`tests/Support/CommentScanner.php`), así que no pueden divergir
+  —a diferencia de los allowlists espejados de la regla de markup, que hay que
+  tocar de a dos—. Ratchet en `tests/Feature/comment_debt.php`.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

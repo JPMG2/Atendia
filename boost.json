@@ -5,10 +5,12 @@
     "cloud": false,
     "guidelines": true,
     "skills": [
+        "infer-conventions",
         "ai-sdk-development",
         "laravel-best-practices",
         "livewire-development",
         "pest-testing",
+        "echo-development",
         "tailwindcss-development"
     ]
 }
