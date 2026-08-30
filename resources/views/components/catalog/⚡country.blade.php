@@ -54,7 +54,7 @@ new class extends Component {
     'currency_id' => ['required'],
 ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.country.search_placeholder')" :search-label="__('catalog.country.search_label')" :singular="__('catalog.country.singular')" :plural="__('catalog.country.plural')" :create="__('catalog.country.create')" />
 
@@ -78,12 +78,12 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.country.new')" :new-title="__('catalog.country.new_title')" :edit-title="__('catalog.country.edit_title')" :create="__('catalog.country.create')"
             title-key="code">
 
-            {{-- Fila 1: el identificador corto y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short identifier and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.country.fields.code')" required name="code" :hint="__('catalog.country.fields.code_hint')"
                     maxlength="3" alpine-error="code" x-mask="aaa" style="text-transform:uppercase"
@@ -93,7 +93,7 @@ new class extends Component {
                     alpine-error="name" wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
+            {{-- Row 2: the remaining fields sharing the full width. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.country.fields.phone_code')" name="phone_code" :hint="__('catalog.country.fields.phone_code_hint')"
                     maxlength="6" alpine-error="phone_code" wire:model="form.data.phone_code" />

@@ -71,7 +71,7 @@
         @endif
     </div>
 
-    {{-- La descripción y el error coexisten apilados (.field-meta) para que NUNCA se solapen --}}
+    {{-- Hint and error stack in .field-meta so they NEVER overlap. --}}
     @if ($hint || $error || $alpineErrorExpr)
         <div class="field-meta">
             @if ($hint)

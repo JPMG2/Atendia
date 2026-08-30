@@ -25,7 +25,7 @@
                 </div>
             </div>
 
-            {{-- Mock de teléfono --}}
+            {{-- Phone mockup. --}}
             <x-site.phone-mock />
         </div>
     </div>

@@ -102,10 +102,10 @@
                 class="field-input"
             />
 
-            {{-- Limpiar de un golpe. Aparece solo cuando hay algo que limpiar: una
-                 'x' fija sobre un campo vacío es ruido, y encima invita a hacer
-                 click en algo que no hace nada. `mousedown.prevent` porque el
-                 blur del buscador cierra el panel y se comería el click. --}}
+            {{-- Clear in one go. It only appears when there is something to clear:
+            a fixed cross over an empty field is noise. `mousedown.prevent`
+            because the search box's blur closes the panel and would eat
+            the click. --}}
             <button type="button" class="combo-clear" tabindex="-1"
                 x-show="selected || query" x-cloak
                 aria-label="{{ __('forms.combobox.clear') }}"
@@ -128,7 +128,7 @@
                 @endif
             </button>
 
-            {{-- El valor real: es el que lleva el wire:model y el que viaja al server. --}}
+            {{-- The real value: it carries the wire:model and travels to the server. --}}
             <input type="hidden" x-ref="value" @if ($name) name="{{ $name }}" @endif
                 {{ $valueAttributes }} />
         </div>
@@ -151,7 +151,7 @@
         </ul>
     </div>
 
-    {{-- La descripción y el error coexisten apilados (.field-meta) para que NUNCA se solapen --}}
+    {{-- Hint and error stack in .field-meta so they NEVER overlap. --}}
     @if ($hint || $error || $alpineErrorExpr)
         <div class="field-meta">
             @if ($hint)

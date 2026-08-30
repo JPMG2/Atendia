@@ -6,18 +6,10 @@
 ])
 
 {{--
-    Envoltorio del maestro: monta `catalogMaster()` y ofrece las dos vistas
-    (tabla ⇄ formulario) por slot. Todo el estado del editor —view, mode, current,
-    errors, filtered(), openCreate(), openEdit(), submit()— vive en la fábrica
-    compartida de resources/js/catalog-master.js, no copiado en cada editor.
-
-    El formulario NO tiene estado en Alpine: los campos van por wire:model contra
-    el DTO del server. `current` es solo la fila abierta, para el título.
-
-    La semilla del x-data es una propiedad #[Locked] del componente: si cambiara
-    en un re-render, Livewire re-escribiría el atributo y Alpine RE-INICIALIZARÍA
-    el editor perdiendo `view` y `mode`. La tabla se mantiene al día por el
-    evento `catalog-rows-refreshed`, nunca por este atributo.
+    The master's wrapper: it mounts `catalogMaster()` and offers both views by
+    slot. The editor's state lives in the shared factory, and the form holds NO
+    Alpine state. The x-data seed is #[Locked]: were it to change on a
+    re-render, Alpine would RE-INITIALISE the editor and lose the open view.
 --}}
 <div class="catalog-master"
     x-data="catalogMaster({

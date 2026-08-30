@@ -7,9 +7,8 @@
 ])
 
 {{--
-    Chrome del formulario: la barra de arriba (volver · badge · título) y el pie
-    de acciones (eliminar · cancelar · guardar). Era idéntico en los tres
-    editores salvo el copy, así que el maestro ahora solo aporta SUS campos.
+    The form's chrome: the top bar and the action footer. It was identical in
+    every editor bar the copy, so a master now contributes ONLY its fields.
 --}}
 <div class="catalog-formbar">
     <button type="button" class="catalog-back" x-on:click="backToList()">

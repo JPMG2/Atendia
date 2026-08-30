@@ -55,7 +55,7 @@ new class extends Component {
         'country_id' => ['required'],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.tax_condition.search_placeholder')"
             :search-label="__('catalog.tax_condition.search_label')" :singular="__('catalog.tax_condition.singular')"
@@ -81,13 +81,13 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.tax_condition.new')" :new-title="__('catalog.tax_condition.new_title')"
             :edit-title="__('catalog.tax_condition.edit_title')" :create="__('catalog.tax_condition.create')"
             title-key="code">
 
-            {{-- Fila 1: el código corto y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short code and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.tax_condition.fields.code')" required name="code"
                     :hint="__('catalog.tax_condition.fields.code_hint')" maxlength="10" alpine-error="code"
@@ -98,8 +98,8 @@ new class extends Component {
                     wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: el resto repartiéndose el ancho completo, los dos
-                 booleanos incluidos. --}}
+            {{-- Row 2: the rest sharing the full width, both booleans
+            included. --}}
             <x-catalog.form-row>
                 <x-inputsform.combobox span="text" :label="__('catalog.tax_condition.fields.country')" required
                     name="country_id" :placeholder="__('catalog.tax_condition.fields.country_placeholder')"

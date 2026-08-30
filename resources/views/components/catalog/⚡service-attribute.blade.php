@@ -56,7 +56,7 @@ new class extends Component {
         'sort_order' => ['integer', ['min', 0], ['max', 32767]],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.service_attribute.search_placeholder')"
             :search-label="__('catalog.service_attribute.search_label')"
@@ -71,19 +71,19 @@ new class extends Component {
             ['label' => __('catalog.service_attribute.columns.status')],
         ]">
             <td><span class="catalog-code" x-text="row.code"></span></td>
-            {{-- La descripción va bajo el nombre, no en una columna propia: es una
-                 aclaración, y como columna se comía el ancho de la tabla. --}}
+            {{-- The description sits under the name and not in a column of its own:
+            it is a clarification, and a column ate the table's width. --}}
             <td class="catalog-cell-fill">
                 <span class="catalog-cell-primary">
                     <span class="name" x-text="row.name"></span>
                     <span class="sub" x-text="row.description"></span>
                 </span>
             </td>
-            {{-- Tipo, unidad y cardinalidad juntos: tres columnas para tres datos
-                 chicos empujaban la tabla fuera del panel. --}}
+            {{-- Type, unit and cardinality together: three columns for three small
+            facts pushed the table out of the panel. --}}
             <td class="catalog-cell-meta" x-text="row.type"></td>
-            {{-- Las opciones son una LISTA: como pastillas se cuentan de un
-                 vistazo y envuelven solas, pegadas con comas son un párrafo. --}}
+            {{-- The options are a LIST: as pills they count at a glance and wrap on
+            their own, while a comma string reads as a paragraph. --}}
             <td>
                 <span class="catalog-chips" x-show="row.options.length">
                     <template x-for="option in row.options" :key="option">
@@ -100,14 +100,14 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.service_attribute.new')"
             :new-title="__('catalog.service_attribute.new_title')"
             :edit-title="__('catalog.service_attribute.edit_title')"
             :create="__('catalog.service_attribute.create')" title-key="name">
 
-            {{-- Fila 1: la clave corta, el nombre y de qué clase es el dato. --}}
+            {{-- Row 1: the short key, the name and what kind of data it is. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.service_attribute.fields.code')" required name="code"
                     :hint="__('catalog.service_attribute.fields.code_hint')" maxlength="40" alpine-error="code"
@@ -123,8 +123,8 @@ new class extends Component {
                     :value="$form->data?->data_type" alpine-error="data_type" wire:model="form.data.data_type" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: la descripción absorbe el sobrante y el estado cierra la
-                 línea, para no gastar una fila entera en un booleano. --}}
+            {{-- Row 2: the description takes the slack and the status closes the
+            line, so a boolean does not cost a whole row. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="long" :label="__('catalog.service_attribute.fields.description')"
                     name="description" :placeholder="__('catalog.service_attribute.fields.description_placeholder')"
@@ -149,8 +149,8 @@ new class extends Component {
                     :off="__('catalog.service_attribute.status.inactive')" wire:model="form.data.is_active" />
             </x-catalog.form-row>
 
-            {{-- Fila 3: las opciones de la lista. Va sola porque es la única que
-                 puede llegar a ser larga, y solo la usa el tipo "Lista". --}}
+            {{-- Row 3: the list's options. Alone because it is the only one that can
+            get long, and only the list type uses it. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="full" :label="__('catalog.service_attribute.fields.options')" name="options"
                     :placeholder="__('catalog.service_attribute.fields.options_placeholder')"

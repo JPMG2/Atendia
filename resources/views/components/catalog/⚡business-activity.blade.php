@@ -55,7 +55,7 @@ new class extends Component {
         'sort_order' => ['integer', ['min', 0], ['max', 32767]],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.business_activity.search_placeholder')" :search-label="__('catalog.business_activity.search_label')" :singular="__('catalog.business_activity.singular')" :plural="__('catalog.business_activity.plural')" :create="__('catalog.business_activity.create')" />
 
@@ -79,12 +79,12 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.business_activity.new')" :new-title="__('catalog.business_activity.new_title')" :edit-title="__('catalog.business_activity.edit_title')" :create="__('catalog.business_activity.create')"
             title-key="name">
 
-            {{-- Fila 1: la clave corta y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short key and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.business_activity.fields.code')" required name="code" :hint="__('catalog.business_activity.fields.code_hint')"
                     maxlength="40" alpine-error="code" wire:model="form.data.code" />
@@ -93,8 +93,8 @@ new class extends Component {
                     alpine-error="name" wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: el rubro del que cuelga, la descripción que absorbe el
-                 sobrante, y el orden y el estado cerrando la línea. --}}
+            {{-- Row 2: the sector it hangs off, the description taking the slack,
+            then the order and the status closing the line. --}}
             <x-catalog.form-row>
                 <x-inputsform.combobox span="text" :label="__('catalog.business_activity.fields.sector')" required name="business_sector_id"
                     :placeholder="__('catalog.business_activity.fields.sector_placeholder')" :options="$this->sectorOptions" :value="$form->data?->business_sector_id" alpine-error="business_sector_id"

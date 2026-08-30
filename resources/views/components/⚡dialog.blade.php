@@ -27,22 +27,22 @@ new class extends Component {};
 ]) })" x-on:dialog.window="push($event.detail)">
 
     <template x-if="current !== null">
-        {{-- Cerrar al tocar el fondo va acá con `.self` (solo si el click fue en el
-             fondo mismo), NO con un `.outside` sobre la ventana: `.outside`
-             engancha su listener en el documento DURANTE el mismo click que abre
-             el diálogo, ese click sigue burbujeando y lo cierra en el acto — se
-             abría y se cerraba dentro del mismo evento. --}}
+        {{-- Closing on a backdrop click uses `.self` and NOT `.outside` on the
+        window: `.outside` hooks its listener DURING the very click that
+        opens the dialog, and that click keeps bubbling and closes it on
+        the spot. --}}
         <div class="dialog-backdrop" x-transition.opacity x-on:keydown.escape.window="cancel()"
             x-on:click.self="cancel()">
 
-            {{-- `alertdialog` y no `dialog`: interrumpe para pedir una respuesta,
-                 así el lector de pantalla lo anuncia entero al abrirse. --}}
+            {{-- `alertdialog` and not `dialog`: it interrupts to ask for an
+            answer, so the screen reader announces it whole. --}}
             <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title"
                 aria-describedby="dialog-message" x-transition
                 x-transition:enter-start="dialog-off" x-transition:leave-end="dialog-off">
 
-                {{-- El disco teñido dice de qué se trata antes de leer una palabra.
-                     El color sale del tipo; el glifo, del registro de iconos. --}}
+                {{-- The tinted disc says what this is about before a word is read.
+                The colour comes from the type, the glyph from the icon
+                registry. --}}
                 <span class="dialog-icon" x-bind:class="'dialog-icon-' + current.type" aria-hidden="true">
                     <template x-if="current.type === 'info'"><x-icon name="info" :size="22" /></template>
                     <template x-if="current.type === 'success'"><x-icon name="circle-check" :size="22" /></template>
@@ -56,10 +56,10 @@ new class extends Component {};
                     </p>
                 </div>
 
-                {{-- Cancelar primero y la acción a la derecha, igual que el pie de
-                     los formularios: el botón que confirma siempre cae en el mismo
-                     lugar de la pantalla. Un aviso no lleva cancelar: no hay nada
-                     que decidir. --}}
+                {{-- Cancel first and the action on the right, same as a form's
+                footer: the confirming button always lands in the same
+                place. A notice carries no cancel — there is nothing to
+                decide. --}}
                 <div class="dialog-foot">
                     <x-ui.button variant="ghost" x-show="current.mode !== 'notify'" x-on:click="cancel()">
                         <span x-text="cancelLabel()"></span>

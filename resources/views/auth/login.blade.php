@@ -8,7 +8,7 @@
         </p>
     </div>
 
-    {{-- Estado de sesión (ej. "Te enviamos el enlace de recuperación") --}}
+    {{-- Session status, such as the password-reset confirmation. --}}
     @if (session('status'))
         <x-ui.alert variant="success" icon="message-circle" class="mb-6">
             {{ session('status') }}

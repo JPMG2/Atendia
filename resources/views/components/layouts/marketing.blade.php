@@ -9,7 +9,7 @@
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}">
 
-    {{-- Tema antes del primer pintado: evita el flash claro→oscuro --}}
+    {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>
         (function () {
             try {

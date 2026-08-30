@@ -4,14 +4,10 @@
 ])
 
 {{--
-    Tabla del maestro. El slot aporta SOLO las <td> de una fila; el componente
-    pone el encabezado, el `x-for`, la fila vacía y la celda del chevron.
-
-    La variable de la fila es `row` en los tres maestros (antes era `c` en uno y
-    `n` en otro, por copiar y pegar).
-
-    El `colspan` del vacío se calcula de `columns`: escrito a mano se
-    desincronizaba al agregar una columna y el mensaje quedaba corrido.
+    The master's table: the slot brings ONLY a row's cells, and the component
+    puts in the header, the loop, the empty row and the chevron. That empty
+    row's `colspan` is computed from the columns, since written by hand it
+    drifted out of step whenever one was added.
 --}}
 <div class="catalog-table-wrap">
     <table class="catalog-table">

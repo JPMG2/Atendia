@@ -24,11 +24,6 @@ if ($relative === '' || ! is_file($absolute)) {
     exit(0);
 }
 
-// Files frozen the day the rule landed are not judged yet.
-if (in_array($relative, require __DIR__.'/../Feature/comment_debt.php', true)) {
-    exit(0);
-}
-
 $problems = [];
 
 foreach (CommentScanner::commentsIn($relative, (string) file_get_contents($absolute)) as $comment) {

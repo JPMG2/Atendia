@@ -9,14 +9,12 @@
     $active = $default ?? ($steps[0]['value'] ?? null);
 @endphp
 
-{{-- Un paso NO es una solapa: además de cambiar de panel dice en qué punto de la
-     carga está el usuario y cuál todavía no puede abrir.
+{{-- A step is NOT a tab: besides switching panels it says how far along the
+person is and which one they cannot open yet.
 
-     El primer paso es el que abre los demás: mientras `unlocked` sea false solo
-     él se puede tocar, y al desbloquearse queda marcado como cumplido. El estado
-     vive en Alpine —los paneles del slot usan x-show="step === '...'"— y se
-     abre desde afuera con el evento `stepper-unlock`, que es lo que va a
-     disparar el guardado el día que exista. --}}
+The first step is what opens the rest: while locked only it can be
+touched, and unlocking marks it done. The state lives in Alpine and is
+opened from outside with an event. --}}
 <div
     x-data="{
         step: @js($active),
@@ -50,8 +48,9 @@
     <ol class="stepper" role="tablist">
         @foreach ($steps as $index => $step)
             @if ($index > 0)
-                {{-- El hilo es lo único que dice que un paso lleva al otro: gris
-                     mientras el anterior no se guardó, jade cuando sí. --}}
+                {{-- The thread is the only thing saying one step leads to the
+                next: grey until the previous one saved, brand when it
+                did. --}}
                 <li class="stepper-link" :class="{ 'is-done': unlocked }" aria-hidden="true"></li>
             @endif
 
@@ -69,9 +68,9 @@
                     :aria-disabled="isLocked({{ $index }})"
                     x-on:click="open(@js($step['value']), {{ $index }})"
                 >
-                    {{-- El disco lleva el número mientras falta, el tilde cuando
-                         el paso quedó guardado y el candado cuando todavía no se
-                         puede abrir: el estado se ve sin leer una palabra. --}}
+                    {{-- The disc carries the number while pending, the tick once the
+                    step is saved and the padlock while it cannot be
+                    opened: the state reads without a word. --}}
                     <span class="stepper-mark">
                         <span x-show="! isDone({{ $index }}) && ! isLocked({{ $index }})">{{ $index + 1 }}</span>
                         <span x-show="isDone({{ $index }})" x-cloak><x-icon name="check" :size="18" /></span>
@@ -85,7 +84,7 @@
                             <span class="stepper-desc" x-show="! isLocked({{ $index }})">{{ $step['desc'] }}</span>
                         @endisset
 
-                        {{-- Bloqueado no alcanza: hay que decir QUÉ lo abre. --}}
+                        {{-- Locked is not enough: it has to say WHAT opens it. --}}
                         @if ($lockedHint)
                             <span class="stepper-hint" x-show="isLocked({{ $index }})" x-cloak>{{ $lockedHint }}</span>
                         @endif

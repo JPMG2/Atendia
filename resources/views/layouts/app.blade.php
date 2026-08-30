@@ -9,7 +9,7 @@
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}">
 
-    {{-- Tema antes del primer pintado: evita el flash claro→oscuro --}}
+    {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>
         (function () {
             try {
@@ -22,15 +22,15 @@
 
     <style>[x-cloak]{display:none !important;}</style>
 
-    {{-- CSS + form-guard por Vite. NO cargamos app.js (arranca su propio Alpine): el Alpine
-         lo trae Livewire y form-guard.js se cuelga de él con alpine:init → cero doble Alpine. --}}
+    {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
+    own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
     @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js'])
     @livewireStyles
 </head>
 <body>
     <div class="app-shell" x-data="{ sidebarOpen: false }">
 
-        {{-- Scrim del drawer (solo mobile) --}}
+        {{-- Drawer scrim, mobile only. --}}
         <div class="sidebar-scrim" data-testid="sidebar-scrim" x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"></div>
 
         {{-- Sidebar --}}
@@ -92,9 +92,9 @@
 
                         <div class="topbar-user-dropdown" x-show="open" x-cloak x-transition
                              @click.outside="open = false">
-                            {{-- Switch de panel: solo para admin (super-admin via Gate::before).
-                                 La impersonación de un cliente PUNTUAL (ver sus datos) es una
-                                 feature aparte y futura; acá solo se cambia de panel. --}}
+                            {{-- Panel switch, admin only. Impersonating one particular
+                            customer is a separate feature for later; this
+                            only changes panel. --}}
                             @can('access-admin-panel')
                                 @if ($onAdminPanel)
                                     <a href="{{ route('dashboard') }}" wire:navigate class="dropdown-item">
@@ -131,13 +131,13 @@
         </div>
     </div>
 
-    {{-- Pila de avisos: una sola instancia para toda la app. Cualquier componente
-         la alimenta con $this->dispatchNotification(...) — ver trait HasNotifications. --}}
+    {{-- The toast stack: one instance for the whole app, fed by any component
+    through the notification trait. --}}
     <livewire:toast />
 
-    {{-- La ventana de avisos del sistema: se monta UNA vez y la usa cualquier
-         componente por `dialog.*`. En AtendIa no hay avisos nativos del
-         navegador — ver .ai/guidelines/avisos-y-modales.md. --}}
+    {{-- The system's dialog window: mounted ONCE and used by any component
+    through `dialog.*`. AtendIa has no native browser alerts — see
+    .ai/guidelines/avisos-y-modales.md. --}}
     <livewire:dialog />
 
     @livewireScripts

@@ -68,7 +68,9 @@ final class CommentScanner
         if (str_ends_with($path, '.blade.php')) {
             preg_match_all('/\{\{--(.*?)--\}\}/s', $contents, $matches);
 
-            return $matches[1];
+            // The delimiters travel back: a Blade comment is a block, and
+            // without them it would be measured as a run of `//` lines.
+            return array_map(fn (string $c): string => '{{--'.$c.'--}}', $matches[1]);
         }
 
         if (str_ends_with($path, '.js')) {
@@ -228,7 +230,9 @@ final class CommentScanner
     {
         $lines = preg_split('/\R/', trim($comment)) ?: [];
 
-        if (! str_starts_with(trim($comment), '/*')) {
+        $trimmed = trim($comment);
+
+        if (! str_starts_with($trimmed, '/*') && ! str_starts_with($trimmed, '{{--')) {
             return count($lines) > self::MAX_INLINE_LINES;
         }
 
@@ -237,7 +241,10 @@ final class CommentScanner
         foreach ($lines as $line) {
             // The `*` and the ONE space after it go; whatever indentation is
             // left marks a code sample apart from prose.
-            $line = rtrim(trim($line), '*/');
+            $line = trim($line);
+            $line = str_starts_with($line, '{{--') ? substr($line, 4) : $line;
+            $line = str_ends_with($line, '--}}') ? substr($line, 0, -4) : $line;
+            $line = rtrim($line, '*/');
             $line = ltrim($line, '*');
             $line = rtrim($line);
 

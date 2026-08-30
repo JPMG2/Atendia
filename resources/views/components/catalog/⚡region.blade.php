@@ -58,7 +58,7 @@ new class extends Component {
         'province_id' => ['required'],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.region.search_placeholder')"
             :search-label="__('catalog.region.search_label')" :singular="__('catalog.region.singular')"
@@ -82,13 +82,13 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.region.new')" :new-title="__('catalog.region.new_title')"
             :edit-title="__('catalog.region.edit_title')" :create="__('catalog.region.create')">
 
-            {{-- Tres campos: entran en una fila que llega al borde. El nombre se
-                 lleva el sobrante; el estado cierra la línea. --}}
+            {{-- Three fields in one row reaching the edge: the name takes the
+            slack and the status closes the line. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.region.fields.name')" required name="name"
                     :placeholder="__('catalog.region.fields.name_placeholder')" alpine-error="name"

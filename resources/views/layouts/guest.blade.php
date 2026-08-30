@@ -9,7 +9,7 @@
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}">
 
-    {{-- Tema antes del primer pintado: evita el flash claro→oscuro --}}
+    {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>
         (function () {
             try {
@@ -35,7 +35,7 @@
     }"
     class="min-h-screen grid lg:grid-cols-2 bg-page"
 >
-    {{-- Panel de marca (solo desktop) --}}
+    {{-- Brand panel, desktop only. --}}
     <aside
         class="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
         style="background:
@@ -78,9 +78,9 @@
         </p>
     </aside>
 
-    {{-- Panel del formulario --}}
+    {{-- Form panel. --}}
     <main class="relative flex flex-col items-center justify-center px-5 py-12 sm:px-8">
-        {{-- Toggle de tema --}}
+        {{-- Theme toggle. --}}
         <div class="absolute top-5 right-5">
             <x-ui.icon-button label="Cambiar tema" @click="toggleTheme()">
                 <span x-show="!dark"><x-icon name="moon" :size="18" /></span>
@@ -88,7 +88,7 @@
             </x-ui.icon-button>
         </div>
 
-        {{-- Logo compacto (solo mobile, el panel de marca está oculto) --}}
+        {{-- Compact logo: mobile only, where the brand panel is hidden. --}}
         <x-site.logo :size="26" :href="url('/')" class="lg:hidden mb-8" />
 
         <div class="w-full" style="max-width:26rem;">

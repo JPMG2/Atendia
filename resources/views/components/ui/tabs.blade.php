@@ -7,7 +7,7 @@
     $active = $default ?? ($tabs[0]['value'] ?? null);
 @endphp
 
-{{-- Estado en Alpine: la barra alterna `tab`; los paneles del slot usan x-show="tab === '...'". --}}
+{{-- State in Alpine: the bar switches `tab` and the slot's panels show on it. --}}
 <div x-data="{ tab: @js($active) }" {{ $attributes }}>
     <div role="tablist" class="tabs">
         @foreach ($tabs as $t)

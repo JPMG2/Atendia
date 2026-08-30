@@ -57,7 +57,7 @@ new class extends Component {
         'sort_order' => ['integer', ['min', 0], ['max', 32767]],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.service_modality.search_placeholder')"
             :search-label="__('catalog.service_modality.search_label')"
@@ -71,9 +71,9 @@ new class extends Component {
             ['label' => __('catalog.service_modality.columns.status')],
         ]">
             <td><span class="catalog-code" x-text="row.code"></span></td>
-            {{-- El glifo REAL al lado del nombre, en vez de una columna con su
-                 clave: "calendar-check" es config, no un dato del catálogo. Y
-                 debajo, qué pide y qué recuerda esa modalidad. --}}
+            {{-- The REAL glyph beside the name instead of a column holding its
+            key, which is config and not catalog data. Underneath, what
+            the modality asks for and remembers. --}}
             <td class="catalog-cell-fill">
                 <span class="catalog-cell-lead">
                     <span class="catalog-row-icon" x-show="row.icon_svg">
@@ -97,14 +97,14 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.service_modality.new')"
             :new-title="__('catalog.service_modality.new_title')"
             :edit-title="__('catalog.service_modality.edit_title')"
             :create="__('catalog.service_modality.create')" title-key="name">
 
-            {{-- Fila 1: la clave corta y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short key and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.service_modality.fields.code')" required name="code"
                     :hint="__('catalog.service_modality.fields.code_hint')" maxlength="30" alpine-error="code"
@@ -115,8 +115,8 @@ new class extends Component {
                     wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: la descripción absorbe el sobrante y el estado cierra la
-                 línea, para no gastar una fila entera en un booleano. --}}
+            {{-- Row 2: the description takes the slack and the status closes the
+            line, so a boolean does not cost a whole row. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="long" :label="__('catalog.service_modality.fields.description')"
                     name="description" :placeholder="__('catalog.service_modality.fields.description_placeholder')"

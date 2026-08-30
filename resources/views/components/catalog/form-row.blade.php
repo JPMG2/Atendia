@@ -1,13 +1,9 @@
 {{--
-    Una fila del formulario de un maestro.
+    One row of a master's form.
 
-    Las filas se DECLARAN acá, no las decide el wrap del navegador: si el corte
-    lo elige el ancho de la pantalla, el mismo formulario se ve distinto en un
-    monitor grande que en un notebook, y el último campo —casi siempre el
-    estado— termina solo en una fila entera.
-
-    La fila siempre llega al borde derecho: los campos declaran cuánto contenido
-    necesitan (`span`) y el sobrante se lo lleva el descriptivo de la fila.
+    Rows are DECLARED here and not left to the browser's wrap, which leaves the
+    last field alone on a row of its own. A row always reaches the right edge:
+    fields declare how much content they need.
 --}}
 <div {{ $attributes->merge(['class' => 'form-row']) }}>
     {{ $slot }}

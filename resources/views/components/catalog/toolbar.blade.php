@@ -7,9 +7,8 @@
 ])
 
 {{--
-    Barra superior del maestro: buscar · contar · crear. Idéntica en los tres
-    editores, así que vive acá una sola vez. El contador y el filtro salen de
-    `filtered()`, que aporta el riel de Alpine (`catalogMaster`).
+    The master's top bar: search, count, create. Identical in every editor, so
+    it lives here once. The count and the filter both come from `filtered()`.
 --}}
 <div class="catalog-toolbar">
     <x-inputsform.input name="q" size="s" icon="search" :placeholder="$searchPlaceholder" x-model="q"

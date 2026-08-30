@@ -99,26 +99,24 @@ new #[Title('Catálogos del sistema')] class extends Component {
     </div>
 
     <div class="catalog-hub @if ($this->current) is-collapsed @endif">
-        {{-- Panel 1: riel de maestros (data-driven desde catalog_forms).
-             Se compacta a iconos mientras hay un maestro abierto y solo se
-             re-expande al cerrarlo (el hover no cambia el ancho). --}}
+        {{-- Panel 1: the master rail, data-driven from the table. It collapses to
+        icons while a master is open and expands again on closing — hovering
+        does not change the width. --}}
         <div class="catalog-rail-slot">
             <nav class="card catalog-list" aria-label="{{ __('catalog.hub.rail_label') }}"
                 x-data="catalogRail({ titles: {{ \Illuminate\Support\Js::from($this->forms->pluck('title')->all()) }} })">
 
-                {{-- Cabecera fija: el buscador no se va con el scroll de la lista.
-                     Filtra client-side (los maestros ya están renderizados), así que
-                     tipear no dispara un request. Con un maestro abierto el riel se
-                     colapsa a iconos y esta cabecera se esconde por CSS. --}}
+                {{-- A fixed header, so the search box does not scroll away. It filters
+                client-side, so typing fires no request, and it hides by CSS once the
+                rail collapses to icons. --}}
                 <div class="catalog-rail-search">
                     <x-inputsform.input name="catalog-search" size="s" icon="search"
                         :placeholder="__('catalog.hub.search_placeholder')"
                         :aria-label="__('catalog.hub.search_label')" x-model="q" />
                 </div>
 
-                {{-- Cuerpo: alto acotado por --rail-scroll-h, con su propio scroll.
-                     Antes el riel crecía con la cantidad de maestros y estiraba la
-                     pantalla entera. --}}
+                {{-- The body: a bounded height with its own scroll. The rail used to grow
+                with the number of masters and stretch the whole screen. --}}
                 <div class="catalog-rail-body">
                     @forelse ($this->grouped as $group => $items)
                         <div class="catalog-group"
@@ -146,7 +144,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
             </nav>
         </div>
 
-        {{-- Panel 2: editor del maestro abierto (componente dinámico) --}}
+        {{-- Panel 2: the open master's editor, a dynamic component. --}}
         <section class="card catalog-panel" wire:key="panel-{{ $selectedId ?? 'none' }}">
             @if ($this->current)
                 <div class="catalog-panel-head">

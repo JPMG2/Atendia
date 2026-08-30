@@ -52,7 +52,7 @@ new class extends Component {
     'country_id' => ['required'],
 ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.province.search_placeholder')" :search-label="__('catalog.province.search_label')" :singular="__('catalog.province.singular')" :plural="__('catalog.province.plural')" :create="__('catalog.province.create')" />
 
@@ -72,12 +72,12 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.province.new')" :new-title="__('catalog.province.new_title')" :edit-title="__('catalog.province.edit_title')" :create="__('catalog.province.create')">
 
-            {{-- Tres campos: entran en una fila que llega al borde. El nombre se
-                 lleva el sobrante; el estado cierra la línea. --}}
+            {{-- Three fields in one row reaching the edge: the name takes the
+            slack and the status closes the line. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.province.fields.name')" required name="name" :placeholder="__('catalog.province.fields.name_placeholder')"
                     alpine-error="name" wire:model="form.data.name" />

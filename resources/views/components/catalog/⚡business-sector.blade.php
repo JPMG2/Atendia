@@ -39,7 +39,7 @@ new class extends Component {
         'sort_order' => ['integer', ['min', 0], ['max', 32767]],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.business_sector.search_placeholder')"
             :search-label="__('catalog.business_sector.search_label')"
@@ -66,13 +66,13 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.business_sector.new')"
             :new-title="__('catalog.business_sector.new_title')" :edit-title="__('catalog.business_sector.edit_title')"
             :create="__('catalog.business_sector.create')" title-key="name">
 
-            {{-- Fila 1: la clave corta y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short key and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.business_sector.fields.code')" required name="code"
                     :hint="__('catalog.business_sector.fields.code_hint')" maxlength="30" alpine-error="code"
@@ -83,8 +83,8 @@ new class extends Component {
                     wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: la descripción absorbe el sobrante y el estado cierra la
-                 línea, para no gastar una fila entera en un booleano. --}}
+            {{-- Row 2: the description takes the slack and the status closes the
+            line, so a boolean does not cost a whole row. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="long" :label="__('catalog.business_sector.fields.description')"
                     name="description" :placeholder="__('catalog.business_sector.fields.description_placeholder')"

@@ -24,17 +24,12 @@
 @endphp
 
 {{--
-    El estado con la MISMA caja y altura que un input, para que entre en la fila
-    del formulario como un control más. Antes vivía en un bloque a lo ancho al
-    pie, que gastaba una fila entera en un booleano.
+The status in the SAME box and height as an input, so it joins the form row
+as one more control instead of spending a whole row on a boolean.
 
-    Las DOS palabras se renderizan siempre y el CSS muestra la que corresponde
-    con `:has(input:checked)`. No es una maña: la versión con Alpine
-    (`x-init="on = $el.checked"`) leía el checkbox UNA sola vez, y cuando
-    Livewire hacía morph al abrir un registro el `checked` cambiaba pero el
-    texto quedaba congelado — se veía "No" con la perilla encendida. Atado al
-    DOM por CSS, la palabra sigue al control siempre: al tocarlo (sin esperar el
-    round trip) y después de cualquier re-render.
+BOTH words always render and CSS shows the right one. The Alpine version
+read the checkbox ONCE, so a morph changed `checked` while the text stayed
+frozen. Tied to the DOM by CSS, the word follows the control.
 --}}
 <div class="field {{ $spanClass }}">
     @if ($label)

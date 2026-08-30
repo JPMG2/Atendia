@@ -59,22 +59,22 @@ new class extends Component {
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.status.search_placeholder')"
             :search-label="__('catalog.status.search_label')" :singular="__('catalog.status.singular')"
             :plural="__('catalog.status.plural')" :create="__('catalog.status.create')" />
 
-        {{-- Con solo dos columnas el que absorbe el sobrante es el COLOR, no el
-             nombre: así el tag queda pegado al nombre en vez de irse al borde
-             derecho dejando un hueco enorme en el medio. --}}
+        {{-- With only two columns the COLOUR takes the slack and not the name,
+        so the tag stays next to the name instead of drifting to the
+        right edge and leaving a hole in the middle. --}}
         <x-catalog.table :empty="__('catalog.status.empty')" :columns="[
             ['label' => __('catalog.status.columns.name')],
             ['label' => __('catalog.status.columns.color'), 'class' => 'catalog-col-fill'],
         ]">
             <td class="catalog-cell-name" x-text="row.name"></td>
-            {{-- El tag se muestra tal cual se va a ver en el resto del programa:
-                 el color no se escribe acá, sale de la clave guardada en la fila. --}}
+            {{-- The tag shows exactly as it will everywhere else: the colour is
+            not written here, it comes from the key stored on the row. --}}
             <td class="catalog-cell-fill">
                 <span class="status-tag" x-bind:class="'is-' + row.color">
                     <span class="dot"></span><span x-text="row.name"></span>
@@ -83,12 +83,12 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.status.new')" :new-title="__('catalog.status.new_title')"
             :edit-title="__('catalog.status.edit_title')" :create="__('catalog.status.create')">
 
-            {{-- Nombre y color en una fila: el nombre se lleva el sobrante. --}}
+            {{-- Name and colour in one row: the name takes the slack. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="text" :label="__('catalog.status.fields.name')" required name="name"
                     :placeholder="__('catalog.status.fields.name_placeholder')" alpine-error="name"

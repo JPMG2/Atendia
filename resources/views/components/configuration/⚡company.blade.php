@@ -227,8 +227,8 @@ new #[Title('Compañía')] class extends Component {
 };
 ?>
 
-{{-- Al cambiar de paso se vacía el bag: si no, volvés al paso 1 y te recibe
-     un campo en rojo de un intento viejo que ya no estabas mirando. --}}
+{{-- Changing step empties the bag: otherwise step one greets you with a
+field in red from an attempt you had stopped looking at. --}}
 <div x-data="companyForm" x-on:step-changed="errors = {}">
     <div class="page-head">
         <div>
@@ -237,17 +237,17 @@ new #[Title('Compañía')] class extends Component {
         </div>
     </div>
 
-    {{-- El paso 2 arranca cerrado hasta que la compañía exista: los datos
-         comerciales cuelgan de un registro que todavía no está. Con la compañía
-         ya cargada no hay nada que ordenar y los dos pasos quedan libres. --}}
+    {{-- Step two starts locked until the company exists: the commercial data
+    hangs off a record that is not there yet. With it loaded there is
+    nothing to order and both steps are free. --}}
     <x-ui.stepper default="main" :unlocked="$isRegistered" :lockedHint="__('company.steps.locked_hint')" :steps="[
         ['value' => 'main', 'label' => __('company.steps.main.label'), 'desc' => __('company.steps.main.desc')],
         ['value' => 'commercial', 'label' => __('company.steps.commercial.label'), 'desc' => __('company.steps.commercial.desc')],
     ]">
 
-        {{-- ============ DATOS DE LA EMPRESA ============
-             Orden de carga: quién es → con qué número factura → dónde está →
-             con qué se la ve → qué cierra la factura. --}}
+        {{-- Company details. The order they are filled in: who it is, the number it
+        invoices under, where it is, how it looks, what closes the
+        invoice. --}}
         <x-ui.card class="mt-4" x-show="step === 'main'" x-cloak wire:key="step-main-{{ $mainRevision }}">
 
             <div class="config-block">
@@ -273,9 +273,9 @@ new #[Title('Compañía')] class extends Component {
                     <p class="config-block-desc">{{ __('company.address.desc') }}</p>
                 </div>
 
-                {{-- De lo general a lo puntual: país → provincia → región, y recién
-                     después la calle. El país se elige primero porque de él cuelga
-                     todo lo demás, la condición fiscal incluida. --}}
+                {{-- Broad to narrow: country, province, region, and only then the
+                street. The country goes first because everything else hangs
+                off it, the tax standing included. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
                         <x-inputsform.combobox span="text" required name="country_id" alpine-error="country_id"
@@ -304,8 +304,8 @@ new #[Title('Compañía')] class extends Component {
                     <p class="config-block-desc">{{ __('company.tax.desc') }}</p>
                 </div>
 
-                {{-- La condición va primero: es la que dice qué número corresponde
-                     cargar, no al revés. --}}
+                {{-- The standing comes first: it is what says which number belongs
+                here, not the other way round. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
                         <x-inputsform.combobox span="text" required name="tax_condition_id"
@@ -330,9 +330,9 @@ new #[Title('Compañía')] class extends Component {
                         <div class="field">
                             <x-ui.label :for="'if-' . $logo['name']">{{ $logo['label'] }}</x-ui.label>
 
-                            {{-- Sin cablear: la zona de carga todavía no recibe archivos.
-                                 El control real va a ser un <x-ui.*> con su test, y
-                                 recién ahí se ata a form.data.logo_path_*. --}}
+                            {{-- Not wired: the drop zone takes no files yet. The real control
+                            will be an <x-ui.*> with its test, and only then does
+                            it bind to the model. --}}
                             <button type="button" class="config-drop" id="if-{{ $logo['name'] }}">
                                 <span class="config-drop-icon"><x-icon name="upload" :size="22" /></span>
                                 <span>{{ __('company.logo.upload') }}</span>
@@ -358,7 +358,7 @@ new #[Title('Compañía')] class extends Component {
             </div>
         </x-ui.card>
 
-        {{-- ============ CONTACTOS Y REDES ============ --}}
+        {{-- Contact details and social networks. --}}
         <x-ui.card class="mt-4" x-show="step === 'commercial'" x-cloak
             wire:key="step-commercial-{{ $commercialRevision }}">
 
@@ -369,8 +369,8 @@ new #[Title('Compañía')] class extends Component {
                 </div>
 
                 <div class="config-fields catalog-form">
-                    {{-- Dos filas, no tres campos apretados: un teléfono en mono
-                         necesita su ancho y truncar un dato no es compactar. --}}
+                    {{-- Two rows and not three cramped fields: a phone number in mono
+                    needs its width, and truncating is not compacting. --}}
                     <x-catalog.form-row>
                         <x-inputsform.input span="text" name="email" alpine-error="email" type="email" icon="mail"
                             :label="__('company.fields.email')" :placeholder="__('company.fields.email_placeholder')" wire:model="form.data.email" />
@@ -386,8 +386,8 @@ new #[Title('Compañía')] class extends Component {
                 </div>
             </div>
 
-            {{-- Las redes no son una lista fija: la empresa suma las que tenga y
-                 quita las que deje de usar. Cada fila es una red. --}}
+            {{-- The networks are not a fixed list: a company adds the ones it has
+            and drops the ones it stops using. Each row is one. --}}
             <div class="config-block">
                 <div>
                     <h2 class="config-block-title">{{ __('company.social.title') }}</h2>
@@ -402,16 +402,14 @@ new #[Title('Compañía')] class extends Component {
                             <span class="config-social-spacer" aria-hidden="true"></span>
                         </div>
 
-                        {{-- Quitar y agregar viven en la MISMA línea de la fila: un
-                             botón suelto abajo rompe la alineación y obliga a bajar
-                             la vista para sumar la red siguiente. Siempre queda una
-                             fila: si se pudieran borrar todas, no habría dónde
-                             volver a empezar. --}}
-                        {{-- Las filas viven en el SERVER (`form.social`), no en Alpine:
-                             una fila que solo existe en el navegador no se puede
-                             guardar. El `wire:key` va con la clave de la fila y no
-                             con su índice, así quitar una del medio mueve el nodo
-                             correcto en vez de repintar al que quedó en ese lugar. --}}
+                        {{-- Remove and add live on the SAME line as the row: a loose
+                        button underneath breaks the alignment and forces the
+                        eye down to add the next one. One row always
+                        remains, or there is nowhere to start again. --}}
+                        {{-- The rows live on the SERVER and not in Alpine: a row that only
+                        exists in the browser cannot be saved. The `wire:key`
+                        carries the row's key and not its index, so removing
+                        one from the middle moves the right node. --}}
                         @foreach ($form->social as $index => $row)
                             <div class="config-social-row" wire:key="social-{{ $row['key'] }}">
                                 <x-inputsform.combobox span="text" :id="'if-social-' . $index . '-network'"
@@ -424,12 +422,10 @@ new #[Title('Compañía')] class extends Component {
                                     :placeholder="__('company.social.url_placeholder')" maxlength="255"
                                     wire:model="form.social.{{ $index }}.url" />
 
-                                {{-- Quitar una red guardada la borra EN EL MOMENTO, así que
-                                     antes se advierte. El aviso sale del diálogo del
-                                     sistema: en AtendIa no hay confirmaciones nativas
-                                     del navegador (.ai/guidelines/avisos-y-modales.md).
-                                     Una fila que nunca se guardó se va sin preguntar:
-                                     no hay nada que perder. --}}
+                                {{-- Removing a saved network deletes it THERE AND THEN, so it
+                                warns first, through the system dialog — AtendIa
+                                has no native browser confirmations. A row that
+                                was never saved goes without asking. --}}
                                 <x-ui.icon-button icon="trash-2" variant="ghost" class="config-social-remove"
                                     data-testid="social-remove"
                                     :label="__('company.social.remove')" :disabled="count($form->social) === 1 && $row['id'] === null"
@@ -445,21 +441,20 @@ new #[Title('Compañía')] class extends Component {
             </div>
         </x-ui.card>
 
-        {{-- Las acciones cierran la pantalla, igual que el pie de los maestros: el
-             guardar se busca al final del formulario, no arriba de todo.
+        {{-- The actions close the screen, same as the masters' footer: save is
+        looked for at the end of a form, not above it.
 
-             Va una sola vez y DENTRO del stepper —no una barra por panel— porque
-             el pie no es de la solapa, es de la pantalla; adentro puede leer en
-             qué paso está parado el usuario, que es lo que decide a quién le
-             pega el botón. --}}
+        It goes in once and INSIDE the stepper — the footer belongs to the
+        screen and not to a tab, and in there it can read which step the
+        person is on, which is what decides who the button hits. --}}
         <div class="catalog-form-foot config-foot">
             <span class="catalog-foot-grow"></span>
             <x-ui.button variant="ghost" x-on:click="discard(step)">{{ __('company.discard') }}</x-ui.button>
 
-            {{-- Con la compañía sin cargar, guardar el paso 1 es lo que abre el 2:
-                 el rótulo lo dice en vez de dejar al usuario adivinando por qué el
-                 otro paso sigue con candado. El texto del server ya viene en el
-                 estado correcto, así que no hay parpadeo hasta que arranca Alpine. --}}
+            {{-- With no company yet, saving step one is what opens step two, and
+            the label says so instead of leaving people guessing why the
+            other step is still locked. The server sends the text already
+            in the right state, so there is no flicker. --}}
             <x-ui.button variant="primary" icon="check" x-on:click="submit(step)">
                 <span
                     x-text="step === 'main' && ! unlocked ? @js(__('company.save_continue')) : @js(__('company.save'))"

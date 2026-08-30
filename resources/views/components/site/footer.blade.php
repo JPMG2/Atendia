@@ -31,7 +31,7 @@
             <a href="#" class="text-subtle">{{ __('landing.footer.terms') }}</a>
             <a href="#" class="text-subtle">{{ __('landing.footer.privacy') }}</a>
 
-            {{-- Selector de idioma: la geo sugiere, el usuario decide --}}
+            {{-- Language picker: geolocation suggests, the person decides. --}}
             <span x-data="{ open: false }" class="relative">
                 <button
                     type="button"

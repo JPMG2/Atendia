@@ -30,7 +30,7 @@
         </nav>
 
         <div class="ml-auto flex items-center gap-2.5">
-            {{-- Toggle de tema (slot con los dos iconos que Alpine alterna) --}}
+            {{-- Theme toggle: the slot holds the two icons Alpine swaps. --}}
             <x-ui.icon-button :label="__('landing.nav.toggle_theme')" @click="toggleTheme()">
                 <span x-show="!dark"><x-icon name="moon" :size="18" /></span>
                 <span x-show="dark" x-cloak><x-icon name="sun" :size="18" /></span>
@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    {{-- Drawer móvil --}}
+    {{-- Mobile drawer. --}}
     <div
         x-show="open"
         x-cloak

@@ -57,7 +57,7 @@ new class extends Component {
         'abbreviation' => [['maxLength', 10], 'noMarkup'],
     ]">
 
-    {{-- ============ VISTA TABLA (el "mostrar") ============ --}}
+    {{-- Table view: the list. --}}
     <x-slot:list>
         <x-catalog.toolbar :search-placeholder="__('catalog.social_network.search_placeholder')"
             :search-label="__('catalog.social_network.search_label')" :singular="__('catalog.social_network.singular')"
@@ -83,12 +83,12 @@ new class extends Component {
         </x-catalog.table>
     </x-slot:list>
 
-    {{-- ============ VISTA FORMULARIO (crear / editar) ============ --}}
+    {{-- Form view: create and edit. --}}
     <x-slot:form>
         <x-catalog.form-shell :new="__('catalog.social_network.new')" :new-title="__('catalog.social_network.new_title')"
             :edit-title="__('catalog.social_network.edit_title')" :create="__('catalog.social_network.create')">
 
-            {{-- Fila 1: el identificador corto y el nombre, que se lleva todo el resto. --}}
+            {{-- Row 1: the short identifier and the name, which takes all the rest. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.social_network.fields.abbreviation')"
                     name="abbreviation" :hint="__('catalog.social_network.fields.abbreviation_hint')" maxlength="10"
@@ -99,7 +99,7 @@ new class extends Component {
                     wire:model="form.data.name" />
             </x-catalog.form-row>
 
-            {{-- Fila 2: el resto de los campos repartiéndose el ancho completo. --}}
+            {{-- Row 2: the remaining fields sharing the full width. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="long" :label="__('catalog.social_network.fields.url')" required name="url"
                     type="url" :hint="__('catalog.social_network.fields.url_hint')" maxlength="255" alpine-error="url"
