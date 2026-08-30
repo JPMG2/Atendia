@@ -9,8 +9,6 @@ use App\Models\ServiceAttribute;
 class CreateServiceAttribute
 {
     /**
-     * Create a service attribute.
-     *
      * @param  array{
      *     code: string,
      *     name: string,
@@ -20,7 +18,7 @@ class CreateServiceAttribute
      *     options: ?array<int, string>,
      *     sort_order: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma ServiceAttributeForm::transformServiceData().
+     * }  $data  Already validated by ServiceAttributeForm::transformServiceData().
      */
     public function handle(array $data): ServiceAttribute
     {

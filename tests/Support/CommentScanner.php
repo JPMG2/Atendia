@@ -160,8 +160,9 @@ final class CommentScanner
     /**
      * Whether a comment is longer than the rule allows.
      *
-     * A docblock is measured on its prose only: `@param` lines with an array
-     * shape are structure, not an essay, and must not be punished.
+     * A docblock is measured on the description above its first tag. Whatever
+     * follows a tag is structure — an array shape spans lines and is not an
+     * essay.
      */
     public static function isTooLong(string $comment): bool
     {
@@ -171,11 +172,19 @@ final class CommentScanner
             return count($lines) > self::MAX_INLINE_LINES;
         }
 
-        $prose = array_filter($lines, function (string $line): bool {
+        $prose = [];
+
+        foreach ($lines as $line) {
             $line = trim(ltrim(trim($line), '*/ '));
 
-            return $line !== '' && ! str_starts_with($line, '@');
-        });
+            if (str_starts_with($line, '@')) {
+                break;
+            }
+
+            if ($line !== '') {
+                $prose[] = $line;
+            }
+        }
 
         return count($prose) > self::MAX_DOCBLOCK_PROSE;
     }

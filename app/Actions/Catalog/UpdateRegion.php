@@ -9,13 +9,11 @@ use App\Models\Region;
 class UpdateRegion
 {
     /**
-     * Update a region.
-     *
      * @param  array{
      *     province_id: int,
      *     name: string,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma RegionForm::transformServiceData().
+     * }  $data  Already validated by RegionForm::transformServiceData().
      */
     public function handle(int $id, array $data): Region
     {

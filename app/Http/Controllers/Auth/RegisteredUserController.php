@@ -44,8 +44,8 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Rol por defecto: cliente. El rol admin solo se asigna por seeder/comando
-        // en el servidor, nunca por la web pública (ver AdminUserSeeder).
+        // Default role is client. The admin role is only granted by a seeder or a
+        // command on the server, never through the public web.
         $user->assignRole('client');
 
         event(new Registered($user));

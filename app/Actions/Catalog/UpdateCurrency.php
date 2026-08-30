@@ -9,15 +9,13 @@ use App\Models\Currency;
 class UpdateCurrency
 {
     /**
-     * Update a currency.
-     *
      * @param  array{
      *     code: string,
      *     name: string,
      *     symbol: string,
      *     decimal_places: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma CurrencyForm::transformServiceData().
+     * }  $data  Already validated by CurrencyForm::transformServiceData().
      */
     public function handle(int $id, array $data): Currency
     {

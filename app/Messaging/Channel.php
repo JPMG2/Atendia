@@ -9,35 +9,30 @@ use InvalidArgumentException;
 use Throwable;
 
 /**
- * Un canal por el que sale un mensaje del sistema: mail hoy, WhatsApp mañana.
+ * A medium a system message goes out through: mail today, WhatsApp tomorrow.
  *
- * La clase escribe el RITUAL completo —capturar el idioma, aislar la falla— y
- * deja un solo hueco, `deliver()`, para lo único que cada canal hace distinto:
- * poner el mensaje en su vía.
- *
- * Por eso tiene UN método abstracto y tiene que seguir teniendo uno: sumar un
- * canal es sumar una SUBCLASE, nunca un método nuevo acá. Si el día de mañana
- * apareciera un `deliverWhatsapp()`, `Email` quedaría obligada a implementarlo
- * —vacío, porque no sabe mandar un WhatsApp— y ese método vacío devolvería
- * `null` sin avisar: el mensaje no sale y nadie se entera.
+ * The class writes the whole ritual and leaves one hole, `deliver()`, for what
+ * a medium does its own way. That abstract has to stay single: a new medium is
+ * a SUBCLASS. A second one would force Email to implement a delivery it cannot
+ * do, and an empty delivery drops the message in silence.
  */
 abstract class Channel
 {
     /**
-     * El tipo que ESTE canal le exige al mensaje.
+     * What THIS channel demands of the message.
      *
-     * `null` = alcanza con que la clase exista. Cada canal lo pisa con lo suyo
-     * (mail exige un Mailable) sin que el contrato crezca: es una constante que
-     * se sobreescribe, no un método abstracto más.
+     * `null` means the class only has to exist. A channel overrides it with its
+     * own type without the contract growing: it is a constant, not one more
+     * abstract method.
      */
     protected const MESSAGE_CONTRACT = null;
 
     /**
-     * @param  Model  $model  El registro del que habla el mensaje.
-     * @param  array<int, string>  $receives  A quién se le manda. Lo decide el canal, no el mensaje.
-     * @param  class-string  $message  La clase del mensaje a armar (para mail, el Mailable).
+     * @param  Model  $model  The record the message talks about.
+     * @param  array<int, string>  $receives  Who it goes to. The channel decides, not the message.
+     * @param  class-string  $message  The message class to build (a Mailable, for mail).
      *
-     * @throws InvalidArgumentException si `$message` no es una clase usable por este canal.
+     * @throws InvalidArgumentException when `$message` is not usable by this channel.
      */
     public function __construct(
         protected Model $model,
@@ -48,25 +43,38 @@ abstract class Channel
     }
 
     /**
-     * Se planta si `$message` no cumple lo que este canal necesita.
+     * Sends the message through this channel. It is what the rest of the app
+     * calls, and it is the same for every channel — what changes is `deliver()`.
+     */
+    public function send(): void
+    {
+        // Captured here, in the request: a queued message is built in the
+        // worker, where there is no session, and would go out in the fallback
+        // locale instead of the one the person picked.
+        $locale = app()->getLocale();
+
+        try {
+            $this->deliver($locale);
+        } catch (Throwable $e) {
+            // A dead channel cannot undo the operation that fired it: the
+            // company was saved all the same.
+            report($e);
+        }
+    }
+
+    /**
+     * Refuses a `$message` this channel cannot use.
      *
-     * `$message` es lo único del constructor que PHP NO puede garantizar: es un
-     * `string`, y que ese texto sea el nombre de una clase usable es una promesa
-     * que nadie verifica. Sin este chequeo, un typo explota recién al mandar
-     * ("Class not found"), y una clase que no es un mensaje se construye igual y
-     * revienta más adentro, con un error que habla de otra cosa y apunta al
-     * lugar equivocado.
-     *
-     * Falla al CONSTRUIR y no en `send()`: un mensaje mal declarado es un error
-     * de programación, no un servicio caído. El `try/catch` de `send()` está para
-     * que un canal caído no voltee el guardado, no para tapar un nombre mal
-     * escrito — ese tiene que dar la cara.
+     * It is the one constructor argument PHP cannot vouch for: a string naming
+     * a usable class is a promise nobody checks. It throws while CONSTRUCTING,
+     * not while sending — a misdeclared message is a programming error, and the
+     * catch in `send()` is there for a dead service, not for a typo.
      */
     private function guardMessage(string $message): void
     {
         if (! class_exists($message)) {
             throw new InvalidArgumentException(
-                sprintf('[%s] no existe la clase de mensaje "%s".', static::class, $message)
+                sprintf('[%s] no message class named "%s".', static::class, $message)
             );
         }
 
@@ -74,36 +82,11 @@ abstract class Channel
 
         if ($contract !== null && ! is_a($message, $contract, true)) {
             throw new InvalidArgumentException(
-                sprintf('[%s] el mensaje "%s" tiene que ser un %s.', static::class, $message, $contract)
+                sprintf('[%s] the message "%s" has to be a %s.', static::class, $message, $contract)
             );
         }
     }
 
-    /**
-     * Manda el mensaje por este canal.
-     *
-     * Es el método que llama el resto de la app, y es el mismo para todos los
-     * canales: lo que cambia es el `deliver()` de cada uno.
-     */
-    public function send(): void
-    {
-        // El idioma se captura ACÁ, en el request, y viaja con el mensaje. Si no,
-        // un envío encolado se arma en el worker —donde no hay sesión ni request—
-        // y sale en el idioma por defecto en vez del que eligió la persona.
-        $locale = app()->getLocale();
-
-        try {
-            $this->deliver($locale);
-        } catch (Throwable $e) {
-            // Un canal caído no puede voltear la operación que lo disparó: la
-            // compañía se guardó igual. Queda en el log, no en la cara del
-            // usuario.
-            report($e);
-        }
-    }
-
-    /**
-     * Lo único que cada canal sabe hacer distinto.
-     */
+    /** The only thing each channel does its own way. */
     abstract protected function deliver(string $locale): void;
 }

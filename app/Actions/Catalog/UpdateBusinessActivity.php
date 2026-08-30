@@ -9,8 +9,6 @@ use App\Models\BusinessActivity;
 class UpdateBusinessActivity
 {
     /**
-     * Update a business activity.
-     *
      * @param  array{
      *     business_sector_id: int,
      *     code: string,
@@ -18,7 +16,7 @@ class UpdateBusinessActivity
      *     description: ?string,
      *     sort_order: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma BusinessActivityForm::transformServiceData().
+     * }  $data  Already validated by BusinessActivityForm::transformServiceData().
      */
     public function handle(int $id, array $data): BusinessActivity
     {

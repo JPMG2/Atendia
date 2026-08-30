@@ -236,13 +236,10 @@ class AttributeValidator
     }
 
     /**
-     * Build a decimal rule.
-     *
-     * The `numeric` rule is mandatory here: without it Laravel measures the
-     * string length instead of the value, so companion rules such as `gt:0`
-     * would compare the number of characters. For the same reason there is no
-     * `max:MAX_STRING_LENGTH` — on a numeric attribute that would cap the
-     * value at 255, not its length.
+     * `numeric` is mandatory: without it Laravel measures the string length
+     * instead of the value, so a companion `gt:0` would compare characters.
+     * Same reason there is no `max:MAX_STRING_LENGTH` — on a numeric attribute
+     * that caps the value at 255, not its length.
      *
      * @return array<int, string>
      */
@@ -256,15 +253,10 @@ class AttributeValidator
     }
 
     /**
-     * Build an integer rule with a minimum value.
-     *
-     * There is no `max:MAX_STRING_LENGTH` here on purpose: on an attribute
-     * validated as an integer, Laravel's `max` compares the VALUE, so it used
-     * to reject any number above 255. Pass an explicit upper bound at the call
-     * site when a field really needs one.
-     *
-     * There is no XSS regex either: `integer:strict` only lets a real int
-     * through, and an int cannot carry `<` or `>`.
+     * No `max:MAX_STRING_LENGTH` on purpose: on an integer attribute Laravel's
+     * `max` compares the VALUE, so it rejected anything above 255. Pass an
+     * explicit bound at the call site. No XSS regex either — `integer:strict`
+     * only lets a real int through, and an int cannot carry `<` or `>`.
      *
      * @return array<int, string>
      */

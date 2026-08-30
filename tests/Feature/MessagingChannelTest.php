@@ -87,7 +87,7 @@ test('a message class that does not exist is rejected on the spot', function ():
     // A typo used to survive until somebody saved the form in production, and by
     // then the try/catch of send() swallowed it.
     expect(fn () => new Email($company, ['hola@atendia.app'], 'App\\Mail\\NoExiste'))
-        ->toThrow(InvalidArgumentException::class, 'no existe la clase de mensaje');
+        ->toThrow(InvalidArgumentException::class, 'no message class named');
 });
 
 test('the email channel refuses a message that is not a mailable', function (): void {
@@ -96,7 +96,7 @@ test('the email channel refuses a message that is not a mailable', function (): 
     // Company::class builds fine on its own: without the guard the failure would
     // surface inside Mail, far from the line that caused it.
     expect(fn () => new Email($company, ['hola@atendia.app'], Company::class))
-        ->toThrow(InvalidArgumentException::class, 'tiene que ser un');
+        ->toThrow(InvalidArgumentException::class, 'has to be a');
 });
 
 test('a channel with no contract takes any class that exists', function (): void {

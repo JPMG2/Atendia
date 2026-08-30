@@ -10,19 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Deja el autor de cada cambio EN LA PROPIA FILA.
+ * Stamps the author of each change ON THE ROW ITSELF.
  *
- * No reemplaza a spatie/activitylog, que guarda el rastro completo —valores
- * viejos y nuevos— en `activity_log`. Esto es el atajo: poder mostrar "creado
- * por Fulano" en una grilla sin cruzar el log, y que el dato siga ahí aunque el
- * log se purgue.
- *
- * Solo escribe cuando HAY usuario logueado. Seeders, comandos y colas corren sin
- * sesión: ahí la columna queda como está en vez de pisarse con null, porque un
- * autor borrado es peor que un autor ausente.
- *
- * Requiere las columnas `created_by`, `updated_by` y `deleted_by` en la tabla.
- * `deleted_by` solo tiene sentido junto a `softDeletes`.
+ * Not a replacement for spatie/activitylog, which keeps the full trail: this
+ * is the shortcut that shows "created by X" in a grid without joining the log,
+ * and survives its purge. It only writes when a user is logged in — a wiped
+ * author is worse than a missing one. Needs the three `*_by` columns.
  */
 trait TracksUserActions
 {
@@ -35,7 +28,7 @@ trait TracksUserActions
                 return;
             }
 
-            // ??=: si la acción ya declaró el autor a mano, manda ella.
+            // ??=: an action that already named the author wins.
             $model->created_by ??= $userId;
             $model->updated_by ??= $userId;
         });
@@ -47,8 +40,8 @@ trait TracksUserActions
         });
 
         static::deleting(function (Model $model): void {
-            // En un forceDelete la fila desaparece: sellar el autor no tiene a
-            // quién servirle y encima dispara un UPDATE al pedo.
+            // A forceDelete takes the row with it: stamping the author serves
+            // nobody and fires a pointless UPDATE.
             if (method_exists($model, 'isForceDeleting') && $model->isForceDeleting()) {
                 return;
             }
@@ -57,23 +50,23 @@ trait TracksUserActions
                 return;
             }
 
-            // saveQuietly: el borrado ya emite sus propios eventos; sin esto la
-            // grabación del sello dispara `updating`/`updated` de más.
+            // saveQuietly: the delete fires its own events; without this the stamp
+            // would add an `updating`/`updated` of its own.
             $model->deleted_by = Auth::id();
             $model->saveQuietly();
         });
 
         static::restored(function (Model $model): void {
-            // Un registro restaurado no tiene quién lo borró: si el sello queda,
-            // la pantalla muestra un borrador de algo que está vivo.
+            // A restored record has no deleter: leaving the stamp shows the screen
+            // someone who deleted a row that is alive.
             $model->deleted_by = null;
             $model->saveQuietly();
         });
     }
 
     /**
-     * Usuario que dio de alta el registro. Null si lo creó un seeder o un
-     * proceso de fondo, o si esa cuenta se eliminó después.
+     * Who created the record. Null when a seeder or a background process did, or
+     * when that account was deleted afterwards.
      *
      * @return BelongsTo<User, $this>
      */

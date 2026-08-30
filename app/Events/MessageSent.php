@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Prueba de vida del WebSocket, ahora sobre un canal PRIVADO por negocio.
+ * Proof of life for the WebSocket, over a PRIVATE per-business channel.
  *
- * El mensaje viaja únicamente a quienes el callback de `routes/channels.php`
- * autoriza: los usuarios de ese negocio, más el dueño.
+ * It only reaches whoever the callback in `routes/channels.php` authorises:
+ * the users of that business, plus the owner.
  */
 class MessageSent implements ShouldBroadcast
 {

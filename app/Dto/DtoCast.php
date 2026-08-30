@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Casts compartidos por los DTO de los maestros.
+ * Casts shared by the catalog DTOs.
  *
- * Cada DTO tenía su propia copia privada de estos dos métodos, con el mismo
- * comentario explicando la misma trampa. Acá viven una sola vez.
+ * Every DTO used to carry its own private copy of these two, down to the
+ * comment explaining the same trap. Here they live once.
  */
 final class DtoCast
 {
     /**
-     * Id de una FK que llega del front.
+     * A foreign key arriving from the front.
      *
-     * El combobox manda el id como STRING ("3"), y los DTO corren con
-     * `strict_types`: pasarlo tal cual a un parámetro `?int` es un TypeError que
-     * mata el componente (419, editor en blanco). El "sin elegir" llega como '',
-     * y eso es null, no 0 — un 0 pasaría por `exists` como id inexistente.
+     * The combobox sends the id as a string and DTOs run under `strict_types`:
+     * passing it to a `?int` is a TypeError that kills the component (419, blank
+     * editor). "Nothing picked" arrives as '' and means null, not 0 — a 0 would
+     * reach `exists` as a missing id.
      */
     public static function toNullableId(mixed $value): ?int
     {
@@ -30,11 +30,11 @@ final class DtoCast
     }
 
     /**
-     * Texto de una columna nullable.
+     * Text for a nullable column.
      *
-     * Un input vacío llega como '' y la columna admite null: se guarda null, no
-     * una cadena vacía. Si no, media tabla queda con valores "presentes pero
-     * vacíos" que `whereNull` no encuentra nunca.
+     * An empty input arrives as '' and the column takes null, so null is stored.
+     * Otherwise half the table holds values that are present but empty, which
+     * `whereNull` never finds.
      */
     public static function toNullableString(mixed $value): ?string
     {

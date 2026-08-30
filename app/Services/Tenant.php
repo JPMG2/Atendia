@@ -7,27 +7,22 @@ namespace App\Services;
 use Closure;
 
 /**
- * Quién es el negocio actual.
+ * Which business is the current one.
  *
- * Por defecto sale del usuario logueado. Se puede fijar a mano para los
- * contextos donde NO hay sesión —colas, comandos, seeders—, que es justo donde
- * el aislamiento se rompe si nadie se acuerda.
- *
- * Es un singleton del contenedor, no estático: el contenedor se reconstruye
- * entre tests, así que un negocio fijado en un test no se filtra al siguiente.
- *
- * `null` significa "sin negocio" y desactiva el filtro. Eso es correcto para el
- * admin (el dueño de AtendIa no es inquilino de nadie) y para los procesos de
- * fondo, que tienen que poder tocar los datos de cualquiera.
+ * It comes from the logged-in user, and can be set by hand where there is no
+ * session — queues, commands, seeders — which is exactly where isolation
+ * breaks if nobody remembers. A container singleton rather than static state,
+ * so a business set in one test does not leak into the next. `null` disables
+ * the filter, which is right for the admin and for background processes.
  */
 class Tenant
 {
     private ?int $businessId = null;
 
     /**
-     * Un id fijado a mano gana sobre el usuario logueado. La bandera es
-     * necesaria porque fijar `null` es una orden válida ("actuá como admin"),
-     * distinta de "no fijé nada".
+     * An id set by hand beats the logged-in user. The flag is needed because
+     * setting `null` is a valid order ("act as admin"), which is not the same
+     * as never having set anything.
      */
     private bool $overridden = false;
 
@@ -53,8 +48,8 @@ class Tenant
     }
 
     /**
-     * Corre el callback en el contexto de un negocio y restaura lo anterior,
-     * incluso si el callback explota. Para jobs: `Tenant::for($id, fn () => ...)`.
+     * Runs the callback in a business context and restores the previous one even
+     * if it blows up. For jobs: `Tenant::for($id, fn () => ...)`.
      */
     public function for(?int $businessId, Closure $callback): mixed
     {

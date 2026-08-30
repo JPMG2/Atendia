@@ -13,14 +13,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
- * Resuelve el locale de la visita con esta prioridad:
+ * Resolves the visit's locale: the user's own choice in session first, then
+ * geolocation by IP, then the default.
  *
- *   1. Elección explícita del usuario (sesión) — manda siempre.
- *   2. Geolocalización por IP (stevebauman/location), cacheada por IP.
- *   3. Locale por defecto (config('locales.default')).
- *
- * La geolocalización solo SUGIERE: en cuanto el usuario elige una variante
- * desde el selector, queda fija en sesión y no se vuelve a geolocalizar.
+ * Geolocation only SUGGESTS — once someone picks a variant in the selector it
+ * sticks in session and no lookup happens again.
  */
 class SetLocale
 {
@@ -50,8 +47,8 @@ class SetLocale
     {
         $ip = $request->ip();
 
-        // Las IPs privadas/locales no geolocalizan (entorno de desarrollo,
-        // requests internos). Evitamos pegarle a la API en vano.
+        // Private and local IPs never geolocate (development, internal requests):
+        // no point calling the API for them.
         if ($ip === null || in_array($ip, ['127.0.0.1', '::1'], true)) {
             return $default;
         }

@@ -18,14 +18,10 @@ class NewCompany extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     /**
-     * El mensaje sabe QUÉ decir; a quién se le manda es asunto del canal.
-     *
-     * Por eso acá entra solo el modelo, y no los destinatarios: guardarlos en
-     * los dos lados deja el mismo dato en dos lugares que pueden contradecirse.
-     *
-     * Va público a propósito: Laravel pasa las propiedades públicas de un
-     * Mailable a su vista, así que `emails.new.company` puede leer `$model` sin
-     * que haya que declarar un `with()`.
+     * The message knows WHAT to say; who reads it is the channel's business, so
+     * only the model comes in. Public on purpose: Laravel hands a Mailable's
+     * public properties to its view, so `emails.new.company` reads `$model`
+     * without a `with()`.
      */
     public function __construct(
         public Model $model,

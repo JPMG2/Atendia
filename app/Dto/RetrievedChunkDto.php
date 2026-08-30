@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Un fragmento recuperado por similitud, listo para armar el contexto del
- * asistente. `distance` es la distancia coseno (0 = idéntico); la similitud
- * equivalente es 1 - distance.
+ * A chunk retrieved by similarity, ready to build the assistant's context.
+ * `distance` is the cosine distance (0 = identical); the matching similarity
+ * is 1 - distance.
  */
 final readonly class RetrievedChunkDto
 {

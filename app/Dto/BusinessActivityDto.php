@@ -65,8 +65,8 @@ class BusinessActivityDto implements FormData
     {
         return [
             'business_sector_id' => $this->business_sector_id,
-            // Las dos normalizaciones son las del modelo: el código en minúscula
-            // (es la clave del oficio) y el nombre tal cual lo escribe el usuario.
+            // Both normalisations belong to the model: the code is lowercased
+            // because it is the trade's key, the name is kept as typed.
             'code' => BusinessSector::normalizeCode($this->code),
             'name' => BusinessSector::normalizeName($this->name),
             'description' => $this->description,

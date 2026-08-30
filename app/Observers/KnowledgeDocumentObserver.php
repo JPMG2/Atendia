@@ -10,8 +10,8 @@ use App\Models\KnowledgeDocument;
 class KnowledgeDocumentObserver
 {
     /**
-     * Recalcula el hash del contenido y marca el documento como pendiente cuando
-     * el texto cambia. Solo el contenido dispara re-indexado: editar el título no.
+     * Recomputes the content hash and marks the document pending when the text
+     * changes. Only content triggers re-indexing — editing the title does not.
      */
     public function saving(KnowledgeDocument $document): void
     {
@@ -22,7 +22,7 @@ class KnowledgeDocumentObserver
     }
 
     /**
-     * Al crear, siempre hay contenido para indexar → encola una vez.
+     * A new document always has content to index, so it queues once.
      */
     public function created(KnowledgeDocument $document): void
     {
@@ -32,9 +32,8 @@ class KnowledgeDocumentObserver
     }
 
     /**
-     * Al actualizar, re-indexa SOLO si el contenido cambió (el hash cambió). Editar
-     * el título no reindexar; y cuando el job escribe `status`/`indexed_at`, el hash
-     * no cambia, así que no se re-dispara (nada de bucles).
+     * Re-indexes only when the hash moved. Editing the title does not, and when
+     * the job writes `status`/`indexed_at` the hash stays put — so no loops.
      */
     public function updated(KnowledgeDocument $document): void
     {

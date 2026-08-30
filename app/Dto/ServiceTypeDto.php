@@ -57,8 +57,8 @@ class ServiceTypeDto implements FormData
             code: $data['code'] ?? '',
             name: $data['name'] ?? '',
             description: DtoCast::toNullableString($data['description'] ?? null),
-            // Los combobox mandan el id como string y el DTO corre con
-            // strict_types: sin el cast es un TypeError (419, editor en blanco).
+            // Comboboxes send the id as a string and the DTO runs under strict_types:
+            // without the cast it is a TypeError (419, blank editor).
             service_modality_id: DtoCast::toNullableId($data['service_modality_id'] ?? null),
             business_sector_id: DtoCast::toNullableId($data['business_sector_id'] ?? null),
             sort_order: (int) ($data['sort_order'] ?? 0),

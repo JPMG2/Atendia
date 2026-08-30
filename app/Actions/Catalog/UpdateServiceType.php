@@ -9,8 +9,6 @@ use App\Models\ServiceType;
 class UpdateServiceType
 {
     /**
-     * Update a service type.
-     *
      * @param  array{
      *     code: string,
      *     name: string,
@@ -19,7 +17,7 @@ class UpdateServiceType
      *     business_sector_id: ?int,
      *     sort_order: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma ServiceTypeForm::transformServiceData().
+     * }  $data  Already validated by ServiceTypeForm::transformServiceData().
      */
     public function handle(int $id, array $data): ServiceType
     {

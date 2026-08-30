@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
     }
 
     /**
-     * Nombre del dispositivo que pide el token (para poder revocarlo luego).
+     * Name of the device asking for the token, so it can be revoked later.
      */
     public function deviceName(): string
     {

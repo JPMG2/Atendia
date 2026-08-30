@@ -17,9 +17,8 @@ class IndexKnowledgeDocument implements ShouldQueue
     public function __construct(public int $documentId) {}
 
     /**
-     * Indexa el documento en segundo plano. Si desapareció (borrado), no hace nada.
-     * Ante un fallo (p. ej. la API de embeddings), marca `failed` y relanza para
-     * que la cola reintente.
+     * Indexes the document in the background; a document that is gone is a no-op.
+     * On failure it marks `failed` and rethrows so the queue retries.
      */
     public function handle(KnowledgeIndexer $indexer): void
     {

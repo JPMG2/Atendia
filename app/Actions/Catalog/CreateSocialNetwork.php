@@ -9,15 +9,13 @@ use App\Models\SocialNetwork;
 class CreateSocialNetwork
 {
     /**
-     * Create a social network.
-     *
      * @param  array{
      *     name: string,
      *     url: string,
      *     icon: string|null,
      *     abbreviation: string|null,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma SocialNetworkForm::transformServiceData().
+     * }  $data  Already validated by SocialNetworkForm::transformServiceData().
      */
     public function handle(array $data): SocialNetwork
     {

@@ -7,14 +7,12 @@ namespace App\Dto;
 use App\Interfaces\Catalog\FormData;
 
 /**
- * El estado del formulario de la Compañía (AtendIa, el emisor de la factura).
+ * State of the company form — AtendIa itself, the one issuing the invoice.
  *
- * `country_id` y `province_id` NO son columnas de `companies`: la tabla guarda
- * solo `region_id`. Viven acá porque la pantalla pide el domicilio de lo general
- * a lo puntual (país → provincia → región) y esos dos campos necesitan estado
- * donde apoyarse. Por eso entran en `toArray()` (Livewire tiene que poder
- * hidratarlos) pero quedan FUERA de `toPayload()`: lo que se persiste es la
- * región, y el resto se vuelve a derivar de ella al cargar.
+ * `country_id` and `province_id` are not columns: the table stores `region_id`
+ * alone. They live here because the screen asks for the address from broad to
+ * narrow and those two need somewhere to stand. Hence they are in `toArray()`,
+ * which Livewire hydrates from, but out of `toPayload()`.
  */
 class CompanyDto implements FormData
 {
@@ -95,11 +93,10 @@ class CompanyDto implements FormData
     }
 
     /**
-     * Solo las columnas de `companies`: país y provincia se quedan afuera.
+     * Columns only: country and province stay out.
      *
-     * Los textos se limpian de espacios y los nullable vuelven a null, así una
-     * columna vacía no queda con `''` — un valor "presente pero vacío" que
-     * `whereNull` no encuentra nunca.
+     * Text is trimmed and nullable columns go back to null, so an empty one never
+     * holds `''` — present but empty, which `whereNull` never finds.
      */
     public function toPayload(): array
     {
@@ -120,8 +117,8 @@ class CompanyDto implements FormData
     }
 
     /**
-     * Colapsa los espacios de un texto escrito a mano y devuelve null si no
-     * quedó nada. Mismo criterio que el `normalizeName` de los maestros.
+     * Collapses the whitespace of hand-typed text, null when nothing is left.
+     * Same criterion as `normalizeName` in the catalog models.
      */
     private static function squish(?string $value): ?string
     {

@@ -7,9 +7,9 @@ namespace App\Services\Knowledge;
 class KnowledgeChunker
 {
     /**
-     * Parte un texto en fragmentos de ~`max_chars` con `overlap_chars` de solape,
-     * cortando en límites de palabra (nunca a mitad de palabra). El solape evita
-     * perder contexto en el borde entre fragmentos contiguos.
+     * Splits text into ~`max_chars` chunks overlapping by `overlap_chars`, always
+     * cutting on a word boundary. The overlap keeps the edge between two
+     * neighbouring chunks from losing its context.
      *
      * @return list<array{content: string, token_count: int}>
      */
@@ -36,7 +36,7 @@ class KnowledgeChunker
                 $chunks[] = $current;
                 $current = $this->tail($current, $overlapChars);
 
-                continue; // reintenta la misma palabra sobre el fragmento con solape
+                continue; // retry the same word against the overlapping chunk
             }
 
             $current = $candidate;
@@ -57,8 +57,8 @@ class KnowledgeChunker
     }
 
     /**
-     * Devuelve la cola del texto (~$chars caracteres) empezando en un límite de
-     * palabra, para sembrar el siguiente fragmento con solape.
+     * The tail of the text (~$chars) starting on a word boundary, to seed the
+     * next chunk with its overlap.
      */
     private function tail(string $text, int $chars): string
     {

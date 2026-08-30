@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Knowledge;
 
 use App\Dto\RetrievedChunkDto;
-use App\Services\Tenant;
 use App\Models\KnowledgeChunk;
+use App\Services\Tenant;
+use App\Traits\BelongsToBusiness;
 use Illuminate\Support\Collection;
 
 class KnowledgeRetriever
@@ -16,14 +17,12 @@ class KnowledgeRetriever
     ) {}
 
     /**
-     * Recupera los `top_k` fragmentos más parecidos a la consulta, SIEMPRE
-     * acotados a un negocio (multi-tenant: jamás cruza `business_id`). Embeddea
-     * la consulta a mano para usar el mismo modelo/dims que el indexado.
+     * The `top_k` chunks closest to the query, ALWAYS bounded to one business.
      *
-     * El aislamiento NO se hace acá con un `where`: se adopta el negocio y lo
-     * aplica el scope de {@see \App\Traits\BelongsToBusiness}. Una sola fuente
-     * de verdad. Además funciona en cola o en consola, donde no hay sesión y un
-     * filtro olvidado dejaría que la IA responda con documentos de otro negocio.
+     * The isolation is not a `where` here: the business is adopted and the scope
+     * of {@see BelongsToBusiness} applies it, so there is a single
+     * source of truth. It also works on a queue or in the console, where a
+     * forgotten filter would answer with another business's documents.
      *
      * @return Collection<int, RetrievedChunkDto>
      */
@@ -48,8 +47,8 @@ class KnowledgeRetriever
     }
 
     /**
-     * Arma un bloque de contexto con citas [título] para pasarle al asistente
-     * como grounding. Vacío si no hay conocimiento para esa empresa.
+     * Builds a context block with [title] citations to ground the assistant.
+     * Empty when that company has no knowledge yet.
      */
     public function context(string $query, int $businessId, ?int $limit = null): string
     {

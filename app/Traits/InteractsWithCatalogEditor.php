@@ -13,32 +13,30 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 
 /**
- * Las acciones de server de un editor de catálogo, UNA sola vez.
+ * The server actions of a catalog editor, written once.
  *
- * Los 9 editores hacían exactamente lo mismo —guardar, avisar, limpiar el form y
- * refrescar la tabla—; lo único que cambiaba era el nombre del método del Form
- * (`storeCurrency` vs `storeBusinessActivity`). Con `BaseCatalogForm` ese nombre
- * pasó a ser el mismo en todos, así que el bloque entero pudo mudarse acá.
- *
- * El editor solo declara su Form y su modelo; lo demás son sus campos en Blade.
+ * The 9 editors did the same thing — save, notify, clear the form, refresh the
+ * table — and only the Form's method name differed. `BaseCatalogForm` made that
+ * name the same everywhere, so the whole block could move here. An editor now
+ * declares its Form and its model; the rest are its fields in Blade.
  */
 trait InteractsWithCatalogEditor
 {
     use HasNotifications;
 
     /**
-     * Semilla del riel de Alpine, CONGELADA al montar. Ver el comentario de
-     * `<x-catalog.master>`: si cambiara, Alpine re-inicializaría el editor.
+     * Seed of the Alpine rail, FROZEN at mount. See `<x-catalog.master>`: were it
+     * to change, Alpine would re-initialise the editor.
      *
      * @var array<int, array<string, mixed>>
      */
     #[Locked]
     public array $initialRows = [];
 
-    /** El Form del maestro. Cada editor lo declara con su tipo concreto. */
+    /** The master's Form. Each editor declares it with its concrete type. */
     abstract protected function catalogForm(): BaseCatalogForm;
 
-    /** El modelo del maestro, que sabe describir sus propias filas. */
+    /** The master's model, which knows how to describe its own rows. */
     abstract protected function catalogModel(): DataTable;
 
     public function mount(): void
@@ -49,8 +47,8 @@ trait InteractsWithCatalogEditor
     }
 
     /**
-     * Devuelve si se guardó, para que Alpine sepa si volver a la lista o dejar
-     * al usuario en el formulario con lo que escribió.
+     * Returns whether it saved, so Alpine knows whether to go back to the list or
+     * leave the person in the form with what they typed.
      */
     public function create(): bool
     {
@@ -63,8 +61,8 @@ trait InteractsWithCatalogEditor
     }
 
     /**
-     * Devuelve si se pudo abrir. Si el registro ya no existe avisa y el front se
-     * queda en la lista, en vez de mostrar un formulario vacío o un 404 crudo.
+     * Returns whether it could open. A record that is gone gets a notice and the
+     * front stays on the list, instead of an empty form or a raw 404.
      */
     public function openEdit(int $id): bool
     {
@@ -80,8 +78,8 @@ trait InteractsWithCatalogEditor
     }
 
     /**
-     * Un alta arranca en blanco: vaciar el estado de Alpine no alcanza, el form
-     * del server sigue con el registro que se abrió antes.
+     * A new record starts blank: clearing Alpine's state is not enough, the
+     * server form still holds the record opened before.
      */
     public function openCreate(): void
     {
@@ -89,9 +87,9 @@ trait InteractsWithCatalogEditor
     }
 
     /**
-     * Filas del maestro para el riel de Alpine. Se entregan una sola vez al
-     * montar: el buscador y el contador filtran client-side, sin request al
-     * server. La forma de cada fila la decide el modelo, no el editor.
+     * Rows for the Alpine rail, handed over once at mount: the search box and the
+     * counter filter client-side, with no request. The model decides the shape of
+     * a row, not the editor.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -102,9 +100,9 @@ trait InteractsWithCatalogEditor
     }
 
     /**
-     * El único lugar donde se decide qué pasa después de escribir. Acá va la
-     * gate el día que la autorización deje de estar solo en el middleware del
-     * panel admin — una vez, no nueve. Ver la memoria del pendiente.
+     * The single place deciding what happens after a write. The gate goes here
+     * the day authorisation stops living only in the admin panel middleware —
+     * once, not nine times.
      */
     private function persist(NotificationDto $notification): bool
     {

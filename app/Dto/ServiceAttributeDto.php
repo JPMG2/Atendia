@@ -10,11 +10,9 @@ use App\Models\ServiceAttribute;
 class ServiceAttributeDto implements FormData
 {
     /**
-     * Create a new class instance.
-     *
-     * `options` viaja como TEXTO separado por coma, que es lo que escribe el
-     * admin en el campo. La columna es jsonb: la conversión a lista la hace
-     * `toPayload()` con el normalizador del modelo, en un solo lugar.
+     * `options` travels as comma-separated text, which is what the admin types.
+     * The column is jsonb: `toPayload()` turns it into a list with the model's
+     * normaliser, in one place.
      */
     public function __construct(
         public string $code = '',
@@ -69,8 +67,8 @@ class ServiceAttributeDto implements FormData
             description: DtoCast::toNullableString($data['description'] ?? null),
             data_type: (string) ($data['data_type'] ?? ServiceAttribute::FALLBACK_DATA_TYPE),
             unit: DtoCast::toNullableString($data['unit'] ?? null),
-            // Al editar, el valor llega como LISTA (columna jsonb); al volver del
-            // formulario, como el texto que escribió el admin. Las dos entran.
+            // Editing hands over a list (the jsonb column); coming back from the
+            // form, the text the admin typed. Both are accepted.
             options: DtoCast::toNullableString(is_array($options) ? implode(', ', $options) : $options),
             is_multiple: $data['is_multiple'] ?? false,
             sort_order: (int) ($data['sort_order'] ?? 0),
@@ -86,8 +84,8 @@ class ServiceAttributeDto implements FormData
             'description' => $this->description,
             'data_type' => $this->data_type,
             'unit' => $this->unit,
-            // Solo la lista usa opciones: si el tipo es otro, se guardan en null
-            // en vez de dejar una lista huérfana que nadie va a mostrar.
+            // Only the list type uses options: anything else stores null rather
+            // than an orphan list nobody will ever show.
             'options' => $this->data_type === 'list'
                 ? ServiceAttribute::normalizeOptions($this->options)
                 : null,

@@ -9,8 +9,6 @@ use App\Models\ServiceAttribute;
 class UpdateServiceAttribute
 {
     /**
-     * Update a service attribute.
-     *
      * @param  array{
      *     code: string,
      *     name: string,
@@ -20,7 +18,7 @@ class UpdateServiceAttribute
      *     options: ?array<int, string>,
      *     sort_order: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma ServiceAttributeForm::transformServiceData().
+     * }  $data  Already validated by ServiceAttributeForm::transformServiceData().
      */
     public function handle(int $id, array $data): ServiceAttribute
     {

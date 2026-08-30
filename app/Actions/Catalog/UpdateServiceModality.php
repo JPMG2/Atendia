@@ -9,8 +9,6 @@ use App\Models\ServiceModality;
 class UpdateServiceModality
 {
     /**
-     * Update a service modality.
-     *
      * @param  array{
      *     code: string,
      *     name: string,
@@ -18,7 +16,7 @@ class UpdateServiceModality
      *     icon: ?string,
      *     sort_order: int,
      *     is_active: bool
-     * }  $data  Payload YA validado, tal como lo arma ServiceModalityForm::transformServiceData().
+     * }  $data  Already validated by ServiceModalityForm::transformServiceData().
      */
     public function handle(int $id, array $data): ServiceModality
     {

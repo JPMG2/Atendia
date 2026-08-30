@@ -15,8 +15,8 @@ class KnowledgeIndexer
     ) {}
 
     /**
-     * (Re)indexa un documento: borra sus fragmentos viejos, re-fragmenta, embeddea
-     * en batch y persiste. Idempotente: correrlo dos veces deja el mismo resultado.
+     * (Re)indexes a document: drops its old chunks, splits again, embeds in batch
+     * and stores. Idempotent — running it twice leaves the same result.
      */
     public function index(KnowledgeDocument $document): void
     {

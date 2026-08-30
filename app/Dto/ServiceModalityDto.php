@@ -56,8 +56,8 @@ class ServiceModalityDto implements FormData
             name: $data['name'] ?? '',
             description: DtoCast::toNullableString($data['description'] ?? null),
             icon: DtoCast::toNullableString($data['icon'] ?? null),
-            // El input manda el número como string y la propiedad es `int`: sin
-            // el cast es un TypeError, porque el DTO corre con strict_types.
+            // The input sends the number as a string and the property is `int`:
+            // under strict_types, skipping the cast is a TypeError.
             sort_order: (int) ($data['sort_order'] ?? 0),
             is_active: $data['is_active'] ?? true,
         );
@@ -66,9 +66,8 @@ class ServiceModalityDto implements FormData
     public function toPayload(): array
     {
         return [
-            // Se normaliza ANTES de validar: el unique tiene que mirar el mismo
-            // valor que se va a guardar, o "CITA" pasaría el unique y entraría
-            // como "cita" chocando en la base.
+            // Normalised BEFORE validating: unique has to look at the value that
+            // will be stored, or "CITA" would pass and land as "cita", colliding.
             'code' => ServiceModality::normalizeCode($this->code),
             'name' => ServiceModality::normalizeName($this->name),
             'description' => $this->description,

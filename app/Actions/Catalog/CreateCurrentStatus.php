@@ -9,11 +9,9 @@ use App\Models\CurrentStatus;
 class CreateCurrentStatus
 {
     /**
-     * Create a status.
-     *
      * @param  array{
      *     name: string
-     * }  $data  Payload YA validado, tal como lo arma CurrentStatusForm::transformServiceData().
+     * }  $data  Already validated by CurrentStatusForm::transformServiceData().
      */
     public function handle(array $data): CurrentStatus
     {

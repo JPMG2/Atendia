@@ -15,12 +15,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Autenticación de la app móvil vía tokens Bearer de Sanctum.
+ * Mobile app authentication through Sanctum bearer tokens.
  */
 class AuthController extends Controller
 {
     /**
-     * Registra un usuario y devuelve su primer token de acceso.
+     * Registers a user and hands back their first access token.
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -61,7 +61,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Revoca únicamente el token con el que se hizo esta petición.
+     * Revokes only the token this request was made with.
      */
     public function logout(Request $request): JsonResponse
     {
@@ -70,9 +70,6 @@ class AuthController extends Controller
         return response()->json(['message' => __('Sesión cerrada correctamente.')]);
     }
 
-    /**
-     * Devuelve el usuario autenticado.
-     */
     public function me(Request $request): UserResource
     {
         return UserResource::make($request->user());

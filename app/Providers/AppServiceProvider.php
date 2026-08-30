@@ -30,10 +30,10 @@ class AppServiceProvider extends ServiceProvider
     #[\Override]
     public function register(): void
     {
-        // SINGLETON obligatorio: el scope de aislamiento y quien adopta un negocio
-        // (jobs, KnowledgeRetriever) tienen que estar mirando la MISMA instancia.
-        // Sin esto cada app(Tenant::class) devuelve una nueva, el negocio fijado se
-        // pierde y el filtro no se aplica: se leen datos de todos los negocios.
+        // SINGLETON, not optional: the isolation scope and whoever adopts a
+        // business have to look at the SAME instance. Otherwise every resolve
+        // hands back a new one, the business set is lost and the filter never
+        // applies — every business's data becomes readable.
         $this->app->singleton(Tenant::class);
     }
 
@@ -57,12 +57,10 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureCommands(): void
     {
-        // El dato de trabajo vive en 'atendia' AUNQUE APP_ENV sea 'local' (no 'production'),
-        // así que gatear por isProduction() dejaría 'atendia' DESPROTEGIDA. Bloqueamos los
-        // comandos destructivos (migrate:fresh/refresh/reset, db:wipe) SIEMPRE, salvo cuando
-        // la base activa es EXACTAMENTE la de testing. Esto cubre el CLI directo Y el
-        // RefreshDatabase (que corre migrate:fresh por dentro), en Unit o Feature, extienda
-        // o no el guard de TestCase. Ver .ai/guidelines/migraciones-seguras.md.
+        // The working data lives in 'atendia' even though APP_ENV is 'local', so
+        // gating on isProduction() would leave it UNPROTECTED. The destructive
+        // commands are blocked always, except when the active database is exactly
+        // the testing one. See .ai/guidelines/migraciones-seguras.md.
         $connection = config('database.default');
         $database = config("database.connections.{$connection}.database");
 
@@ -77,8 +75,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Super-admin: el rol "admin" pasa cualquier gate/policy. Es lo que permite
-     * que el admin acceda también al panel cliente (ver arquitectura de paneles).
+     * Super-admin: the "admin" role passes any gate or policy. That is what
+     * lets the admin reach the client panel too.
      */
     private function configureAuthorization(): void
     {
@@ -86,12 +84,10 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * En los requests que siguen (POST /livewire/update) Livewire NO re-aplica el
-     * middleware de la ruta original: solo el de su lista blanca (Authenticate,
-     * Authorize…). Los de spatie no están, así que sin esto un permiso revocado
-     * seguiría pasando hasta que el usuario recargue la página.
-     *
-     * Ver .ai/guidelines/arquitectura-paneles.md (la cerradura va en middleware/policy).
+     * On the requests that follow, Livewire does not re-apply the original
+     * route's middleware — only the ones on its allowlist, and spatie's are not
+     * there. Without this a revoked permission would keep passing until the
+     * page is reloaded. See .ai/guidelines/arquitectura-paneles.md.
      */
     private function configureLivewire(): void
     {
@@ -116,15 +112,15 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Límites de tasa para la API consumida por la app móvil.
+     * Rate limits for the API the mobile app consumes.
      */
     private function configureRateLimiting(): void
     {
-        // General: 60 req/min por usuario autenticado (o por IP si es anónimo).
+        // General: 60 req/min per authenticated user, or per IP when anonymous.
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
             ->by($request->user()?->id ?: $request->ip()));
 
-        // Login/registro: estricto para frenar fuerza bruta (por email + IP).
+        // Login and register: strict, to slow brute force down (email + IP).
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
             ->by(((string) $request->input('email')).'|'.$request->ip()));
     }

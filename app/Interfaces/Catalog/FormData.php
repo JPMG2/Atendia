@@ -7,37 +7,33 @@ namespace App\Interfaces\Catalog;
 use Livewire\Wireable;
 
 /**
- * El DTO que carga un editor de catálogo.
+ * The DTO a catalog editor carries.
  *
- * `BaseCatalogForm` guarda el DTO en UNA propiedad `$data` compartida por los 9
- * maestros, así que su tipo no puede ser `CurrencyDto`: tiene que ser lo que los
- * nueve tienen en común. Esta interfaz es ese tipo, y de paso es la cerradura —
- * un DTO nuevo que se olvide `toPayload()` revienta al cargar la clase, igual
- * que [[DataTable]] del lado del modelo.
- *
- * Livewire hidrata bien igual: `WireableSynth` guarda la clase CONCRETA en el
- * metadato del snapshot, no el tipo de la propiedad.
+ * `BaseCatalogForm` keeps it in ONE `$data` property shared by the 9 masters,
+ * so its type has to be what the nine have in common. This interface is that
+ * type, and the lock too: a new DTO that forgets `toPayload()` breaks when the
+ * class loads. Livewire still hydrates fine — the snapshot metadata records
+ * the concrete class, not the property's type.
  */
 interface FormData extends Wireable
 {
     /**
-     * Reconstruye el DTO desde un array (el `toArray()` del modelo al editar).
+     * Rebuilds the DTO from an array (the model's `toArray()` when editing).
      *
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self;
 
     /**
-     * El estado del DTO tal cual, para Livewire y para volver a armarlo.
+     * The DTO's state as is, for Livewire and for rebuilding it.
      *
      * @return array<string, mixed>
      */
     public function toArray(): array;
 
     /**
-     * Lo que se manda a validar y a la Action: los mismos datos ya normalizados
-     * por el modelo (mayúsculas de un código, espacios de un nombre, null de una
-     * columna nullable).
+     * What goes to validation and to the Action: the same data already
+     * normalised by the model — a code's case, a name's spacing, a null column.
      *
      * @return array<string, mixed>
      */

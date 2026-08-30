@@ -35,7 +35,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Panel de aterrizaje según capacidad: admin → /admin, resto → /dashboard.
+     * Landing panel by capability: admin → /admin, everyone else → /dashboard.
      */
     private function panelHomeFor(User $user): string
     {

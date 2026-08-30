@@ -11,18 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Aísla el modelo por negocio.
+ * Isolates the model per business: it scopes every query to the current one
+ * AND fills `business_id` on create. Both halves are needed — without the
+ * second, a row is born ownerless and invisible to everyone.
  *
- * Hace las DOS mitades, y las dos hacen falta:
- *   - filtra toda consulta por el negocio actual;
- *   - completa `business_id` al crear.
- *
- * Sin la segunda, el registro nace sin dueño y queda invisible para todos. Con
- * la columna en NOT NULL eso explota en la base, que es la falla que querés:
- * ruidosa y en el momento, no un dato huérfano descubierto tres meses después.
- *
- * El filtro se aplica SOLO cuando hay un negocio actual. Sin negocio no filtra,
- * y eso es a propósito: es el admin y son los procesos de fondo. Ver {@see Tenant}.
+ * It only scopes when there IS a current business. No business means no
+ * filter, on purpose: that is the admin and the background jobs. {@see Tenant}
  */
 trait BelongsToBusiness
 {
@@ -35,8 +29,8 @@ trait BelongsToBusiness
                 return;
             }
 
-            // qualifyColumn: sin el nombre de la tabla, un join contra otra tabla
-            // que también tenga `business_id` deja la consulta ambigua.
+            // qualifyColumn: without the table name, a join against another table
+            // that also has `business_id` leaves the query ambiguous.
             $builder->where($builder->getModel()->qualifyColumn('business_id'), $businessId);
         });
 

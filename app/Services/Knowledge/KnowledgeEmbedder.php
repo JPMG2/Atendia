@@ -10,9 +10,9 @@ use Laravel\Ai\Enums\Lab;
 class KnowledgeEmbedder
 {
     /**
-     * Embeddea uno o más textos con el MISMO modelo/dimensiones que la columna
-     * `vector` (config/rag.php). Centralizarlo garantiza que indexado y consulta
-     * usen el mismo espacio vectorial; si no, la similitud no significa nada.
+     * Embeds text with the SAME model and dimensions as the `vector` column.
+     * Keeping it in one place is what guarantees indexing and querying share a
+     * vector space — otherwise similarity means nothing.
      *
      * @param  list<string>  $texts
      * @return list<list<float>>
