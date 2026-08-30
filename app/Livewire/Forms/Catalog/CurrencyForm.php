@@ -33,9 +33,9 @@ class CurrencyForm extends BaseCatalogForm
 
             'name' => AttributeValidator::stringValid(true, '3'),
 
-            // La columna es varchar(10) y el input pone maxlength=5: sin este tope
-            // el max:255 que trae stringValid dejaba pasar un símbolo que después
-            // reventaba en Postgres. 5 es lo que ya pide la UI ("$, US$, €").
+            // The column is varchar(10) and the input caps at 5: without this the
+            // max:255 from stringValid let through a symbol that then blew up in
+            // Postgres.
             'symbol' => [
                 ...AttributeValidator::stringValid(true, '1'),
                 'max:5',

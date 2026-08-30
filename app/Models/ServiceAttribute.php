@@ -18,10 +18,10 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * Atributo de servicio: un campo REUTILIZABLE que un tipo de servicio puede llevar.
+ * A REUSABLE field a service type can carry.
  *
- * `Precio` es el mismo atributo en Plato y en Combo. Qué tipo lo lleva —y si ahí
- * es obligatorio— vive en el pivot, no acá.
+ * "Price" is the same attribute on a dish and on a combo. Which type carries
+ * it — and whether it is required there — lives in the pivot, not here.
  */
 #[Fillable(['code', 'name', 'description', 'data_type', 'unit', 'options', 'is_multiple', 'sort_order', 'is_active'])]
 class ServiceAttribute extends Model implements DataTable
@@ -33,7 +33,7 @@ class ServiceAttribute extends Model implements DataTable
     use SoftDeletes;
     use TracksUserActions;
 
-    /** Tipo al que cae un `data_type` que el sistema no conoce. */
+    /** What a `data_type` the system does not know falls back to. */
     public const string FALLBACK_DATA_TYPE = 'text';
 
     public function getActivitylogOptions(): LogOptions
@@ -59,7 +59,7 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * Los tipos de servicio que ya usan este atributo.
+     * The service types already using this attribute.
      *
      * @return BelongsToMany<ServiceType, $this>
      */
@@ -71,12 +71,11 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * ¿Algún tipo de servicio ya lo usa?
+     * Whether any service type already uses it.
      *
-     * Marca la frontera de lo que se puede tocar: mientras nadie lo use, el
-     * atributo es libre; después, cambiarle el tipo de dato rompería los valores
-     * ya cargados. Es también la razón por la que no se borra sino que se
-     * desactiva.
+     * It marks the line of what can still be touched: unused, the attribute is
+     * free; used, changing its data type would break the values already stored.
+     * It is also why it is deactivated rather than deleted.
      */
     public function isInUse(): bool
     {
@@ -84,8 +83,6 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * Los tipos de dato disponibles, con su etiqueta.
-     *
      * @return array<string, string>
      */
     public static function dataTypes(): array
@@ -94,9 +91,9 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * La etiqueta legible del tipo. Un tipo que ya no está en config —porque se
-     * lo quitó después de haberlo usado— cae a texto en vez de dejar la celda
-     * vacía y hacer creer que el atributo no tiene tipo.
+     * The readable label. A type no longer in config — removed after being used —
+     * falls back to text instead of leaving the cell empty and suggesting the
+     * attribute has no type at all.
      */
     public static function dataTypeLabel(string $dataType): string
     {
@@ -116,9 +113,9 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * Las opciones se escriben en un solo campo separadas por coma. Se limpian
-     * los espacios sobrantes y se descartan las vacías: "Chico, , Grande" no
-     * puede meter una opción en blanco en la lista que después ve el negocio.
+     * Options are typed into one comma-separated field. Spacing is cleaned and
+     * empties are dropped: "Small, , Large" cannot slip a blank option into the
+     * list the business ends up seeing.
      *
      * @param  string|array<int, string>|null  $value
      * @return array<int, string>|null
@@ -150,11 +147,11 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
-     * Cómo se describe el tipo de dato en una sola celda: "Número · min · varios".
+     * The data type described in a single cell: "Number - min - many".
      *
-     * El tipo, la unidad y la cardinalidad son tres datos chicos que juntos se
-     * leen de un vistazo; en tres columnas separadas ocupaban un tercio de la
-     * tabla y la empujaban fuera del panel. No se abrevia nada: se agrupa.
+     * Type, unit and cardinality are three small facts that read at a glance
+     * together; as three columns they took a third of the table and pushed it out
+     * of the panel. Nothing is abbreviated — it is grouped.
      */
     public static function describeType(self $attribute): string
     {
@@ -186,11 +183,11 @@ class ServiceAttribute extends Model implements DataTable
                     'code' => $attribute->code,
                     'name' => $attribute->name,
                     'description' => $attribute->description ?? '',
-                    // La fila muestra la ETIQUETA, no la clave: el admin lee
-                    // "Lista de opciones", no "list".
+                    // The row shows the LABEL, not the key: an admin reads a phrase,
+                    // not an identifier.
                     'type' => self::describeType($attribute),
-                    // Lista de verdad, no un string con comas: la celda las pinta
-                    // como pastillas y el buscador igual las encuentra.
+                    // A real list, not a comma string: the cell paints them as pills and
+                    // the search box still finds them.
                     'options' => $attribute->options ?? [],
                     'order' => $attribute->sort_order,
                     'active' => $attribute->is_active,

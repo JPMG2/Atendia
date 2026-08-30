@@ -23,12 +23,11 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
-     * El negocio al que pertenece. NULL en el admin: el dueño de AtendIa no es
-     * inquilino de nadie, y ese null es justamente lo que lo distingue.
+     * The business they belong to. NULL for the admin: AtendIa's owner is nobody's
+     * tenant, and that null is exactly what tells them apart.
      *
-     * `business_id` NO está en Fillable a propósito: se asigna en código. Si
-     * fuera asignable en masa, un registro podría mandar el id de otro negocio
-     * y meterse adentro.
+     * `business_id` is kept out of Fillable on purpose — mass assignable, a
+     * registration could send another business's id and walk in.
      *
      * @return BelongsTo<Business, $this>
      */

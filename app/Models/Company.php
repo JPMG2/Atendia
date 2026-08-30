@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * AtendIa: el emisor de la factura. Un ÚNICO registro, para siempre.
+ * AtendIa itself, the one issuing the invoice. A SINGLE row, forever.
  *
- * No confundir con {@see Business}, que es el negocio del cliente (el tenant).
- * Acá viven los datos que encabezan una factura emitida por AtendIa.
+ * Not to be confused with {@see Business}, the customer's business — the
+ * tenant. What heads an invoice issued by AtendIa lives here.
  */
 class Company extends Model
 {
@@ -51,8 +51,6 @@ class Company extends Model
     }
 
     /**
-     * Región del emisor.
-     *
      * @return BelongsTo<Region, $this>
      */
     public function region(): BelongsTo
@@ -61,7 +59,7 @@ class Company extends Model
     }
 
     /**
-     * Condición fiscal del emisor en Argentina.
+     * The issuer's tax standing in Argentina.
      *
      * @return BelongsTo<TaxCondition, $this>
      */
@@ -71,10 +69,10 @@ class Company extends Model
     }
 
     /**
-     * Las redes donde está la cuenta, en el orden en que se muestran.
+     * The networks the account is on, in display order.
      *
-     * La relación es polimórfica: la misma tabla guarda las redes de la compañía
-     * y las de cada negocio (ver {@see SocialLink}).
+     * The relation is polymorphic: one table holds the company's networks and
+     * every business's ({@see SocialLink}).
      *
      * @return MorphMany<SocialLink, $this>
      */

@@ -6,6 +6,7 @@ use App\Models\Business;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 
 uses(RefreshDatabase::class);
 
@@ -26,7 +27,7 @@ beforeEach(function (): void {
 });
 
 /** Ask the real /broadcasting/auth endpoint, which is the path the browser takes. */
-function joinChannel(User $user, int $businessId): \Illuminate\Testing\TestResponse
+function joinChannel(User $user, int $businessId): TestResponse
 {
     return test()->actingAs($user)->postJson('/broadcasting/auth', [
         'socket_id' => '1234.5678',

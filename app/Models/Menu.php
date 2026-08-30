@@ -130,9 +130,9 @@ class Menu extends Model
     }
 
     /**
-     * Whether the item is visible to the user: sin permiso = público dentro del
-     * panel; con permiso = solo si el usuario lo tiene (el admin pasa por
-     * Gate::before). Ver arquitectura de paneles.
+     * Whether the item is visible: no permission means public inside the panel,
+     * a permission means only whoever holds it — the admin passes through
+     * Gate::before.
      */
     public function isVisibleTo(?Authenticatable $user): bool
     {
@@ -141,10 +141,10 @@ class Menu extends Model
     }
 
     /**
-     * The active menu tree for a panel (admin|client): roots with recursive
-     * active children, ordered, y filtrado por permiso para el usuario actual.
-     * La memoización por request la da el #[Computed] de Navigation; NO se
-     * cachea cross-request (serializar Eloquent al store da __PHP_Incomplete_Class).
+     * The active menu tree for a panel: ordered roots with their recursive active
+     * children, filtered by what the current user may see. Navigation's
+     * #[Computed] memoises it per request; it is NOT cached across requests, as
+     * serialising Eloquent to the store gives back __PHP_Incomplete_Class.
      *
      * @return Collection<int, Menu>
      */

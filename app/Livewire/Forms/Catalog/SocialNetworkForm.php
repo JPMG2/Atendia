@@ -27,32 +27,31 @@ class SocialNetworkForm extends BaseCatalogForm
     {
         return [
 
-            // `name` es UNIQUE en la tabla: sin la regla, una red repetida no sería
-            // un error de campo sino un crash de base atrapado por tryAction, es
-            // decir un toast vago en vez de un mensaje útil.
+            // `name` is UNIQUE on the table: without the rule a repeated network is
+            // a database crash caught by tryAction — a vague toast instead of a
+            // useful message.
             'name' => AttributeValidator::uniqueIdNameLength('3', 'social_networks', 'name', $excludeId),
 
-            // Obligatoria y acotada a la columna (string 255). NO se usa webValid():
-            // ese helper suma `active_url`, que resuelve DNS en cada guardado — un
-            // maestro que solo carga la URL base no puede depender de que la red
-            // esté online (ni los tests de una red externa).
+            // webValid() is NOT used: it adds `active_url`, which resolves DNS on
+            // every save. A master that only stores the base URL cannot depend on
+            // the network being online — nor can the tests.
             'url' => [
                 'required',
                 'url:http,https',
                 'max:255',
             ],
 
-            // El ícono es la CLAVE de config/icons.php, no un texto libre: si no
-            // existe, <x-icon> no dibuja nada y la fila queda muda. Se valida
-            // contra el catálogo real de glifos, que es la única fuente de verdad.
+            // The icon is the KEY in config/icons.php, not free text: a missing one
+            // draws nothing and the row goes mute. It is validated against the real
+            // glyph catalog, the only source of truth.
             'icon' => [
                 'nullable',
                 Rule::in(array_keys(config('icons'))),
             ],
 
-            // Opcional (la columna es nullable) y acotada a lo que aguanta la
-            // columna y pide la UI (string 10 / maxlength=10): sin el `nullable`
-            // una red sin abreviatura rebotaría contra el `min:1` de stringValid().
+            // Optional and capped at what the column and the UI take: without
+            // `nullable` a network with no short form would bounce off the `min:1`
+            // in stringValid().
             'abbreviation' => [
                 'nullable',
                 ...AttributeValidator::stringValid(false, '1'),

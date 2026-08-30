@@ -31,17 +31,13 @@ class TaxConditionForm extends BaseCatalogForm
 
         return [
 
-            // La FK es obligatoria en la tabla (`constrained()`), así que sin
-            // `required` un alta sin país reventaría en Postgres en vez de
-            // marcar el campo.
+            // The FK is required on the table, so without `required` a row with no
+            // country would blow up in Postgres instead of flagging the field.
             'country_id' => AttributeValidator::requireAndExists('countries', 'id', 'country_id', true),
 
-            // La tabla tiene UNIQUE (country_id, code) y UNIQUE (country_id, name):
-            // las condiciones fiscales son de cada país, así que "RI" puede existir
-            // en Argentina y en otro país a la vez. Un unique global rechazaría el
-            // segundo; sin unique, el choque dentro del mismo país sería un crash
-            // de Postgres atrapado por tryAction — un toast vago en vez de un
-            // mensaje sobre el campo.
+            // The table is UNIQUE per country on both code and name: a standing
+            // belongs to a country, so the same code can exist in two. A global unique
+            // would reject the second; none at all would let a clash reach Postgres.
             'code' => AttributeValidator::requiredExistModelRelation(
                 'tax_conditions',
                 'code',

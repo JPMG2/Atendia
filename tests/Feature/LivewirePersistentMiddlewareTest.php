@@ -6,7 +6,9 @@ use App\Models\User;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Livewire\Drawer\Utils;
+use Livewire\Mechanisms\HandleRequests\HandleRequests;
 use Livewire\Mechanisms\PersistentMiddleware\PersistentMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -26,11 +28,11 @@ beforeEach(function (): void {
  *
  * @param  array<string, mixed>  $snapshot
  */
-function postLivewireUpdate(array $snapshot): \Illuminate\Testing\TestResponse
+function postLivewireUpdate(array $snapshot): TestResponse
 {
     // Livewire 4 obfuscates the endpoint (/livewire-<hash>/update), so it is
     // resolved through the mechanism instead of hardcoded.
-    $uri = app(\Livewire\Mechanisms\HandleRequests\HandleRequests::class)->getUpdateUri();
+    $uri = app(HandleRequests::class)->getUpdateUri();
 
     return test()->postJson($uri, [
         'components' => [[

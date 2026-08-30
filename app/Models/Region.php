@@ -23,13 +23,11 @@ class Region extends Model implements DataTable
     /** @use HasFactory<RegionFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
     /**
-     * Provincia a la que pertenece la región (FK obligatoria en la tabla).
-     *
      * @return BelongsTo<Province, $this>
      */
     public function province(): BelongsTo
@@ -49,8 +47,8 @@ class Region extends Model implements DataTable
     }
 
     /**
-     * Nombre propio: se respeta lo que escribe el usuario, solo se limpian
-     * espacios. Mismo criterio que Country::normalizeName.
+     * A proper name: kept as typed, only the spacing is cleaned. Same criterion
+     * as Country::normalizeName.
      */
     public static function normalizeName(string $value): string
     {
@@ -65,15 +63,12 @@ class Region extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `name`
+     * is user-editable, so it cannot identify the row.
      *
-     * La región cuelga de una provincia y la provincia de un país. El país viaja
-     * en la fila —y no solo la provincia— porque si no hay que saberse de memoria
-     * a qué país pertenece cada provincia para entender la lista.
-     *
-     * `country_id` va en el select de la provincia a propósito: sin esa columna
-     * Eloquent no puede resolver el `belongsTo` al país y `country` volvería vacío.
+     * The country travels on the row too: otherwise you have to know by heart
+     * which country each province is in. `country_id` is in the province select
+     * on purpose — without it `country` comes back empty.
      *
      * @return Collection<int, array{id: int, name: string, province: string, country: string, active: bool}>
      */
@@ -96,19 +91,13 @@ class Region extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de región.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it. The bare name is the default
+     * because a province was picked first and already narrowed the list.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
-     *
-     * El default es el nombre pelado porque hoy la región se elige después de
-     * la provincia, que ya acotó la lista. Una pantalla que la muestre suelta
-     * puede pasar su propio `label` con la provincia, sin tocar a nadie más.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
-     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = [], ?Closure $label = null, ?int $provinceId = null): array

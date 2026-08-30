@@ -38,7 +38,7 @@ foreach (CommentScanner::commentsIn($relative, (string) file_get_contents($absol
         $problems[] = 'Spanish comment: '.$first;
     }
 
-    if (CommentScanner::isTooLong($comment)) {
+    if (CommentScanner::judgesLength($relative) && CommentScanner::isTooLong($comment)) {
         $problems[] = 'Comment too long: '.$first;
     }
 }

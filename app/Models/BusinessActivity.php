@@ -17,9 +17,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 /**
- * Actividad del negocio: Farmacia, Panadería, Peluquería…
+ * What the business does: pharmacy, bakery, hair salon…
  *
- * Es lo que el negocio elige y lo que después define cómo atiende el asistente.
+ * It is what the business picks, and what then shapes how the assistant works.
  */
 #[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active'])]
 class BusinessActivity extends Model implements DataTable
@@ -27,12 +27,12 @@ class BusinessActivity extends Model implements DataTable
     /** @use HasFactory<BusinessActivityFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
     /**
-     * Rubro al que pertenece la actividad (FK obligatoria en la tabla).
+     * The sector the activity belongs to (a required FK on the table).
      *
      * @return BelongsTo<BusinessSector, $this>
      */
@@ -45,11 +45,10 @@ class BusinessActivity extends Model implements DataTable
      * @return BelongsToMany<Business, $this>
      */
     /**
-     * Los tipos de servicio que se le SUGIEREN a esta actividad.
+     * The service types SUGGESTED for this activity.
      *
-     * Sugerir no es permitir en exclusiva: un negocio puede adoptar un tipo que
-     * no está acá (la panadería que decide poner mesas). La ausencia de una fila
-     * significa "no se lo muestro arriba", nunca "no puede".
+     * Suggesting is not allowing exclusively: a business can adopt a type that is
+     * not here. A missing row means "not shown first", never "not allowed".
      *
      * @return BelongsToMany<ServiceType, $this>
      */
@@ -62,7 +61,7 @@ class BusinessActivity extends Model implements DataTable
     }
 
     /**
-     * Los negocios que declararon esta actividad, principal o secundaria.
+     * The businesses that declared this activity, primary or secondary.
      *
      * @return BelongsToMany<Business, $this>
      */
@@ -100,8 +99,8 @@ class BusinessActivity extends Model implements DataTable
     }
 
     /**
-     * Se agrupan por rubro y dentro de cada uno por su orden, que es como el
-     * negocio las va a ver al elegir.
+     * Grouped by sector and, inside each, by their order — which is how the
+     * business will see them when choosing.
      *
      * @return Collection<int, array{id: int, code: string, name: string, sector: string, order: int, active: bool}>
      */

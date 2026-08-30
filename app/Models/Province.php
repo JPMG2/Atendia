@@ -23,13 +23,11 @@ class Province extends Model implements DataTable
     /** @use HasFactory<ProvinceFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
     /**
-     * País al que pertenece la provincia (FK obligatoria en la tabla).
-     *
      * @return BelongsTo<Country, $this>
      */
     public function country(): BelongsTo
@@ -49,8 +47,8 @@ class Province extends Model implements DataTable
     }
 
     /**
-     * Nombre propio: se respeta lo que escribe el usuario, solo se limpian
-     * espacios. Mismo criterio que Country::normalizeName.
+     * A proper name: kept as typed, only the spacing is cleaned. Same criterion
+     * as Country::normalizeName.
      */
     public static function normalizeName(string $value): string
     {
@@ -65,8 +63,8 @@ class Province extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `name`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, name: string, country: string, active: bool}>
      */
@@ -88,25 +86,14 @@ class Province extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de provincia.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it. `label` and `countryId` are
+     * opt-in for the same reason — the default must fit the existing callers.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
-     *
-     * El `label` lo decide quien llama: el catálogo necesita el código del país
-     * para distinguir dos provincias homónimas, un formulario de negocio no.
-     * Sin argumento sale el texto de siempre, así que sumar una variante no
-     * obliga a recorrer los llamadores existentes.
-     *
-     * `countryId` acota la lista al país elegido, para la cascada país →
-     * provincia. Es null por default —o sea, sin filtro— por lo mismo que
-     * `states`: mientras no haya país elegido tienen que estar todas.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
-     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
-     * @param  int|null  $countryId  país al que acotar; null = todos
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
+     * @param  int|null  $countryId  country to narrow to; null = all
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = [], ?Closure $label = null, ?int $countryId = null): array

@@ -26,8 +26,8 @@ class ServiceAttributeForm extends BaseCatalogForm
     {
         return [
 
-            // Único global: es la clave por la que el asistente y el pivot van a
-            // referenciar el atributo. La columna es varchar(40).
+            // Globally unique: the key the assistant and the pivot reference the
+            // attribute by. The column is varchar(40).
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('3', 'service_attributes', 'code', $excludeId),
                 'max:40',
@@ -41,29 +41,25 @@ class ServiceAttributeForm extends BaseCatalogForm
                 'max:255',
             ],
 
-            // El tipo de dato decide con qué control se pinta el campo: solo
-            // valen los que config/attribute_types.php sabe dibujar. Y una vez
-            // que un tipo de servicio ya usa el atributo, deja de ser editable:
-            // cambiarlo rompería los valores ya cargados. Es la misma regla que
-            // aplican Drupal y commercetools ("attribute level cannot be changed
-            // after saving").
+            // Only the types config knows how to draw are valid. Once a service type
+            // uses the attribute it stops being editable: changing it would break the
+            // values already stored, which is what Drupal and commercetools do too.
             'data_type' => [
                 'required',
                 'string',
                 'in:'.implode(',', $this->editableDataTypes($excludeId)),
             ],
 
-            // La columna es varchar(15) y la unidad es un símbolo corto ("min",
-            // "personas"): sin este tope, el max:255 del helper la dejaba pasar y
-            // reventaba en Postgres.
+            // The column is varchar(15) and a unit is a short symbol: without this
+            // cap the helper's max:255 let it through and Postgres blew up.
             'unit' => [
                 'nullable',
                 'string',
                 'max:15',
             ],
 
-            // Ya viene normalizado a lista por el DTO, o null si el tipo no es
-            // lista. El tope evita una lista interminable en una columna jsonb.
+            // Already normalised to a list by the DTO, or null when the type is not
+            // a list. The cap keeps an endless list out of a jsonb column.
             'options' => ['nullable', 'array', 'max:100'],
             'options.*' => ['string', 'max:60'],
 
@@ -79,11 +75,11 @@ class ServiceAttributeForm extends BaseCatalogForm
     }
 
     /**
-     * Qué tipos de dato acepta la validación.
+     * Which data types validation accepts.
      *
-     * Los de config, salvo que el atributo ya esté en uso: ahí el único válido
-     * es el que ya tiene, así el intento de cambiarlo sale como error del campo
-     * y no como valores rotos meses después.
+     * The ones in config, unless the attribute is already in use: then the only
+     * valid one is the one it has, so an attempt to change it surfaces as a
+     * field error and not as broken values months later.
      *
      * @return array<int, string>
      */

@@ -15,11 +15,31 @@ namespace Tests\Support;
 final class CommentScanner
 {
     /**
-     * Words that place a comment in Spanish.
+     * Function words that only belong to one language.
      *
-     * Accents alone miss too much: plenty of Spanish sentences carry none.
-     * These words are picked for not being English, so a comment has to be
-     * Spanish to trip them.
+     * A comment with Spanish ones and no English ones is Spanish, however
+     * technical the rest of it reads. It catches what the list below misses:
+     * "Solo prevenir peticiones HTTP en testing" holds no accent and no
+     * telltale noun.
+     *
+     * @var list<string>
+     */
+    private const SPANISH_FUNCTION_WORDS = [
+        'el', 'la', 'los', 'las', 'un', 'una', 'de', 'del', 'al', 'en', 'y',
+        'que', 'para', 'con', 'por', 'se', 'es', 'lo', 'su', 'sus', 'si',
+        'como', 'pero', 'no', 'son', 'esta', 'este', 'esto', 'hay', 'ya',
+    ];
+
+    /** @var list<string> */
+    private const ENGLISH_FUNCTION_WORDS = [
+        'the', 'of', 'to', 'is', 'and', 'that', 'it', 'for', 'in', 'on',
+        'with', 'not', 'but', 'so', 'as', 'at', 'by', 'a', 'an', 'this',
+        'are', 'be', 'from', 'or', 'its', 'has', 'have', 'would', 'when',
+        'what', 'which', 'they', 'we', 'you', 'one', 'only', 'never',
+    ];
+
+    /**
+     * Words that place a comment in Spanish on their own.
      *
      * @var list<string>
      */
@@ -145,6 +165,18 @@ final class CommentScanner
         return str_contains($comment, '|-----');
     }
 
+    /**
+     * Whether a file is judged on comment length.
+     *
+     * Published config is vendor text — Laravel's and spatie's — rewritten on
+     * every package update. Its language still has to be English, but its
+     * length is not ours to trim.
+     */
+    public static function judgesLength(string $path): bool
+    {
+        return ! str_starts_with($path, 'config/');
+    }
+
     /** Whether a comment reads as Spanish. */
     public static function isSpanish(string $comment): bool
     {
@@ -152,9 +184,18 @@ final class CommentScanner
             return true;
         }
 
-        $words = preg_split('/[^a-z]+/', mb_strtolower($comment)) ?: [];
+        // A URL is not prose: "docs.example.org/en/stable" would read as the
+        // Spanish "en" and drag the whole comment with it.
+        $prose = preg_replace('#\bhttps?://\S+#i', ' ', $comment) ?? $comment;
 
-        return array_intersect($words, self::SPANISH_WORDS) !== [];
+        $words = preg_split('/[^a-z]+/', mb_strtolower($prose)) ?: [];
+
+        if (array_intersect($words, self::SPANISH_WORDS) !== []) {
+            return true;
+        }
+
+        return array_intersect($words, self::SPANISH_FUNCTION_WORDS) !== []
+            && array_intersect($words, self::ENGLISH_FUNCTION_WORDS) === [];
     }
 
     /**

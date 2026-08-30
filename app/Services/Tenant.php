@@ -11,9 +11,8 @@ use Closure;
  *
  * It comes from the logged-in user, and can be set by hand where there is no
  * session — queues, commands, seeders — which is exactly where isolation
- * breaks if nobody remembers. A container singleton rather than static state,
- * so a business set in one test does not leak into the next. `null` disables
- * the filter, which is right for the admin and for background processes.
+ * breaks if nobody remembers. A container singleton and not static state, so
+ * a business set in one test does not leak into the next.
  */
 class Tenant
 {

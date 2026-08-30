@@ -12,45 +12,39 @@ use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
 
 /**
- * El Form de CUALQUIER maestro del hub de catálogos.
+ * The Form of ANY master in the catalog hub.
  *
- * Los nueve tenían el mismo `store()`, el mismo `update()` y el mismo
- * `loadData()` copiados; lo único que cambiaba era el nombre de la propiedad
- * (`$currencyData` vs `$regionData`) y las cuatro clases a las que le hablaban.
- * Uniformar el nombre a `$data` fue lo que permitió que los cuerpos subieran
- * acá — el mismo movimiento que ya se había hecho un piso más arriba con
- * `App\Traits\InteractsWithCatalogEditor`.
- *
- * Un Form concreto queda entonces con lo que de verdad es suyo: a qué está
- * cableado (`catalog()`) y sus reglas de validación.
+ * The nine carried the same `store()`, `update()` and `loadData()`; only the
+ * property name and the four classes they talked to differed. Renaming it to
+ * `$data` is what let the bodies move up here. A concrete Form is left with
+ * what is really its own: its wiring and its validation rules.
  */
 abstract class BaseCatalogForm extends BaseForm
 {
     /**
-     * El registro que se está editando. `null` = alta.
+     * The record being edited; `null` means a new one.
      *
-     * Va `#[Locked]` porque nunca lo elige el front: lo asigna `loadData()` en
-     * el server a partir del id que se pidió abrir.
+     * `#[Locked]` because the front never picks it: `loadData()` assigns it on
+     * the server from the id that was asked for.
      */
     #[Locked]
     public ?int $recordId = null;
 
     /**
-     * El DTO del maestro, con el estado del formulario.
+     * The master's DTO, holding the form state.
      *
-     * El tipo es la interfaz y no el DTO concreto porque la propiedad es una
-     * sola para los nueve; PHP no deja angostar el tipo de una propiedad en la
-     * hija. Livewire hidrata la clase concreta igual (ver `FormData`), y el Form
-     * que necesite leer un campo suyo se lo documenta con un `@var` local.
+     * The type is the interface and not the concrete DTO because one property
+     * serves the nine, and PHP does not let a child narrow it. Livewire hydrates
+     * the concrete class all the same (see `FormData`).
      */
     public ?FormData $data = null;
 
     private ?CatalogWiring $wiring = null;
 
-    /** A qué DTO, modelo y Actions le habla este maestro. */
+    /** Which DTO, model and Actions this master talks to. */
     abstract protected function catalog(): CatalogWiring;
 
-    /** Deja el DTO en blanco: es el estado con el que arranca un alta. */
+    /** Blanks the DTO: the state a new record starts from. */
     public function setup(): void
     {
         $dto = $this->wiring()->dto;
@@ -88,7 +82,7 @@ abstract class BaseCatalogForm extends BaseForm
         }, __('notifications.not_updated'));
     }
 
-    /** Carga el registro en el form. Devuelve false si ya no existe. */
+    /** Loads the record into the form. False when it is gone. */
     public function loadData(int $id): bool
     {
         $record = $this->findRecord($id);

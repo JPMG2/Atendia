@@ -10,10 +10,8 @@ use Livewire\Wireable;
  * The DTO a catalog editor carries.
  *
  * `BaseCatalogForm` keeps it in ONE `$data` property shared by the 9 masters,
- * so its type has to be what the nine have in common. This interface is that
- * type, and the lock too: a new DTO that forgets `toPayload()` breaks when the
- * class loads. Livewire still hydrates fine — the snapshot metadata records
- * the concrete class, not the property's type.
+ * so its type has to be what the nine have in common. It is the lock too: a
+ * DTO that forgets `toPayload()` breaks when the class loads.
  */
 interface FormData extends Wireable
 {

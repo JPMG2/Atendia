@@ -19,10 +19,11 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * Tipo de servicio: QUÉ ofrece un negocio. Consulta, Plato, Mesa, Arreglo.
+ * WHAT a business offers: an appointment, a dish, a table, a repair.
  *
- * Global, no de un rubro. Hereda UNA modalidad. Qué actividades lo sugieren lo
- * dice el pivot, y sugerir nunca es permitir en exclusiva.
+ * Global, not tied to a sector. It inherits ONE modality. Which activities
+ * suggest it is the pivot's business, and suggesting is never allowing
+ * exclusively.
  */
 #[Fillable(['code', 'name', 'description', 'service_modality_id', 'business_sector_id', 'sort_order', 'is_active'])]
 class ServiceType extends Model implements DataTable
@@ -32,7 +33,7 @@ class ServiceType extends Model implements DataTable
 
     use LogsActivity;
 
-    // Un maestro no se borra: el pivot y los negocios que lo adoptaron quedarían colgando.
+    // A master row is never deleted: the pivot and the businesses that adopted it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -50,14 +51,14 @@ class ServiceType extends Model implements DataTable
      */
     public function modality(): BelongsTo
     {
-        // La FK va explícita: Eloquent la deduciría como `modality_id` a partir
-        // del nombre del método, no del tipo devuelto.
+        // The FK is explicit: Eloquent would guess it from the method name, not
+        // from the returned type.
         return $this->belongsTo(ServiceModality::class, 'service_modality_id');
     }
 
     /**
-     * El rubro es SOLO agrupación de la pantalla del admin. Quién ofrece este
-     * tipo lo decide {@see self::activities()}.
+     * The sector is ONLY grouping for the admin screen. Who offers this type is
+     * {@see self::activities()}'s call.
      *
      * @return BelongsTo<BusinessSector, $this>
      */
@@ -67,12 +68,11 @@ class ServiceType extends Model implements DataTable
     }
 
     /**
-     * Los atributos que lleva este tipo, con lo que es propio de ESTA instancia:
-     * si acá es obligatorio, en qué orden va y con qué etiqueta se muestra.
+     * The attributes this type carries, with what belongs to THIS instance:
+     * whether it is required here, its order and its label.
      *
-     * NO se puede llamar `attributes()`: `$model->attributes` es el array
-     * interno de columnas de Eloquent, y la relación quedaría tapada por él sin
-     * que nada avise (devuelve un array y revienta recién al usarlo).
+     * It cannot be called `attributes()` — `$model->attributes` is Eloquent's own
+     * column array, and the relation would be shadowed with nothing warning you.
      *
      * @return BelongsToMany<ServiceAttribute, $this>
      */
@@ -85,8 +85,8 @@ class ServiceType extends Model implements DataTable
     }
 
     /**
-     * Las actividades a las que se les SUGIERE este tipo. La ausencia de una fila
-     * no impide adoptarlo: el catálogo ofrece, no prohíbe.
+     * The activities this type is SUGGESTED to. A missing row does not stop
+     * anyone adopting it: the catalog offers, it does not forbid.
      *
      * @return BelongsToMany<BusinessActivity, $this>
      */
@@ -110,13 +110,13 @@ class ServiceType extends Model implements DataTable
         ];
     }
 
-    /** Nombre propio: se respeta lo que escribe el admin, solo se limpian espacios. */
+    /** A proper name: kept as the admin typed it, only the spacing is cleaned. */
     public static function normalizeName(string $value): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', $value));
     }
 
-    /** La clave es técnica, no copy: siempre en minúsculas. */
+    /** The key is technical, not copy: always lowercase. */
     public static function normalizeCode(string $value): string
     {
         return mb_strtolower(trim($value));
@@ -137,8 +137,8 @@ class ServiceType extends Model implements DataTable
     }
 
     /**
-     * La fila muestra la modalidad y el rubro APLANADOS a su nombre legible, y
-     * los atributos como una lista: es lo que la maqueta pinta como chips.
+     * The row FLATTENS modality and sector to their readable names and hands the
+     * attributes over as a list, which is what the table paints as chips.
      *
      * @return Collection<int, array{id: int, code: string, name: string, description: string, modality: string, sector: string, attributes: list<string>, order: int, active: bool}>
      */
@@ -155,13 +155,11 @@ class ServiceType extends Model implements DataTable
                     'code' => $type->code,
                     'name' => $type->name,
                     'description' => $type->description ?? '',
-                    // El null viaja como '' (convención de la fila de catálogo).
+                    // Null travels as '' — the catalog row's convention.
                     'modality' => $type->modality?->name ?? '',
                     'sector' => $type->sector?->name ?? '',
-                    // Con la etiqueta de ESTE tipo, no la global: en Mesa el
-                    // atributo "Personas" se lee "Comensales", que es lo que va a
-                    // ver el negocio. Mostrar la global acá haría que el override
-                    // pareciera no estar aplicado.
+                    // With THIS type's label, not the global one: showing the global
+                    // here would make the override look like it never applied.
                     'attributes' => $type->serviceAttributes
                         ->map(fn (ServiceAttribute $attribute): string => $attribute->pivot->label_override ?? $attribute->name)
                         ->values()

@@ -15,10 +15,10 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * La cuenta de alguien en una red social.
+ * Somebody's account on a social network.
  *
- * El dueño es polimórfico (`linkable`): hoy la compañía y los negocios. La red
- * en sí es el maestro `SocialNetwork`; acá vive el enlace.
+ * The owner is polymorphic (`linkable`): the company and the businesses. The
+ * network itself is the `SocialNetwork` master; the link lives here.
  */
 #[Fillable(['social_network_id', 'url', 'sort_order'])]
 class SocialLink extends Model
@@ -29,13 +29,11 @@ class SocialLink extends Model
     use LogsActivity;
 
     /**
-     * Auditoría del enlace: quién lo cargó, lo corrigió o lo borró, y cuándo.
+     * Link audit: who added, fixed or removed it, and when.
      *
-     * Acá el rastro pesa más que en un maestro: la baja es INMEDIATA —el tacho
-     * borra la fila en el momento, no al guardar— y no hay papelera. Sin log, un
-     * enlace que desaparece no deja forma de saber quién lo sacó.
-     *
-     * El causante (el usuario logueado) lo resuelve spatie solo.
+     * The trail matters more here than in a master: the delete is IMMEDIATE and
+     * there is no bin. Without the log, a link that disappears leaves no way of
+     * knowing who took it out.
      */
     public function getActivitylogOptions(): LogOptions
     {
@@ -57,7 +55,7 @@ class SocialLink extends Model
     }
 
     /**
-     * Quién es el dueño de la cuenta: `Company` o `Business`.
+     * Who owns the account: a `Company` or a `Business`.
      *
      * @return MorphTo<Model, $this>
      */
@@ -75,9 +73,9 @@ class SocialLink extends Model
     }
 
     /**
-     * Un enlace no lleva espacios: se quitan TODOS, no solo los de las puntas.
-     * Mismo criterio que `SocialNetwork::normalizeUrl` — un espacio pegado al
-     * copiar ("https://x.com/atendia ") rebota sin que el usuario vea por qué.
+     * A link carries no spaces: ALL of them go, not only the outer ones. Same
+     * criterion as `SocialNetwork::normalizeUrl` — one pasted along with the URL
+     * bounces without the person seeing why.
      */
     protected function url(): Attribute
     {

@@ -22,7 +22,7 @@ class SocialNetwork extends Model implements DataTable
     /** @use HasFactory<SocialNetworkFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -37,9 +37,8 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * Los nombres de red son NOMBRES PROPIOS: "TikTok", "LinkedIn", "X (Twitter)".
-     * Mismo criterio que Currency::normalizeName y Country::normalizeName: se
-     * respeta lo que escribe el usuario, solo se limpian espacios.
+     * Network names are PROPER NAMES: "TikTok", "LinkedIn", "X (Twitter)". Same
+     * criterion as the other masters — kept as typed, spacing cleaned.
      */
     public static function normalizeName(string $value): string
     {
@@ -47,9 +46,9 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * Una URL no lleva espacios: se quitan TODOS, no solo los de las puntas. Un
-     * espacio pegado al copiar ("https://x.com/ ") pasaría el `url` de Laravel
-     * como falso positivo o rebotaría sin que el usuario vea por qué.
+     * A URL carries no spaces: ALL of them go, not only the outer ones. One
+     * pasted along with it would either slip past Laravel's `url` rule or bounce
+     * without the person seeing why.
      */
     public static function normalizeUrl(string $value): string
     {
@@ -57,8 +56,8 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * El ícono es la CLAVE de config/icons.php ("x-twitter"), y la columna es
-     * nullable: sin ícono elegido se guarda null, no ''.
+     * The icon is the KEY in config/icons.php, and the column is nullable: with
+     * none picked, null is stored rather than ''.
      */
     public static function normalizeIcon(?string $value): ?string
     {
@@ -68,10 +67,9 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * La abreviatura se respeta tal cual la escribe el usuario — misma lección que
-     * Currency::normalizeSymbol: forzar mayúsculas acá rompería una abreviatura
-     * que el usuario quiso escribir de otra forma. Solo se limpian espacios, y la
-     * columna es nullable, así que vacío es null.
+     * The short form is kept exactly as typed — same lesson as
+     * Currency::normalizeSymbol: forcing uppercase would wreck one written on
+     * purpose another way. The column is nullable, so empty means null.
      */
     public static function normalizeAbbreviation(?string $value): ?string
     {
@@ -109,8 +107,8 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `name`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, name: string, url: string, icon: string, abbreviation: string, active: bool}>
      */
@@ -124,8 +122,8 @@ class SocialNetwork extends Model implements DataTable
                     'id' => $network->id,
                     'name' => $network->name,
                     'url' => $network->url,
-                    // Las columnas son nullable y Alpine pinta el valor crudo: un
-                    // null saldría como "null" en la celda, así que viaja vacío.
+                    // The columns are nullable and Alpine paints the raw value: a null
+                    // would read as "null" in the cell, so it travels empty.
                     'icon' => $network->icon ?? '',
                     'abbreviation' => $network->abbreviation ?? '',
                     'active' => $network->is_active,
@@ -135,19 +133,15 @@ class SocialNetwork extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de red social.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     * The bare name is the default: the short form is optional, so prefixing it
+     * would leave half the list with a dangling dash.
      *
-     * El default es el nombre pelado ("Instagram"): la abreviatura es opcional
-     * en la tabla, así que anteponerla dejaría la mitad de la lista con un
-     * guión colgando. Una pantalla que la quiera pasa su propio `label`.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
-     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = [], ?Closure $label = null): array

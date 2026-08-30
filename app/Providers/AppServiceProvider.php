@@ -31,9 +31,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // SINGLETON, not optional: the isolation scope and whoever adopts a
-        // business have to look at the SAME instance. Otherwise every resolve
-        // hands back a new one, the business set is lost and the filter never
-        // applies — every business's data becomes readable.
+        // business must look at the SAME instance. Otherwise the business set is
+        // lost, the filter never applies, and every business's data is readable.
         $this->app->singleton(Tenant::class);
     }
 
@@ -58,9 +57,8 @@ class AppServiceProvider extends ServiceProvider
     private function configureCommands(): void
     {
         // The working data lives in 'atendia' even though APP_ENV is 'local', so
-        // gating on isProduction() would leave it UNPROTECTED. The destructive
-        // commands are blocked always, except when the active database is exactly
-        // the testing one. See .ai/guidelines/migraciones-seguras.md.
+        // gating on isProduction() would leave it UNPROTECTED. Blocked always,
+        // except when the active database is exactly the testing one.
         $connection = config('database.default');
         $database = config("database.connections.{$connection}.database");
 
@@ -105,7 +103,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRequests(): void
     {
-        // Solo prevenir peticiones HTTP en testing
+        // Stray HTTP requests are only blocked while testing.
         if (app()->environment('testing')) {
             Http::preventStrayRequests();
         }

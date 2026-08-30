@@ -19,10 +19,10 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * Modalidad: CÓMO se ofrece un servicio.
+ * HOW a service is offered.
  *
- * Un tipo de servicio hereda una sola. Es lo que decide qué pregunta el
- * asistente y qué recuerda el sistema. El `code` es la bisagra con el código.
+ * A service type inherits exactly one. It decides what the assistant asks and
+ * what the system remembers. The `code` is the hinge with the code.
  */
 #[Fillable(['code', 'name', 'description', 'icon', 'sort_order', 'is_active'])]
 class ServiceModality extends Model implements DataTable
@@ -32,7 +32,7 @@ class ServiceModality extends Model implements DataTable
 
     use LogsActivity;
 
-    // Un maestro no se borra: los tipos de servicio quedarían colgando.
+    // A master row is never deleted: the service types would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -46,8 +46,8 @@ class ServiceModality extends Model implements DataTable
     }
 
     /**
-     * Los tipos de servicio que heredan esta modalidad. Son muchos: Plato y
-     * Combo comparten "Producto" sin que eso rompa nada.
+     * The service types inheriting this modality — many of them: a dish and a
+     * combo share "product" without that breaking anything.
      *
      * @return HasMany<ServiceType, $this>
      */
@@ -56,7 +56,7 @@ class ServiceModality extends Model implements DataTable
         return $this->hasMany(ServiceType::class);
     }
 
-    /** ¿Algún tipo de servicio ya la usa? Si sí, no se borra: se desactiva. */
+    /** Whether a service type already uses it. If so it is deactivated, not deleted. */
     public function isInUse(): bool
     {
         return $this->types()->exists();
@@ -73,13 +73,13 @@ class ServiceModality extends Model implements DataTable
         ];
     }
 
-    /** Nombre propio: se respeta lo que escribe el admin, solo se limpian espacios. */
+    /** A proper name: kept as the admin typed it, only the spacing is cleaned. */
     public static function normalizeName(string $value): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', $value));
     }
 
-    /** La clave es técnica, no copy: siempre en minúsculas. */
+    /** The key is technical, not copy: always lowercase. */
     public static function normalizeCode(string $value): string
     {
         return mb_strtolower(trim($value));
@@ -100,8 +100,8 @@ class ServiceModality extends Model implements DataTable
     }
 
     /**
-     * El interior del SVG del glifo, o vacío si la modalidad no tiene ícono o si
-     * el que tiene ya no está en `config/icons.php`.
+     * The inside of the glyph's SVG, empty when there is no icon or the one set
+     * is no longer in `config/icons.php`.
      */
     private static function iconSvg(?string $icon): string
     {
@@ -115,8 +115,8 @@ class ServiceModality extends Model implements DataTable
     }
 
     /**
-     * Se ordenan por `sort_order`: el orden es el que el admin decide para que el
-     * negocio las vea así al elegir.
+     * Sorted by `sort_order`: the order is the admin's, so the business sees them
+     * that way when choosing.
      *
      * @return Collection<int, array{id: int, code: string, name: string, description: string, icon: string, icon_svg: string, order: int, active: bool}>
      */
@@ -133,10 +133,9 @@ class ServiceModality extends Model implements DataTable
                     'name' => $modality->name,
                     'description' => $modality->description ?? '',
                     'icon' => $modality->icon ?? '',
-                    // El SVG viaja con la fila para que la celda pinte el glifo y
-                    // no su clave: "calendar-check" en una tabla es config, no un
-                    // dato para quien configura el catálogo. Alpine lo inyecta con
-                    // x-html dentro de un <svg> que ya trae el trazo de Lucide.
+                    // The SVG travels with the row so the cell paints the glyph and not
+                    // its key: a key in a table is config, not a fact for whoever fills
+                    // the catalog in.
                     'icon_svg' => self::iconSvg($modality->icon),
                     'order' => $modality->sort_order,
                     'active' => $modality->is_active,
@@ -146,14 +145,11 @@ class ServiceModality extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de modalidad.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = []): array

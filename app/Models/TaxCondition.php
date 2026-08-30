@@ -23,7 +23,7 @@ class TaxCondition extends Model implements DataTable
     /** @use HasFactory<TaxConditionFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -53,8 +53,7 @@ class TaxCondition extends Model implements DataTable
     }
 
     /**
-     * Nombre propio ("Responsable Inscripto"): se respeta lo que escribe el
-     * usuario, solo se limpian espacios.
+     * A proper name: kept as typed, only the spacing is cleaned.
      */
     public static function normalizeName(string $value): string
     {
@@ -76,8 +75,8 @@ class TaxCondition extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `code`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, code: string, name: string, country: string, discriminates: bool, active: bool}>
      */
@@ -101,23 +100,16 @@ class TaxCondition extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de condición fiscal.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     * It sorts by `name`, not `code`: a table is searched by code, a dropdown by
+     * name.
      *
-     * El default es el nombre pelado ("Responsable Inscripto"): es lo que el
-     * usuario reconoce. Una pantalla que necesite el código puede pasar su
-     * propio `label`, sin tocar a los demás llamadores.
-     *
-     * Ordena por `name` y no por `code` como la tabla del maestro: en una tabla
-     * se busca por código, en un desplegable se busca por nombre.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
-     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
-     * @param  int|null  $countryId  ID del país a filtrar; null = todos
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
+     * @param  int|null  $countryId  country to filter by; null = all
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = [], ?Closure $label = null, ?int $countryId = null): array

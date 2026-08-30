@@ -20,18 +20,17 @@ class CurrentStatus extends Model implements DataTable
     /** @use HasFactory<CurrentStatusFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
     /**
-     * Paleta de un estado: se guarda la CLAVE de un token semántico, nunca un hex.
+     * A status palette: what is stored is the KEY of a semantic token, never a hex.
      *
-     * El estado se pinta en TODO el programa, así que el color tiene que responder
-     * al tema: `var(--danger)` es rojo en claro y un rojo legible en oscuro,
-     * mientras que un `#F2555A` guardado en la base se ve igual en los dos y en
-     * oscuro queda fuera de contraste. Los swatches viven acá, en PHP, no en el
-     * Blade — el markup nunca escribe un color.
+     * A status is painted all over the program, so its colour has to follow the
+     * theme — a hex in the database looks the same in both and falls out of
+     * contrast in dark. The swatches live here, in PHP: markup never writes a
+     * colour.
      *
      * @var array<int, string>
      */
@@ -40,10 +39,9 @@ class CurrentStatus extends Model implements DataTable
     public const DEFAULT_COLOR = 'neutral';
 
     /**
-     * Nombre propio ("En proceso"): se respeta lo que escribe el usuario, solo
-     * se limpian espacios. La columna es UNIQUE, así que normalizar ANTES de
-     * validar es lo que hace que el duplicado salga como error de campo y no
-     * como un crash de Postgres.
+     * A proper name, kept as typed with only the spacing cleaned. The column is
+     * UNIQUE, so normalising BEFORE validating is what turns a duplicate into a
+     * field error instead of a Postgres crash.
      */
     public static function normalizeName(string $value): string
     {
@@ -58,8 +56,8 @@ class CurrentStatus extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `name` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `name`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, name: string, color: string}>
      */

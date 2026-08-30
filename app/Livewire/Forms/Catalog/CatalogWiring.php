@@ -8,23 +8,20 @@ use App\Interfaces\Catalog\FormData;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Las cuatro clases con las que está cableado un maestro.
+ * The four classes a master is wired to.
  *
- * `BaseCatalogForm` hace el mismo trabajo para los nueve; lo ÚNICO que cambia
- * es a qué DTO, qué modelo y qué Actions le habla. En vez de cuatro métodos
- * abstractos por Form, cada uno declara este objeto una sola vez y se lee de
- * corrido a qué está enchufado.
- *
- * Es también el lugar donde va a entrar la Action de baja cuando se programe:
- * un parámetro más acá, con default, y los nueve Forms siguen compilando.
+ * `BaseCatalogForm` does the same work for the nine; the ONLY thing that
+ * changes is which DTO, model and Actions it talks to. One object read at a
+ * glance beats four abstract methods per Form, and the delete Action lands
+ * here as one more parameter with a default.
  */
 final readonly class CatalogWiring
 {
     /**
-     * @param  class-string<FormData>  $dto  El DTO que viaja en el formulario.
-     * @param  class-string<Model>  $model  El modelo del maestro, para leer el registro a editar.
-     * @param  class-string  $create  Action de alta: `handle(array $data): Model`.
-     * @param  class-string  $update  Action de edición: `handle(int $id, array $data): Model`.
+     * @param  class-string<FormData>  $dto  The DTO travelling in the form.
+     * @param  class-string<Model>  $model  The master's model, to read the record being edited.
+     * @param  class-string  $create  Create action: `handle(array $data): Model`.
+     * @param  class-string  $update  Update action: `handle(int $id, array $data): Model`.
      */
     public function __construct(
         public string $dto,

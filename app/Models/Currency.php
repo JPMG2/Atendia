@@ -25,17 +25,16 @@ class Currency extends Model implements DataTable
 
     use LogsActivity;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
     /**
-     * Auditoría del maestro: quién cambió qué y cuándo.
+     * Master audit: who changed what, and when.
      *
-     * Es un catálogo que editan administradores a mano, así que interesa el
-     * rastro. `logOnlyDirty` guarda únicamente lo que cambió de verdad, y
-     * `dontSubmitEmptyLogs` evita una entrada vacía cuando se guarda sin tocar
-     * nada. El causante (el usuario logueado) lo resuelve spatie solo.
+     * Admins edit this catalog by hand, so the trail matters. `logOnlyDirty`
+     * keeps only what really changed and `dontSubmitEmptyLogs` avoids an empty
+     * entry when someone saves without touching anything.
      */
     public function getActivitylogOptions(): LogOptions
     {
@@ -63,11 +62,9 @@ class Currency extends Model implements DataTable
     }
 
     /**
-     * Los nombres de moneda son NOMBRES PROPIOS: "Dólar Estadounidense",
-     * "Franco CFA", "Real Brasileño". Acá había un ucfirst(mb_strtolower()) que
-     * los destrozaba —"Franco cfa"— y que además, por no ser multibyte, dejaba
-     * en minúscula cualquier nombre que empezara con acento o Ñ ("Ñandú" =>
-     * "ñandú"). Se respeta lo que escribe el usuario; solo se limpian espacios.
+     * Currency names are PROPER NAMES. An ucfirst(mb_strtolower()) used to wreck
+     * them, and being non-multibyte it also lowercased any name starting with an
+     * accent. They are kept as typed; only the spacing is cleaned.
      */
     public static function normalizeName(string $value): string
     {
@@ -75,9 +72,9 @@ class Currency extends Model implements DataTable
     }
 
     /**
-     * El símbolo se respeta tal cual lo escribe el usuario. Tenía un ucfirst() que
-     * lo capitalizaba arbitrariamente ("us$" => "Us$", que no es "US$") y que además
-     * no es multibyte. Solo se limpian espacios, igual que en el nombre.
+     * The symbol is kept exactly as typed. An ucfirst() used to capitalise it at
+     * random — "us$" became "Us$", which is not "US$" — and it is not multibyte
+     * either. Only the spacing is cleaned, same as the name.
      */
     public static function normalizeSymbol(string $value): string
     {
@@ -106,8 +103,8 @@ class Currency extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `code`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, code: string, name: string, symbol: string, decimals: int, active: bool}>
      */
@@ -130,12 +127,11 @@ class Currency extends Model implements DataTable
     }
 
     /**
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it.
      *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = []): array

@@ -17,10 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 /**
- * Rubro del negocio: Salud, Gastronomía, Belleza…
+ * The trade a business is in: health, food, beauty…
  *
- * Maestro que carga el admin. Agrupa {@see BusinessActivity}, que es el nivel
- * con el que trabaja el asistente.
+ * A master the admin fills in. It groups {@see BusinessActivity}, which is the
+ * level the assistant works with.
  */
 #[Fillable(['code', 'name', 'description', 'sort_order', 'is_active'])]
 class BusinessSector extends Model implements DataTable
@@ -28,7 +28,7 @@ class BusinessSector extends Model implements DataTable
     /** @use HasFactory<BusinessSectorFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -52,8 +52,8 @@ class BusinessSector extends Model implements DataTable
     }
 
     /**
-     * Nombre propio: se respeta lo que escribe el usuario, solo se limpian
-     * espacios. Mismo criterio que Province::normalizeName.
+     * A proper name: kept as typed, only the spacing is cleaned. Same criterion
+     * as Province::normalizeName.
      */
     public static function normalizeName(string $value): string
     {
@@ -61,7 +61,7 @@ class BusinessSector extends Model implements DataTable
     }
 
     /**
-     * La clave es técnica, no copy: se guarda siempre en minúsculas.
+     * The key is technical, not copy: always stored lowercase.
      */
     public static function normalizeCode(string $value): string
     {
@@ -83,8 +83,8 @@ class BusinessSector extends Model implements DataTable
     }
 
     /**
-     * Se ordenan por `sort_order` y no por nombre: el orden es justamente lo que
-     * el admin decide acá para que el negocio lo vea así al elegir.
+     * Sorted by `sort_order` and not by name: the order is precisely what the
+     * admin decides here, so the business sees them that way when choosing.
      *
      * @return Collection<int, array{id: int, code: string, name: string, description: string, order: int, active: bool}>
      */
@@ -108,14 +108,13 @@ class BusinessSector extends Model implements DataTable
     }
 
     /**
-     * Opciones para el combobox de rubro.
+     * Options for the sector combobox.
      *
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it.
      *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = []): array

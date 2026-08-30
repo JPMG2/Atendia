@@ -29,15 +29,13 @@ class ProvinceForm extends BaseCatalogForm
 
         return [
 
-            // La FK es obligatoria en la tabla (`constrained()`), así que sin
-            // `required` un alta sin país reventaría en Postgres en vez de
-            // marcar el campo.
+            // The FK is required on the table, so without `required` a row with no
+            // country would blow up in Postgres instead of flagging the field.
             'country_id' => AttributeValidator::requireAndExists('countries', 'id', 'country_id', true),
 
-            // El nombre es único DENTRO del país: "Córdoba" existe en Argentina
-            // y en España, y las dos son válidas. Un unique global rechazaría la
-            // segunda, y uno inexistente dejaría cargar Córdoba dos veces en el
-            // mismo país. Por eso el unique va scopeado por country_id.
+            // The name is unique WITHIN the country: the same province name exists
+            // in two countries and both are valid. Hence the unique is scoped by
+            // country_id.
             'name' => AttributeValidator::requiredExistModelRelation(
                 'provinces',
                 'name',

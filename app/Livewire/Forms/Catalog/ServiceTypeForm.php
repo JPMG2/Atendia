@@ -26,8 +26,8 @@ class ServiceTypeForm extends BaseCatalogForm
     {
         return [
 
-            // Único global: es la clave que referencian el asistente y el RAG.
-            // La columna es varchar(40), así que el max:255 del helper no alcanza.
+            // Globally unique: the key the assistant and the RAG reference. The
+            // column is varchar(40), so the helper's max:255 is not enough.
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('3', 'service_types', 'code', $excludeId),
                 'max:40',
@@ -41,14 +41,14 @@ class ServiceTypeForm extends BaseCatalogForm
                 'max:255',
             ],
 
-            // Una sola modalidad, y obligatoria: es lo que decide qué le pregunta
-            // el asistente. Un tipo sin modalidad no sabría cómo ofrecerse.
+            // One modality, and required: it decides what the assistant asks. A type
+            // without one would not know how to offer itself.
             'service_modality_id' => AttributeValidator::requireAndExists(
                 'service_modalities', 'id', 'service_modality_id', true,
             ),
 
-            // El rubro es OPCIONAL y solo agrupa la pantalla del admin: quién
-            // ofrece el tipo lo decide `activity_service_type`, no esta columna.
+            // The sector is OPTIONAL and only groups the admin screen: who offers
+            // the type is `activity_service_type`'s call, not this column.
             'business_sector_id' => AttributeValidator::requireAndExists(
                 'business_sectors', 'id', 'business_sector_id', false,
             ),

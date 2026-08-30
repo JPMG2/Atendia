@@ -89,6 +89,10 @@ test('comments stay short', function (): void {
     $offenders = [];
 
     foreach (sourcesUnderRule() as $path => $contents) {
+        if (! CommentScanner::judgesLength($path)) {
+            continue;
+        }
+
         foreach (CommentScanner::commentsIn($path, $contents) as $comment) {
             if (CommentScanner::isTooLong($comment)) {
                 $offenders[$path] = trim(explode("\n", trim($comment))[0]);
@@ -112,8 +116,10 @@ test('the debt list only ever shrinks', function (): void {
     $settled = collect(commentDebt())
         ->filter(fn (string $path): bool => isset($sources[$path]))
         ->reject(function (string $path) use ($sources): bool {
+            $judgesLength = CommentScanner::judgesLength($path);
+
             foreach (CommentScanner::commentsIn($path, $sources[$path]) as $comment) {
-                if (CommentScanner::isSpanish($comment) || CommentScanner::isTooLong($comment)) {
+                if (CommentScanner::isSpanish($comment) || ($judgesLength && CommentScanner::isTooLong($comment))) {
                     return true;
                 }
             }

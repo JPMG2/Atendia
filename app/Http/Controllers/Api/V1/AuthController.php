@@ -39,7 +39,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Valida credenciales y emite un nuevo token de acceso.
+     * Checks the credentials and issues a new access token.
      *
      * @throws ValidationException
      */

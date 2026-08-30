@@ -26,10 +26,9 @@ class BusinessSectorForm extends BaseCatalogForm
     {
         return [
 
-            // La clave del rubro es única GLOBAL en la tabla y es lo que van a
-            // referenciar los perfiles del asistente: sin la regla, un código
-            // repetido sale como crash de Postgres en vez de error de campo.
-            // La columna es varchar(30), así que el max:255 del helper no alcanza.
+            // Globally unique, and what the assistant's profiles reference: without
+            // the rule a repeated code surfaces as a Postgres crash instead of a
+            // field error. The column is varchar(30).
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('2', 'business_sectors', 'code', $excludeId),
                 'max:30',
@@ -37,16 +36,16 @@ class BusinessSectorForm extends BaseCatalogForm
 
             'name' => AttributeValidator::uniqueIdNameLength('3', 'business_sectors', 'name', $excludeId),
 
-            // La columna es nullable: sin el `nullable` un rubro sin descripción
-            // rebotaría contra el min de stringValid().
+            // The column is nullable: without `nullable` a sector with no description
+            // would bounce off the min in stringValid().
             'description' => [
                 'nullable',
                 ...AttributeValidator::stringValid(false, '3'),
                 'max:255',
             ],
 
-            // El tope es el de la columna (smallint). Va explícito porque sobre un
-            // entero `max` compara el VALOR, no el largo.
+            // The cap is the column's (smallint). Explicit because on an integer
+            // `max` compares the VALUE, not the length.
             'sort_order' => [
                 ...AttributeValidator::numericInteger(true, 0),
                 'max:32767',

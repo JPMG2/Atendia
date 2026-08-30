@@ -26,10 +26,9 @@ class ServiceModalityForm extends BaseCatalogForm
     {
         return [
 
-            // El `code` es la bisagra con el código: es único global y es lo que
-            // el sistema matchea para saber qué comportamiento aplicar. Sin la
-            // regla, un código repetido sale como crash de Postgres en vez de
-            // error de campo. La columna es varchar(30): el max:255 no alcanza.
+            // The `code` is the hinge with the code: globally unique, and what the
+            // system matches on to know which behaviour applies. The column is
+            // varchar(30), so the helper's max:255 is not enough.
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('3', 'service_modalities', 'code', $excludeId),
                 'max:30',
@@ -37,24 +36,24 @@ class ServiceModalityForm extends BaseCatalogForm
 
             'name' => AttributeValidator::uniqueIdNameLength('3', 'service_modalities', 'name', $excludeId),
 
-            // La columna es nullable: sin el `nullable` una modalidad sin
-            // descripción rebotaría contra el min de stringValid().
+            // The column is nullable: without `nullable` a modality with no
+            // description would bounce off the min in stringValid().
             'description' => [
                 'nullable',
                 ...AttributeValidator::stringValid(false, '3'),
                 'max:255',
             ],
 
-            // El ícono no es texto libre: tiene que ser una clave real de
-            // config/icons.php o <x-icon> pintaría un hueco.
+            // The icon is not free text: it has to be a real key in config/icons.php
+            // or <x-icon> would paint a hole.
             'icon' => [
                 'nullable',
                 'string',
                 'in:'.implode(',', array_keys(config('icons'))),
             ],
 
-            // El tope es el de la columna (smallint). Va explícito porque sobre
-            // un entero `max` compara el VALOR, no el largo.
+            // The cap is the column's (smallint). Explicit because on an integer
+            // `max` compares the VALUE, not the length.
             'sort_order' => [
                 ...AttributeValidator::numericInteger(true, 0),
                 'max:32767',

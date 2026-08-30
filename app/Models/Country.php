@@ -23,7 +23,7 @@ class Country extends Model implements DataTable
     /** @use HasFactory<CountryFactory> */
     use HasFactory;
 
-    // Un maestro no se borra: lo que lo referencia quedaría colgando.
+    // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
 
@@ -39,8 +39,6 @@ class Country extends Model implements DataTable
     }
 
     /**
-     * Moneda del país (FK obligatoria en la tabla).
-     *
      * @return BelongsTo<Currency, $this>
      */
     public function currency(): BelongsTo
@@ -54,9 +52,8 @@ class Country extends Model implements DataTable
     }
 
     /**
-     * Los nombres de país son NOMBRES PROPIOS: "República Dominicana", "El
-     * Salvador", "Costa Rica". Se respeta lo que escribe el usuario (mismo
-     * criterio que Currency::normalizeName); solo se limpian espacios.
+     * Country names are PROPER NAMES. They are kept as typed, same criterion as
+     * Currency::normalizeName; only the spacing is cleaned.
      */
     public static function normalizeName(string $value): string
     {
@@ -64,9 +61,9 @@ class Country extends Model implements DataTable
     }
 
     /**
-     * La columna es nullable: un campo vacío se guarda como null, no como ''.
-     * Si no, la mitad de los países quedarían con un código telefónico "vacío
-     * pero presente" y `whereNull` no los encontraría nunca.
+     * The column is nullable, so an empty field is stored as null and not ''.
+     * Otherwise half the countries would hold a dialling code that is present
+     * but empty, which `whereNull` never finds.
      */
     public static function normalizePhoneCode(?string $value): ?string
     {
@@ -97,8 +94,8 @@ class Country extends Model implements DataTable
     }
 
     /**
-     * El `id` viaja siempre: es la única clave estable para editar. El `code` es
-     * editable por el usuario, así que no sirve para identificar la fila.
+     * The `id` always travels: it is the only stable key for editing. The `code`
+     * is user-editable, so it cannot identify the row.
      *
      * @return Collection<int, array{id: int, code: string, name: string, phone_code: string|null, currency: string, active: bool}>
      */
@@ -122,18 +119,13 @@ class Country extends Model implements DataTable
     }
 
     /**
-     * Un array vacío NO filtra: trae el catálogo completo. Ese es el default
-     * porque el combobox resuelve la opción elegida buscando su id dentro de
-     * `options` (resources/js/combobox.js): si una fila dada de baja quedara
-     * fuera, editar un registro que la referencia mostraría el campo vacío.
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank the
+     * field when editing a record that uses it. `label` is opt-in for the same
+     * reason — the default has to fit the callers that already exist.
      *
-     * El `label` lo decide quien llama: el catálogo antepone el código para
-     * poder buscar por él, un formulario de negocio quiere el nombre pelado.
-     * Sin argumento sale el texto de siempre, así que sumar una variante no
-     * obliga a recorrer los llamadores existentes.
-     *
-     * @param  list<bool>  $states  estados de `is_active` a incluir; vacío = todos
-     * @param  (Closure(self): string)|null  $label  texto de la opción; null = el default
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
      * @return array<int, array{value: int, label: string}>
      */
     public static function options(array $states = [], ?Closure $label = null): array
