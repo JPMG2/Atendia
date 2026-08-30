@@ -6,6 +6,7 @@ use App\Dto\CompanyDto;
 use App\Livewire\Forms\BaseForm;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Configuration\CompanyForm;
+use App\Mail\NewCompany;
 use App\Models\Business;
 use App\Models\Company;
 use App\Models\Country;
@@ -20,6 +21,7 @@ use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -1131,4 +1133,65 @@ test('changing step clears the errors of the step being left behind', function (
     // attempt you were no longer looking at.
     expect($blade)->toContain('x-on:step-changed="errors = {}"')
         ->and($stepper)->toContain("\$dispatch('step-changed'");
+});
+
+test('the company is welcomed the first time it saves an email', function (): void {
+    Mail::fake();
+
+    // Born without a contact: the address is a step two column, so a brand new
+    // company has none until somebody fills it in.
+    $company = Company::factory()->create(['email' => null]);
+
+    $this->actingAs(companyAdmin());
+
+    Livewire::test('configuration.company')
+        ->set('form.data.email', 'hola@atendia.app')
+        ->call('saveCommercial')
+        ->assertReturned(true);
+
+    // Queued, not sent: the mailable is ShouldQueue, so the save hands the mail
+    // to the queue and returns instead of waiting on the SMTP server.
+    Mail::assertQueued(NewCompany::class, function (NewCompany $mail) use ($company): bool {
+        return $mail->hasTo('hola@atendia.app')
+            && $mail->model->is($company);
+    });
+});
+
+test('the welcome is not sent again on later saves', function (): void {
+    Mail::fake();
+
+    Company::factory()->create(['email' => 'hola@atendia.app']);
+
+    $this->actingAs(companyAdmin());
+
+    // A company that already had an address is not being welcomed, it is being
+    // edited — and a change of address is not a welcome.
+    Livewire::test('configuration.company')
+        ->set('form.data.email', 'otro@atendia.app')
+        ->call('saveCommercial')
+        ->assertReturned(true);
+
+    Mail::assertNothingOutgoing();
+});
+
+test('the main step never sends the welcome', function (): void {
+    Mail::fake();
+
+    $region = Region::factory()->create();
+    $taxCondition = TaxCondition::factory()->create();
+
+    $this->actingAs(companyAdmin());
+
+    // The company is born here, but its address is not: there is nobody to
+    // write to yet.
+    Livewire::test('configuration.company')
+        ->set('form.data.legal_name', 'AtendIa SRL')
+        ->set('form.data.region_id', $region->id)
+        ->set('form.data.address', 'Calle Falsa 123')
+        ->set('form.data.tax_condition_id', $taxCondition->id)
+        ->set('form.data.tax_id', '30-12345678-9')
+        ->call('saveMain')
+        ->assertReturned(true);
+
+    Mail::assertNothingOutgoing();
 });

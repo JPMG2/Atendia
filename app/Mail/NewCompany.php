@@ -5,21 +5,31 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class NewCompany extends Mailable
+class NewCompany extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     /**
-     * Create a new message instance.
+     * El mensaje sabe QUÉ decir; a quién se le manda es asunto del canal.
+     *
+     * Por eso acá entra solo el modelo, y no los destinatarios: guardarlos en
+     * los dos lados deja el mismo dato en dos lugares que pueden contradecirse.
+     *
+     * Va público a propósito: Laravel pasa las propiedades públicas de un
+     * Mailable a su vista, así que `emails.new.company` puede leer `$model` sin
+     * que haya que declarar un `with()`.
      */
-    public function __construct()
-    {
+    public function __construct(
+        public Model $model,
+    ) {
         //
     }
 
@@ -29,7 +39,7 @@ class NewCompany extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Company',
+            subject: 'Nueva compañía',
         );
     }
 

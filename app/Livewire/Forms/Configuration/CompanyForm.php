@@ -8,6 +8,8 @@ use App\Dto\CompanyDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
+use App\Mail\NewCompany;
+use App\Messaging\Channels\Email;
 use App\Models\Company;
 use App\Models\SocialLink;
 use App\Rules\AttributeValidator;
@@ -254,9 +256,18 @@ class CompanyForm extends BaseForm
 
         $validated = $this->validateStep(self::STEP_COMMERCIAL);
 
-        return $this->tryAction(function () use ($validated): NotificationDto {
+        // El registro sale del closure por referencia porque el correo se manda
+        // AFUERA: `tryAction()` solo puede devolver la notificación de pantalla.
+        $company = null;
+
+        // Si ya tenía email, este guardado no es el que lo estrena.
+        $hadEmail = false;
+
+        $notification = $this->tryAction(function () use ($validated, &$company, &$hadEmail): NotificationDto {
 
             $company = Company::query()->findOrFail($this->recordId);
+
+            $hadEmail = filled($company->email);
 
             $company->fill(Arr::only($validated, self::COMMERCIAL_COLUMNS))->save();
 
@@ -275,6 +286,25 @@ class CompanyForm extends BaseForm
             return $this->notificationService()->notificationFor($company, 'updated');
 
         }, __('notifications.not_updated'));
+
+        // El correo va FUERA del `tryAction()` y DESPUÉS de que la fila esté
+        // escrita, por dos razones:
+        //
+        // 1. Adentro, cualquier problema del envío caería en el catch y
+        //    convertiría un guardado que salió bien en un toast de error. El
+        //    correo es una consecuencia del guardado, no parte de él.
+        // 2. Si el `save()` tira, el closure corta antes y no hay a quién
+        //    escribirle: el email que la persona tipeó no llegó a la base.
+        //
+        // Se manda UNA vez: cuando la compañía estrena su correo. `wasChanged()`
+        // solo dice la verdad después de un `save()` exitoso, y `$hadEmail`
+        // distingue estrenarlo de corregirlo — un cambio de dirección no es una
+        // bienvenida.
+        if ($company !== null && ! $hadEmail && $company->wasChanged('email') && filled($company->email)) {
+            (new Email($company, [$company->email], NewCompany::class))->send();
+        }
+
+        return $notification;
     }
 
     /**
