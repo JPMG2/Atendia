@@ -984,6 +984,12 @@
                        transition:color var(--dur-fast) var(--ease-out); }
   .catalog-item:hover .catalog-item-icon { color:var(--brand); }
   .catalog-item-text { overflow:hidden; transition:opacity var(--dur-base) var(--ease-out); }
+  /* Lo que coincide con la búsqueda. Fondo de marca suave y NO amarillo: el
+     resaltado tiene que leerse como parte del sistema y sobrevivir el tema
+     oscuro, donde un <mark> del navegador queda ilegible. */
+  .catalog-item-hit { background:var(--brand-soft); color:var(--brand-soft-text);
+                      border-radius:var(--radius-sm); font-weight:700; }
+  .catalog-item[aria-current="true"] .catalog-item-hit { background:transparent; }
   .catalog-item:hover { background:var(--surface-sunken); }
   .catalog-item[aria-current="true"] { background:var(--brand-soft); color:var(--brand-soft-text); font-weight:600; }
   .catalog-item[aria-current="true"] .catalog-item-icon { color:var(--brand-soft-text); }

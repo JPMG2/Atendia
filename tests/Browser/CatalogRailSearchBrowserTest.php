@@ -68,3 +68,19 @@ test('opening a master hides the search box while the rail is collapsed', functi
 
     expect($page->script('document.querySelector(".catalog-rail-search").clientHeight'))->toBe(0);
 });
+
+test('the search marks what matched, from the second character on', function (): void {
+    $page = visit('/admin/catalogs');
+
+    // One letter matches nearly every title and would speckle the rail with
+    // loose marks. Filtering still works from the first keystroke.
+    $page->fill('catalog-search', 'p')
+        ->assertVisible('.catalog-item[title="Países"]')
+        ->assertMissing('.catalog-item[title="Países"] .catalog-item-hit');
+
+    // Typed without the accent on purpose: the filter folds, so the highlight
+    // folds too and still marks the accented letter.
+    $page->fill('catalog-search', 'paise')
+        ->assertVisible('.catalog-item[title="Países"] .catalog-item-hit')
+        ->assertNoJavaScriptErrors();
+});

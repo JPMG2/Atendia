@@ -129,7 +129,18 @@ new #[Title('Catálogos del sistema')] class extends Component {
                                     x-show="matches({{ \Illuminate\Support\Js::from($form->title) }})"
                                     @if ($selectedId === $form->id) aria-current="true" @endif>
                                     <span class="catalog-item-icon"><x-icon :name="$form->icon ?? 'library'" :size="18" /></span>
-                                    <span class="catalog-item-text">{{ $form->title }}</span>
+                                    <span class="catalog-item-text">
+                                        {{-- The server paints the plain title, so nothing
+                                             flickers before Alpine boots; the split
+                                             version takes over only while searching. --}}
+                                        <span x-show="! searching()">{{ $form->title }}</span>
+
+                                        <span x-show="searching()" x-cloak>
+                                            <template x-for="(part, i) in segments({{ \Illuminate\Support\Js::from($form->title) }})" :key="i">
+                                                <span x-text="part.text" :class="part.hit && 'catalog-item-hit'"></span>
+                                            </template>
+                                        </span>
+                                    </span>
                                 </button>
                             @endforeach
                         </div>

@@ -91,3 +91,30 @@ test('masters are hidden from a user without their permission', function (): voi
         ->assertSee(__('catalog.hub.none'))
         ->assertDontSee('Monedas');
 });
+
+test('the rail marks what matched the search, without building HTML from data', function (): void {
+    $blade = file_get_contents(
+        resource_path('views/components/catalog/⚡manager.blade.php')
+    );
+
+    // The hits are painted as separate spans and never through x-html: a title
+    // is admin-editable data, and a highlight is not worth an injection hole.
+    expect($blade)->toContain('segments(')
+        ->and($blade)->toContain('catalog-item-hit')
+        ->and($blade)->not->toContain('x-html');
+
+    // The plain title stays server-rendered, so nothing flickers before Alpine.
+    expect($blade)->toContain('x-show="! searching()"');
+});
+
+test('the highlight is styled from tokens, never a raw colour', function (): void {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    preg_match('/\.catalog-item-hit \{[^}]*\}/', $css, $rule);
+
+    // A browser's own <mark> is yellow and unreadable in the dark theme, so the
+    // rule has to exist and has to come from the brand tokens.
+    expect($rule)->not->toBeEmpty()
+        ->and($rule[0])->toContain('var(--brand-soft)')
+        ->and($rule[0])->not->toMatch('/#[0-9a-fA-F]{3,8}/');
+});

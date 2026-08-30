@@ -21,6 +21,13 @@ function fold(value) {
         .replace(/[\u0300-\u036f]/g, '');
 }
 
+/**
+ * Shortest query that gets highlighted. One letter matches nearly every title
+ * and speckles the rail with loose marks; from two on, the mark points
+ * somewhere. Filtering still starts at the first keystroke.
+ */
+const MIN_HIGHLIGHT = 2;
+
 export function catalogRail({ titles = [] } = {}) {
     return {
         q: '',
@@ -30,6 +37,48 @@ export function catalogRail({ titles = [] } = {}) {
             const needle = fold(this.q).trim();
 
             return needle === '' || fold(title).includes(needle);
+        },
+
+        /** Whether the query is long enough to be worth marking. */
+        searching() {
+            return fold(this.q).trim().length >= MIN_HIGHLIGHT;
+        },
+
+        /**
+         * The title split into what matches the query and what does not, so the
+         * view can mark the hits without ever building HTML out of data.
+         *
+         * Matched on the FOLDED title and sliced out of the ORIGINAL, so typing
+         * without accents still highlights the accented text. The guard bails out
+         * on any character where folding would not preserve the length.
+         *
+         * @returns {{text: string, hit: boolean}[]}
+         */
+        segments(title) {
+            const needle = fold(this.q).trim();
+            const haystack = fold(title);
+
+            if (needle.length < MIN_HIGHLIGHT || haystack.length !== title.length) {
+                return [{ text: title, hit: false }];
+            }
+
+            const parts = [];
+            let from = 0;
+
+            for (let at = haystack.indexOf(needle); at !== -1; at = haystack.indexOf(needle, from)) {
+                if (at > from) {
+                    parts.push({ text: title.slice(from, at), hit: false });
+                }
+
+                parts.push({ text: title.slice(at, at + needle.length), hit: true });
+                from = at + needle.length;
+            }
+
+            if (from < title.length) {
+                parts.push({ text: title.slice(from), hit: false });
+            }
+
+            return parts;
         },
 
         /**
