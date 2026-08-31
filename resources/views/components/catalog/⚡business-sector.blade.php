@@ -8,11 +8,11 @@ use App\Traits\InteractsWithCatalogEditor;
 use Livewire\Component;
 
 /**
- * Editor del maestro Rubros (tabla `business_sectors`).
+ * Editor for the Sectors master (`business_sectors` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;

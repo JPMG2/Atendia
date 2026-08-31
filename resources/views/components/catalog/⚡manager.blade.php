@@ -6,11 +6,11 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Catálogos del sistema')] class extends Component {
-    /** Id del maestro abierto (fila de catalog_forms); null = ninguno abierto. */
+    /** Id of the open master (a catalog_forms row); null means none is open. */
     public ?int $selectedId = null;
 
     /**
-     * Abrir un maestro: el editor renderiza su formulario y el riel se compacta.
+     * Opens a master: the editor renders its form and the rail collapses.
      */
     public function select(int $id): void
     {
@@ -18,7 +18,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * Cerrar el maestro abierto: vuelve al estado vacío y el riel se expande.
+     * Closes the open master: back to the empty state and the rail expands.
      */
     public function close(): void
     {
@@ -26,8 +26,8 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * Maestros activos visibles para el usuario (filtrados por permission_key).
-     * El super-admin pasa por Gate::before, así que ve todos.
+     * Active masters visible to the user, filtered by permission_key. The
+     * super-admin goes through Gate::before, so they see every one.
      *
      * @return \Illuminate\Support\Collection<int, CatalogForm>
      */
@@ -38,7 +38,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * Maestros agrupados para la lista del riel.
+     * Masters grouped for the rail listing.
      *
      * @return \Illuminate\Support\Collection<string, \Illuminate\Support\Collection<int, CatalogForm>>
      */
@@ -48,7 +48,7 @@ new #[Title('Catálogos del sistema')] class extends Component {
         return $this->forms->groupBy('group');
     }
 
-    /** El maestro abierto, o null si no hay ninguno. */
+    /** The open master, or null when none is. */
     #[Computed]
     public function current(): ?CatalogForm
     {
@@ -60,8 +60,8 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * Nombre del componente Livewire a renderizar en el editor. Si el editor del
-     * maestro aún no existe, cae al placeholder "en construcción".
+     * Name of the Livewire component the editor renders. Falls back to the
+     * "under construction" placeholder while the master has no editor yet.
      */
     #[Computed]
     public function editorComponent(): ?string
@@ -76,8 +76,8 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * ¿Existe el SFC del editor? Mapea el nombre Livewire (con puntos) a su
-     * archivo `⚡<segmento>.blade.php` bajo resources/views/components.
+     * Whether the editor SFC exists. Maps the dotted Livewire name to its
+     * `⚡<segment>.blade.php` file under resources/views/components.
      */
     private function editorExists(string $name): bool
     {

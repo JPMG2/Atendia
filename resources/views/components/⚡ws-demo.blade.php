@@ -7,8 +7,8 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * Prueba de vida del WebSocket sobre un canal PRIVADO por negocio.
- * Descartable: cuando exista el chat real, esto se borra.
+ * Liveness check for the WebSocket over a PRIVATE per-business channel.
+ * Throwaway: it goes the day the real chat exists.
  */
 new class extends Component {
     /** @var array<int, string> */
@@ -16,7 +16,7 @@ new class extends Component {
 
     public string $draft = '';
 
-    /** Negocio cuyo canal se escucha. El dueño no tiene, así que toma el primero. */
+    /** Business whose channel is listened to. The owner has none, so take the first. */
     #[Locked]
     public ?int $businessId = null;
 
@@ -37,7 +37,8 @@ new class extends Component {
     }
 
     /**
-     * El canal lleva el id en el nombre, así que el listener se arma en runtime.
+     * The channel carries the id in its name, so the listener is built at
+     * runtime.
      *
      * @return array<string, string>
      */

@@ -10,11 +10,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Actividades (tabla `business_activities`).
+ * Editor for the Activities master (`business_activities` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -32,10 +32,11 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de rubro. Van TODOS, también los inactivos: si una
-     * actividad ya apunta a un rubro dado de baja, filtrarlo acá haría que al
-     * abrirla el combobox apareciera vacío y el guardado le cambiara el rubro sin
-     * que nadie lo tocara.
+     * Sector options for the combobox, inactive ones included.
+     *
+     * Filtering them out would leave the combobox empty on an activity that
+     * points at a retired sector, and saving would then change its sector with
+     * nobody touching it.
      *
      * @return array<int, array{value: int, label: string}>
      */

@@ -14,15 +14,11 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Compañía: los datos de AtendIa — UN solo registro, no los negocios clientes.
+ * Company: AtendIa's own data — a SINGLE record, not the client businesses.
  *
- * La carga va por PASOS: el segundo recién se abre cuando la compañía existe,
- * porque lo que lo desbloquea es haber guardado el primero. Con el registro ya
- * cargado los dos pasos quedan libres.
- *
- * El paso 1 ya guarda: valida en el front, después en el server, y persiste
- * SOLO sus columnas. El paso 2 sigue sin acción, y las redes sociales siguen
- * siendo maqueta: todavía no se cargan desde `social_links`.
+ * Loading goes in STEPS: the second opens only once the company exists,
+ * because saving the first is what unlocks it. Step 1 already persists; step 2
+ * has no action yet and the social rows are still a mock-up.
  */
 new #[Title('Compañía')] class extends Component {
     use HasNotifications;
@@ -30,41 +26,35 @@ new #[Title('Compañía')] class extends Component {
     public CompanyForm $form;
 
     /**
-     * ¿La compañía ya está cargada? Es lo que abre el segundo paso.
+     * Whether the company is loaded. This is what opens the second step.
      *
-     * Va `#[Locked]` y se setea UNA vez en `mount()` a propósito: siembra el
-     * `x-data` del stepper, y si el JSON embebido cambiara entre renders Livewire
-     * reescribiría el atributo y Alpine re-inicializaría el componente, perdiendo
-     * en qué paso estaba parado el usuario. El desbloqueo en caliente viaja por
-     * el evento `stepper-unlock`, no por este valor.
+     * `#[Locked]` and set ONCE in `mount()`: it seeds the stepper's `x-data`,
+     * so a changing value would make Alpine re-initialize and lose the step the
+     * user was on. The live unlock travels on the `stepper-unlock` event.
      */
     #[Locked]
     public bool $isRegistered = false;
 
     /**
-     * Cuántas veces se descartó el paso 1. Va en el `wire:key` de su panel.
+     * How many times step 1 was discarded. Goes in its panel's `wire:key`.
      *
-     * Los campos van con `wire:model` deferred: lo que el usuario tipea NO viaja
-     * hasta que hay un request. Al descartar, el server repone valores que en su
-     * lado muchas veces YA eran esos, así que el HTML sale idéntico, Livewire no
-     * parchea nada y en pantalla sobrevive lo tipeado —el combobox vaciado se
-     * quedaba vacío aunque la región estuviera restaurada—. Cambiar la clave
-     * fuerza a rehacer el panel entero desde el server, que es exactamente lo que
-     * significa descartar.
+     * The fields use deferred `wire:model`, so on discard the server replays
+     * values it often already held: the HTML comes out identical and what was
+     * typed survives on screen. Changing the key rebuilds the panel instead.
      */
     #[Locked]
     public int $mainRevision = 0;
 
-    /** Lo mismo para el panel del paso 2. Ver {@see self::$mainRevision}. */
+    /** The same for the step 2 panel. See {@see self::$mainRevision}. */
     #[Locked]
     public int $commercialRevision = 0;
 
     /**
-     * Deja el DTO cargado ANTES del primer render.
+     * Leaves the DTO loaded BEFORE the first render.
      *
-     * `setup()` no es un hook de Livewire Form: si no se lo llama desde acá, el
-     * DTO queda en null y el primer `wire:model` explota con "Cannot assign
-     * array to property".
+     * `setup()` is not a Livewire Form hook: without this call the DTO stays
+     * null and the first `wire:model` blows up with "Cannot assign array to
+     * property".
      */
     public function mount(): void
     {
@@ -74,19 +64,11 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Guarda el paso principal. Devuelve si guardó.
+     * Saves the main step. Returns whether it saved, which unlocks step 2.
      *
-     * El front usa ese booleano para desbloquear el paso 2 y avanzar; si rebotó,
-     * el usuario se queda donde está con lo que escribió.
-     *
-     * OJO: acá NO se toca `$isRegistered`. Siembra el `x-data` del stepper, y si
-     * cambiara de valor Livewire reescribiría el atributo y Alpine
-     * re-inicializaría el componente —perdiendo el paso, el scroll y lo tipeado—.
-     * El desbloqueo en caliente lo hace el evento `stepper-unlock`.
-     *
-     * Sin `authorize()`: la ruta ya exige `access-admin-panel` y ese middleware
-     * se vuelve a aplicar en cada request de Livewire (persistent middleware),
-     * igual que en los editores de catálogo.
+     * `$isRegistered` is NOT touched here: it seeds the stepper's `x-data` and
+     * writing it would re-initialize Alpine, losing the step. No `authorize()`
+     * either — the route's admin middleware re-applies on every request.
      */
     public function saveMain(): bool
     {
@@ -98,7 +80,7 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Guarda el paso comercial (contacto y redes). Devuelve si guardó.
+     * Saves the commercial step (contact and links). Returns whether it saved.
      */
     public function saveCommercial(): bool
     {
@@ -121,18 +103,18 @@ new #[Title('Compañía')] class extends Component {
         $this->commercialRevision++;
     }
 
-    /** Suma una fila de red debajo de la indicada. */
+    /** Adds a social row right below the given one. */
     public function addSocialRow(int $after): void
     {
         $this->form->addSocialRow($after);
     }
 
     /**
-     * Quita una fila de red. Si ya estaba guardada, el borrado es inmediato.
+     * Removes a social row. One already stored is deleted right away.
      *
-     * La advertencia la pide la pantalla ANTES de llamar acá, por el diálogo del
-     * sistema; la autorización sigue siendo la del panel (el middleware admin se
-     * re-aplica en cada request de Livewire).
+     * The screen raises the warning BEFORE calling here, through the system
+     * dialog; authorization stays the panel's, since the admin middleware
+     * re-applies on every Livewire request.
      */
     public function removeSocialRow(int $index): void
     {
@@ -144,10 +126,10 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Descarta lo escrito en el paso principal y vuelve a lo guardado.
+     * Discards what was typed in the main step and restores what is stored.
      *
-     * También limpia el rebote del server: un campo en rojo de un intento que se
-     * acaba de descartar no describe nada de lo que hay ahora en pantalla.
+     * It clears the server-side errors too: a field left red by an attempt that
+     * was just discarded describes nothing of what is on screen now.
      */
     public function discardMain(): void
     {
@@ -159,11 +141,11 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Países activos para el combobox.
+     * Active countries for the combobox.
      *
-     * El catálogo antepone el código ("ARG — Argentina") para poder buscar por
-     * él; acá el país se elige por su nombre, así que la pantalla pasa su
-     * propio label en vez de arrastrar un código que nadie va a tipear.
+     * The catalog prefixes the code ("ARG — Argentina") so it can be searched
+     * by; here the country is picked by name, so the screen passes a label of
+     * its own instead of dragging along a code nobody will type.
      *
      * @return array<int, array{value: int, label: string}>
      */
@@ -174,15 +156,11 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Provincias del país elegido.
+     * Provinces of the chosen country.
      *
-     * No hace falta recargarla desde ningún hook: la computed LEE
-     * `form.data.country_id`, así que al cambiar el país el próximo render ya
-     * sale con la lista nueva. Sin país elegido salen todas.
-     *
-     * Mismo criterio de etiqueta que el país: el catálogo cuelga el código del
-     * país para distinguir dos provincias homónimas, y acá alcanza con el
-     * nombre porque el país ya quedó elegido en el campo de arriba.
+     * No hook has to reload it: the computed READS `form.data.country_id`, so
+     * the next render already carries the new list, and with no country chosen
+     * all of them show. No country prefix on the label, unlike the catalog's.
      *
      * @return array<int, array{value: int, label: string}>
      */
@@ -193,7 +171,7 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Regiones activas para el combobox.
+     * Active regions for the combobox.
      *
      * @return array<int, array{value: int, label: string}>
      */
@@ -204,7 +182,7 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Condiciones fiscales activas para el combobox.
+     * Active tax conditions for the combobox.
      *
      * @return array<int, array{value: int, label: string}>
      */
@@ -215,7 +193,7 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Redes sociales del catálogo, para elegir en cada fila.
+     * Catalog social networks, to pick from on each row.
      *
      * @return array<int, array{value: int, label: string}>
      */

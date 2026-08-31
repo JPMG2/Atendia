@@ -70,7 +70,11 @@ final class CommentScanner
 
             // The delimiters travel back: a Blade comment is a block, and
             // without them it would be measured as a run of `//` lines.
-            return array_map(fn (string $c): string => '{{--'.$c.'--}}', $matches[1]);
+            $comments = array_map(fn (string $c): string => '{{--'.$c.'--}}', $matches[1]);
+
+            // A Livewire SFC carries its whole class in a leading `<?php`
+            // block, so the docblocks that matter live there, not in Blade.
+            return array_merge($comments, self::phpComments($contents));
         }
 
         if (str_ends_with($path, '.js')) {
@@ -90,6 +94,16 @@ final class CommentScanner
             return array_values($comments);
         }
 
+        return self::phpComments($contents);
+    }
+
+    /**
+     * The PHP comments in a source string, runs already merged.
+     *
+     * @return list<string>
+     */
+    private static function phpComments(string $contents): array
+    {
         $sourceLines = preg_split('/\R/', $contents) ?: [];
         $found = [];
 

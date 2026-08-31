@@ -54,7 +54,10 @@ Cuando se suma un set de reglas de oro:
   `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
   MISMO scanner (`tests/Support/CommentScanner.php`), así que no pueden divergir
   —a diferencia de los allowlists espejados de la regla de markup, que hay que
-  tocar de a dos—. Ratchet en `tests/Feature/comment_debt.php`.
+  tocar de a dos—. El ratchet llegó a cero y se borró: hoy no hay allowlist.
+  Ojo con el ALCANCE del scanner: un `.blade.php` puede ser un SFC de Livewire y
+  llevar su clase entera en un bloque `<?php`; mirar solo los `{{-- --}}` deja sin
+  vigilar la mitad del archivo (pasó, y los docblocks quedaron en español).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

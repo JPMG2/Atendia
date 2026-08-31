@@ -240,7 +240,10 @@ las 3 capas está en `reglas-de-oro-enforcement.md`.
   el copy que lee el cliente, y tiene variantes regionales. Ver
   `.ai/guidelines/formularios.md` §4.
 - Los `.md` de `.ai/guidelines/` y las memorias siguen en español: los leés vos.
-- Los banners `|-----|` que trae Laravel en `config/` son del framework.
+- Los banners `|-----|` que trae Laravel son del framework.
+- **`config/` no se juzga por LARGO**: son archivos publicados por Laravel y
+  spatie, con su texto original, que se pisa en cada update del paquete. El
+  idioma sí se exige (los `config/` nuestros van en inglés).
 
 ## Ejemplos
 
@@ -267,17 +270,11 @@ $company = Company::query()->find($this->recordId) ?? Company::query()->first();
 /** @param  array<int, string>  $recipients */
 ```
 
-## La deuda (`tests/Feature/comment_debt.php`)
+## Sin excepciones
 
-Cuando la regla nació había **229 archivos** con comentarios viejos. Están
-congelados en esa lista, que es una **lista de pendientes, no una excepción**:
-
-- El guardián solo tolera lo que está ahí; cualquier archivo fuera de la lista se
-  exige completo.
-- **Nunca se agrega un path.** Si un archivo nuevo falla, se arregla el archivo.
-- Al limpiar un archivo hay que **sacarlo de la lista** — hay un test que falla si
-  quedó adentro estando limpio, porque si no dejaría de estar protegido.
-- La meta es que el archivo llegue a `[]` y se borre.
+La regla nació con **229 archivos** viejos congelados en una lista de pendientes.
+Esa lista **llegó a cero y se borró**: hoy el guardián exige TODOS los archivos,
+sin allowlist. No hay dónde anotar una excepción — si un archivo falla, se arregla.
 
 ## Checklist de salida
 
@@ -286,7 +283,6 @@ congelados en esa lista, que es una **lista de pendientes, no una excepción**:
 - [ ] Ninguno pasa de 3 líneas (`//`) o 5 de prosa (docblock).
 - [ ] Sin `@param` que repita el tipo; sí los array shapes y `@throws`.
 - [ ] Sin código comentado ni banners decorativos.
-- [ ] Si limpiaste un archivo, lo sacaste de `comment_debt.php`.
 - [ ] `./vendor/bin/pest --filter=GoldenRulesComments` en verde.
 
 === .ai/documentacion-y-memoria rules ===
@@ -659,7 +655,10 @@ Cuando se suma un set de reglas de oro:
   `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
   MISMO scanner (`tests/Support/CommentScanner.php`), así que no pueden divergir
   —a diferencia de los allowlists espejados de la regla de markup, que hay que
-  tocar de a dos—. Ratchet en `tests/Feature/comment_debt.php`.
+  tocar de a dos—. El ratchet llegó a cero y se borró: hoy no hay allowlist.
+  Ojo con el ALCANCE del scanner: un `.blade.php` puede ser un SFC de Livewire y
+  llevar su clase entera en un bloque `<?php`; mirar solo los `{{-- --}}` deja sin
+  vigilar la mitad del archivo (pasó, y los docblocks quedaron en español).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

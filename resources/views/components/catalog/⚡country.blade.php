@@ -10,11 +10,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Países (tabla `countries`).
+ * Editor for the Countries master (`countries` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -32,10 +32,11 @@ new class extends Component {
     }
 
     /**
-     * Opciones del select de moneda. Van TODAS, también las inactivas: si un país
-     * ya apunta a una moneda dada de baja, filtrarla acá haría que al abrir ese
-     * país el select apareciera vacío y el guardado le cambiara la moneda sin que
-     * nadie la tocara.
+     * Currency options for the select, inactive ones included.
+     *
+     * Filtering them out would leave the select empty on a country that points
+     * at a retired currency, and saving would then change its currency with
+     * nobody touching it.
      *
      * @return array<int, array{value: int, label: string}>
      */

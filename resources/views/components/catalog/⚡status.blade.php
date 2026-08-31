@@ -9,15 +9,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Estados (tabla `current_statuses`).
+ * Editor for the Statuses master (`current_statuses` table).
  *
- * El más chico de los maestros: la tabla tiene UN dato, el nombre. No lleva
- * `is_active` —la columna no existe— así que este editor no tiene switch de
- * estado ni columna Estado; agregarlos sería inventar un campo que la base no
- * guarda.
- *
- * El chrome y el riel de Alpine viven en `<x-catalog.*>` y en `catalogMaster()`.
- * Livewire 4 nativo (SFC).
+ * The smallest master: the table holds one column, the name. There is no
+ * `is_active`, so this editor has no state switch and no Status column —
+ * adding them would invent a field the database does not store.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -35,9 +31,9 @@ new class extends Component {
     }
 
     /**
-     * Paleta para el combobox. Sale de `CurrentStatus::COLORS` y no de una lista
-     * escrita en el Blade: la clave que se guarda y la que el CSS sabe pintar
-     * tienen que ser la MISMA, y la validación usa esa misma constante.
+     * Palette for the combobox, out of `CurrentStatus::COLORS` rather than a
+     * list written in the Blade: the key that gets stored, the one the CSS can
+     * paint and the one validation checks all have to be the SAME.
      *
      * @return array<int, array{value: string, label: string}>
      */

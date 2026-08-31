@@ -3,16 +3,12 @@
 use Livewire\Component;
 
 /**
- * Toast global y REUTILIZABLE por cualquier componente.
+ * Global toast, REUSABLE by any component.
  *
- * No tiene estado en el servidor: se monta una sola vez en el layout y escucha
- * el evento `notify` que dispara el trait `HasNotifications` a partir de un
- * `NotificationDto` (`type` = success|error|warning|info, `message`).
+ * No server state: mounted once in the layout and listening for the `notify`
+ * event that `HasNotifications` fires out of a `NotificationDto`. Being all
+ * Alpine, showing one costs no extra request.
  *
- * Al ser 100% Alpine, mostrar un aviso NO cuesta un request extra: el evento que
- * Livewire emite en el navegador burbujea hasta `window` y la pila lo apila.
- *
- * Uso desde cualquier componente:
  *   $this->dispatchNotification($this->form->storeCurrency());
  */
 new class extends Component {};

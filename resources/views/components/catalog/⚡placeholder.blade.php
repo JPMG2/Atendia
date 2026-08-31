@@ -3,9 +3,9 @@
 use Livewire\Component;
 
 /**
- * Editor placeholder: se renderiza cuando un maestro de catalog_forms todavía
- * no tiene su componente editor propio. Al crear `catalog/⚡<entity>.blade.php`,
- * el hub lo usa automáticamente en lugar de este.
+ * Placeholder editor, rendered while a catalog_forms master has no editor
+ * component of its own. Creating `catalog/⚡<entity>.blade.php` makes the hub
+ * pick that one up instead.
  */
 new class extends Component {};
 ?>

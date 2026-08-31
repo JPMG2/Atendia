@@ -9,11 +9,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Atributos (tabla `service_attributes`).
+ * Editor for the Attributes master (`service_attributes` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -31,8 +31,9 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de tipo de dato. Salen de config/attribute_types.php,
-     * que es lo único que el sistema sabe pintar y validar.
+     * Data-type options for the combobox. They come from
+     * config/attribute_types.php, which is all the system knows how to render
+     * and validate.
      *
      * @return array<int, array{value: string, label: string}>
      */

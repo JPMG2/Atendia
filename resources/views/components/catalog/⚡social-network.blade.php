@@ -9,11 +9,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Redes sociales (tabla `social_networks`).
+ * Editor for the Social networks master (`social_networks` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -31,9 +31,9 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de ícono: las CLAVES de config/icons.php, que es el
-     * catálogo real de glifos del sistema. Texto libre no sirve — <x-icon> con un
-     * nombre inexistente no dibuja nada y la red queda sin ícono sin avisar.
+     * Icon options for the combobox: the KEYS of config/icons.php, which is the
+     * real glyph catalog. Free text will not do — <x-icon> with a name that
+     * does not exist draws nothing and the network silently ends up iconless.
      *
      * @return array<int, array{value: string, label: string}>
      */

@@ -7,8 +7,8 @@ use Livewire\Component;
 new class extends Component
 {
     /**
-     * Panel activo (admin | client). Se fija en mount desde la ruta para que
-     * persista en los updates de Livewire (no depender del request en vivo).
+     * Active panel (admin | client). Fixed in mount from the route so it
+     * survives Livewire updates instead of depending on the live request.
      */
     public string $panel = 'client';
 
@@ -18,7 +18,7 @@ new class extends Component
     }
 
     /**
-     * Árbol de menú del panel activo (memoizado por request).
+     * Menu tree of the active panel, memoized per request.
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Menu>
      */

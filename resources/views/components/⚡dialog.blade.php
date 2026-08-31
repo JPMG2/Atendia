@@ -3,17 +3,12 @@
 use Livewire\Component;
 
 /**
- * La ventana de avisos del sistema, REUTILIZABLE por cualquier componente.
+ * The system's dialog window, REUSABLE by any component.
  *
- * No tiene estado en el servidor: se monta una sola vez en el layout —igual que
- * el toast— y escucha el evento `dialog` que dispara la función global
- * `dialog.*` (resources/js/dialog.js). Abrir un aviso NO cuesta un request.
+ * No server state: mounted once in the layout, listening for the `dialog`
+ * event the global `dialog.*` fires. GOLDEN RULE: every warning goes through
+ * here, never a native `alert` — .ai/guidelines/avisos-y-modales.md.
  *
- * REGLA DE ORO: acá pasan TODOS los avisos del sistema. En AtendIa no existe un
- * `alert`, `confirm` ni `prompt` del navegador — ni en el panel admin ni
- * en el del cliente. Ver .ai/guidelines/avisos-y-modales.md.
- *
- * Uso desde cualquier componente Alpine o Livewire:
  *   if (! await dialog.confirm({ title: '…', message: '…', type: 'danger' })) return;
  */
 new class extends Component {};

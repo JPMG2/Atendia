@@ -11,15 +11,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Tipos de servicio (tabla `service_types`).
+ * Editor for the Service types master (`service_types` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
- *
- * La columna "Atributos" de la tabla es de LECTURA: asignarlos es una pantalla
- * aparte (una fila por atributo con su obligatorio, su orden y su etiqueta
- * propia), no un campo de este formulario.
+ * The chrome and the Alpine rail live in `<x-catalog.*>` and `catalogMaster()`.
+ * The table's "Attributes" column is READ-ONLY: assigning them is a screen of
+ * its own, not a field of this form.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -37,10 +33,11 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de modalidad. Van TODAS, también las inactivas: si un
-     * tipo ya apunta a una modalidad dada de baja, filtrarla acá haría que al
-     * abrirlo el combobox apareciera vacío y el guardado le cambiara la modalidad
-     * sin que nadie la tocara.
+     * Modality options for the combobox, inactive ones included.
+     *
+     * Filtering them out would leave the combobox empty on a type that points
+     * at a retired modality, and saving would then change its modality with
+     * nobody touching it.
      *
      * @return array<int, array{value: int, label: string}>
      */
@@ -51,7 +48,7 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de rubro. Mismo criterio que arriba.
+     * Sector options for the combobox. Same reasoning as above.
      *
      * @return array<int, array{value: int, label: string}>
      */

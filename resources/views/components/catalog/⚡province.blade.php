@@ -10,11 +10,11 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Editor del maestro Provincias (tabla `provinces`).
+ * Editor for the Provinces master (`provinces` table).
  *
- * El chrome (toolbar, tabla, barra del form, pie de acciones) y todo el riel de
- * Alpine viven en `<x-catalog.*>` y en `catalogMaster()`: acá quedan SOLO las
- * acciones del server y los campos propios del maestro. Livewire 4 nativo (SFC).
+ * The chrome and the whole Alpine rail live in `<x-catalog.*>` and in
+ * `catalogMaster()`, so only the server actions and this master's own fields
+ * belong here.
  */
 new class extends Component {
     use InteractsWithCatalogEditor;
@@ -32,10 +32,11 @@ new class extends Component {
     }
 
     /**
-     * Opciones del combobox de país. Van TODOS, también los inactivos: si una
-     * provincia ya apunta a un país dado de baja, filtrarlo acá haría que al
-     * abrirla el combobox apareciera vacío y el guardado le cambiara el país sin
-     * que nadie lo tocara.
+     * Country options for the combobox, inactive ones included.
+     *
+     * Filtering them out would leave the combobox empty on a province that
+     * points at a retired country, and saving would then change its country
+     * with nobody touching it.
      *
      * @return array<int, array{value: int, label: string}>
      */
