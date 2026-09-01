@@ -3,7 +3,7 @@
     'name' => '',
     'size' => 'md',     // xs | sm | md | lg | xl
     'status' => null,   // online | away | offline
-    'tint' => null,     // brand | coral | info | warning ; null = determinístico por nombre
+    'tint' => null,     // brand | coral | info | warning ; null = derived from the name
 ])
 
 @php
@@ -15,14 +15,14 @@
         ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
         ->implode('') ?: '?';
 
-    // Paleta de tintes (mismos tokens → light/dark solos).
+    // Tint palette (same tokens → light/dark for free).
     $tints = [
         'brand' => ['var(--jade-100)', 'var(--jade-700)'],
         'coral' => ['var(--coral-100)', 'var(--coral-700)'],
         'info' => ['var(--blue-50)', 'var(--blue-500)'],
         'warning' => ['var(--amber-50)', 'var(--amber-500)'],
     ];
-    // Tinte fijo si se pide uno válido; si no, determinístico por nombre.
+    // A fixed tint when a valid one is asked for, otherwise derived from the name.
     $keys = array_keys($tints);
     $tintKey = array_key_exists($tint, $tints) ? $tint : $keys[crc32($name) % count($keys)];
     [$bg, $fg] = $tints[$tintKey];

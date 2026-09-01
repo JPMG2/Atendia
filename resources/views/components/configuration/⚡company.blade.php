@@ -12,6 +12,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * Company: AtendIa's own data — a SINGLE record, not the client businesses.
@@ -22,6 +23,7 @@ use Livewire\Component;
  */
 new #[Title('Compañía')] class extends Component {
     use HasNotifications;
+    use WithFileUploads;
 
     public CompanyForm $form;
 
@@ -92,7 +94,7 @@ new #[Title('Compañía')] class extends Component {
     }
 
     /**
-     * Descarta lo escrito en el paso comercial y vuelve a lo guardado.
+     * Discards what was typed in the commercial step and restores what is stored.
      */
     public function discardCommercial(): void
     {
@@ -190,6 +192,27 @@ new #[Title('Compañía')] class extends Component {
     public function taxConditionOptions(): array
     {
         return $this->form->data?->country_id ? TaxCondition::options(states: [true], countryId: $this->form->data?->country_id) : [];
+    }
+
+    /**
+     * The stored logos as URLs, keyed by the column that holds each path.
+     *
+     * `asset()` and not `Storage::url()`: the disk's URL is pinned to APP_URL,
+     * and behind the proxy that comes out http on an https page, where the
+     * browser blocks it. A map because a computed takes no arguments.
+     *
+     * @return array<string, string|null>
+     */
+    #[Computed]
+    public function logoUrls(): array
+    {
+        return collect(['logo_path_light', 'logo_path_dark'])
+            ->mapWithKeys(fn(string $column): array => [
+                $column => filled($this->form->data?->{$column})
+                    ? asset('storage/' . $this->form->data->{$column})
+                    : null,
+            ])
+            ->all();
     }
 
     /**
@@ -303,21 +326,17 @@ field in red from an attempt you had stopped looking at. --}}
                     <p class="config-block-desc">{{ __('company.logo.desc') }}</p>
                 </div>
 
+                {{-- The file travels the moment it is picked, but the PATH is only
+                written when step one is saved: discarding drops the upload,
+                same as it drops what was typed. --}}
                 <div class="config-logo-grid">
-                    @foreach ([['name' => 'logo_path_light', 'label' => __('company.logo.light')], ['name' => 'logo_path_dark', 'label' => __('company.logo.dark')]] as $logo)
-                        <div class="field">
-                            <x-ui.label :for="'if-' . $logo['name']">{{ $logo['label'] }}</x-ui.label>
+                    <x-inputsform.file span="full" name="logo_light_file" :label="__('company.logo.light')"
+                        :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_light']"
+                        wire:model="form.logo_light_file" />
 
-                            {{-- Not wired: the drop zone takes no files yet. The real control
-                            will be an <x-ui.*> with its test, and only then does
-                            it bind to the model. --}}
-                            <button type="button" class="config-drop" id="if-{{ $logo['name'] }}">
-                                <span class="config-drop-icon"><x-icon name="upload" :size="22" /></span>
-                                <span>{{ __('company.logo.upload') }}</span>
-                                <span class="config-drop-hint">{{ __('company.logo.hint') }}</span>
-                            </button>
-                        </div>
-                    @endforeach
+                    <x-inputsform.file span="full" name="logo_dark_file" :label="__('company.logo.dark')"
+                        :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_dark']"
+                        wire:model="form.logo_dark_file" />
                 </div>
             </div>
 
@@ -445,27 +464,24 @@ field in red from an attempt you had stopped looking at. --}}
 @script
     <script>
         /*
-         * Validación en el FRONT de la pantalla Compañía.
+         * FRONT validation of the company screen.
          *
-         * Mismo criterio que los maestros del catálogo: las reglas espejan lo que
-         * la pantalla marca con asterisco, y el guardado no sale hasta que estén
-         * completas. Lo que NO se puede replicar acá es lo que necesita la base
-         * (`exists` de los combobox): ese rebote sigue viniendo del server.
-         *
-         * Se apoya en la función madre global `validate()` (form-guard.js), que
-         * ya viene cargada en el layout del dashboard.
+         * Same criterion as the catalog masters: the rules mirror what the
+         * screen marks with an asterisk, and no save leaves until they are
+         * met. What cannot be replicated here is whatever needs the database
+         * (the comboboxes' `exists`): that bounce still comes from the server.
          */
         Alpine.data('companyForm', () => ({
             errors: {},
 
-            // Dónde vive el DTO en el server. Los valores se leen de ahí y no de
-            // Alpine: los campos van por wire:model contra el DTO, que es el
-            // único estado del formulario.
+            // Where the DTO lives on the server. Values are read from there and
+            // not from Alpine: the fields bind to the DTO through wire:model,
+            // which is the form's only state.
             path: 'form.data',
 
-            // Una bolsa POR PASO, no una sola para toda la pantalla: si el paso
-            // parado validara también las reglas del otro, el error se pintaría
-            // en un panel oculto y el botón parecería no hacer nada.
+            // One bag PER STEP and not a single one for the whole screen: were
+            // the standing step judged by the other's rules too, the error would
+            // be painted on a hidden panel and the button would look dead.
             rules: {
                 main: {
                     legal_name: ['required', ['maxLength', 255], 'noMarkup'],
@@ -477,9 +493,9 @@ field in red from an attempt you had stopped looking at. --}}
                     tax_id: ['required', ['maxLength', 20], 'noMarkup'],
                 },
 
-                // El formato de la URL y la red repetida NO se pueden replicar
-                // acá (una es `url:` de Laravel, la otra necesita mirar el resto
-                // de las filas): esos rebotan del server, como el `exists`.
+                // The URL format and the repeated network CANNOT be replicated
+                // here — one is Laravel's `url:`, the other has to look at every
+                // other row. Those bounce from the server, same as `exists`.
                 commercial: {
                     email: ['email', ['maxLength', 255]],
                     phone: [['maxLength', 30]],
@@ -488,11 +504,11 @@ field in red from an attempt you had stopped looking at. --}}
             },
 
             /**
-             * Quita una red. Si ya estaba guardada, advierte primero.
+             * Removes a network. Warns first when it was already saved.
              *
-             * El borrado no espera al botón de guardar y no hay papelera, así que
-             * la advertencia es la única oportunidad de arrepentirse. Una fila que
-             * nunca se guardó se va sin preguntar.
+             * The delete does not wait for the save button and there is no bin,
+             * so the warning is the only chance to back out. A row that was
+             * never saved goes without asking.
              */
             async removeSocial(index, saved) {
                 if (saved && ! await dialog.confirm({
@@ -508,11 +524,11 @@ field in red from an attempt you had stopped looking at. --}}
             },
 
             /**
-             * Descarta lo escrito en el paso parado, y solo ese.
+             * Discards the standing step, and only that one.
              *
-             * El estado real vive en el server (los campos van por wire:model
-             * contra el DTO), así que revertir es cosa suya; acá solo se baja el
-             * bag de errores del front, que sí es local.
+             * The real state lives on the server (the fields bind to the DTO
+             * through wire:model), so reverting is its business; all that goes
+             * down here is the front's error bag, which is local.
              */
             async discard(step) {
                 this.errors = {};
@@ -527,10 +543,11 @@ field in red from an attempt you had stopped looking at. --}}
             },
 
             /**
-             * Valida el paso donde está parado el usuario, y solo ese.
+             * Validates the step the user is standing on, and only that one.
              *
-             * El paso llega por parámetro porque `step` vive en el stepper, no
-             * acá: el click se evalúa en el scope del pie, que sí lo ve.
+             * The step arrives as a parameter because `step` lives in the
+             * stepper and not here: the click is evaluated in the foot's scope,
+             * which does see it.
              */
             async submit(step) {
                 const rules = this.rules[step] ?? {};
@@ -546,12 +563,9 @@ field in red from an attempt you had stopped looking at. --}}
                     return;
                 }
 
-                // Una acción por paso: el 1 crea la compañía y abre el 2, el 2
-                // actualiza sus columnas y sus redes.
-                //
-                // El server valida de nuevo lo que el front no puede (`exists`
-                // contra la base, el formato de la URL, la red repetida) y pinta
-                // esos errores por el ErrorBag.
+                // One action per step: the first creates the company and opens
+                // the second, the second updates its columns and its networks.
+                // The server judges again what the front cannot reach.
                 if (step !== 'main') {
                     await this.$wire.saveCommercial();
 
@@ -559,8 +573,8 @@ field in red from an attempt you had stopped looking at. --}}
                 }
 
                 if (await this.$wire.saveMain()) {
-                    // Abre el paso 2 y lleva hasta él, la primera vez. Si ya
-                    // estaba abierto, el stepper ignora el evento.
+                    // Opens step two and takes the user there, the first time
+                    // round. With it already open the stepper ignores the event.
                     this.$dispatch('stepper-unlock');
                 }
             },

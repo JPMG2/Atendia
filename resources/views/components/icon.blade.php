@@ -7,8 +7,8 @@
 @php
     $icon = config("icons.{$name}");
 
-    // Un icono es un string (Lucide, de trazo) o un array ['filled' => true,
-    // 'path' => ...] para los logos de marca (Simple Icons, de relleno).
+    // An icon is a string (Lucide, stroked) or an array ['filled' => true,
+    // 'path' => ...] for the brand logos (Simple Icons, filled).
     $filled = is_array($icon) && ($icon['filled'] ?? false);
     $svg = is_array($icon) ? ($icon['path'] ?? null) : $icon;
 @endphp

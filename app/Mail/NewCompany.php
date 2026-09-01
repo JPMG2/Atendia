@@ -25,9 +25,7 @@ class NewCompany extends Mailable implements ShouldQueue
      */
     public function __construct(
         public Model $model,
-    ) {
-        //
-    }
+    ) {}
 
     /**
      * Get the message envelope.
@@ -35,7 +33,7 @@ class NewCompany extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Nueva compañía',
+            subject: __('mail.new_company.subject'),
         );
     }
 

@@ -1,9 +1,9 @@
 @props([
     'searchPlaceholder' => null,
     'searchLabel' => null,
-    'singular' => null,     // "moneda" — el contador concuerda en singular/plural
+    'singular' => null,     // "currency"; the counter agrees in singular and plural
     'plural' => null,
-    'create' => null,       // texto del botón de alta
+    'create' => null,       // label of the create button
 ])
 
 {{--

@@ -44,10 +44,10 @@ new class extends Component {};
             toasts: [],
             lastId: 0,
 
-            // Tipos válidos del NotificationType; cualquier otro cae a 'info'.
+            // Valid NotificationType kinds; anything else falls back to 'info'.
             types: ['success', 'error', 'warning', 'info'],
 
-            // Cuánto vive el aviso y cuánto dura la transición de salida (ver .toast-trans).
+            // How long a toast lives and how long its leave transition runs (.toast-trans).
             duration: 5000,
             leaveDuration: 260,
 
@@ -65,8 +65,8 @@ new class extends Component {};
                     visible: false,
                 });
 
-                // Se pinta oculto y se muestra en el siguiente tick: así x-show
-                // dispara la transición de entrada también en el primer render.
+                // Painted hidden and shown on the next tick, so x-show fires the
+                // enter transition on the first render too.
                 this.$nextTick(() => {
                     const toast = this.find(id);
                     if (toast) toast.visible = true;
@@ -82,7 +82,7 @@ new class extends Component {};
 
                 toast.visible = false;
 
-                // Se saca del array recién cuando terminó la transición de salida.
+                // Dropped from the array only once the leave transition has finished.
                 setTimeout(() => {
                     this.toasts = this.toasts.filter(t => t.id !== id);
                 }, this.leaveDuration);

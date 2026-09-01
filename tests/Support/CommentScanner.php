@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\View\Compilers\BladeCompiler;
+
 /**
  * Reads the comments out of a source file so the guardian can judge them.
  *
@@ -72,29 +75,74 @@ final class CommentScanner
             // without them it would be measured as a run of `//` lines.
             $comments = array_map(fn (string $c): string => '{{--'.$c.'--}}', $matches[1]);
 
-            // A Livewire SFC carries its whole class in a leading `<?php`
-            // block, so the docblocks that matter live there, not in Blade.
-            return array_merge($comments, self::phpComments($contents));
+            // Half a Blade file is not Blade: the SFC class, the `@props` and
+            // the `@script` are all code. Reading only `{{-- --}}` left every
+            // one of them unwatched, and that is where they drifted to Spanish.
+            return array_merge(
+                $comments,
+                self::phpComments(self::bladePhp($contents)),
+                self::jsComments(self::bladeScripts($contents)),
+            );
         }
 
         if (str_ends_with($path, '.js')) {
-            // Two passes on purpose: one regex with the `s` flag would let a
-            // `//` line swallow the rest of the file.
-            preg_match_all('#/\*(.*?)\*/#s', $contents, $blocks);
-            preg_match_all('#^\s*//(.*)$#m', $contents, $lines);
-
-            $comments = array_map(fn (string $b): string => '/*'.$b.'*/', $blocks[1]);
-
-            foreach ($lines[1] as $line) {
-                if (trim($line) !== '') {
-                    $comments[] = '//'.$line;
-                }
-            }
-
-            return array_values($comments);
+            return self::jsComments($contents);
         }
 
         return self::phpComments($contents);
+    }
+
+    /**
+     * The comments of a JavaScript source.
+     *
+     * @return list<string>
+     */
+    private static function jsComments(string $contents): array
+    {
+        // Two passes on purpose: one regex with the `s` flag would let a `//`
+        // line swallow the rest of the file. Only a `//` that OWNS its line
+        // counts, or every `https://` would read as a comment.
+        preg_match_all('#/\*(.*?)\*/#s', $contents, $blocks);
+        preg_match_all('#^\s*//(.*)$#m', $contents, $lines);
+
+        $comments = array_map(fn (string $b): string => '/*'.$b.'*/', $blocks[1]);
+
+        foreach ($lines[1] as $line) {
+            if (trim($line) !== '') {
+                $comments[] = '//'.$line;
+            }
+        }
+
+        return array_values($comments);
+    }
+
+    /**
+     * The PHP a Blade file turns into, so the tokenizer can read all of it.
+     *
+     * Compiled instead of having its regions listed by hand: naming them one
+     * by one is what left `@php`, `@props` and `@script` unwatched, and the
+     * next directive would have slipped through the same way. Component tags
+     * are skipped — they need a container and carry no comments.
+     */
+    private static function bladePhp(string $contents): string
+    {
+        $compiler = new BladeCompiler(new Filesystem, sys_get_temp_dir());
+
+        $compiler->withoutComponentTags();
+
+        return $compiler->compileString($contents);
+    }
+
+    /**
+     * The JavaScript of every `<script>` in a Blade file, `@script` included.
+     *
+     * Blade hands this through untouched, so the tokenizer never sees it.
+     */
+    private static function bladeScripts(string $contents): string
+    {
+        preg_match_all('#<script\\b[^>]*>(.*?)</script>#is', $contents, $matches);
+
+        return implode("\n", $matches[1]);
     }
 
     /**

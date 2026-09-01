@@ -13,9 +13,12 @@ use App\Messaging\Channels\Email;
 use App\Models\Company;
 use App\Models\SocialLink;
 use App\Rules\AttributeValidator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * The company form: ONE row, forever.
@@ -50,6 +53,28 @@ class CompanyForm extends BaseForm
     private const MAIN_SCREEN_STATE = ['country_id', 'province_id'];
 
     /**
+     * The logo columns and the upload field that feeds each one.
+     *
+     * A picked file becomes a path; with none picked the stored path stays. The
+     * uploads are NOT columns, which is why they leave `$validated` before it
+     * reaches `fill()`.
+     *
+     * @var array<string, string>
+     */
+    /**
+     * What a logo may be. SVG is in because a brand mark is vector: it scales
+     * into the footer and the invoice without blurring.
+     *
+     * @var list<string>
+     */
+    private const LOGO_RULES = ['nullable', 'file', 'mimes:png,webp,jpg,jpeg,svg', 'max:2048'];
+
+    private const LOGO_UPLOADS = [
+        'logo_path_light' => 'logo_light_file',
+        'logo_path_dark' => 'logo_dark_file',
+    ];
+
+    /**
      * Columns of `companies` the commercial step writes.
      *
      * The separate list is needed here: the step's rules include the networks',
@@ -77,6 +102,21 @@ class CompanyForm extends BaseForm
      * a null.
      */
     public ?CompanyDto $data = null;
+
+    /**
+     * The logos while they are still uploads, one per theme.
+     *
+     * Untyped on purpose: between the pick and the save Livewire holds a
+     * `TemporaryUploadedFile` here, and typing the property would reject the
+     * plain `UploadedFile` a test hands over. They stay out of the DTO, which
+     * only ever holds the stored path.
+     *
+     * @var TemporaryUploadedFile|null
+     */
+    public $logo_light_file = null;
+
+    /** @var TemporaryUploadedFile|null */
+    public $logo_dark_file = null;
 
     /**
      * The company's networks, as editable rows.
@@ -204,9 +244,11 @@ class CompanyForm extends BaseForm
                 ?? Company::query()->first()
                 ?? new Company;
 
-            $company->fill($validated)->save();
+            $company->fill($this->columnsWithLogos($validated, $company))->save();
 
             $this->recordId = $company->id;
+
+            $this->settleLogos($company);
 
             return $this->notificationService()->notificationFor(
                 $company,
@@ -318,10 +360,75 @@ class CompanyForm extends BaseForm
             ? CompanyDto::fromArray($this->stateFrom($company))
             : new CompanyDto;
 
-        // The step's rule keys ARE its columns: one list for what is validated,
-        // what is saved and what is discarded.
-        foreach ([...array_keys($this->rulesFor(self::STEP_MAIN)), ...self::MAIN_SCREEN_STATE] as $field) {
+        // The step's rule keys ARE its columns, bar the uploads: one list for
+        // what is validated, what is saved and what is discarded.
+        $columns = array_diff(array_keys($this->rulesFor(self::STEP_MAIN)), array_values(self::LOGO_UPLOADS));
+
+        foreach ([...$columns, ...self::MAIN_SCREEN_STATE] as $field) {
             $this->data->{$field} = $saved->{$field};
+        }
+
+        // A file picked and not yet saved goes with the discard, same as text.
+        foreach (self::LOGO_UPLOADS as $upload) {
+            $this->{$upload} = null;
+        }
+    }
+
+    /**
+     * The step's columns, with a freshly picked logo already on disk.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function columnsWithLogos(array $validated, Company $company): array
+    {
+        $columns = Arr::except($validated, array_values(self::LOGO_UPLOADS));
+
+        foreach (self::LOGO_UPLOADS as $column => $upload) {
+            $file = $validated[$upload] ?? null;
+
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $columns[$column] = $this->storeLogo($file, $company->{$column});
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Stores a logo and drops the one it replaces.
+     *
+     * The old file goes as soon as the new path is written: nothing points at it
+     * any more, and an orphan on a public disk is nobody's to find later.
+     */
+    private function storeLogo(UploadedFile $file, ?string $previous): string
+    {
+        $path = (string) $file->store('logos', 'public');
+
+        if ($previous !== null && $previous !== $path) {
+            Storage::disk('public')->delete($previous);
+        }
+
+        return $path;
+    }
+
+    /**
+     * Leaves the form standing on the STORED logo, with no pick pending.
+     *
+     * The DTO takes the paths just written, so the zone shows the file on disk
+     * and a second save cannot store the same upload all over again.
+     */
+    private function settleLogos(Company $company): void
+    {
+        if ($this->data === null) {
+            return;
+        }
+
+        foreach (self::LOGO_UPLOADS as $column => $upload) {
+            $this->data->{$column} = $company->{$column};
+            $this->{$upload} = null;
         }
     }
 
@@ -388,6 +495,8 @@ class CompanyForm extends BaseForm
             'tax_id' => config('nicename.tax_id'),
             'logo_path_light' => config('nicename.logo_path_light'),
             'logo_path_dark' => config('nicename.logo_path_dark'),
+            'logo_light_file' => config('nicename.logo_path_light'),
+            'logo_dark_file' => config('nicename.logo_path_dark'),
             'text_copyright' => config('nicename.text_copyright'),
             'email' => config('nicename.email'),
             'phone' => config('nicename.phone'),
@@ -402,6 +511,8 @@ class CompanyForm extends BaseForm
     {
         return [
             ...$this->data?->toPayload() ?? [],
+            'logo_light_file' => $this->logo_light_file,
+            'logo_dark_file' => $this->logo_dark_file,
             'social' => $this->filledSocialRows(),
         ];
     }
@@ -519,11 +630,15 @@ class CompanyForm extends BaseForm
                 // then blew up in Postgres.
                 'tax_id' => [...AttributeValidator::stringValid(true, '3'), 'max:20'],
 
-                // Nothing is uploaded yet — the drop zone is a mockup — but the
-                // rules go in anyway: they are the step's columns, and what has
-                // no rule is never saved.
+                // The columns hold the PATH, which the form never types: it is
+                // written from the file below. They keep their rule because what
+                // has none is never saved.
                 'logo_path_light' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
                 'logo_path_dark' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
+
+                // Optional: saving the rest of the step cannot demand a logo.
+                'logo_light_file' => self::LOGO_RULES,
+                'logo_dark_file' => self::LOGO_RULES,
 
                 'text_copyright' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
             ],

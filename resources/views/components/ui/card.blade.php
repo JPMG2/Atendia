@@ -1,6 +1,6 @@
 @props([
-    'interactive' => false,  // hover lift + borde jade (regla de oro: cards interactivas)
-    'as' => 'div',           // etiqueta HTML del contenedor
+    'interactive' => false,  // hover lift + jade border (golden rule: interactive cards)
+    'as' => 'div',           // HTML tag of the container
 ])
 
 @php

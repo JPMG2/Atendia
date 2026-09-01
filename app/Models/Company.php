@@ -40,6 +40,18 @@ class Company extends Model
     ];
 
     /**
+     * The single company row, with what the public pages need.
+     *
+     * Memoised: the footer renders on every marketing page and it is the same
+     * row every time. Null while nobody has saved the screen yet, which is why
+     * every caller has to have a fallback.
+     */
+    public static function current(): ?self
+    {
+        return once(fn (): ?self => self::query()->with('socialLinks.socialNetwork')->first());
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

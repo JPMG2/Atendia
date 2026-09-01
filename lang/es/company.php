@@ -60,7 +60,7 @@ return [
         'light' => 'Logo para fondo claro',
         'dark' => 'Logo para fondo oscuro',
         'upload' => 'Subir archivo',
-        'hint' => 'SVG o PNG, hasta 1 MB.',
+        'hint' => 'SVG, PNG, WEBP o JPG, hasta 2 MB.',
     ],
 
     'footer' => [

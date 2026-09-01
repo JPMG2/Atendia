@@ -1,18 +1,18 @@
 @props([
     'label' => null,
-    'hint' => null,        // descripción persistente bajo el campo
-    'error' => null,       // error de Laravel; si no se pasa, se toma del ErrorBag por `name`
-    'alpineError' => null, // clave del bag Alpine `errors` (ej. "currency_id"): borde y mensaje siguen a ese estado
+    'hint' => null,        // standing description under the field
+    'error' => null,       // Laravel error; with none passed it is read from the ErrorBag by `name`
+    'alpineError' => null, // key in the Alpine `errors` bag (e.g. "currency_id"): border and message follow it
     'name' => null,
     'id' => null,
     'size' => 'm',         // s | m | l
     'options' => [],       // ['a' => 'Label'] | ['a','b'] | [['value'=>..,'label'=>..]]
-    'value' => null,       // opción preseleccionada (su `value`)
+    'value' => null,       // preselected option (its `value`)
     'placeholder' => null,
-    'empty' => null,       // texto cuando la búsqueda no encuentra nada
-    'loading' => null,     // propiedad Livewire de la que depende la lista (ej. "form.data.country_id"):
-                           // mientras ese request viaja el campo queda bloqueado con un spinner
-    'span' => 'text',      // ancho POR CONTENIDO: code | short | text | long | full
+    'empty' => null,       // text shown when the search finds nothing
+    'loading' => null,     // Livewire property the list hangs off (e.g. "form.data.country_id"):
+                           // while that request travels the field stays locked behind a spinner
+    'span' => 'text',      // width BY CONTENT: code | short | text | long | full
 ])
 
 @php
@@ -25,12 +25,12 @@
     $isDisabled = $attributes->has('disabled') && $attributes->get('disabled') !== false;
     $isRequired = $attributes->has('required') && $attributes->get('required') !== false;
 
-    // La prop recibe solo la clave; el componente arma la expresión Alpine contra
-    // el bag `errors` (convención de validate()). Así el Blade nunca escribe la expresión.
+    // The prop takes only the key; the component builds the Alpine expression
+    // against the `errors` bag, so no Blade ever writes that expression by hand.
     $alpineErrorExpr = $alpineError !== null ? 'errors.'.$alpineError : null;
 
-    // Normaliza las tres formas de `options` a [['value'=>..,'label'=>..]], que es
-    // lo único que entiende el JS. El Blade no debe reproducir esta lógica.
+    // Normalises the three shapes of `options` into [['value'=>..,'label'=>..]],
+    // the only one the JS understands. No Blade should repeat this logic.
     $normalizedOptions = collect($options)
         ->map(fn ($option, $key) => is_array($option)
             ? ['value' => $option['value'], 'label' => (string) $option['label']]
@@ -40,18 +40,17 @@
         ->values()
         ->all();
 
-    // `wire:model` y compañía van al hidden (es el campo real); el buscador visible
-    // no lleva `name` para que un submit nativo no mande el texto tipeado.
+    // `wire:model` and friends go on the hidden field, which is the real one. The
+    // visible search box carries no `name`, so a native submit never posts it.
     $valueAttributes = $isRequired ? $attributes->except('required') : $attributes;
 
     $controlClasses = trim('field-control combo-control '.$sizeClass
         .($error ? ' field-error' : '')
         .($isDisabled ? ' is-disabled' : ''));
 
-    // Una lista que depende de otro campo NO se puede tocar mientras la está
-    // esperando: elegir sobre la lista vieja guarda un valor que el server ya
-    // descartó. `wire:target` acota el bloqueo a ESE campo, así cualquier otro
-    // request de la pantalla no congela el combobox de rebote.
+    // A list hanging off another field cannot be touched while it waits for it:
+    // picking from the stale list stores a value the server already dropped.
+    // `wire:target` narrows the block to THAT field and to no other request.
     $loadingAttributes = $loading !== null ? 'wire:target="'.$loading.'"' : '';
 
     $descId = $id ? $id.'-desc' : null;
@@ -59,9 +58,9 @@
     $listId = $id ? $id.'-list' : null;
     $describedBy = trim(($error && $errId ? $errId.' ' : '').($hint && $descId ? $descId : '')) ?: null;
 
-    // El ancho de un campo se declara por lo que el campo ES, nunca en columnas:
-    // `.catalog-form` reparte el sobrante y así ninguna fila queda ragged a la
-    // derecha. Mapa (no concatenación) para que un valor inválido caiga al default.
+    // A field's width is declared by what the field IS, never in columns:
+    // `.catalog-form` hands out the slack, so no row is left ragged on the right.
+    // A map and not concatenation, so an invalid value falls back to the default.
     $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp

@@ -1,14 +1,14 @@
 @props([
     'label' => null,
-    'hint' => null,        // descripción persistente bajo el input
-    'error' => null,       // error de Laravel; si no se pasa, se toma del ErrorBag por `name`
-    'alpineError' => null, // clave del bag Alpine `errors` (ej. "code" → errors.code): borde y mensaje siguen a ese estado
+    'hint' => null,        // standing description under the input
+    'error' => null,       // Laravel error; with none passed it is read from the ErrorBag by `name`
+    'alpineError' => null, // key in the Alpine `errors` bag (e.g. "code" → errors.code): border and message follow it
     'name' => null,
     'id' => null,
     'size' => 'm',         // s | m | l
-    'icon' => null,        // icono a la izquierda, dentro del control
-    'iconRight' => null,   // icono a la derecha
-    'span' => 'text',      // ancho POR CONTENIDO: code | short | text | long | full
+    'icon' => null,        // icon on the left, inside the control
+    'iconRight' => null,   // icon on the right
+    'span' => 'text',      // width BY CONTENT: code | short | text | long | full
 ])
 
 @php
@@ -22,12 +22,12 @@
     $isDisabled = $attributes->has('disabled') && $attributes->get('disabled') !== false;
     $isRequired = $attributes->has('required') && $attributes->get('required') !== false;
 
-    // La prop recibe solo la clave; el componente arma la expresión Alpine contra
-    // el bag `errors` (convención de validate()). Así el Blade nunca escribe la expresión.
+    // The prop takes only the key; the component builds the Alpine expression
+    // against the `errors` bag, so no Blade ever writes that expression by hand.
     $alpineErrorExpr = $alpineError !== null ? 'errors.'.$alpineError : null;
 
-    // Marca el campo como requerido (asterisco + aria-required) pero SIN el `required`
-    // nativo, para que la validación del navegador no pise a nuestra validate().
+    // Marks the field required (asterisk + aria-required) but WITHOUT the native
+    // `required`, so the browser's own validation never overrides our validate().
     $inputAttributes = $isRequired ? $attributes->except('required') : $attributes;
 
     $controlClasses = trim('field-control '.$sizeClass
@@ -39,9 +39,9 @@
     $errId = $id ? $id.'-err' : null;
     $describedBy = trim(($error && $errId ? $errId.' ' : '').($hint && $descId ? $descId : '')) ?: null;
 
-    // El ancho de un campo se declara por lo que el campo ES, nunca en columnas:
-    // `.catalog-form` reparte el sobrante y así ninguna fila queda ragged a la
-    // derecha. Mapa (no concatenación) para que un valor inválido caiga al default.
+    // A field's width is declared by what the field IS, never in columns:
+    // `.catalog-form` hands out the slack, so no row is left ragged on the right.
+    // A map and not concatenation, so an invalid value falls back to the default.
     $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp

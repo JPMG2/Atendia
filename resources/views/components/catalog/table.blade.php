@@ -1,6 +1,6 @@
 @props([
     'columns' => [],   // [['label' => '...', 'class' => 'catalog-col-name'], ...]
-    'empty' => null,   // texto cuando la búsqueda no encuentra nada
+    'empty' => null,   // text shown when the search finds nothing
 ])
 
 {{--

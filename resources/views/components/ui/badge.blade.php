@@ -1,6 +1,6 @@
 @props([
     'variant' => 'brand',  // brand | accent
-    'dot' => false,        // muestra un punto del color de la variante
+    'dot' => false,        // shows a dot in the variant's colour
 ])
 
 @php

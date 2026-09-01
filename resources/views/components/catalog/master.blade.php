@@ -1,8 +1,8 @@
 @props([
-    'rows' => [],        // semilla del riel, CONGELADA (ver el #[Locked] del editor)
-    'path' => 'form.data', // dónde vive el DTO en el server: SIEMPRE `$data` de BaseCatalogForm
-    'search' => [],      // claves de la fila por las que filtra el buscador
-    'rules' => [],       // espejo de getValidationRules() para form-guard.js
+    'rows' => [],        // rail seed, FROZEN (see the editor's #[Locked])
+    'path' => 'form.data', // where the DTO lives on the server: ALWAYS BaseCatalogForm's `$data`
+    'search' => [],      // row keys the search box filters on
+    'rules' => [],       // mirror of getValidationRules() for form-guard.js
 ])
 
 {{--

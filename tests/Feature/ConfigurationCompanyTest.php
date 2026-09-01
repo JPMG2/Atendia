@@ -20,8 +20,10 @@ use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -896,7 +898,7 @@ test('the front discards the step it is standing on and drops its own error bag'
 | Step one — saving
 |--------------------------------------------------------------------------
 | One record, two partial saves. Step one is an upsert and writes ONLY its own
-| columns; step two has no action yet.
+| columns, and never step two's.
 */
 
 /** Fills the screen with a valid main step and returns the component. */
@@ -1190,4 +1192,209 @@ test('the main step never sends the welcome', function (): void {
         ->assertReturned(true);
 
     Mail::assertNothingOutgoing();
+});
+
+/*
+|--------------------------------------------------------------------------
+| The logo
+|--------------------------------------------------------------------------
+| Two files, one per theme. The upload travels the moment it is picked, but
+| the PATH is written when step one is saved: discarding drops it.
+*/
+
+/** A logo that passes every rule. */
+function fakeLogo(string $name = 'logo.png'): UploadedFile
+{
+    return UploadedFile::fake()->create($name, 40, 'image/png');
+}
+
+test('a picked logo is stored and its path written on save', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', fakeLogo())
+        ->call('saveMain')
+        ->assertReturned(true);
+
+    $path = Company::query()->firstOrFail()->logo_path_light;
+
+    expect($path)->toStartWith('logos/');
+
+    Storage::disk('public')->assertExists($path);
+});
+
+test('the logo is optional: the rest of the step saves without one', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()->call('saveMain')->assertReturned(true);
+
+    expect(Company::query()->firstOrFail()->logo_path_light)->toBeNull();
+});
+
+test('saving again with no new pick leaves the stored logo alone', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    $component = fillMainStep()->set('form.logo_light_file', fakeLogo())->call('saveMain');
+
+    $stored = Company::query()->firstOrFail()->logo_path_light;
+
+    // A save that touches only the name must not blank the logo: the path is a
+    // column of this step and travels with every one of its saves.
+    $component->set('form.data.legal_name', 'AtendIa SA')->call('saveMain');
+
+    expect(Company::query()->firstOrFail()->logo_path_light)->toBe($stored);
+
+    Storage::disk('public')->assertExists($stored);
+});
+
+test('replacing a logo deletes the file it replaces', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    $component = fillMainStep()->set('form.logo_light_file', fakeLogo('first.png'))->call('saveMain');
+
+    $first = Company::query()->firstOrFail()->logo_path_light;
+
+    $component->set('form.logo_light_file', fakeLogo('second.png'))->call('saveMain');
+
+    $second = Company::query()->firstOrFail()->logo_path_light;
+
+    // Nothing points at the old file any more, and an orphan on a public disk
+    // is nobody's to find later.
+    expect($second)->not->toBe($first);
+
+    Storage::disk('public')->assertMissing($first);
+    Storage::disk('public')->assertExists($second);
+});
+
+test('each theme keeps its own file', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', fakeLogo('light.png'))
+        ->set('form.logo_dark_file', fakeLogo('dark.png'))
+        ->call('saveMain');
+
+    $company = Company::query()->firstOrFail();
+
+    expect($company->logo_path_light)->not->toBeNull()
+        ->and($company->logo_path_dark)->not->toBeNull()
+        ->and($company->logo_path_light)->not->toBe($company->logo_path_dark);
+});
+
+test('a file the screen does not accept bounces and stores nothing', function (string $name, string $mime, int $kilobytes): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', UploadedFile::fake()->create($name, $kilobytes, $mime))
+        ->call('saveMain')
+        ->assertReturned(false);
+
+    expect(Company::query()->count())->toBe(0);
+
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+})->with([
+    'a document' => ['contract.pdf', 'application/pdf', 40],
+    'something over 2 MB' => ['huge.png', 'image/png', 2100],
+]);
+
+test('a vector logo goes through, since a brand mark is vector', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', UploadedFile::fake()->create('logo.svg', 12, 'image/svg+xml'))
+        ->call('saveMain')
+        ->assertReturned(true);
+
+    expect(Company::query()->firstOrFail()->logo_path_light)->toEndWith('.svg');
+});
+
+test('discarding the main step drops a logo that was never saved', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', fakeLogo())
+        ->call('discardMain')
+        ->assertSet('form.logo_light_file', null);
+
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+test('the screen shows the stored logo, built as a request-aware URL', function (): void {
+    Storage::fake('public');
+
+    Company::factory()->create(['logo_path_light' => 'logos/stored.svg']);
+
+    $this->actingAs(companyAdmin());
+
+    // Not Storage::url(): the disk's URL is pinned to APP_URL and behind the
+    // proxy that comes out http on an https page, where the browser blocks it.
+    Livewire::test('configuration.company')
+        ->assertSee(str_replace('/', '\\/', asset('storage/logos/stored.svg')), escape: false);
+});
+
+test('the logo field is the real control, not the mock-up it used to be', function (): void {
+    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+
+    expect($blade)->toContain('<x-inputsform.file')
+        ->toContain('wire:model="form.logo_light_file"')
+        ->not->toContain('config-drop');
+});
+
+test('the welcome says what was registered, and no longer the Laravel stub', function (): void {
+    $company = Company::factory()->create([
+        'legal_name' => 'AtendIa SRL',
+        'tax_id' => '30123456789',
+        'address' => 'Av. Siempre Viva 742',
+    ]);
+
+    $rendered = (new NewCompany($company))->render();
+
+    expect($rendered)->toContain('AtendIa SRL')
+        ->toContain('30123456789')
+        ->toContain('Av. Siempre Viva 742')
+        ->toContain(__('mail.new_company.action'))
+        ->and($rendered)->not->toContain('The body of your message')
+        ->and($rendered)->not->toContain('Button Text');
+});
+
+test('the subject and the body come from translations, like every visible copy', function (): void {
+    $mail = new NewCompany(Company::factory()->create());
+
+    expect($mail->envelope()->subject)->toBe(__('mail.new_company.subject'))
+        ->and($mail->render())->toContain(__('mail.new_company.greeting'));
+});
+
+test('the welcome takes the reader to the screen it is talking about', function (): void {
+    expect((new NewCompany(Company::factory()->create()))->render())
+        ->toContain(route('admin.company'));
+});
+
+test('an address left empty leaves no dangling label in the mail', function (): void {
+    $rendered = (new NewCompany(Company::factory()->create(['address' => null])))->render();
+
+    expect($rendered)->not->toContain(__('mail.new_company.address'));
+});
+
+test('the frame Laravel puts around the mail is Spanish too', function (): void {
+    // The footer line comes from the vendor mail layout: untranslated it reached
+    // the reader in English, in the middle of a message written in Spanish.
+    expect((new NewCompany(Company::factory()->create()))->render())
+        ->toContain('Todos los derechos reservados.')
+        ->not->toContain('All rights reserved.');
 });

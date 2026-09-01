@@ -1,9 +1,9 @@
 @props([
-    'new' => null,        // badge del alta ("Nueva" / "Nuevo") — concuerda con el género
+    'new' => null,        // "New" badge; the word agrees with the master's gender
     'newTitle' => null,   // "Nueva red social"
-    'editTitle' => null,  // "Editar" — al lado va el identificador de la fila
-    'create' => null,     // texto del botón de alta
-    'titleKey' => 'name', // campo de la fila en curso que se muestra junto a "Editar"
+    'editTitle' => null,  // "Edit"; the row identifier goes right next to it
+    'create' => null,     // label of the create button
+    'titleKey' => 'name', // field of the current row, shown next to "Edit"
 ])
 
 {{--

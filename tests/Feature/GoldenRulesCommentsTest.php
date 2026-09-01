@@ -85,3 +85,22 @@ test('comments stay short', function (): void {
         CommentScanner::MAX_DOCBLOCK_PROSE,
     ));
 });
+
+test('the scanner reads the code a Blade file hides outside its comments', function (string $region, string $source): void {
+    $comments = CommentScanner::commentsIn('resources/views/probe.blade.php', $source);
+
+    expect($comments)->toContain($region);
+})->with([
+    // Every one of these was invisible while the scanner read `{{-- --}}` alone,
+    // which is how they all drifted to Spanish without the guardian noticing.
+    'the SFC class' => ['// a note', "<?php\n// a note\nnew class extends Component {};\n?>\n<div></div>"],
+    'a @php block' => ['// a note', "@php\n    // a note\n    \$x = 1;\n@endphp"],
+    'a @props default' => ['// a note', "@props([\n    'size' => 'm', // a note\n])"],
+    'a @script body' => ['// a note', "@script\n<script>\n    // a note\n    Alpine.data('x', () => ({}));\n</script>\n@endscript"],
+]);
+
+test('a Blade comment is still read, now that the file is compiled', function (): void {
+    $comments = CommentScanner::commentsIn('resources/views/probe.blade.php', "{{-- a note --}}\n<div></div>");
+
+    expect($comments)->toContain('{{-- a note --}}');
+});

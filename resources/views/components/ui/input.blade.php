@@ -1,12 +1,12 @@
 @props([
     'label' => null,
     'hint' => null,
-    'error' => null,        // si no se pasa, se toma del ErrorBag por `name`
+    'error' => null,        // with none passed it is read from the ErrorBag by `name`
     'name' => null,
     'id' => null,
     'size' => 'md',         // sm | md | lg
     'icon' => null,         // icono a la izquierda
-    'iconRight' => null,    // icono a la derecha
+    'iconRight' => null,    // icon on the right
 ])
 
 @php

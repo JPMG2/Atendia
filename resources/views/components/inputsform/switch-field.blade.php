@@ -1,11 +1,11 @@
 @props([
     'label' => null,
-    'hint' => null,        // descripción persistente bajo el campo
+    'hint' => null,        // standing description under the field
     'name' => null,
     'id' => null,
-    'on' => null,          // palabra que describe el valor encendido ("Activa", "Sí")
-    'off' => null,         // ídem apagado ("Inactiva", "No")
-    'span' => 'short',     // ancho POR CONTENIDO: code | short | text | long | full
+    'on' => null,          // word describing the on value ("Activa", "Sí")
+    'off' => null,         // the same for the off one ("Inactiva", "No")
+    'span' => 'short',     // width BY CONTENT: code | short | text | long | full
 ])
 
 @php
@@ -16,9 +16,9 @@
 
     $descId = $id ? $id.'-desc' : null;
 
-    // El ancho de un campo se declara por lo que el campo ES, nunca en columnas:
-    // `.catalog-form` reparte el sobrante y así ninguna fila queda ragged a la
-    // derecha. Mapa (no concatenación) para que un valor inválido caiga al default.
+    // A field's width is declared by what the field IS, never in columns:
+    // `.catalog-form` hands out the slack, so no row is left ragged on the right.
+    // A map and not concatenation, so an invalid value falls back to the default.
     $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-short';
 @endphp

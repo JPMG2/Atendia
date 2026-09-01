@@ -1,8 +1,8 @@
 @props([
-    'icon' => null,           // nombre del icono (o usar el slot para casos especiales)
+    'icon' => null,           // icon name (or use the slot for the special cases)
     'size' => 'md',           // sm | md | lg
     'variant' => 'secondary', // secondary | ghost
-    'label' => null,          // aria-label — obligatorio para accesibilidad si no hay texto
+    'label' => null,          // aria-label; required for accessibility when there is no text
 ])
 
 @php

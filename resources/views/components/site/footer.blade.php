@@ -1,4 +1,9 @@
 @php
+    // The screen fills these in; while nobody has, the copy that shipped stands
+    // in. A footer that empties out because a record is missing is worse than
+    // one that shows the default.
+    $company = \App\Models\Company::current();
+
     $cols = [
         ['h' => __('landing.footer.col_product'), 'links' => __('landing.footer.links_product')],
         ['h' => __('landing.footer.col_resources'), 'links' => __('landing.footer.links_resources')],
@@ -13,8 +18,22 @@
 <footer class="bg-card border-t bd-subtle">
     <div class="mx-auto grid gap-8 grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]" style="max-width: var(--container-xl); padding:48px 24px 28px;">
         <div class="flex flex-col gap-3 col-span-2 lg:col-span-1" style="max-width:280px;">
-            <x-site.logo :size="24" />
-            <p class="text-muted" style="font-size: var(--text-sm); line-height:1.55;">{{ __('landing.footer.tagline') }}</p>
+            <x-site.logo :size="24" :light="$company?->logo_path_light" :dark="$company?->logo_path_dark" />
+            <p class="text-muted" style="font-size: var(--text-sm); line-height:1.55;">{{ $company?->tagline ?: __('landing.footer.tagline') }}</p>
+
+            {{-- The order is the one the screen set: `socialLinks` comes back
+            sorted by `sort_order`, which is what that column is for. --}}
+            @if ($company?->socialLinks->isNotEmpty())
+                <div class="flex items-center gap-3">
+                    @foreach ($company->socialLinks as $link)
+                        <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer"
+                           class="text-subtle hover:text-brand transition"
+                           aria-label="{{ $link->socialNetwork?->name }}">
+                            <x-icon :name="$link->socialNetwork?->icon ?: 'link'" :size="18" />
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         </div>
         @foreach ($cols as $col)
             <div class="flex flex-col gap-2.5">
@@ -26,7 +45,7 @@
         @endforeach
     </div>
     <div class="border-t bd-subtle mx-auto flex flex-wrap justify-between items-center gap-2.5 text-subtle" style="max-width: var(--container-xl); padding:16px 24px; font-size:var(--text-xs);">
-        <span>© {{ date('Y') }} Atendia. {{ __('landing.footer.copyright') }}</span>
+        <span>© {{ date('Y') }} {{ $company?->legal_name ?: 'Atendia' }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
             <a href="#" class="text-subtle">{{ __('landing.footer.terms') }}</a>
             <a href="#" class="text-subtle">{{ __('landing.footer.privacy') }}</a>

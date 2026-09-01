@@ -9,8 +9,8 @@
 ])
 
 @php
-    // Mapas blindados: una variante/tamaño inválido cae en el default,
-    // nunca genera una clase rota. Todo el color sale de tokens → dark/light solos.
+    // Guarded maps: an invalid variant or size falls back to the default instead
+    // of building a broken class. All colour comes from tokens → dark/light free.
     $variants = ['primary' => 'btn-primary', 'secondary' => 'btn-secondary', 'ghost' => 'btn-ghost', 'accent' => 'btn-accent', 'danger' => 'btn-danger'];
     $sizes = ['sm' => 'btn-sm', 'md' => 'btn-md', 'lg' => 'btn-lg'];
 

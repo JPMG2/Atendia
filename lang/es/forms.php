@@ -21,4 +21,8 @@ return [
         'clear' => 'Limpiar la selección',
     ],
 
+    'file' => [
+        'upload' => 'Subir archivo',
+    ],
+
 ];

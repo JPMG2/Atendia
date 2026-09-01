@@ -1,7 +1,7 @@
 @props([
     'steps' => [],       // [['value'=>'main','label'=>'Paso','desc'=>'Qué se carga acá','icon'=>?], ...]
     'default' => null,
-    'unlocked' => false, // true = el registro ya existe → todos los pasos abiertos
+    'unlocked' => false, // true = the record already exists → every step open
     'lockedHint' => null,
 ])
 
