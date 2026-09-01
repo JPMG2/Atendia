@@ -46,6 +46,12 @@ Cuando se suma un set de reglas de oro:
   hook `.claude/hooks/block-browser-suite-reruns.sh` (capa C), que bloquea la
   TERCERA corrida de la suite de browser entera. Escrito ya había estado y se
   incumplió igual varios días seguidos: por eso hay hook.
+- **Una corrida de la suite entera por commit** → memoria
+  `atendia-feedback-modo-trabajo` (capa A) · hook
+  `.claude/hooks/block-full-suite-reruns.sh` (capa C), que bloquea la SEGUNDA
+  corrida completa si no hubo un commit en el medio. Mientras se trabaja va
+  `--filter`; la completa es la puerta del commit. Escrito estaba, y se
+  incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`.

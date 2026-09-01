@@ -11,6 +11,10 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/block-browser-suite-reruns.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/block-full-suite-reruns.sh"
           }
         ]
       }
