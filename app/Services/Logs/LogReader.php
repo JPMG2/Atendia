@@ -35,11 +35,12 @@ class LogReader
 
         usort($paths, static fn (string $a, string $b): int => filemtime($b) <=> filemtime($a));
 
-        // testing.log is the suite's own noise (tests error on purpose): for
-        // the owner reading this screen it is never a system log.
+        // testing.log and browser.log are the suite's own noise (tests error
+        // on purpose): for the owner reading this screen they are never a
+        // system log.
         return array_values(array_filter(
             array_map(static fn (string $path): string => basename($path), $paths),
-            static fn (string $name): bool => $name !== 'testing.log',
+            static fn (string $name): bool => ! in_array($name, ['testing.log', 'browser.log'], true),
         ));
     }
 

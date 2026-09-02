@@ -128,13 +128,15 @@ test('only the tail of a huge log is read, and only whole entries survive', func
         ->and($entries->every(fn ($entry) => str_starts_with($entry->message, 'Entry number')))->toBeTrue();
 });
 
-test('the suite noise file is never offered as a system log', function (): void {
+test('the suite noise files are never offered as system logs', function (): void {
     writeLog($this->logDir, 'laravel.log', sampleLog());
     writeLog($this->logDir, 'testing.log', sampleLog());
+    writeLog($this->logDir, 'browser.log', sampleLog());
 
-    // Tests error on purpose all the time; their log is not the system's.
+    // Tests error on purpose all the time; their logs are not the system's.
     expect(app(LogReader::class)->files())->toBe(['laravel.log'])
-        ->and(app(LogReader::class)->entries('testing.log'))->toHaveCount(0);
+        ->and(app(LogReader::class)->entries('testing.log'))->toHaveCount(0)
+        ->and(app(LogReader::class)->entries('browser.log'))->toHaveCount(0);
 });
 
 test('a file name that is not a known log reads nothing', function (): void {
@@ -157,13 +159,13 @@ test('the screen refuses to switch to a file outside the known list', function (
 
 test('with several log files the screen offers them and switches', function (): void {
     writeLog($this->logDir, 'laravel.log', sampleLog());
-    writeLog($this->logDir, 'browser.log', "[2026-09-02 11:00:00] local.WARNING: Browser said something.\n");
+    writeLog($this->logDir, 'worker.log', "[2026-09-02 11:00:00] local.WARNING: The worker said something.\n");
 
     $this->actingAs(logsAdmin());
 
     $component = Livewire::test('configuration.logs')
-        ->call('selectFile', 'browser.log')
-        ->assertSet('file', 'browser.log');
+        ->call('selectFile', 'worker.log')
+        ->assertSet('file', 'worker.log');
 
     expect($component->get('entries'))->toHaveCount(1)
         ->and($component->get('entries')[0]['level'])->toBe('warning');
