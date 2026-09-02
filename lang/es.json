@@ -1,3 +1,17 @@
 {
-    "All rights reserved.": "Todos los derechos reservados."
+    "All rights reserved.": "Todos los derechos reservados.",
+    "Name": "Nombre",
+    "Email": "Email",
+    "Password": "Contraseña",
+    "Confirm Password": "Confirmar la contraseña",
+    "Already registered?": "¿Ya creaste tu cuenta?",
+    "Register": "Crear mi cuenta",
+    "Log Out": "Cerrar sesión",
+    "Confirm": "Confirmar",
+    "Reset Password": "Restablecer la contraseña",
+    "Email Password Reset Link": "Enviar el enlace de restablecimiento",
+    "Resend Verification Email": "Reenviar el correo de verificación",
+    "A new verification link has been sent to the email address you provided during registration.": "Se envió un nuevo enlace de verificación al correo que registraste.",
+    "Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.": "¿Olvidaste tu contraseña? No hay problema: con tu email te enviamos un enlace para elegir una nueva.",
+    "This is a secure area of the application. Please confirm your password before continuing.": "Esta es un área segura de la aplicación: antes de continuar hay que confirmar tu contraseña."
 }
