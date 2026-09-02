@@ -22,6 +22,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->comment('Nombre del negocio del cliente');
             $table->foreignId('country_id')->constrained()->restrictOnDelete();
+            $table->string('timezone', 64)->nullable()->comment('Zona IANA del negocio, para enviar mensajes en su hora local');
             $table->string('billing_email')->comment('A dónde se le manda la factura');
             $table->boolean('is_active')->default(true)->comment('Cortar el servicio sin borrar datos');
             $table->timestamps();
