@@ -1003,6 +1003,41 @@
   .integration-latency { font-size:var(--text-xs); color:var(--text-subtle); margin-left:6px; }
   .integration-foot { margin-top:auto; display:flex; justify-content:flex-end; padding-top:4px; }
 
+  /* Logs del sistema: cada entrada se copia VERBATIM. El raw envuelve
+     (pre-wrap) para que jamás haya scroll horizontal de página. */
+  .log-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:16px; }
+  .log-pills { display:flex; flex-wrap:wrap; gap:6px; }
+  .log-pill { font-size:var(--text-xs); font-weight:600; color:var(--text-muted); padding:6px 12px;
+    border:1px solid var(--border-subtle); border-radius:999px; background:var(--surface-card);
+    transition:all var(--dur-fast) var(--ease-out); }
+  .log-pill:hover { background:var(--surface-sunken); }
+  .log-pill.is-active { color:var(--brand-soft-text); background:var(--brand-soft); border-color:var(--brand-border); }
+  .log-count { margin-left:auto; font-size:var(--text-xs); color:var(--text-subtle); }
+  .log-list { display:flex; flex-direction:column; gap:10px; }
+  .log-entry { padding:12px 16px; }
+  .log-head { display:flex; align-items:center; gap:10px; min-width:0; }
+  .log-badge { font-size:var(--text-2xs); font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    padding:2px 8px; border-radius:999px; white-space:nowrap; }
+  .log-badge.is-error { color:var(--danger); background:var(--danger-soft); }
+  .log-badge.is-warning { color:var(--warning); background:var(--warning-soft); }
+  .log-badge.is-info { color:var(--info); background:var(--info-soft); }
+  .log-badge.is-debug { color:var(--text-muted); background:var(--surface-sunken); }
+  .log-time { font-size:var(--text-xs); color:var(--text-subtle); white-space:nowrap; }
+  .log-message { flex:1; min-width:0; font-size:var(--text-sm); color:var(--text-body);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .log-actions { display:flex; align-items:center; gap:2px; }
+  .log-chevron-open { transform:rotate(180deg); }
+  .log-raw { margin-top:10px; padding:12px 14px; font-size:var(--text-xs); line-height:1.55;
+    color:var(--text-body); background:var(--surface-sunken); border-radius:10px;
+    white-space:pre-wrap; overflow-wrap:anywhere; user-select:all; }
+  .log-empty { padding:24px; text-align:center; color:var(--text-muted); font-size:var(--text-sm); }
+
+  /* En angosto el mensaje baja a su propia línea, entero. */
+  @media (max-width: 560px) {
+    .log-head { flex-wrap:wrap; }
+    .log-message { flex-basis:100%; white-space:normal; order:9; }
+  }
+
   /* --- Catálogos: hub maestro-detalle (riel + editor que se reparten el ancho) ---
      Modelo: dos columnas flex que NUNCA se superponen. Al abrir un maestro el hub
      recibe .is-collapsed → el riel se achica a iconos y el editor gana ese ancho.

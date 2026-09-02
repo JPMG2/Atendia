@@ -27,5 +27,8 @@ Route::livewire('/company', 'configuration.company')->name('company');
 // Integrations: the health of everything the platform consumes.
 Route::livewire('/integrations', 'configuration.integrations')->name('integrations');
 
+// System logs: the latest entries, built to be copied into a help chat.
+Route::livewire('/logs', 'configuration.logs')->name('logs');
+
 // Proof of life for the WebSocket. It goes when the real chat exists.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');

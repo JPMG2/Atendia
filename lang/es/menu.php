@@ -38,5 +38,6 @@ return [
     'admin_catalogs' => 'Catálogos',
     'admin_company' => 'Compañía',
     'admin_integrations' => 'Integraciones',
+    'admin_logs' => 'Logs del sistema',
     'admin_settings' => 'Configuración',
 ];
