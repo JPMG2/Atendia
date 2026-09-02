@@ -87,3 +87,21 @@ test('the client dashboard shows the client menu, not the admin menu', function 
         ->assertSee('Conversaciones')
         ->assertDontSee('Usuarios');
 });
+
+test('the plan upsell talks only to clients, never in the admin panel', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+    $admin = User::factory()->create();
+    $admin->syncRoles('admin');
+
+    // The owner has no plan to improve; a client on a trial does.
+    $this->actingAs($admin)
+        ->get('/admin')
+        ->assertDontSee(__('menu.plan_name'))
+        ->assertDontSee(__('menu.plan_cta'));
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertSee(__('menu.plan_name'))
+        ->assertSee(__('menu.plan_cta'));
+});

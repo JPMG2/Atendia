@@ -38,13 +38,17 @@ new class extends Component
     <div class="sidebar-nav-bottom">
         <x-ui.menu :items="$this->tree->where('placement', 'bottom')->values()" />
 
-        <div class="sidebar-upsell">
-            <div class="sidebar-upsell-head">
-                <x-icon name="zap" :size="16" />
-                <span>{{ __('menu.plan_name') }}</span>
+        {{-- The plan upsell talks to a CLIENT on a trial; the admin panel is
+        the owner's and has no plan to improve. --}}
+        @if ($panel === 'client')
+            <div class="sidebar-upsell">
+                <div class="sidebar-upsell-head">
+                    <x-icon name="zap" :size="16" />
+                    <span>{{ __('menu.plan_name') }}</span>
+                </div>
+                <p class="sidebar-upsell-text">{{ __('menu.plan_trial') }}</p>
+                <x-ui.button variant="primary" size="sm" :fullWidth="true">{{ __('menu.plan_cta') }}</x-ui.button>
             </div>
-            <p class="sidebar-upsell-text">{{ __('menu.plan_trial') }}</p>
-            <x-ui.button variant="primary" size="sm" :fullWidth="true">{{ __('menu.plan_cta') }}</x-ui.button>
-        </div>
+        @endif
     </div>
 </nav>
