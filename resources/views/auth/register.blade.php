@@ -66,6 +66,15 @@
         </div>
     </form>
 
+    {{-- TEMPORARY shortcut while the wizard is a mock-up: jumps into the
+    mock right after "the account was born", no typing. It goes away the day
+    the real wizard replaces this screen. --}}
+    <div class="flex justify-center mt-6">
+        <x-ui.button variant="ghost" size="sm" href="{{ asset('maqueta-registro.html') }}#wizard">
+            Ver cómo sigue el alta (maqueta temporal) →
+        </x-ui.button>
+    </div>
+
     <script>
         // Front mirror of RegisteredUserController's rules: what cannot pass
         // there is stopped here, before the request leaves.
