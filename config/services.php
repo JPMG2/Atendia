@@ -37,4 +37,18 @@ return [
         ],
     ],
 
+    'evolution' => [
+        'url' => env('EVOLUTION_API_URL'),
+        'key' => env('EVOLUTION_API_KEY'),
+    ],
+
+    'n8n' => [
+        'api_url' => env('N8N_API_URL'),
+        'webhook_url' => env('N8N_WEBHOOK_URL'),
+    ],
+
+    'chatwoot' => [
+        'url' => env('CHATWOOT_URL'),
+    ],
+
 ];

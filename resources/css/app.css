@@ -984,6 +984,25 @@
                          color:var(--text-strong); margin-bottom:4px; }
   .settings-tile-desc { font-size:var(--text-sm); color:var(--text-muted); line-height:1.45; }
 
+  /* Integraciones: la salud de lo que AtendIa consume. La pastilla de estado
+     usa los tokens semánticos; "is-wait" es el primer pintado, antes de que
+     vuelvan las sondas. */
+  .integrations-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; }
+  .integration-card { padding:20px; display:flex; flex-direction:column; gap:8px; }
+  .integration-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .integration-name { font-family:var(--font-display); font-size:var(--text-base); font-weight:700; color:var(--text-strong); }
+  .integration-status { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-2xs);
+    font-weight:700; letter-spacing:.02em; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+  .integration-status .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .integration-status.is-connected { color:var(--success); background:var(--success-soft); }
+  .integration-status.is-failing { color:var(--danger); background:var(--danger-soft); }
+  .integration-status.is-off,
+  .integration-status.is-wait { color:var(--text-muted); background:var(--surface-sunken); }
+  .integration-desc { font-size:var(--text-sm); color:var(--text-muted); line-height:1.45; }
+  .integration-detail { font-size:var(--text-sm); color:var(--text-body); line-height:1.5; overflow-wrap:anywhere; }
+  .integration-latency { font-size:var(--text-xs); color:var(--text-subtle); margin-left:6px; }
+  .integration-foot { margin-top:auto; display:flex; justify-content:flex-end; padding-top:4px; }
+
   /* --- Catálogos: hub maestro-detalle (riel + editor que se reparten el ancho) ---
      Modelo: dos columnas flex que NUNCA se superponen. Al abrir un maestro el hub
      recibe .is-collapsed → el riel se achica a iconos y el editor gana ese ancho.

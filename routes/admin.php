@@ -24,5 +24,8 @@ Route::livewire('/catalogs', 'catalog.manager')->name('catalogs');
 // Company: AtendIa's own data, a single row.
 Route::livewire('/company', 'configuration.company')->name('company');
 
+// Integrations: the health of everything the platform consumes.
+Route::livewire('/integrations', 'configuration.integrations')->name('integrations');
+
 // Proof of life for the WebSocket. It goes when the real chat exists.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
