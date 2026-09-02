@@ -40,6 +40,13 @@ class CountryForm extends BaseCatalogForm
                 'size:3',
             ],
 
+            // The 2-letter twin of `code`: PHP's timezone-per-country list and
+            // geo-IP only take this variant, so the row has to carry both.
+            'iso2' => [
+                ...AttributeValidator::uniqueAlpha(true, '2', false, 'countries', 'iso2', $excludeId),
+                'size:2',
+            ],
+
             // Optional and capped at what the UI asks for: without `nullable` a
             // country with no dialling code would bounce off the `min:1` in
             // digitValid().
@@ -59,6 +66,7 @@ class CountryForm extends BaseCatalogForm
             'currency_id' => config('nicename.currency_id'),
             'name' => config('nicename.name'),
             'code' => config('nicename.code'),
+            'iso2' => config('nicename.iso2'),
             'phone_code' => config('nicename.phone_code'),
             'is_active' => config('nicename.is_active'),
         ];

@@ -9,6 +9,7 @@ return [
     'decimal_places' => 'decimales',
     'is_active' => 'estado',
     'phone_code' => 'código telefónico',
+    'iso2' => 'código de 2 letras',
     'currency_id' => 'moneda',
     'country_id' => 'país',
     'province_id' => 'provincia',

@@ -50,6 +50,7 @@ new class extends Component {
 
 <x-catalog.master :rows="$initialRows" :search="['code', 'name']" :rules="[
     'code' => ['required', 'alpha', ['length', 3]],
+    'iso2' => ['required', 'alpha', ['length', 2]],
     'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     'phone_code' => [['maxLength', 6]],
     'currency_id' => ['required'],
@@ -84,11 +85,17 @@ new class extends Component {
         <x-catalog.form-shell :new="__('catalog.country.new')" :new-title="__('catalog.country.new_title')" :edit-title="__('catalog.country.edit_title')" :create="__('catalog.country.create')"
             title-key="code">
 
-            {{-- Row 1: the short identifier and the name, which takes all the rest. --}}
+            {{-- Row 1: the two ISO identifiers and the name, which takes all the
+            rest. Both codes travel together: the 3-letter one is the visible
+            key, the 2-letter one feeds timezones and geo-IP. --}}
             <x-catalog.form-row>
                 <x-inputsform.input span="code" :label="__('catalog.country.fields.code')" required name="code" :hint="__('catalog.country.fields.code_hint')"
                     maxlength="3" alpine-error="code" x-mask="aaa" style="text-transform:uppercase"
                     wire:model="form.data.code" />
+
+                <x-inputsform.input span="code" :label="__('catalog.country.fields.iso2')" required name="iso2" :hint="__('catalog.country.fields.iso2_hint')"
+                    maxlength="2" alpine-error="iso2" x-mask="aa" style="text-transform:uppercase"
+                    wire:model="form.data.iso2" />
 
                 <x-inputsform.input span="text" :label="__('catalog.country.fields.name')" required name="name" :placeholder="__('catalog.country.fields.name_placeholder')"
                     alpine-error="name" wire:model="form.data.name" />

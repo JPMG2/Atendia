@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignIdFor(Currency::class)->constrained()->cascadeOnDelete();
             $table->string('name')->unique();
             $table->string('code')->unique();
+            $table->string('iso2', 2)->unique()->comment('ISO 3166-1 alfa-2: la llave de zonas horarias y geo-IP');
             $table->string('phone_code')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

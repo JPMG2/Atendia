@@ -75,11 +75,58 @@ test('the country payload escapes names that would break the Alpine expression',
 test('the country editor renders its real inputs', function (): void {
     Livewire::test('catalog.country')
         ->assertSee('Código ISO')
+        ->assertSee('Código ISO-2')
         ->assertSee('Nombre')
         ->assertSee('Código telefónico')
         ->assertSee('Moneda')
         ->assertSee('Estado');
 });
+
+test('the iso2 code is stored uppercase, ready for the timezone-per-country lookup', function (): void {
+    $currency = Currency::factory()->create(['code' => 'CLP', 'name' => 'Peso Chileno']);
+
+    // PHP's DateTimeZone per-country list takes exactly this 2-letter key; the
+    // 3-letter `code` is the visible one and does not work there.
+    Livewire::test('catalog.country')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'CHL')
+        ->set('form.data.iso2', 'cl')
+        ->set('form.data.name', 'Chile')
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect(Country::where('code', 'CHL')->value('iso2'))->toBe('CL');
+});
+
+test('a repeated iso2 bounces as a field error, not as a database crash', function (): void {
+    $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
+    Country::factory()->create(['iso2' => 'AR']);
+
+    Livewire::test('catalog.country')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.iso2', 'ar')
+        ->set('form.data.name', 'Argentina bis')
+        ->call('create')
+        ->assertHasErrors('iso2');
+});
+
+test('an iso2 that is not exactly two letters is rejected', function (string $iso2): void {
+    $currency = Currency::factory()->create(['code' => 'ARS', 'name' => 'Peso Argentino']);
+
+    Livewire::test('catalog.country')
+        ->set('form.data.currency_id', $currency->id)
+        ->set('form.data.code', 'ARG')
+        ->set('form.data.iso2', $iso2)
+        ->set('form.data.name', 'Argentina')
+        ->call('create')
+        ->assertHasErrors('iso2');
+})->with([
+    'a single letter' => ['A'],
+    'three letters' => ['ARG'],
+    'digits' => ['12'],
+    'left empty' => [''],
+]);
 
 test('the currency select lists every currency, so a country on a disabled currency keeps it', function (): void {
     // Filtering by is_active here would blank the select when opening such a
@@ -115,6 +162,7 @@ test('a country is created with its currency, code and phone code', function ():
     Livewire::test('catalog.country')
         ->set('form.data.currency_id', $currency->id)
         ->set('form.data.code', 'ARG')
+        ->set('form.data.iso2', 'AR')
         ->set('form.data.name', 'Argentina')
         ->set('form.data.phone_code', '54')
         ->call('create')
@@ -129,6 +177,7 @@ test('a country without a phone code is accepted, because the column is nullable
     Livewire::test('catalog.country')
         ->set('form.data.currency_id', $currency->id)
         ->set('form.data.code', 'USA')
+        ->set('form.data.iso2', 'US')
         ->set('form.data.name', 'Estados Unidos')
         ->set('form.data.phone_code', '')
         ->call('create')
@@ -233,6 +282,7 @@ test('creating a country hands the refreshed rows back to Alpine', function (): 
     Livewire::test('catalog.country')
         ->set('form.data.currency_id', $currency->id)
         ->set('form.data.code', 'BOL')
+        ->set('form.data.iso2', 'BO')
         ->set('form.data.name', 'Bolivia')
         ->set('form.data.phone_code', '591')
         ->set('form.data.is_active', true)
@@ -263,6 +313,7 @@ test('a failed save keeps what the user typed instead of wiping the form', funct
     Livewire::test('catalog.country')
         ->set('form.data.currency_id', $currency->id)
         ->set('form.data.code', 'ARG')
+        ->set('form.data.iso2', 'AR')
         ->set('form.data.name', 'Argentina')
         ->set('form.data.phone_code', '54')
         ->call('create')

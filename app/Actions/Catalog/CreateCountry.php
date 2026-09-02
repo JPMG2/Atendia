@@ -13,6 +13,7 @@ class CreateCountry
      *     currency_id: int,
      *     name: string,
      *     code: string,
+     *     iso2: string,
      *     phone_code: string|null,
      *     is_active: bool
      * }  $data  Already validated by CountryForm::transformServiceData().

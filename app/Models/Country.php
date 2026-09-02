@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
-#[Fillable(['currency_id', 'name', 'code', 'phone_code', 'is_active'])]
+#[Fillable(['currency_id', 'name', 'code', 'iso2', 'phone_code', 'is_active'])]
 class Country extends Model implements DataTable
 {
     /** @use HasFactory<CountryFactory> */
@@ -80,6 +80,17 @@ class Country extends Model implements DataTable
     }
 
     protected function code(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => self::normalizeCode($value),
+        );
+    }
+
+    /**
+     * The 2-letter twin of `code`: what PHP's per-country timezone list and
+     * geo-IP take. Same normalization — both are ISO 3166-1 codes.
+     */
+    protected function iso2(): Attribute
     {
         return Attribute::make(
             set: fn (string $value): string => self::normalizeCode($value),

@@ -24,6 +24,7 @@ class CountryFactory extends Factory
             'currency_id' => Currency::factory(),
             'name' => $this->faker->unique()->country(),
             'code' => strtoupper($this->faker->unique()->lexify('???')),
+            'iso2' => strtoupper($this->faker->unique()->lexify('??')),
             'phone_code' => (string) $this->faker->numberBetween(1, 999),
             'is_active' => true,
         ];

@@ -145,6 +145,7 @@ test('a save that fails reports it back so the front keeps the user on the form'
     Livewire::test('catalog.country')
         ->set('form.data.currency_id', $currency->id)
         ->set('form.data.code', 'ARG')
+        ->set('form.data.iso2', 'AR')
         ->set('form.data.name', 'Argentina')
         ->set('form.data.phone_code', '54')
         ->call('create')

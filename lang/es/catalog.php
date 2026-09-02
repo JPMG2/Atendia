@@ -113,6 +113,8 @@ return [
         'fields' => [
             'code' => 'Código ISO',
             'code_hint' => '3 letras (ARG, USA)',
+            'iso2' => 'Código ISO-2',
+            'iso2_hint' => '2 letras (AR, US)',
             'name' => 'Nombre',
             'name_placeholder' => 'Ej. República Dominicana',
             'phone_code' => 'Código telefónico',

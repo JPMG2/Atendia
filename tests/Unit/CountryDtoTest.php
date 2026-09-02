@@ -31,6 +31,7 @@ test('toArray exposes every field', function (): void {
         currency_id: 3,
         name: 'Argentina',
         code: 'ARG',
+        iso2: 'AR',
         phone_code: '54',
         is_active: false,
     );
@@ -39,6 +40,7 @@ test('toArray exposes every field', function (): void {
         'currency_id' => 3,
         'name' => 'Argentina',
         'code' => 'ARG',
+        'iso2' => 'AR',
         'phone_code' => '54',
         'is_active' => false,
     ]);
@@ -49,6 +51,7 @@ test('fromArray rebuilds the dto from a full payload', function (): void {
         'currency_id' => 5,
         'name' => 'Uruguay',
         'code' => 'URY',
+        'iso2' => 'UY',
         'phone_code' => '598',
         'is_active' => true,
     ]);
@@ -56,6 +59,7 @@ test('fromArray rebuilds the dto from a full payload', function (): void {
     expect($dto->currency_id)->toBe(5)
         ->and($dto->name)->toBe('Uruguay')
         ->and($dto->code)->toBe('URY')
+        ->and($dto->iso2)->toBe('UY')
         ->and($dto->phone_code)->toBe('598');
 });
 
@@ -63,6 +67,7 @@ test('fromArray falls back to defaults for missing keys', function (): void {
     $dto = CountryDto::fromArray(['code' => 'BRA']);
 
     expect($dto->code)->toBe('BRA')
+        ->and($dto->iso2)->toBe('')
         ->and($dto->name)->toBe('')
         ->and($dto->currency_id)->toBeNull()
         ->and($dto->phone_code)->toBeNull()

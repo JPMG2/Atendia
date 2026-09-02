@@ -16,6 +16,7 @@ class CountryDto implements FormData
         public ?int $currency_id = null,
         public string $name = '',
         public string $code = '',
+        public string $iso2 = '',
         public ?string $phone_code = null,
         public bool $is_active = true
     ) {}
@@ -42,6 +43,7 @@ class CountryDto implements FormData
             'currency_id' => $this->currency_id,
             'name' => $this->name,
             'code' => $this->code,
+            'iso2' => $this->iso2,
             'phone_code' => $this->phone_code,
             'is_active' => $this->is_active,
         ];
@@ -53,6 +55,7 @@ class CountryDto implements FormData
             currency_id: DtoCast::toNullableId($data['currency_id'] ?? null),
             name: $data['name'] ?? '',
             code: $data['code'] ?? '',
+            iso2: $data['iso2'] ?? '',
             phone_code: DtoCast::toNullableString($data['phone_code'] ?? null),
             is_active: $data['is_active'] ?? true,
         );
@@ -64,6 +67,7 @@ class CountryDto implements FormData
             'currency_id' => $this->currency_id,
             'name' => Country::normalizeName($this->name),
             'code' => Country::normalizeCode($this->code),
+            'iso2' => Country::normalizeCode($this->iso2),
             'phone_code' => Country::normalizePhoneCode($this->phone_code),
             'is_active' => $this->is_active,
         ];
