@@ -165,6 +165,17 @@ class Business extends Model
     }
 
     /**
+     * The services this business actually offers, in its own words — not to
+     * be confused with the catalog's service TYPES, which are the moulds.
+     *
+     * @return HasMany<Service, $this>
+     */
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    /**
      * @return HasMany<User, $this>
      */
     public function users(): HasMany

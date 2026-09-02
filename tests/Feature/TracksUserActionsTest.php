@@ -10,6 +10,7 @@ use App\Models\Currency;
 use App\Models\CurrentStatus;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\Service;
 use App\Models\SocialNetwork;
 use App\Models\TaxCondition;
 use App\Models\User;
@@ -113,6 +114,7 @@ test('every master and the business itself track their author', function (string
         ->and(in_array(SoftDeletes::class, class_uses_recursive($model), true))->toBeTrue();
 })->with([
     Business::class,
+    Service::class,
     BusinessSector::class,
     BusinessActivity::class,
     Country::class,
