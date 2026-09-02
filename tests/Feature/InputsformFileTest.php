@@ -82,3 +82,24 @@ test('the progress bar only exists while the file is travelling', function (): v
 test('the zone paints from tokens, with no hex of its own', function (): void {
     expect(renderFileField())->not->toMatch('/#[0-9a-fA-F]{3}\b/');
 });
+
+test('the remove button only exists when a screen asks for it', function (): void {
+    expect(renderFileField())->not->toContain('field-drop-remove');
+});
+
+test('removing announces to the screen and never opens the picker', function (): void {
+    $html = renderFileField('removable');
+
+    // The zone itself is the pick button, so the remove click must not bubble
+    // into it; the decision (confirm, delete) belongs to the screen.
+    expect($html)->toContain('field-drop-remove')
+        ->toContain('x-on:click.stop="remove()"')
+        ->toContain("field: 'logo'")
+        ->toContain('x-show="preview"');
+});
+
+test('the zone resets when the screen says its file went through', function (): void {
+    expect(renderFileField('removable'))
+        ->toContain('x-on:file-reset.window')
+        ->toContain('reset()');
+});

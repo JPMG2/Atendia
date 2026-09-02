@@ -73,8 +73,11 @@ test('no view uses a raw input, select or textarea — forms must use <x-ui.*>',
 });
 
 test('no view hardcodes a hex color — use semantic tokens from app.css', function (): void {
+    // Mail views are the one legit DIRECTORY exception: their CSS is inlined
+    // on send and mail clients never load app.css, so no token exists there.
     $offenders = collect(bladeViews())
         ->reject(fn (string $html, string $path): bool => in_array($path, HEX_ALLOWLIST, true))
+        ->reject(fn (string $html, string $path): bool => str_starts_with($path, 'emails/') || str_starts_with($path, 'components/email/'))
         ->filter(fn (string $html): bool => preg_match('/#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?\b/', $html) === 1)
         ->keys();
 

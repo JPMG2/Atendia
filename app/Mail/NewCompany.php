@@ -28,22 +28,25 @@ class NewCompany extends Mailable implements ShouldQueue
     ) {}
 
     /**
-     * Get the message envelope.
+     * The subject carries the company's name: a mail that names its reader
+     * stands out in the inbox where a generic line reads as noise.
      */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('mail.new_company.subject'),
+            subject: __('mail.new_company.subject', ['name' => $this->model->legal_name]),
         );
     }
 
     /**
-     * Get the message content definition.
+     * An own HTML view and not markdown: the brand chrome (band, card, button)
+     * needs full control of the markup. The text view keeps a plain fallback.
      */
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.new.company',
+            view: 'emails.new.company',
+            text: 'emails.new.company-text',
         );
     }
 

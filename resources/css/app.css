@@ -431,6 +431,10 @@
      mostrar una marca que no es la que se subió. */
   .field-drop-preview { max-height:76px; max-width:100%; object-fit:contain; }
 
+  /* En la esquina y no en el flujo: la zona entera es el botón de elegir, y el
+     de quitar solo se le superpone cuando hay algo que quitar. */
+  .field-drop-remove { position:absolute; top:6px; right:6px; }
+
   /* Fuera de pantalla pero NO `display:none`: así sigue siendo enfocable y el
      lector de pantalla lo anuncia como el campo de archivo que es. */
   .field-drop-picker { position:absolute; width:1px; height:1px; padding:0; margin:-1px;

@@ -51,13 +51,18 @@ components/site/pricing.blade.php
 
 in_list() { printf '%s\n' "$2" | grep -qxF "$1"; }
 
+# Los correos son la excepción legítima por DIRECTORIO: su CSS se inlinea al
+# enviar y los clientes de correo jamás cargan app.css, así que los tokens no
+# existen ahí. Espejado en el test guardián.
+is_email_view() { case "$1" in emails/*|components/email/*) return 0 ;; *) return 1 ;; esac; }
+
 violations=""
 
 if ! in_list "$rel" "$raw_allow" && grep -qiE '<(input|select|textarea)\b' "$file"; then
     violations="${violations}- Usa <input>/<select>/<textarea> crudo. Usá los componentes <x-ui.input/select/textarea/switch/checkbox> (garantizan el foco de un solo anillo, el theming y el wiring del error).\n"
 fi
 
-if ! in_list "$rel" "$hex_allow" && grep -qE '#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b' "$file"; then
+if ! in_list "$rel" "$hex_allow" && ! is_email_view "$rel" && grep -qE '#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b' "$file"; then
     violations="${violations}- Hardcodea un color hex. Usá tokens semánticos de resources/css/app.css (var(--...)), nunca un hex.\n"
 fi
 

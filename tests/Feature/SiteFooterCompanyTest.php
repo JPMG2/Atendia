@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 
 uses(RefreshDatabase::class);
 
@@ -53,10 +54,24 @@ test('the stored logo replaces the bundled mark, one per theme', function (): vo
         'logo_path_dark' => 'logos/dark.svg',
     ]);
 
-    // The header keeps the bundled mark: only the footer was given the record.
+    // The logo resolves the record on its own, so header and footer both show it.
     $this->get('/')
         ->assertSee(asset('storage/logos/light.svg'))
         ->assertSee(asset('storage/logos/dark.svg'));
+});
+
+test('the logo resolves the stored mark on its own, wherever it renders', function (): void {
+    Company::factory()->create(['logo_path_light' => 'logos/mine.svg']);
+
+    // No props passed: this is what the header and the auth layout render.
+    expect(Blade::render('<x-site.logo />'))
+        ->toContain(asset('storage/logos/mine.svg'))
+        ->not->toContain(asset('assets/logo-mark.svg'));
+});
+
+test('with no company the logo falls back to the bundled mark', function (): void {
+    expect(Blade::render('<x-site.logo />'))
+        ->toContain(asset('assets/logo-mark.svg'));
 });
 
 test('with a single logo saved the same file stands in for both themes', function (): void {

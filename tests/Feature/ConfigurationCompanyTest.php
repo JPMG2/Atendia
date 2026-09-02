@@ -1356,6 +1356,90 @@ test('the logo field is the real control, not the mock-up it used to be', functi
         ->not->toContain('config-drop');
 });
 
+test('removing a stored logo empties the column and deletes the file', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    $component = fillMainStep()->set('form.logo_light_file', fakeLogo())->call('saveMain');
+
+    $stored = Company::query()->firstOrFail()->logo_path_light;
+
+    $component->call('removeLogo', 'logo_path_light')
+        ->assertSet('form.data.logo_path_light', null)
+        ->assertDispatched('notify');
+
+    expect(Company::query()->firstOrFail()->logo_path_light)->toBeNull();
+
+    Storage::disk('public')->assertMissing($stored);
+});
+
+test('removing one theme leaves the other alone', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    fillMainStep()
+        ->set('form.logo_light_file', fakeLogo('light.png'))
+        ->set('form.logo_dark_file', fakeLogo('dark.png'))
+        ->call('saveMain')
+        ->call('removeLogo', 'logo_path_dark');
+
+    $company = Company::query()->firstOrFail();
+
+    expect($company->logo_path_dark)->toBeNull()
+        ->and($company->logo_path_light)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($company->logo_path_light);
+});
+
+test('removing a logo drops a pick that was never saved, quietly', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    // Nothing stored is lost, so there is no toast to show either.
+    fillMainStep()->call('saveMain');
+
+    Livewire::test('configuration.company')
+        ->set('form.logo_light_file', fakeLogo())
+        ->call('removeLogo', 'logo_path_light')
+        ->assertSet('form.logo_light_file', null)
+        ->assertNotDispatched('notify');
+
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+test('only a logo column can be emptied through remove', function (): void {
+    $this->actingAs(companyAdmin());
+
+    $component = fillMainStep()->call('saveMain');
+
+    // The column name is public form traffic: anything that is not a logo
+    // column must bounce off, or remove doubles as a blanking tool.
+    $component->call('removeLogo', 'legal_name')->assertNotDispatched('notify');
+
+    expect(Company::query()->firstOrFail()->legal_name)->not->toBeNull();
+});
+
+test('a stored logo warns before going, through the system dialog', function (): void {
+    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+
+    expect($blade)->toContain('x-on:file-remove="removeLogo($event.detail.name)"')
+        ->toContain('async removeLogo(field) {')
+        ->toContain('removable wire:model="form.logo_light_file"')
+        ->toContain('removable wire:model="form.logo_dark_file"');
+});
+
+test('discarding a step asks first, through the system dialog', function (): void {
+    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+
+    // What was typed and not saved cannot be brought back: the dialog is the
+    // only chance to keep it.
+    expect($blade)->toContain('async discard(step) {')
+        ->toContain("__('company.discard_confirm.title')");
+});
+
 test('the welcome says what was registered, and no longer the Laravel stub', function (): void {
     $company = Company::factory()->create([
         'legal_name' => 'AtendIa SRL',
@@ -1368,21 +1452,40 @@ test('the welcome says what was registered, and no longer the Laravel stub', fun
     expect($rendered)->toContain('AtendIa SRL')
         ->toContain('30123456789')
         ->toContain('Av. Siempre Viva 742')
-        ->toContain(__('mail.new_company.action'))
         ->and($rendered)->not->toContain('The body of your message')
         ->and($rendered)->not->toContain('Button Text');
 });
 
 test('the subject and the body come from translations, like every visible copy', function (): void {
-    $mail = new NewCompany(Company::factory()->create());
+    $company = Company::factory()->create();
+    $mail = new NewCompany($company);
 
-    expect($mail->envelope()->subject)->toBe(__('mail.new_company.subject'))
-        ->and($mail->render())->toContain(__('mail.new_company.greeting'));
+    // The subject names the company: a generic line reads as inbox noise.
+    expect($mail->envelope()->subject)->toBe(__('mail.new_company.subject', ['name' => $company->legal_name]))
+        ->and($mail->render())->toContain(__('mail.new_company.title'));
 });
 
-test('the welcome takes the reader to the screen it is talking about', function (): void {
+test('the welcome wears the brand chrome, not the Laravel default', function (): void {
+    $rendered = (new NewCompany(Company::factory()->create()))->render();
+
+    // Wordmark, jade band and rights come from our own email layout; the hex
+    // is legit there, since mail clients never load app.css.
+    expect($rendered)->toContain('Atend<span style="color:#0EA47A;">ia</span>')
+        ->toContain('background-color:#0EA47A')
+        ->toContain(__('mail.new_company.eyebrow'))
+        ->toContain(__('mail.layout.rights', ['year' => now()->year]));
+});
+
+test('the welcome ships a plain-text version alongside the HTML', function (): void {
+    expect((new NewCompany(Company::factory()->create()))->content()->text)
+        ->toBe('emails.new.company-text');
+});
+
+test('the welcome carries no call to action, by design', function (): void {
+    // The owner asked the button out: the mail is a record, not a task. A CTA
+    // sneaking back in would be a regression of that decision.
     expect((new NewCompany(Company::factory()->create()))->render())
-        ->toContain(route('admin.company'));
+        ->not->toContain(route('admin.company'));
 });
 
 test('an address left empty leaves no dangling label in the mail', function (): void {
@@ -1391,9 +1494,21 @@ test('an address left empty leaves no dangling label in the mail', function (): 
     expect($rendered)->not->toContain(__('mail.new_company.address'));
 });
 
-test('the frame Laravel puts around the mail is Spanish too', function (): void {
-    // The footer line comes from the vendor mail layout: untranslated it reached
-    // the reader in English, in the middle of a message written in Spanish.
+test('the welcome shows the full location, walked up from the region', function (): void {
+    $country = Country::factory()->create(['name' => 'Argentina']);
+    $province = Province::factory()->create(['country_id' => $country->id, 'name' => 'Buenos Aires']);
+    $region = Region::factory()->create(['province_id' => $province->id, 'name' => 'AMBA']);
+
+    $company = Company::factory()->create(['region_id' => $region->id]);
+
+    // The table stores only the region: country and province come up the chain.
+    expect((new NewCompany($company))->render())
+        ->toContain('Argentina · Buenos Aires · AMBA');
+});
+
+test('the frame around the mail is Spanish too', function (): void {
+    // The rights line once came untranslated from the vendor layout; our own
+    // chrome must never regress into English mid-message.
     expect((new NewCompany(Company::factory()->create()))->render())
         ->toContain('Todos los derechos reservados.')
         ->not->toContain('All rights reserved.');

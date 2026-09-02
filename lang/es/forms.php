@@ -23,6 +23,7 @@ return [
 
     'file' => [
         'upload' => 'Subir archivo',
+        'remove' => 'Quitar el archivo',
     ],
 
 ];

@@ -7,11 +7,12 @@
  * NEVER by importing Alpine here.
  */
 
-function fileFieldData({ preview = null } = {}) {
+function fileFieldData({ preview = null, field = null } = {}) {
     return {
         dragging: false,
         uploading: false,
         progress: 0,
+        field,
 
         // What the zone shows. The file just picked wins over the stored one:
         // the person has to see what they chose before saving it.
@@ -45,6 +46,29 @@ function fileFieldData({ preview = null } = {}) {
 
             this.$refs.picker.files = box.files;
             this.$refs.picker.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+
+        /**
+         * Announces the remove; deciding it (confirm, delete) is the SCREEN's
+         * business, which answers with `file-reset` once it went through.
+         */
+        remove() {
+            this.$dispatch('file-remove', { name: this.field });
+        },
+
+        /**
+         * Back to empty, once the screen removed the file: the preview is
+         * local state, so no server render can blank it from outside.
+         */
+        reset() {
+            if (this.objectUrl) {
+                URL.revokeObjectURL(this.objectUrl);
+            }
+
+            this.objectUrl = null;
+            this.name = '';
+            this.preview = null;
+            this.$refs.picker.value = '';
         },
 
         show(file) {

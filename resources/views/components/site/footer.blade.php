@@ -18,7 +18,7 @@
 <footer class="bg-card border-t bd-subtle">
     <div class="mx-auto grid gap-8 grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]" style="max-width: var(--container-xl); padding:48px 24px 28px;">
         <div class="flex flex-col gap-3 col-span-2 lg:col-span-1" style="max-width:280px;">
-            <x-site.logo :size="24" :light="$company?->logo_path_light" :dark="$company?->logo_path_dark" />
+            <x-site.logo :size="24" />
             <p class="text-muted" style="font-size: var(--text-sm); line-height:1.55;">{{ $company?->tagline ?: __('landing.footer.tagline') }}</p>
 
             {{-- The order is the one the screen set: `socialLinks` comes back

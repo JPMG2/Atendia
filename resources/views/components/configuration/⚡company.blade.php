@@ -18,8 +18,8 @@ use Livewire\WithFileUploads;
  * Company: AtendIa's own data — a SINGLE record, not the client businesses.
  *
  * Loading goes in STEPS: the second opens only once the company exists,
- * because saving the first is what unlocks it. Step 1 already persists; step 2
- * has no action yet and the social rows are still a mock-up.
+ * because saving the first is what unlocks it. Each step validates, saves and
+ * discards on its own, so an error never lands on a hidden panel.
  */
 new #[Title('Compañía')] class extends Component {
     use HasNotifications;
@@ -121,6 +121,19 @@ new #[Title('Compañía')] class extends Component {
     public function removeSocialRow(int $index): void
     {
         $notification = $this->form->removeSocialRow($index);
+
+        if ($notification !== null) {
+            $this->dispatchNotification($notification);
+        }
+    }
+
+    /**
+     * Removes a logo, leaving the zone empty. The screen warned already: the
+     * stored file is gone there and then, like a saved network.
+     */
+    public function removeLogo(string $column): void
+    {
+        $notification = $this->form->removeLogo($column);
 
         if ($notification !== null) {
             $this->dispatchNotification($notification);
@@ -230,7 +243,7 @@ new #[Title('Compañía')] class extends Component {
 
 {{-- Changing step empties the bag: otherwise step one greets you with a
 field in red from an attempt you had stopped looking at. --}}
-<div x-data="companyForm" x-on:step-changed="errors = {}">
+<div x-data="companyForm" x-on:step-changed="errors = {}" x-on:file-remove="removeLogo($event.detail.name)">
     <div class="page-head">
         <div>
             <h1 class="page-head-title">{{ __('company.title') }}</h1>
@@ -332,11 +345,11 @@ field in red from an attempt you had stopped looking at. --}}
                 <div class="config-logo-grid">
                     <x-inputsform.file span="full" name="logo_light_file" :label="__('company.logo.light')"
                         :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_light']"
-                        wire:model="form.logo_light_file" />
+                        removable wire:model="form.logo_light_file" />
 
                     <x-inputsform.file span="full" name="logo_dark_file" :label="__('company.logo.dark')"
                         :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_dark']"
-                        wire:model="form.logo_dark_file" />
+                        removable wire:model="form.logo_dark_file" />
                 </div>
             </div>
 
@@ -503,6 +516,40 @@ field in red from an attempt you had stopped looking at. --}}
                 },
             },
 
+            // Which column each upload field feeds, to ask the server about
+            // the right one when a zone announces its remove.
+            logoColumns: {
+                logo_light_file: 'logo_path_light',
+                logo_dark_file: 'logo_path_dark',
+            },
+
+            /**
+             * Removes a logo. A stored one warns first — the file is deleted
+             * there and then, like a saved network. A pick not yet saved just
+             * goes, since nothing on disk is lost. The zone resets on the
+             * `file-reset` echo, because its preview is local Alpine state.
+             */
+            async removeLogo(field) {
+                const column = this.logoColumns[field];
+
+                if (! column) {
+                    return;
+                }
+
+                if (this.$wire.get(`${this.path}.${column}`) && ! await dialog.confirm({
+                    title: @js(__('company.logo.remove_confirm.title')),
+                    message: @js(__('company.logo.remove_confirm.message')),
+                    accept: @js(__('company.logo.remove_confirm.accept')),
+                    type: 'danger',
+                })) {
+                    return;
+                }
+
+                await this.$wire.removeLogo(column);
+
+                this.$dispatch('file-reset', { name: field });
+            },
+
             /**
              * Removes a network. Warns first when it was already saved.
              *
@@ -524,13 +571,22 @@ field in red from an attempt you had stopped looking at. --}}
             },
 
             /**
-             * Discards the standing step, and only that one.
+             * Discards the standing step, and only that one. It warns first:
+             * what was typed and not saved cannot be brought back.
              *
              * The real state lives on the server (the fields bind to the DTO
              * through wire:model), so reverting is its business; all that goes
              * down here is the front's error bag, which is local.
              */
             async discard(step) {
+                if (! await dialog.confirm({
+                    title: @js(__('company.discard_confirm.title')),
+                    message: @js(__('company.discard_confirm.message')),
+                    accept: @js(__('company.discard_confirm.accept')),
+                })) {
+                    return;
+                }
+
                 this.errors = {};
 
                 if (step === 'main') {

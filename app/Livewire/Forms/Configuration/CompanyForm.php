@@ -433,6 +433,41 @@ class CompanyForm extends BaseForm
     }
 
     /**
+     * Removes a logo and leaves its column empty, deleting the stored file.
+     *
+     * It runs THERE AND THEN, like removing a saved network, which is why the
+     * screen confirms first. A pick not yet saved is simply dropped, with
+     * nothing on disk to delete and nothing to say.
+     */
+    public function removeLogo(string $column): ?NotificationDto
+    {
+        if (! array_key_exists($column, self::LOGO_UPLOADS) || $this->data === null) {
+            return null;
+        }
+
+        $this->{self::LOGO_UPLOADS[$column]} = null;
+        $this->data->{$column} = null;
+
+        $company = Company::query()->find($this->recordId);
+
+        if ($company === null || $company->{$column} === null) {
+            return null;
+        }
+
+        return $this->tryAction(function () use ($company, $column): NotificationDto {
+            $path = $company->{$column};
+
+            $company->fill([$column => null])->save();
+
+            // Only once nothing points at it: deleting first would leave a
+            // saved path with no file behind it if the save failed.
+            Storage::disk('public')->delete($path);
+
+            return $this->notificationService()->notificationFor($company, 'updated');
+        }, __('notifications.not_updated'));
+    }
+
+    /**
      * Changing the country invalidates everything hanging off it.
      *
      * Otherwise the old province survives: it vanishes from the list, already

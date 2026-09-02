@@ -17,6 +17,14 @@ return [
     'subtitle' => 'Los datos de Atendia: encabezan la factura y se muestran en la web.',
 
     'discard' => 'Descartar',
+
+    // Descartar avisa antes: lo tipeado sin guardar no se puede recuperar.
+    'discard_confirm' => [
+        'title' => '¿Descartar los cambios?',
+        'message' => 'Lo escrito sin guardar en este paso se pierde.',
+        'accept' => 'Descartar',
+    ],
+
     'save' => 'Guardar cambios',
     // Sin compañía cargada, guardar el paso 1 es lo que abre el 2: el botón lo dice.
     'save_continue' => 'Guardar y continuar',
@@ -61,6 +69,13 @@ return [
         'dark' => 'Logo para fondo oscuro',
         'upload' => 'Subir archivo',
         'hint' => 'SVG, PNG, WEBP o JPG, hasta 2 MB.',
+
+        // La baja es inmediata, como la de una red: el aviso dice la consecuencia.
+        'remove_confirm' => [
+            'title' => '¿Quitar el logo?',
+            'message' => 'Se elimina del sitio y del pie de página. No se puede deshacer.',
+            'accept' => 'Quitar el logo',
+        ],
     ],
 
     'footer' => [

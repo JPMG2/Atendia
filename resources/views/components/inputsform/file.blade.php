@@ -9,6 +9,7 @@
     'preview' => null,     // URL of the stored file, shown until a new one is picked
     'note' => null,        // the small line inside the zone (formats, weight)
     'span' => 'text',      // width BY CONTENT: code | short | text | long | full
+    'removable' => false,  // opt-in: a remove button while something is showing
 ])
 
 @php
@@ -40,7 +41,7 @@
     like, and hands the click to the picker. --}}
     <div
         class="field-drop{{ $error ? ' field-error' : '' }}"
-        x-data="inputsformFile({ preview: @js($preview) })"
+        x-data="inputsformFile({ preview: @js($preview), field: @js($name) })"
         x-bind:class="{ 'is-dragging': dragging, 'field-error': {{ $alpineErrorExpr ? '!!('.$alpineErrorExpr.')' : 'false' }} }"
         x-on:click="$refs.picker.click()"
         x-on:keydown.enter.prevent="$refs.picker.click()"
@@ -48,6 +49,9 @@
         x-on:dragover.prevent="dragging = true"
         x-on:dragleave.prevent="dragging = false"
         x-on:drop.prevent="drop($event)"
+        @if ($removable)
+            x-on:file-reset.window="$event.detail.name === field && reset()"
+        @endif
         role="button"
         tabindex="0"
         @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
@@ -72,6 +76,14 @@
         />
 
         <img class="field-drop-preview" alt="" x-show="preview" x-cloak x-bind:src="preview" />
+
+        @if ($removable)
+            {{-- Removing is the SCREEN's decision: the button only announces it,
+            and the zone resets when the screen says it went through. --}}
+            <x-ui.icon-button icon="trash-2" size="sm" variant="ghost" class="field-drop-remove"
+                :label="__('forms.file.remove')" x-show="preview" x-cloak
+                x-on:click.stop="remove()" />
+        @endif
 
         <span class="field-drop-icon" x-show="! preview">
             <x-icon name="upload" :size="22" />

@@ -1,0 +1,17 @@
+{{ __('mail.new_company.title') }}
+
+{{ __('mail.new_company.intro', ['name' => $model->legal_name]) }}
+
+{{ __('mail.new_company.legal_name') }}: {{ $model->legal_name }}
+{{ __('mail.new_company.tax_id') }}: {{ $model->tax_id }}
+@if (filled($model->address))
+{{ __('mail.new_company.address') }}: {{ $model->address }}
+@endif
+@if (filled($location = collect([$model->region?->province?->country?->name, $model->region?->province?->name, $model->region?->name])->filter()->implode(' · ')))
+{{ __('mail.new_company.location') }}: {{ $location }}
+@endif
+
+{{ __('mail.new_company.closing') }}
+{{ __('mail.new_company.team') }}
+
+{{ __('mail.layout.rights', ['year' => now()->year]) }}
