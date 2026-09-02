@@ -68,6 +68,40 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Atrapa TODO el correo de la app para verlo a ojo: UI en https://IP/mailpit
+  # (con usuario/clave; credencial en .env -> MAILPIT_UI_AUTH, no se commitea).
+  # La app le habla por SMTP interno: MAIL_HOST=mailpit, puerto 1025.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: atendia-mailpit
+    restart: unless-stopped
+    environment:
+      # La UI vive bajo /mailpit para colgarla de la misma IP que el sitio
+      MP_WEBROOT: /mailpit
+      # user:pass leido del .env (interpolacion de compose); vacio = sin auth
+      MP_UI_AUTH: ${MAILPIT_UI_AUTH:-}
+    networks:
+      - easypanel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=easypanel"
+      # Prioridad > 100 para ganarle al router del sitio en /mailpit
+      - "traefik.http.routers.atendia-mailpit-http.rule=HostRegexp(`^[0-9.]+$`) && PathPrefix(`/mailpit`)"
+      - "traefik.http.routers.atendia-mailpit-http.entrypoints=http"
+      - "traefik.http.routers.atendia-mailpit-http.priority=110"
+      - "traefik.http.routers.atendia-mailpit-http.service=atendia-mailpit-svc"
+      - "traefik.http.routers.atendia-mailpit-https.rule=HostRegexp(`^[0-9.]+$`) && PathPrefix(`/mailpit`)"
+      - "traefik.http.routers.atendia-mailpit-https.entrypoints=https"
+      - "traefik.http.routers.atendia-mailpit-https.priority=110"
+      - "traefik.http.routers.atendia-mailpit-https.tls=true"
+      - "traefik.http.routers.atendia-mailpit-https.service=atendia-mailpit-svc"
+      - "traefik.http.services.atendia-mailpit-svc.loadbalancer.server.port=8025"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   root-home:
     # Se sembro con el /root del contenedor viejo (tar) el 2026-08-12.
