@@ -99,6 +99,7 @@ return [
 
         'columns' => [
             'code' => 'Código',
+            'iso2' => 'ISO-2',
             'name' => 'Nombre',
             'phone_code' => 'Cód. telefónico',
             'currency' => 'Moneda',

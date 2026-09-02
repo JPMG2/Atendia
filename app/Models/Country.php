@@ -108,7 +108,7 @@ class Country extends Model implements DataTable
      * The `id` always travels: it is the only stable key for editing. The `code`
      * is user-editable, so it cannot identify the row.
      *
-     * @return Collection<int, array{id: int, code: string, name: string, phone_code: string|null, currency: string, active: bool}>
+     * @return Collection<int, array{id: int, code: string, iso2: string, name: string, phone_code: string|null, currency: string, active: bool}>
      */
     public function catalogRows(): Collection
     {
@@ -120,6 +120,7 @@ class Country extends Model implements DataTable
                 fn (self $country): array => [
                     'id' => $country->id,
                     'code' => $country->code,
+                    'iso2' => $country->iso2,
                     'name' => $country->name,
                     'phone_code' => $country->phone_code,
                     'currency' => $country->currency?->code ?? '',

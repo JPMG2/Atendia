@@ -82,6 +82,15 @@ test('the country editor renders its real inputs', function (): void {
         ->assertSee('Estado');
 });
 
+test('every row carries the iso2 code, shown in the table next to the 3-letter one', function (): void {
+    Country::factory()->create(['code' => 'ARG', 'iso2' => 'AR', 'name' => 'Argentina']);
+
+    $component = Livewire::test('catalog.country');
+
+    expect(collect($component->get('initialRows'))->pluck('iso2')->all())->toBe(['AR'])
+        ->and($component->html())->toContain('x-text="row.iso2"');
+});
+
 test('the iso2 code is stored uppercase, ready for the timezone-per-country lookup', function (): void {
     $currency = Currency::factory()->create(['code' => 'CLP', 'name' => 'Peso Chileno']);
 
