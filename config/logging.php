@@ -67,6 +67,15 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // The test suite errors ON PURPOSE all the time and was drowning the
+        // real log the admin screen reads; phpunit.xml points it here instead.
+        'testing' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/testing.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

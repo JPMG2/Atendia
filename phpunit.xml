@@ -29,6 +29,9 @@
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_DATABASE" value="atendia_testing"/>
         <env name="DB_URL" value=""/>
+        <!-- Los tests fallan a propósito todo el tiempo: su ruido va a
+             testing.log, nunca al laravel.log que lee la pantalla de Logs. -->
+        <env name="LOG_CHANNEL" value="testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

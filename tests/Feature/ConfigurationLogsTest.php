@@ -128,6 +128,15 @@ test('only the tail of a huge log is read, and only whole entries survive', func
         ->and($entries->every(fn ($entry) => str_starts_with($entry->message, 'Entry number')))->toBeTrue();
 });
 
+test('the suite noise file is never offered as a system log', function (): void {
+    writeLog($this->logDir, 'laravel.log', sampleLog());
+    writeLog($this->logDir, 'testing.log', sampleLog());
+
+    // Tests error on purpose all the time; their log is not the system's.
+    expect(app(LogReader::class)->files())->toBe(['laravel.log'])
+        ->and(app(LogReader::class)->entries('testing.log'))->toHaveCount(0);
+});
+
 test('a file name that is not a known log reads nothing', function (): void {
     writeLog($this->logDir, 'laravel.log', sampleLog());
 
