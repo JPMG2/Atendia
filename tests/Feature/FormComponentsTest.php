@@ -27,6 +27,16 @@ test('the input shows an error and switches the control to the error state', fun
     expect($html)->toContain('field-error')->toContain('Required');
 });
 
+test('the input wires the Alpine errors bag when given an alpine-error key', function (): void {
+    // Same capability as <x-inputsform.input>: the front guard paints the
+    // border and the message without a server round-trip.
+    $html = Blade::render('<x-ui.input name="email" alpine-error="email" :hint="\'Un hint\'" />');
+
+    expect($html)->toContain("x-bind:class=\"{ 'field-error': !!(errors.email) }\"")
+        ->toContain('x-text="errors.email"')
+        ->toContain('x-show="!(errors.email)"');
+});
+
 test('the input forwards attributes like placeholder and wire:model to the control', function (): void {
     $html = Blade::render('<x-ui.input name="email" placeholder="tu@correo" wire:model="email" />');
 

@@ -1,52 +1,96 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+    <div class="mb-8">
+        <h2 class="font-display text-strong" style="font-weight:800; font-size:var(--text-3xl); letter-spacing:-0.02em;">
+            Creá tu cuenta
+        </h2>
+        <p class="text-muted mt-1.5" style="font-size:var(--text-base);">
+            Tres datos y tu asistente empieza a tomar forma.
+        </p>
+    </div>
+
+    {{-- `novalidate` on purpose: the browser's native bubbles are the one
+    dialog nobody can theme; the guard below speaks for the form instead,
+    same criterion as the catalog masters. The server judges again. --}}
+    <form method="POST" action="{{ route('register') }}" class="flex flex-col gap-5" novalidate
+        x-data="registerGuard" x-on:submit="guard($event)">
         @csrf
 
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
-        </div>
+        <x-ui.input
+            :label="__('Name')"
+            name="name"
+            alpine-error="name"
+            icon="users"
+            :value="old('name')"
+            placeholder="María Gómez"
+            autofocus
+            autocomplete="name"
+        />
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        <x-ui.input
+            label="Email"
+            name="email"
+            type="email"
+            alpine-error="email"
+            icon="mail"
+            :value="old('email')"
+            placeholder="vos@tunegocio.com"
+            autocomplete="username"
+        />
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <x-ui.input
+            :label="__('Password')"
+            name="password"
+            type="password"
+            alpine-error="password"
+            icon="lock"
+            placeholder="Mínimo 8 caracteres"
+            autocomplete="new-password"
+        />
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
+        <x-ui.input
+            :label="__('Confirm Password')"
+            name="password_confirmation"
+            type="password"
+            alpine-error="password_confirmation"
+            icon="lock"
+            placeholder="La misma contraseña, para estar seguros"
+            autocomplete="new-password"
+        />
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
+        <div class="flex items-center justify-between gap-4 mt-2">
+            <a href="{{ route('login') }}" class="text-brand font-semibold hover:underline" style="font-size:var(--text-sm);">
                 {{ __('Already registered?') }}
             </a>
 
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
+            <x-ui.button variant="primary">{{ __('Register') }}</x-ui.button>
         </div>
     </form>
+
+    <script>
+        // Front mirror of RegisteredUserController's rules: what cannot pass
+        // there is stopped here, before the request leaves.
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('registerGuard', () => ({
+                errors: {},
+
+                guard(event) {
+                    const values = Object.fromEntries(
+                        ['name', 'email', 'password', 'password_confirmation']
+                            .map(field => [field, event.target.elements[field]?.value ?? ''])
+                    );
+
+                    this.errors = validate(values, {
+                        name: ['required', ['maxLength', 255], 'noMarkup'],
+                        email: ['required', 'email', ['maxLength', 255]],
+                        password: ['required', ['minLength', 8]],
+                        password_confirmation: ['required', ['same', values.password]],
+                    });
+
+                    if (Object.keys(this.errors).length > 0) {
+                        event.preventDefault();
+                    }
+                },
+            }));
+        });
+    </script>
 </x-guest-layout>

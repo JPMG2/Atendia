@@ -22,7 +22,9 @@
 
     <style>[x-cloak]{display:none !important;}</style>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- form-guard has no Alpine of its own (it hangs validate() on window),
+    so it rides along app.js safely on the guest pages. --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/form-guard.js'])
 </head>
 <body
     x-data="{

@@ -19,15 +19,28 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_the_register_form_guards_on_the_front_like_the_catalogs_do(): void
+    {
+        // `novalidate` kills the browser's native bubbles (the one dialog
+        // nobody can theme); the Alpine guard speaks for the form instead.
+        $this->get('/register')
+            ->assertSee('novalidate', false)
+            ->assertSee('x-data="registerGuard"', false)
+            ->assertSee("['minLength', 8]", false)
+            ->assertSee("['same', values.password]", false)
+            ->assertSee('errors.password_confirmation', false)
+            ->assertSee('field-control', false);
+    }
+
     public function test_the_registration_screen_speaks_spanish(): void
     {
-        // The stock Breeze keys shipped untranslated: the buttons greeted the
-        // visitor in English in the middle of a Spanish product.
+        // The stock Breeze keys shipped untranslated. Positive assertions:
+        // DontSee('Register') would trip on RegisteredUserController leaking
+        // into framework metadata, not on copy.
         $this->get('/register')
             ->assertSee('Crear mi cuenta')
             ->assertSee('Contraseña')
             ->assertSee('¿Ya creaste tu cuenta?')
-            ->assertDontSee('Register')
             ->assertDontSee('Already registered?');
     }
 

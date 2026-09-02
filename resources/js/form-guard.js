@@ -45,6 +45,9 @@ const CHECKS = {
     min: (v, n) => Number(v) >= n || `Debe ser mayor o igual a ${n}.`,
     max: (v, n) => Number(v) <= n || `Debe ser menor o igual a ${n}.`,
     between: (v, a, b) => (Number(v) >= a && Number(v) <= b) || `Debe estar entre ${a} y ${b}.`,
+    // Mirrors Laravel's `confirmed`: the caller passes the OTHER value when
+    // assembling the rules, e.g. [['same', values.password]].
+    same: (v, other) => v === String(other ?? '') || 'Los valores no coinciden.',
 };
 
 /**
