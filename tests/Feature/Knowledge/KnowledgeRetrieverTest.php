@@ -34,7 +34,8 @@ test('retrieval is scoped to a single company and never leaks another tenant', f
     $docA = KnowledgeDocument::factory()->for($businessA)->create();
     $docB = KnowledgeDocument::factory()->for($businessB)->create();
 
-    // Business A: two chunks pointing in different directions.
+    // Business A: a chunk matching the query and an orthogonal one, which the
+    // similarity floor discards.
     KnowledgeChunk::factory()->forDocument($docA)->withEmbedding(unitVector(0))->create(['content' => 'A-cero']);
     KnowledgeChunk::factory()->forDocument($docA)->withEmbedding(unitVector(1))->create(['content' => 'A-uno']);
     // Business B: a chunk IDENTICAL to the query — it must never appear in A's results.
@@ -45,10 +46,28 @@ test('retrieval is scoped to a single company and never leaks another tenant', f
 
     $results = app(KnowledgeRetriever::class)->retrieve('lo que sea', $businessA->id);
 
-    expect($results)->toHaveCount(2)
+    expect($results)->toHaveCount(1)
         ->and($results->pluck('content')->all())->not->toContain('B-cero') // tenant isolation
         ->and($results->first()->content)->toBe('A-cero')                  // nearest within the tenant
         ->and($results->first()->distance)->toBeLessThan(0.01);            // identical direction ⇒ ~0 distance
+});
+
+test('chunks below the similarity floor are discarded instead of padding the context', function (): void {
+    Queue::fake();
+
+    $business = Business::factory()->create();
+    $document = KnowledgeDocument::factory()->for($business)->create();
+
+    // Orthogonal to the query: cosine similarity 0, far under the floor. Fed
+    // to the assistant it would be noise dressed up as context.
+    KnowledgeChunk::factory()->forDocument($document)->withEmbedding(unitVector(1))->create(['content' => 'Nada que ver']);
+
+    Embeddings::fake(fn () => [unitVector(0)]);
+
+    $retriever = app(KnowledgeRetriever::class);
+
+    expect($retriever->retrieve('otra cosa', $business->id))->toHaveCount(0)
+        ->and($retriever->context('otra cosa', $business->id))->toBe('');
 });
 
 test('the context block cites the source document title', function (): void {

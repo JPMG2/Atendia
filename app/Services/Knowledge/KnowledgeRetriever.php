@@ -29,6 +29,12 @@ class KnowledgeRetriever
     public function retrieve(string $query, int $businessId, ?int $limit = null): Collection
     {
         $limit ??= (int) config('rag.retrieval.top_k');
+
+        // Cosine distance = 1 - similarity: the configured floor becomes a
+        // ceiling. Without it, top_k pads the context with far-off chunks and
+        // the assistant improvises from noise instead of saying "not found".
+        $maxDistance = 1.0 - (float) config('rag.retrieval.min_similarity');
+
         $vector = $this->embedder->embedOne($query);
 
         return app(Tenant::class)->for($businessId, fn (): Collection => KnowledgeChunk::query()
@@ -38,6 +44,8 @@ class KnowledgeRetriever
             ->with('document:id,title')
             ->limit($limit)
             ->get()
+            ->filter(static fn (KnowledgeChunk $chunk): bool => (float) $chunk->getAttribute('distance') <= $maxDistance)
+            ->values()
             ->map(static fn (KnowledgeChunk $chunk): RetrievedChunkDto => new RetrievedChunkDto(
                 documentId: (int) $chunk->knowledge_document_id,
                 documentTitle: (string) ($chunk->document?->title ?? ''),
