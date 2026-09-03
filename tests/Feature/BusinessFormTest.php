@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
 use App\Models\Business;
+use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\Province;
@@ -52,8 +53,10 @@ function signedInBlankForm(): array
 
     $province = Province::factory()->create();
 
-    // The sector rule points at the catalog, so the chip has to exist there.
-    BusinessSector::factory()->create(['code' => 'salud']);
+    // The sector and activity rules point at the catalog, so the chips have
+    // to exist there — the activity scoped under its sector.
+    $sector = BusinessSector::factory()->create(['code' => 'salud']);
+    BusinessActivity::factory()->create(['code' => 'consultorio-medico', 'business_sector_id' => $sector->id]);
 
     return [makeBusinessForm(), $user, $province];
 }
@@ -65,6 +68,7 @@ test('the identity step creates the business, links the user and copies the bill
     $form->data->country_id = $province->country_id;
     $form->data->province_id = $province->id;
     $form->data->sector = 'salud';
+    $form->data->activity = 'consultorio-medico';
 
     $notification = $form->saveIdentity();
 
@@ -85,6 +89,7 @@ test('a second identity save updates the same business instead of creating anoth
     $form->data->country_id = $province->country_id;
     $form->data->province_id = $province->id;
     $form->data->sector = 'salud';
+    $form->data->activity = 'consultorio-medico';
 
     $form->saveIdentity();
 
@@ -117,6 +122,35 @@ test('a sector missing from the catalog is rejected, even a well-formed one', fu
     $form->saveIdentity();
 })->throws(ValidationException::class);
 
+test('the identity save declares the primary activity of the tenant', function (): void {
+    [$form, , $province] = signedInBlankForm();
+
+    $form->data->name = 'Clínica Vida';
+    $form->data->country_id = $province->country_id;
+    $form->data->province_id = $province->id;
+    $form->data->sector = 'salud';
+    $form->data->activity = 'consultorio-medico';
+
+    $form->saveIdentity();
+
+    expect(Business::sole()->primaryActivity()->code)->toBe('consultorio-medico');
+});
+
+test('an activity of another sector is rejected, even an existing one', function (): void {
+    [$form, , $province] = signedInBlankForm();
+
+    // Exists and is active, but hangs off a different sector than the chosen one.
+    BusinessActivity::factory()->create(['code' => 'peluqueria']);
+
+    $form->data->name = 'Clínica Vida';
+    $form->data->country_id = $province->country_id;
+    $form->data->province_id = $province->id;
+    $form->data->sector = 'salud';
+    $form->data->activity = 'peluqueria';
+
+    $form->saveIdentity();
+})->throws(ValidationException::class);
+
 test('a province of another country is rejected even if the id exists', function (): void {
     [$form, , $province] = signedInBlankForm();
 
@@ -126,6 +160,7 @@ test('a province of another country is rejected even if the id exists', function
     $form->data->country_id = $province->country_id;
     $form->data->province_id = $foreign->id;
     $form->data->sector = 'salud';
+    $form->data->activity = 'consultorio-medico';
 
     $form->saveIdentity();
 })->throws(ValidationException::class);

@@ -35,6 +35,7 @@ return [
         'country_placeholder' => 'Elegí el país',
         'province_placeholder' => 'Elegí la provincia',
         'service_placeholder' => 'Escribí uno y apretá Enter — ej. Ecodoppler',
+        'activity_hint' => 'Con esto tu asistente aprende tu oficio y te sugiere los servicios justos. Podés sumar más actividades después.',
     ],
 
     'products' => [

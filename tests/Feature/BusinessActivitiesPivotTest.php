@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Business;
 use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Models\ServiceType;
 use Database\Seeders\BusinessActivitySeeder;
 use Database\Seeders\BusinessSectorSeeder;
@@ -124,6 +125,21 @@ test('a bakery is suggested only its own service types', function (): void {
         // Ordered by the type's own sort_order, not by the activity.
         ->toBe(['pedido-llevar', 'producto-mostrador'])
         ->not->toContain('mesa');
+});
+
+// The sector's twin of the business method: same union via activities, used
+// by the wizard before any business exists. The type's own sector column is
+// admin grouping and takes no part.
+test('a sector suggests the union of what its activities suggest', function (): void {
+    seedBusinessCatalog();
+
+    $sector = BusinessSector::where('code', 'gastronomia')->sole();
+
+    expect($sector->suggestedServiceTypes()->pluck('code')->all())
+        ->toContain('plato')
+        ->toContain('mesa')
+        ->toContain('pedido-llevar')
+        ->not->toContain('consulta');
 });
 
 test('adding a second activity unlocks its types, with no code exception anywhere', function (): void {

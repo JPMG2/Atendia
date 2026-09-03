@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\BusinessActivityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
@@ -58,6 +60,57 @@ class BusinessActivity extends Model implements DataTable
             ->withPivot('sort_order')
             ->withTimestamps()
             ->orderBy('activity_service_type.sort_order');
+    }
+
+    /**
+     * The CONCRETE services suggested to this trade, GBP-style, in demand
+     * order. Same spirit as the types above: shown first, never a fence.
+     *
+     * @return HasMany<SuggestedService, $this>
+     */
+    public function suggestedServices(): HasMany
+    {
+        return $this->hasMany(SuggestedService::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Options for an activity picker. Same conventions as its siblings: an
+     * empty `states` does not filter, `label`/`value` are opt-in (the wizard
+     * chips carry the code), `sectorId` narrows to one trade group the way
+     * `Province::options()` narrows to a country.
+     *
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @param  (Closure(self): string)|null  $label  the option text; null = the name
+     * @param  (Closure(self): (int|string))|null  $value  the option value; null = the id
+     * @param  int|null  $sectorId  sector to narrow to; null = all
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    public static function options(array $states = [], ?Closure $label = null, ?Closure $value = null, ?int $sectorId = null): array
+    {
+        $query = self::query();
+
+        $label ??= fn (self $activity): string => $activity->name;
+        $value ??= fn (self $activity): int => $activity->id;
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        if ($sectorId !== null) {
+            $query->where('business_sector_id', $sectorId);
+        }
+
+        return $query
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $activity): array => [
+                    'value' => $value($activity),
+                    'label' => $label($activity),
+                ],
+            )
+            ->all();
     }
 
     /**

@@ -34,4 +34,17 @@ return [
         'reason' => 'Recibiste este correo porque esta dirección es el contacto registrado de la compañía.',
     ],
 
+    'business_welcome' => [
+        'subject' => ':name ya tiene su asistente',
+        'preheader' => 'Tu asistente ya sabe presentarse. Conecta tu WhatsApp y empieza a atender por ti.',
+        'eyebrow' => 'Bienvenido a AtendIa',
+        'title' => 'Tu asistente ya está en marcha',
+        'intro' => ':name ya tiene quién lo atienda: tu asistente sabe presentarse y está listo para aprender tu oficio.',
+        'next' => 'Un solo paso lo separa de atender de verdad: conecta el WhatsApp de tu negocio.',
+        'cta' => 'Conectar mi WhatsApp',
+        'closing' => 'Gracias por elegirnos para atender tu negocio.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque creaste tu negocio en AtendIa con esta dirección.',
+    ],
+
 ];

@@ -7,8 +7,11 @@ namespace App\Livewire\Forms\Business;
 use App\Dto\BusinessDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Events\BusinessCreated;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
+use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Rules\AttributeValidator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -91,7 +94,11 @@ class BusinessForm extends BaseForm
 
         $creating = $this->recordId === null;
 
-        return $this->tryAction(function () use ($validated): NotificationDto {
+        // Leaves the closure by reference: the event fires OUTSIDE tryAction,
+        // where a listener's failure cannot turn a good save into an error.
+        $born = null;
+
+        $notification = $this->tryAction(function () use ($validated, &$born): NotificationDto {
 
             $user = Auth::user();
 
@@ -99,7 +106,11 @@ class BusinessForm extends BaseForm
             // locked recordId is display state, the relation is the authority.
             $business = $user?->business ?? new Business;
 
-            if (! $business->exists) {
+            // Taken BEFORE save: `wasRecentlyCreated` stays true on the
+            // instance associate() cached, so it would greet twice.
+            $isBirth = ! $business->exists;
+
+            if ($isBirth) {
                 $business->billing_email = (string) $user?->email;
             }
 
@@ -111,12 +122,31 @@ class BusinessForm extends BaseForm
                 $user->business()->associate($business)->save();
             }
 
+            if ($isBirth) {
+                $born = $business;
+            }
+
+            // The wizard declares the PRIMARY activity; secondaries belong to
+            // the profile and survive a walk-back save untouched.
+            $business->syncActivities(
+                BusinessActivity::query()->where('code', $validated['activity'])->value('id'),
+                $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all(),
+            );
+
             return $this->notificationService()->notificationFor(
                 $business,
-                $business->wasRecentlyCreated ? 'created' : 'updated',
+                $isBirth ? 'created' : 'updated',
             );
 
         }, $creating ? __('notifications.not_created') : __('notifications.not_updated'));
+
+        // Once per business, at birth: walking back and saving again updates
+        // the same row and must never greet twice.
+        if ($born instanceof Business) {
+            BusinessCreated::dispatch($born);
+        }
+
+        return $notification;
     }
 
     /**
@@ -184,6 +214,7 @@ class BusinessForm extends BaseForm
             'country_id' => config('nicename.country_id'),
             'province_id' => config('nicename.province_id'),
             'sector' => config('nicename.sector'),
+            'activity' => config('nicename.activity'),
             'whatsapp_number' => config('nicename.whatsapp_number'),
             'fallback_whatsapp_number' => config('nicename.fallback_whatsapp_number'),
             'email' => config('nicename.email'),
@@ -194,8 +225,9 @@ class BusinessForm extends BaseForm
     {
         return [
             ...$this->data?->toPayload() ?? [],
-            // Screen state, out of the payload; its rule still needs it here.
+            // Screen state, out of the payload; their rules still need them.
             'sector' => $this->data?->sector,
+            'activity' => $this->data?->activity,
         ];
     }
 
@@ -229,6 +261,16 @@ class BusinessForm extends BaseForm
                 // its suggestions from it, so without one there is nothing to
                 // offer there. The catalog is the source, never a hardcoded list.
                 'sector' => ['required', Rule::exists('business_sectors', 'code')->where('is_active', true)],
+
+                // The trade itself — what tunes the assistant and narrows the
+                // suggestions. Scoped to the chosen sector: a code posted by
+                // hand must not cross trades.
+                'activity' => [
+                    'required',
+                    Rule::exists('business_activities', 'code')
+                        ->where('is_active', true)
+                        ->where('business_sector_id', BusinessSector::query()->where('code', (string) $this->data?->sector)->value('id')),
+                ],
             ],
 
             self::STEP_CONNECTION => [

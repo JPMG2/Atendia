@@ -22,6 +22,8 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
 
     public string $sector = '';
 
+    public string $activity = '';
+
     /** @var list<string> */
     public array $services = [];
 
@@ -76,6 +78,15 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
     public function sectorChosen(string $sector): void
     {
         $this->sector = $sector;
+
+        // The trade hangs off the sector: a new one voids the old choice.
+        $this->activity = '';
+    }
+
+    #[On('wizard:activity-chosen')]
+    public function activityChosen(string $activity): void
+    {
+        $this->activity = $activity;
     }
 
     /** @param  list<string>  $services */
@@ -197,7 +208,7 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
                 <livewire:business.step-business />
             </div>
             <div @if ($step !== 3) hidden @endif>
-                <livewire:business.step-services :sector="$sector" />
+                <livewire:business.step-services :sector="$sector" :activity="$activity" />
             </div>
             <div @if ($step !== 4) hidden @endif>
                 <livewire:business.step-products />

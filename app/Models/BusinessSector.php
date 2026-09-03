@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
+use Closure;
 use Database\Factories\BusinessSectorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,6 +39,52 @@ class BusinessSector extends Model implements DataTable
     public function activities(): HasMany
     {
         return $this->hasMany(BusinessActivity::class);
+    }
+
+    /**
+     * The CONCRETE services suggested across this sector, wizard food: at
+     * that point only the sector is known, so sibling trades pool their
+     * lists. Deduped by name — the classics repeat in every trade — and
+     * capped: chips invite, they do not enumerate. Once a business declares
+     * its activities, the narrower per-activity lists take over.
+     *
+     * @return Collection<int, SuggestedService>
+     */
+    public function suggestedServices(int $limit = 12): Collection
+    {
+        return SuggestedService::query()
+            ->where('is_active', true)
+            ->whereHas(
+                'activity',
+                fn (Builder $query): Builder => $query->where('business_sector_id', $this->id),
+            )
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->unique('name')
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * The service types SUGGESTED to this sector: the union of what its
+     * activities suggest — the sector's twin of
+     * {@see Business::suggestedServiceTypes()}. The type's own sector column
+     * is admin grouping and takes no part here. A suggestion, never a fence.
+     *
+     * @return Collection<int, ServiceType>
+     */
+    public function suggestedServiceTypes(): Collection
+    {
+        return ServiceType::query()
+            ->whereHas(
+                'activities',
+                fn (Builder $query): Builder => $query->where('business_activities.business_sector_id', $this->id),
+            )
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
     /**
@@ -108,19 +155,23 @@ class BusinessSector extends Model implements DataTable
     }
 
     /**
-     * Options for the sector combobox.
-     *
-     * An empty `states` does NOT filter, on purpose: the combobox resolves the
-     * chosen option inside `options`, so hiding a deactivated row would blank the
-     * field when editing a record that uses it.
+     * Options for the sector combobox. An empty `states` does NOT filter, on
+     * purpose: hiding a deactivated row would blank the field when editing a
+     * record that uses it. `value` is opt-in like the catalog's `label`: the
+     * wizard chips carry the CODE, existing callers keep the id.
      *
      * @param  list<bool>  $states  `is_active` values to include; empty = all
-     * @return array<int, array{value: int, label: string}>
+     * @param  (Closure(self): string)|null  $label  the option text; null = the default
+     * @param  (Closure(self): (int|string))|null  $value  the option value; null = the id
+     * @return array<int, array{value: int|string, label: string}>
      */
-    public static function options(array $states = []): array
+    public static function options(array $states = [], ?Closure $label = null, ?Closure $value = null): array
     {
         /** @var Builder<self> $query */
         $query = self::query();
+
+        $label ??= fn (self $sector): string => $sector->name;
+        $value ??= fn (self $sector): int => $sector->id;
 
         if ($states !== []) {
             $query->whereIn('is_active', $states);
@@ -132,8 +183,8 @@ class BusinessSector extends Model implements DataTable
             ->get()
             ->map(
                 fn (self $sector): array => [
-                    'value' => $sector->id,
-                    'label' => $sector->name,
+                    'value' => $value($sector),
+                    'label' => $label($sector),
                 ],
             )
             ->all();

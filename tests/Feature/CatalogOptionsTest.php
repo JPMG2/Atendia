@@ -92,6 +92,15 @@ test('sector and modality options are sorted by sort_order before name', functio
         ->and(array_column(ServiceModality::options(), 'label'))->toBe(['Turno', 'Abono']);
 });
 
+// The wizard chips speak in codes — the value closure is opt-in, so the
+// combobox callers keep receiving ids untouched.
+test('sector options can carry the code as value while the default stays the id', function (): void {
+    $sector = BusinessSector::factory()->create(['code' => 'salud']);
+
+    expect(array_column(BusinessSector::options(value: fn (BusinessSector $s): string => $s->code), 'value'))->toBe(['salud'])
+        ->and(array_column(BusinessSector::options(), 'value'))->toBe([$sector->id]);
+});
+
 // The three masters the company screen picks from are chosen by name, so their
 // default label is the bare name — no code, no parent, nothing to disambiguate.
 test('region, tax condition and social network options carry the bare name', function (): void {

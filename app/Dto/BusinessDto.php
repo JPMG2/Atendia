@@ -8,12 +8,11 @@ use App\Interfaces\Catalog\FormData;
 use App\Models\Business;
 
 /**
- * State of the business forms — the TENANT ({@see Business}).
- *
- * Full row on purpose: wizard steps and the future profile edit slices of the
- * same record, each form hydrating from it first, so a partial screen can
- * never blank out what another one saved. `sector` is not a column — it feeds
- * the suggestions and the activity sync — so it stays out of `toPayload()`.
+ * State of the business forms — the TENANT ({@see Business}). Full row on
+ * purpose: wizard steps and the future profile edit slices of the same
+ * record, each form hydrating from it first, so a partial screen never
+ * blanks out what another saved. `sector` and `activity` are not columns —
+ * they gate the wizard and feed the activity sync — so no `toPayload()`.
  */
 class BusinessDto implements FormData
 {
@@ -32,6 +31,7 @@ class BusinessDto implements FormData
         public ?string $web = null,
         public bool $is_active = true,
         public ?string $sector = null,
+        public ?string $activity = null,
     ) {}
 
     /**
@@ -64,6 +64,7 @@ class BusinessDto implements FormData
             'web' => $this->web,
             'is_active' => $this->is_active,
             'sector' => $this->sector,
+            'activity' => $this->activity,
         ];
     }
 
@@ -81,11 +82,12 @@ class BusinessDto implements FormData
             web: DtoCast::toNullableString($data['web'] ?? null),
             is_active: $data['is_active'] ?? true,
             sector: DtoCast::toNullableString($data['sector'] ?? null),
+            activity: DtoCast::toNullableString($data['activity'] ?? null),
         );
     }
 
     /**
-     * Columns only: the sector stays out.
+     * Columns only: the sector and the activity stay out.
      *
      * Text is trimmed and nullable columns go back to null, so an empty one never
      * holds `''` — present but empty, which `whereNull` never finds.

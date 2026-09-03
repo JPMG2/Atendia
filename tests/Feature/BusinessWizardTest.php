@@ -6,7 +6,7 @@ use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Province;
-use App\Models\ServiceType;
+use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -149,12 +149,48 @@ test('the business step reports the name live and the chosen sector', function (
         ->assertDispatched('wizard:sector-chosen', sector: 'salud');
 });
 
+// Picking a sector opens the second question with ITS trades only; picking
+// a sector with a single trade answers itself.
+test('choosing a sector offers its trades, and a lone trade picks itself', function (): void {
+    $sector = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
+    BusinessActivity::factory()->create(['code' => 'panaderia', 'name' => 'Panadería', 'business_sector_id' => $sector->id]);
+    BusinessActivity::factory()->create(['code' => 'heladeria', 'name' => 'Heladería', 'business_sector_id' => $sector->id]);
+    BusinessActivity::factory()->create(['code' => 'ajeno', 'name' => 'Oficio ajeno']);
+
+    $lone = BusinessSector::factory()->create(['code' => 'otro', 'name' => 'Otro']);
+    BusinessActivity::factory()->create(['code' => 'otra-actividad', 'business_sector_id' => $lone->id]);
+
+    Livewire::test('business.step-business')
+        ->call('choose', 'gastronomia')
+        ->assertSee('Panadería')
+        ->assertSee('Heladería')
+        ->assertDontSee('Oficio ajeno')
+        ->assertSet('form.data.activity', null)
+        ->call('choose', 'otro')
+        ->assertSet('form.data.activity', 'otra-actividad')
+        ->assertDispatched('wizard:activity-chosen', activity: 'otra-actividad');
+});
+
+test('the chosen activity narrows the suggestions to its own trade', function (): void {
+    $sector = BusinessSector::factory()->create(['code' => 'gastronomia']);
+    $bakery = BusinessActivity::factory()->create(['code' => 'panaderia', 'business_sector_id' => $sector->id]);
+    $iceCream = BusinessActivity::factory()->create(['code' => 'heladeria', 'business_sector_id' => $sector->id]);
+
+    SuggestedService::factory()->create(['business_activity_id' => $bakery->id, 'name' => 'Pan del día']);
+    SuggestedService::factory()->create(['business_activity_id' => $iceCream->id, 'name' => 'Cuarto kilo de helado']);
+
+    Livewire::test('business.step-services', ['sector' => 'gastronomia', 'activity' => 'heladeria'])
+        ->assertSee('Cuarto kilo de helado')
+        ->assertDontSee('Pan del día');
+});
+
 // The wiring proof: Continuar runs the form, the tenant lands in the table
 // and only then does the wizard move on.
 test('finishing the business step creates the tenant and advances', function (): void {
     $client = actingAsClient();
 
     $sector = BusinessSector::factory()->create(['code' => 'salud']);
+    $activity = BusinessActivity::factory()->create(['code' => 'consultorio-medico', 'business_sector_id' => $sector->id]);
     $province = Province::factory()->create();
 
     Livewire::test('business.step-business')
@@ -162,10 +198,12 @@ test('finishing the business step creates the tenant and advances', function ():
         ->set('form.data.country_id', $province->country_id)
         ->set('form.data.province_id', $province->id)
         ->call('choose', $sector->code)
+        ->call('chooseActivity', $activity->code)
         ->call('finish')
         ->assertDispatched('wizard:step-completed', step: 2);
 
     expect(Business::sole()->name)->toBe('Clínica Vida')
+        ->and(Business::sole()->primaryActivity()->code)->toBe('consultorio-medico')
         ->and($client->refresh()->business_id)->toBe(Business::sole()->id);
 });
 
@@ -198,20 +236,18 @@ test('the services step adds without duplicates and removes by index', function 
         ->assertDispatched('wizard:services-updated');
 });
 
-// Sector → its activities → the types they are suggested. The type's own
-// sector column is admin grouping and takes no part here.
-test('the services step suggests the service types of the sector\'s activities', function (): void {
+// Sector → its activities → their CONCRETE suggested services (GBP-style):
+// the chips speak the client's language, never the catalog's abstractions.
+test('the services step suggests the sector\'s concrete services', function (): void {
     $sector = BusinessSector::factory()->create(['code' => 'salud']);
     $activity = BusinessActivity::factory()->create(['business_sector_id' => $sector->id]);
 
-    $suggested = ServiceType::factory()->create(['name' => 'Ecodoppler doppler', 'is_active' => true]);
-    $suggested->activities()->attach($activity->id, ['sort_order' => 1]);
-
-    ServiceType::factory()->create(['name' => 'Tipo de otro rubro', 'is_active' => true]);
+    SuggestedService::factory()->create(['business_activity_id' => $activity->id, 'name' => 'Ecodoppler doppler']);
+    SuggestedService::factory()->create(['name' => 'Servicio de otro rubro']);
 
     Livewire::test('business.step-services', ['sector' => 'salud'])
         ->assertSee('Ecodoppler doppler')
-        ->assertDontSee('Tipo de otro rubro');
+        ->assertDontSee('Servicio de otro rubro');
 });
 
 test('a sector with nothing to suggest hides the suggestion block', function (): void {

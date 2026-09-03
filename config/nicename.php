@@ -45,6 +45,7 @@ return [
 
     // Business: the tenant, as the wizard asks for it.
     'sector' => 'rubro',
+    'activity' => 'actividad',
     'whatsapp_number' => 'WhatsApp del negocio',
     'fallback_whatsapp_number' => 'WhatsApp de respaldo',
 ];

@@ -2,6 +2,7 @@
 
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
+use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\Province;
@@ -48,21 +49,15 @@ new class extends Component {
     }
 
     /**
-     * The sector chips, straight from the catalog: the seeder carries the
-     * demand-ordered research, so the wizard never hardcodes the list.
+     * The sector chips, straight from the catalog: the model owns the query,
+     * the wizard only asks for the CODE as value — the hinge the DTO speaks.
      *
-     * @return array<int, array{code: string, name: string}>
+     * @return array<int, array{value: int|string, label: string}>
      */
     #[Computed]
     public function sectorOptions(): array
     {
-        return BusinessSector::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['code', 'name'])
-            ->map(fn (BusinessSector $sector): array => ['code' => $sector->code, 'name' => $sector->name])
-            ->all();
+        return BusinessSector::options(states: [true], value: fn (BusinessSector $sector): string => $sector->code);
     }
 
     /**
@@ -76,11 +71,58 @@ new class extends Component {
         }
     }
 
+    /**
+     * The trades of the chosen sector, from the model. Empty until a sector
+     * chip is picked, which is what makes the second question appear.
+     *
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    #[Computed]
+    public function activityOptions(): array
+    {
+        $sectorId = BusinessSector::query()->where('code', (string) $this->form->data?->sector)->value('id');
+
+        return $sectorId === null ? [] : BusinessActivity::options(
+            states: [true],
+            value: fn (BusinessActivity $activity): string => $activity->code,
+            sectorId: $sectorId,
+        );
+    }
+
+    /** "¿Qué tipo de gastronomía?" — the question names the chosen sector. */
+    #[Computed]
+    public function activityLabel(): string
+    {
+        $chosen = collect($this->sectorOptions)->firstWhere('value', $this->form->data?->sector);
+
+        return __('wizard.fields.activity', ['sector' => mb_strtolower((string) ($chosen['label'] ?? ''))]);
+    }
+
     public function choose(string $sector): void
     {
         $this->form->data->sector = $sector;
 
+        // A new sector invalidates the trade: the old one no longer belongs.
+        $this->form->data->activity = null;
+
+        unset($this->activityOptions);
+
+        // BEFORE the auto-pick below, or the parent's reset on sector-chosen
+        // would wipe the freshly picked trade.
         $this->dispatch('wizard:sector-chosen', sector: $sector);
+
+        // "Otro" has a single trade: asking would be a question with one
+        // answer, so it picks itself.
+        if (count($this->activityOptions) === 1) {
+            $this->chooseActivity((string) $this->activityOptions[0]['value']);
+        }
+    }
+
+    public function chooseActivity(string $activity): void
+    {
+        $this->form->data->activity = $activity;
+
+        $this->dispatch('wizard:activity-chosen', activity: $activity);
     }
 
     /** Advances ONLY on a real save: a validation error keeps the step open. */
@@ -123,9 +165,9 @@ new class extends Component {
             <span class="field-label">{{ __('wizard.fields.sector') }}</span>
             <div class="wizard-chips">
                 @foreach ($this->sectorOptions as $option)
-                    <button type="button" wire:key="sector-{{ $option['code'] }}"
-                        wire:click="choose('{{ $option['code'] }}')" @class(['wizard-chip', 'is-on' => $form->data?->sector === $option['code']])>
-                        {{ $option['name'] }}
+                    <button type="button" wire:key="sector-{{ $option['value'] }}"
+                        wire:click="choose('{{ $option['value'] }}')" @class(['wizard-chip', 'is-on' => $form->data?->sector === $option['value']])>
+                        {{ $option['label'] }}
                     </button>
                 @endforeach
             </div>
@@ -134,6 +176,24 @@ new class extends Component {
             @enderror
             <span class="field-hint">{{ __('wizard.fields.sector_hint') }}</span>
         </div>
+
+        @if ($this->activityOptions !== [])
+            <div class="field">
+                <span class="field-label">{{ $this->activityLabel }}</span>
+                <div class="wizard-chips">
+                    @foreach ($this->activityOptions as $option)
+                        <button type="button" wire:key="activity-{{ $option['value'] }}"
+                            wire:click="chooseActivity('{{ $option['value'] }}')" @class(['wizard-chip', 'is-on' => $form->data?->activity === $option['value']])>
+                            {{ $option['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+                @error('activity')
+                    <span class="field-error-text">{{ $message }}</span>
+                @enderror
+                <span class="field-hint">{{ __('wizard.fields.activity_hint') }}</span>
+            </div>
+        @endif
 
         <div class="wizard-foot">
             <span class="wizard-spacer"></span>

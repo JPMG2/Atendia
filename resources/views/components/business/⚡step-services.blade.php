@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\ServiceType;
+use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
@@ -14,32 +15,35 @@ new class extends Component {
     #[Reactive]
     public string $sector = '';
 
+    #[Reactive]
+    public string $activity = '';
+
     /** @var list<string> */
     public array $services = [];
 
     public string $draft = '';
 
     /**
-     * The top service types of the chosen sector, via its ACTIVITIES: on
-     * `ServiceType` the sector is only admin grouping, the activity pivot is
-     * who actually offers what — and it stays a suggestion, never a fence.
+     * The top CONCRETE services (GBP-style), straight from the models. The
+     * ACTIVITY gives the fine per-trade list; with only the sector known the
+     * sibling trades pool theirs as the fallback.
      *
      * @return list<string>
      */
     #[Computed]
     public function suggestions(): array
     {
+        if ($this->activity !== '') {
+            return BusinessActivity::query()->where('code', $this->activity)->first()
+                ?->suggestedServices()->pluck('name')->all() ?? [];
+        }
+
         if ($this->sector === '') {
             return [];
         }
 
-        return ServiceType::query()
-            ->where('is_active', true)
-            ->whereHas('activities.sector', fn ($query) => $query->where('code', $this->sector))
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name')
-            ->all();
+        return BusinessSector::query()->where('code', $this->sector)->first()
+            ?->suggestedServices()->pluck('name')->all() ?? [];
     }
 
     public function add(?string $name = null): void
