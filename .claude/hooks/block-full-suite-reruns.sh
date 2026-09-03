@@ -28,6 +28,12 @@ case "$command" in
     *) exit 0 ;;
 esac
 
+# `make:test --pest` es scaffolding, no una corrida: sin esto el flag --pest
+# matchea *pest* y crear un test consume la corrida del commit (pasó).
+case "$command" in
+    *make:test*) exit 0 ;;
+esac
+
 # Con un filtro o un archivo puntual no aplica: eso es exactamente lo que se
 # quiere que se corra mientras se trabaja.
 case "$command" in

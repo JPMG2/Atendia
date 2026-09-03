@@ -51,6 +51,10 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/check-comment-golden-rules.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-migration-consolidation.sh"
           }
         ]
       }

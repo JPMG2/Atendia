@@ -17,15 +17,13 @@ set -u
 
 cmd=$(jq -r '.tool_input.command // ""' 2>/dev/null)
 
-# Solo interesa lo que corrió DENTRO del contenedor sin `-u` (es decir, root).
+# Cualquier `docker exec` sobre el contenedor dispara la revisión. OJO: acá no
+# se excluye el `-u www-data` — un comando COMPUESTO (root && www-data) contiene
+# ese flag y aun así deja basura de root (pasó el 2026-09-03: view:clear como
+# root && pest como www-data → livewire/views quedó root y el sitio dio 500).
+# El `find` de abajo ya decide solo: si no hay archivos de root, no hace nada.
 case "$cmd" in
-    *"docker exec"*atendia-app*)
-        case "$cmd" in
-            *"-u www-data"* | *"--user www-data"* | *"-u 82"*)
-                exit 0
-                ;;
-        esac
-        ;;
+    *"docker exec"*atendia-app*) ;;
     *)
         exit 0
         ;;

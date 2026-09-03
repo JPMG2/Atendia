@@ -47,6 +47,21 @@ Blindado con test de regresión: `tests/Feature/DestructiveCommandGuardTest.php`
   → corre **únicamente esa** migración. Ver convención del usuario.
 - Recordá el entorno Docker: `docker exec -w /var/www/html atendia-app php artisan migrate ...`
 
+## Columna nueva en tabla existente — REGLA DE ORO (2026-09-02, blindada)
+
+> Mientras no haya go-live, **NO se crean migraciones `add_*`/`drop_*`/`rename_*`**:
+> la columna se suma **rediseñando la migración de CREACIÓN** de la tabla.
+> Incumplida el 2026-09-03 (dos `add_*` sobre `businesses`) → ahora blindada:
+> test guardián `tests/Feature/GoldenRulesMigrationsTest.php` + hook
+> `.claude/hooks/check-migration-consolidation.sh` (las `add_*` anteriores a la
+> fecha son historia y quedan).
+
+1. Sumar la columna a la migración `create_*_table` existente.
+2. Sincronizar `atendia` con un **ALTER quirúrgico** (`Schema::table(...)` en tinker
+   — no destructivo; la create ya corrió ahí y no se re-ejecuta).
+3. `atendia_testing` se rearma sola vía RefreshDatabase → correr los tests.
+4. Si hubo una `add_*` temporal aplicada, borrar el archivo Y su fila en `migrations`.
+
 ## Al crear una migración nueva (flujo completo)
 1. Crear la migración (y modelo/seeder).
 2. **Aplicarla a `atendia` con `migrate --path`** — si no, la feature no existe en el
