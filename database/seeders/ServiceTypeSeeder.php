@@ -132,7 +132,7 @@ class ServiceTypeSeeder extends Seeder
                 'name' => 'Arreglo', 'description' => 'Se deja, se trabaja y se retira.',
                 'modality' => 'encargo', 'sector' => 'servicios', 'sort_order' => 40,
                 'attributes' => ['notas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Qué hay que hacer'], 'hora_retiro' => ['sort_order' => 2]],
-                'activities' => ['lavanderia', 'reparacion-electrodomesticos', 'gomeria', 'cerrajeria'],
+                'activities' => ['lavanderia', 'reparacion-electrodomesticos', 'gomeria', 'cerrajeria', 'taller-mecanico'],
             ],
             'visita-presupuesto' => [
                 'name' => 'Visita a presupuestar', 'description' => 'Se releva en el lugar y después se cotiza.',
@@ -161,6 +161,74 @@ class ServiceTypeSeeder extends Seeder
                 'modality' => 'suscripcion', 'sector' => 'bienestar', 'sort_order' => 51,
                 'attributes' => ['vigencia' => ['is_required' => true, 'sort_order' => 1], 'incluye' => ['sort_order' => 2]],
                 'activities' => ['gimnasio', 'yoga', 'pilates', 'natacion', 'guarderia-mascotas'],
+            ],
+            'reserva-habitacion' => [
+                'name' => 'Reserva de habitación', 'description' => 'Noches, huéspedes y confirmación al instante.',
+                'modality' => 'reserva', 'sector' => 'turismo', 'sort_order' => 60,
+                'attributes' => ['personas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Huéspedes'], 'notas' => ['sort_order' => 2]],
+                'activities' => ['hotel'],
+            ],
+            'excursion' => [
+                'name' => 'Excursión', 'description' => 'Salida programada con cupo.',
+                'modality' => 'reserva', 'sector' => 'turismo', 'sort_order' => 61,
+                'attributes' => ['personas' => ['is_required' => true, 'sort_order' => 1], 'lugar' => ['sort_order' => 2]],
+                'activities' => ['excursiones', 'agencia-viajes', 'hotel'],
+            ],
+            'traslado' => [
+                'name' => 'Traslado', 'description' => 'De un punto a otro, con hora pactada.',
+                'modality' => 'reserva', 'sector' => 'turismo', 'sort_order' => 62,
+                'attributes' => ['zona' => ['is_required' => true, 'sort_order' => 1], 'personas' => ['sort_order' => 2]],
+                'activities' => ['traslados', 'agencia-viajes', 'hotel'],
+            ],
+            'visita-propiedad' => [
+                'name' => 'Visita a la propiedad', 'description' => 'Recorrer el inmueble con cita.',
+                'modality' => 'cita', 'sector' => 'inmobiliaria', 'sort_order' => 70,
+                'attributes' => ['zona' => ['is_required' => true, 'sort_order' => 1], 'notas' => ['sort_order' => 2]],
+                'activities' => ['inmobiliaria'],
+            ],
+            'tasacion' => [
+                'name' => 'Tasación', 'description' => 'Se releva la propiedad y se cotiza su valor.',
+                'modality' => 'presupuesto', 'sector' => 'inmobiliaria', 'sort_order' => 71,
+                'attributes' => ['zona' => ['is_required' => true, 'sort_order' => 1], 'notas' => ['sort_order' => 2]],
+                'activities' => ['inmobiliaria', 'administracion-alquileres'],
+            ],
+            'alquiler-temporario' => [
+                'name' => 'Alquiler temporario', 'description' => 'Estadías cortas con depósito y vigencia.',
+                'modality' => 'alquiler', 'sector' => 'inmobiliaria', 'sort_order' => 72,
+                'attributes' => ['personas' => ['is_required' => true, 'sort_order' => 1], 'deposito' => ['sort_order' => 2]],
+                'activities' => ['inmobiliaria', 'administracion-alquileres'],
+            ],
+            'clase-particular' => [
+                'name' => 'Clase particular', 'description' => 'Uno a uno, con horario propio.',
+                'modality' => 'cita', 'sector' => 'educacion', 'sort_order' => 80,
+                'attributes' => ['profesional' => ['sort_order' => 1, 'label_override' => 'Docente'], 'notas' => ['sort_order' => 2]],
+                'activities' => ['apoyo-escolar', 'instituto-idiomas', 'academia-musica', 'autoescuela'],
+            ],
+            'curso' => [
+                'name' => 'Curso', 'description' => 'Programa con inicio, fin e inscripción.',
+                'modality' => 'clase', 'sector' => 'educacion', 'sort_order' => 81,
+                'attributes' => ['cupo' => ['is_required' => true, 'sort_order' => 1], 'vigencia' => ['sort_order' => 2]],
+                'activities' => ['instituto-idiomas', 'academia-musica', 'apoyo-escolar', 'autoescuela'],
+            ],
+
+            // The open door's generics: what any trade can offer from day one.
+            'turno' => [
+                'name' => 'Turno', 'description' => 'Atención con día y hora.',
+                'modality' => 'cita', 'sector' => 'otro', 'sort_order' => 90,
+                'attributes' => ['notas' => ['sort_order' => 1]],
+                'activities' => ['otra-actividad', 'lavadero-autos', 'concesionaria'],
+            ],
+            'pedido' => [
+                'name' => 'Pedido', 'description' => 'Una orden con entrega o retiro.',
+                'modality' => 'pedido', 'sector' => 'otro', 'sort_order' => 91,
+                'attributes' => ['items' => ['is_required' => true, 'sort_order' => 1], 'a_domicilio' => ['sort_order' => 2]],
+                'activities' => ['otra-actividad', 'catering', 'almacen', 'supermercado', 'dietetica', 'floreria', 'libreria'],
+            ],
+            'presupuesto' => [
+                'name' => 'Presupuesto', 'description' => 'Se consulta, se cotiza y se decide.',
+                'modality' => 'presupuesto', 'sector' => 'otro', 'sort_order' => 92,
+                'attributes' => ['notas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Qué necesita']],
+                'activities' => ['otra-actividad', 'imprenta', 'agencia-marketing', 'desarrollo-software', 'seguros', 'repuestos'],
             ],
         ];
     }

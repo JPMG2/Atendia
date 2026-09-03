@@ -52,6 +52,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Straight into the onboarding wizard: the account exists, the
+        // business does not yet — that is exactly what the wizard creates.
+        return redirect(route('onboarding', absolute: false));
     }
 }

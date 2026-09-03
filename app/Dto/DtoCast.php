@@ -44,4 +44,15 @@ final class DtoCast
 
         return (string) $value;
     }
+
+    /**
+     * Collapses the whitespace of hand-typed text, null when nothing is left.
+     * Same criterion as `normalizeName` in the catalog models.
+     */
+    public static function squish(?string $value): ?string
+    {
+        return self::toNullableString(
+            trim((string) preg_replace('/\s+/u', ' ', (string) $value))
+        );
+    }
 }

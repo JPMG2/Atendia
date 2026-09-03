@@ -1471,3 +1471,178 @@
     .config-drop { transition:none; }
   }
 }
+
+/* ============================================================
+   ALTA DE CLIENTE — shell del wizard de onboarding
+   (contrato visual: public/maqueta-registro.html)
+   ============================================================ */
+@layer components {
+  /* Barra superior propia: el wizard vive fuera del shell del dashboard. */
+  .wizard-top { position:sticky; top:0; z-index:100; background:var(--surface-card);
+                border-bottom:1px solid var(--border-subtle); }
+  .wizard-top-in { max-width:var(--container-2xl); margin:0 auto; display:flex;
+                   align-items:center; gap:16px; padding:12px 24px; }
+  .wizard-wordmark { font-family:var(--font-display); font-weight:var(--weight-extra);
+                     letter-spacing:-.03em; font-size:19px; color:var(--text-strong); }
+  .wizard-wordmark b { color:var(--brand); }
+  .wizard-crumb { color:var(--text-subtle); border-left:1px solid var(--border-default);
+                  padding-left:16px; font-size:var(--text-sm); }
+  .wizard-spacer { flex:1; }
+  .wizard-count { font-size:var(--text-sm); color:var(--text-subtle); font-variant-numeric:tabular-nums; }
+  .wizard-count b { color:var(--text-strong); }
+
+  /* Grilla: pasos arriba, panel a la izquierda, riel a la derecha. */
+  .wizard { max-width:var(--container-2xl); margin:0 auto; padding:26px 24px 80px;
+            display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:28px; align-items:start; }
+
+  .wizard-steps { grid-column:1 / -1; display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+  .wizard-tab { flex:1; min-width:128px; text-align:left; padding-top:10px;
+                border-top:3px solid var(--border-default); color:var(--text-subtle);
+                font-size:var(--text-sm); font-weight:var(--weight-semibold); white-space:nowrap;
+                transition:all var(--dur-fast) var(--ease-out); }
+  .wizard-tab .n { font-family:var(--font-mono); font-weight:var(--weight-bold); margin-right:6px; }
+  .wizard-tab.is-active { border-top-color:var(--brand); color:var(--text-strong); }
+  .wizard-tab.is-done { border-top-color:var(--jade-300); color:var(--brand-soft-text); }
+  .wizard-tab .tick { display:none; color:var(--success); vertical-align:-2px; margin-left:4px; }
+  .wizard-tab.is-done .tick { display:inline-block; }
+
+  /* Panel del paso. */
+  .wizard-panel h2 { font-family:var(--font-display); font-weight:var(--weight-extra);
+                     letter-spacing:-.02em; color:var(--text-strong);
+                     font-size:clamp(1.5rem,3vw,2.1rem); }
+  .wizard-panel .lead { margin:8px 0 24px; color:var(--text-muted); font-size:var(--text-base); max-width:560px; }
+  .wizard-panel .card { padding:28px; }
+  .wizard-optional { display:inline-block; font-size:var(--text-2xs); font-weight:var(--weight-bold);
+                     letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);
+                     background:var(--surface-sunken); border-radius:var(--radius-pill);
+                     padding:4px 12px; vertical-align:middle; margin-left:10px; }
+  .wizard-foot { display:flex; align-items:center; gap:12px; margin-top:24px; }
+  .wizard-note { font-size:var(--text-xs); color:var(--text-subtle); }
+  .wizard-frow { display:flex; gap:16px; flex-wrap:wrap; }
+  .wizard-frow > .field { flex:1; min-width:220px; }
+  .wizard-panel .field { margin-bottom:18px; }
+
+  /* Chips de rubro y pastillas de servicios. */
+  .wizard-chips { display:flex; flex-wrap:wrap; gap:10px; }
+  .wizard-chip { border:1px solid var(--border-default); border-radius:var(--radius-md);
+                 padding:12px 18px; font-weight:var(--weight-semibold); color:var(--text-body);
+                 background:var(--surface-card); transition:all var(--dur-fast) var(--ease-out); }
+  .wizard-chip:hover { border-color:var(--brand); background:var(--brand-soft); }
+  .wizard-chip.is-on { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
+  .wizard-suggest { margin:4px 0 14px; font-size:var(--text-sm); color:var(--text-subtle); }
+  .wizard-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; min-height:34px; }
+  .wizard-pill { display:inline-flex; align-items:center; gap:8px; background:var(--brand-soft);
+                 color:var(--brand-soft-text); border:1px solid var(--brand-border);
+                 border-radius:var(--radius-pill); padding:6px 8px 6px 14px;
+                 font-weight:var(--weight-semibold); font-size:var(--text-sm); }
+  .wizard-pill button { line-height:1; border-radius:var(--radius-pill); padding:2px 7px; color:inherit; }
+  .wizard-pill button:hover { background:var(--surface-sunken); }
+  .wizard-pill-suggest { background:var(--surface-sunken); color:var(--text-muted);
+                         border:1px dashed var(--border-default); border-radius:var(--radius-pill);
+                         padding:6px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); }
+  .wizard-pill-suggest:hover { border-color:var(--brand); color:var(--brand-soft-text); }
+
+  /* Zona de import simulada del paso 4. */
+  .wizard-drop { display:block; width:100%; border:2px dashed var(--border-default);
+                 border-radius:var(--radius-md); padding:34px; text-align:center;
+                 color:var(--text-muted); cursor:pointer; background:var(--surface-card);
+                 transition:all var(--dur-fast) var(--ease-out); }
+  .wizard-drop:hover { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
+  .wizard-drop b { display:block; color:var(--text-strong); font-size:var(--text-base); margin-bottom:4px; }
+  .wizard-drop .fmt { display:block; font-family:var(--font-mono); font-size:var(--text-xs);
+                      color:var(--text-subtle); margin-top:8px; }
+  .wizard-import-ok { margin-top:12px; color:var(--success); font-weight:var(--weight-semibold);
+                      font-size:var(--text-sm); }
+
+  /* QR del paso 5. */
+  .wizard-qrbox { display:flex; gap:26px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  /* La placa del QR queda clara también en oscuro, como un QR de verdad. */
+  .wizard-qr { width:168px; height:168px; border-radius:var(--radius-md);
+               border:1px solid var(--border-default); background:var(--ink-0);
+               display:grid; place-items:center; padding:14px; flex:none; color:var(--ink-900); }
+  .wizard-qr svg { width:100%; height:100%; }
+  .wizard-qr-steps { flex:1; min-width:240px; margin:0; padding-left:20px; }
+  .wizard-qr-steps li { margin-bottom:10px; color:var(--text-body); }
+  .wizard-qr-steps b { color:var(--text-strong); }
+
+  /* Pantalla final. */
+  .wizard-done { text-align:center; padding:36px 20px; }
+  .wizard-seal { width:74px; height:74px; border-radius:50%; background:var(--brand-soft);
+                 border:2px solid var(--brand-border); display:grid; place-items:center;
+                 margin:0 auto 20px; color:var(--brand); }
+  .wizard-done h2 { font-family:var(--font-display); font-weight:var(--weight-extra);
+                    color:var(--text-strong); font-size:clamp(1.5rem,3vw,2rem); }
+  .wizard-done p { margin:10px auto 26px; max-width:420px; color:var(--text-muted); }
+
+  /* Riel derecho: preview, tip y checklist. */
+  .wizard-rail { display:flex; flex-direction:column; gap:18px; position:sticky; top:76px; }
+  .wizard-preview { border:1px solid var(--brand-border); background:var(--brand-soft);
+                    border-radius:var(--radius-lg); padding:18px; }
+  .wizard-preview h3 { font-family:var(--font-display); font-size:var(--text-base);
+                       font-weight:var(--weight-bold); color:var(--brand-soft-text); }
+  .wizard-preview .pdesc { font-size:var(--text-sm); color:var(--brand-soft-text);
+                           opacity:.85; margin:4px 0 14px; }
+  .wizard-phone { background:var(--chat-canvas); border-radius:var(--radius-md); padding:14px;
+                  min-height:190px; display:flex; flex-direction:column; gap:10px;
+                  box-shadow:var(--shadow-sm) inset; }
+  .wizard-phone-empty { margin:auto; text-align:center; font-size:var(--text-sm);
+                        color:var(--text-muted); background:var(--surface-card);
+                        border-radius:var(--radius-md); padding:14px 16px; box-shadow:var(--shadow-sm); }
+  .wizard-phone .msg { max-width:86%; border-radius:14px; padding:9px 13px; font-size:var(--text-sm);
+                       line-height:1.45; box-shadow:var(--shadow-sm);
+                       animation:wizard-pop .28s var(--ease-out); }
+  .wizard-phone .msg.in { background:var(--bubble-in); color:var(--bubble-in-text);
+                          align-self:flex-start; border-bottom-left-radius:4px; }
+  .wizard-phone .msg.out { background:var(--bubble-out); color:var(--bubble-out-text);
+                           align-self:flex-end; border-bottom-right-radius:4px; }
+  .wizard-phone .msg .who { display:block; font-size:var(--text-2xs); font-weight:var(--weight-bold);
+                            opacity:.65; margin-bottom:2px; }
+  .wizard-phone .typing { display:inline-flex; gap:4px; align-items:center; background:var(--bubble-in);
+                          border-radius:14px; border-bottom-left-radius:4px; padding:12px 14px;
+                          align-self:flex-start; box-shadow:var(--shadow-sm); }
+  .wizard-phone .typing i { width:6px; height:6px; border-radius:50%; background:var(--text-subtle);
+                            animation:wizard-blink 1s infinite; }
+  .wizard-phone .typing i:nth-child(2) { animation-delay:.2s; }
+  .wizard-phone .typing i:nth-child(3) { animation-delay:.4s; }
+
+  /* Tip por paso: el único toque coral de la vista. */
+  .wizard-tip { border-radius:var(--radius-lg); padding:16px 18px; background:var(--surface-card);
+                border:1px solid var(--border-subtle); box-shadow:var(--shadow-sm); }
+  .wizard-tip .tag { display:inline-block; font-size:.625rem; font-weight:var(--weight-extra);
+                     letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+  .wizard-tip p { font-size:var(--text-sm); line-height:var(--leading-normal); color:var(--text-body); }
+  .wizard-tip p b { color:var(--text-strong); }
+
+  .wizard-todo-card { padding:18px; }
+  .wizard-todo-card h3 { font-family:var(--font-display); font-size:var(--text-base);
+                         font-weight:var(--weight-bold); color:var(--text-strong); margin-bottom:12px; }
+  .wizard-todo { display:flex; align-items:center; gap:10px; padding:7px 0;
+                 font-size:var(--text-sm); color:var(--text-muted); }
+  .wizard-todo .box { width:18px; height:18px; border-radius:50%; border:2px solid var(--border-default);
+                      flex:none; display:grid; place-items:center; color:var(--ink-0);
+                      transition:all var(--dur-base) var(--ease-out); }
+  .wizard-todo .box svg { display:none; }
+  .wizard-todo.done { color:var(--text-body); }
+  .wizard-todo.done .box { background:var(--success); border-color:var(--success); }
+  .wizard-todo.done .box svg { display:block; }
+  .wizard-todo .opt { font-size:var(--text-2xs); color:var(--text-subtle); }
+
+  @media (max-width:960px) {
+    .wizard { grid-template-columns:1fr; }
+    .wizard-rail { position:static; order:2; }
+    .wizard-panel { order:1; }
+    .wizard-steps { order:0; }
+  }
+  @media (max-width:560px) {
+    .wizard-crumb { display:none; }
+    .wizard-panel .card { padding:20px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .wizard-tab, .wizard-todo .box, .wizard-chip, .wizard-drop { transition:none; }
+    .wizard-phone .msg { animation:none; }
+    .wizard-phone .typing i { animation:none; }
+  }
+}
+
+@keyframes wizard-pop { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes wizard-blink { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }

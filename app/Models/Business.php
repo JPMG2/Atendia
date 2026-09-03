@@ -25,7 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Company}, which is AtendIa itself — the one
  * issuing the invoice, a single row. Every operational record hangs off here.
  */
-#[Fillable(['name', 'country_id', 'timezone', 'billing_email', 'is_active'])]
+#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'is_active'])]
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */
@@ -48,7 +48,7 @@ class Business extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'country_id', 'timezone', 'billing_email', 'is_active'])
+            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
@@ -71,6 +71,14 @@ class Business extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * @return BelongsTo<Province, $this>
+     */
+    public function province(): BelongsTo
+    {
+        return $this->belongsTo(Province::class);
     }
 
     /**

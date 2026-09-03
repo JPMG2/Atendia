@@ -16,6 +16,7 @@ return [
         'social_network' => 'Red social',
         'social_link' => 'Red',
         'status' => 'Estado',
+        'business' => 'Negocio',
         'business_sector' => 'Rubro',
         'business_activity' => 'Actividad',
         'service_modality' => 'Modalidad',

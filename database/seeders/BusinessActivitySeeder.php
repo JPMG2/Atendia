@@ -11,12 +11,11 @@ use Illuminate\Database\Seeder;
 class BusinessActivitySeeder extends Seeder
 {
     /**
-     * The concrete trade, grouped by sector ({@see BusinessSectorSeeder}, which
-     * has to run first).
-     *
-     * This is the level that talks to the assistant: the tone, what it asks for
-     * and the trade's seed knowledge all hang off this `code`, which is why it is
-     * unique across the table. Idempotent, keyed by `code`.
+     * The concrete trade, grouped by sector ({@see BusinessSectorSeeder}, first).
+     * This level talks to the assistant: tone and seed knowledge hang off its
+     * unique `code`. Idempotent AND the curated source: re-running realigns
+     * sector, name and order — how `inmobiliaria` moved to its own sector when
+     * the 2026-09 research promoted it.
      */
     public function run(): void
     {
@@ -72,11 +71,20 @@ class BusinessActivitySeeder extends Seeder
                 'eventos' => 'Organización de eventos',
                 'reparacion-electrodomesticos' => 'Reparación de electrodomésticos',
             ],
+            'turismo' => [
+                'hotel' => 'Hotel y hospedaje',
+                'agencia-viajes' => 'Agencia de viajes',
+                'excursiones' => 'Excursiones y paseos',
+                'traslados' => 'Traslados y remises',
+            ],
+            'inmobiliaria' => [
+                'inmobiliaria' => 'Inmobiliaria',
+                'administracion-alquileres' => 'Administración de alquileres',
+            ],
             'profesionales' => [
                 'estudio-contable' => 'Estudio contable',
                 'estudio-juridico' => 'Estudio jurídico',
                 'arquitectura' => 'Arquitectura',
-                'inmobiliaria' => 'Inmobiliaria',
                 'seguros' => 'Seguros',
                 'agencia-marketing' => 'Agencia de marketing',
                 'desarrollo-software' => 'Desarrollo de software',
@@ -109,6 +117,11 @@ class BusinessActivitySeeder extends Seeder
                 'jardin-infantes' => 'Jardín de infantes',
                 'autoescuela' => 'Autoescuela',
             ],
+
+            // The open door's single trade: it keeps the sector suggestable.
+            'otro' => [
+                'otra-actividad' => 'Otra actividad',
+            ],
         ];
 
         foreach ($activities as $sectorCode => $names) {
@@ -118,7 +131,7 @@ class BusinessActivitySeeder extends Seeder
             foreach ($names as $code => $name) {
                 $order++;
 
-                BusinessActivity::query()->firstOrCreate(
+                BusinessActivity::query()->updateOrCreate(
                     ['code' => $code],
                     [
                         'business_sector_id' => $sector->id,

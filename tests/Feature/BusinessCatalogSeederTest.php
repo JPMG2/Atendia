@@ -20,14 +20,18 @@ test('the seeders load sectors with their activities', function (): void {
     $this->seed(BusinessSectorSeeder::class);
     $this->seed(BusinessActivitySeeder::class);
 
-    expect(BusinessSector::count())->toBe(10)
-        ->and(BusinessActivity::count())->toBe(68);
+    expect(BusinessSector::count())->toBe(13)
+        ->and(BusinessActivity::count())->toBe(74);
 
     // The examples the master has to cover from day one.
     expect(BusinessActivity::where('code', 'panaderia')->sole()->sector->name)->toBe('Gastronomía')
         ->and(BusinessActivity::where('code', 'farmacia')->sole()->sector->name)->toBe('Salud')
         ->and(BusinessActivity::where('code', 'peluqueria')->sole()->sector->name)->toBe('Belleza y estética')
-        ->and(BusinessActivity::where('code', 'kiosco')->sole()->sector->name)->toBe('Comercio');
+        ->and(BusinessActivity::where('code', 'kiosco')->sole()->sector->name)->toBe('Comercio')
+        // The 2026-09 research: tourism arrived and real estate got promoted
+        // out of professional services into a sector of its own.
+        ->and(BusinessActivity::where('code', 'hotel')->sole()->sector->name)->toBe('Turismo y hotelería')
+        ->and(BusinessActivity::where('code', 'inmobiliaria')->sole()->sector->code)->toBe('inmobiliaria');
 });
 
 test('running the seeders twice does not duplicate anything', function (): void {
@@ -36,8 +40,8 @@ test('running the seeders twice does not duplicate anything', function (): void 
     $this->seed(BusinessSectorSeeder::class);
     $this->seed(BusinessActivitySeeder::class);
 
-    expect(BusinessSector::count())->toBe(10)
-        ->and(BusinessActivity::count())->toBe(68);
+    expect(BusinessSector::count())->toBe(13)
+        ->and(BusinessActivity::count())->toBe(74);
 });
 
 test('every seeded activity belongs to a sector and is active', function (): void {

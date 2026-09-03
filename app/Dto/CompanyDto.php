@@ -101,29 +101,18 @@ class CompanyDto implements FormData
     public function toPayload(): array
     {
         return [
-            'legal_name' => self::squish($this->legal_name) ?? '',
-            'tagline' => self::squish($this->tagline),
+            'legal_name' => DtoCast::squish($this->legal_name) ?? '',
+            'tagline' => DtoCast::squish($this->tagline),
             'region_id' => $this->region_id,
-            'address' => self::squish($this->address),
+            'address' => DtoCast::squish($this->address),
             'tax_condition_id' => $this->tax_condition_id,
-            'tax_id' => self::squish($this->tax_id) ?? '',
+            'tax_id' => DtoCast::squish($this->tax_id) ?? '',
             'logo_path_light' => DtoCast::toNullableString($this->logo_path_light),
             'logo_path_dark' => DtoCast::toNullableString($this->logo_path_dark),
-            'text_copyright' => self::squish($this->text_copyright),
-            'email' => self::squish($this->email),
-            'phone' => self::squish($this->phone),
-            'web' => self::squish($this->web),
+            'text_copyright' => DtoCast::squish($this->text_copyright),
+            'email' => DtoCast::squish($this->email),
+            'phone' => DtoCast::squish($this->phone),
+            'web' => DtoCast::squish($this->web),
         ];
-    }
-
-    /**
-     * Collapses the whitespace of hand-typed text, null when nothing is left.
-     * Same criterion as `normalizeName` in the catalog models.
-     */
-    private static function squish(?string $value): ?string
-    {
-        return DtoCast::toNullableString(
-            trim((string) preg_replace('/\s+/u', ' ', (string) $value))
-        );
     }
 }

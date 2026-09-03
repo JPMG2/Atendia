@@ -66,14 +66,15 @@
         </div>
     </form>
 
-    {{-- TEMPORARY shortcut while the wizard is a mock-up: jumps into the
-    mock right after "the account was born", no typing. It goes away the day
-    the real wizard replaces this screen. --}}
-    <div class="flex justify-center mt-6">
-        <x-ui.button variant="ghost" size="sm" href="{{ asset('maqueta-registro.html') }}#wizard">
-            Ver cómo sigue el alta (maqueta temporal) →
-        </x-ui.button>
-    </div>
+    {{-- TEMPORARY, local only: jump into the wizard without creating an
+    account (a demo client signs in). Deleted at go-live with its route. --}}
+    @if (app()->environment('local'))
+        <div class="flex justify-center mt-6">
+            <x-ui.button variant="ghost" size="sm" href="{{ route('onboarding.demo') }}">
+                Ver el alta sin crear cuenta (atajo temporal) →
+            </x-ui.button>
+        </div>
+    @endif
 
     <script>
         // Front mirror of RegisteredUserController's rules: what cannot pass

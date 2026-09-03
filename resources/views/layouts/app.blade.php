@@ -66,13 +66,7 @@
                         <span class="conn-dot"></span>WhatsApp conectado
                     </span>
 
-                    <button type="button" class="icon-btn icon-btn-secondary" data-testid="theme-toggle"
-                            x-data="{ dark: document.documentElement.classList.contains('dark') }"
-                            @click="dark = ! dark; document.documentElement.classList.toggle('dark', dark); localStorage.setItem('atendia-theme', dark ? 'dark' : 'light')"
-                            :aria-label="dark ? 'Activar tema claro' : 'Activar tema oscuro'">
-                        <x-icon name="sun" :size="20" x-show="dark" x-cloak />
-                        <x-icon name="moon" :size="20" x-show="! dark" x-cloak />
-                    </button>
+                    <x-ui.theme-toggle />
 
                     <button type="button" class="icon-btn icon-btn-secondary topbar-notif" aria-label="Notificaciones">
                         <x-icon name="bell" :size="20" />

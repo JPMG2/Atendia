@@ -29,6 +29,7 @@ class NotificationService
             'social_networks' => ['entity' => __('notifications.entities.social_network'), 'gender' => 'female'],
             'social_links' => ['entity' => __('notifications.entities.social_link'), 'gender' => 'female'],
             'current_statuses' => ['entity' => __('notifications.entities.status'), 'gender' => 'male'],
+            'businesses' => ['entity' => __('notifications.entities.business'), 'gender' => 'male'],
             'business_sectors' => ['entity' => __('notifications.entities.business_sector'), 'gender' => 'male'],
             'business_activities' => ['entity' => __('notifications.entities.business_activity'), 'gender' => 'female'],
             'service_modalities' => ['entity' => __('notifications.entities.service_modality'), 'gender' => 'female'],

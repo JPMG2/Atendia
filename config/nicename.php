@@ -42,4 +42,9 @@ return [
     'phone' => 'teléfono',
     'web' => 'sitio web',
     'social_network_id' => 'red',
+
+    // Business: the tenant, as the wizard asks for it.
+    'sector' => 'rubro',
+    'whatsapp_number' => 'WhatsApp del negocio',
+    'fallback_whatsapp_number' => 'WhatsApp de respaldo',
 ];
