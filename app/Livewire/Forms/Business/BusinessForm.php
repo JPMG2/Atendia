@@ -12,7 +12,10 @@ use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
+use App\Models\Service;
+use App\Models\SuggestedService;
 use App\Rules\AttributeValidator;
+use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -170,6 +173,84 @@ class BusinessForm extends BaseForm
         return $this->tryAction(function () use ($validated, $business): NotificationDto {
 
             $business->fill(Arr::only($validated, self::CONNECTION_COLUMNS))->save();
+
+            return $this->notificationService()->notificationFor($business, 'updated');
+
+        }, __('notifications.not_updated'));
+    }
+
+    /**
+     * Saves the services step. A name the curated suggestions know adopts
+     * their type; an unknown one stays untyped until someone classifies it.
+     *
+     * @param  list<string>  $names
+     */
+    public function saveServices(array $names): NotificationDto
+    {
+        return $this->saveNamedList('services', $names, __('wizard.fields.service'), function (Service $service): void {
+            $service->service_type_id ??= SuggestedService::query()
+                ->whereRaw('lower(name) = ?', [mb_strtolower((string) $service->name)])
+                ->value('service_type_id');
+        });
+    }
+
+    /**
+     * Saves the products step: the universal core takes only names here;
+     * price and stock belong to the panel, extra data to the knowledge.
+     *
+     * @param  list<string>  $names
+     */
+    public function saveProducts(array $names): NotificationDto
+    {
+        return $this->saveNamedList('products', $names, __('wizard.fields.product'));
+    }
+
+    /**
+     * Shared reconciliation for the wizard's named lists (services, products):
+     * dropped names leave softly, a trashed one coming back is restored (the
+     * unique owner+name outlives a soft delete), new ones are created through
+     * the owner. `$decorate` lets a list enrich the row before saving.
+     *
+     * @param  list<string>  $names
+     */
+    private function saveNamedList(string $relation, array $names, string $attribute, ?Closure $decorate = null): NotificationDto
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null) {
+            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
+        }
+
+        $names = collect($names)
+            ->map(fn (string $name): string => trim($name))
+            ->filter()
+            ->unique()
+            ->values();
+
+        Validator::make(
+            [$relation => $names->all()],
+            [$relation => ['array', 'max:200'], $relation.'.*' => ['string', 'max:255']],
+            [],
+            [$relation.'.*' => $attribute],
+        )->validate();
+
+        return $this->tryAction(function () use ($business, $relation, $names, $decorate): NotificationDto {
+
+            $business->{$relation}()->whereNotIn('name', $names)->get()->each->delete();
+
+            foreach ($names as $name) {
+                $row = $business->{$relation}()->withTrashed()->firstOrNew(['name' => $name]);
+
+                if ($row->trashed()) {
+                    $row->restore();
+                }
+
+                if ($decorate !== null) {
+                    $decorate($row);
+                }
+
+                $row->save();
+            }
 
             return $this->notificationService()->notificationFor($business, 'updated');
 

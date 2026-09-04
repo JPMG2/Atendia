@@ -1,24 +1,177 @@
 <?php
 
+use App\Dto\NotificationDto;
+use App\Enums\NotificationType;
+use App\Jobs\ProcessProductImport;
+use App\Livewire\Forms\Business\BusinessForm;
+use App\Services\ProductImport\ColumnMapper;
+use App\Services\ProductImport\ImportFileReader;
+use App\Traits\HasNotifications;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
- * Wizard step 4 — the inventory import, simulated. Clicking the drop zone
- * plays the happy path so the phone preview can answer a stock question;
- * the real upload arrives with the import feature.
+ * Wizard step 4 — the products. The spreadsheet path reads the file, lets the
+ * mapper propose where each column lands and asks for ONE confirmation; the
+ * queued job does the heavy write. The manual list persists through
+ * {@see BusinessForm::saveProducts()}. Skipping writes nothing.
  */
 new class extends Component {
-    public bool $imported = false;
+    use HasNotifications;
+    use WithFileUploads;
 
-    public function simulateImport(): void
+    public BusinessForm $form;
+
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $upload = null;
+
+    /** @var list<string> */
+    public array $headers = [];
+
+    /** @var list<string> One proposed target per column, index-aligned. */
+    public array $mapping = [];
+
+    public int $totalRows = 0;
+
+    public ?string $queuedFile = null;
+
+    /** @var list<string> */
+    public array $products = [];
+
+    public string $draft = '';
+
+    /** Re-entry shows what a previous pass saved; the preview hears it too. */
+    public function mount(): void
     {
-        $this->imported = true;
+        $this->products = Auth::user()?->business?->products()->orderBy('id')->pluck('name')->all() ?? [];
+
+        if ($this->products !== []) {
+            $this->dispatch('wizard:products-updated', products: $this->products);
+        }
+    }
+
+    /** The label of each mapping destination, for the review selects. */
+    #[Computed]
+    public function targetOptions(): array
+    {
+        return __('wizard.products.targets');
+    }
+
+    /** A fresh file opens the review: read the shape, propose the mapping. */
+    public function updatedUpload(): void
+    {
+        $this->validate(
+            ['upload' => ['required', 'file', 'mimes:xlsx,csv,txt', 'max:10240']],
+            [],
+            ['upload' => __('wizard.fields.import_file')],
+        );
+
+        try {
+            $summary = app(ImportFileReader::class)->read($this->upload->getRealPath());
+        } catch (\Throwable) {
+            $summary = ['headers' => [], 'samples' => [], 'total_rows' => 0];
+        }
+
+        if ($summary['headers'] === []) {
+            $this->reset('upload');
+
+            $this->dispatchNotification(new NotificationDto(__('wizard.products.unreadable'), NotificationType::Error));
+
+            return;
+        }
+
+        $this->headers = $summary['headers'];
+        $this->totalRows = $summary['total_rows'];
+        $this->mapping = app(ColumnMapper::class)->map($summary['headers'], $summary['samples']);
+        $this->queuedFile = null;
+    }
+
+    /** Stores the file and the confirmed mapping; the queued job takes over. */
+    public function confirmImport(): void
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null || $this->upload === null) {
+            $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
+
+            return;
+        }
+
+        $original = $this->upload->getClientOriginalName();
+
+        $path = $this->upload->storeAs(
+            'imports/business-'.$business->id,
+            now()->format('YmdHis').'-'.Str::slug(pathinfo($original, PATHINFO_FILENAME)).'.'.strtolower($this->upload->getClientOriginalExtension()),
+            'local',
+        );
+
+        $import = $business->productImports()->create([
+            'original_name' => $original,
+            'path' => $path,
+            'mapping' => collect($this->headers)
+                ->map(fn (string $header, int $index): array => ['column' => $header, 'target' => $this->mapping[$index] ?? 'extra'])
+                ->values()
+                ->all(),
+            'total_rows' => $this->totalRows,
+            'status' => 'pending',
+        ]);
+
+        ProcessProductImport::dispatch($import->id);
+
+        $this->queuedFile = $original;
+
+        $this->reset('upload', 'headers', 'mapping');
 
         $this->dispatch('wizard:products-imported');
     }
 
+    public function cancelUpload(): void
+    {
+        $this->reset('upload', 'headers', 'mapping');
+
+        $this->totalRows = 0;
+    }
+
+    public function add(?string $name = null): void
+    {
+        $name = trim($name ?? $this->draft);
+
+        $this->draft = '';
+
+        if ($name === '' || in_array($name, $this->products, true)) {
+            return;
+        }
+
+        $this->products[] = $name;
+
+        $this->dispatch('wizard:products-updated', products: $this->products);
+    }
+
+    public function remove(int $index): void
+    {
+        unset($this->products[$index]);
+
+        $this->products = array_values($this->products);
+
+        $this->dispatch('wizard:products-updated', products: $this->products);
+    }
+
+    /** Advances ONLY on a real save; a skip is the promise of writing nothing. */
     public function finish(bool $skipped = false): void
     {
+        if (! $skipped) {
+            $notification = $this->form->saveProducts($this->products);
+
+            $this->dispatchNotification($notification);
+
+            if ($notification->type === NotificationType::Error) {
+                return;
+            }
+        }
+
         $this->dispatch('wizard:step-completed', step: 4, skipped: $skipped);
     }
 };
@@ -32,15 +185,56 @@ new class extends Component {
     <p class="lead">{{ __('wizard.steps.4.lead') }}</p>
 
     <x-ui.card>
-        <button type="button" class="wizard-drop" wire:click="simulateImport">
-            <b>{{ __('wizard.products.drop_title') }}</b>
-            {{ __('wizard.products.drop_text') }}
-            <span class="fmt">{{ __('wizard.products.drop_formats') }}</span>
-        </button>
+        @if ($headers === [])
+            <x-inputsform.file span="full" name="upload" wire:model="upload"
+                accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+                :note="__('wizard.products.drop_formats')">
+                {{ __('wizard.products.drop_text') }}
+            </x-inputsform.file>
+        @else
+            <div class="wizard-map">
+                <h3>{{ __('wizard.products.review_title') }}</h3>
+                <p>{{ __('wizard.products.review_hint', ['rows' => $totalRows]) }}</p>
 
-        @if ($imported)
-            <p class="wizard-import-ok">{{ __('wizard.products.import_ok') }}</p>
+                @foreach ($headers as $index => $header)
+                    <div class="wizard-map-row" wire:key="map-{{ $index }}">
+                        <span class="wizard-map-col">{{ $header }}</span>
+                        <x-ui.select name="map_{{ $index }}" :options="$this->targetOptions"
+                            wire:model="mapping.{{ $index }}" />
+                    </div>
+                @endforeach
+
+                <div class="wizard-foot">
+                    <x-ui.button variant="ghost" wire:click="cancelUpload">
+                        {{ __('wizard.products.cancel') }}
+                    </x-ui.button>
+                    <span class="wizard-spacer"></span>
+                    <x-ui.button variant="primary" wire:click="confirmImport">
+                        {{ __('wizard.products.confirm') }}
+                    </x-ui.button>
+                </div>
+            </div>
         @endif
+
+        @if ($queuedFile !== null)
+            <p class="wizard-import-ok">{{ __('wizard.products.queued', ['file' => $queuedFile, 'rows' => $totalRows]) }}</p>
+        @endif
+
+        <p class="wizard-suggest">{{ __('wizard.products.manual') }}</p>
+
+        <x-inputsform.input span="long" name="product_draft" wire:model="draft" wire:keydown.enter.prevent="add"
+            :label="__('wizard.fields.product')"
+            :placeholder="__('wizard.fields.product_placeholder')" />
+
+        <div class="wizard-pills">
+            @foreach ($products as $index => $product)
+                <span wire:key="product-{{ md5($product) }}" class="wizard-pill">
+                    {{ $product }}
+                    <button type="button" wire:click="remove({{ $index }})"
+                            aria-label="{{ __('wizard.services.remove') }}">×</button>
+                </span>
+            @endforeach
+        </div>
 
         <div class="wizard-foot">
             <x-ui.button variant="ghost" wire:click="finish(true)">

@@ -22,6 +22,7 @@
  */
 const RE = {
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    phone: /^[0-9\s\-+()]*$/,
     alpha: /^[\p{L}\p{M}]+$/u,
     alphaSpaces: /^[\p{L}\p{M}\s'-]+$/u,
     alphanum: /^[\p{L}\p{N}\s'’-]+$/u,
@@ -32,6 +33,7 @@ const RE = {
 const CHECKS = {
     required: (v) => v !== '' || 'Este campo es obligatorio.',
     email: (v) => RE.email.test(v) || 'Ingresá un email válido.',
+    phone: (v) => RE.phone.test(v) || 'Solo números, espacios y los signos + - ( ).',
     numeric: (v) => (isFinite(Number(v)) && v !== '') || 'Debe ser un número.',
     integer: (v) => Number.isInteger(Number(v)) || 'Debe ser un número entero.',
     date: (v) => !isNaN(Date.parse(v)) || 'Ingresá una fecha válida.',

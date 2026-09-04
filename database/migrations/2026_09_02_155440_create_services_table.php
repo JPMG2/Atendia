@@ -24,8 +24,9 @@ return new class extends Migration
             // The tenant. Its services leave with it, like its knowledge does.
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
 
-            // The mould lending behavior. Restrict: a type in use cannot go.
-            $table->foreignId('service_type_id')->constrained()->restrictOnDelete();
+            // The mould lending behavior. Nullable: a hand-typed service the
+            // catalog does not know waits untyped for a later classification.
+            $table->foreignId('service_type_id')->nullable()->constrained()->restrictOnDelete();
 
             $table->string('name')->comment('El nombre que le pone el negocio: Ecodoppler, Dobladillo, Torta de bodas');
             $table->string('description')->nullable();

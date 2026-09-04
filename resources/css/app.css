@@ -1492,11 +1492,11 @@
   .wizard-count b { color:var(--text-strong); }
 
   /* Grilla: pasos arriba, panel a la izquierda, riel a la derecha. */
-  .wizard { max-width:var(--container-2xl); margin:0 auto; padding:26px 24px 80px;
+  .wizard { max-width:var(--container-2xl); margin:0 auto; padding:16px 24px 64px;
             display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:28px; align-items:start; }
 
   .wizard-steps { grid-column:1 / -1; display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
-  .wizard-tab { flex:1; min-width:128px; text-align:left; padding-top:10px;
+  .wizard-tab { flex:1; min-width:128px; text-align:left; padding-top:8px;
                 border-top:3px solid var(--border-default); color:var(--text-subtle);
                 font-size:var(--text-sm); font-weight:var(--weight-semibold); white-space:nowrap;
                 transition:all var(--dur-fast) var(--ease-out); }
@@ -1509,28 +1509,28 @@
   /* Panel del paso. */
   .wizard-panel h2 { font-family:var(--font-display); font-weight:var(--weight-extra);
                      letter-spacing:-.02em; color:var(--text-strong);
-                     font-size:clamp(1.5rem,3vw,2.1rem); }
-  .wizard-panel .lead { margin:8px 0 24px; color:var(--text-muted); font-size:var(--text-base); max-width:560px; }
-  .wizard-panel .card { padding:28px; }
+                     font-size:clamp(1.35rem,2.4vw,1.75rem); }
+  .wizard-panel .lead { margin:6px 0 16px; color:var(--text-muted); font-size:var(--text-base); max-width:560px; }
+  .wizard-panel .card { padding:22px; }
   .wizard-optional { display:inline-block; font-size:var(--text-2xs); font-weight:var(--weight-bold);
                      letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);
                      background:var(--surface-sunken); border-radius:var(--radius-pill);
                      padding:4px 12px; vertical-align:middle; margin-left:10px; }
-  .wizard-foot { display:flex; align-items:center; gap:12px; margin-top:24px; }
+  .wizard-foot { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .wizard-note { font-size:var(--text-xs); color:var(--text-subtle); }
   .wizard-frow { display:flex; gap:16px; flex-wrap:wrap; }
   .wizard-frow > .field { flex:1; min-width:220px; }
-  .wizard-panel .field { margin-bottom:18px; }
+  .wizard-panel .field { margin-bottom:14px; }
 
   /* Chips de rubro y pastillas de servicios. */
-  .wizard-chips { display:flex; flex-wrap:wrap; gap:10px; }
-  .wizard-chip { border:1px solid var(--border-default); border-radius:var(--radius-md);
-                 padding:12px 18px; font-weight:var(--weight-semibold); color:var(--text-body);
+  .wizard-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .wizard-chip { border:1px solid var(--border-default); border-radius:var(--radius-pill);
+                 padding:7px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text-body);
                  background:var(--surface-card); transition:all var(--dur-fast) var(--ease-out); }
   .wizard-chip:hover { border-color:var(--brand); background:var(--brand-soft); }
   .wizard-chip.is-on { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
-  .wizard-suggest { margin:4px 0 14px; font-size:var(--text-sm); color:var(--text-subtle); }
-  .wizard-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; min-height:34px; }
+  .wizard-suggest { margin:2px 0 10px; font-size:var(--text-sm); color:var(--text-subtle); }
+  .wizard-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; min-height:34px; }
   .wizard-pill { display:inline-flex; align-items:center; gap:8px; background:var(--brand-soft);
                  color:var(--brand-soft-text); border:1px solid var(--brand-border);
                  border-radius:var(--radius-pill); padding:6px 8px 6px 14px;
@@ -1539,18 +1539,21 @@
   .wizard-pill button:hover { background:var(--surface-sunken); }
   .wizard-pill-suggest { background:var(--surface-sunken); color:var(--text-muted);
                          border:1px dashed var(--border-default); border-radius:var(--radius-pill);
-                         padding:6px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); }
+                         padding:7px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); }
   .wizard-pill-suggest:hover { border-color:var(--brand); color:var(--brand-soft-text); }
 
-  /* Zona de import simulada del paso 4. */
-  .wizard-drop { display:block; width:100%; border:2px dashed var(--border-default);
-                 border-radius:var(--radius-md); padding:34px; text-align:center;
-                 color:var(--text-muted); cursor:pointer; background:var(--surface-card);
-                 transition:all var(--dur-fast) var(--ease-out); }
-  .wizard-drop:hover { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
-  .wizard-drop b { display:block; color:var(--text-strong); font-size:var(--text-base); margin-bottom:4px; }
-  .wizard-drop .fmt { display:block; font-family:var(--font-mono); font-size:var(--text-xs);
-                      color:var(--text-subtle); margin-top:8px; }
+  /* Panel de confirmación del mapeo (paso 4): columna → destino. */
+  .wizard-map { border:1px solid var(--border-subtle); border-radius:var(--radius-md);
+                background:var(--surface-sunken); padding:14px 16px 16px; }
+  .wizard-map h3 { font-family:var(--font-display); font-size:var(--text-base);
+                   font-weight:var(--weight-bold); color:var(--text-strong); }
+  .wizard-map > p { margin:4px 0 6px; font-size:var(--text-sm); color:var(--text-muted); }
+  .wizard-map-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
+  .wizard-map-row .field { flex:1; margin-bottom:0; }
+  .wizard-map-col { flex:1; min-width:0; font-family:var(--font-mono); font-size:var(--text-sm);
+                    color:var(--text-strong); overflow-wrap:anywhere; }
+  .wizard-map .wizard-foot { margin-top:14px; }
+
   .wizard-import-ok { margin-top:12px; color:var(--success); font-weight:var(--weight-semibold);
                       font-size:var(--text-sm); }
 
@@ -1576,15 +1579,33 @@
 
   /* Riel derecho: preview, tip y checklist. */
   .wizard-rail { display:flex; flex-direction:column; gap:18px; position:sticky; top:76px; }
+  /* overflow:hidden recorta el teléfono que asoma por abajo (patrón bento de
+     Tailwind Plus: se ve solo la mitad superior del equipo). */
   .wizard-preview { border:1px solid var(--brand-border); background:var(--brand-soft);
-                    border-radius:var(--radius-lg); padding:18px; }
+                    border-radius:var(--radius-lg); padding:18px 18px 0; overflow:hidden; }
   .wizard-preview h3 { font-family:var(--font-display); font-size:var(--text-base);
                        font-weight:var(--weight-bold); color:var(--brand-soft-text); }
   .wizard-preview .pdesc { font-size:var(--text-sm); color:var(--brand-soft-text);
                            opacity:.85; margin:4px 0 14px; }
-  .wizard-phone { background:var(--chat-canvas); border-radius:var(--radius-md); padding:14px;
-                  min-height:190px; display:flex; flex-direction:column; gap:10px;
-                  box-shadow:var(--shadow-sm) inset; }
+  /* Marco de móvil (calcado del phone-mock de la landing, a escala del riel). */
+  .wizard-phone-frame { margin:0 auto; max-width:280px; border:8px solid var(--surface-card);
+                        border-bottom:0; border-radius:34px 34px 0 0;
+                        box-shadow:0 0 0 1px var(--border-default), var(--shadow-lg); }
+  .wizard-phone-screen { background:var(--chat-canvas); border-radius:26px 26px 0 0; overflow:hidden; }
+  .wizard-phone-top { display:flex; align-items:center; gap:10px; background:var(--bubble-out);
+                      padding:10px 12px; }
+  .wizard-phone-top .pavatar { display:inline-flex; align-items:center; justify-content:center;
+                               width:30px; height:30px; border-radius:50%; flex:none;
+                               background:rgba(255,255,255,.18); color:var(--text-on-brand); }
+  .wizard-phone-top .pmeta { display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+  .wizard-phone-top .pname { color:var(--text-on-brand); font-weight:var(--weight-bold);
+                             font-size:var(--text-xs); }
+  .wizard-phone-top .pstatus { display:inline-flex; align-items:center; gap:5px;
+                               color:color-mix(in srgb, var(--text-on-brand) 80%, transparent);
+                               font-size:.6875rem; }
+  .wizard-phone-top .pstatus i { width:6px; height:6px; border-radius:50%; background:#7CFFC4; }
+  .wizard-phone { background:var(--chat-canvas); padding:12px 12px 26px;
+                  min-height:200px; display:flex; flex-direction:column; gap:10px; }
   .wizard-phone-empty { margin:auto; text-align:center; font-size:var(--text-sm);
                         color:var(--text-muted); background:var(--surface-card);
                         border-radius:var(--radius-md); padding:14px 16px; box-shadow:var(--shadow-sm); }
@@ -1638,7 +1659,7 @@
     .wizard-panel .card { padding:20px; }
   }
   @media (prefers-reduced-motion:reduce) {
-    .wizard-tab, .wizard-todo .box, .wizard-chip, .wizard-drop { transition:none; }
+    .wizard-tab, .wizard-todo .box, .wizard-chip { transition:none; }
     .wizard-phone .msg { animation:none; }
     .wizard-phone .typing i { animation:none; }
   }

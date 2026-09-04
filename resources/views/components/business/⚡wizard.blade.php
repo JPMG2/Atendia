@@ -6,9 +6,9 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Client onboarding wizard — the parent. Still a mock-up: children own their
- * fields and report up by events; this class mirrors that state in memory
- * (nothing persists) to drive the tabs, the checklist and the phone preview.
+ * Client onboarding wizard — the parent. Children own their fields and
+ * persist through their forms; this class only mirrors their state in memory
+ * (by events) to drive the tabs, the checklist and the phone preview.
  */
 new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Component {
     private const int LAST_STEP = 5;
@@ -26,6 +26,9 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
 
     /** @var list<string> */
     public array $services = [];
+
+    /** @var list<string> */
+    public array $products = [];
 
     public bool $productsLoaded = false;
 
@@ -112,6 +115,19 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
         $this->refreshPreview();
     }
 
+    /** @param  list<string>  $products */
+    #[On('wizard:products-updated')]
+    public function productsUpdated(array $products): void
+    {
+        $this->products = $products;
+
+        if ($products !== []) {
+            $this->markDone(4);
+        }
+
+        $this->refreshPreview();
+    }
+
     private function markDone(int $step): void
     {
         if (! in_array($step, $this->done, true)) {
@@ -155,7 +171,12 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
             $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_service', ['business' => $business, 'services' => $list])];
         }
 
-        if ($this->productsLoaded) {
+        if ($this->products !== []) {
+            // A real product beats the canned joke: the demo asks for what
+            // the business actually loaded.
+            $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_product_named', ['product' => e(mb_strtolower(end($this->products)))])];
+            $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_product')];
+        } elseif ($this->productsLoaded) {
             $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_product')];
             $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_product')];
         }
@@ -233,10 +254,23 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
             <div class="wizard-preview">
                 <h3>{{ __('wizard.preview.title') }}</h3>
                 <p class="pdesc">{{ __('wizard.preview.description') }}</p>
-                {{-- wire:ignore: the conversation is painted by the script
-                below and a morph would wipe it. --}}
-                <div class="wizard-phone" data-phone wire:ignore data-empty="{{ __('wizard.preview.empty') }}">
-                    <div class="wizard-phone-empty">{{ __('wizard.preview.empty') }}</div>
+                {{-- The landing's phone mock, shrunk to the rail: dark bezel,
+                chat header, and the same live canvas inside. --}}
+                <div class="wizard-phone-frame">
+                    <div class="wizard-phone-screen">
+                        <div class="wizard-phone-top">
+                            <span class="pavatar"><x-icon name="bot" :size="18" /></span>
+                            <span class="pmeta">
+                                <span class="pname">{{ __('wizard.preview.header') }}</span>
+                                <span class="pstatus"><i></i>{{ __('wizard.preview.online') }}</span>
+                            </span>
+                        </div>
+                        {{-- wire:ignore: the conversation is painted by the script
+                        below and a morph would wipe it. --}}
+                        <div class="wizard-phone" data-phone wire:ignore data-empty="{{ __('wizard.preview.empty') }}">
+                            <div class="wizard-phone-empty">{{ __('wizard.preview.empty') }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

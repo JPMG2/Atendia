@@ -1,7 +1,11 @@
 <?php
 
+use App\Enums\NotificationType;
+use App\Livewire\Forms\Business\BusinessForm;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
+use App\Traits\HasNotifications;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
@@ -9,9 +13,15 @@ use Livewire\Component;
 /**
  * Wizard step 3 — the services, one Enter at a time. Suggestions follow the
  * sector chosen on step 2 (reactive: it may change after this step mounted).
- * Every change travels up so the phone preview answers with the real list.
+ * Every change travels up so the phone preview answers with the real list;
+ * Continuar persists through {@see BusinessForm::saveServices()}, skipping
+ * writes nothing.
  */
 new class extends Component {
+    use HasNotifications;
+
+    public BusinessForm $form;
+
     #[Reactive]
     public string $sector = '';
 
@@ -22,6 +32,16 @@ new class extends Component {
     public array $services = [];
 
     public string $draft = '';
+
+    /** Re-entry shows what a previous pass saved; the preview hears it too. */
+    public function mount(): void
+    {
+        $this->services = Auth::user()?->business?->services()->orderBy('id')->pluck('name')->all() ?? [];
+
+        if ($this->services !== []) {
+            $this->dispatch('wizard:services-updated', services: $this->services);
+        }
+    }
 
     /**
      * The top CONCRETE services (GBP-style), straight from the models. The
@@ -70,8 +90,19 @@ new class extends Component {
         $this->dispatch('wizard:services-updated', services: $this->services);
     }
 
+    /** Advances ONLY on a real save; a skip is the promise of writing nothing. */
     public function finish(bool $skipped = false): void
     {
+        if (! $skipped) {
+            $notification = $this->form->saveServices($this->services);
+
+            $this->dispatchNotification($notification);
+
+            if ($notification->type === NotificationType::Error) {
+                return;
+            }
+        }
+
         $this->dispatch('wizard:step-completed', step: 3, skipped: $skipped);
     }
 };

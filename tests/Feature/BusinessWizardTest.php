@@ -61,6 +61,29 @@ test('the wizard shows every mounted step', function (): void {
         ->assertSee('<title>Alta de cliente</title>', false);
 });
 
+// The guard mirrors the server rules in form-guard.js: a doomed request is
+// cut on the front, but the server keeps validating everything.
+test('the identity and connection steps carry the front guard', function (): void {
+    actingAsClient();
+
+    $this->get('/alta')
+        ->assertOk()
+        ->assertSee('x-data="stepBusinessGuard"', false)
+        ->assertSee('x-data="stepWhatsappGuard"', false)
+        ->assertSee('x-text="errors.sector"', false)
+        ->assertSee('errors.whatsapp_number', false);
+});
+
+test('the preview wears the phone frame with its chat header', function (): void {
+    actingAsClient();
+
+    $this->get('/alta')
+        ->assertOk()
+        ->assertSee('wizard-phone-frame', false)
+        ->assertSee(__('wizard.preview.header'))
+        ->assertSee(__('wizard.preview.online'));
+});
+
 // Its own layout must not cost system chrome: same shared component as the shell.
 test('the wizard keeps the theme toggle from the main layout', function (): void {
     actingAsClient();
@@ -257,12 +280,14 @@ test('a sector with nothing to suggest hides the suggestion block', function ():
         ->assertDontSee(__('wizard.services.suggest'));
 });
 
-test('the products step simulates the import and reports it', function (): void {
+test('the products step offers the real upload and the manual list', function (): void {
+    // The simulated drop zone left with the import slice: the step now shows
+    // the real file zone plus the one-by-one manual load.
+    actingAsClient();
+
     Livewire::test('business.step-products')
-        ->call('simulateImport')
-        ->assertSet('imported', true)
-        ->assertDispatched('wizard:products-imported')
-        ->assertSee(__('wizard.products.import_ok'));
+        ->assertSee(__('wizard.products.drop_text'))
+        ->assertSee(__('wizard.products.manual'));
 });
 
 test('the connection step saves numbers and email before reporting the connection', function (): void {

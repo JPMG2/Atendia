@@ -184,6 +184,25 @@ class Business extends Model
     }
 
     /**
+     * The goods this business sells — the universal core the import maps
+     * onto; anything beyond it lives in the product's knowledge.
+     *
+     * @return HasMany<Product, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * @return HasMany<ProductImport, $this>
+     */
+    public function productImports(): HasMany
+    {
+        return $this->hasMany(ProductImport::class);
+    }
+
+    /**
      * @return HasMany<User, $this>
      */
     public function users(): HasMany

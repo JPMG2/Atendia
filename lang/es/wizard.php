@@ -59,6 +59,10 @@ return [
         'service' => 'Tus servicios',
         'service_placeholder' => 'Escribe uno y aprieta Enter — ej. Ecodoppler',
 
+        'product' => 'Tus productos',
+        'product_placeholder' => 'Escribe uno y aprieta Enter — ej. Pan de campo',
+        'import_file' => 'planilla',
+
         'whatsapp_number' => 'WhatsApp del negocio',
         'whatsapp_number_placeholder' => '+54 9 341 512 4408',
         'whatsapp_number_hint' => 'El número al que te escriben tus clientes. No mandamos nada sin avisarte.',
@@ -84,11 +88,23 @@ return [
     ],
 
     'products' => [
-        'drop_title' => 'Arrastra tu planilla aquí',
         'drop_text' => 'Tu lista de precios o inventario, tal cual la tienes. Nosotros la entendemos.',
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
-        'import_ok' => '✓ inventario.xlsx — 1.240 productos leídos. Pruébalo a la derecha.',
+        'manual' => 'O carga tus productos aquí, uno por uno.',
         'skip' => 'Saltar este paso',
+        'unreadable' => 'No pudimos leer la planilla. Revisa que tenga una fila de títulos y vuelve a intentar.',
+        'review_title' => 'Esto entendimos de tu planilla',
+        'review_hint' => ':rows filas detectadas. Revisa cada columna y corrige la que no encaje: las columnas extra no se pierden, tu asistente las aprende.',
+        'cancel' => 'Elegir otro archivo',
+        'confirm' => 'Confirmar e importar',
+        'queued' => '✓ :file — :rows productos en cola. Tu asistente los está aprendiendo.',
+        'targets' => [
+            'name' => 'Nombre del producto',
+            'price' => 'Precio',
+            'stock' => 'Cantidad',
+            'description' => 'Descripción',
+            'extra' => 'Dato extra (tu asistente lo sabrá)',
+        ],
     ],
 
     'whatsapp' => [
@@ -110,6 +126,8 @@ return [
         'title' => 'Así te va a atender',
         'description' => 'Vista previa real: responde con lo que vas cargando.',
         'empty' => 'Carga el nombre de tu negocio y te muestro cómo se presenta tu asistente.',
+        'header' => 'Tu asistente',
+        'online' => 'en línea',
     ],
 
     'phone' => [
@@ -121,6 +139,7 @@ return [
         'q_service' => '¿Hacen :service?',
         'a_service' => '¡Sí! En :business ofrecemos :services. ¿Quieres que te agende?',
         'q_product' => '¿Tienen el alternador de un Fiat Palio 1.4?',
+        'q_product_named' => '¿Tienen :product?',
         'a_product' => 'Déjame revisar el inventario… ¡Sí! Lo tenemos disponible. ¿Te lo reservo?',
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por ti.',
     ],

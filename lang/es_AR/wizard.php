@@ -35,14 +35,16 @@ return [
         'country_placeholder' => 'Elegí el país',
         'province_placeholder' => 'Elegí la provincia',
         'service_placeholder' => 'Escribí uno y apretá Enter — ej. Ecodoppler',
+        'product_placeholder' => 'Escribí uno y apretá Enter — ej. Pan de campo',
         'activity_hint' => 'Con esto tu asistente aprende tu oficio y te sugiere los servicios justos. Podés sumar más actividades después.',
     ],
 
     'products' => [
-        'drop_title' => 'Arrastrá tu planilla acá',
         'drop_text' => 'Tu lista de precios o inventario, tal cual la tenés. Nosotros la entendemos.',
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
-        'import_ok' => '✓ inventario.xlsx — 1.240 productos leídos. Probalo a la derecha.',
+        'unreadable' => 'No pudimos leer la planilla. Revisá que tenga una fila de títulos y volvé a intentar.',
+        'review_hint' => ':rows filas detectadas. Revisá cada columna y corregí la que no encaje: las columnas extra no se pierden, tu asistente las aprende.',
+        'manual' => 'O cargá tus productos acá, uno por uno.',
         'skip' => 'Saltar este paso',
     ],
 

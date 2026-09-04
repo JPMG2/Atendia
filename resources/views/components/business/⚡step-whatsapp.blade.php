@@ -40,22 +40,22 @@ new class extends Component {
 };
 ?>
 
-<div>
+<div x-data="stepWhatsappGuard">
     <h2>{{ __('wizard.steps.5.heading') }}</h2>
     <p class="lead">{{ __('wizard.steps.5.lead') }}</p>
 
     <x-ui.card>
         <div class="wizard-frow">
-            <x-inputsform.input span="short" name="whatsapp_number" class="font-mono" wire:model="form.data.whatsapp_number"
+            <x-inputsform.input span="short" name="whatsapp_number" class="font-mono" alpine-error="whatsapp_number" wire:model="form.data.whatsapp_number"
                 :label="__('wizard.fields.whatsapp_number')"
                 :placeholder="__('wizard.fields.whatsapp_number_placeholder')"
                 :hint="__('wizard.fields.whatsapp_number_hint')" />
-            <x-inputsform.input span="short" name="fallback_whatsapp_number" class="font-mono" wire:model="form.data.fallback_whatsapp_number"
+            <x-inputsform.input span="short" name="fallback_whatsapp_number" class="font-mono" alpine-error="fallback_whatsapp_number" wire:model="form.data.fallback_whatsapp_number"
                 :label="__('wizard.fields.fallback_whatsapp_number')"
                 :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
                 :hint="__('wizard.fields.fallback_whatsapp_number_hint')" />
 
-            <x-inputsform.input span="long" type="email" name="email" wire:model="form.data.email"
+            <x-inputsform.input span="long" type="email" name="email" alpine-error="email" wire:model="form.data.email"
                 :label="__('wizard.fields.business_email')"
                 :placeholder="__('wizard.fields.business_email_placeholder')"
                 :hint="__('wizard.fields.business_email_hint')" />
@@ -79,9 +79,37 @@ new class extends Component {
                 {{ __('wizard.whatsapp.later') }}
             </x-ui.button>
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" wire:click="finish">
+            <x-ui.button variant="primary" x-on:click="guard">
                 {{ __('wizard.whatsapp.scanned') }}
             </x-ui.button>
         </div>
     </x-ui.card>
 </div>
+
+@script
+<script>
+    // Front mirror of the connection rules. Every field is optional — the
+    // checks only fire on what was actually typed.
+    Alpine.data('stepWhatsappGuard', () => ({
+        errors: {},
+
+        guard() {
+            const data = this.$wire.form.data ?? {};
+
+            this.errors = validate({
+                whatsapp_number: data.whatsapp_number,
+                fallback_whatsapp_number: data.fallback_whatsapp_number,
+                email: data.email,
+            }, {
+                whatsapp_number: ['phone', ['minLength', 6], ['maxLength', 30]],
+                fallback_whatsapp_number: ['phone', ['minLength', 6], ['maxLength', 30]],
+                email: ['email', ['maxLength', 255]],
+            });
+
+            if (Object.keys(this.errors).length === 0) {
+                this.$wire.finish();
+            }
+        },
+    }));
+</script>
+@endscript
