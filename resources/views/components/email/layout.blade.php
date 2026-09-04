@@ -20,12 +20,12 @@ load app.css — the one place the brand lives outside the tokens. --}}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EEF4F1;">
         <tr>
-            <td align="center" style="padding:36px 16px;">
+            <td align="center" style="padding:26px 16px;">
                 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:100%;">
                     <tr>
                         {{-- The wordmark is TEXT, not an image: it shows even in
                         clients that block every image by default. --}}
-                        <td align="center" style="padding:0 0 26px;">
+                        <td align="center" style="padding:0 0 18px;">
                             <span style="font-family:'Sora', 'Segoe UI', Arial, sans-serif; font-size:27px; font-weight:800; letter-spacing:-0.03em; color:#0B5440;">Atend<span style="color:#0EA47A;">ia</span></span>
                         </td>
                     </tr>
@@ -39,7 +39,7 @@ load app.css — the one place the brand lives outside the tokens. --}}
                         </td>
                     </tr>
                     <tr>
-                        <td align="center" style="padding:26px 24px 0;">
+                        <td align="center" style="padding:18px 24px 0;">
                             <p style="margin:0; font-family:'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; font-size:12px; line-height:1.6; color:#7A8A84;">{{ __('mail.layout.rights', ['year' => now()->year]) }}</p>
 
                             @isset($footnote)

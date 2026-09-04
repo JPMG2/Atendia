@@ -11,6 +11,14 @@
 {{ __('mail.new_company.location') }}: {{ $location }}
 @endif
 
+{{ __('mail.new_company.next_title') }}
+
+{{ __('mail.new_company.next_catalogs_title') }}: {{ __('mail.new_company.next_catalogs_body') }}
+{{ __('mail.new_company.next_catalogs_cta') }}: {{ route('admin.catalogs') }}
+
+{{ __('mail.new_company.next_integrations_title') }}: {{ __('mail.new_company.next_integrations_body') }}
+{{ __('mail.new_company.next_integrations_cta') }}: {{ route('admin.integrations') }}
+
 {{ __('mail.new_company.closing') }}
 {{ __('mail.new_company.team') }}
 

@@ -102,6 +102,17 @@ test('the mail names the business and points at the one next step', function ():
         ->toContain(route('onboarding'));
 });
 
+test('the mail sells the two gains, Firebase style', function (): void {
+    // The owner asked for the benefit-card pair on 2026-09-04: a 24-hour
+    // assistant and the one-click inbox, each pointing at its screen.
+    expect((new BusinessWelcome(Business::factory()->create()))->render())
+        ->toContain(__('mail.business_welcome.banner'))
+        ->toContain(__('mail.business_welcome.gains_title'))
+        ->toContain(__('mail.business_welcome.gain_always_title'))
+        ->toContain(__('mail.business_welcome.gain_inbox_title'))
+        ->toContain(route('dashboard'));
+});
+
 test('a failed save greets nobody', function (): void {
     Mail::fake();
 

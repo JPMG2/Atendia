@@ -1481,11 +1481,13 @@ test('the welcome ships a plain-text version alongside the HTML', function (): v
         ->toBe('emails.new.company-text');
 });
 
-test('the welcome carries no call to action, by design', function (): void {
-    // The owner asked the button out: the mail is a record, not a task. A CTA
-    // sneaking back in would be a regression of that decision.
+test('the welcome closes with the two next-step cards', function (): void {
+    // The owner reversed the old no-CTA decision on 2026-09-04: the mail now
+    // ends Firebase-style, with catalogs and integrations as next steps.
     expect((new NewCompany(Company::factory()->create()))->render())
-        ->not->toContain(route('admin.company'));
+        ->toContain(__('mail.new_company.next_title'))
+        ->toContain(route('admin.catalogs'))
+        ->toContain(route('admin.integrations'));
 });
 
 test('an address left empty leaves no dangling label in the mail', function (): void {
