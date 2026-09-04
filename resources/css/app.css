@@ -1550,8 +1550,19 @@
   .wizard-map > p { margin:4px 0 6px; font-size:var(--text-sm); color:var(--text-muted); }
   .wizard-map-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
   .wizard-map-row .field { flex:1; margin-bottom:0; }
-  .wizard-map-col { flex:1; min-width:0; font-family:var(--font-mono); font-size:var(--text-sm);
-                    color:var(--text-strong); overflow-wrap:anywhere; }
+  /* Teléfono partido: el select del prefijo vive DENTRO del control, sin
+     anillo propio — el foco lo dibuja el wrapper, como en todo campo. */
+  .phone-control { gap:0; }
+  .phone-dial { appearance:none; -webkit-appearance:none; border:0; background:transparent;
+                color:var(--text-strong); font:inherit; font-weight:var(--weight-semibold);
+                padding-right:10px; margin-right:10px; border-right:1px solid var(--border-subtle);
+                cursor:pointer; flex:none; max-width:132px; }
+  .phone-dial:focus { outline:none; box-shadow:none; }
+  .phone-number { font-family:var(--font-mono); }
+
+  .wizard-map-colbox { flex:1; min-width:0; }
+  .wizard-map-was { display:block; margin-top:2px; font-family:var(--font-mono);
+                    font-size:var(--text-2xs); color:var(--text-subtle); }
   .wizard-map .wizard-foot { margin-top:14px; }
 
   .wizard-import-ok { margin-top:12px; color:var(--success); font-weight:var(--weight-semibold);

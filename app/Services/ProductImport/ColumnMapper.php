@@ -28,13 +28,18 @@ class ColumnMapper
     ];
 
     /**
+     * Targets say where each column lands; labels are the headers with their
+     * spelling fixed by the agent — a suggestion the review screen lets the
+     * person edit, never a silent correction.
+     *
      * @param  list<string>  $headers
      * @param  list<list<string>>  $samples
-     * @return list<string> One target per column, index-aligned with headers.
+     * @return array{targets: list<string>, labels: list<string>} Index-aligned with headers.
      */
     public function map(array $headers, array $samples): array
     {
         $targets = array_fill(0, count($headers), null);
+        $labels = array_values($headers);
         $taken = [];
 
         foreach ($headers as $index => $header) {
@@ -46,7 +51,7 @@ class ColumnMapper
             }
         }
 
-        $targets = $this->askAgentForUnresolved($headers, $samples, $targets, $taken);
+        [$targets, $labels] = $this->askAgentForUnresolved($headers, $samples, $targets, $labels, $taken);
 
         // The floor of the whole feature: a column nobody could place is
         // still data — it becomes knowledge, so it must never block.
@@ -56,7 +61,7 @@ class ColumnMapper
             $targets[0] = 'name';
         }
 
-        return $targets;
+        return ['targets' => $targets, 'labels' => $labels];
     }
 
     private function fieldForHeader(string $header): ?string
@@ -76,15 +81,16 @@ class ColumnMapper
      * @param  list<string>  $headers
      * @param  list<list<string>>  $samples
      * @param  list<string|null>  $targets
+     * @param  list<string>  $labels
      * @param  array<string, bool>  $taken
-     * @return list<string|null>
+     * @return array{0: list<string|null>, 1: list<string>}
      */
-    private function askAgentForUnresolved(array $headers, array $samples, array $targets, array $taken): array
+    private function askAgentForUnresolved(array $headers, array $samples, array $targets, array $labels, array $taken): array
     {
         $unresolved = array_keys(array_filter($targets, fn (?string $target): bool => $target === null));
 
         if ($unresolved === []) {
-            return $targets;
+            return [$targets, $labels];
         }
 
         try {
@@ -97,10 +103,22 @@ class ColumnMapper
                 'Classify these spreadsheet columns: '.$columns->toJson(JSON_UNESCAPED_UNICODE),
             );
 
-            $byColumn = collect($response['mappings'] ?? [])->pluck('target', 'column');
+            $byColumn = collect($response['mappings'] ?? [])->keyBy('column');
 
             foreach ($unresolved as $index) {
-                $target = $byColumn->get($headers[$index]);
+                $entry = $byColumn->get($headers[$index]);
+
+                if ($entry === null) {
+                    continue;
+                }
+
+                $label = trim((string) ($entry['label'] ?? ''));
+
+                if ($label !== '') {
+                    $labels[$index] = mb_substr($label, 0, 255);
+                }
+
+                $target = $entry['target'] ?? null;
 
                 // A core field already taken cannot be granted twice; the
                 // agent's answer degrades to extra instead of clashing.
@@ -114,11 +132,13 @@ class ColumnMapper
                     $taken[$target] = true;
                 }
             }
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // The AI being down must never break an upload: everything the
-            // heuristics missed simply lands on extra.
+            // heuristics missed simply lands on extra — but it does leave a
+            // trace, or a silent outage looks like a dumb mapper.
+            report($e);
         }
 
-        return $targets;
+        return [$targets, $labels];
     }
 }

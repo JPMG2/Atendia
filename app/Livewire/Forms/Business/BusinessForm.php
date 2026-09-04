@@ -356,15 +356,14 @@ class BusinessForm extends BaseForm
 
             self::STEP_CONNECTION => [
 
-                // Both optional, as the columns are nullable: "conectar después"
-                // is a promise the validation has to keep. varchar(30) caps.
-                'whatsapp_number' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
+                // The three are the product's core when actually CONNECTING:
+                // the AI's number, a human to hand off to, and the inbox.
+                // "Conectar después" stays honest — skipping never validates.
+                'whatsapp_number' => [...AttributeValidator::digitValid('6', true), 'max:30'],
 
-                'fallback_whatsapp_number' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
+                'fallback_whatsapp_number' => [...AttributeValidator::digitValid('6', true), 'max:30'],
 
-                // The business's own address, where the welcome mail lands.
-                // Optional: skipping the step is a promise the rule keeps.
-                'email' => ['nullable', 'email:rfc', 'max:255'],
+                'email' => ['required', 'email:rfc', 'max:255'],
             ],
 
             default => [],

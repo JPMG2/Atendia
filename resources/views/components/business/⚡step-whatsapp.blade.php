@@ -2,7 +2,9 @@
 
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
+use App\Models\Country;
 use App\Traits\HasNotifications;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
@@ -20,6 +22,35 @@ new class extends Component {
     public function mount(): void
     {
         $this->form->setup();
+    }
+
+    /**
+     * Dial options for the phone control, straight from the catalog. The
+     * flag comes from iso2 as regional-indicator pairs — no image to load.
+     *
+     * @return list<array{code: string, flag: string}>
+     */
+    #[Computed]
+    public function phoneCountries(): array
+    {
+        return Country::query()->where('is_active', true)->orderBy('name')->get(['iso2', 'phone_code'])
+            ->map(fn (Country $country): array => [
+                'code' => (string) $country->phone_code,
+                'flag' => implode('', array_map(
+                    fn (string $letter): string => mb_chr(0x1F1E6 - 65 + ord($letter)),
+                    str_split(strtoupper((string) $country->iso2)),
+                )),
+            ])
+            ->all();
+    }
+
+    /** The business's own country starts selected: most numbers live there. */
+    #[Computed]
+    public function defaultDial(): ?string
+    {
+        $code = Country::query()->find($this->form->data?->country_id)?->phone_code;
+
+        return $code === null ? null : (string) $code;
     }
 
     /** Skipping saves nothing — "conectar después" is a promise kept. */
@@ -46,16 +77,20 @@ new class extends Component {
 
     <x-ui.card>
         <div class="wizard-frow">
-            <x-inputsform.input span="short" name="whatsapp_number" class="font-mono" alpine-error="whatsapp_number" wire:model="form.data.whatsapp_number"
+            <x-inputsform.phone span="short" required name="whatsapp_number" alpine-error="whatsapp_number"
+                :countries="$this->phoneCountries" :default-dial="$this->defaultDial"
+                :value="$form->data?->whatsapp_number" wire:model="form.data.whatsapp_number"
                 :label="__('wizard.fields.whatsapp_number')"
                 :placeholder="__('wizard.fields.whatsapp_number_placeholder')"
                 :hint="__('wizard.fields.whatsapp_number_hint')" />
-            <x-inputsform.input span="short" name="fallback_whatsapp_number" class="font-mono" alpine-error="fallback_whatsapp_number" wire:model="form.data.fallback_whatsapp_number"
+            <x-inputsform.phone span="short" required name="fallback_whatsapp_number" alpine-error="fallback_whatsapp_number"
+                :countries="$this->phoneCountries" :default-dial="$this->defaultDial"
+                :value="$form->data?->fallback_whatsapp_number" wire:model="form.data.fallback_whatsapp_number"
                 :label="__('wizard.fields.fallback_whatsapp_number')"
                 :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
                 :hint="__('wizard.fields.fallback_whatsapp_number_hint')" />
 
-            <x-inputsform.input span="long" type="email" name="email" alpine-error="email" wire:model="form.data.email"
+            <x-inputsform.input span="long" type="email" required name="email" alpine-error="email" wire:model="form.data.email"
                 :label="__('wizard.fields.business_email')"
                 :placeholder="__('wizard.fields.business_email_placeholder')"
                 :hint="__('wizard.fields.business_email_hint')" />
@@ -88,8 +123,8 @@ new class extends Component {
 
 @script
 <script>
-    // Front mirror of the connection rules. Every field is optional — the
-    // checks only fire on what was actually typed.
+    // Front mirror of the connection rules: connecting for real demands the
+    // three fields — "conectar después" skips this guard entirely.
     Alpine.data('stepWhatsappGuard', () => ({
         errors: {},
 
@@ -101,9 +136,9 @@ new class extends Component {
                 fallback_whatsapp_number: data.fallback_whatsapp_number,
                 email: data.email,
             }, {
-                whatsapp_number: ['phone', ['minLength', 6], ['maxLength', 30]],
-                fallback_whatsapp_number: ['phone', ['minLength', 6], ['maxLength', 30]],
-                email: ['email', ['maxLength', 255]],
+                whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                fallback_whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                email: ['required', 'email', ['maxLength', 255]],
             });
 
             if (Object.keys(this.errors).length === 0) {

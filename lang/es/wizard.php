@@ -64,11 +64,11 @@ return [
         'import_file' => 'planilla',
 
         'whatsapp_number' => 'WhatsApp del negocio',
-        'whatsapp_number_placeholder' => '+54 9 341 512 4408',
+        'whatsapp_number_placeholder' => '3415124408',
         'whatsapp_number_hint' => 'El número al que te escriben tus clientes. No mandamos nada sin avisarte.',
 
         'fallback_whatsapp_number' => 'WhatsApp para derivar',
-        'fallback_whatsapp_number_placeholder' => '+54 9 341 555 0199',
+        'fallback_whatsapp_number_placeholder' => '3415550199',
         'fallback_whatsapp_number_hint' => 'Tu número o el de alguien del equipo: ahí te pasamos los mensajes que la IA no pueda responder.',
 
         'business_email' => 'Correo del negocio',
@@ -88,6 +88,7 @@ return [
     ],
 
     'products' => [
+        'drop_title' => 'Arrastra tu planilla aquí',
         'drop_text' => 'Tu lista de precios o inventario, tal cual la tienes. Nosotros la entendemos.',
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
         'manual' => 'O carga tus productos aquí, uno por uno.',
@@ -95,6 +96,7 @@ return [
         'unreadable' => 'No pudimos leer la planilla. Revisa que tenga una fila de títulos y vuelve a intentar.',
         'review_title' => 'Esto entendimos de tu planilla',
         'review_hint' => ':rows filas detectadas. Revisa cada columna y corrige la que no encaje: las columnas extra no se pierden, tu asistente las aprende.',
+        'was' => 'En tu planilla: :column',
         'cancel' => 'Elegir otro archivo',
         'confirm' => 'Confirmar e importar',
         'queued' => '✓ :file — :rows productos en cola. Tu asistente los está aprendiendo.',
@@ -138,7 +140,6 @@ return [
         'a_open' => '¡Hola! 👋 Soy el asistente de <b>:business</b>. Sí, estoy para ayudarte las 24 horas. Cuéntame qué necesitas.',
         'q_service' => '¿Hacen :service?',
         'a_service' => '¡Sí! En :business ofrecemos :services. ¿Quieres que te agende?',
-        'q_product' => '¿Tienen el alternador de un Fiat Palio 1.4?',
         'q_product_named' => '¿Tienen :product?',
         'a_product' => 'Déjame revisar el inventario… ¡Sí! Lo tenemos disponible. ¿Te lo reservo?',
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por ti.',

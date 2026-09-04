@@ -115,7 +115,13 @@ new class extends Component {
         // answer, so it picks itself.
         if (count($this->activityOptions) === 1) {
             $this->chooseActivity((string) $this->activityOptions[0]['value']);
+
+            return;
         }
+
+        // The trade question appears below the fold: a gentle scroll makes
+        // sure the person ever sees it. rAF waits for the morph to paint it.
+        $this->js('requestAnimationFrame(() => document.querySelector("[data-activity-field]")?.scrollIntoView({ behavior: "smooth", block: "center" }))');
     }
 
     public function chooseActivity(string $activity): void
@@ -179,7 +185,7 @@ new class extends Component {
         </div>
 
         @if ($this->activityOptions !== [])
-            <div class="field">
+            <div class="field" data-activity-field>
                 <span class="field-label">{{ $this->activityLabel }}</span>
                 <div class="wizard-chips">
                     @foreach ($this->activityOptions as $option)

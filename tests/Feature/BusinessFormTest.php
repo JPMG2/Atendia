@@ -186,6 +186,7 @@ test('the connection step writes its own columns and nothing else', function ():
     $form = makeBusinessForm();
 
     $form->data->whatsapp_number = '+54 9 341 512 4408';
+    $form->data->fallback_whatsapp_number = '+54 9 341 555 0199';
     $form->data->email = 'hola@laesquina.com';
     // The screen name typed here must NOT travel: it is another step's column.
     $form->data->name = 'Renombrada a escondidas';
@@ -196,6 +197,7 @@ test('the connection step writes its own columns and nothing else', function ():
 
     expect($notification->type)->toBe(NotificationType::Success)
         ->and($business->whatsapp_number)->toBe('+54 9 341 512 4408')
+        ->and($business->fallback_whatsapp_number)->toBe('+54 9 341 555 0199')
         ->and($business->email)->toBe('hola@laesquina.com')
         ->and($business->name)->toBe('La Esquina');
 });

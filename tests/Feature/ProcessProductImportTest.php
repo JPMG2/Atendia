@@ -65,7 +65,7 @@ test('the job turns the mapped core into products and every column into knowledg
     ], [
         ['column' => 'Estudio', 'target' => 'name'],
         ['column' => 'Precio', 'target' => 'price'],
-        ['column' => 'Preparación', 'target' => 'extra'],
+        ['column' => 'Preparación', 'target' => 'extra', 'label' => 'Preparación del estudio'],
     ]);
 
     new ProcessProductImport($import->id)->handle(app(ImportFileReader::class));
@@ -79,7 +79,7 @@ test('the job turns the mapped core into products and every column into knowledg
 
     expect($document->business_id)->toBe($business->id)
         ->and($document->source_type)->toBe('import')
-        ->and($document->content)->toContain('Preparación: Venir en ayunas');
+        ->and($document->content)->toContain('Preparación del estudio: Venir en ayunas');
 });
 
 test('re-importing the same file replaces its knowledge instead of duplicating it', function (): void {

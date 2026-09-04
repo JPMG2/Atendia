@@ -23,7 +23,7 @@
     <style>[x-cloak]{display:none !important;}</style>
 
     {{-- No app.js: Livewire brings its own Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js'])
     @livewireStyles
 </head>
 <body class="bg-page">

@@ -34,6 +34,11 @@ Route::livewire('/alta', 'business.wizard')
 // throwaway demo client. Listed in aproduccion.md to be deleted at go-live.
 if (app()->environment('local')) {
     Route::get('/alta-demo', function () {
+        // Every visit starts a pristine run: the wizard now persists and
+        // preloads on re-entry, so the previous demo tenant must leave whole
+        // (every business_id FK cascades — the demo user included).
+        User::query()->where('email', 'demo@atendia.test')->first()?->business?->forceDelete();
+
         $demo = User::query()->firstOrCreate(
             ['email' => 'demo@atendia.test'],
             ['name' => 'Demo AtendIa', 'password' => Hash::make(Str::random(32))],

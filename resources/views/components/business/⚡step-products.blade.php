@@ -34,7 +34,13 @@ new class extends Component {
     /** @var list<string> One proposed target per column, index-aligned. */
     public array $mapping = [];
 
+    /** @var list<string> The headers with typos fixed — editable suggestions. */
+    public array $labels = [];
+
     public int $totalRows = 0;
+
+    /** The first product of the sheet: the preview asks for something REAL. */
+    public ?string $sampleProduct = null;
 
     public ?string $queuedFile = null;
 
@@ -83,9 +89,16 @@ new class extends Component {
             return;
         }
 
+        $proposal = app(ColumnMapper::class)->map($summary['headers'], $summary['samples']);
+
+        $nameIndex = array_search('name', $proposal['targets'], true);
+
         $this->headers = $summary['headers'];
         $this->totalRows = $summary['total_rows'];
-        $this->mapping = app(ColumnMapper::class)->map($summary['headers'], $summary['samples']);
+        $this->mapping = $proposal['targets'];
+        $this->labels = $proposal['labels'];
+        $sample = $nameIndex === false ? '' : trim($summary['samples'][0][$nameIndex] ?? '');
+        $this->sampleProduct = $sample === '' ? null : $sample;
         $this->queuedFile = null;
     }
 
@@ -112,7 +125,11 @@ new class extends Component {
             'original_name' => $original,
             'path' => $path,
             'mapping' => collect($this->headers)
-                ->map(fn (string $header, int $index): array => ['column' => $header, 'target' => $this->mapping[$index] ?? 'extra'])
+                ->map(fn (string $header, int $index): array => [
+                    'column' => $header,
+                    'label' => trim($this->labels[$index] ?? '') !== '' ? trim($this->labels[$index]) : $header,
+                    'target' => $this->mapping[$index] ?? 'extra',
+                ])
                 ->values()
                 ->all(),
             'total_rows' => $this->totalRows,
@@ -123,14 +140,20 @@ new class extends Component {
 
         $this->queuedFile = $original;
 
-        $this->reset('upload', 'headers', 'mapping');
+        $this->reset('upload', 'headers', 'mapping', 'labels');
 
         $this->dispatch('wizard:products-imported');
+
+        // With a real row in hand the preview asks for it, whatever the
+        // trade — no canned demo product for a doctor to sell car parts.
+        if ($this->sampleProduct !== null) {
+            $this->dispatch('wizard:products-updated', products: array_values(array_unique([...$this->products, $this->sampleProduct])));
+        }
     }
 
     public function cancelUpload(): void
     {
-        $this->reset('upload', 'headers', 'mapping');
+        $this->reset('upload', 'headers', 'mapping', 'labels');
 
         $this->totalRows = 0;
     }
@@ -189,6 +212,7 @@ new class extends Component {
             <x-inputsform.file span="full" name="upload" wire:model="upload"
                 accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                 :note="__('wizard.products.drop_formats')">
+                <b class="block">{{ __('wizard.products.drop_title') }}</b>
                 {{ __('wizard.products.drop_text') }}
             </x-inputsform.file>
         @else
@@ -198,7 +222,13 @@ new class extends Component {
 
                 @foreach ($headers as $index => $header)
                     <div class="wizard-map-row" wire:key="map-{{ $index }}">
-                        <span class="wizard-map-col">{{ $header }}</span>
+                        <div class="wizard-map-colbox">
+                            <x-inputsform.input span="full" name="label_{{ $index }}"
+                                wire:model="labels.{{ $index }}" />
+                            @if (($labels[$index] ?? $header) !== $header)
+                                <span class="wizard-map-was">{{ __('wizard.products.was', ['column' => $header]) }}</span>
+                            @endif
+                        </div>
                         <x-ui.select name="map_{{ $index }}" :options="$this->targetOptions"
                             wire:model="mapping.{{ $index }}" />
                     </div>

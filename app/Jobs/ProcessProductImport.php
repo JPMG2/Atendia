@@ -101,7 +101,12 @@ class ProcessProductImport implements ShouldQueue
      */
     private function feedKnowledge(ProductImport $import, array $rows): void
     {
-        $columns = array_column($import->mapping, 'column');
+        // The confirmed label (typos fixed on the review screen) names each
+        // value; imports saved before labels existed fall back to the header.
+        $columns = array_map(
+            fn (array $entry): string => trim($entry['label'] ?? '') !== '' ? $entry['label'] : $entry['column'],
+            $import->mapping,
+        );
 
         $content = collect($rows)
             ->map(fn (array $row): string => collect($columns)

@@ -26,4 +26,8 @@ return [
         'remove' => 'Quitar el archivo',
     ],
 
+    'phone' => [
+        'country' => 'País del número',
+    ],
+
 ];

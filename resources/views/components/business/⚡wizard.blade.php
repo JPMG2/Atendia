@@ -30,8 +30,6 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
     /** @var list<string> */
     public array $products = [];
 
-    public bool $productsLoaded = false;
-
     public bool $connected = false;
 
     /**
@@ -108,8 +106,6 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
     #[On('wizard:products-imported')]
     public function productsImported(): void
     {
-        $this->productsLoaded = true;
-
         $this->markDone(4);
 
         $this->refreshPreview();
@@ -172,12 +168,9 @@ new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Compo
         }
 
         if ($this->products !== []) {
-            // A real product beats the canned joke: the demo asks for what
-            // the business actually loaded.
+            // Always something the business actually loaded — a manual pill
+            // or the sheet's own first row, never a canned demo product.
             $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_product_named', ['product' => e(mb_strtolower(end($this->products)))])];
-            $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_product')];
-        } elseif ($this->productsLoaded) {
-            $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_product')];
             $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_product')];
         }
 

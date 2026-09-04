@@ -40,6 +40,7 @@ return [
     ],
 
     'products' => [
+        'drop_title' => 'Arrastrá tu planilla acá',
         'drop_text' => 'Tu lista de precios o inventario, tal cual la tenés. Nosotros la entendemos.',
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
         'unreadable' => 'No pudimos leer la planilla. Revisá que tenga una fila de títulos y volvé a intentar.',
@@ -75,7 +76,6 @@ return [
         'a_open' => '¡Hola! 👋 Soy el asistente de <b>:business</b>. Sí, estoy para ayudarte las 24 horas. Contame qué necesitás.',
         'q_service' => '¿Hacen :service?',
         'a_service' => '¡Sí! En :business ofrecemos :services. ¿Querés que te agende?',
-        'q_product' => '¿Tienen el alternador de un Fiat Palio 1.4?',
         'a_product' => 'Dejame revisar el inventario… ¡Sí! Lo tenemos disponible. ¿Te lo reservo?',
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por vos.',
     ],

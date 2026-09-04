@@ -42,7 +42,10 @@ class ProductColumnMapper implements Agent, HasStructuredOutput
             "stock" (available quantity), "description", or "extra" for
             anything else — never invent another target and never drop a
             column. At most one column may map to each of name, price, stock
-            and description; when in doubt, prefer "extra".
+            and description; when in doubt, prefer "extra". Also return
+            "label": the header with spelling mistakes fixed, in the header's
+            own language ("Prescio" becomes "Precio"); when the header is
+            already correct, return it unchanged.
             INSTRUCTIONS;
     }
 
@@ -57,6 +60,7 @@ class ProductColumnMapper implements Agent, HasStructuredOutput
                     $schema->object(fn ($schema) => [
                         'column' => $schema->string()->required(),
                         'target' => $schema->string()->enum(self::TARGETS)->required(),
+                        'label' => $schema->string()->required(),
                     ])
                 )
                 ->required(),

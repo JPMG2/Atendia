@@ -74,6 +74,16 @@ test('the identity and connection steps carry the front guard', function (): voi
         ->assertSee('errors.whatsapp_number', false);
 });
 
+test('picking a sector marks the trade question so the scroll can find it', function (): void {
+    actingAsClient();
+    $sector = BusinessSector::factory()->create(['code' => 'salud']);
+    BusinessActivity::factory()->count(2)->create(['business_sector_id' => $sector->id]);
+
+    Livewire::test('business.step-business')
+        ->call('choose', 'salud')
+        ->assertSee('data-activity-field', false);
+});
+
 test('the preview wears the phone frame with its chat header', function (): void {
     actingAsClient();
 
@@ -82,6 +92,16 @@ test('the preview wears the phone frame with its chat header', function (): void
         ->assertSee('wizard-phone-frame', false)
         ->assertSee(__('wizard.preview.header'))
         ->assertSee(__('wizard.preview.online'));
+});
+
+test('the wizard layout ships the file-field script the drop zone needs', function (): void {
+    // Without it Alpine never initializes inputsformFile and the upload zone
+    // renders mute — caught live on 2026-09-04.
+    actingAsClient();
+
+    $this->get('/alta')
+        ->assertOk()
+        ->assertSee('file-field', false);
 });
 
 // Its own layout must not cost system chrome: same shared component as the shell.
@@ -286,6 +306,7 @@ test('the products step offers the real upload and the manual list', function ()
     actingAsClient();
 
     Livewire::test('business.step-products')
+        ->assertSee(__('wizard.products.drop_title'))
         ->assertSee(__('wizard.products.drop_text'))
         ->assertSee(__('wizard.products.manual'));
 });
@@ -298,13 +319,28 @@ test('the connection step saves numbers and email before reporting the connectio
     Livewire::test('business.step-whatsapp')
         ->assertSee(__('wizard.fields.whatsapp_number'))
         ->assertSee(__('wizard.fields.business_email'))
-        ->set('form.data.whatsapp_number', '+54 9 341 512 4408')
+        ->set('form.data.whatsapp_number', '+54 3415124408')
+        ->set('form.data.fallback_whatsapp_number', '+54 3415550199')
         ->set('form.data.email', 'hola@laesquina.com')
         ->call('finish')
         ->assertDispatched('wizard:step-completed', step: 5, skipped: false, connected: true);
 
-    expect($business->refresh()->whatsapp_number)->toBe('+54 9 341 512 4408')
+    expect($business->refresh()->whatsapp_number)->toBe('+54 3415124408')
+        ->and($business->fallback_whatsapp_number)->toBe('+54 3415550199')
         ->and($business->email)->toBe('hola@laesquina.com');
+});
+
+test('connecting for real demands the three fields; skipping demands none', function (): void {
+    // The owner made them mandatory on 2026-09-04: without the AI's number,
+    // a human to hand off to and the inbox there is nothing to connect.
+    $client = actingAsClient();
+    $client->business()->associate(Business::factory()->create())->save();
+
+    Livewire::test('business.step-whatsapp')
+        ->set('form.data.whatsapp_number', '+54 3415124408')
+        ->call('finish')
+        ->assertNotDispatched('wizard:step-completed')
+        ->assertHasErrors(['fallback_whatsapp_number', 'email']);
 });
 
 test('skipping the connection saves nothing and still moves on', function (): void {

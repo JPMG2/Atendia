@@ -80,21 +80,22 @@ test('the reader tastes headers, samples and the row count', function (): void {
 test('the bakery spreadsheet is mapped by synonyms alone, no AI needed', function (): void {
     ProductColumnMapper::fake();
 
-    $targets = new ColumnMapper()->map(['Producto', 'Cantidad', 'Precio', 'Descripción'], []);
+    $proposal = new ColumnMapper()->map(['Producto', 'Cantidad', 'Precio', 'Descripción'], []);
 
-    expect($targets)->toBe(['name', 'stock', 'price', 'description']);
+    expect($proposal['targets'])->toBe(['name', 'stock', 'price', 'description'])
+        ->and($proposal['labels'])->toBe(['Producto', 'Cantidad', 'Precio', 'Descripción']);
 
     ProductColumnMapper::assertNeverPrompted();
 });
 
 test('a column the synonyms do not know is asked to the agent', function (): void {
     ProductColumnMapper::fake([
-        ['mappings' => [['column' => 'Preparación', 'target' => 'extra']]],
+        ['mappings' => [['column' => 'Preparación', 'target' => 'extra', 'label' => 'Preparación']]],
     ]);
 
-    $targets = new ColumnMapper()->map(['Producto', 'Preparación'], [['Ecodoppler', 'Venir en ayunas']]);
+    $proposal = new ColumnMapper()->map(['Producto', 'Preparación'], [['Ecodoppler', 'Venir en ayunas']]);
 
-    expect($targets)->toBe(['name', 'extra']);
+    expect($proposal['targets'])->toBe(['name', 'extra']);
 
     ProductColumnMapper::assertPrompted(fn ($prompt) => str_contains($prompt->prompt, 'Preparación'));
 });
@@ -103,15 +104,26 @@ test('the AI being down degrades to extra instead of breaking the upload', funct
     // No fake response defined: the stray-prompt exception plays the outage.
     ProductColumnMapper::fake()->preventStrayPrompts();
 
-    $targets = new ColumnMapper()->map(['Producto', 'Columna misteriosa'], []);
+    $proposal = new ColumnMapper()->map(['Producto', 'Columna misteriosa'], []);
 
-    expect($targets)->toBe(['name', 'extra']);
+    expect($proposal['targets'])->toBe(['name', 'extra']);
+});
+
+test('a typoed header comes back fixed as an editable label suggestion', function (): void {
+    ProductColumnMapper::fake([
+        ['mappings' => [['column' => 'Prescio', 'target' => 'price', 'label' => 'Precio']]],
+    ]);
+
+    $proposal = new ColumnMapper()->map(['Producto', 'Prescio'], [['Coca 1.5L', '2500']]);
+
+    expect($proposal['targets'])->toBe(['name', 'price'])
+        ->and($proposal['labels'])->toBe(['Producto', 'Precio']);
 });
 
 test('with no name column the first one takes the role: a list always has names', function (): void {
     ProductColumnMapper::fake()->preventStrayPrompts();
 
-    expect(new ColumnMapper()->map(['Cosa rara', 'Precio'], []))->toBe(['name', 'price']);
+    expect(new ColumnMapper()->map(['Cosa rara', 'Precio'], [])['targets'])->toBe(['name', 'price']);
 });
 
 test('uploading opens the review with the proposed mapping', function (): void {
@@ -125,6 +137,7 @@ test('uploading opens the review with the proposed mapping', function (): void {
         ]))
         ->assertSet('headers', ['Producto', 'Precio'])
         ->assertSet('mapping', ['name', 'price'])
+        ->assertSet('labels', ['Producto', 'Precio'])
         ->assertSet('totalRows', 1)
         ->assertSee(__('wizard.products.review_title'));
 });
@@ -142,7 +155,10 @@ test('confirming stores the file and queues the import for the tenant', function
         ], 'estudios.xlsx'))
         ->call('confirmImport')
         ->assertSet('headers', [])
-        ->assertDispatched('wizard:products-imported');
+        ->assertDispatched('wizard:products-imported')
+        // The preview asks for the sheet's own first row, never a canned
+        // demo product — a doctor must not end up selling car parts.
+        ->assertDispatched('wizard:products-updated', products: ['Ecodoppler']);
 
     $import = ProductImport::query()->sole();
 
@@ -150,7 +166,8 @@ test('confirming stores the file and queues the import for the tenant', function
         ->and($import->original_name)->toBe('estudios.xlsx')
         ->and($import->status)->toBe('pending')
         ->and($import->total_rows)->toBe(1)
-        ->and(collect($import->mapping)->firstWhere('column', 'Preparación')['target'])->toBe('extra');
+        ->and(collect($import->mapping)->firstWhere('column', 'Preparación'))
+        ->toMatchArray(['target' => 'extra', 'label' => 'Preparación']);
 
     Storage::disk('local')->assertExists($import->path);
 
