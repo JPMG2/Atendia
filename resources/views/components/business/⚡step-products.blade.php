@@ -10,6 +10,7 @@ use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -47,12 +48,23 @@ new class extends Component {
     /** @var list<string> */
     public array $products = [];
 
+    /**
+     * What the screen actually showed: the only names Continuar may drop.
+     * The import job writes behind this step, and reconciling against the
+     * pills alone wiped its rows once. Locked: the front never edits it.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $knownProducts = [];
+
     public string $draft = '';
 
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
         $this->products = Auth::user()?->business?->products()->orderBy('id')->pluck('name')->all() ?? [];
+        $this->knownProducts = $this->products;
 
         if ($this->products !== []) {
             $this->dispatch('wizard:products-updated', products: $this->products);
@@ -186,13 +198,16 @@ new class extends Component {
     public function finish(bool $skipped = false): void
     {
         if (! $skipped) {
-            $notification = $this->form->saveProducts($this->products);
+            $notification = $this->form->saveProducts($this->products, $this->knownProducts);
 
             $this->dispatchNotification($notification);
 
             if ($notification->type === NotificationType::Error) {
                 return;
             }
+
+            // The list just saved is now the screen's truth for a re-run.
+            $this->knownProducts = $this->products;
         }
 
         $this->dispatch('wizard:step-completed', step: 4, skipped: $skipped);

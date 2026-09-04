@@ -195,25 +195,30 @@ class BusinessForm extends BaseForm
     }
 
     /**
-     * Saves the products step: the universal core takes only names here;
-     * price and stock belong to the panel, extra data to the knowledge.
+     * Saves the products step: the universal core takes only names here.
+     * `$known` scopes deletions to what the SCREEN showed — the queued
+     * import writes products behind this step, and reconciling against the
+     * manual list alone would wipe them (it did, on 2026-09-04).
      *
      * @param  list<string>  $names
+     * @param  list<string>  $known
      */
-    public function saveProducts(array $names): NotificationDto
+    public function saveProducts(array $names, array $known = []): NotificationDto
     {
-        return $this->saveNamedList('products', $names, __('wizard.fields.product'));
+        return $this->saveNamedList('products', $names, __('wizard.fields.product'), known: $known);
     }
 
     /**
-     * Shared reconciliation for the wizard's named lists (services, products):
-     * dropped names leave softly, a trashed one coming back is restored (the
-     * unique owner+name outlives a soft delete), new ones are created through
-     * the owner. `$decorate` lets a list enrich the row before saving.
+     * Shared reconciliation for the wizard's named lists: dropped names leave
+     * softly, a trashed one coming back is restored (unique owner+name
+     * outlives a soft delete), the rest upserts through the owner. With
+     * `$known` only names the screen showed may be dropped; null keeps the
+     * full reconciliation for a list with a single writer.
      *
      * @param  list<string>  $names
+     * @param  list<string>|null  $known
      */
-    private function saveNamedList(string $relation, array $names, string $attribute, ?Closure $decorate = null): NotificationDto
+    private function saveNamedList(string $relation, array $names, string $attribute, ?Closure $decorate = null, ?array $known = null): NotificationDto
     {
         $business = Auth::user()?->business;
 
@@ -234,9 +239,13 @@ class BusinessForm extends BaseForm
             [$relation.'.*' => $attribute],
         )->validate();
 
-        return $this->tryAction(function () use ($business, $relation, $names, $decorate): NotificationDto {
+        return $this->tryAction(function () use ($business, $relation, $names, $decorate, $known): NotificationDto {
 
-            $business->{$relation}()->whereNotIn('name', $names)->get()->each->delete();
+            $doomed = $known === null
+                ? $business->{$relation}()->whereNotIn('name', $names)
+                : $business->{$relation}()->whereIn('name', array_diff($known, $names->all()));
+
+            $doomed->get()->each->delete();
 
             foreach ($names as $name) {
                 $row = $business->{$relation}()->withTrashed()->firstOrNew(['name' => $name]);

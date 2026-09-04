@@ -74,6 +74,23 @@ test('a removed name coming back restores the same row, not a duplicate', functi
         ->and($product->fresh()->trashed())->toBeFalse();
 });
 
+test('finishing never deletes what the import wrote behind the screen', function (): void {
+    // Caught live on 2026-09-04: the queued import created three products
+    // and Continuar, reconciling against the empty pill list, wiped them.
+    $business = actingAsShopOwner();
+
+    $component = Livewire::test('business.step-products');
+
+    // The job lands AFTER the step mounted: the screen never showed these.
+    $business->products()->create(['name' => 'Eco doppler']);
+    $business->products()->create(['name' => 'Eco vaginal']);
+
+    $component->call('add', 'Vacuna antigripal')->call('finish');
+
+    expect($business->products()->orderBy('id')->pluck('name')->all())
+        ->toBe(['Eco doppler', 'Eco vaginal', 'Vacuna antigripal']);
+});
+
 test('skipping the step writes nothing, as promised', function (): void {
     actingAsShopOwner();
 
