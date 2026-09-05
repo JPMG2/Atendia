@@ -393,6 +393,9 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 - Depende de `fallback_locale=es`. La región se resuelve por el middleware `SetLocale`
   (sesión › geo IP › default) y el **selector manual** manda. Detalle completo en la
   memoria `atendia-i18n-variantes-regionales`.
+- **El título de la pestaña también es copy** (blindado): nada de `#[Title('...')]`
+  en un SFC — un atributo PHP no puede llamar `__()`. La vía: `render()` con
+  `$this->view()->title(__('...'))`, o el default traducido del layout (caso wizard).
 - Estilo (aplica a las tres variantes): **sentence case**, verbo primero, concreto, **sin
   emoji** en la chrome. Errores útiles: *"No pudimos guardar. Revisá el email."*
   (neutro: *"Revisa el email."*).
@@ -537,6 +540,21 @@ Blindado con test de regresión: `tests/Feature/DestructiveCommandGuardTest.php`
   → corre **únicamente esa** migración. Ver convención del usuario.
 - Recordá el entorno Docker: `docker exec -w /var/www/html atendia-app php artisan migrate ...`
 
+## Columna nueva en tabla existente — REGLA DE ORO (2026-09-02, blindada)
+
+> Mientras no haya go-live, **NO se crean migraciones `add_*`/`drop_*`/`rename_*`**:
+> la columna se suma **rediseñando la migración de CREACIÓN** de la tabla.
+> Incumplida el 2026-09-03 (dos `add_*` sobre `businesses`) → ahora blindada:
+> test guardián `tests/Feature/GoldenRulesMigrationsTest.php` + hook
+> `.claude/hooks/check-migration-consolidation.sh` (las `add_*` anteriores a la
+> fecha son historia y quedan).
+
+1. Sumar la columna a la migración `create_*_table` existente.
+2. Sincronizar `atendia` con un **ALTER quirúrgico** (`Schema::table(...)` en tinker
+   — no destructivo; la create ya corrió ahí y no se re-ejecuta).
+3. `atendia_testing` se rearma sola vía RefreshDatabase → correr los tests.
+4. Si hubo una `add_*` temporal aplicada, borrar el archivo Y su fila en `migrations`.
+
 ## Al crear una migración nueva (flujo completo)
 
 1. Crear la migración (y modelo/seeder).
@@ -591,6 +609,64 @@ Relacionado: la receta de enforcement de 3 capas — ver `.ai/guidelines/reglas-
    teorizar.
 
 Relacionado: `atendiadesign` (sistema de diseño), memoria `atendia-feedback-modo-trabajo`.
+
+=== .ai/queries-en-el-modelo rules ===
+
+# Queries en el modelo — un Blade jamás arma una query (regla de oro)
+
+> Un `.blade.php` (el template O el bloque PHP de un SFC de Livewire) nunca
+> construye una consulta a la base. Pide el dato al **modelo** por su nombre
+> de dominio: `options()`, `suggestionsName()`, `serviceNames()`,
+> `phoneFlags()`, `dialCode()`, `idFromCode()`, `visibleTo()`…
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesBladeQueriesTest.php` y el hook
+`check-blade-query-golden-rules.sh` fallan el build si un Blade arma una query.
+Nació el 2026-09-05: el usuario cazó 3 queries armadas en los steps del wizard
+y en la auditoría aparecieron 4 más — la clase de agujero se cierra acá.
+
+## Por qué
+
+- **DRY de decisiones, no de teclas.** Un query inline repite el *contrato*
+  (qué filtra `$states`, en qué orden sale la lista) y los contratos copiados
+  a mano divergen: el bug de `phoneFlags()` (un `$states` muerto pisado por un
+  hardcode) nació exactamente así.
+- **El segundo llamador ya tiene fecha.** La pantalla de edición de
+  configuración del cliente va a pedir los mismos datos; si el query vive en
+  el modelo, la decisión de copiar no existe.
+- **Testabilidad**: un método del modelo se prueba sembrando y llamando; el
+  mismo query dentro del componente exige montar el Livewire completo.
+
+## La línea (qué va dónde)
+
+- **Al modelo**: lo que expresa vocabulario del dominio — algo que un segundo
+  llamador pediría con las mismas palabras ("los nombres sugeridos de este
+  rubro", "el prefijo telefónico de este país").
+- **Puede quedar en el componente**: armado de UI de UNA pantalla (filtrar una
+  Collection ya cargada, `firstWhere` sobre opciones, `groupBy` para pintar).
+  Por eso los verbos compartidos con Collection (`->where`, `->pluck`) NO se
+  prohíben por patrón: filtrar en memoria es presentación.
+- Si un modelo engorda demasiado, el paso siguiente son query objects — con el
+  3º caso, no antes (ver memoria `atendia-cuando-abstraer`).
+
+## Patrones prohibidos en un `.blade.php`
+
+`::query(` · `DB::` · estáticos de query (`Modelo::where/find/all/first/
+firstWhere/pluck/orderBy/latest/oldest`) · `->orderBy(` (verbo exclusivo del
+builder: en un Blade delata una query encadenada a una relación).
+
+## Ratchet
+
+Deuda congelada con razón (NUNCA agregar entradas, se arregla el archivo):
+`components/⚡ws-demo.blade.php` (demo de desarrollo, muere en go-live).
+El allowlist vive espejado en el test guardián y el hook: se tocan de a dos.
+
+## Checklist de salida
+
+- [ ] Ningún `::query()` / `DB::` / estático de query / `->orderBy(` en Blade.
+- [ ] El método nuevo del modelo tiene nombre de dominio y PHPDoc con el shape.
+- [ ] Contrato consistente con sus hermanos (`$states` vacío = sin filtro).
+- [ ] `./vendor/bin/pest --filter=GoldenRulesBladeQueries` en verde.
 
 === .ai/reglas-de-oro-enforcement rules ===
 
@@ -647,6 +723,12 @@ Cuando se suma un set de reglas de oro:
   hook `.claude/hooks/block-browser-suite-reruns.sh` (capa C), que bloquea la
   TERCERA corrida de la suite de browser entera. Escrito ya había estado y se
   incumplió igual varios días seguidos: por eso hay hook.
+- **Una corrida de la suite entera por commit** → memoria
+  `atendia-feedback-modo-trabajo` (capa A) · hook
+  `.claude/hooks/block-full-suite-reruns.sh` (capa C), que bloquea la SEGUNDA
+  corrida completa si no hubo un commit en el medio. Mientras se trabaja va
+  `--filter`; la completa es la puerta del commit. Escrito estaba, y se
+  incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`.
@@ -659,6 +741,11 @@ Cuando se suma un set de reglas de oro:
   Ojo con el ALCANCE del scanner: un `.blade.php` puede ser un SFC de Livewire y
   llevar su clase entera en un bloque `<?php`; mirar solo los `{{-- --}}` deja sin
   vigilar la mitad del archivo (pasó, y los docblocks quedaron en español).
+- **Queries en el modelo (un Blade jamás arma una query)** →
+  `.ai/guidelines/queries-en-el-modelo.md` · test guardián
+  `tests/Feature/GoldenRulesBladeQueriesTest.php` · hook
+  `.claude/hooks/check-blade-query-golden-rules.sh`. Allowlists espejados
+  (tocar de a dos); los verbos compartidos con Collection no se prohíben.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

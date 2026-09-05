@@ -1,8 +1,8 @@
 <?php
 
 use App\Services\Logs\LogReader;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
@@ -10,7 +10,8 @@ use Livewire\Component;
  * (headline plus trace) so pasting it into a help conversation points at the
  * error without anyone ssh-ing into the server.
  */
-new #[Title('Logs del sistema')] class extends Component {
+new class extends Component
+{
     /**
      * `#[Locked]` because the file name reaches the reader: the browser picks
      * one through {@see selectFile()}, which only accepts the known list.
@@ -44,6 +45,12 @@ new #[Title('Logs del sistema')] class extends Component {
         $this->file = $file;
 
         $this->load();
+    }
+
+    /** The tab title comes from translations; a PHP attribute cannot call __(). */
+    public function render(): View
+    {
+        return $this->view()->title(__('logs.title'));
     }
 };
 ?>

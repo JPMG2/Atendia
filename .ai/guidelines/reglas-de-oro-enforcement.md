@@ -64,6 +64,11 @@ Cuando se suma un set de reglas de oro:
   Ojo con el ALCANCE del scanner: un `.blade.php` puede ser un SFC de Livewire y
   llevar su clase entera en un bloque `<?php`; mirar solo los `{{-- --}}` deja sin
   vigilar la mitad del archivo (pasó, y los docblocks quedaron en español).
+- **Queries en el modelo (un Blade jamás arma una query)** →
+  `.ai/guidelines/queries-en-el-modelo.md` · test guardián
+  `tests/Feature/GoldenRulesBladeQueriesTest.php` · hook
+  `.claude/hooks/check-blade-query-golden-rules.sh`. Allowlists espejados
+  (tocar de a dos); los verbos compartidos con Collection no se prohíben.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

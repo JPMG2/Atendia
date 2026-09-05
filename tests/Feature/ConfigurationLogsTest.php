@@ -72,6 +72,12 @@ test('a client cannot reach the logs page', function (): void {
     $this->actingAs($client)->get('/admin/logs')->assertForbidden();
 });
 
+test('the logs page carries its translated tab title', function (): void {
+    $this->actingAs(logsAdmin())->get('/admin/logs')
+        ->assertOk()
+        ->assertSee('<title>Logs del sistema</title>', false);
+});
+
 test('an admin sees the latest entries, newest first', function (): void {
     writeLog($this->logDir, 'laravel.log', sampleLog());
 

@@ -22,6 +22,7 @@ return [
 
     // Chrome del hub de catálogos (la pantalla que lista los maestros).
     'hub' => [
+        'page_title' => 'Catálogos del sistema',
         'title' => 'Configuración general',
         'subtitle' => 'Elige un catálogo de la izquierda y configúralo a la derecha.',
         'rail_label' => 'Catálogos',

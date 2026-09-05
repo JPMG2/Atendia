@@ -67,6 +67,10 @@ if ! in_list "$rel" "$hex_allow" && ! is_email_view "$rel" && grep -qE '#[0-9a-f
     violations="${violations}- Hardcodea un color hex. Usá tokens semánticos de resources/css/app.css (var(--...)), nunca un hex.\n"
 fi
 
+if grep -qE '#\[Title\(' "$file"; then
+    violations="${violations}- Hardcodea el título de la página con #[Title(...)]. Un atributo no puede llamar __(): usá render() con \$this->view()->title(__('...')) o el default traducido del layout.\n"
+fi
+
 if grep -qiE 'data-lucide|lucide\.createIcons' "$file"; then
     violations="${violations}- Usa Lucide vía data-lucide/createIcons. Los iconos van por <x-icon name=\"...\" :size=\"...\" />.\n"
 fi

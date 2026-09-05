@@ -1,7 +1,7 @@
 <?php
 
 use App\Services\Integrations\IntegrationHealth;
-use Livewire\Attributes\Title;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 /**
@@ -9,7 +9,8 @@ use Livewire\Component;
  * look. The probes run AFTER the first paint (`wire:init`): eight checks with
  * timeouts must never hold the page hostage.
  */
-new #[Title('Integraciones')] class extends Component {
+new class extends Component
+{
     /** @var array<string, array{key: string, state: string, latency_ms: int|null, detail: string|null, hint: string|null}> */
     public array $statuses = [];
 
@@ -30,6 +31,12 @@ new #[Title('Integraciones')] class extends Component {
         }
 
         $this->statuses[$key] = app(IntegrationHealth::class)->check($key)->toArray();
+    }
+
+    /** The tab title comes from translations; a PHP attribute cannot call __(). */
+    public function render(): View
+    {
+        return $this->view()->title(__('integrations.title'));
     }
 };
 ?>

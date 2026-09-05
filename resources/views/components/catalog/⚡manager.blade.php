@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\CatalogForm;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Catálogos del sistema')] class extends Component {
+new class extends Component
+{
     /** Id of the open master (a catalog_forms row); null means none is open. */
     public ?int $selectedId = null;
 
@@ -26,24 +28,24 @@ new #[Title('Catálogos del sistema')] class extends Component {
     }
 
     /**
-     * Active masters visible to the user, filtered by permission_key. The
-     * super-admin goes through Gate::before, so they see every one.
+     * Active masters visible to the user; the model owns the query and the
+     * permission cut.
      *
-     * @return \Illuminate\Support\Collection<int, CatalogForm>
+     * @return Collection<int, CatalogForm>
      */
     #[Computed]
-    public function forms(): \Illuminate\Support\Collection
+    public function forms(): Collection
     {
-        return CatalogForm::query()->where('is_active', true)->orderBy('order')->get()->filter(fn(CatalogForm $form): bool => $form->permission_key === null || (bool) auth()->user()?->can($form->permission_key))->values();
+        return CatalogForm::visibleTo(auth()->user());
     }
 
     /**
      * Masters grouped for the rail listing.
      *
-     * @return \Illuminate\Support\Collection<string, \Illuminate\Support\Collection<int, CatalogForm>>
+     * @return Collection<string, Collection<int, CatalogForm>>
      */
     #[Computed]
-    public function grouped(): \Illuminate\Support\Collection
+    public function grouped(): Collection
     {
         return $this->forms->groupBy('group');
     }
@@ -86,6 +88,12 @@ new #[Title('Catálogos del sistema')] class extends Component {
         $dir = implode('/', $segments);
 
         return is_file(resource_path("views/components/{$dir}/⚡{$file}.blade.php"));
+    }
+
+    /** The tab title comes from translations; a PHP attribute cannot call __(). */
+    public function render(): View
+    {
+        return $this->view()->title(__('catalog.hub.page_title'));
     }
 };
 ?>

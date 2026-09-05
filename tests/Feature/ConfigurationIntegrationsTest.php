@@ -67,6 +67,7 @@ test('an admin sees every integration, still probing on the first paint', functi
     // timeouts must never hold the page hostage.
     $this->actingAs(integrationsAdmin())->get('/admin/integrations')
         ->assertOk()
+        ->assertSee('<title>Integraciones</title>', false)
         ->assertSee(__('integrations.title'))
         ->assertSee(__('integrations.checking'))
         ->assertSee(__('integrations.names.whatsapp'))

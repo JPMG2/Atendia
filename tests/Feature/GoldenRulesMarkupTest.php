@@ -85,6 +85,17 @@ test('no view hardcodes a hex color — use semantic tokens from app.css', funct
     expect($offenders->implode("\n"))->toBe('');
 });
 
+test('no view hardcodes the page title via #[Title] — titles come from translations', function (): void {
+    // A PHP attribute only takes constants, so #[Title('...')] is always
+    // hardcoded copy. The sanctioned paths: render() with
+    // $this->view()->title(__('...')), or the layout's translated default.
+    $offenders = collect(bladeViews())
+        ->filter(fn (string $html): bool => preg_match('/#\[Title\(/', $html) === 1)
+        ->keys();
+
+    expect($offenders->implode("\n"))->toBe('');
+});
+
 test('no view wires Lucide via data-lucide or createIcons — icons go through <x-icon>', function (): void {
     $offenders = collect(bladeViews())
         ->filter(fn (string $html): bool => preg_match('/data-lucide|lucide\.createIcons/i', $html) === 1)

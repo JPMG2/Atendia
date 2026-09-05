@@ -19,6 +19,12 @@ beforeEach(function (): void {
     $this->admin->syncRoles('admin');
 });
 
+test('the hub page carries its translated tab title', function (): void {
+    $this->actingAs($this->admin)->get('/admin/catalogs')
+        ->assertOk()
+        ->assertSee('<title>Catálogos del sistema</title>', false);
+});
+
 test('the hub lists the seeded masters grouped from catalog_forms', function (): void {
     Livewire::actingAs($this->admin)
         ->test('catalog.manager')

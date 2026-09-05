@@ -70,6 +70,9 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 - Depende de `fallback_locale=es`. La región se resuelve por el middleware `SetLocale`
   (sesión › geo IP › default) y el **selector manual** manda. Detalle completo en la
   memoria `atendia-i18n-variantes-regionales`.
+- **El título de la pestaña también es copy** (blindado): nada de `#[Title('...')]`
+  en un SFC — un atributo PHP no puede llamar `__()`. La vía: `render()` con
+  `$this->view()->title(__('...'))`, o el default traducido del layout (caso wizard).
 - Estilo (aplica a las tres variantes): **sentence case**, verbo primero, concreto, **sin
   emoji** en la chrome. Errores útiles: *"No pudimos guardar. Revisá el email."*
   (neutro: *"Revisa el email."*).

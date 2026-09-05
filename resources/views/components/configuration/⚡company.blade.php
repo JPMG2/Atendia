@@ -8,9 +8,9 @@ use App\Models\Region;
 use App\Models\SocialNetwork;
 use App\Models\TaxCondition;
 use App\Traits\HasNotifications;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -21,7 +21,8 @@ use Livewire\WithFileUploads;
  * because saving the first is what unlocks it. Each step validates, saves and
  * discards on its own, so an error never lands on a hidden panel.
  */
-new #[Title('Compañía')] class extends Component {
+new class extends Component
+{
     use HasNotifications;
     use WithFileUploads;
 
@@ -167,7 +168,7 @@ new #[Title('Compañía')] class extends Component {
     #[Computed]
     public function countryOptions(): array
     {
-        return Country::options(states: [true], label: fn(Country $country): string => $country->name);
+        return Country::options(states: [true], label: fn (Country $country): string => $country->name);
     }
 
     /**
@@ -182,7 +183,7 @@ new #[Title('Compañía')] class extends Component {
     #[Computed]
     public function provinceOptions(): array
     {
-        return $this->form->data?->country_id ? Province::options(states: [true], label: fn(Province $province): string => $province->name, countryId: $this->form->data?->country_id) : [];
+        return $this->form->data?->country_id ? Province::options(states: [true], label: fn (Province $province): string => $province->name, countryId: $this->form->data?->country_id) : [];
     }
 
     /**
@@ -220,9 +221,9 @@ new #[Title('Compañía')] class extends Component {
     public function logoUrls(): array
     {
         return collect(['logo_path_light', 'logo_path_dark'])
-            ->mapWithKeys(fn(string $column): array => [
+            ->mapWithKeys(fn (string $column): array => [
                 $column => filled($this->form->data?->{$column})
-                    ? asset('storage/' . $this->form->data->{$column})
+                    ? asset('storage/'.$this->form->data->{$column})
                     : null,
             ])
             ->all();
@@ -237,6 +238,12 @@ new #[Title('Compañía')] class extends Component {
     public function socialOptions(): array
     {
         return SocialNetwork::options(states: [true]);
+    }
+
+    /** The tab title comes from translations; a PHP attribute cannot call __(). */
+    public function render(): View
+    {
+        return $this->view()->title(__('company.title'));
     }
 };
 ?>
