@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? config('app.name', 'Atendia') }}</title>
+    {{-- The default comes from translations: a PHP attribute cannot call __(). --}}
+    <title>{{ $title ?? __('wizard.title') }}</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}">
 

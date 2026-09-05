@@ -110,6 +110,7 @@ return [
     ],
 
     'whatsapp' => [
+        'qr_alt' => 'Código QR de ejemplo',
         'qr_step_1' => 'Abre <b>WhatsApp</b> en el teléfono del negocio.',
         'qr_step_2' => 'Ve a <b>Dispositivos vinculados</b>.',
         'qr_step_3' => 'Escanea este código y listo: tu asistente queda de guardia.',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Traits\SuggestsServiceNames;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\BusinessActivityFactory;
@@ -31,6 +32,7 @@ class BusinessActivity extends Model implements DataTable
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
+    use SuggestsServiceNames;
     use TracksUserActions;
 
     /**

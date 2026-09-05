@@ -183,6 +183,12 @@ class Business extends Model
         return $this->hasMany(Service::class);
     }
 
+    /** @return list<string> service names in creation order, as the wizard shows them */
+    public function serviceNames(): array
+    {
+        return $this->services()->orderBy('id')->pluck('name')->all();
+    }
+
     /**
      * The goods this business sells — the universal core the import maps
      * onto; anything beyond it lives in the product's knowledge.
@@ -192,6 +198,12 @@ class Business extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /** @return list<string> product names in creation order, as the wizard shows them */
+    public function productNames(): array
+    {
+        return $this->products()->orderBy('id')->pluck('name')->all();
     }
 
     /**

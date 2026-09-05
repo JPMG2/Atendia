@@ -2,7 +2,6 @@
 
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
@@ -10,7 +9,8 @@ use Livewire\Component;
  * persist through their forms; this class only mirrors their state in memory
  * (by events) to drive the tabs, the checklist and the phone preview.
  */
-new #[Title('Alta de cliente')] #[Layout('layouts::wizard')] class extends Component {
+new #[Layout('layouts::wizard')] class extends Component
+{
     private const int LAST_STEP = 5;
 
     public int $step = 1;

@@ -16,7 +16,8 @@ use Livewire\Component;
  * it when walking back). The name feeds the phone preview live; the province
  * pins the timezone; the sector drives the suggestions of step 3.
  */
-new class extends Component {
+new class extends Component
+{
     use HasNotifications;
 
     public BusinessForm $form;
@@ -80,7 +81,7 @@ new class extends Component {
     #[Computed]
     public function activityOptions(): array
     {
-        $sectorId = BusinessSector::query()->where('code', (string) $this->form->data?->sector)->value('id');
+        $sectorId = BusinessSector::idFromCode((string) $this->form->data?->sector);
 
         return $sectorId === null ? [] : BusinessActivity::options(
             states: [true],

@@ -162,4 +162,36 @@ class Country extends Model implements DataTable
             )
             ->all();
     }
+
+    /**
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @return array<int, array{code: string, flag: string}>
+     */
+    public static function phoneFlags(array $states = []): array
+    {
+        /** @var Builder<self> $query */
+        $query = self::query();
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        return $query->orderBy('name')->get(['iso2', 'phone_code'])
+            ->map(fn (self $country): array => [
+                'code' => (string) $country->phone_code,
+                'flag' => implode('', array_map(
+                    fn (string $letter): string => mb_chr(0x1F1E6 - 65 + ord($letter)),
+                    str_split(strtoupper((string) $country->iso2)),
+                )),
+            ])
+            ->all();
+    }
+
+    /** A nullable id lets callers pass an unset form value without checking first. */
+    public static function dialCode(?int $id): ?string
+    {
+        $code = self::query()->find($id)?->phone_code;
+
+        return $code === null ? null : (string) $code;
+    }
 }

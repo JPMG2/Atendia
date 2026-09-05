@@ -17,7 +17,8 @@ use Livewire\Component;
  * Continuar persists through {@see BusinessForm::saveServices()}, skipping
  * writes nothing.
  */
-new class extends Component {
+new class extends Component
+{
     use HasNotifications;
 
     public BusinessForm $form;
@@ -36,7 +37,7 @@ new class extends Component {
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
-        $this->services = Auth::user()?->business?->services()->orderBy('id')->pluck('name')->all() ?? [];
+        $this->services = Auth::user()?->business?->serviceNames() ?? [];
 
         if ($this->services !== []) {
             $this->dispatch('wizard:services-updated', services: $this->services);
@@ -54,16 +55,14 @@ new class extends Component {
     public function suggestions(): array
     {
         if ($this->activity !== '') {
-            return BusinessActivity::query()->where('code', $this->activity)->first()
-                ?->suggestedServices()->pluck('name')->all() ?? [];
+            return BusinessActivity::suggestionsName(code: $this->activity);
         }
 
         if ($this->sector === '') {
             return [];
         }
 
-        return BusinessSector::query()->where('code', $this->sector)->first()
-            ?->suggestedServices()->pluck('name')->all() ?? [];
+        return BusinessSector::suggestionsName(code: $this->sector);
     }
 
     public function add(?string $name = null): void
@@ -114,15 +113,16 @@ new class extends Component {
 
     <x-ui.card>
         <x-inputsform.input span="long" name="service_draft" wire:model="draft" wire:keydown.enter.prevent="add"
-            :label="__('wizard.fields.service')"
-            :placeholder="__('wizard.fields.service_placeholder')" />
+            :label="__('wizard.fields.service')" :placeholder="__('wizard.fields.service_placeholder')" />
 
         @if ($this->suggestions !== [])
             <p class="wizard-suggest">{{ __('wizard.services.suggest') }}</p>
             <div class="wizard-chips">
                 @foreach ($this->suggestions as $suggestion)
-                    <button type="button" wire:key="suggest-{{ $suggestion }}"
-                            wire:click="add('{{ $suggestion }}')" class="wizard-pill-suggest">
+                    {{-- @js, not an inline quote: an apostrophe in the name would
+                    close the JS string and break the whole expression. --}}
+                    <button type="button" wire:key="suggest-{{ $suggestion }}" wire:click="add(@js($suggestion))"
+                        class="wizard-pill-suggest">
                         + {{ $suggestion }}
                     </button>
                 @endforeach
@@ -134,7 +134,7 @@ new class extends Component {
                 <span wire:key="service-{{ md5($service) }}" class="wizard-pill">
                     {{ $service }}
                     <button type="button" wire:click="remove({{ $index }})"
-                            aria-label="{{ __('wizard.services.remove') }}">×</button>
+                        aria-label="{{ __('wizard.services.remove') }}">×</button>
                 </span>
             @endforeach
         </div>

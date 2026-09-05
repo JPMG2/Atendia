@@ -13,7 +13,8 @@ use Livewire\Component;
  * it cannot answer) plus the business email, where the welcome lands.
  * The QR is still a prop: nothing connects yet.
  */
-new class extends Component {
+new class extends Component
+{
     use HasNotifications;
 
     public BusinessForm $form;
@@ -33,24 +34,14 @@ new class extends Component {
     #[Computed]
     public function phoneCountries(): array
     {
-        return Country::query()->where('is_active', true)->orderBy('name')->get(['iso2', 'phone_code'])
-            ->map(fn (Country $country): array => [
-                'code' => (string) $country->phone_code,
-                'flag' => implode('', array_map(
-                    fn (string $letter): string => mb_chr(0x1F1E6 - 65 + ord($letter)),
-                    str_split(strtoupper((string) $country->iso2)),
-                )),
-            ])
-            ->all();
+        return Country::phoneFlags(states: [true]);
     }
 
     /** The business's own country starts selected: most numbers live there. */
     #[Computed]
     public function defaultDial(): ?string
     {
-        $code = Country::query()->find($this->form->data?->country_id)?->phone_code;
-
-        return $code === null ? null : (string) $code;
+        return Country::dialCode($this->form->data?->country_id);
     }
 
     /** Skipping saves nothing — "conectar después" is a promise kept. */
@@ -78,29 +69,45 @@ new class extends Component {
     <x-ui.card>
         <div class="wizard-frow">
             <x-inputsform.phone span="short" required name="whatsapp_number" alpine-error="whatsapp_number"
-                :countries="$this->phoneCountries" :default-dial="$this->defaultDial"
-                :value="$form->data?->whatsapp_number" wire:model="form.data.whatsapp_number"
-                :label="__('wizard.fields.whatsapp_number')"
-                :placeholder="__('wizard.fields.whatsapp_number_placeholder')"
-                :hint="__('wizard.fields.whatsapp_number_hint')" />
-            <x-inputsform.phone span="short" required name="fallback_whatsapp_number" alpine-error="fallback_whatsapp_number"
-                :countries="$this->phoneCountries" :default-dial="$this->defaultDial"
-                :value="$form->data?->fallback_whatsapp_number" wire:model="form.data.fallback_whatsapp_number"
-                :label="__('wizard.fields.fallback_whatsapp_number')"
-                :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
+                :countries="$this->phoneCountries" :default-dial="$this->defaultDial" :value="$form->data?->whatsapp_number" wire:model="form.data.whatsapp_number"
+                :label="__('wizard.fields.whatsapp_number')" :placeholder="__('wizard.fields.whatsapp_number_placeholder')" :hint="__('wizard.fields.whatsapp_number_hint')" />
+            <x-inputsform.phone span="short" required name="fallback_whatsapp_number"
+                alpine-error="fallback_whatsapp_number" :countries="$this->phoneCountries" :default-dial="$this->defaultDial" :value="$form->data?->fallback_whatsapp_number"
+                wire:model="form.data.fallback_whatsapp_number" :label="__('wizard.fields.fallback_whatsapp_number')" :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
                 :hint="__('wizard.fields.fallback_whatsapp_number_hint')" />
 
-            <x-inputsform.input span="long" type="email" required name="email" alpine-error="email" wire:model="form.data.email"
-                :label="__('wizard.fields.business_email')"
-                :placeholder="__('wizard.fields.business_email_placeholder')"
-                :hint="__('wizard.fields.business_email_hint')" />
+            <x-inputsform.input span="long" type="email" required name="email" alpine-error="email"
+                wire:model="form.data.email" :label="__('wizard.fields.business_email')" :placeholder="__('wizard.fields.business_email_placeholder')" :hint="__('wizard.fields.business_email_hint')" />
         </div>
 
         <div class="wizard-qrbox">
             {{-- The mock QR from the maqueta, not an icon: a QR plate stays
             light in dark mode, like the real one will. --}}
-            <div class="wizard-qr" aria-label="Código QR de ejemplo">
-                <svg viewBox="0 0 100 100" fill="currentColor"><rect x="4" y="4" width="26" height="26" rx="3"/><rect x="10" y="10" width="14" height="14" fill="var(--ink-0)"/><rect x="70" y="4" width="26" height="26" rx="3"/><rect x="76" y="10" width="14" height="14" fill="var(--ink-0)"/><rect x="4" y="70" width="26" height="26" rx="3"/><rect x="10" y="76" width="14" height="14" fill="var(--ink-0)"/><rect x="40" y="8" width="8" height="8"/><rect x="52" y="16" width="8" height="8"/><rect x="40" y="28" width="8" height="8"/><rect x="8" y="40" width="8" height="8"/><rect x="24" y="44" width="8" height="8"/><rect x="40" y="44" width="8" height="8"/><rect x="56" y="40" width="8" height="8"/><rect x="72" y="44" width="8" height="8"/><rect x="88" y="40" width="8" height="8"/><rect x="44" y="58" width="8" height="8"/><rect x="60" y="56" width="8" height="8"/><rect x="80" y="60" width="8" height="8"/><rect x="44" y="74" width="8" height="8"/><rect x="58" y="82" width="8" height="8"/><rect x="74" y="76" width="8" height="8"/><rect x="88" y="88" width="8" height="8"/></svg>
+            <div class="wizard-qr" aria-label="{{ __('wizard.whatsapp.qr_alt') }}">
+                <svg viewBox="0 0 100 100" fill="currentColor">
+                    <rect x="4" y="4" width="26" height="26" rx="3" />
+                    <rect x="10" y="10" width="14" height="14" fill="var(--ink-0)" />
+                    <rect x="70" y="4" width="26" height="26" rx="3" />
+                    <rect x="76" y="10" width="14" height="14" fill="var(--ink-0)" />
+                    <rect x="4" y="70" width="26" height="26" rx="3" />
+                    <rect x="10" y="76" width="14" height="14" fill="var(--ink-0)" />
+                    <rect x="40" y="8" width="8" height="8" />
+                    <rect x="52" y="16" width="8" height="8" />
+                    <rect x="40" y="28" width="8" height="8" />
+                    <rect x="8" y="40" width="8" height="8" />
+                    <rect x="24" y="44" width="8" height="8" />
+                    <rect x="40" y="44" width="8" height="8" />
+                    <rect x="56" y="40" width="8" height="8" />
+                    <rect x="72" y="44" width="8" height="8" />
+                    <rect x="88" y="40" width="8" height="8" />
+                    <rect x="44" y="58" width="8" height="8" />
+                    <rect x="60" y="56" width="8" height="8" />
+                    <rect x="80" y="60" width="8" height="8" />
+                    <rect x="44" y="74" width="8" height="8" />
+                    <rect x="58" y="82" width="8" height="8" />
+                    <rect x="74" y="76" width="8" height="8" />
+                    <rect x="88" y="88" width="8" height="8" />
+                </svg>
             </div>
             <ol class="wizard-qr-steps">
                 <li>{!! __('wizard.whatsapp.qr_step_1') !!}</li>
@@ -122,29 +129,33 @@ new class extends Component {
 </div>
 
 @script
-<script>
-    // Front mirror of the connection rules: connecting for real demands the
-    // three fields — "conectar después" skips this guard entirely.
-    Alpine.data('stepWhatsappGuard', () => ({
-        errors: {},
+    <script>
+        // Front mirror of the connection rules: connecting for real demands the
+        // three fields — "conectar después" skips this guard entirely.
+        Alpine.data('stepWhatsappGuard', () => ({
+            errors: {},
 
-        guard() {
-            const data = this.$wire.form.data ?? {};
+            guard() {
+                const data = this.$wire.form.data ?? {};
 
-            this.errors = validate({
-                whatsapp_number: data.whatsapp_number,
-                fallback_whatsapp_number: data.fallback_whatsapp_number,
-                email: data.email,
-            }, {
-                whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
-                fallback_whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
-                email: ['required', 'email', ['maxLength', 255]],
-            });
+                this.errors = validate({
+                    whatsapp_number: data.whatsapp_number,
+                    fallback_whatsapp_number: data.fallback_whatsapp_number,
+                    email: data.email,
+                }, {
+                    whatsapp_number: ['required', 'phone', ['minLength', 6],
+                        ['maxLength', 30]
+                    ],
+                    fallback_whatsapp_number: ['required', 'phone', ['minLength', 6],
+                        ['maxLength', 30]
+                    ],
+                    email: ['required', 'email', ['maxLength', 255]],
+                });
 
-            if (Object.keys(this.errors).length === 0) {
-                this.$wire.finish();
-            }
-        },
-    }));
-</script>
+                if (Object.keys(this.errors).length === 0) {
+                    this.$wire.finish();
+                }
+            },
+        }));
+    </script>
 @endscript

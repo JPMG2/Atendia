@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Traits\SuggestsServiceNames;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\BusinessSectorFactory;
@@ -31,6 +32,7 @@ class BusinessSector extends Model implements DataTable
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
+    use SuggestsServiceNames;
     use TracksUserActions;
 
     /**
@@ -188,5 +190,13 @@ class BusinessSector extends Model implements DataTable
                 ],
             )
             ->all();
+    }
+
+    public static function idFromCode(string $code): ?int
+    {
+        /** @var Builder<self> $query */
+        $query = self::query();
+
+        return $query->where('code', $code)->value('id');
     }
 }

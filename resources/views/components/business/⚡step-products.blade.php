@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 /**
@@ -20,13 +21,14 @@ use Livewire\WithFileUploads;
  * queued job does the heavy write. The manual list persists through
  * {@see BusinessForm::saveProducts()}. Skipping writes nothing.
  */
-new class extends Component {
+new class extends Component
+{
     use HasNotifications;
     use WithFileUploads;
 
     public BusinessForm $form;
 
-    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    /** @var TemporaryUploadedFile|null */
     public $upload = null;
 
     /** @var list<string> */
@@ -63,7 +65,7 @@ new class extends Component {
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
-        $this->products = Auth::user()?->business?->products()->orderBy('id')->pluck('name')->all() ?? [];
+        $this->products = Auth::user()?->business?->productNames() ?? [];
         $this->knownProducts = $this->products;
 
         if ($this->products !== []) {
@@ -89,7 +91,7 @@ new class extends Component {
 
         try {
             $summary = app(ImportFileReader::class)->read($this->upload->getRealPath());
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $summary = ['headers' => [], 'samples' => [], 'total_rows' => 0];
         }
 

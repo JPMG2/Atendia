@@ -8,6 +8,7 @@ use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Js;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -50,6 +51,18 @@ test('finishing writes the list and a suggested name adopts its type', function 
     expect($business->services()->where('name', 'Corte de caballero')->value('service_type_id'))
         ->toBe($suggestion->service_type_id)
         ->and($business->services()->where('name', 'Ecodoppler')->first()?->service_type_id)->toBeNull();
+});
+
+test('a suggestion with an apostrophe renders a valid click expression', function (): void {
+    actingAsOwner();
+    $suggestion = SuggestedService::factory()->create(['name' => "Corte D'Angelo"]);
+
+    // The chip must reach the page as a safe JS literal — a raw quote would
+    // close the wire:click string and break the expression.
+    Livewire::test('business.step-services', ['activity' => $suggestion->activity->code])
+        ->assertSeeHtml('add('.Js::from("Corte D'Angelo")->toHtml().')')
+        ->call('add', "Corte D'Angelo")
+        ->assertSet('services', ["Corte D'Angelo"]);
 });
 
 test('a service dropped from the list leaves softly on finish', function (): void {
