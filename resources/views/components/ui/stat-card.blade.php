@@ -21,10 +21,10 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'stat-card']) }}>
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-3">
         <span class="stat-label">{{ $label }}</span>
         @if ($icon)
-            <span class="stat-icon" style="background:{{ $bg }};color:{{ $fg }};"><x-icon :name="$icon" :size="20" /></span>
+            <span class="stat-icon" style="background:{{ $bg }};color:{{ $fg }};"><x-icon :name="$icon" :size="16" /></span>
         @endif
     </div>
     <div class="flex items-baseline gap-2.5 flex-wrap">

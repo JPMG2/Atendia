@@ -84,9 +84,15 @@ new class extends Component
                         <span>{{ __('client.setup.steps.'.$key.'.hint') }}</span>
                     </div>
                     @unless ($completed)
-                        <x-ui.button :variant="$key === 'whatsapp' ? 'primary' : 'secondary'" size="sm">
-                            {{ __('client.setup.steps.'.$key.'.cta') }}
-                        </x-ui.button>
+                        @if ($key === 'business')
+                            <x-ui.button variant="secondary" size="sm" :href="route('my-business')" wire:navigate>
+                                {{ __('client.setup.steps.'.$key.'.cta') }}
+                            </x-ui.button>
+                        @else
+                            <x-ui.button :variant="$key === 'whatsapp' ? 'primary' : 'secondary'" size="sm">
+                                {{ __('client.setup.steps.'.$key.'.cta') }}
+                            </x-ui.button>
+                        @endif
                     @endunless
                 </div>
             @endforeach
@@ -97,16 +103,18 @@ new class extends Component
         state beats a naked zero (NN/g empty-state guidance). --}}
         <div class="preview-grid">
             <x-ui.card class="preview-card">
-                <span class="preview-icon"><x-icon name="message-circle" :size="20" /></span>
-                <h3>{{ __('client.previews.conversations_title') }}</h3>
+                <div class="preview-head">
+                    <span class="preview-icon"><x-icon name="message-circle" :size="16" /></span>
+                    <h3>{{ __('client.previews.conversations_title') }}</h3>
+                </div>
                 <p>{{ __('client.previews.conversations_text') }}</p>
-                <div class="preview-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>
             </x-ui.card>
             <x-ui.card class="preview-card">
-                <span class="preview-icon"><x-icon name="bar-chart-3" :size="20" /></span>
-                <h3>{{ __('client.previews.metrics_title') }}</h3>
+                <div class="preview-head">
+                    <span class="preview-icon"><x-icon name="bar-chart-3" :size="16" /></span>
+                    <h3>{{ __('client.previews.metrics_title') }}</h3>
+                </div>
                 <p>{{ __('client.previews.metrics_text') }}</p>
-                <div class="preview-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>
             </x-ui.card>
         </div>
     @else

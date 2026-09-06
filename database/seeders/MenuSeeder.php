@@ -25,7 +25,21 @@ class MenuSeeder extends Seeder
         // Client panel, main group (items default to the 'client' panel).
         Menu::create(['label_key' => 'menu.home', 'icon' => 'layout-dashboard', 'route_name' => 'dashboard', 'sort_order' => 1]);
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'sort_order' => 2]);
-        Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'sort_order' => 3]);
+        // "Mi negocio" opens the whole profile; its children deep-link one
+        // section each (LinkedIn-style: update just the piece you came for).
+        // Labels reuse the section titles so menu and screen never diverge.
+        $myBusiness = Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'route_name' => 'my-business', 'sort_order' => 3]);
+        $profileSections = [
+            ['client.business.identity.title', 'sparkles', 'my-business.identidad'],
+            ['client.business.location.title', 'map-pin', 'my-business.ubicacion'],
+            ['client.business.hours.title', 'clock', 'my-business.horarios'],
+            ['client.business.contact.title', 'at-sign', 'my-business.contacto'],
+            ['client.business.social.title', 'share-2', 'my-business.redes'],
+            ['client.business.billing.title', 'receipt', 'my-business.facturacion'],
+        ];
+        foreach ($profileSections as $order => [$labelKey, $icon, $routeName]) {
+            Menu::create(['parent_id' => $myBusiness->id, 'label_key' => $labelKey, 'icon' => $icon, 'route_name' => $routeName, 'sort_order' => $order + 1]);
+        }
         Menu::create(['label_key' => 'menu.services', 'icon' => 'briefcase', 'sort_order' => 4]);
         Menu::create(['label_key' => 'menu.products', 'icon' => 'package', 'sort_order' => 5]);
         Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'sort_order' => 6]);

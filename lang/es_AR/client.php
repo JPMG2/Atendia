@@ -32,4 +32,28 @@ return [
     'kpis' => [
         'handoffs' => 'Derivadas a vos',
     ],
+
+    'business' => [
+        'try' => [
+            'button' => 'Probalo ahora',
+        ],
+        'identity' => [
+            'description_hint' => 'Tu asistente la usa para presentarse. Contá qué hacés y qué te hace distinto.',
+        ],
+        'location' => [
+            'sub' => 'Si atendés en un local, tu asistente puede pasar la dirección cuando se la pidan.',
+            'question' => '¿Atendés clientes en un local?',
+        ],
+        'billing' => [
+            'natural_hint' => '¿No tenés datos fiscales? Sin problema: tu factura sale a tu nombre, como persona natural.',
+        ],
+        'meter' => [
+            'todo_logo' => 'Subí tu logo',
+            'todo_hours' => 'Cargá tus horarios',
+            'todo_currency' => 'Elegí tu moneda',
+        ],
+        'preview' => [
+            'caption' => 'La descripción y el logo salen acá.',
+        ],
+    ],
 ];

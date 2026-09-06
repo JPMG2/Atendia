@@ -23,6 +23,20 @@ Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('dashboard');
 
+// "Mi negocio": living mock-up of the business profile, same lock as the panel.
+Route::get('/negocio', fn () => view('my-business'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-business');
+
+// One deep link per profile section (LinkedIn-style "update just this piece"):
+// same screen, one card. Named one by one because the menu resolves bare
+// route names, and the literal slug is what keeps the component lookup safe.
+foreach (['identidad', 'ubicacion', 'horarios', 'contacto', 'redes', 'facturacion'] as $slug) {
+    Route::get("/negocio/{$slug}", fn () => view('my-business', ['section' => $slug]))
+        ->middleware(['auth', 'verified', 'permission:access-client-app'])
+        ->name("my-business.{$slug}");
+}
+
 // Client onboarding wizard. It writes real data now, so it sits behind the
 // client-panel lock. No 'verified': the welcome tour must not wait for the
 // verification mail.

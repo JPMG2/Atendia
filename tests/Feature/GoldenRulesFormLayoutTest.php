@@ -63,10 +63,10 @@ test('a form row is a flex line, and something in it can absorb the leftover', f
     // A 3-letter code must NOT stretch — the name is what takes the space, which
     // is why `f-code` has grow 0. The invariant is therefore per ROW: a row built
     // only out of codes would stop short of the right edge.
-    expect(cssRule('.catalog-form .form-row'))->toContain('display:flex');
+    expect(cssRule('.form-row'))->toContain('display:flex');
 
     $css = File::get(resource_path('css/app.css'));
-    preg_match_all('/\.catalog-form \.(f-\w+)\s*\{\s*flex:\s*(\d+)/', $css, $spans, PREG_SET_ORDER);
+    preg_match_all('/\.form-row > \.(f-\w+)\s*\{\s*flex:\s*(\d+)/', $css, $spans, PREG_SET_ORDER);
 
     $absorbs = collect($spans)
         ->filter(fn (array $span): bool => (int) $span[2] > 0)
@@ -97,7 +97,7 @@ test('a field message stays far closer to its own control than to the next row',
     // rows. If the three distances are similar the eye cannot tell which field
     // the error belongs to, so the row gap has to dominate.
     $betweenRows = gapPx(cssRule('.catalog-form'));
-    $insideRow = gapPx(cssRule('.catalog-form .form-row'));
+    $insideRow = gapPx(cssRule('.form-row'));
     $controlToMessage = cssRule('.field');
 
     preg_match('/gap:\s*(\.?[\d.]+)rem/', $controlToMessage, $match);

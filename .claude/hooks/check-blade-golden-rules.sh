@@ -38,6 +38,7 @@ components/inputsform/select.blade.php
 components/inputsform/combobox.blade.php
 components/inputsform/file.blade.php
 components/inputsform/phone.blade.php
+components/inputsform/textarea.blade.php
 components/text-input.blade.php
 auth/reset-password.blade.php
 "

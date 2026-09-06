@@ -31,6 +31,7 @@ const RAW_CONTROL_ALLOWLIST = [
     'components/inputsform/combobox.blade.php', // idem: autocomplete select (search input + hidden value)
     'components/inputsform/file.blade.php', // idem: the drop zone over a native file input
     'components/inputsform/phone.blade.php', // idem: dial select + national number over a hidden composite
+    'components/inputsform/textarea.blade.php', // idem: the multiline sibling of input
     'components/text-input.blade.php',  // Breeze legacy primitive
     'auth/reset-password.blade.php',    // hidden token input (Breeze)
 ];

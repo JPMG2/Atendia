@@ -119,7 +119,8 @@
                 <div class="app-page-header">{{ $header }}</div>
             @endisset
 
-            <main class="app-content">
+            {{-- The shell stays still: only this region animates between SPA visits. --}}
+            <main class="app-content" wire:transition.navigate>
                 {{ $slot }}
             </main>
         </div>
