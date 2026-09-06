@@ -53,13 +53,15 @@ test('picking services reports success even though the business row is untouched
         );
 });
 
-test('re-saving the same list honestly says nothing changed', function (): void {
+test('re-saving the same list advances in silence: Continuar is navigation', function (): void {
     $business = actingAsOwner();
     $business->services()->create(['name' => 'Ecodoppler']);
 
+    // Toasting "nothing changed" here read as "you did something wrong".
     Livewire::test('business.step-services')
         ->call('finish')
-        ->assertDispatched('notify', message: __('notifications.no_changes'));
+        ->assertNotDispatched('notify')
+        ->assertDispatched('wizard:step-completed', step: 3);
 });
 
 test('finishing writes the list and a suggested name adopts its type', function (): void {

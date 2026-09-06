@@ -137,7 +137,7 @@ new class extends Component
     {
         $notification = $this->form->saveIdentity();
 
-        $this->dispatchNotification($notification);
+        $this->dispatchChangeNotification($notification);
 
         if ($notification->type === NotificationType::Error) {
             return;

@@ -1,3 +1,7 @@
+{{-- Memoized: dozens of repeats per page, output depends only on the props
+     and the static config — never on auth, session or queries. --}}
+@blaze(memo: true)
+
 @props([
     'name',
     'size' => 20,

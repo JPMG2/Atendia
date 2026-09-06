@@ -95,7 +95,7 @@ new class extends Component
         if (! $skipped) {
             $notification = $this->form->saveServices($this->services);
 
-            $this->dispatchNotification($notification);
+            $this->dispatchChangeNotification($notification);
 
             if ($notification->type === NotificationType::Error) {
                 return;

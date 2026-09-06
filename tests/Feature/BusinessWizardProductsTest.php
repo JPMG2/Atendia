@@ -91,6 +91,17 @@ test('finishing never deletes what the import wrote behind the screen', function
         ->toBe(['Eco doppler', 'Eco vaginal', 'Vacuna antigripal']);
 });
 
+test('continuing with nothing loaded advances in silence, no scolding toast', function (): void {
+    actingAsShopOwner();
+
+    // Caught live on 2026-09-06: an empty Continuar toasted "nothing
+    // changed" and the person read it as their own mistake.
+    Livewire::test('business.step-products')
+        ->call('finish')
+        ->assertNotDispatched('notify')
+        ->assertDispatched('wizard:step-completed', step: 4);
+});
+
 test('skipping the step writes nothing, as promised', function (): void {
     actingAsShopOwner();
 

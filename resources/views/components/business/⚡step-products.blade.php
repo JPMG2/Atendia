@@ -270,7 +270,7 @@ new class extends Component
         if (! $skipped) {
             $notification = $this->form->saveProducts($this->products, $this->knownProducts);
 
-            $this->dispatchNotification($notification);
+            $this->dispatchChangeNotification($notification);
 
             if ($notification->type === NotificationType::Error) {
                 return;
