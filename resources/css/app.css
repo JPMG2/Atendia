@@ -816,7 +816,7 @@
   /* ---- StatCard ---- */
   .stat-card {
     background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-card);
-    padding:var(--space-5); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:12px;
+    padding:var(--space-5) var(--space-6); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:12px;
   }
   .stat-label { font-size:var(--text-sm); font-weight:var(--weight-medium); color:var(--text-muted); }
   .stat-value { font-family:var(--font-display); font-size:var(--text-3xl); font-weight:var(--weight-bold); color:var(--text-strong); letter-spacing:-0.02em; line-height:1; }
@@ -908,6 +908,83 @@
                      letter-spacing:-0.02em; color:var(--text-strong); }
   .page-head-sub { color:var(--text-muted); margin-top:4px; }
   .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+  /* --- Inicio del cliente: switch de maqueta + guía de configuración --- */
+  .mock-switch { display:inline-flex; gap:4px; padding:4px; border:1px solid var(--border-subtle);
+                 border-radius:999px; background:var(--surface-sunken); }
+  .mock-switch button { border:0; background:transparent; color:var(--text-muted); font:inherit;
+                        font-size:var(--text-sm); font-weight:600; padding:6px 14px; border-radius:999px;
+                        cursor:pointer; transition:background var(--dur-fast) var(--ease-out),
+                        color var(--dur-fast) var(--ease-out); }
+  .mock-switch button.is-active { background:var(--surface-card); color:var(--text-strong);
+                                  box-shadow:var(--shadow-sm); }
+
+  /* Regla de oro: un card jamás entrega contenido pegado a su borde. */
+  .setup-card, .preview-card, .recent-card { padding:var(--space-5) var(--space-6); }
+
+  .setup-card { margin-bottom:24px; }
+  .setup-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .setup-head h2 { font-family:var(--font-display); font-size:var(--text-xl); letter-spacing:-0.01em;
+                   color:var(--text-strong); }
+  .setup-head p { color:var(--text-muted); margin-top:2px; font-size:var(--text-sm); }
+  .setup-count { color:var(--text-subtle); font-size:var(--text-sm); white-space:nowrap; }
+  .setup-bar { height:8px; border-radius:999px; background:var(--surface-sunken); overflow:hidden;
+               margin:12px 0 8px; }
+  .setup-bar i { display:block; height:100%; border-radius:999px; background:var(--brand);
+                 transition:width var(--dur-base) var(--ease-out); }
+
+  /* Compact stacked list, Tailwind UI style: rows share hairline borders and
+     only the group's ends are rounded; the highlighted row pops as a whole. */
+  .setup-list { margin-top:12px; }
+  .setup-step { display:flex; align-items:center; gap:12px; padding:10px 14px; margin-top:-1px;
+                position:relative; border:1px solid var(--border-subtle);
+                transition:background var(--dur-fast) var(--ease-out),
+                border-color var(--dur-fast) var(--ease-out); }
+  .setup-step:first-child { margin-top:0; border-radius:var(--radius-md) var(--radius-md) 0 0; }
+  .setup-step:last-child { border-radius:0 0 var(--radius-md) var(--radius-md); }
+  .setup-step:not(.is-done):hover { background:var(--surface-sunken); z-index:1;
+                                    border-color:var(--border-default); }
+  .setup-step.is-hero { background:var(--brand-soft); border-color:var(--brand-border); z-index:1; }
+  .setup-step.is-hero .setup-copy b { color:var(--brand-soft-text); }
+  .setup-step.is-hero:not(.is-done):hover { background:var(--brand-soft); border-color:var(--brand); }
+  .setup-tick { flex:none; width:24px; height:24px; border-radius:999px; display:inline-flex;
+                align-items:center; justify-content:center; border:2px solid var(--border-default);
+                color:var(--text-on-brand); }
+  .setup-step.is-done .setup-tick { background:var(--brand); border-color:var(--brand); }
+  .setup-step.is-done .setup-copy b { color:var(--text-muted); }
+  .setup-copy { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .setup-copy b { color:var(--text-strong); font-weight:600; }
+  .setup-copy span { color:var(--text-muted); font-size:var(--text-sm); }
+  .setup-step.is-hero { background:var(--brand-soft); border-color:var(--border-subtle); }
+  .setup-step.is-hero .setup-tick { border-color:var(--brand); }
+
+  .preview-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .preview-icon { width:38px; height:38px; border-radius:12px; display:inline-flex; align-items:center;
+                  justify-content:center; background:var(--brand-soft); color:var(--brand-soft-text); }
+  .preview-card h3 { font-family:var(--font-display); font-size:var(--text-base);
+                     color:var(--text-strong); margin-top:10px; }
+  .preview-card p { color:var(--text-muted); font-size:var(--text-sm); margin-top:4px; }
+  .preview-skeleton { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .preview-skeleton i { height:10px; border-radius:999px; background:var(--surface-sunken); }
+  .preview-skeleton i:nth-child(2) { width:78%; }
+  .preview-skeleton i:nth-child(3) { width:56%; }
+
+  .recent-card { margin-top:24px; }
+  .recent-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .recent-head h3 { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong); }
+  .recent-row { display:flex; align-items:center; gap:12px; padding:10px 0;
+                border-top:1px solid var(--border-subtle); }
+  .recent-copy { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .recent-copy b { color:var(--text-strong); font-weight:600; font-size:var(--text-sm); }
+  .recent-copy span { color:var(--text-muted); font-size:var(--text-sm); overflow:hidden;
+                      text-overflow:ellipsis; white-space:nowrap; }
+  .recent-time { color:var(--text-subtle); font-size:var(--text-xs); }
+
+  @media (max-width:600px) {
+    .setup-step { flex-wrap:wrap; }
+    .setup-step .btn { margin-left:36px; }
+    .preview-grid { grid-template-columns:1fr; }
+  }
 
   /* --- Responsive: sidebar → drawer --- */
   @media (max-width:860px) {

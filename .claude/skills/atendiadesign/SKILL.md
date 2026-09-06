@@ -73,6 +73,21 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 - Motion calmo: `--dur-fast` (140ms) hovers, `--dur-base` (220ms) transiciones, `--ease-out` por defecto.
   `--ease-spring` solo en micro-interacciones (knob del switch). Respetar `prefers-reduced-motion`.
 
+### Densidad y respiración — REGLAS DE ORO (2026-09-06, pedidas por el dueño)
+
+1. **Primer impacto compacto.** El primer pantallazo es el más importante: listas,
+   checklists y grillas SIN aire muerto entre filas (filas de lista ~8-10px de
+   padding vertical, no 14+). Compactar es acomodar mejor, jamás recortar contenido.
+2. **Nada pegado al borde.** Todo contenedor (card, panel, modal) da respiración
+   interna de **20–24px** (`--space-5`/`--space-6`). OJO: el `.card` base NO trae
+   padding — cada uso debe dárselo. Un texto o icono tocando el borde es un BUG.
+3. **Hover en todo lo accionable.** Toda fila o elemento que invita a actuar
+   responde al puntero (wash `--surface-sunken` o borde, `--dur-fast`). Una lista
+   de acciones sin hover está incompleta.
+4. **Diseño repetido = componente.** Todo bloque visual usado en más de un lugar
+   vive como componente Blade (`<x-ui.*>`), jamás copy-paste de markup (los KPI
+   son `<x-ui.stat-card>`: arreglarlo ahí lo arregla en todos lados).
+
 ### Estados de interacción
 - **Hover:** botón primario `brightness(.95)` + mantiene sombra; card `translateY(-3px)` + borde jade; ghost/icon se rellena con `--surface-sunken`.
 - **Press:** `scale(.97)`. **Focus:** halo de `--focus-ring` + outline; **nunca** quitar el focus ring. **Disabled:** ~55% opacidad, `not-allowed`.
@@ -153,6 +168,9 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
       Detalle: `.ai/guidelines/formularios.md` §5.
 - [ ] **Mirar el formulario CON un error a la vista.** Al mostrarse, el campo crece y el
       mensaje queda entre dos filas: tiene que leerse pegado a SU campo, no al de abajo.
+- [ ] **Densidad y respiración:** compacto sin aire muerto entre filas; ningún
+      contenido pegado al borde de su contenedor (20–24px); hover visible en todo
+      lo accionable; bloques repetidos extraídos a componente.
 - [ ] **Test Pest (en inglés)** que cubra el render y la regla relevante.
 - [ ] **Responsive + dark/light** verificados (los 3 mandatos de arriba).
 

@@ -10,10 +10,11 @@ use Illuminate\Database\Seeder;
 class MenuSeeder extends Seeder
 {
     /**
-     * Seeds the temporary dashboard navigation.
+     * Seeds the dashboard navigation for both panels.
      *
-     * A skeleton: the options will change as the product grows. It includes a
-     * nested branch to exercise the recursive, arbitrary-depth tree.
+     * The client sections are the six blessed on 2026-09-06 (research pass:
+     * Mercado Libre, Amazon, Meta, GBP + NN/g): see first, then feed the
+     * assistant, then connect. Routes arrive with each screen.
      */
     public function run(): void
     {
@@ -21,20 +22,15 @@ class MenuSeeder extends Seeder
         // (children cascade on delete). Safe — menus is seed data, not user data.
         Menu::query()->delete();
 
-        // Main navigation group.
+        // Client panel, main group (items default to the 'client' panel).
         Menu::create(['label_key' => 'menu.home', 'icon' => 'layout-dashboard', 'route_name' => 'dashboard', 'sort_order' => 1]);
-        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'badge' => '3', 'sort_order' => 2]);
-        Menu::create(['label_key' => 'menu.agenda', 'icon' => 'calendar', 'badge' => '12', 'sort_order' => 3]);
+        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'sort_order' => 2]);
+        Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'sort_order' => 3]);
+        Menu::create(['label_key' => 'menu.services', 'icon' => 'briefcase', 'sort_order' => 4]);
+        Menu::create(['label_key' => 'menu.products', 'icon' => 'package', 'sort_order' => 5]);
+        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'sort_order' => 6]);
 
-        $products = Menu::create(['label_key' => 'menu.products', 'icon' => 'package', 'sort_order' => 4]);
-        Menu::create(['parent_id' => $products->id, 'label_key' => 'menu.products_catalog', 'icon' => 'store', 'sort_order' => 1]);
-
-        $categories = Menu::create(['parent_id' => $products->id, 'label_key' => 'menu.products_categories', 'icon' => 'sliders-horizontal', 'sort_order' => 2]);
-        Menu::create(['parent_id' => $categories->id, 'label_key' => 'menu.products_categories_active', 'icon' => 'check', 'sort_order' => 1]);
-
-        Menu::create(['label_key' => 'menu.metrics', 'icon' => 'bar-chart-3', 'sort_order' => 5]);
-
-        // Bottom navigation group. Client items default to the 'client' panel.
+        // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'profile.edit', 'placement' => 'bottom', 'sort_order' => 1]);
         Menu::create(['label_key' => 'menu.help', 'icon' => 'life-buoy', 'placement' => 'bottom', 'sort_order' => 2]);
 

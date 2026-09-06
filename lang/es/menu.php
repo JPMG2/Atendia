@@ -23,12 +23,10 @@ return [
 
     'home' => 'Inicio',
     'conversations' => 'Conversaciones',
-    'agenda' => 'Agenda',
+    'my_business' => 'Mi negocio',
+    'services' => 'Servicios',
     'products' => 'Productos',
-    'products_catalog' => 'Catálogo',
-    'products_categories' => 'Categorías',
-    'products_categories_active' => 'Activas',
-    'metrics' => 'Métricas',
+    'whatsapp' => 'WhatsApp',
     'settings' => 'Ajustes',
     'help' => 'Ayuda',
 

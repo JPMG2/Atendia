@@ -299,10 +299,11 @@ test('with no province chosen the region combobox comes up empty', function (): 
 });
 
 test('editing an existing company opens the cascade already filled in', function (): void {
-    // The record only stores the region: if country and province were not derived
-    // from it, both combobox above would come up empty and their own lists would
-    // be empty too, so the screen would look like the address was never loaded.
-    $region = Region::factory()->create(['name' => 'Cuyo']);
+    // The record only stores the region; country and province derive from it.
+    // The province name is pinned: toContain() reads RAW html, and a Faker
+    // city with an apostrophe ("L' Pantoja") arrives escaped — flaked once.
+    $province = Province::factory()->create(['name' => 'Mendoza']);
+    $region = Region::factory()->create(['name' => 'Cuyo', 'province_id' => $province->id]);
     Company::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs(companyAdmin());

@@ -64,16 +64,28 @@ test('the tree reflects newly added menu items', function (): void {
     expect(Menu::tree())->toHaveCount(2);
 });
 
-test('the seeder builds the temporary dashboard tree with nesting', function (): void {
+test('the seeder builds the blessed client menu in its logical order', function (): void {
     $this->seed(MenuSeeder::class);
 
     $tree = Menu::tree();
-    $products = $tree->firstWhere('label_key', 'menu.products');
 
-    expect($tree->where('placement', 'main'))->toHaveCount(5)
-        ->and($tree->where('placement', 'bottom'))->toHaveCount(2)
-        ->and($products->childrenRecursive)->toHaveCount(2)
-        ->and($products->childrenRecursive->firstWhere('label_key', 'menu.products_categories')->childrenRecursive)->toHaveCount(1);
+    // See first, then feed the assistant, then connect (blessed 2026-09-06).
+    expect($tree->where('placement', 'main')->pluck('label_key')->values()->all())->toBe([
+        'menu.home', 'menu.conversations', 'menu.my_business',
+        'menu.services', 'menu.products', 'menu.whatsapp',
+    ])->and($tree->where('placement', 'bottom'))->toHaveCount(2);
+});
+
+test('the tree nests children to arbitrary depth', function (): void {
+    $parent = Menu::factory()->create(['label_key' => 'menu.products']);
+    $child = Menu::factory()->create(['parent_id' => $parent->id, 'label_key' => 'menu.services']);
+    Menu::factory()->create(['parent_id' => $child->id, 'label_key' => 'menu.whatsapp']);
+
+    $tree = Menu::tree();
+
+    expect($tree)->toHaveCount(1)
+        ->and($tree->first()->childrenRecursive)->toHaveCount(1)
+        ->and($tree->first()->childrenRecursive->first()->childrenRecursive)->toHaveCount(1);
 });
 
 test('the tree only returns items for the requested panel', function (): void {

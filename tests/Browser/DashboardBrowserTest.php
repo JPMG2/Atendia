@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Menu;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -24,21 +25,24 @@ test('the dashboard loads with no JS errors and renders the recursive menu', fun
         ->assertNoConsoleLogs()
         ->assertSee('Inicio')
         ->assertSee('Productos')
-        ->assertSee('Crear mi asistente');
+        ->assertSee('Tu asistente está listo al 20%');
 });
 
 test('clicking a parent item expands its nested children (Alpine)', function (): void {
-    $this->seed(MenuSeeder::class);
+    // The blessed client menu is flat, so recursion gets its own fixture.
+    $parent = Menu::factory()->create(['label_key' => 'menu.products']);
+    $child = Menu::factory()->create(['parent_id' => $parent->id, 'label_key' => 'menu.services']);
+    Menu::factory()->create(['parent_id' => $child->id, 'label_key' => 'menu.whatsapp']);
     $this->actingAs(User::factory()->create());
 
     $page = visit('/dashboard');
 
     // The nested branch is collapsed until its parent is clicked.
-    $page->assertDontSee('Activas')
+    $page->assertDontSee('WhatsApp')
         ->click('Productos')
-        ->assertSee('Catálogo')
-        ->click('Categorías')
-        ->assertSee('Activas');
+        ->assertSee('Servicios')
+        ->click('Servicios')
+        ->assertSee('WhatsApp');
 });
 
 test('the theme toggle switches between light and dark', function (): void {

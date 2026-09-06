@@ -8,6 +8,15 @@ metadata:
 
 # Tailwind CSS Development
 
+## Composition patterns (AtendIa) — READ THIS FIRST
+
+Before building any screen or block, read [reference/patterns.md](reference/patterns.md):
+curated Tailwind UI composition techniques (stacked lists, selector-driven states,
+hover rows, empty states, setup guides) translated to this project's token system,
+plus the v4→v3 syntax table. Tailwind Plus blocks are always TRANSLATED to house
+tokens, never pasted; to view a licensed block, use the Claude in Chrome extension
+on the owner's logged-in session (never ask for credentials).
+
 ## Documentation
 
 Use `search-docs` for detailed Tailwind CSS v3 patterns and documentation.

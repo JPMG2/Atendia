@@ -16,14 +16,16 @@ beforeEach(function (): void {
 });
 
 test('the navigation renders the active menu tree to arbitrary depth', function (): void {
-    $this->seed(MenuSeeder::class);
+    // The blessed client menu is flat, so recursion gets its own fixture.
+    $parent = Menu::factory()->create(['label_key' => 'menu.products']);
+    $child = Menu::factory()->create(['parent_id' => $parent->id, 'label_key' => 'menu.services']);
+    Menu::factory()->create(['parent_id' => $child->id, 'label_key' => 'menu.whatsapp']);
+    Menu::factory()->create(['label_key' => 'menu.settings', 'placement' => 'bottom']);
 
     Livewire::test('navigation')
-        ->assertSee('Inicio')        // root
         ->assertSee('Productos')     // root with children
-        ->assertSee('Catálogo')      // depth 2
-        ->assertSee('Categorías')    // depth 2 (has its own child)
-        ->assertSee('Activas')       // depth 3 — proves recursion
+        ->assertSee('Servicios')     // depth 2
+        ->assertSee('WhatsApp')      // depth 3 — proves recursion
         ->assertSee('Ajustes');      // bottom group
 });
 
@@ -46,7 +48,7 @@ test('the dashboard renders the sidebar navigation and skeleton for an authentic
         ->assertSuccessful()
         ->assertSee('Inicio')
         ->assertSee('Conversaciones')
-        ->assertSee('Crear mi asistente');
+        ->assertSee('Tu asistente está listo al 20%');
 });
 
 test('the admin panel shows the admin menu, not the client menu', function (): void {
