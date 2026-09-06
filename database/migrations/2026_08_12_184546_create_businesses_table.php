@@ -30,6 +30,18 @@ return new class extends Migration
             $table->string('fallback_whatsapp_number', 30)->nullable()->comment('WhatsApp de una persona: acá se derivan los mensajes que la IA no puede responder');
             $table->string('email')->nullable()->comment('Correo de contacto del negocio: acá llega la bienvenida y el contacto público');
             $table->string('web')->nullable()->comment('Sitio web del negocio, para su perfil público');
+            $table->string('logo_path')->nullable()->comment('Logo del negocio, uno solo para ambos temas');
+            $table->string('address')->nullable()->comment('Calle y número del local, si atiende en uno');
+            $table->string('city')->nullable()->comment('Ciudad del local: la provincia sola no lo ubica');
+            $table->boolean('has_premises')->nullable()->comment('¿Atiende en un local? Null = todavía no respondió (patrón GBP)');
+            $table->text('description')->nullable()->comment('Presentación corta del negocio: la IA la usa para presentarse y responder mejor');
+            $table->foreignId('currency_id')->nullable()->constrained()->restrictOnDelete()
+                ->comment('Moneda legal en la que publica sus precios');
+            $table->foreignId('reference_currency_id')->nullable()->constrained('currencies')->restrictOnDelete()
+                ->comment('Moneda de referencia mostrada junto al precio (el "Ref" venezolano: Bs por ley, USD real)');
+            $table->foreignId('tax_condition_id')->nullable()->constrained()->restrictOnDelete()
+                ->comment('Condición fiscal del negocio; null = persona natural sin datos fiscales, válido');
+            $table->string('tax_id', 20)->nullable()->comment('Número de identificación fiscal (RIF / CUIT), si lo tiene');
             $table->boolean('is_active')->default(true)->comment('Cortar el servicio sin borrar datos');
             $table->timestamps();
 

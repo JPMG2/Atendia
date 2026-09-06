@@ -25,7 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Company}, which is AtendIa itself — the one
  * issuing the invoice, a single row. Every operational record hangs off here.
  */
-#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'is_active'])]
+#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])]
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */
@@ -48,7 +48,7 @@ class Business extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'is_active'])
+            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
@@ -60,6 +60,7 @@ class Business extends Model
     protected function casts(): array
     {
         return [
+            'has_premises' => 'boolean',
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
@@ -79,6 +80,48 @@ class Business extends Model
     public function province(): BelongsTo
     {
         return $this->belongsTo(Province::class);
+    }
+
+    /**
+     * The legal currency its prices are published in.
+     *
+     * @return BelongsTo<Currency, $this>
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
+    /**
+     * The currency shown NEXT to the price as a reference — the Venezuelan
+     * "Ref": local currency by law, the dollar is what people actually pay.
+     *
+     * @return BelongsTo<Currency, $this>
+     */
+    public function referenceCurrency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'reference_currency_id');
+    }
+
+    /**
+     * Null is a valid answer: a seamstress with no tax registration gets her
+     * invoice as a natural person.
+     *
+     * @return BelongsTo<TaxCondition, $this>
+     */
+    public function taxCondition(): BelongsTo
+    {
+        return $this->belongsTo(TaxCondition::class);
+    }
+
+    /**
+     * Opening shifts, several rows per day when the business splits its hours.
+     *
+     * @return HasMany<BusinessHour, $this>
+     */
+    public function hours(): HasMany
+    {
+        return $this->hasMany(BusinessHour::class)->orderBy('day_of_week')->orderBy('opens_at');
     }
 
     /**
