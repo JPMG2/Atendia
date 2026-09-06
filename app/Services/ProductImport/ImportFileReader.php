@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ProductImport;
 
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
@@ -55,6 +56,33 @@ class ImportFileReader
             'samples' => $samples,
             'total_rows' => max(0, $lastRow - 1),
         ];
+    }
+
+    /**
+     * The values of ONE column, header excluded, capped: the typo review
+     * needs the product names but must not drag a huge sheet into a request.
+     *
+     * @return list<string>
+     */
+    public function column(string $path, int $index, int $limit = 500): array
+    {
+        $reader = IOFactory::createReaderForFile($path);
+        $reader->setReadDataOnly(true);
+
+        $sheet = $reader->load($path)->getSheet(0);
+
+        $letter = Coordinate::stringFromColumnIndex($index + 1);
+        $lastRow = min($sheet->getHighestDataRow(), 1 + $limit);
+
+        if ($lastRow < 2) {
+            return [];
+        }
+
+        return collect($sheet->rangeToArray("{$letter}2:{$letter}{$lastRow}", '', false, false))
+            ->map(fn (array $row): string => trim((string) ($row[0] ?? '')))
+            ->filter(fn (string $value): bool => $value !== '')
+            ->values()
+            ->all();
     }
 
     /**

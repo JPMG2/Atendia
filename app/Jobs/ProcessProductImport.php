@@ -36,7 +36,7 @@ class ProcessProductImport implements ShouldQueue
         $import->forceFill(['status' => 'processing'])->save();
 
         try {
-            $rows = $reader->rows(Storage::disk('local')->path($import->path));
+            $rows = $this->applyCorrections($import, $reader->rows(Storage::disk('local')->path($import->path)));
 
             $this->upsertProducts($import, $rows);
             $this->feedKnowledge($import, $rows);
@@ -47,6 +47,30 @@ class ProcessProductImport implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /**
+     * The data-typo fixes confirmed on the review screen, applied to the
+     * name column before anyone reads the rows: products and knowledge must
+     * both learn the corrected spelling, or the two would tell different names.
+     *
+     * @param  list<list<string>>  $rows
+     * @return list<list<string>>
+     */
+    private function applyCorrections(ProductImport $import, array $rows): array
+    {
+        $nameIndex = array_search('name', array_column($import->mapping, 'target'), true);
+        $fixes = collect($import->corrections ?? [])->pluck('fixed', 'original');
+
+        if ($nameIndex === false || $fixes->isEmpty()) {
+            return $rows;
+        }
+
+        return array_map(function (array $row) use ($nameIndex, $fixes): array {
+            $row[$nameIndex] = $fixes[$row[$nameIndex] ?? ''] ?? ($row[$nameIndex] ?? '');
+
+            return $row;
+        }, $rows);
     }
 
     /**

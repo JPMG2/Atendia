@@ -45,6 +45,7 @@ return [
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
         'unreadable' => 'No pudimos leer la planilla. Revisá que tenga una fila de títulos y volvé a intentar.',
         'review_hint' => ':rows filas detectadas. Revisá cada columna y corregí la que no encaje: las columnas extra no se pierden, tu asistente las aprende.',
+        'fixes_hint' => 'Cada campo muestra cómo va a quedar el nombre: ajustalo si hace falta, o escribí el original para dejarlo igual.',
         'manual' => 'O cargá tus productos acá, uno por uno.',
         'skip' => 'Saltar este paso',
     ],

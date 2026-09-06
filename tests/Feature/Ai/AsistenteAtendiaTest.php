@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Models\Business;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Enums\Lab;
@@ -31,4 +32,28 @@ test('registra el prompt enviado al asistente', function (): void {
     AsistenteAtendia::make()->prompt('¿Cuál es el horario de atención?');
 
     AsistenteAtendia::assertPrompted('¿Cuál es el horario de atención?');
+});
+
+test('an answer that skipped the knowledge search is re-asked with a firm reminder', function (): void {
+    $business = Business::factory()->create();
+
+    AsistenteAtendia::fake(['Creo que sí lo hacemos.', 'Confirmado: ofrecemos ecodoppler.']);
+
+    $response = new AsistenteAtendia($business)->answer('¿Hacen ecodoppler?');
+
+    // The caller receives the grounded second pass, never the improvised one.
+    expect($response->text)->toBe('Confirmado: ofrecemos ecodoppler.');
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema')
+        && str_contains($prompt->prompt, '¿Hacen ecodoppler?'));
+});
+
+test('without a business there is no knowledge tool and no re-ask', function (): void {
+    AsistenteAtendia::fake(['¡Hola! ¿En qué te ayudo?']);
+
+    $response = new AsistenteAtendia()->answer('Hola');
+
+    expect($response->text)->toBe('¡Hola! ¿En qué te ayudo?');
+
+    AsistenteAtendia::assertNotPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema'));
 });

@@ -15,6 +15,7 @@ use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
+use Laravel\Ai\Responses\AgentResponse;
 use Stringable;
 
 #[Provider(Lab::OpenAI)]
@@ -30,6 +31,30 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     public function __construct(
         public ?Business $business = null,
     ) {}
+
+    /**
+     * Answer a customer question, guaranteeing the knowledge search ran.
+     *
+     * The model sometimes skips the tool on the first pass (seen live on
+     * 2026-09-05): when it answers a business question without searching,
+     * one firm re-ask grounds the reply instead of trusting improvisation.
+     */
+    public function answer(string $question): AgentResponse
+    {
+        $response = $this->prompt($question);
+
+        if ($this->business === null || $response->toolCalls->isNotEmpty()) {
+            return $response;
+        }
+
+        return $this->prompt(
+            'Recordatorio del sistema: antes de responder, usá la herramienta de búsqueda '
+            .'en la base de conocimiento del negocio si la consulta puede referirse a algo '
+            .'que el negocio ofrece (productos, servicios, precios, disponibilidad). '
+            ."Si la consulta no habla del negocio, respondé normalmente.\n\n"
+            .'Consulta del cliente: '.$question,
+        );
+    }
 
     /**
      * Get the instructions that the agent should follow.

@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\ProductColumnMapper;
+use App\Ai\Agents\ProductNameFixer;
 use App\Jobs\ProcessProductImport;
 use App\Models\Business;
 use App\Models\ProductImport;
 use App\Models\User;
 use App\Services\ProductImport\ColumnMapper;
 use App\Services\ProductImport\ImportFileReader;
+use App\Services\ProductImport\NameReviewer;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Testing\File;
@@ -129,6 +131,7 @@ test('with no name column the first one takes the role: a list always has names'
 test('uploading opens the review with the proposed mapping', function (): void {
     actingAsImporter();
     ProductColumnMapper::fake();
+    ProductNameFixer::fake([['corrections' => []]]);
 
     Livewire::test('business.step-products')
         ->set('upload', spreadsheetFile([
@@ -147,6 +150,7 @@ test('confirming stores the file and queues the import for the tenant', function
     Storage::fake('local');
     $business = actingAsImporter();
     ProductColumnMapper::fake();
+    ProductNameFixer::fake([['corrections' => []]]);
 
     Livewire::test('business.step-products')
         ->set('upload', spreadsheetFile([
@@ -167,7 +171,8 @@ test('confirming stores the file and queues the import for the tenant', function
         ->and($import->status)->toBe('pending')
         ->and($import->total_rows)->toBe(1)
         ->and(collect($import->mapping)->firstWhere('column', 'Preparación'))
-        ->toMatchArray(['target' => 'extra', 'label' => 'Preparación']);
+        ->toMatchArray(['target' => 'extra', 'label' => 'Preparación'])
+        ->and($import->corrections)->toBeNull();
 
     Storage::disk('local')->assertExists($import->path);
 
@@ -183,4 +188,101 @@ test('an unreadable file warns and never opens the review', function (): void {
         ->assertSet('upload', null);
 
     expect(ProductImport::query()->count())->toBe(0);
+});
+
+test('the column reader taps one column, header excluded and capped', function (): void {
+    $file = spreadsheetFile([
+        ['Producto', 'Precio'],
+        ['Eco dobler', '15000'],
+        ['Radiografía', '8000'],
+    ]);
+
+    $reader = new ImportFileReader;
+
+    expect($reader->column($file->getRealPath(), 0))->toBe(['Eco dobler', 'Radiografía'])
+        ->and($reader->column($file->getRealPath(), 0, 1))->toBe(['Eco dobler']);
+});
+
+test('the reviewer keeps only real fixes for names it was actually sent', function (): void {
+    ProductNameFixer::fake([
+        ['corrections' => [
+            ['original' => 'Eco dobler', 'fixed' => 'Eco doppler'],
+            // Unchanged and hallucinated entries must both be dropped.
+            ['original' => 'Radiografía', 'fixed' => 'Radiografía'],
+            ['original' => 'Invento', 'fixed' => 'Inventado'],
+        ]],
+    ]);
+
+    expect(new NameReviewer()->review(['Eco dobler', 'Radiografía']))
+        ->toBe(['Eco dobler' => 'Eco doppler']);
+});
+
+test('the AI being down means no suggestions, never a blocked upload', function (): void {
+    ProductNameFixer::fake()->preventStrayPrompts();
+
+    expect(new NameReviewer()->review(['Eco dobler']))->toBe([]);
+});
+
+test('a typoed product name comes back fixed as an editable suggestion', function (): void {
+    actingAsImporter();
+    ProductColumnMapper::fake();
+    ProductNameFixer::fake([
+        ['corrections' => [['original' => 'Eco dobler', 'fixed' => 'Eco doppler']]],
+    ]);
+
+    Livewire::test('business.step-products')
+        ->set('upload', spreadsheetFile([
+            ['Producto', 'Precio'],
+            ['Eco dobler', '15000'],
+        ]))
+        ->assertSet('fixOriginals', ['Eco dobler'])
+        ->assertSet('fixes', ['Eco doppler'])
+        ->assertSee(__('wizard.products.fixes_title'));
+});
+
+test('moving the name target away clears the typo review', function (): void {
+    actingAsImporter();
+    ProductColumnMapper::fake();
+    ProductNameFixer::fake([
+        ['corrections' => [['original' => 'Eco dobler', 'fixed' => 'Eco doppler']]],
+    ]);
+
+    Livewire::test('business.step-products')
+        ->set('upload', spreadsheetFile([
+            ['Producto', 'Precio'],
+            ['Eco dobler', '15000'],
+        ]))
+        ->assertSet('fixOriginals', ['Eco dobler'])
+        ->set('mapping.0', 'extra')
+        ->assertSet('fixOriginals', [])
+        ->assertSet('fixes', []);
+});
+
+test('confirming stores only the fixes that still change something', function (): void {
+    Queue::fake();
+    Storage::fake('local');
+    actingAsImporter();
+    ProductColumnMapper::fake();
+    ProductNameFixer::fake([
+        ['corrections' => [
+            ['original' => 'Eco dobler', 'fixed' => 'Eco doppler'],
+            ['original' => 'Radiografia', 'fixed' => 'Radiografía'],
+        ]],
+    ]);
+
+    Livewire::test('business.step-products')
+        ->set('upload', spreadsheetFile([
+            ['Producto'],
+            ['Eco dobler'],
+            ['Radiografia'],
+        ]))
+        // Edited back to the original: the sheet was right, drop the fix.
+        ->set('fixes.1', 'Radiografia')
+        ->call('confirmImport')
+        // The preview must ask for the name as it will be written.
+        ->assertDispatched('wizard:products-updated', products: ['Eco doppler']);
+
+    expect(ProductImport::query()->sole()->corrections)->toBe([
+        ['original' => 'Eco dobler', 'fixed' => 'Eco doppler'],
+    ]);
 });

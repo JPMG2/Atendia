@@ -146,6 +146,9 @@ test('the business name travels live into the preview', function (): void {
     Livewire::test('business.wizard')
         ->dispatch('wizard:name-updated', name: 'Clínica Vida')
         ->assertSet('businessName', 'Clínica Vida')
+        // The phone chat header wears the real name, not the generic copy.
+        ->assertSee('Clínica Vida')
+        ->assertDontSee(__('wizard.preview.header'))
         ->assertDispatched('preview-updated');
 });
 

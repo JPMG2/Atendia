@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * is created THROUGH its owner, so an id arriving from a request can never
  * queue an import into another tenant.
  */
-#[Fillable(['original_name', 'path', 'mapping', 'total_rows', 'status'])]
+#[Fillable(['original_name', 'path', 'mapping', 'corrections', 'total_rows', 'status'])]
 class ProductImport extends Model
 {
     /** @use HasFactory<ProductImportFactory> */
@@ -30,6 +30,7 @@ class ProductImport extends Model
     {
         return [
             'mapping' => 'array',
+            'corrections' => 'array',
             'total_rows' => 'integer',
         ];
     }

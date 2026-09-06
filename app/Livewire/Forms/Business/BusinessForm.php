@@ -241,11 +241,13 @@ class BusinessForm extends BaseForm
 
         return $this->tryAction(function () use ($business, $relation, $names, $decorate, $known): NotificationDto {
 
-            $doomed = $known === null
+            $doomed = ($known === null
                 ? $business->{$relation}()->whereNotIn('name', $names)
-                : $business->{$relation}()->whereIn('name', array_diff($known, $names->all()));
+                : $business->{$relation}()->whereIn('name', array_diff($known, $names->all())))->get();
 
-            $doomed->get()->each->delete();
+            $doomed->each->delete();
+
+            $changed = $doomed->isNotEmpty();
 
             foreach ($names as $name) {
                 $row = $business->{$relation}()->withTrashed()->firstOrNew(['name' => $name]);
@@ -259,9 +261,16 @@ class BusinessForm extends BaseForm
                 }
 
                 $row->save();
+
+                $changed = $changed || $row->wasRecentlyCreated || $row->wasChanged();
             }
 
-            return $this->notificationService()->notificationFor($business, 'updated');
+            // The change lives in the LIST, not the parent row: judging it by
+            // the business's wasChanged() said "nothing changed" with the
+            // fresh services in plain sight — caught live on 2026-09-06.
+            return $changed
+                ? $this->notificationService()->updatedRelated($business)
+                : $this->notificationService()->notificationFor($business, 'updated');
 
         }, __('notifications.not_updated'));
     }

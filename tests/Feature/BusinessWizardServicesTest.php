@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\NotificationType;
 use App\Models\Business;
 use App\Models\Service;
 use App\Models\SuggestedService;
@@ -37,6 +38,29 @@ function actingAsOwner(): Business
 
     return $business;
 }
+
+test('picking services reports success even though the business row is untouched', function (): void {
+    actingAsOwner();
+
+    // The change lives in the services list; judging it by the parent's
+    // wasChanged() toasted "nothing changed" — caught live on 2026-09-06.
+    Livewire::test('business.step-services')
+        ->call('add', 'Ecodoppler')
+        ->call('finish')
+        ->assertDispatched('notify',
+            type: NotificationType::Success->value,
+            message: __('notifications.updated.male', ['entity' => __('notifications.entities.business')]),
+        );
+});
+
+test('re-saving the same list honestly says nothing changed', function (): void {
+    $business = actingAsOwner();
+    $business->services()->create(['name' => 'Ecodoppler']);
+
+    Livewire::test('business.step-services')
+        ->call('finish')
+        ->assertDispatched('notify', message: __('notifications.no_changes'));
+});
 
 test('finishing writes the list and a suggested name adopts its type', function (): void {
     $business = actingAsOwner();

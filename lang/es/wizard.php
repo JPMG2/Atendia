@@ -97,6 +97,8 @@ return [
         'review_title' => 'Esto entendimos de tu planilla',
         'review_hint' => ':rows filas detectadas. Revisa cada columna y corrige la que no encaje: las columnas extra no se pierden, tu asistente las aprende.',
         'was' => 'En tu planilla: :column',
+        'fixes_title' => 'Nombres con posibles errores de tipeo',
+        'fixes_hint' => 'Cada campo muestra cómo va a quedar el nombre: ajústalo si hace falta, o escribe el original para dejarlo igual.',
         'cancel' => 'Elegir otro archivo',
         'confirm' => 'Confirmar e importar',
         'queued' => '✓ :file — :rows productos en cola. Tu asistente los está aprendiendo.',

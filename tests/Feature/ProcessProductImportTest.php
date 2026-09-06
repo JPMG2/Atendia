@@ -99,6 +99,30 @@ test('re-importing the same file replaces its knowledge instead of duplicating i
         ->and(KnowledgeDocument::query()->sole()->content)->toContain('Pan integral');
 });
 
+test('confirmed fixes rewrite the name for both products and knowledge', function (): void {
+    Storage::fake('local');
+    Embeddings::fake();
+
+    $business = Business::factory()->create();
+
+    $import = importOnDisk($business, [
+        ['Producto', 'Precio'],
+        ['Eco dobler', '15000'],
+    ], [
+        ['column' => 'Producto', 'target' => 'name'],
+        ['column' => 'Precio', 'target' => 'price'],
+    ]);
+
+    $import->update(['corrections' => [['original' => 'Eco dobler', 'fixed' => 'Eco doppler']]]);
+
+    new ProcessProductImport($import->id)->handle(app(ImportFileReader::class));
+
+    // Products and knowledge must tell the SAME corrected name.
+    expect($business->products()->pluck('name')->all())->toBe(['Eco doppler'])
+        ->and(KnowledgeDocument::query()->sole()->content)->toContain('Eco doppler')
+        ->and(KnowledgeDocument::query()->sole()->content)->not->toContain('Eco dobler');
+});
+
 test('an import never deletes what the business already loaded', function (): void {
     Storage::fake('local');
     Embeddings::fake();

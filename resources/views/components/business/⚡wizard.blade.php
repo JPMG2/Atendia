@@ -254,7 +254,7 @@ new #[Layout('layouts::wizard')] class extends Component
                         <div class="wizard-phone-top">
                             <span class="pavatar"><x-icon name="bot" :size="18" /></span>
                             <span class="pmeta">
-                                <span class="pname">{{ __('wizard.preview.header') }}</span>
+                                <span class="pname">{{ $businessName !== '' ? $businessName : __('wizard.preview.header') }}</span>
                                 <span class="pstatus"><i></i>{{ __('wizard.preview.online') }}</span>
                             </span>
                         </div>

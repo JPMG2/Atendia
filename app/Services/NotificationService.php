@@ -94,6 +94,21 @@ class NotificationService
         return new NotificationDto(__('notifications.no_changes'), NotificationType::Info);
     }
 
+    /**
+     * An update that lives in RELATED rows: the parent may be untouched while
+     * the change sits freshly saved in plain sight, so `wasChanged()` would
+     * wrongly report "nothing changed" — the caller asserts the success.
+     */
+    public function updatedRelated(Model $model): NotificationDto
+    {
+        $context = $this->contextFor($model->getTable());
+
+        return new NotificationDto(
+            __('notifications.updated.'.$context['gender'], ['entity' => $context['entity']]),
+            NotificationType::Success,
+        );
+    }
+
     public function deleted(Model $model): NotificationDto
     {
         $context = $this->contextFor($model->getTable());

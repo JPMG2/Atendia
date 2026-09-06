@@ -294,10 +294,7 @@ class CompanyForm extends BaseForm
             // `notificationFor()` would say "nothing changed" with the networks
             // freshly saved in plain sight.
             if ($linksChanged && ! $company->wasChanged()) {
-                return new NotificationDto(
-                    __('notifications.updated.female', ['entity' => __('notifications.entities.company')]),
-                    NotificationType::Success,
-                );
+                return $this->notificationService()->updatedRelated($company);
             }
 
             return $this->notificationService()->notificationFor($company, 'updated');

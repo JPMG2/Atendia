@@ -27,6 +27,11 @@ return new class extends Migration
             // because two columns may carry the same header.
             $table->json('mapping');
 
+            // Data-typo fixes confirmed on the review screen, as
+            // [{original, fixed}]: the job rewrites matching name cells
+            // before products and knowledge read the rows.
+            $table->json('corrections')->nullable();
+
             $table->unsignedInteger('total_rows')->default(0);
 
             $table->string('status')->default('pending')->comment('pending | processing | done | failed');

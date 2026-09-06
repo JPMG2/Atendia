@@ -6,6 +6,7 @@ use App\Jobs\ProcessProductImport;
 use App\Livewire\Forms\Business\BusinessForm;
 use App\Services\ProductImport\ColumnMapper;
 use App\Services\ProductImport\ImportFileReader;
+use App\Services\ProductImport\NameReviewer;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -39,6 +40,22 @@ new class extends Component
 
     /** @var list<string> The headers with typos fixed — editable suggestions. */
     public array $labels = [];
+
+    /**
+     * Names the AI flagged as data typos, index-aligned with $fixes. Locked:
+     * the original is what the sheet says, only the fix is up for editing.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $fixOriginals = [];
+
+    /** @var list<string> The proposed spellings — editable suggestions. */
+    public array $fixes = [];
+
+    /** Which column fed the typo review, to re-run it when "name" moves. */
+    #[Locked]
+    public ?int $nameIndex = null;
 
     public int $totalRows = 0;
 
@@ -114,6 +131,43 @@ new class extends Component
         $sample = $nameIndex === false ? '' : trim($summary['samples'][0][$nameIndex] ?? '');
         $this->sampleProduct = $sample === '' ? null : $sample;
         $this->queuedFile = null;
+
+        $this->proposeNameFixes();
+    }
+
+    /** Re-targeting the name column re-runs the typo review on the right one. */
+    public function updatedMapping(): void
+    {
+        $index = array_search('name', $this->mapping, true);
+
+        if (($index === false ? null : $index) !== $this->nameIndex) {
+            $this->proposeNameFixes();
+        }
+    }
+
+    /** Data typos, AI-suggested and person-confirmed — never a silent rewrite. */
+    private function proposeNameFixes(): void
+    {
+        $index = array_search('name', $this->mapping, true);
+
+        $this->nameIndex = $index === false ? null : $index;
+        $this->fixOriginals = [];
+        $this->fixes = [];
+
+        if ($index === false || $this->upload === null) {
+            return;
+        }
+
+        try {
+            $names = app(ImportFileReader::class)->column($this->upload->getRealPath(), $index);
+        } catch (Throwable) {
+            return;
+        }
+
+        $corrections = app(NameReviewer::class)->review($names);
+
+        $this->fixOriginals = array_keys($corrections);
+        $this->fixes = array_values($corrections);
     }
 
     /** Stores the file and the confirmed mapping; the queued job takes over. */
@@ -128,6 +182,16 @@ new class extends Component
         }
 
         $original = $this->upload->getClientOriginalName();
+
+        // Only real, confirmed changes travel: a fix edited back to the
+        // original (or blanked) means "the sheet was right, leave it".
+        $corrections = collect($this->fixOriginals)
+            ->map(fn (string $name, int $index): array => [
+                'original' => $name,
+                'fixed' => trim($this->fixes[$index] ?? ''),
+            ])
+            ->filter(fn (array $fix): bool => $fix['fixed'] !== '' && $fix['fixed'] !== $fix['original'])
+            ->values();
 
         $path = $this->upload->storeAs(
             'imports/business-'.$business->id,
@@ -146,6 +210,7 @@ new class extends Component
                 ])
                 ->values()
                 ->all(),
+            'corrections' => $corrections->isEmpty() ? null : $corrections->all(),
             'total_rows' => $this->totalRows,
             'status' => 'pending',
         ]);
@@ -154,7 +219,10 @@ new class extends Component
 
         $this->queuedFile = $original;
 
-        $this->reset('upload', 'headers', 'mapping', 'labels');
+        // The preview must ask for the name as it will be written.
+        $this->sampleProduct = $corrections->firstWhere('original', $this->sampleProduct)['fixed'] ?? $this->sampleProduct;
+
+        $this->reset('upload', 'headers', 'mapping', 'labels', 'fixOriginals', 'fixes', 'nameIndex');
 
         $this->dispatch('wizard:products-imported');
 
@@ -167,7 +235,7 @@ new class extends Component
 
     public function cancelUpload(): void
     {
-        $this->reset('upload', 'headers', 'mapping', 'labels');
+        $this->reset('upload', 'headers', 'mapping', 'labels', 'fixOriginals', 'fixes', 'nameIndex');
 
         $this->totalRows = 0;
     }
@@ -250,6 +318,19 @@ new class extends Component
                             wire:model="mapping.{{ $index }}" />
                     </div>
                 @endforeach
+
+                @if ($fixOriginals !== [])
+                    <h3>{{ __('wizard.products.fixes_title') }}</h3>
+                    <p>{{ __('wizard.products.fixes_hint') }}</p>
+
+                    @foreach ($fixOriginals as $index => $original)
+                        <div class="wizard-map-colbox" wire:key="fix-{{ $index }}">
+                            <x-inputsform.input span="full" name="fix_{{ $index }}"
+                                wire:model="fixes.{{ $index }}" />
+                            <span class="wizard-map-was">{{ __('wizard.products.was', ['column' => $original]) }}</span>
+                        </div>
+                    @endforeach
+                @endif
 
                 <div class="wizard-foot">
                     <x-ui.button variant="ghost" wire:click="cancelUpload">
