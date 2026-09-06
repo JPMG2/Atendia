@@ -36,13 +36,17 @@ test('the province stays optional until the wizard asks for it', function (): vo
 
 test('the wizard business step cascades provinces from the chosen country', function (): void {
     $country = Country::factory()->create();
-    $mine = Province::factory()->create(['country_id' => $country->id]);
-    $foreign = Province::factory()->create();
+
+    // Fixed names on purpose: assertDontSee matches SUBSTRINGS and Faker's
+    // city names share bases ("Lake Ana" / "Lake Analand"), so two random
+    // names overlapped once in a while and flaked the full-suite run.
+    Province::factory()->create(['country_id' => $country->id, 'name' => 'Provincia Cercana']);
+    Province::factory()->create(['name' => 'Comarca Lejana']);
 
     Livewire::test('business.step-business')
         ->set('form.data.country_id', $country->id)
-        ->assertSee($mine->name)
-        ->assertDontSee($foreign->name);
+        ->assertSee('Provincia Cercana')
+        ->assertDontSee('Comarca Lejana');
 });
 
 test('changing the country empties the chosen province', function (): void {
