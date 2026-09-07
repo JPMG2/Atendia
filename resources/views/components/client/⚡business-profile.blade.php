@@ -1,10 +1,13 @@
 <?php
 
+use App\Classes\Main\Client;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Mi negocio" — living mock-up of the client's business profile. The parent
- * only orchestrates: each card is its own child component with its own save
+ * "Mi negocio" — the client's business profile. The parent only
+ * orchestrates: each card is its own child component with its own save
  * (offer-never-require: you save the piece you touched). With a section slug
  * it renders that single card — the deep links the menu and the meter use.
  */
@@ -12,11 +15,32 @@ new class extends Component
 {
     public ?string $section = null;
 
-    // Mock progress: 2 of 5 done. At 5 the meter turns into the LinkedIn-style
-    // "profile complete" celebration — tests drive it there.
-    public int $doneSteps = 2;
+    /**
+     * The real meter: read from the client's main class, the only place that
+     * sees every piece. At 100% it turns into the LinkedIn-style celebration.
+     *
+     * @return array{done: int, total: int, missing: list<string>}
+     */
+    #[Computed]
+    public function strength(): array
+    {
+        return Client::for(Auth::user())->profileStrength();
+    }
 
-    public int $totalSteps = 5;
+    /**
+     * Piece → the section card that completes it, for the meter deep links.
+     *
+     * @return array<string, string>
+     */
+    public function meterSections(): array
+    {
+        return [
+            'personal_data' => 'contacto',
+            'tax_details' => 'facturacion',
+            'schedule' => 'horarios',
+            'social_media' => 'redes',
+        ];
+    }
 
     /**
      * Slug → child component. Only route-baked slugs ever arrive, so an
@@ -71,7 +95,8 @@ new class extends Component
             </x-ui.button>
 
             @php
-                $percent = (int) round($doneSteps / max(1, $totalSteps) * 100);
+                $strength = $this->strength;
+                $percent = (int) round($strength['done'] / max(1, $strength['total']) * 100);
             @endphp
             @if ($percent === 100)
                 <x-ui.card class="bp-card bp-complete">
@@ -83,17 +108,19 @@ new class extends Component
                 <x-ui.card class="bp-card">
                     <div class="bp-meter-head">
                         <b>{{ __('client.business.meter.title', ['percent' => $percent]) }}</b>
-                        <span class="font-mono">{{ __('client.business.meter.count', ['done' => $doneSteps, 'total' => $totalSteps]) }}</span>
+                        <span class="font-mono">{{ __('client.business.meter.count', ['done' => $strength['done'], 'total' => $strength['total']]) }}</span>
                     </div>
                     <div class="setup-bar" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100">
                         <i style="width: {{ $percent }}%"></i>
                     </div>
-                    <div class="bp-todo is-done"><em></em>{{ __('client.business.meter.done_name') }}</div>
-                    <div class="bp-todo is-done"><em></em>{{ __('client.business.meter.done_description') }}</div>
-                    {{-- Each pending item deep-links straight to its section. --}}
-                    <a href="{{ route('my-business.identidad') }}" wire:navigate class="bp-todo"><em></em>{{ __('client.business.meter.todo_logo') }}</a>
-                    <a href="{{ route('my-business.horarios') }}" wire:navigate class="bp-todo"><em></em>{{ __('client.business.meter.todo_hours') }}</a>
-                    <a href="{{ route('my-business.facturacion') }}" wire:navigate class="bp-todo"><em></em>{{ __('client.business.meter.todo_currency') }}</a>
+                    {{-- Each pending piece deep-links straight to its section. --}}
+                    @foreach ($this->meterSections() as $piece => $slug)
+                        @if (in_array($piece, $strength['missing'], true))
+                            <a href="{{ route('my-business.'.$slug) }}" wire:navigate class="bp-todo"><em></em>{{ __('client.business.meter.'.$piece) }}</a>
+                        @else
+                            <div class="bp-todo is-done"><em></em>{{ __('client.business.meter.'.$piece) }}</div>
+                        @endif
+                    @endforeach
                 </x-ui.card>
             @endif
 

@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms\Business;
 
+use App\Actions\Business\ReconcileBusinessList;
+use App\Actions\Business\SaveBusinessProducts;
+use App\Actions\Business\SaveBusinessServices;
+use App\Classes\Main\Client;
 use App\Dto\BusinessDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Events\BusinessCreated;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
-use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
-use App\Models\Service;
-use App\Models\SuggestedService;
 use App\Rules\AttributeValidator;
-use Closure;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -24,9 +23,9 @@ use Livewire\Attributes\Locked;
 
 /**
  * The tenant's form: the wizard edits it in slices, the profile will edit the
- * rest, all through the same shape ({@see BusinessDto}). Same step pattern as
- * `CompanyForm`: each save validates and writes ONLY its own columns, so one
- * step can never blank out what another one stored.
+ * rest, all through the same shape ({@see BusinessDto}). Each save validates
+ * ONLY its own slice and persists it through {@see Client} — the same door
+ * the profile cards use, so persistence can never diverge between screens.
  */
 class BusinessForm extends BaseForm
 {
@@ -37,17 +36,6 @@ class BusinessForm extends BaseForm
     public const STEP_IDENTITY = 'identity';
 
     public const STEP_CONNECTION = 'connection';
-
-    /**
-     * Columns each step writes. `sector` is validated with identity but is not
-     * here: it is screen state, not a column ({@see BusinessDto}).
-     *
-     * @var list<string>
-     */
-    private const IDENTITY_COLUMNS = ['name', 'country_id', 'province_id'];
-
-    /** @var list<string> */
-    private const CONNECTION_COLUMNS = ['whatsapp_number', 'fallback_whatsapp_number', 'email'];
 
     /**
      * The signed-in user's business; `null` until the identity step creates it.
@@ -85,63 +73,45 @@ class BusinessForm extends BaseForm
     }
 
     /**
-     * Saves the identity step: name, minimal location and sector.
-     *
-     * First save CREATES the business and hangs the user off it; the billing
-     * email starts as the account's — the only address known at this point.
-     * Later saves update the same row.
+     * Saves the identity step through its Action; the form keeps validation,
+     * the notification and the birth event.
      */
     public function saveIdentity(): NotificationDto
     {
         $validated = $this->validateStep(self::STEP_IDENTITY);
 
-        $creating = $this->recordId === null;
+        $user = Auth::user();
+
+        if ($user === null) {
+            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
+        }
+
+        // Taken BEFORE the action runs: `wasRecentlyCreated` stays true on the
+        // instance associate() caches, so it would greet twice.
+        $isBirth = $user->business === null;
 
         // Leaves the closure by reference: the event fires OUTSIDE tryAction,
         // where a listener's failure cannot turn a good save into an error.
         $born = null;
 
-        $notification = $this->tryAction(function () use ($validated, &$born): NotificationDto {
+        $notification = $this->tryAction(function () use ($user, $validated, $isBirth, &$born): NotificationDto {
 
-            $user = Auth::user();
+            $business = Client::for($user)->personalData()->saveIdentity($validated);
 
-            // Reached through the OWNER, never by an id from the front: the
-            // locked recordId is display state, the relation is the authority.
-            $business = $user?->business ?? new Business;
-
-            // Taken BEFORE save: `wasRecentlyCreated` stays true on the
-            // instance associate() cached, so it would greet twice.
-            $isBirth = ! $business->exists;
-
-            if ($isBirth) {
-                $business->billing_email = (string) $user?->email;
-            }
-
-            $business->fill(Arr::only($validated, self::IDENTITY_COLUMNS))->save();
-
+            // The locked recordId is display state, the relation the Action
+            // walked is the authority.
             $this->recordId = $business->id;
-
-            if ($user !== null && $user->business_id === null) {
-                $user->business()->associate($business)->save();
-            }
 
             if ($isBirth) {
                 $born = $business;
             }
-
-            // The wizard declares the PRIMARY activity; secondaries belong to
-            // the profile and survive a walk-back save untouched.
-            $business->syncActivities(
-                BusinessActivity::query()->where('code', $validated['activity'])->value('id'),
-                $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all(),
-            );
 
             return $this->notificationService()->notificationFor(
                 $business,
                 $isBirth ? 'created' : 'updated',
             );
 
-        }, $creating ? __('notifications.not_created') : __('notifications.not_updated'));
+        }, $isBirth ? __('notifications.not_created') : __('notifications.not_updated'));
 
         // Once per business, at birth: walking back and saving again updates
         // the same row and must never greet twice.
@@ -162,17 +132,18 @@ class BusinessForm extends BaseForm
      */
     public function saveConnection(): NotificationDto
     {
-        $business = Auth::user()?->business;
+        $user = Auth::user();
+        $business = $user?->business;
 
-        if ($this->recordId === null || $business === null) {
+        if ($this->recordId === null || $user === null || $business === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
         }
 
         $validated = $this->validateStep(self::STEP_CONNECTION);
 
-        return $this->tryAction(function () use ($validated, $business): NotificationDto {
+        return $this->tryAction(function () use ($validated, $user, $business): NotificationDto {
 
-            $business->fill(Arr::only($validated, self::CONNECTION_COLUMNS))->save();
+            Client::for($user)->personalData()->saveConnection($validated);
 
             return $this->notificationService()->notificationFor($business, 'updated');
 
@@ -180,18 +151,14 @@ class BusinessForm extends BaseForm
     }
 
     /**
-     * Saves the services step. A name the curated suggestions know adopts
-     * their type; an unknown one stays untyped until someone classifies it.
+     * Saves the services step ({@see SaveBusinessServices} for the typing of
+     * suggested names).
      *
      * @param  list<string>  $names
      */
     public function saveServices(array $names): NotificationDto
     {
-        return $this->saveNamedList('services', $names, __('wizard.fields.service'), function (Service $service): void {
-            $service->service_type_id ??= SuggestedService::query()
-                ->whereRaw('lower(name) = ?', [mb_strtolower((string) $service->name)])
-                ->value('service_type_id');
-        });
+        return $this->saveNamedList('services', $names, __('wizard.fields.service'), app(SaveBusinessServices::class));
     }
 
     /**
@@ -205,20 +172,18 @@ class BusinessForm extends BaseForm
      */
     public function saveProducts(array $names, array $known = []): NotificationDto
     {
-        return $this->saveNamedList('products', $names, __('wizard.fields.product'), known: $known);
+        return $this->saveNamedList('products', $names, __('wizard.fields.product'), app(SaveBusinessProducts::class), $known);
     }
 
     /**
-     * Shared reconciliation for the wizard's named lists: dropped names leave
-     * softly, a trashed one coming back is restored (unique owner+name
-     * outlives a soft delete), the rest upserts through the owner. With
-     * `$known` only names the screen showed may be dropped; null keeps the
-     * full reconciliation for a list with a single writer.
+     * Validation and feedback around a named-list Action: the form normalizes
+     * and validates the names, the Action reconciles the rows
+     * ({@see ReconcileBusinessList}).
      *
      * @param  list<string>  $names
      * @param  list<string>|null  $known
      */
-    private function saveNamedList(string $relation, array $names, string $attribute, ?Closure $decorate = null, ?array $known = null): NotificationDto
+    private function saveNamedList(string $relation, array $names, string $attribute, ReconcileBusinessList $action, ?array $known = null): NotificationDto
     {
         $business = Auth::user()?->business;
 
@@ -239,35 +204,10 @@ class BusinessForm extends BaseForm
             [$relation.'.*' => $attribute],
         )->validate();
 
-        return $this->tryAction(function () use ($business, $relation, $names, $decorate, $known): NotificationDto {
+        return $this->tryAction(function () use ($business, $action, $names, $known): NotificationDto {
 
-            $doomed = ($known === null
-                ? $business->{$relation}()->whereNotIn('name', $names)
-                : $business->{$relation}()->whereIn('name', array_diff($known, $names->all())))->get();
+            $changed = $action->handle($business, $names->all(), $known);
 
-            $doomed->each->delete();
-
-            $changed = $doomed->isNotEmpty();
-
-            foreach ($names as $name) {
-                $row = $business->{$relation}()->withTrashed()->firstOrNew(['name' => $name]);
-
-                if ($row->trashed()) {
-                    $row->restore();
-                }
-
-                if ($decorate !== null) {
-                    $decorate($row);
-                }
-
-                $row->save();
-
-                $changed = $changed || $row->wasRecentlyCreated || $row->wasChanged();
-            }
-
-            // The change lives in the LIST, not the parent row: judging it by
-            // the business's wasChanged() said "nothing changed" with the
-            // fresh services in plain sight — caught live on 2026-09-06.
             return $changed
                 ? $this->notificationService()->updatedRelated($business)
                 : $this->notificationService()->notificationFor($business, 'updated');

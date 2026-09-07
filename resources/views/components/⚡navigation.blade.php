@@ -1,6 +1,9 @@
 <?php
 
+use App\Classes\Main\Client;
 use App\Models\Menu;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -20,12 +23,21 @@ new class extends Component
     /**
      * Menu tree of the active panel, memoized per request.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, Menu>
+     * @return Collection<int, Menu>
      */
     #[Computed]
     public function tree()
     {
         return Menu::tree($this->panel);
+    }
+
+    /** The real profile strength, from the one class that sees every piece. */
+    #[Computed]
+    public function profilePercent(): int
+    {
+        $strength = Client::for(Auth::user())->profileStrength();
+
+        return (int) round($strength['done'] / max(1, $strength['total']) * 100);
     }
 };
 ?>
@@ -39,14 +51,14 @@ new class extends Component
         <x-ui.menu :items="$this->tree->where('placement', 'bottom')->values()" />
 
         {{-- LinkedIn-style profile strength: constant presence, zero pressure.
-        Mock at 40%; wired, it derives from the data and vanishes at 100%. --}}
-        @if ($panel === 'client')
-            <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-progress">
+        Derived from the real data; at 100% it vanishes — job done. --}}
+        @if ($panel === 'client' && auth()->check() && $this->profilePercent < 100)
+            <a href="{{ route('my-business') }}" wire:navigate class="sidebar-progress">
                 <span class="sidebar-progress-head">
-                    <span>{{ __('menu.profile_progress', ['percent' => 40]) }}</span>
+                    <span>{{ __('menu.profile_progress', ['percent' => $this->profilePercent]) }}</span>
                     <x-icon name="chevron-right" :size="14" />
                 </span>
-                <span class="setup-bar"><i style="width: 40%"></i></span>
+                <span class="setup-bar"><i style="width: {{ $this->profilePercent }}%"></i></span>
             </a>
         @endif
 

@@ -2,14 +2,25 @@
 
 declare(strict_types=1);
 
+use App\Dto\BusinessDto;
 use App\Models\Business;
 use App\Models\BusinessHour;
 use App\Models\Currency;
 use App\Models\TaxCondition;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
+
+test('the dto mirrors every column of the businesses table, so a profile slice can hydrate from it', function (): void {
+    // The DTO's docblock promises "full row": this pins it, so a new column
+    // cannot reach the table without reaching the DTO too.
+    $columns = collect(Schema::getColumnListing('businesses'))
+        ->diff(['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by']);
+
+    expect((new BusinessDto)->toPayload())->toHaveKeys($columns->all());
+});
 
 /*
 |--------------------------------------------------------------------------

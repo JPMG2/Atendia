@@ -14,6 +14,15 @@ test('a fresh dto carries the business defaults', function (): void {
         ->and($dto->billing_email)->toBe('')
         ->and($dto->whatsapp_number)->toBeNull()
         ->and($dto->fallback_whatsapp_number)->toBeNull()
+        ->and($dto->logo_path)->toBeNull()
+        ->and($dto->address)->toBeNull()
+        ->and($dto->city)->toBeNull()
+        ->and($dto->has_premises)->toBeNull()
+        ->and($dto->description)->toBeNull()
+        ->and($dto->currency_id)->toBeNull()
+        ->and($dto->reference_currency_id)->toBeNull()
+        ->and($dto->tax_condition_id)->toBeNull()
+        ->and($dto->tax_id)->toBeNull()
         ->and($dto->is_active)->toBeTrue()
         ->and($dto->sector)->toBeNull();
 });
@@ -27,10 +36,32 @@ test('the dto never carries an id, so the record identity cannot be rewritten fr
 });
 
 test('the ids arrive from the comboboxes as strings and are cast, instead of killing the component', function (): void {
-    $dto = BusinessDto::fromArray(['country_id' => '3', 'province_id' => '12']);
+    $dto = BusinessDto::fromArray([
+        'country_id' => '3',
+        'province_id' => '12',
+        'currency_id' => '5',
+        'reference_currency_id' => '',
+        'tax_condition_id' => '8',
+    ]);
 
     expect($dto->country_id)->toBe(3)
-        ->and($dto->province_id)->toBe(12);
+        ->and($dto->province_id)->toBe(12)
+        ->and($dto->currency_id)->toBe(5)
+        ->and($dto->reference_currency_id)->toBeNull()
+        ->and($dto->tax_condition_id)->toBe(8);
+});
+
+test('the premises answer keeps its three states: yes, no and not answered yet', function (): void {
+    expect(BusinessDto::fromArray([])->has_premises)->toBeNull()
+        ->and(BusinessDto::fromArray(['has_premises' => true])->has_premises)->toBeTrue()
+        ->and(BusinessDto::fromArray(['has_premises' => false])->has_premises)->toBeFalse();
+});
+
+test('the description keeps its line breaks in the payload, only the edges are trimmed', function (): void {
+    $dto = new BusinessDto(description: "  Panadería artesanal.\nHorneamos todos los días.  ");
+
+    expect($dto->toPayload()['description'])->toBe("Panadería artesanal.\nHorneamos todos los días.")
+        ->and((new BusinessDto(description: '   '))->toPayload()['description'])->toBeNull();
 });
 
 test('the empty option of a combobox is stored as null, never as a zero id', function (): void {

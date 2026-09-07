@@ -170,11 +170,10 @@ return [
             'count' => ':done de :total',
             'complete_title' => 'Perfil completo',
             'complete_sub' => 'Tu asistente ya tiene todo para presentarse como un grande.',
-            'done_name' => 'Nombre y ubicación',
-            'done_description' => 'Descripción',
-            'todo_logo' => 'Sube tu logo',
-            'todo_hours' => 'Carga tus horarios',
-            'todo_currency' => 'Elige tu moneda',
+            'personal_data' => 'Datos de contacto',
+            'tax_details' => 'Moneda y facturación',
+            'schedule' => 'Horarios',
+            'social_media' => 'Redes sociales',
         ],
 
         'preview' => [
