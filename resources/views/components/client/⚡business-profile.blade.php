@@ -27,12 +27,12 @@ new class extends Component
     public function sections(): array
     {
         return [
-            'identidad' => 'client.business.section-identity',
-            'ubicacion' => 'client.business.section-location',
-            'horarios' => 'client.business.section-hours',
-            'contacto' => 'client.business.section-contact',
-            'redes' => 'client.business.section-social',
-            'facturacion' => 'client.business.section-billing',
+            'identidad' => 'client.section-identity',
+            'ubicacion' => 'client.section-location',
+            'horarios' => 'client.section-hours',
+            'contacto' => 'client.section-contact',
+            'redes' => 'client.section-social',
+            'facturacion' => 'client.section-billing',
         ];
     }
 };

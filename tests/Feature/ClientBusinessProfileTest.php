@@ -45,7 +45,7 @@ test('every optional field offers instead of requiring', function (): void {
 });
 
 test('saying no to the premises question folds the address away', function (): void {
-    Livewire::test('client.business.section-location')
+    Livewire::test('client.section-location')
         ->assertSee(__('client.business.location.address'))
         ->set('hasPremises', false)
         ->assertDontSee(__('client.business.location.address_placeholder'));
@@ -128,14 +128,23 @@ test('the live preview and the thank-you bubble ship their hooks and copy', func
         ->assertSee('cuándo estás abierto', false);
 });
 
+test('the sidebar carries the profile-strength pill from any client screen', function (): void {
+    $this->seed(MenuSeeder::class);
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('my-business'))
+        ->assertSeeHtml('sidebar-progress')
+        ->assertSee(__('menu.profile_progress', ['percent' => 40]));
+});
+
 test('the hours mock shows split shifts and a closed sunday', function (): void {
-    Livewire::test('client.business.section-hours')
+    Livewire::test('client.section-hours')
         ->assertSee('16:00 – 20:00')
         ->assertSee(__('client.business.hours.closed'));
 });
 
 test('one click stamps monday onto the weekdays', function (): void {
-    Livewire::test('client.business.section-hours')
+    Livewire::test('client.section-hours')
         ->assertSet('shifts.5', ['09:00 – 18:00'])
         ->call('applyWeekdays')
         ->assertSet('shifts.5', ['09:00 – 13:00', '16:00 – 20:00'])

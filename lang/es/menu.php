@@ -17,6 +17,7 @@ return [
     'aria_nav' => 'Navegación principal',
 
     // Upsell card del footer del sidebar (skeleton temporal)
+    'profile_progress' => 'Tu perfil, al :percent%',
     'plan_name' => 'Plan Inicial',
     'plan_trial' => 'Quedan 9 días de prueba.',
     'plan_cta' => 'Mejorar plan',

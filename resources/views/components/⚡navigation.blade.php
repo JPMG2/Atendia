@@ -38,6 +38,18 @@ new class extends Component
     <div class="sidebar-nav-bottom">
         <x-ui.menu :items="$this->tree->where('placement', 'bottom')->values()" />
 
+        {{-- LinkedIn-style profile strength: constant presence, zero pressure.
+        Mock at 40%; wired, it derives from the data and vanishes at 100%. --}}
+        @if ($panel === 'client')
+            <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-progress">
+                <span class="sidebar-progress-head">
+                    <span>{{ __('menu.profile_progress', ['percent' => 40]) }}</span>
+                    <x-icon name="chevron-right" :size="14" />
+                </span>
+                <span class="setup-bar"><i style="width: 40%"></i></span>
+            </a>
+        @endif
+
         {{-- The plan upsell talks to a CLIENT on a trial; the admin panel is
         the owner's and has no plan to improve. --}}
         @if ($panel === 'client')
