@@ -123,7 +123,7 @@
 
   /* ---- Layout ---- */
   --container-sm:640px; --container-md:768px; --container-lg:1024px;
-  --container-xl:1200px; --container-2xl:1320px; --sidebar-w:264px; --topbar-h:64px;
+  --container-xl:1200px; --container-2xl:1320px; --sidebar-w:264px; --sidebar-w-rail:76px; --topbar-h:64px;
 
   /* ---- Motion ---- */
   --ease-out:cubic-bezier(.22,1,.36,1); --ease-in-out:cubic-bezier(.65,0,.35,1);
@@ -1085,6 +1085,68 @@
     .preview-grid { grid-template-columns:1fr; }
   }
 
+  /* --- Colapso a riel de iconos (solo desktop; en mobile manda el drawer) --- */
+
+  /* Straddles the sidebar's right border — EXACTLY half in, half out — level
+     with the logo / search band. Brand-filled so it reads as the one control
+     that moves the shell. */
+  .sidebar-collapse { position:absolute; top:28px; right:-9px; z-index:5;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px; border:none; border-radius:var(--radius-pill);
+      background:var(--brand); color:var(--text-on-brand); cursor:pointer;
+      transition:filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+  .sidebar-collapse:hover { filter:brightness(.95); }
+  .sidebar-collapse:active { transform:scale(.97); }
+  .sidebar-collapse:focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; }
+  .sidebar-collapse .sidebar-collapse-out { display:none; }
+  html[data-sidebar="rail"] .sidebar-collapse .sidebar-collapse-in { display:none; }
+  html[data-sidebar="rail"] .sidebar-collapse .sidebar-collapse-out { display:block; }
+
+  @media (min-width:861px) {
+    .sidebar { transition:width var(--dur-base) var(--ease-out); }
+    html[data-sidebar="rail"] .sidebar { width:var(--sidebar-w-rail); padding-left:10px; padding-right:10px; }
+    html[data-sidebar="rail"] .sidebar-header { justify-content:center; padding-left:0; padding-right:0; }
+    html[data-sidebar="rail"] .sidebar-wordmark,
+    html[data-sidebar="rail"] .sidebar-header .badge,
+    html[data-sidebar="rail"] .menu-section,
+    html[data-sidebar="rail"] .sidebar-progress,
+    html[data-sidebar="rail"] .sidebar-upsell { display:none; }
+
+    /* The flyouts must escape the rail: no scroll clipping (the rail is short). */
+    html[data-sidebar="rail"] .sidebar-nav { overflow:visible; }
+
+    /* Top-level items become centered icons; their text lives in the flyout. */
+    html[data-sidebar="rail"] .menu > .menu-node > .menu-item { justify-content:center; padding:10px; }
+    html[data-sidebar="rail"] .menu > .menu-node > .menu-item > .menu-item-label,
+    html[data-sidebar="rail"] .menu > .menu-node > .menu-item > .menu-caret,
+    html[data-sidebar="rail"] .menu > .menu-node > .menu-item > .menu-badge { display:none; }
+
+    html[data-sidebar="rail"] .menu-node { position:relative; }
+
+    /* Children ignore the Alpine open state here (`x-show` writes an inline
+       display), so hover/focus rule them with !important. Anchored at the
+       item's own height, flush to the rail so the pointer never falls off. */
+    html[data-sidebar="rail"] .menu-children { display:none !important; position:absolute; left:100%; top:0;
+        min-width:210px; margin:0; padding:8px; background:var(--surface-card);
+        border:1px solid var(--border-subtle); border-radius:var(--radius-md);
+        box-shadow:var(--shadow-lg); z-index:90; }
+    html[data-sidebar="rail"] .menu-node:hover > .menu-children,
+    html[data-sidebar="rail"] .menu-node:focus-within > .menu-children { display:flex !important; }
+    html[data-sidebar="rail"] .menu-children .menu-item { padding-left:12px; }
+
+    /* A leaf has no children: its flyout is its own name. */
+    html[data-sidebar="rail"] .menu > .menu-node:hover > .menu-item:not(.menu-item-toggle) > .menu-item-label,
+    html[data-sidebar="rail"] .menu > .menu-node > .menu-item:not(.menu-item-toggle):focus-visible > .menu-item-label {
+        display:block; position:absolute; left:100%; top:50%; transform:translateY(-50%);
+        width:max-content; padding:8px 14px; background:var(--surface-card); color:var(--text-body);
+        border:1px solid var(--border-subtle); border-radius:var(--radius-md);
+        box-shadow:var(--shadow-lg); z-index:90; }
+
+    /* The freed width goes to the work area — the point of collapsing. */
+    html[data-sidebar="rail"] .app-content,
+    html[data-sidebar="rail"] .app-page-header { max-width:none; }
+  }
+
   /* --- Responsive: sidebar → drawer --- */
   @media (max-width:860px) {
     .sidebar { position:fixed; left:0; top:0; transform:translateX(-100%);
@@ -1092,6 +1154,7 @@
     .sidebar.sidebar-open { transform:translateX(0); box-shadow:var(--shadow-xl); }
     .sidebar-scrim { display:block; position:fixed; inset:0; background:var(--surface-overlay); z-index:70; }
     .topbar-burger { display:inline-flex; }
+    .sidebar-collapse { display:none; }
   }
   @media (max-width:1100px) {
     .bp-layout { grid-template-columns:1fr; }

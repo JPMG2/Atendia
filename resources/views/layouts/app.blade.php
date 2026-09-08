@@ -9,14 +9,29 @@
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}">
 
-    {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
+    {{-- Theme and sidebar rail before the first paint: avoids both flashes. --}}
     <script>
         (function () {
             try {
                 var t = localStorage.getItem('atendia-theme');
                 if (!t) { t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
                 document.documentElement.classList.toggle('dark', t === 'dark');
+
+                if (localStorage.getItem('atendia-sidebar') === 'rail') {
+                    document.documentElement.setAttribute('data-sidebar', 'rail');
+                }
             } catch (e) {}
+
+            // Pure DOM on purpose: collapsing is a CSS state on <html>, so no
+            // Livewire render and no lost component state.
+            window.atendiaSidebarToggle = function () {
+                var el = document.documentElement;
+                var rail = el.getAttribute('data-sidebar') !== 'rail';
+
+                if (rail) { el.setAttribute('data-sidebar', 'rail'); } else { el.removeAttribute('data-sidebar'); }
+
+                try { localStorage.setItem('atendia-sidebar', rail ? 'rail' : 'open'); } catch (e) {}
+            };
         })();
     </script>
 
@@ -50,6 +65,15 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     <x-ui.badge variant="accent">Admin</x-ui.badge>
                 @endif
             </a>
+
+            {{-- Desktop-only: collapses the menu to an icon rail. The drawer
+            owns mobile, where this button never shows. CSS picks the chevrons
+            for the current state: << to collapse, >> to expand. --}}
+            <button type="button" class="sidebar-collapse" data-testid="sidebar-collapse"
+                    aria-label="{{ __('menu.sidebar_toggle') }}" @click="window.atendiaSidebarToggle()">
+                <x-icon name="chevrons-left" :size="11" class="sidebar-collapse-in" />
+                <x-icon name="chevrons-right" :size="11" class="sidebar-collapse-out" />
+            </button>
 
             <livewire:navigation />
         </aside>

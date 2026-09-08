@@ -15,6 +15,7 @@ declare(strict_types=1);
 return [
     'section' => 'Menú',
     'aria_nav' => 'Navegación principal',
+    'sidebar_toggle' => 'Compactar o expandir el menú',
 
     // Upsell card del footer del sidebar (skeleton temporal)
     'profile_progress' => 'Tu perfil, al :percent%',

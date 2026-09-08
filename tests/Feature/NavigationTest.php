@@ -51,6 +51,19 @@ test('the dashboard renders the sidebar navigation and skeleton for an authentic
         ->assertSee('Tu asistente está listo al 20%');
 });
 
+test('the shell ships the sidebar collapse toggle and the rail hook', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+
+    $this->actingAs(User::factory()->create()->refresh())
+        ->get(route('dashboard'))
+        ->assertSuccessful()
+        ->assertSee('data-testid="sidebar-collapse"', false)
+        ->assertSee('atendiaSidebarToggle', false)
+        ->assertSee('atendia-sidebar', false)
+        ->assertSee(__('menu.sidebar_toggle'));
+});
+
 test('the admin panel shows the admin menu, not the client menu', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
