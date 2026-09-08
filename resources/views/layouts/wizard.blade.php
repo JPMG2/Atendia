@@ -24,10 +24,16 @@
     <style>[x-cloak]{display:none !important;}</style>
 
     {{-- No app.js: Livewire brings its own Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/livewire-failures.js'])
     @livewireStyles
 </head>
-<body class="bg-page">
+{{-- data-*: config for livewire-failures.js — JS can resolve neither routes
+nor translations, and the graceful flag stays off with debug on (there the
+Livewire overlay with the stack trace is the useful thing to see). --}}
+<body class="bg-page" data-login-url="{{ route('login', ['expired' => 1]) }}"
+      data-fail-title="{{ __('errors.action_failed.title') }}"
+      data-fail-message="{{ __('errors.action_failed.message') }}"
+      @unless (config('app.debug')) data-graceful-failures @endunless>
     {{ $slot }}
 
     <livewire:toast />

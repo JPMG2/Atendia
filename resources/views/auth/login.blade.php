@@ -8,6 +8,14 @@
         </p>
     </div>
 
+    {{-- Landing spot of session-expired.js: a Livewire 419 redirects here
+    with ?expired=1 (the full-page 419 already explained itself). --}}
+    @if (request()->boolean('expired'))
+        <x-ui.alert variant="info" icon="clock" class="mb-6">
+            {{ __('errors.expired_alert') }}
+        </x-ui.alert>
+    @endif
+
     {{-- Session status, such as the password-reset confirmation. --}}
     @if (session('status'))
         <x-ui.alert variant="success" icon="message-circle" class="mb-6">
