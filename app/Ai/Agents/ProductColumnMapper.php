@@ -24,7 +24,7 @@ use Stringable;
  * knowledge the assistant can answer from.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-4.1')]
+#[Model('gpt-6-astra')]
 #[Temperature(0.0)]
 class ProductColumnMapper implements Agent, HasStructuredOutput
 {

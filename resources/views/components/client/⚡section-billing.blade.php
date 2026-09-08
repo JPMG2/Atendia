@@ -41,6 +41,10 @@ new class extends Component
         foreach ($details->data() as $field => $value) {
             $this->{$field} = $value;
         }
+
+        // A fresh card suggests the registration country's currency; it only
+        // sticks when the client saves.
+        $this->currency_id ??= Auth::user()->business?->country?->currency_id;
     }
 
     /** Rebuilt per request: a Livewire component cannot hold it in a constructor. */

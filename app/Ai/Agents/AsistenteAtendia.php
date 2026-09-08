@@ -19,7 +19,7 @@ use Laravel\Ai\Responses\AgentResponse;
 use Stringable;
 
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-4.1')]
+#[Model('gpt-6-astra')]
 class AsistenteAtendia implements Agent, Conversational, HasTools
 {
     use Promptable;

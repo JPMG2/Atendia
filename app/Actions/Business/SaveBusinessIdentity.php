@@ -10,14 +10,15 @@ use App\Models\User;
 use Illuminate\Support\Arr;
 
 /**
- * The identity slice: name, minimal location and the primary activity.
- * Shared socket for every screen writing it — the wizard today, the
- * profile cards next — so the persistence can never diverge.
+ * The identity slice: who the business is and where it stands — name,
+ * location and the primary activity. Shared socket for every screen
+ * writing it (the wizard, the profile cards), each sending its own
+ * subset, so the persistence can never diverge.
  */
 class SaveBusinessIdentity
 {
     /** @var list<string> */
-    private const COLUMNS = ['name', 'country_id', 'province_id'];
+    private const COLUMNS = ['name', 'country_id', 'province_id', 'address', 'city', 'has_premises', 'description', 'logo_path'];
 
     /**
      * First save CREATES the business and hangs the user off it; the billing
@@ -41,12 +42,14 @@ class SaveBusinessIdentity
             $user->business()->associate($business)->save();
         }
 
-        // The caller declares the PRIMARY activity; secondaries belong to
-        // the profile and survive a walk-back save untouched.
-        $business->syncActivities(
-            BusinessActivity::query()->where('code', $data['activity'])->value('id'),
-            $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all(),
-        );
+        // Only the caller that declares the PRIMARY activity syncs it (the
+        // wizard); a profile card sends its own fields and no activity.
+        if (isset($data['activity'])) {
+            $business->syncActivities(
+                BusinessActivity::query()->where('code', $data['activity'])->value('id'),
+                $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all(),
+            );
+        }
 
         return $business;
     }

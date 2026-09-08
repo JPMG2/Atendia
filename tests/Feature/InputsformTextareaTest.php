@@ -26,6 +26,22 @@ it('marks the required state without the native attribute', function () {
         ->assertDontSee('required>', false);
 });
 
+it('shows an opt-in character counter wired to its maxlength', function () {
+    $this->blade('<x-inputsform.textarea name="d" maxlength="500" counter />')
+        ->assertSee('field-counter', false)
+        ->assertSee('/500', false)
+        ->assertSee('count >= 450', false)
+        ->assertSee('maxlength="500"', false);
+});
+
+it('keeps the counter out without the opt-in or without a maxlength', function () {
+    $this->blade('<x-inputsform.textarea name="d" maxlength="500" />')
+        ->assertDontSee('field-counter', false);
+
+    $this->blade('<x-inputsform.textarea name="d" counter />')
+        ->assertDontSee('field-counter', false);
+});
+
 it('shows a Laravel error with the red-border hook and the message', function () {
     $this->blade('<x-inputsform.textarea name="d" error="Requerido" />')
         ->assertSee('field-error', false)

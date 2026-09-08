@@ -115,6 +115,10 @@ return [
             'add_shift' => 'Agregar turno',
             'apply_weekdays' => 'Aplicar de lunes a viernes',
             'closed' => 'Cerrado',
+            'opens' => 'Abre',
+            'closes' => 'Cierra',
+            'time_placeholder' => '09:00',
+            'remove_shift' => 'Quitar este turno',
         ],
 
         'contact' => [
@@ -128,10 +132,12 @@ return [
         'social' => [
             'title' => 'Redes sociales',
             'sub' => 'Los perfiles que tu asistente puede compartir cuando se los pidan.',
-            'instagram' => 'Instagram',
-            'facebook' => 'Facebook',
+            'network' => 'Red',
+            'network_placeholder' => 'Elige una red',
+            'url' => 'Enlace o usuario',
             'url_placeholder' => 'https://facebook.com/tunegocio',
             'add' => 'Agregar red',
+            'remove' => 'Quitar esta red',
         ],
 
         'billing' => [
@@ -199,7 +205,6 @@ return [
             'province' => 'Carabobo',
             'currency' => 'Bolívar (Bs)',
             'reference' => 'Dólar (USD)',
-            'instagram' => 'https://instagram.com/costurasmary',
         ],
 
         'actions' => [

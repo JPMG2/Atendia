@@ -7,6 +7,7 @@
     'id' => null,
     'rows' => 3,
     'span' => 'full',      // width BY CONTENT: code | short | text | long | full
+    'counter' => false,    // opt-in live character counter; needs a maxlength
 ])
 
 @php
@@ -34,9 +35,15 @@
 
     $spanClass = ['code' => 'f-code', 'short' => 'f-short', 'text' => 'f-text',
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-full';
+
+    // The counter lives off the same maxlength that stops the typing, so the
+    // two can never disagree; it warms to the danger tone at 90%.
+    $maxlength = (int) $attributes->get('maxlength', 0);
+    $showCounter = $counter !== false && $maxlength > 0;
+    $nearAt = (int) floor($maxlength * 0.9);
 @endphp
 
-<div class="field {{ $spanClass }}">
+<div class="field {{ $spanClass }}" @if ($showCounter) x-data="{ count: 0 }" x-init="count = $refs.ta.value.length" @endif>
     @if ($label)
         <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
     @endif
@@ -50,12 +57,13 @@
             @if ($alpineErrorExpr) x-bind:aria-invalid="!!({{ $alpineErrorExpr }}) || null" @endif
             @if ($isRequired) aria-required="true" @endif
             @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
+            @if ($showCounter) x-ref="ta" x-on:input="count = $el.value.length" @endif
             {{ $fieldAttributes->merge(['class' => 'field-input']) }}
         >{{ $slot }}</textarea>
     </div>
 
     {{-- Hint and error stack in .field-meta so they NEVER overlap. --}}
-    @if ($hint || $error || $alpineErrorExpr)
+    @if ($hint || $error || $alpineErrorExpr || $showCounter)
         <div class="field-meta">
             @if ($hint)
                 <span @if ($descId) id="{{ $descId }}" @endif class="field-hint">{{ $hint }}</span>
@@ -65,6 +73,10 @@
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+            @endif
+
+            @if ($showCounter)
+                <span class="field-counter" x-bind:class="{ 'is-near': count >= {{ $nearAt }} }"><span x-text="count">0</span>/{{ $maxlength }}</span>
             @endif
         </div>
     @endif

@@ -8,14 +8,14 @@ use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Enums\Lab;
 
-test('the assistant is pinned to the OpenAI provider and gpt-4.1 model', function (): void {
+test('the assistant is pinned to the OpenAI provider and gpt-6-astra model', function (): void {
     $reflection = new ReflectionClass(AsistenteAtendia::class);
 
     $provider = $reflection->getAttributes(Provider::class)[0]->newInstance();
     $model = $reflection->getAttributes(Model::class)[0]->newInstance();
 
     expect($provider->value)->toBe(Lab::OpenAI)
-        ->and($model->value)->toBe('gpt-4.1');
+        ->and($model->value)->toBe('gpt-6-astra');
 });
 
 test('el asistente responde un prompt del usuario', function (): void {

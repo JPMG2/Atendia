@@ -44,6 +44,9 @@ return [
             'sub' => 'Si atendés en un local, tu asistente puede pasar la dirección cuando se la pidan.',
             'question' => '¿Atendés clientes en un local?',
         ],
+        'social' => [
+            'network_placeholder' => 'Elegí una red',
+        ],
         'billing' => [
             'natural_hint' => '¿No tenés datos fiscales? Sin problema: tu factura sale a tu nombre, como persona natural.',
         ],

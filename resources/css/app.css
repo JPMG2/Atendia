@@ -400,13 +400,17 @@
   .field-input::placeholder { color:var(--text-subtle); }
   /* Multiline sibling: the fixed one-line height gives way to the rows. */
   .field-control-multiline { height:auto; padding:10px 14px; }
-  .field-control-multiline .field-input { resize:vertical; line-height:1.5; }
+  /* No native resize grip: the height is the component's, set by `rows`. */
+  .field-control-multiline .field-input { resize:none; line-height:1.5; }
   .field-icon { color:var(--text-subtle); display:inline-flex; flex-shrink:0; }
   .field-hint { font-size:var(--text-xs); color:var(--text-muted); }
   .field-error-text { font-size:var(--text-xs); color:var(--danger); }
 
   /* inputsform: la descripción y el error coexisten apilados (nunca se solapan) */
   .field-meta { display:flex; flex-direction:column; gap:.1875rem; }
+  /* Numbers go mono; near the maxlength it warms to a softened danger tone. */
+  .field-counter { margin-left:auto; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-muted); }
+  .field-counter.is-near { color:var(--danger); opacity:.8; }
 
   /* ---- Campo de archivo (drop zone) ----
      Vive acá y no en la pantalla de configuración: es un control de la librería
@@ -1004,6 +1008,13 @@
   .bp-form { display:flex; flex-direction:column; gap:20px; }
   .bp-question { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
   .bp-question > span { font-weight:600; color:var(--text-strong); font-size:var(--text-sm); }
+  /* Redes en "Mi negocio": la red es corta y el enlace absorbe el sobrante,
+     así quitar y agregar caben en la MISMA fila que sus controles. */
+  .bp-form .config-social-row > .f-short { flex:0 1 150px; min-width:110px; }
+  .bp-form .config-social-row > .f-long  { flex:1 1 200px; min-width:0; }
+  /* Remove and add sit tight as one pair; the link input takes what they free. */
+  .bp-form .config-social-add { margin-left:-10px; }
+
   .bp-hours { border:1px solid var(--border-subtle); border-radius:12px; overflow:hidden; }
   .bp-hrow { display:flex; align-items:center; gap:10px; padding:6px 12px; transition:background var(--dur-fast) var(--ease-out); }
   .bp-hrow + .bp-hrow { border-top:1px solid var(--border-subtle); }
@@ -1013,6 +1024,13 @@
   .bp-shift { font-size:var(--text-xs); color:var(--text-strong); background:var(--surface-sunken);
               border:1px solid var(--border-subtle); border-radius:8px; padding:3px 9px; }
   .bp-closed { color:var(--text-subtle); font-size:var(--text-sm); }
+  /* Turnos editables: los pares de horas envuelven juntos, nunca partidos. */
+  .bp-hshifts { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; flex:1 1 auto; min-width:0; }
+  .bp-shift-edit { display:flex; align-items:center; gap:6px; }
+  .bp-shift-edit .field { flex:none; width:106px; }
+  .bp-shift-sep { color:var(--text-subtle); }
+  .bp-shift-remove { flex:none; color:var(--danger); }
+  .bp-shift-remove:hover { background:var(--danger-soft); }
   .bp-hadd { margin-left:auto; border:0; background:none; color:var(--brand); font:inherit;
              font-size:var(--text-xs); font-weight:600; cursor:pointer; opacity:0;
              transition:opacity var(--dur-fast) var(--ease-out); }

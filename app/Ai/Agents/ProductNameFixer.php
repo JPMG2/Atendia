@@ -22,7 +22,7 @@ use Stringable;
  * nothing is rewritten without the person's confirmation ({@see NameReviewer}).
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-4.1')]
+#[Model('gpt-6-astra')]
 #[Temperature(0.0)]
 class ProductNameFixer implements Agent, HasStructuredOutput
 {
