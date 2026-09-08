@@ -8,13 +8,13 @@ use Illuminate\Validation\Rule;
 
 class AttributeValidator
 {
-    private const MAX_STRING_LENGTH = 255;
+    private const int MAX_STRING_LENGTH = 255;
 
-    private const XSS_PREVENTION_PATTERN = '/^([^<>]*)$/';
+    private const string XSS_PREVENTION_PATTERN = '/^([^<>]*)$/';
 
-    private const DIGIT_PATTERN = '/^([0-9\s\-\+\(\)]*)$/';
+    private const string DIGIT_PATTERN = '/^([0-9\s\-\+\(\)]*)$/';
 
-    private const ALPHA_PATTERN = '/^[\p{L}\p{M}\s\'\-]+$/u';
+    private const string ALPHA_PATTERN = '/^[\p{L}\p{M}\s\'\-]+$/u';
 
     /**
      * Plain digits with an optional decimal part: no sign, no thousands separator.
@@ -23,7 +23,7 @@ class AttributeValidator
      * dead: the companion `numeric` rule rejects that shape first, so it never
      * matched anything.
      */
-    private const DECIMAL_PATTERN = '/^\d+(\.\d+)?$/';
+    private const string DECIMAL_PATTERN = '/^\d+(\.\d+)?$/';
 
     /**
      * Build a unique email rule (RFC + DNS), optionally ignoring an existing record id.

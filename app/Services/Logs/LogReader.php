@@ -15,9 +15,9 @@ use Illuminate\Support\Collection;
  */
 class LogReader
 {
-    private const TAIL_BYTES = 524_288;
+    private const int TAIL_BYTES = 524_288;
 
-    private const ENTRY_HEADER = '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(\w+)\.(\w+):\s?(.*)$/';
+    private const string ENTRY_HEADER = '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(\w+)\.(\w+):\s?(.*)$/';
 
     /** The directory is injectable so tests never touch the real logs. */
     public function __construct(
@@ -39,7 +39,7 @@ class LogReader
         // on purpose): for the owner reading this screen they are never a
         // system log.
         return array_values(array_filter(
-            array_map(static fn (string $path): string => basename($path), $paths),
+            array_map(basename(...), $paths),
             static fn (string $name): bool => ! in_array($name, ['testing.log', 'browser.log'], true),
         ));
     }

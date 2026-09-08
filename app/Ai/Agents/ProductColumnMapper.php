@@ -57,7 +57,7 @@ class ProductColumnMapper implements Agent, HasStructuredOutput
         return [
             'mappings' => $schema->array()
                 ->items(
-                    $schema->object(fn ($schema) => [
+                    $schema->object(fn ($schema): array => [
                         'column' => $schema->string()->required(),
                         'target' => $schema->string()->enum(self::TARGETS)->required(),
                         'label' => $schema->string()->required(),

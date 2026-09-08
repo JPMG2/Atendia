@@ -78,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureAuthorization(): void
     {
-        Gate::before(fn (User $user) => $user->hasRole('admin') ? true : null);
+        Gate::before(fn (User $user): ?true => $user->hasRole('admin') ? true : null);
     }
 
     /**
@@ -120,6 +120,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Login and register: strict, to slow brute force down (email + IP).
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
-            ->by(((string) $request->input('email')).'|'.$request->ip()));
+            ->by(($request->input('email')).'|'.$request->ip()));
     }
 }

@@ -22,7 +22,7 @@ use Throwable;
  */
 class IntegrationHealth
 {
-    private const TIMEOUT_SECONDS = 3;
+    private const int TIMEOUT_SECONDS = 3;
 
     /**
      * The TCP probe is injectable because tests cannot fake a raw socket the

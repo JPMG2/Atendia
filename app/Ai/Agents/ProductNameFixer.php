@@ -49,7 +49,7 @@ class ProductNameFixer implements Agent, HasStructuredOutput
         return [
             'corrections' => $schema->array()
                 ->items(
-                    $schema->object(fn ($schema) => [
+                    $schema->object(fn ($schema): array => [
                         'original' => $schema->string()->required(),
                         'fixed' => $schema->string()->required(),
                     ])

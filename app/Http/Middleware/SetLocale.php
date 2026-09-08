@@ -61,7 +61,7 @@ class SetLocale
                     $position = Location::get($ip);
 
                     return $position ? $position->countryCode : null;
-                } catch (Throwable $e) {
+                } catch (Throwable) {
                     return null;
                 }
             }

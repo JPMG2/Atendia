@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 class SaveBusinessConnection
 {
     /** @var list<string> */
-    private const COLUMNS = ['whatsapp_number', 'fallback_whatsapp_number', 'email', 'web'];
+    private const array COLUMNS = ['whatsapp_number', 'fallback_whatsapp_number', 'email', 'web'];
 
     /**
      * @param  array<string, mixed>  $data  Already validated by the calling form.

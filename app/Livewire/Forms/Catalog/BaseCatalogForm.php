@@ -56,7 +56,7 @@ abstract class BaseCatalogForm extends BaseForm
     {
         $validated = $this->validateServiceData();
 
-        return $this->tryAction(function () use ($validated) {
+        return $this->tryAction(function () use ($validated): NotificationDto {
 
             $model = app($this->wiring()->create)->handle($validated);
 
@@ -73,7 +73,7 @@ abstract class BaseCatalogForm extends BaseForm
 
         $validated = $this->validateServiceData($this->recordId);
 
-        return $this->tryAction(function () use ($validated) {
+        return $this->tryAction(function () use ($validated): NotificationDto {
 
             $model = app($this->wiring()->update)->handle($this->recordId, $validated);
 

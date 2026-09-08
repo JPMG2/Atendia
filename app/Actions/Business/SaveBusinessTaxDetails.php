@@ -14,7 +14,7 @@ use Illuminate\Support\Arr;
 class SaveBusinessTaxDetails
 {
     /** @var list<string> */
-    private const COLUMNS = ['currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id'];
+    private const array COLUMNS = ['currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id'];
 
     /**
      * @param  array<string, mixed>  $data  Already validated by the calling form.

@@ -103,7 +103,7 @@ class ServiceModality extends Model implements DataTable
      * The inside of the glyph's SVG, empty when there is no icon or the one set
      * is no longer in `config/icons.php`.
      */
-    private static function iconSvg(?string $icon): string
+    private function iconSvg(?string $icon): string
     {
         if ($icon === null) {
             return '';
@@ -136,7 +136,7 @@ class ServiceModality extends Model implements DataTable
                     // The SVG travels with the row so the cell paints the glyph and not
                     // its key: a key in a table is config, not a fact for whoever fills
                     // the catalog in.
-                    'icon_svg' => self::iconSvg($modality->icon),
+                    'icon_svg' => $this->iconSvg($modality->icon),
                     'order' => $modality->sort_order,
                     'active' => $modality->is_active,
                 ],

@@ -125,7 +125,7 @@ class ServiceAttribute extends Model implements DataTable
         $items = is_array($value) ? $value : explode(',', (string) $value);
 
         $items = array_values(array_filter(
-            array_map(static fn (string $item): string => trim($item), $items),
+            array_map(trim(...), $items),
             static fn (string $item): bool => $item !== '',
         ));
 

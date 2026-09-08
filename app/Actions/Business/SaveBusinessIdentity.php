@@ -18,7 +18,7 @@ use Illuminate\Support\Arr;
 class SaveBusinessIdentity
 {
     /** @var list<string> */
-    private const COLUMNS = ['name', 'country_id', 'province_id', 'address', 'city', 'has_premises', 'description', 'logo_path'];
+    private const array COLUMNS = ['name', 'country_id', 'province_id', 'address', 'city', 'has_premises', 'description', 'logo_path'];
 
     /**
      * First save CREATES the business and hangs the user off it; the billing

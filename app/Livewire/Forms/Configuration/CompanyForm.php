@@ -50,7 +50,7 @@ class CompanyForm extends BaseForm
      *
      * @var list<string>
      */
-    private const MAIN_SCREEN_STATE = ['country_id', 'province_id'];
+    private const array MAIN_SCREEN_STATE = ['country_id', 'province_id'];
 
     /**
      * The logo columns and the upload field that feeds each one.
@@ -67,9 +67,9 @@ class CompanyForm extends BaseForm
      *
      * @var list<string>
      */
-    private const LOGO_RULES = ['nullable', 'file', 'mimes:png,webp,jpg,jpeg,svg', 'max:2048'];
+    private const array LOGO_RULES = ['nullable', 'file', 'mimes:png,webp,jpg,jpeg,svg', 'max:2048'];
 
-    private const LOGO_UPLOADS = [
+    private const array LOGO_UPLOADS = [
         'logo_path_light' => 'logo_light_file',
         'logo_path_dark' => 'logo_dark_file',
     ];
@@ -83,7 +83,7 @@ class CompanyForm extends BaseForm
      *
      * @var list<string>
      */
-    private const COMMERCIAL_COLUMNS = ['email', 'phone', 'web'];
+    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web'];
 
     /**
      * The loaded record; `null` means nothing has been loaded yet.
@@ -113,10 +113,10 @@ class CompanyForm extends BaseForm
      *
      * @var TemporaryUploadedFile|null
      */
-    public $logo_light_file = null;
+    public $logo_light_file;
 
     /** @var TemporaryUploadedFile|null */
-    public $logo_dark_file = null;
+    public $logo_dark_file;
 
     /**
      * The company's networks, as editable rows.
