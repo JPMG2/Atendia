@@ -1,9 +1,12 @@
 <x-guest-layout>
     <div class="mb-8">
-        <h2 class="font-display text-strong" style="font-weight:800; font-size:var(--text-3xl); letter-spacing:-0.02em;">
+        <h2
+            class="text-strong font-display"
+            style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
+        >
             Creá tu cuenta
         </h2>
-        <p class="text-muted mt-1.5" style="font-size:var(--text-base);">
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">
             Tres datos y tu asistente empieza a tomar forma.
         </p>
     </div>
@@ -11,8 +14,14 @@
     {{-- `novalidate` on purpose: the browser's native bubbles are the one
     dialog nobody can theme; the guard below speaks for the form instead,
     same criterion as the catalog masters. The server judges again. --}}
-    <form method="POST" action="{{ route('register') }}" class="flex flex-col gap-5" novalidate
-        x-data="registerGuard" x-on:submit="guard($event)">
+    <form
+        method="POST"
+        action="{{ route('register') }}"
+        class="flex flex-col gap-5"
+        novalidate
+        x-data="registerGuard"
+        x-on:submit="guard($event)"
+    >
         @csrf
 
         <x-ui.input
@@ -57,8 +66,12 @@
             autocomplete="new-password"
         />
 
-        <div class="flex items-center justify-between gap-4 mt-2">
-            <a href="{{ route('login') }}" class="text-brand font-semibold hover:underline" style="font-size:var(--text-sm);">
+        <div class="mt-2 flex items-center justify-between gap-4">
+            <a
+                href="{{ route('login') }}"
+                class="text-brand font-semibold hover:underline"
+                style="font-size: var(--text-sm)"
+            >
                 {{ __('Already registered?') }}
             </a>
 
@@ -69,7 +82,7 @@
     {{-- TEMPORARY, local only: jump into the wizard without creating an
     account (a demo client signs in). Deleted at go-live with its route. --}}
     @if (app()->environment('local'))
-        <div class="flex justify-center mt-6">
+        <div class="mt-6 flex justify-center">
             <x-ui.button variant="ghost" size="sm" href="{{ route('onboarding.demo') }}">
                 Ver el alta sin crear cuenta (atajo temporal) →
             </x-ui.button>
@@ -85,8 +98,10 @@
 
                 guard(event) {
                     const values = Object.fromEntries(
-                        ['name', 'email', 'password', 'password_confirmation']
-                            .map(field => [field, event.target.elements[field]?.value ?? ''])
+                        ['name', 'email', 'password', 'password_confirmation'].map((field) => [
+                            field,
+                            event.target.elements[field]?.value ?? '',
+                        ]),
                     );
 
                     this.errors = validate(values, {

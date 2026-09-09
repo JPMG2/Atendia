@@ -112,8 +112,14 @@ new class extends Component
     <p class="lead">{{ __('wizard.steps.3.lead') }}</p>
 
     <x-ui.card>
-        <x-inputsform.input span="long" name="service_draft" wire:model="draft" wire:keydown.enter.prevent="add"
-            :label="__('wizard.fields.service')" :placeholder="__('wizard.fields.service_placeholder')" />
+        <x-inputsform.input
+            span="long"
+            name="service_draft"
+            wire:model="draft"
+            wire:keydown.enter.prevent="add"
+            :label="__('wizard.fields.service')"
+            :placeholder="__('wizard.fields.service_placeholder')"
+        />
 
         @if ($this->suggestions !== [])
             <p class="wizard-suggest">{{ __('wizard.services.suggest') }}</p>
@@ -121,8 +127,12 @@ new class extends Component
                 @foreach ($this->suggestions as $suggestion)
                     {{-- @js, not an inline quote: an apostrophe in the name would
                     close the JS string and break the whole expression. --}}
-                    <button type="button" wire:key="suggest-{{ $suggestion }}" wire:click="add(@js($suggestion))"
-                        class="wizard-pill-suggest">
+                    <button
+                        type="button"
+                        wire:key="suggest-{{ $suggestion }}"
+                        wire:click="add(@js($suggestion))"
+                        class="wizard-pill-suggest"
+                    >
                         + {{ $suggestion }}
                     </button>
                 @endforeach
@@ -133,20 +143,21 @@ new class extends Component
             @foreach ($services as $index => $service)
                 <span wire:key="service-{{ md5($service) }}" class="wizard-pill">
                     {{ $service }}
-                    <button type="button" wire:click="remove({{ $index }})"
-                        aria-label="{{ __('wizard.services.remove') }}">×</button>
+                    <button
+                        type="button"
+                        wire:click="remove({{ $index }})"
+                        aria-label="{{ __('wizard.services.remove') }}"
+                    >
+                        ×
+                    </button>
                 </span>
             @endforeach
         </div>
 
         <div class="wizard-foot">
-            <x-ui.button variant="ghost" wire:click="finish(true)">
-                {{ __('wizard.services.skip') }}
-            </x-ui.button>
+            <x-ui.button variant="ghost" wire:click="finish(true)"> {{ __('wizard.services.skip') }} </x-ui.button>
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" wire:click="finish">
-                {{ __('wizard.continue') }}
-            </x-ui.button>
+            <x-ui.button variant="primary" wire:click="finish"> {{ __('wizard.continue') }} </x-ui.button>
         </div>
     </x-ui.card>
 </div>

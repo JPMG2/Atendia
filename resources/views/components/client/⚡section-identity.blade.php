@@ -45,24 +45,46 @@ new class extends Component
 
     <div class="bp-form">
         <x-catalog.form-row>
-            <x-inputsform.input span="full" :label="__('client.business.identity.name')" name="name"
-                alpine-error="name" wire:model="form.name" />
+            <x-inputsform.input
+                span="full"
+                :label="__('client.business.identity.name')"
+                name="name"
+                alpine-error="name"
+                wire:model="form.name"
+            />
         </x-catalog.form-row>
         <x-catalog.form-row>
-            <x-inputsform.textarea span="full" :label="__('client.business.identity.description')" name="description"
-                :hint="__('client.business.identity.description_hint')" :rows="3" maxlength="500" counter
-                alpine-error="description" wire:model="form.description" />
+            <x-inputsform.textarea
+                span="full"
+                :label="__('client.business.identity.description')"
+                name="description"
+                :hint="__('client.business.identity.description_hint')"
+                :rows="3"
+                maxlength="500"
+                counter
+                alpine-error="description"
+                wire:model="form.description"
+            />
         </x-catalog.form-row>
         <x-catalog.form-row>
-            <x-inputsform.file span="full" name="logo_file"
+            <x-inputsform.file
+                span="full"
+                name="logo_file"
                 :label="__('client.business.identity.logo').' · '.__('client.business.optional')"
-                :note="__('client.business.identity.logo_hint')" :preview="$this->logoUrl"
-                wire:model="form.logo_file" />
+                :note="__('client.business.identity.logo_hint')"
+                :preview="$this->logoUrl"
+                wire:model="form.logo_file"
+            />
         </x-catalog.form-row>
     </div>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button
+            variant="primary"
+            size="sm"
+            x-on:click="submit()"
+        >
+            {{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
 

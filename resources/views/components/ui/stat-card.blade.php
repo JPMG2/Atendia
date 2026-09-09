@@ -24,13 +24,18 @@
     <div class="flex items-center justify-between gap-3">
         <span class="stat-label">{{ $label }}</span>
         @if ($icon)
-            <span class="stat-icon" style="background:{{ $bg }};color:{{ $fg }};"><x-icon :name="$icon" :size="16" /></span>
+            <span class="stat-icon" style="background:{{ $bg }};color:{{ $fg }};"
+                ><x-icon :name="$icon" :size="16"
+            /></span>
         @endif
     </div>
-    <div class="flex items-baseline gap-2.5 flex-wrap">
+    <div class="flex flex-wrap items-baseline gap-2.5">
         <span class="stat-value">{{ $value }}</span>
         @if ($delta)
-            <span class="inline-flex items-center gap-1" style="font-size:var(--text-sm);font-weight:600;color:{{ $trendColor }};">{{ $arrow }} {{ $delta }}</span>
+            <span
+                class="inline-flex items-center gap-1"
+                style="font-size:var(--text-sm);font-weight:600;color:{{ $trendColor }};"
+            >{{ $arrow }} {{ $delta }}</span>
         @endif
     </div>
 </div>

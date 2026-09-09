@@ -14,7 +14,8 @@ use Livewire\Component;
  * `catalogMaster()`, so only the server actions and this master's own fields
  * belong here.
  */
-new class extends Component {
+new class extends Component
+{
     use InteractsWithCatalogEditor;
 
     public CurrencyForm $form;
@@ -31,36 +32,46 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows"
+<x-catalog.master
+    :rows="$initialRows"
     :search="['code', 'name']"
     :rules="[
         'code' => ['required', 'alpha', ['length', 3]],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'symbol' => ['required', ['minLength', 1], ['maxLength', 5], 'noMarkup'],
         'decimal_places' => ['required', 'integer', ['min', 0], ['max', 2]],
-    ]">
-
+    ]"
+>
     {{-- Table view: the list. --}}
     <x-slot:list>
-        <x-catalog.toolbar :search-placeholder="__('catalog.currency.search_placeholder')"
-            :search-label="__('catalog.currency.search_label')" :singular="__('catalog.currency.singular')"
-            :plural="__('catalog.currency.plural')" :create="__('catalog.currency.create')" />
+        <x-catalog.toolbar
+            :search-placeholder="__('catalog.currency.search_placeholder')"
+            :search-label="__('catalog.currency.search_label')"
+            :singular="__('catalog.currency.singular')"
+            :plural="__('catalog.currency.plural')"
+            :create="__('catalog.currency.create')"
+        />
 
-        <x-catalog.table :empty="__('catalog.currency.empty')" :columns="[
-            ['label' => __('catalog.currency.columns.code')],
-            ['label' => __('catalog.currency.columns.name'), 'class' => 'catalog-col-fill'],
-            ['label' => __('catalog.currency.columns.symbol')],
-            ['label' => __('catalog.currency.columns.decimals'), 'class' => 'is-num'],
-            ['label' => __('catalog.currency.columns.status')],
-        ]">
+        <x-catalog.table
+            :empty="__('catalog.currency.empty')"
+            :columns="[
+                ['label' => __('catalog.currency.columns.code')],
+                ['label' => __('catalog.currency.columns.name'), 'class' => 'catalog-col-fill'],
+                ['label' => __('catalog.currency.columns.symbol')],
+                ['label' => __('catalog.currency.columns.decimals'), 'class' => 'is-num'],
+                ['label' => __('catalog.currency.columns.status')],
+            ]"
+        >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td class="catalog-cell-sym" x-text="row.symbol"></td>
             <td class="catalog-cell-num" x-text="row.decimals"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
-                    <span class="dot"></span><span
-                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.currency.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.currency.status.inactive')) }}"></span>
+                    <span class="dot"></span
+                    ><span
+                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.currency.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.currency.status.inactive')) }}"
+                    ></span>
                 </span>
             </td>
         </x-catalog.table>
@@ -68,35 +79,72 @@ new class extends Component {
 
     {{-- Form view: create and edit. --}}
     <x-slot:form>
-        <x-catalog.form-shell :new="__('catalog.currency.new')" :new-title="__('catalog.currency.new_title')"
-            :edit-title="__('catalog.currency.edit_title')" :create="__('catalog.currency.create')" title-key="code">
-
+        <x-catalog.form-shell
+            :new="__('catalog.currency.new')"
+            :new-title="__('catalog.currency.new_title')"
+            :edit-title="__('catalog.currency.edit_title')"
+            :create="__('catalog.currency.create')"
+            title-key="code"
+        >
             {{-- Row 1: the short identifier and the name, which takes all the rest. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="code" :label="__('catalog.currency.fields.code')" required name="code"
-                    :hint="__('catalog.currency.fields.code_hint')" maxlength="3" alpine-error="code" x-mask="aaa"
-                    style="text-transform:uppercase" wire:model="form.data.code" />
+                <x-inputsform.input
+                    span="code"
+                    :label="__('catalog.currency.fields.code')"
+                    required
+                    name="code"
+                    :hint="__('catalog.currency.fields.code_hint')"
+                    maxlength="3"
+                    alpine-error="code"
+                    x-mask="aaa"
+                    style="text-transform: uppercase"
+                    wire:model="form.data.code"
+                />
 
-                <x-inputsform.input span="text" :label="__('catalog.currency.fields.name')" required name="name"
-                    :placeholder="__('catalog.currency.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.data.name" />
+                <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.currency.fields.name')"
+                    required
+                    name="name"
+                    :placeholder="__('catalog.currency.fields.name_placeholder')"
+                    alpine-error="name"
+                    wire:model="form.data.name"
+                />
             </x-catalog.form-row>
 
             {{-- Row 2: the remaining fields sharing the full width. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="text" :label="__('catalog.currency.fields.symbol')" required name="symbol"
-                    :hint="__('catalog.currency.fields.symbol_hint')" maxlength="5" alpine-error="symbol"
-                    wire:model="form.data.symbol" />
+                <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.currency.fields.symbol')"
+                    required
+                    name="symbol"
+                    :hint="__('catalog.currency.fields.symbol_hint')"
+                    maxlength="5"
+                    alpine-error="symbol"
+                    wire:model="form.data.symbol"
+                />
 
-                <x-inputsform.input span="text" :label="__('catalog.currency.fields.decimals')" name="decimal_places"
-                    type="number" min="0" max="2" alpine-error="decimal_places"
-                    wire:model="form.data.decimal_places" />
+                <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.currency.fields.decimals')"
+                    name="decimal_places"
+                    type="number"
+                    min="0"
+                    max="2"
+                    alpine-error="decimal_places"
+                    wire:model="form.data.decimal_places"
+                />
 
-                <x-inputsform.switch-field span="text" :label="__('catalog.currency.fields.status')" name="is_active"
-                    :on="__('catalog.currency.status.active')" :off="__('catalog.currency.status.inactive')"
-                    wire:model="form.data.is_active" />
+                <x-inputsform.switch-field
+                    span="text"
+                    :label="__('catalog.currency.fields.status')"
+                    name="is_active"
+                    :on="__('catalog.currency.status.active')"
+                    :off="__('catalog.currency.status.inactive')"
+                    wire:model="form.data.is_active"
+                />
             </x-catalog.form-row>
-
         </x-catalog.form-shell>
     </x-slot:form>
 </x-catalog.master>

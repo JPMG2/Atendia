@@ -11,8 +11,14 @@
     it lives here once. The count and the filter both come from `filtered()`.
 --}}
 <div class="catalog-toolbar">
-    <x-inputsform.input name="q" size="s" icon="search" :placeholder="$searchPlaceholder" x-model="q"
-        :aria-label="$searchLabel" />
+    <x-inputsform.input
+        name="q"
+        size="s"
+        icon="search"
+        :placeholder="$searchPlaceholder"
+        x-model="q"
+        :aria-label="$searchLabel"
+    />
 
     <span class="catalog-count">
         <b x-text="filtered().length"></b>

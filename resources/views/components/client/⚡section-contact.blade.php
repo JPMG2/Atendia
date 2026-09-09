@@ -33,14 +33,30 @@ new class extends Component
     <p class="bp-card-sub">{{ __('client.business.contact.sub') }}</p>
 
     <x-catalog.form-row>
-        <x-inputsform.input span="text" :label="__('client.business.contact.email').' · '.__('client.business.optional')"
-            name="email" alpine-error="email" wire:model="form.email" />
-        <x-inputsform.input span="text" :label="__('client.business.contact.web').' · '.__('client.business.optional')"
-            name="web" alpine-error="web" :placeholder="__('client.business.contact.web_placeholder')" wire:model="form.web" />
+        <x-inputsform.input
+            span="text"
+            :label="__('client.business.contact.email').' · '.__('client.business.optional')"
+            name="email"
+            alpine-error="email"
+            wire:model="form.email"
+        />
+        <x-inputsform.input
+            span="text"
+            :label="__('client.business.contact.web').' · '.__('client.business.optional')"
+            name="web"
+            alpine-error="web"
+            :placeholder="__('client.business.contact.web_placeholder')"
+            wire:model="form.web"
+        />
     </x-catalog.form-row>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button
+            variant="primary"
+            size="sm"
+            x-on:click="submit()"
+        >
+            {{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
 

@@ -68,16 +68,44 @@ new class extends Component
 
     <x-ui.card>
         <div class="wizard-frow">
-            <x-inputsform.phone span="short" required name="whatsapp_number" alpine-error="whatsapp_number"
-                :countries="$this->phoneCountries" :default-dial="$this->defaultDial" :value="$form->data?->whatsapp_number" wire:model="form.data.whatsapp_number"
-                :label="__('wizard.fields.whatsapp_number')" :placeholder="__('wizard.fields.whatsapp_number_placeholder')" :hint="__('wizard.fields.whatsapp_number_hint')" />
-            <x-inputsform.phone span="short" required name="fallback_whatsapp_number"
-                alpine-error="fallback_whatsapp_number" :countries="$this->phoneCountries" :default-dial="$this->defaultDial" :value="$form->data?->fallback_whatsapp_number"
-                wire:model="form.data.fallback_whatsapp_number" :label="__('wizard.fields.fallback_whatsapp_number')" :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
-                :hint="__('wizard.fields.fallback_whatsapp_number_hint')" />
+            <x-inputsform.phone
+                span="short"
+                required
+                name="whatsapp_number"
+                alpine-error="whatsapp_number"
+                :countries="$this->phoneCountries"
+                :default-dial="$this->defaultDial"
+                :value="$form->data?->whatsapp_number"
+                wire:model="form.data.whatsapp_number"
+                :label="__('wizard.fields.whatsapp_number')"
+                :placeholder="__('wizard.fields.whatsapp_number_placeholder')"
+                :hint="__('wizard.fields.whatsapp_number_hint')"
+            />
+            <x-inputsform.phone
+                span="short"
+                required
+                name="fallback_whatsapp_number"
+                alpine-error="fallback_whatsapp_number"
+                :countries="$this->phoneCountries"
+                :default-dial="$this->defaultDial"
+                :value="$form->data?->fallback_whatsapp_number"
+                wire:model="form.data.fallback_whatsapp_number"
+                :label="__('wizard.fields.fallback_whatsapp_number')"
+                :placeholder="__('wizard.fields.fallback_whatsapp_number_placeholder')"
+                :hint="__('wizard.fields.fallback_whatsapp_number_hint')"
+            />
 
-            <x-inputsform.input span="long" type="email" required name="email" alpine-error="email"
-                wire:model="form.data.email" :label="__('wizard.fields.business_email')" :placeholder="__('wizard.fields.business_email_placeholder')" :hint="__('wizard.fields.business_email_hint')" />
+            <x-inputsform.input
+                span="long"
+                type="email"
+                required
+                name="email"
+                alpine-error="email"
+                wire:model="form.data.email"
+                :label="__('wizard.fields.business_email')"
+                :placeholder="__('wizard.fields.business_email_placeholder')"
+                :hint="__('wizard.fields.business_email_hint')"
+            />
         </div>
 
         <div class="wizard-qrbox">
@@ -117,13 +145,9 @@ new class extends Component
         </div>
 
         <div class="wizard-foot">
-            <x-ui.button variant="ghost" wire:click="finish(true)">
-                {{ __('wizard.whatsapp.later') }}
-            </x-ui.button>
+            <x-ui.button variant="ghost" wire:click="finish(true)"> {{ __('wizard.whatsapp.later') }} </x-ui.button>
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" x-on:click="guard">
-                {{ __('wizard.whatsapp.scanned') }}
-            </x-ui.button>
+            <x-ui.button variant="primary" x-on:click="guard"> {{ __('wizard.whatsapp.scanned') }} </x-ui.button>
         </div>
     </x-ui.card>
 </div>
@@ -138,19 +162,18 @@ new class extends Component
             guard() {
                 const data = this.$wire.form.data ?? {};
 
-                this.errors = validate({
-                    whatsapp_number: data.whatsapp_number,
-                    fallback_whatsapp_number: data.fallback_whatsapp_number,
-                    email: data.email,
-                }, {
-                    whatsapp_number: ['required', 'phone', ['minLength', 6],
-                        ['maxLength', 30]
-                    ],
-                    fallback_whatsapp_number: ['required', 'phone', ['minLength', 6],
-                        ['maxLength', 30]
-                    ],
-                    email: ['required', 'email', ['maxLength', 255]],
-                });
+                this.errors = validate(
+                    {
+                        whatsapp_number: data.whatsapp_number,
+                        fallback_whatsapp_number: data.fallback_whatsapp_number,
+                        email: data.email,
+                    },
+                    {
+                        whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                        fallback_whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                        email: ['required', 'email', ['maxLength', 255]],
+                    },
+                );
 
                 if (Object.keys(this.errors).length === 0) {
                     this.$wire.finish();

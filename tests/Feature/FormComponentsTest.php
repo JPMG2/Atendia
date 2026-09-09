@@ -34,7 +34,7 @@ test('the input wires the Alpine errors bag when given an alpine-error key', fun
 
     expect($html)->toContain("x-bind:class=\"{ 'field-error': !!(errors.email) }\"")
         ->toContain('x-text="errors.email"')
-        ->toContain('x-show="!(errors.email)"');
+        ->toContain('x-show="! (errors.email)"');
 });
 
 test('the input forwards attributes like placeholder and wire:model to the control', function (): void {

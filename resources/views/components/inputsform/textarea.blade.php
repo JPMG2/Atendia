@@ -43,9 +43,17 @@
     $nearAt = (int) floor($maxlength * 0.9);
 @endphp
 
-<div class="field {{ $spanClass }}" @if ($showCounter) x-data="{ count: 0 }" x-init="count = $refs.ta.value.length" @endif>
+<div
+    class="field {{ $spanClass }}"
+    @if ($showCounter) x-data="{ count: 0 }" x-init="count = $refs.ta.value.length" @endif
+>
     @if ($label)
-        <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
+        <label for="{{ $id }}" class="field-label"
+            >{{ $label }}
+            @if ($isRequired)
+                <span class="field-required" aria-hidden="true">*</span>
+            @endif
+        </label>
     @endif
 
     <div class="{{ $controlClasses }}">
@@ -72,11 +80,18 @@
             @if ($error)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
-                <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+                <span
+                    @if ($errId) id="{{ $errId }}" @endif
+                    class="field-error-text"
+                    x-show="!!({{ $alpineErrorExpr }})"
+                    x-text="{{ $alpineErrorExpr }}"
+                    x-cloak
+                ></span>
             @endif
 
             @if ($showCounter)
-                <span class="field-counter" x-bind:class="{ 'is-near': count >= {{ $nearAt }} }"><span x-text="count">0</span>/{{ $maxlength }}</span>
+                <span class="field-counter" x-bind:class="{ 'is-near': count >= {{ $nearAt }} }"
+                    ><span x-text="count">0</span>/{{ $maxlength }}</span>
             @endif
         </div>
     @endif

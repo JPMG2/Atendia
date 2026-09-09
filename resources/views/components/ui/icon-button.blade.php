@@ -16,11 +16,7 @@
     $iconSize = ['sm' => 16, 'md' => 18, 'lg' => 20][$size] ?? 18;
 @endphp
 
-<button
-    type="button"
-    @if ($label) aria-label="{{ $label }}" @endif
-    {{ $attributes->merge(['class' => $classes]) }}
->
+<button type="button" @if ($label) aria-label="{{ $label }}" @endif {{ $attributes->merge(['class' => $classes]) }}>
     @if ($slot->isEmpty())
         <x-icon :name="$icon" :size="$iconSize" />
     @else

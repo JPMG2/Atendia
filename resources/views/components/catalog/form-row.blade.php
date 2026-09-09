@@ -5,6 +5,4 @@
     last field alone on a row of its own. A row always reaches the right edge:
     fields declare how much content they need.
 --}}
-<div {{ $attributes->merge(['class' => 'form-row']) }}>
-    {{ $slot }}
-</div>
+<div {{ $attributes->merge(['class' => 'form-row']) }}>{{ $slot }}</div>

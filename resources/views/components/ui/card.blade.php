@@ -7,6 +7,4 @@
     $classes = 'card'.($interactive ? ' card-interactive' : '');
 @endphp
 
-<{{ $as }} {{ $attributes->merge(['class' => $classes]) }}>
-    {{ $slot }}
-</{{ $as }}>
+<{{ $as }} {{ $attributes->merge(['class' => $classes]) }}> {{ $slot }} </{{ $as }}>

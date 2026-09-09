@@ -11,7 +11,7 @@
     'placeholder' => null,
     'empty' => null,       // text shown when the search finds nothing
     'loading' => null,     // Livewire property the list hangs off (e.g. "form.data.country_id"):
-                           // while that request travels the field stays locked behind a spinner
+    // while that request travels the field stays locked behind a spinner
     'span' => 'text',      // width BY CONTENT: code | short | text | long | full
 ])
 
@@ -65,15 +65,27 @@
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp
 
-<div class="field combo {{ $spanClass }}" x-data="inputsformCombobox({ options: {{ \Illuminate\Support\Js::from($normalizedOptions) }}, initial: {{ \Illuminate\Support\Js::from($value) }} })"
-    x-on:keydown.escape.stop="closePanel()" x-on:click.outside="closePanel()">
+<div
+    class="field combo {{ $spanClass }}"
+    x-data="inputsformCombobox({ options: {{ \Illuminate\Support\Js::from($normalizedOptions) }}, initial: {{ \Illuminate\Support\Js::from($value) }} })"
+    x-on:keydown.escape.stop="closePanel()"
+    x-on:click.outside="closePanel()"
+>
     @if ($label)
-        <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
+        <label for="{{ $id }}" class="field-label"
+            >{{ $label }}
+            @if ($isRequired)
+                <span class="field-required" aria-hidden="true">*</span>
+            @endif
+        </label>
     @endif
 
     <div class="combo-shell">
-        <div class="{{ $controlClasses }}" x-bind:class="open && 'is-open'"
-            @if ($loading) wire:loading.class="is-loading" {!! $loadingAttributes !!} @endif>
+        <div
+            class="{{ $controlClasses }}"
+            x-bind:class="open && 'is-open'"
+            @if ($loading) wire:loading.class="is-loading" {!! $loadingAttributes !!} @endif
+        >
             <input
                 type="text"
                 role="combobox"
@@ -105,42 +117,68 @@
             a fixed cross over an empty field is noise. `mousedown.prevent`
             because the search box's blur closes the panel and would eat
             the click. --}}
-            <button type="button" class="combo-clear" tabindex="-1"
-                x-show="selected || query" x-cloak
+            <button
+                type="button"
+                class="combo-clear"
+                tabindex="-1"
+                x-show="selected || query"
+                x-cloak
                 aria-label="{{ __('forms.combobox.clear') }}"
                 @if ($isDisabled) disabled @endif
                 @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
-                x-on:mousedown.prevent="clear()">
+                x-on:mousedown.prevent="clear()"
+            >
                 <x-icon name="x" :size="$iconSize - 2" />
             </button>
 
-            <button type="button" class="combo-toggle" tabindex="-1" aria-hidden="true"
+            <button
+                type="button"
+                class="combo-toggle"
+                tabindex="-1"
+                aria-hidden="true"
                 @if ($isDisabled) disabled @endif
                 @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
-                x-on:mousedown.prevent="open ? closePanel() : $refs.search.focus()">
+                x-on:mousedown.prevent="open ? closePanel() : $refs.search.focus()"
+            >
                 @if ($loading)
-                    <span wire:loading.remove {!! $loadingAttributes !!}><x-icon name="chevron-down" :size="$iconSize" /></span>
-                    <span class="combo-spinner" wire:loading {!! $loadingAttributes !!} role="status"
-                        aria-label="{{ __('forms.combobox.loading') }}"><x-icon name="loader-circle" :size="$iconSize" /></span>
+                    <span wire:loading.remove {!! $loadingAttributes !!}
+                        ><x-icon name="chevron-down" :size="$iconSize"
+                    /></span>
+                    <span
+                        class="combo-spinner"
+                        wire:loading
+                        {!! $loadingAttributes !!}
+                        role="status"
+                        aria-label="{{ __('forms.combobox.loading') }}"
+                        ><x-icon name="loader-circle" :size="$iconSize"
+                    /></span>
                 @else
                     <x-icon name="chevron-down" :size="$iconSize" />
                 @endif
             </button>
 
             {{-- The real value: it carries the wire:model and travels to the server. --}}
-            <input type="hidden" x-ref="value" @if ($name) name="{{ $name }}" @endif
-                {{ $valueAttributes }} />
+            <input type="hidden" x-ref="value" @if ($name) name="{{ $name }}" @endif {{ $valueAttributes }} />
         </div>
 
-        <ul class="combo-list" x-ref="list" x-show="open" x-cloak role="listbox"
+        <ul
+            class="combo-list"
+            x-ref="list"
+            x-show="open"
+            x-cloak
+            role="listbox"
             @if ($listId) id="{{ $listId }}" @endif
-            @if ($label) aria-label="{{ $label }}" @endif>
+            @if ($label) aria-label="{{ $label }}" @endif
+        >
             <template x-for="(option, index) in filtered()" :key="option.value">
-                <li class="combo-option" role="option"
+                <li
+                    class="combo-option"
+                    role="option"
                     x-bind:data-active="index === highlighted"
                     x-bind:aria-selected="isSelected(option)"
                     x-on:mousedown.prevent="choose(option)"
-                    x-on:mousemove="highlighted = index">
+                    x-on:mousemove="highlighted = index"
+                >
                     <span x-text="option.label"></span>
                     <span class="combo-tick" x-show="isSelected(option)"><x-icon name="check" :size="16" /></span>
                 </li>
@@ -160,7 +198,13 @@
             @if ($error)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
-                <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+                <span
+                    @if ($errId) id="{{ $errId }}" @endif
+                    class="field-error-text"
+                    x-show="!!({{ $alpineErrorExpr }})"
+                    x-text="{{ $alpineErrorExpr }}"
+                    x-cloak
+                ></span>
             @endif
         </div>
     @endif

@@ -577,8 +577,10 @@ test('the screen warns before deleting, through the system dialog', function ():
     expect($blade)->toContain('async removeSocial(index, saved) {')
         ->toContain('dialog.confirm({')
         ->toContain("type: 'danger'")
-        // Only a saved row warns: an unsaved one has nothing to lose.
-        ->toContain('if (saved && ! await dialog.confirm({');
+        // Only a saved row warns: an unsaved one has nothing to lose. Pint's
+        // Blade rule wraps the condition, so the pair is probed in two halves.
+        ->toContain('saved &&')
+        ->toContain('!(await dialog.confirm({');
 });
 
 test('every row keeps its own key, so removing one from the middle moves the right node', function (): void {
@@ -1424,7 +1426,9 @@ test('only a logo column can be emptied through remove', function (): void {
 });
 
 test('a stored logo warns before going, through the system dialog', function (): void {
-    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+    // Whitespace is collapsed because Pint's Blade rule puts one attribute per
+    // line; what the test pins is the pairing, not the line layout.
+    $blade = preg_replace('/\s+/', ' ', file_get_contents(resource_path('views/components/configuration/⚡company.blade.php')));
 
     expect($blade)->toContain('x-on:file-remove="removeLogo($event.detail.name)"')
         ->toContain('async removeLogo(field) {')
@@ -1470,8 +1474,9 @@ test('the welcome wears the brand chrome, not the Laravel default', function ():
     $rendered = (new NewCompany(Company::factory()->create()))->render();
 
     // Wordmark, jade band and rights come from our own email layout; the hex
-    // is legit there, since mail clients never load app.css.
-    expect($rendered)->toContain('Atend<span style="color:#0EA47A;">ia</span>')
+    // is legit there (mail clients never load app.css), spelled as Pint's
+    // Blade rule normalizes it. The wordmark staying glued is what matters.
+    expect($rendered)->toContain('Atend<span style="color: #0ea47a">ia</span>')
         ->toContain('background-color:#0EA47A')
         ->toContain(__('mail.new_company.eyebrow'))
         ->toContain(__('mail.layout.rights', ['year' => now()->year]));

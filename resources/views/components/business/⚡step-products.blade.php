@@ -290,9 +290,13 @@ new class extends Component
 
     <x-ui.card>
         @if ($headers === [])
-            <x-inputsform.file span="full" name="upload" wire:model="upload"
+            <x-inputsform.file
+                span="full"
+                name="upload"
+                wire:model="upload"
                 accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-                :note="__('wizard.products.drop_formats')">
+                :note="__('wizard.products.drop_formats')"
+            >
                 <b class="block">{{ __('wizard.products.drop_title') }}</b>
                 {{ __('wizard.products.drop_text') }}
             </x-inputsform.file>
@@ -304,14 +308,20 @@ new class extends Component
                 @foreach ($headers as $index => $header)
                     <div class="wizard-map-row" wire:key="map-{{ $index }}">
                         <div class="wizard-map-colbox">
-                            <x-inputsform.input span="full" name="label_{{ $index }}"
-                                wire:model="labels.{{ $index }}" />
+                            <x-inputsform.input
+                                span="full"
+                                name="label_{{ $index }}"
+                                wire:model="labels.{{ $index }}"
+                            />
                             @if (($labels[$index] ?? $header) !== $header)
                                 <span class="wizard-map-was">{{ __('wizard.products.was', ['column' => $header]) }}</span>
                             @endif
                         </div>
-                        <x-ui.select name="map_{{ $index }}" :options="$this->targetOptions"
-                            wire:model="mapping.{{ $index }}" />
+                        <x-ui.select
+                            name="map_{{ $index }}"
+                            :options="$this->targetOptions"
+                            wire:model="mapping.{{ $index }}"
+                        />
                     </div>
                 @endforeach
 
@@ -321,8 +331,7 @@ new class extends Component
 
                     @foreach ($fixOriginals as $index => $original)
                         <div class="wizard-map-colbox" wire:key="fix-{{ $index }}">
-                            <x-inputsform.input span="full" name="fix_{{ $index }}"
-                                wire:model="fixes.{{ $index }}" />
+                            <x-inputsform.input span="full" name="fix_{{ $index }}" wire:model="fixes.{{ $index }}" />
                             <span class="wizard-map-was">{{ __('wizard.products.was', ['column' => $original]) }}</span>
                         </div>
                     @endforeach
@@ -341,33 +350,41 @@ new class extends Component
         @endif
 
         @if ($queuedFile !== null)
-            <p class="wizard-import-ok">{{ __('wizard.products.queued', ['file' => $queuedFile, 'rows' => $totalRows]) }}</p>
+            <p class="wizard-import-ok">
+                {{ __('wizard.products.queued', ['file' => $queuedFile, 'rows' => $totalRows]) }}
+            </p>
         @endif
 
         <p class="wizard-suggest">{{ __('wizard.products.manual') }}</p>
 
-        <x-inputsform.input span="long" name="product_draft" wire:model="draft" wire:keydown.enter.prevent="add"
+        <x-inputsform.input
+            span="long"
+            name="product_draft"
+            wire:model="draft"
+            wire:keydown.enter.prevent="add"
             :label="__('wizard.fields.product')"
-            :placeholder="__('wizard.fields.product_placeholder')" />
+            :placeholder="__('wizard.fields.product_placeholder')"
+        />
 
         <div class="wizard-pills">
             @foreach ($products as $index => $product)
                 <span wire:key="product-{{ md5($product) }}" class="wizard-pill">
                     {{ $product }}
-                    <button type="button" wire:click="remove({{ $index }})"
-                            aria-label="{{ __('wizard.services.remove') }}">×</button>
+                    <button
+                        type="button"
+                        wire:click="remove({{ $index }})"
+                        aria-label="{{ __('wizard.services.remove') }}"
+                    >
+                        ×
+                    </button>
                 </span>
             @endforeach
         </div>
 
         <div class="wizard-foot">
-            <x-ui.button variant="ghost" wire:click="finish(true)">
-                {{ __('wizard.products.skip') }}
-            </x-ui.button>
+            <x-ui.button variant="ghost" wire:click="finish(true)"> {{ __('wizard.products.skip') }} </x-ui.button>
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" wire:click="finish">
-                {{ __('wizard.continue') }}
-            </x-ui.button>
+            <x-ui.button variant="primary" wire:click="finish"> {{ __('wizard.continue') }} </x-ui.button>
         </div>
     </x-ui.card>
 </div>

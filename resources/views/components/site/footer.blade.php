@@ -15,20 +15,29 @@
     $current = app()->getLocale();
 @endphp
 
-<footer class="bg-card border-t bd-subtle">
-    <div class="mx-auto grid gap-8 grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]" style="max-width: var(--container-xl); padding:48px 24px 28px;">
-        <div class="flex flex-col gap-3 col-span-2 lg:col-span-1" style="max-width:280px;">
+<footer class="bg-card bd-subtle border-t">
+    <div
+        class="mx-auto grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr_1fr_1fr]"
+        style="max-width: var(--container-xl); padding: 48px 24px 28px"
+    >
+        <div class="col-span-2 flex flex-col gap-3 lg:col-span-1" style="max-width: 280px">
             <x-site.logo :size="24" />
-            <p class="text-muted" style="font-size: var(--text-sm); line-height:1.55;">{{ $company?->tagline ?: __('landing.footer.tagline') }}</p>
+            <p class="text-muted" style="font-size: var(--text-sm); line-height: 1.55">
+                {{ $company?->tagline ?: __('landing.footer.tagline') }}
+            </p>
 
             {{-- The order is the one the screen set: `socialLinks` comes back
             sorted by `sort_order`, which is what that column is for. --}}
             @if ($company?->socialLinks->isNotEmpty())
                 <div class="flex items-center gap-3">
                     @foreach ($company->socialLinks as $link)
-                        <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer"
-                           class="text-subtle hover:text-brand transition"
-                           aria-label="{{ $link->socialNetwork?->name }}">
+                        <a
+                            href="{{ $link->url }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-subtle hover:text-brand transition"
+                            aria-label="{{ $link->socialNetwork?->name }}"
+                        >
                             <x-icon :name="$link->socialNetwork?->icon ?: 'link'" :size="18" />
                         </a>
                     @endforeach
@@ -37,14 +46,21 @@
         </div>
         @foreach ($cols as $col)
             <div class="flex flex-col gap-2.5">
-                <div class="text-strong" style="font-weight:700;font-size:var(--text-sm);">{{ $col['h'] }}</div>
+                <div class="text-strong" style="font-weight: 700; font-size: var(--text-sm)">{{ $col['h'] }}</div>
                 @foreach ($col['links'] as $l)
-                    <a href="#" class="text-muted hover:text-brand transition" style="font-size:var(--text-sm);">{{ $l }}</a>
+                    <a
+                        href="#"
+                        class="text-muted hover:text-brand transition"
+                        style="font-size: var(--text-sm)"
+                    >{{ $l }}</a>
                 @endforeach
             </div>
         @endforeach
     </div>
-    <div class="border-t bd-subtle mx-auto flex flex-wrap justify-between items-center gap-2.5 text-subtle" style="max-width: var(--container-xl); padding:16px 24px; font-size:var(--text-xs);">
+    <div
+        class="bd-subtle text-subtle mx-auto flex flex-wrap items-center justify-between gap-2.5 border-t"
+        style="max-width: var(--container-xl); padding: 16px 24px; font-size: var(--text-xs)"
+    >
         <span>© {{ date('Y') }} {{ $company?->legal_name ?: 'Atendia' }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
             <a href="#" class="text-subtle">{{ __('landing.footer.terms') }}</a>
@@ -54,10 +70,10 @@
             <span x-data="{ open: false }" class="relative">
                 <button
                     type="button"
-                    @click="open = !open"
+                    @click="open = ! open"
                     @click.outside="open = false"
-                    class="inline-flex items-center gap-1.5 text-subtle hover:text-brand transition"
-                    style="font-size:var(--text-xs);"
+                    class="text-subtle hover:text-brand inline-flex items-center gap-1.5 transition"
+                    style="font-size: var(--text-xs)"
                 >
                     <x-icon name="globe" :size="14" />
                     {{ $labels[$current] ?? __('landing.footer.language') }}
@@ -67,14 +83,14 @@
                     x-show="open"
                     x-cloak
                     x-transition
-                    class="absolute right-0 bottom-full mb-2 bg-card border bd-subtle rounded-lg overflow-hidden"
-                    style="z-index: var(--z-sticky); min-width:160px; box-shadow: var(--shadow-md);"
+                    class="bg-card bd-subtle absolute bottom-full right-0 mb-2 overflow-hidden rounded-lg border"
+                    style="z-index: var(--z-sticky); min-width: 160px; box-shadow: var(--shadow-md)"
                 >
                     @foreach ($locales as $loc)
                         <a
                             href="{{ route('locale.switch', $loc) }}"
                             class="block px-3 py-2 text-body hover:bg-sunken transition {{ $loc === $current ? 'text-brand font-semibold' : '' }}"
-                            style="font-size:var(--text-sm);"
+                            style="font-size: var(--text-sm)"
                         >{{ $labels[$loc] ?? $loc }}</a>
                     @endforeach
                 </div>

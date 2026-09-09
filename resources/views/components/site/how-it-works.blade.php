@@ -7,27 +7,35 @@
     ];
 @endphp
 
-<section id="como-funciona" class="w-full flex justify-center pt-16 pb-16">
-    <div class="w-full px-6" style="max-width: var(--container-xl);">
-        <x-ui.card style="border-radius:var(--radius-2xl); padding:48px 40px;">
-            <div class="flex flex-col items-center text-center gap-3 mb-10">
+<section id="como-funciona" class="flex w-full justify-center pb-16 pt-16">
+    <div class="w-full px-6" style="max-width: var(--container-xl)">
+        <x-ui.card style="border-radius: var(--radius-2xl); padding: 48px 40px">
+            <div class="mb-10 flex flex-col items-center gap-3 text-center">
                 <span class="eyebrow eyebrow-line">{{ __('landing.how.eyebrow') }}</span>
-                <h2 class="font-display" style="font-size: var(--text-4xl); max-width:560px;">{{ __('landing.how.title') }}</h2>
+                <h2 class="font-display" style="font-size: var(--text-4xl); max-width: 560px">
+                    {{ __('landing.how.title') }}
+                </h2>
             </div>
 
-            <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($steps as $s)
-                    <div class="flex flex-col gap-3" style="padding:0 8px;">
+                    <div class="flex flex-col gap-3" style="padding: 0 8px">
                         <div class="flex items-center gap-3">
-                            <span class="inline-flex items-center justify-center" style="width:48px;height:48px;border-radius:var(--radius-lg);
+                            <span
+                                class="inline-flex items-center justify-center"
+                                style="width:48px;height:48px;border-radius:var(--radius-lg);
                                 background: {{ $s['accent'] ? 'var(--accent-soft)' : 'var(--brand-soft)' }};
-                                color: {{ $s['accent'] ? 'var(--accent)' : 'var(--brand)' }};">
+                                color: {{ $s['accent'] ? 'var(--accent)' : 'var(--brand)' }};"
+                            >
                                 <x-icon :name="$s['icon']" :size="24" />
                             </span>
-                            <span class="font-mono text-subtle" style="font-size:13px;font-weight:600;">{{ $s['n'] }}</span>
+                            <span
+                                class="text-subtle font-mono"
+                                style="font-size: 13px; font-weight: 600"
+                            >{{ $s['n'] }}</span>
                         </div>
-                        <h3 class="font-display" style="font-size: var(--text-lg);">{{ $s['title'] }}</h3>
-                        <p class="text-muted" style="font-size: var(--text-sm); line-height:1.5;">{{ $s['body'] }}</p>
+                        <h3 class="font-display" style="font-size: var(--text-lg)">{{ $s['title'] }}</h3>
+                        <p class="text-muted" style="font-size: var(--text-sm); line-height: 1.5">{{ $s['body'] }}</p>
                     </div>
                 @endforeach
             </div>

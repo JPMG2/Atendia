@@ -44,7 +44,9 @@ new class extends Component
     <div class="page-head">
         <div>
             <h1 class="page-head-title">{{ __('client.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
-            <p class="page-head-sub">{{ $mode === 'new' ? __('client.home.sub_new') : __('client.home.sub_active') }}</p>
+            <p class="page-head-sub">
+                {{ $mode === 'new' ? __('client.home.sub_new') : __('client.home.sub_active') }}
+            </p>
         </div>
 
         <div class="mock-switch" role="group" aria-label="{{ __('client.home.mock_label') }}">
@@ -67,35 +69,44 @@ new class extends Component
                 <span class="setup-count font-mono">{{ __('client.setup.progress', ['done' => $done, 'total' => $total]) }}</span>
             </div>
 
-            <div class="setup-bar" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100">
+            <div
+                class="setup-bar"
+                role="progressbar"
+                aria-valuenow="{{ $percent }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+            >
                 <i style="width: {{ $percent }}%"></i>
             </div>
 
             <div class="setup-list">
-            @foreach ($steps as $key => $completed)
-                <div wire:key="step-{{ $key }}" @class(['setup-step', 'is-done' => $completed, 'is-hero' => $key === 'whatsapp'])>
-                    <span class="setup-tick">
-                        @if ($completed)
-                            <x-icon name="check" :size="14" />
-                        @endif
-                    </span>
-                    <div class="setup-copy">
-                        <b>{{ __('client.setup.steps.'.$key.'.label') }}</b>
-                        <span>{{ __('client.setup.steps.'.$key.'.hint') }}</span>
+                @foreach ($steps as $key => $completed)
+                    <div
+                        wire:key="step-{{ $key }}"
+                        @class(['setup-step', 'is-done' => $completed, 'is-hero' => $key === 'whatsapp'])
+                    >
+                        <span class="setup-tick">
+                            @if ($completed)
+                                <x-icon name="check" :size="14" />
+                            @endif
+                        </span>
+                        <div class="setup-copy">
+                            <b>{{ __('client.setup.steps.'.$key.'.label') }}</b>
+                            <span>{{ __('client.setup.steps.'.$key.'.hint') }}</span>
+                        </div>
+                        @unless ($completed)
+                            @if ($key === 'business')
+                                <x-ui.button variant="secondary" size="sm" :href="route('my-business')" wire:navigate>
+                                    {{ __('client.setup.steps.'.$key.'.cta') }}
+                                </x-ui.button>
+                            @else
+                                <x-ui.button :variant="$key === 'whatsapp' ? 'primary' : 'secondary'" size="sm">
+                                    {{ __('client.setup.steps.'.$key.'.cta') }}
+                                </x-ui.button>
+                            @endif
+                        @endunless
                     </div>
-                    @unless ($completed)
-                        @if ($key === 'business')
-                            <x-ui.button variant="secondary" size="sm" :href="route('my-business')" wire:navigate>
-                                {{ __('client.setup.steps.'.$key.'.cta') }}
-                            </x-ui.button>
-                        @else
-                            <x-ui.button :variant="$key === 'whatsapp' ? 'primary' : 'secondary'" size="sm">
-                                {{ __('client.setup.steps.'.$key.'.cta') }}
-                            </x-ui.button>
-                        @endif
-                    @endunless
-                </div>
-            @endforeach
+                @endforeach
             </div>
         </x-ui.card>
 
@@ -119,10 +130,38 @@ new class extends Component
         </div>
     @else
         <div class="stat-grid">
-            <x-ui.stat-card :label="__('client.kpis.conversations')" value="48" delta="+12%" trend="up" icon="message-circle" tint="brand" />
-            <x-ui.stat-card :label="__('client.kpis.handled')" value="41" delta="+9%" trend="up" icon="bot" tint="info" />
-            <x-ui.stat-card :label="__('client.kpis.handoffs')" value="7" delta="+2" trend="flat" icon="users" tint="warning" />
-            <x-ui.stat-card :label="__('client.kpis.response')" value="2s" delta="estable" trend="flat" icon="zap" tint="accent" />
+            <x-ui.stat-card
+                :label="__('client.kpis.conversations')"
+                value="48"
+                delta="+12%"
+                trend="up"
+                icon="message-circle"
+                tint="brand"
+            />
+            <x-ui.stat-card
+                :label="__('client.kpis.handled')"
+                value="41"
+                delta="+9%"
+                trend="up"
+                icon="bot"
+                tint="info"
+            />
+            <x-ui.stat-card
+                :label="__('client.kpis.handoffs')"
+                value="7"
+                delta="+2"
+                trend="flat"
+                icon="users"
+                tint="warning"
+            />
+            <x-ui.stat-card
+                :label="__('client.kpis.response')"
+                value="2s"
+                delta="estable"
+                trend="flat"
+                icon="zap"
+                tint="accent"
+            />
         </div>
 
         <x-ui.card class="recent-card">

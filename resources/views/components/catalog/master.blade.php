@@ -11,20 +11,17 @@
     Alpine state. The x-data seed is #[Locked]: were it to change on a
     re-render, Alpine would RE-INITIALISE the editor and lose the open view.
 --}}
-<div class="catalog-master"
+<div
+    class="catalog-master"
     x-data="catalogMaster({
         items: {{ \Illuminate\Support\Js::from($rows) }},
         path: {{ \Illuminate\Support\Js::from($path) }},
         search: {{ \Illuminate\Support\Js::from($search) }},
         rules: {{ \Illuminate\Support\Js::from($rules) }}
     })"
-    x-on:catalog-rows-refreshed="items = $event.detail.rows">
+    x-on:catalog-rows-refreshed="items = $event.detail.rows"
+>
+    <div class="catalog-view" x-show="view === 'list'">{{ $list }}</div>
 
-    <div class="catalog-view" x-show="view === 'list'">
-        {{ $list }}
-    </div>
-
-    <div class="catalog-view" x-show="view === 'form'" x-cloak>
-        {{ $form }}
-    </div>
+    <div class="catalog-view" x-show="view === 'form'" x-cloak>{{ $form }}</div>
 </div>

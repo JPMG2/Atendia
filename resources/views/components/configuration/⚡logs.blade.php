@@ -72,16 +72,27 @@ switching levels must not cost a request. --}}
     <div class="log-toolbar">
         <div class="log-pills" role="tablist">
             @foreach (['all', 'error', 'warning', 'info'] as $option)
-                <button type="button" class="log-pill" x-bind:class="{ 'is-active': level === '{{ $option }}' }"
-                    x-on:click="level = '{{ $option }}'">{{ __('logs.levels.'.$option) }}</button>
+                <button
+                    type="button"
+                    class="log-pill"
+                    x-bind:class="{ 'is-active': level === '{{ $option }}' }"
+                    x-on:click="level = '{{ $option }}'"
+                >
+                    {{ __('logs.levels.'.$option) }}
+                </button>
             @endforeach
         </div>
 
         @if (count(app(App\Services\Logs\LogReader::class)->files()) > 1)
             <div class="log-pills">
                 @foreach (app(App\Services\Logs\LogReader::class)->files() as $candidate)
-                    <button type="button" class="log-pill font-mono @if ($candidate === $file) is-active @endif"
-                        wire:click="selectFile('{{ $candidate }}')">{{ $candidate }}</button>
+                    <button
+                        type="button"
+                        class="log-pill font-mono @if ($candidate === $file) is-active @endif"
+                        wire:click="selectFile('{{ $candidate }}')"
+                    >
+                        {{ $candidate }}
+                    </button>
                 @endforeach
             </div>
         @endif
@@ -106,9 +117,12 @@ switching levels must not cost a request. --}}
                 };
             @endphp
 
-            <x-ui.card class="log-entry" wire:key="log-{{ $file }}-{{ $index }}"
+            <x-ui.card
+                class="log-entry"
+                wire:key="log-{{ $file }}-{{ $index }}"
                 x-data="{ open: false, copied: false }"
-                x-show="level === 'all' || level === '{{ $tone === 'debug' ? 'info' : $tone }}'">
+                x-show="level === 'all' || level === '{{ $tone === 'debug' ? 'info' : $tone }}'"
+            >
                 <div class="log-head">
                     <span class="log-badge is-{{ $tone }}">{{ $entry['level'] }}</span>
                     <span class="log-time font-mono">{{ $entry['timestamp'] }}</span>
@@ -118,14 +132,32 @@ switching levels must not cost a request. --}}
                         {{-- The clipboard gets the entry VERBATIM from the raw
                         block, expanded or not: what is pasted for help must
                         be exactly what the log says. --}}
-                        <x-ui.icon-button size="sm" variant="ghost" :label="__('logs.copy')" data-testid="log-copy"
-                            x-on:click="navigator.clipboard.writeText($refs.raw.textContent).then(() => { copied = true; setTimeout(() => copied = false, 1600); })">
+                        <x-ui.icon-button
+                            size="sm"
+                            variant="ghost"
+                            :label="__('logs.copy')"
+                            data-testid="log-copy"
+                            x-on:click="
+                                navigator.clipboard.writeText($refs.raw.textContent).then(() => {
+                                    copied = true;
+                                    setTimeout(() => (copied = false), 1600);
+                                })
+                            "
+                        >
                             <span x-show="! copied"><x-icon name="copy" :size="16" /></span>
-                            <span x-show="copied" x-cloak style="color:var(--success)"><x-icon name="check" :size="16" /></span>
+                            <span x-show="copied" x-cloak style="color: var(--success)"
+                                ><x-icon name="check" :size="16"
+                            /></span>
                         </x-ui.icon-button>
 
-                        <x-ui.icon-button size="sm" variant="ghost" icon="chevron-down" :label="__('logs.expand')"
-                            x-on:click="open = ! open" x-bind:class="{ 'log-chevron-open': open }" />
+                        <x-ui.icon-button
+                            size="sm"
+                            variant="ghost"
+                            icon="chevron-down"
+                            :label="__('logs.expand')"
+                            x-on:click="open = ! open"
+                            x-bind:class="{ 'log-chevron-open': open }"
+                        />
                     </span>
                 </div>
 

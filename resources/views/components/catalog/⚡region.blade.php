@@ -16,7 +16,8 @@ use Livewire\Component;
  * `catalogMaster()`, so only the server actions and this master's own fields
  * belong here.
  */
-new class extends Component {
+new class extends Component
+{
     use InteractsWithCatalogEditor;
 
     public RegionForm $form;
@@ -48,32 +49,42 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows"
+<x-catalog.master
+    :rows="$initialRows"
     :search="['name', 'province', 'country']"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'province_id' => ['required'],
-    ]">
-
+    ]"
+>
     {{-- Table view: the list. --}}
     <x-slot:list>
-        <x-catalog.toolbar :search-placeholder="__('catalog.region.search_placeholder')"
-            :search-label="__('catalog.region.search_label')" :singular="__('catalog.region.singular')"
-            :plural="__('catalog.region.plural')" :create="__('catalog.region.create')" />
+        <x-catalog.toolbar
+            :search-placeholder="__('catalog.region.search_placeholder')"
+            :search-label="__('catalog.region.search_label')"
+            :singular="__('catalog.region.singular')"
+            :plural="__('catalog.region.plural')"
+            :create="__('catalog.region.create')"
+        />
 
-        <x-catalog.table :empty="__('catalog.region.empty')" :columns="[
-            ['label' => __('catalog.region.columns.name'), 'class' => 'catalog-col-fill'],
-            ['label' => __('catalog.region.columns.province')],
-            ['label' => __('catalog.region.columns.country')],
-            ['label' => __('catalog.region.columns.status')],
-        ]">
+        <x-catalog.table
+            :empty="__('catalog.region.empty')"
+            :columns="[
+                ['label' => __('catalog.region.columns.name'), 'class' => 'catalog-col-fill'],
+                ['label' => __('catalog.region.columns.province')],
+                ['label' => __('catalog.region.columns.country')],
+                ['label' => __('catalog.region.columns.status')],
+            ]"
+        >
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td x-text="row.province"></td>
             <td x-text="row.country"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
-                    <span class="dot"></span><span
-                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.region.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.region.status.inactive')) }}"></span>
+                    <span class="dot"></span
+                    ><span
+                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.region.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.region.status.inactive')) }}"
+                    ></span>
                 </span>
             </td>
         </x-catalog.table>
@@ -81,24 +92,45 @@ new class extends Component {
 
     {{-- Form view: create and edit. --}}
     <x-slot:form>
-        <x-catalog.form-shell :new="__('catalog.region.new')" :new-title="__('catalog.region.new_title')"
-            :edit-title="__('catalog.region.edit_title')" :create="__('catalog.region.create')">
-
+        <x-catalog.form-shell
+            :new="__('catalog.region.new')"
+            :new-title="__('catalog.region.new_title')"
+            :edit-title="__('catalog.region.edit_title')"
+            :create="__('catalog.region.create')"
+        >
             {{-- Three fields in one row reaching the edge: the name takes the
             slack and the status closes the line. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="text" :label="__('catalog.region.fields.name')" required name="name"
-                    :placeholder="__('catalog.region.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.data.name" />
+                <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.region.fields.name')"
+                    required
+                    name="name"
+                    :placeholder="__('catalog.region.fields.name_placeholder')"
+                    alpine-error="name"
+                    wire:model="form.data.name"
+                />
 
-                <x-inputsform.combobox span="text" :label="__('catalog.region.fields.province')" required
-                    name="province_id" :placeholder="__('catalog.region.fields.province_placeholder')"
-                    :options="$this->provinceOptions" :value="$form->data?->province_id"
-                    alpine-error="province_id" wire:model="form.data.province_id" />
+                <x-inputsform.combobox
+                    span="text"
+                    :label="__('catalog.region.fields.province')"
+                    required
+                    name="province_id"
+                    :placeholder="__('catalog.region.fields.province_placeholder')"
+                    :options="$this->provinceOptions"
+                    :value="$form->data?->province_id"
+                    alpine-error="province_id"
+                    wire:model="form.data.province_id"
+                />
 
-                <x-inputsform.switch-field span="short" :label="__('catalog.region.fields.status')" name="is_active"
-                    :on="__('catalog.region.status.active')" :off="__('catalog.region.status.inactive')"
-                    wire:model="form.data.is_active" />
+                <x-inputsform.switch-field
+                    span="short"
+                    :label="__('catalog.region.fields.status')"
+                    name="is_active"
+                    :on="__('catalog.region.status.active')"
+                    :off="__('catalog.region.status.inactive')"
+                    wire:model="form.data.is_active"
+                />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

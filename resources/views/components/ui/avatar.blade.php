@@ -35,9 +35,15 @@
     @if ($src)
         <img class="avatar-img" src="{{ $src }}" alt="{{ $name }}" style="width:{{ $dim }}px;height:{{ $dim }}px;" />
     @else
-        <span class="avatar-fallback" style="width:{{ $dim }}px;height:{{ $dim }}px;background:{{ $bg }};color:{{ $fg }};font-size:{{ $fontSize }}px;">{{ $initials }}</span>
+        <span
+            class="avatar-fallback"
+            style="width:{{ $dim }}px;height:{{ $dim }}px;background:{{ $bg }};color:{{ $fg }};font-size:{{ $fontSize }}px;"
+        >{{ $initials }}</span>
     @endif
     @if ($statusColor)
-        <span class="avatar-status" style="width:{{ $statusDim }}px;height:{{ $statusDim }}px;background:{{ $statusColor }};"></span>
+        <span
+            class="avatar-status"
+            style="width:{{ $statusDim }}px;height:{{ $statusDim }}px;background:{{ $statusColor }};"
+        ></span>
     @endif
 </span>

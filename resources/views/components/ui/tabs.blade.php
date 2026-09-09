@@ -19,9 +19,13 @@
                 :aria-selected="tab === @js($t['value'])"
                 @click="tab = @js($t['value'])"
             >
-                @isset($t['icon'])<x-icon :name="$t['icon']" :size="16" />@endisset
+                @isset($t['icon'])
+                    <x-icon :name="$t['icon']" :size="16" />
+                @endisset
                 <span>{{ $t['label'] }}</span>
-                @isset($t['badge'])<span class="tab-badge">{{ $t['badge'] }}</span>@endisset
+                @isset($t['badge'])
+                    <span class="tab-badge">{{ $t['badge'] }}</span>
+                @endisset
             </button>
         @endforeach
     </div>

@@ -23,8 +23,13 @@
             {{-- A tile with a route is live and navigates; the rest stay the
             skeleton they are until their turn comes. A null href is simply
             omitted, and wire:navigate is inert outside an anchor. --}}
-            <x-ui.card interactive class="settings-tile" :as="isset($tile['route']) ? 'a' : 'div'"
-                :href="isset($tile['route']) ? route($tile['route']) : null" wire:navigate>
+            <x-ui.card
+                interactive
+                class="settings-tile"
+                :as="isset($tile['route']) ? 'a' : 'div'"
+                :href="isset($tile['route']) ? route($tile['route']) : null"
+                wire:navigate
+            >
                 <span class="settings-tile-icon"><x-icon :name="$tile['icon']" :size="22" /></span>
                 <h3 class="settings-tile-title">{{ $tile['title'] }}</h3>
                 <p class="settings-tile-desc">{{ $tile['desc'] }}</p>

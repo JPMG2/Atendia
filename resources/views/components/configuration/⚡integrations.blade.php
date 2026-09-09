@@ -77,7 +77,7 @@ new class extends Component
                     <p class="integration-detail">
                         {{ $status['detail'] }}
                         @if ($status['latency_ms'] !== null)
-                            <span class="font-mono integration-latency">{{ __('integrations.latency', ['ms' => $status['latency_ms']]) }}</span>
+                            <span class="integration-latency font-mono">{{ __('integrations.latency', ['ms' => $status['latency_ms']]) }}</span>
                         @endif
                     </p>
 

@@ -212,7 +212,10 @@ test('the clear button is out of the tab order and never submits', function (): 
         ['options' => comboboxOptions()],
     )->__toString();
 
-    expect($html)->toContain('<button type="button" class="combo-clear" tabindex="-1"');
+    // Collapsed because Pint's Blade rule renders one attribute per line;
+    // the pinned facts are the type, the class and the tab order, not layout.
+    expect(preg_replace('/\s+/', ' ', $html))
+        ->toContain('<button type="button" class="combo-clear" tabindex="-1"');
 });
 
 test('a loading combobox cannot be cleared either', function (): void {

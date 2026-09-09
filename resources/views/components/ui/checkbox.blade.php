@@ -23,8 +23,12 @@
     </span>
     @if ($label || $description)
         <span class="flex flex-col gap-0.5">
-            @if ($label)<span class="checkbox-title">{{ $label }}</span>@endif
-            @if ($description)<span class="checkbox-desc">{{ $description }}</span>@endif
+            @if ($label)
+                <span class="checkbox-title">{{ $label }}</span>
+            @endif
+            @if ($description)
+                <span class="checkbox-desc">{{ $description }}</span>
+            @endif
         </span>
     @endif
 </label>

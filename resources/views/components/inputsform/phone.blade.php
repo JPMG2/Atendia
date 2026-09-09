@@ -38,11 +38,18 @@
 
 <div class="field {{ $spanClass }}">
     @if ($label)
-        <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
+        <label for="{{ $id }}" class="field-label"
+            >{{ $label }}
+            @if ($isRequired)
+                <span class="field-required" aria-hidden="true">*</span>
+            @endif
+        </label>
     @endif
 
-    <div class="{{ $controlClasses }}"
-        x-data="inputsformPhone({ value: @js((string) $value), defaultDial: @js((string) $defaultDial), dials: @js($dials) })">
+    <div
+        class="{{ $controlClasses }}"
+        x-data="inputsformPhone({ value: @js((string) $value), defaultDial: @js((string) $defaultDial), dials: @js($dials) })"
+    >
         <select class="phone-dial" x-model="dial" tabindex="-1" aria-label="{{ __('forms.phone.country') }}">
             @foreach ($countries as $country)
                 <option value="{{ $country['code'] }}">{{ $country['flag'] }} +{{ $country['code'] }}</option>
@@ -63,10 +70,13 @@
             class="field-input phone-number"
         />
 
-        <input type="hidden" x-ref="real"
+        <input
+            type="hidden"
+            x-ref="real"
             @if ($name) name="{{ $name }}" @endif
             value="{{ $value }}"
-            {{ $valueAttributes->whereStartsWith('wire:') }} />
+            {{ $valueAttributes->whereStartsWith('wire:') }}
+        />
     </div>
 
     {{-- Hint and error stack in .field-meta so they NEVER overlap. --}}
@@ -79,7 +89,13 @@
             @if ($error)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
-                <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+                <span
+                    @if ($errId) id="{{ $errId }}" @endif
+                    class="field-error-text"
+                    x-show="!!({{ $alpineErrorExpr }})"
+                    x-text="{{ $alpineErrorExpr }}"
+                    x-cloak
+                ></span>
             @endif
         </div>
     @endif

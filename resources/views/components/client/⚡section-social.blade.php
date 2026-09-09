@@ -67,30 +67,57 @@ new class extends Component
             line so the eye never leaves the row. --}}
             @foreach ($form->social as $index => $row)
                 <div class="config-social-row" wire:key="social-{{ $row['key'] }}">
-                    <x-inputsform.combobox span="short" :id="'bp-social-' . $index . '-network'"
-                        :name="'social.' . $index . '.social_network_id'" :aria-label="__('client.business.social.network')"
-                        :placeholder="__('client.business.social.network_placeholder')" :options="$this->socialOptions"
-                        :value="$row['social_network_id']" wire:model="form.social.{{ $index }}.social_network_id" />
+                    <x-inputsform.combobox
+                        span="short"
+                        :id="'bp-social-'.$index.'-network'"
+                        :name="'social.'.$index.'.social_network_id'"
+                        :aria-label="__('client.business.social.network')"
+                        :placeholder="__('client.business.social.network_placeholder')"
+                        :options="$this->socialOptions"
+                        :value="$row['social_network_id']"
+                        wire:model="form.social.{{ $index }}.social_network_id"
+                    />
 
-                    <x-inputsform.input span="long" icon="link" :id="'bp-social-' . $index . '-url'"
-                        :name="'social.' . $index . '.url'" :aria-label="__('client.business.social.url')"
-                        :placeholder="__('client.business.social.url_placeholder')" maxlength="255"
-                        wire:model="form.social.{{ $index }}.url" />
+                    <x-inputsform.input
+                        span="long"
+                        icon="link"
+                        :id="'bp-social-'.$index.'-url'"
+                        :name="'social.'.$index.'.url'"
+                        :aria-label="__('client.business.social.url')"
+                        :placeholder="__('client.business.social.url_placeholder')"
+                        maxlength="255"
+                        wire:model="form.social.{{ $index }}.url"
+                    />
 
-                    <x-ui.icon-button icon="trash-2" variant="ghost" class="config-social-remove"
-                        data-testid="social-remove" :label="__('client.business.social.remove')"
+                    <x-ui.icon-button
+                        icon="trash-2"
+                        variant="ghost"
+                        class="config-social-remove"
+                        data-testid="social-remove"
+                        :label="__('client.business.social.remove')"
                         :disabled="count($form->social) === 1 && $row['id'] === null"
-                        wire:click="removeSocialRow({{ $index }})" />
+                        wire:click="removeSocialRow({{ $index }})"
+                    />
 
-                    <x-ui.icon-button icon="plus" variant="ghost" class="config-social-add"
-                        :label="__('client.business.social.add')" data-testid="social-add"
-                        wire:click="addSocialRow({{ $index }})" />
+                    <x-ui.icon-button
+                        icon="plus"
+                        variant="ghost"
+                        class="config-social-add"
+                        :label="__('client.business.social.add')"
+                        data-testid="social-add"
+                        wire:click="addSocialRow({{ $index }})"
+                    />
                 </div>
             @endforeach
         </div>
     </div>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" wire:click="save">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button
+            variant="primary"
+            size="sm"
+            wire:click="save"
+        >
+            {{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>

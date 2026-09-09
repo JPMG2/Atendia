@@ -261,16 +261,19 @@ field in red from an attempt you had stopped looking at. --}}
     {{-- Step two starts locked until the company exists: the commercial data
     hangs off a record that is not there yet. With it loaded there is
     nothing to order and both steps are free. --}}
-    <x-ui.stepper default="main" :unlocked="$isRegistered" :lockedHint="__('company.steps.locked_hint')" :steps="[
-        ['value' => 'main', 'label' => __('company.steps.main.label'), 'desc' => __('company.steps.main.desc')],
-        ['value' => 'commercial', 'label' => __('company.steps.commercial.label'), 'desc' => __('company.steps.commercial.desc')],
-    ]">
-
+    <x-ui.stepper
+        default="main"
+        :unlocked="$isRegistered"
+        :lockedHint="__('company.steps.locked_hint')"
+        :steps="[
+            ['value' => 'main', 'label' => __('company.steps.main.label'), 'desc' => __('company.steps.main.desc')],
+            ['value' => 'commercial', 'label' => __('company.steps.commercial.label'), 'desc' => __('company.steps.commercial.desc')],
+        ]"
+    >
         {{-- Company details. The order they are filled in: who it is, the number it
         invoices under, where it is, how it looks, what closes the
         invoice. --}}
         <x-ui.card class="mt-4" x-show="step === 'main'" x-cloak wire:key="step-main-{{ $mainRevision }}">
-
             <div class="config-block">
                 <div>
                     <h2 class="config-block-title">{{ __('company.identity.title') }}</h2>
@@ -279,11 +282,24 @@ field in red from an attempt you had stopped looking at. --}}
 
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.input span="text" required name="legal_name" alpine-error="legal_name"
-                            :label="__('company.fields.legal_name')" :placeholder="__('company.fields.legal_name_placeholder')" wire:model="form.data.legal_name" />
+                        <x-inputsform.input
+                            span="text"
+                            required
+                            name="legal_name"
+                            alpine-error="legal_name"
+                            :label="__('company.fields.legal_name')"
+                            :placeholder="__('company.fields.legal_name_placeholder')"
+                            wire:model="form.data.legal_name"
+                        />
 
-                        <x-inputsform.input span="long" name="tagline" :label="__('company.fields.tagline')" :placeholder="__('company.fields.tagline_placeholder')"
-                            :hint="__('company.fields.tagline_hint')" wire:model="form.data.tagline" />
+                        <x-inputsform.input
+                            span="long"
+                            name="tagline"
+                            :label="__('company.fields.tagline')"
+                            :placeholder="__('company.fields.tagline_placeholder')"
+                            :hint="__('company.fields.tagline_hint')"
+                            wire:model="form.data.tagline"
+                        />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -299,22 +315,56 @@ field in red from an attempt you had stopped looking at. --}}
                 off it, the tax standing included. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" required name="country_id" alpine-error="country_id"
-                            :label="__('company.fields.country')" :placeholder="__('company.fields.country_placeholder')" :options="$this->countryOptions" :value="$form->data?->country_id"
-                            wire:model.live="form.data.country_id" />
+                        <x-inputsform.combobox
+                            span="text"
+                            required
+                            name="country_id"
+                            alpine-error="country_id"
+                            :label="__('company.fields.country')"
+                            :placeholder="__('company.fields.country_placeholder')"
+                            :options="$this->countryOptions"
+                            :value="$form->data?->country_id"
+                            wire:model.live="form.data.country_id"
+                        />
 
-                        <x-inputsform.combobox span="text" required name="province_id" alpine-error="province_id"
-                            :label="__('company.fields.province')" :placeholder="__('company.fields.province_placeholder')" :options="$this->provinceOptions" :value="$form->data?->province_id"
-                            loading="form.data.country_id" wire:model.live="form.data.province_id" />
+                        <x-inputsform.combobox
+                            span="text"
+                            required
+                            name="province_id"
+                            alpine-error="province_id"
+                            :label="__('company.fields.province')"
+                            :placeholder="__('company.fields.province_placeholder')"
+                            :options="$this->provinceOptions"
+                            :value="$form->data?->province_id"
+                            loading="form.data.country_id"
+                            wire:model.live="form.data.province_id"
+                        />
                     </x-catalog.form-row>
 
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" required name="region_id" alpine-error="region_id"
-                            :label="__('company.fields.region')" :placeholder="__('company.fields.region_placeholder')" :options="$this->regionOptions" :value="$form->data?->region_id"
-                            loading="form.data.province_id" wire:model="form.data.region_id" />
+                        <x-inputsform.combobox
+                            span="text"
+                            required
+                            name="region_id"
+                            alpine-error="region_id"
+                            :label="__('company.fields.region')"
+                            :placeholder="__('company.fields.region_placeholder')"
+                            :options="$this->regionOptions"
+                            :value="$form->data?->region_id"
+                            loading="form.data.province_id"
+                            wire:model="form.data.region_id"
+                        />
 
-                        <x-inputsform.input span="long" required name="address" alpine-error="address"
-                            :label="__('company.fields.address')" :placeholder="__('company.fields.address_placeholder')" maxlength="255" wire:model="form.data.address" />
+                        <x-inputsform.input
+                            span="long"
+                            required
+                            name="address"
+                            alpine-error="address"
+                            :label="__('company.fields.address')"
+                            :placeholder="__('company.fields.address_placeholder')"
+                            maxlength="255"
+                            wire:model="form.data.address"
+                        />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -329,16 +379,32 @@ field in red from an attempt you had stopped looking at. --}}
                 here, not the other way round. --}}
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.combobox span="text" required name="tax_condition_id"
-                            alpine-error="tax_condition_id" :label="__('company.fields.tax_condition')" :placeholder="__('company.fields.tax_condition_placeholder')" :options="$this->taxConditionOptions"
-                            :value="$form->data?->tax_condition_id" wire:model="form.data.tax_condition_id" />
+                        <x-inputsform.combobox
+                            span="text"
+                            required
+                            name="tax_condition_id"
+                            alpine-error="tax_condition_id"
+                            :label="__('company.fields.tax_condition')"
+                            :placeholder="__('company.fields.tax_condition_placeholder')"
+                            :options="$this->taxConditionOptions"
+                            :value="$form->data?->tax_condition_id"
+                            wire:model="form.data.tax_condition_id"
+                        />
 
-                        <x-inputsform.input span="long" required name="tax_id" alpine-error="tax_id" class="font-mono" :label="__('company.fields.tax_id')"
-                            :hint="__('company.fields.tax_id_hint')" maxlength="20" wire:model="form.data.tax_id" />
+                        <x-inputsform.input
+                            span="long"
+                            required
+                            name="tax_id"
+                            alpine-error="tax_id"
+                            class="font-mono"
+                            :label="__('company.fields.tax_id')"
+                            :hint="__('company.fields.tax_id_hint')"
+                            maxlength="20"
+                            wire:model="form.data.tax_id"
+                        />
                     </x-catalog.form-row>
                 </div>
             </div>
-
 
             <div class="config-block">
                 <div>
@@ -350,13 +416,25 @@ field in red from an attempt you had stopped looking at. --}}
                 written when step one is saved: discarding drops the upload,
                 same as it drops what was typed. --}}
                 <div class="config-logo-grid">
-                    <x-inputsform.file span="full" name="logo_light_file" :label="__('company.logo.light')"
-                        :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_light']"
-                        removable wire:model="form.logo_light_file" />
+                    <x-inputsform.file
+                        span="full"
+                        name="logo_light_file"
+                        :label="__('company.logo.light')"
+                        :note="__('company.logo.hint')"
+                        :preview="$this->logoUrls['logo_path_light']"
+                        removable
+                        wire:model="form.logo_light_file"
+                    />
 
-                    <x-inputsform.file span="full" name="logo_dark_file" :label="__('company.logo.dark')"
-                        :note="__('company.logo.hint')" :preview="$this->logoUrls['logo_path_dark']"
-                        removable wire:model="form.logo_dark_file" />
+                    <x-inputsform.file
+                        span="full"
+                        name="logo_dark_file"
+                        :label="__('company.logo.dark')"
+                        :note="__('company.logo.hint')"
+                        :preview="$this->logoUrls['logo_path_dark']"
+                        removable
+                        wire:model="form.logo_dark_file"
+                    />
                 </div>
             </div>
 
@@ -368,17 +446,26 @@ field in red from an attempt you had stopped looking at. --}}
 
                 <div class="config-fields catalog-form">
                     <x-catalog.form-row>
-                        <x-inputsform.input span="full" name="text_copyright" :label="__('company.fields.copyright')" :placeholder="__('company.fields.copyright_placeholder')"
-                            maxlength="255" wire:model="form.data.text_copyright" />
+                        <x-inputsform.input
+                            span="full"
+                            name="text_copyright"
+                            :label="__('company.fields.copyright')"
+                            :placeholder="__('company.fields.copyright_placeholder')"
+                            maxlength="255"
+                            wire:model="form.data.text_copyright"
+                        />
                     </x-catalog.form-row>
                 </div>
             </div>
         </x-ui.card>
 
         {{-- Contact details and social networks. --}}
-        <x-ui.card class="mt-4" x-show="step === 'commercial'" x-cloak
-            wire:key="step-commercial-{{ $commercialRevision }}">
-
+        <x-ui.card
+            class="mt-4"
+            x-show="step === 'commercial'"
+            x-cloak
+            wire:key="step-commercial-{{ $commercialRevision }}"
+        >
             <div class="config-block">
                 <div>
                     <h2 class="config-block-title">{{ __('company.contact.title') }}</h2>
@@ -389,16 +476,41 @@ field in red from an attempt you had stopped looking at. --}}
                     {{-- Two rows and not three cramped fields: a phone number in mono
                     needs its width, and truncating is not compacting. --}}
                     <x-catalog.form-row>
-                        <x-inputsform.input span="text" name="email" alpine-error="email" type="email" icon="mail"
-                            :label="__('company.fields.email')" :placeholder="__('company.fields.email_placeholder')" wire:model="form.data.email" />
+                        <x-inputsform.input
+                            span="text"
+                            name="email"
+                            alpine-error="email"
+                            type="email"
+                            icon="mail"
+                            :label="__('company.fields.email')"
+                            :placeholder="__('company.fields.email_placeholder')"
+                            wire:model="form.data.email"
+                        />
 
-                        <x-inputsform.input span="text" name="phone" alpine-error="phone" icon="phone" class="font-mono"
-                            :label="__('company.fields.phone')" :placeholder="__('company.fields.phone_placeholder')" maxlength="30" wire:model="form.data.phone" />
+                        <x-inputsform.input
+                            span="text"
+                            name="phone"
+                            alpine-error="phone"
+                            icon="phone"
+                            class="font-mono"
+                            :label="__('company.fields.phone')"
+                            :placeholder="__('company.fields.phone_placeholder')"
+                            maxlength="30"
+                            wire:model="form.data.phone"
+                        />
                     </x-catalog.form-row>
 
                     <x-catalog.form-row>
-                        <x-inputsform.input span="long" name="web" alpine-error="web" type="url" icon="globe"
-                            :label="__('company.fields.web')" :placeholder="__('company.fields.web_placeholder')" wire:model="form.data.web" />
+                        <x-inputsform.input
+                            span="long"
+                            name="web"
+                            alpine-error="web"
+                            type="url"
+                            icon="globe"
+                            :label="__('company.fields.web')"
+                            :placeholder="__('company.fields.web_placeholder')"
+                            wire:model="form.data.web"
+                        />
                     </x-catalog.form-row>
                 </div>
             </div>
@@ -429,28 +541,50 @@ field in red from an attempt you had stopped looking at. --}}
                         one from the middle moves the right node. --}}
                         @foreach ($form->social as $index => $row)
                             <div class="config-social-row" wire:key="social-{{ $row['key'] }}">
-                                <x-inputsform.combobox span="text" :id="'if-social-' . $index . '-network'"
-                                    :name="'social.' . $index . '.social_network_id'" :aria-label="__('company.social.network')"
-                                    :placeholder="__('company.social.network_placeholder')" :options="$this->socialOptions" :value="$row['social_network_id']"
-                                    wire:model="form.social.{{ $index }}.social_network_id" />
+                                <x-inputsform.combobox
+                                    span="text"
+                                    :id="'if-social-'.$index.'-network'"
+                                    :name="'social.'.$index.'.social_network_id'"
+                                    :aria-label="__('company.social.network')"
+                                    :placeholder="__('company.social.network_placeholder')"
+                                    :options="$this->socialOptions"
+                                    :value="$row['social_network_id']"
+                                    wire:model="form.social.{{ $index }}.social_network_id"
+                                />
 
-                                <x-inputsform.input span="long" icon="link" :id="'if-social-' . $index . '-url'"
-                                    :name="'social.' . $index . '.url'" :aria-label="__('company.social.url')"
-                                    :placeholder="__('company.social.url_placeholder')" maxlength="255"
-                                    wire:model="form.social.{{ $index }}.url" />
+                                <x-inputsform.input
+                                    span="long"
+                                    icon="link"
+                                    :id="'if-social-'.$index.'-url'"
+                                    :name="'social.'.$index.'.url'"
+                                    :aria-label="__('company.social.url')"
+                                    :placeholder="__('company.social.url_placeholder')"
+                                    maxlength="255"
+                                    wire:model="form.social.{{ $index }}.url"
+                                />
 
                                 {{-- Removing a saved network deletes it THERE AND THEN, so it
                                 warns first, through the system dialog — AtendIa
                                 has no native browser confirmations. A row that
                                 was never saved goes without asking. --}}
-                                <x-ui.icon-button icon="trash-2" variant="ghost" class="config-social-remove"
+                                <x-ui.icon-button
+                                    icon="trash-2"
+                                    variant="ghost"
+                                    class="config-social-remove"
                                     data-testid="social-remove"
-                                    :label="__('company.social.remove')" :disabled="count($form->social) === 1 && $row['id'] === null"
-                                    x-on:click="removeSocial({{ $index }}, {{ $row['id'] !== null ? 'true' : 'false' }})" />
+                                    :label="__('company.social.remove')"
+                                    :disabled="count($form->social) === 1 && $row['id'] === null"
+                                    x-on:click="removeSocial({{ $index }}, {{ $row['id'] !== null ? 'true' : 'false' }})"
+                                />
 
-                                <x-ui.icon-button icon="plus" variant="ghost" class="config-social-add"
-                                    :label="__('company.social.add')" data-testid="social-add"
-                                    wire:click="addSocialRow({{ $index }})" />
+                                <x-ui.icon-button
+                                    icon="plus"
+                                    variant="ghost"
+                                    class="config-social-add"
+                                    :label="__('company.social.add')"
+                                    data-testid="social-add"
+                                    wire:click="addSocialRow({{ $index }})"
+                                />
                             </div>
                         @endforeach
                     </div>
@@ -473,9 +607,7 @@ field in red from an attempt you had stopped looking at. --}}
             other step is still locked. The server sends the text already
             in the right state, so there is no flicker. --}}
             <x-ui.button variant="primary" icon="check" x-on:click="submit(step)">
-                <span
-                    x-text="step === 'main' && ! unlocked ? @js(__('company.save_continue')) : @js(__('company.save'))"
-                >{{ $isRegistered ? __('company.save') : __('company.save_continue') }}</span>
+                <span x-text="step === 'main' && ! unlocked ? @js(__('company.save_continue')) : @js(__('company.save'))">{{ $isRegistered ? __('company.save') : __('company.save_continue') }}</span>
             </x-ui.button>
         </div>
     </x-ui.stepper>
@@ -539,16 +671,19 @@ field in red from an attempt you had stopped looking at. --}}
             async removeLogo(field) {
                 const column = this.logoColumns[field];
 
-                if (! column) {
+                if (!column) {
                     return;
                 }
 
-                if (this.$wire.get(`${this.path}.${column}`) && ! await dialog.confirm({
-                    title: @js(__('company.logo.remove_confirm.title')),
-                    message: @js(__('company.logo.remove_confirm.message')),
-                    accept: @js(__('company.logo.remove_confirm.accept')),
-                    type: 'danger',
-                })) {
+                if (
+                    this.$wire.get(`${this.path}.${column}`) &&
+                    !(await dialog.confirm({
+                        title: @js(__('company.logo.remove_confirm.title')),
+                        message: @js(__('company.logo.remove_confirm.message')),
+                        accept: @js(__('company.logo.remove_confirm.accept')),
+                        type: 'danger',
+                    }))
+                ) {
                     return;
                 }
 
@@ -565,12 +700,15 @@ field in red from an attempt you had stopped looking at. --}}
              * never saved goes without asking.
              */
             async removeSocial(index, saved) {
-                if (saved && ! await dialog.confirm({
-                    title: @js(__('company.social.remove_confirm.title')),
-                    message: @js(__('company.social.remove_confirm.message')),
-                    accept: @js(__('company.social.remove_confirm.accept')),
-                    type: 'danger',
-                })) {
+                if (
+                    saved &&
+                    !(await dialog.confirm({
+                        title: @js(__('company.social.remove_confirm.title')),
+                        message: @js(__('company.social.remove_confirm.message')),
+                        accept: @js(__('company.social.remove_confirm.accept')),
+                        type: 'danger',
+                    }))
+                ) {
                     return;
                 }
 
@@ -586,11 +724,13 @@ field in red from an attempt you had stopped looking at. --}}
              * down here is the front's error bag, which is local.
              */
             async discard(step) {
-                if (! await dialog.confirm({
-                    title: @js(__('company.discard_confirm.title')),
-                    message: @js(__('company.discard_confirm.message')),
-                    accept: @js(__('company.discard_confirm.accept')),
-                })) {
+                if (
+                    !(await dialog.confirm({
+                        title: @js(__('company.discard_confirm.title')),
+                        message: @js(__('company.discard_confirm.message')),
+                        accept: @js(__('company.discard_confirm.accept')),
+                    }))
+                ) {
                     return;
                 }
 

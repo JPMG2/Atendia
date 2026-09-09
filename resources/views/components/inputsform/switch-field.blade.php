@@ -42,12 +42,7 @@ frozen. Tied to the DOM by CSS, the word follows the control.
             <span class="switch-word-off">{{ $off }}</span>
         </span>
 
-        <x-ui.switch
-            :id="$id"
-            :name="$name"
-            :aria-describedby="$hint ? $descId : null"
-            {{ $attributes }}
-        />
+        <x-ui.switch :id="$id" :name="$name" :aria-describedby="$hint ? $descId : null" {{ $attributes }} />
     </div>
 
     @if ($hint)

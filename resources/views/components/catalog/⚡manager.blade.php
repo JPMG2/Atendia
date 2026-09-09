@@ -111,32 +111,48 @@ new class extends Component
         icons while a master is open and expands again on closing — hovering
         does not change the width. --}}
         <div class="catalog-rail-slot">
-            <nav class="card catalog-list" aria-label="{{ __('catalog.hub.rail_label') }}"
-                x-data="catalogRail({ titles: {{ \Illuminate\Support\Js::from($this->forms->pluck('title')->all()) }} })">
-
+            <nav
+                class="card catalog-list"
+                aria-label="{{ __('catalog.hub.rail_label') }}"
+                x-data="catalogRail({ titles: {{ \Illuminate\Support\Js::from($this->forms->pluck('title')->all()) }} })"
+            >
                 {{-- A fixed header, so the search box does not scroll away. It filters
                 client-side, so typing fires no request, and it hides by CSS once the
                 rail collapses to icons. --}}
                 <div class="catalog-rail-search">
-                    <x-inputsform.input name="catalog-search" size="s" icon="search"
+                    <x-inputsform.input
+                        name="catalog-search"
+                        size="s"
+                        icon="search"
                         :placeholder="__('catalog.hub.search_placeholder')"
-                        :aria-label="__('catalog.hub.search_label')" x-model="q" />
+                        :aria-label="__('catalog.hub.search_label')"
+                        x-model="q"
+                    />
                 </div>
 
                 {{-- The body: a bounded height with its own scroll. The rail used to grow
                 with the number of masters and stretch the whole screen. --}}
                 <div class="catalog-rail-body">
                     @forelse ($this->grouped as $group => $items)
-                        <div class="catalog-group"
-                            x-show="groupVisible({{ \Illuminate\Support\Js::from($items->pluck('title')->all()) }})">
+                        <div
+                            class="catalog-group"
+                            x-show="groupVisible({{ \Illuminate\Support\Js::from($items->pluck('title')->all()) }})"
+                        >
                             <p class="catalog-group-label">{{ $group }}</p>
                             <div class="catalog-group-rule" aria-hidden="true"></div>
                             @foreach ($items as $form)
-                                <button type="button" wire:click="select({{ $form->id }})"
-                                    x-on:click="clearSearch()" class="catalog-item" title="{{ $form->title }}"
+                                <button
+                                    type="button"
+                                    wire:click="select({{ $form->id }})"
+                                    x-on:click="clearSearch()"
+                                    class="catalog-item"
+                                    title="{{ $form->title }}"
                                     x-show="matches({{ \Illuminate\Support\Js::from($form->title) }})"
-                                    @if ($selectedId === $form->id) aria-current="true" @endif>
-                                    <span class="catalog-item-icon"><x-icon :name="$form->icon ?? 'library'" :size="18" /></span>
+                                    @if ($selectedId === $form->id) aria-current="true" @endif
+                                >
+                                    <span class="catalog-item-icon"
+                                        ><x-icon :name="$form->icon ?? 'library'" :size="18"
+                                    /></span>
                                     <span class="catalog-item-text">
                                         {{-- The server paints the plain title, so nothing
                                              flickers before Alpine boots; the split
@@ -144,7 +160,10 @@ new class extends Component
                                         <span x-show="! searching()">{{ $form->title }}</span>
 
                                         <span x-show="searching()" x-cloak>
-                                            <template x-for="(part, i) in segments({{ \Illuminate\Support\Js::from($form->title) }})" :key="i">
+                                            <template
+                                                x-for="(part, i) in segments({{ \Illuminate\Support\Js::from($form->title) }})"
+                                                :key="i"
+                                            >
                                                 <span x-text="part.text" :class="part.hit && 'catalog-item-hit'"></span>
                                             </template>
                                         </span>
@@ -156,9 +175,7 @@ new class extends Component
                         <p class="catalog-group-label">{{ __('catalog.hub.none') }}</p>
                     @endforelse
 
-                    <p class="catalog-rail-empty" x-show="!hasResults()" x-cloak>
-                        {{ __('catalog.hub.no_matches') }}
-                    </p>
+                    <p class="catalog-rail-empty" x-show="! hasResults()" x-cloak>{{ __('catalog.hub.no_matches') }}</p>
                 </div>
             </nav>
         </div>
@@ -169,17 +186,28 @@ new class extends Component
                 <div class="catalog-panel-head">
                     <div class="catalog-panel-head-text">
                         <h2>
-                            <span class="catalog-panel-icon"><x-icon :name="$this->current->icon ?? 'library'" :size="18" /></span>
+                            <span class="catalog-panel-icon"
+                                ><x-icon :name="$this->current->icon ?? 'library'" :size="18"
+                            /></span>
                             {{ $this->current->title }}
                         </h2>
                         <p>{{ $this->current->description }}</p>
                     </div>
-                    <button type="button" class="catalog-panel-close" wire:click="close" aria-label="{{ __('catalog.hub.close') }}">
+                    <button
+                        type="button"
+                        class="catalog-panel-close"
+                        wire:click="close"
+                        aria-label="{{ __('catalog.hub.close') }}"
+                    >
                         <x-icon name="x" :size="18" />
                     </button>
                 </div>
 
-                <livewire:dynamic-component :is="$this->editorComponent" :wire:key="'editor-'.$this->current->id" lazy />
+                <livewire:dynamic-component
+                    :is="$this->editorComponent"
+                    :wire:key="'editor-'.$this->current->id"
+                    lazy
+                />
             @else
                 <div class="catalog-empty">
                     <x-icon name="library" :size="32" />

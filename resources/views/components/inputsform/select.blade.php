@@ -45,7 +45,12 @@
 
 <div class="field {{ $spanClass }}">
     @if ($label)
-        <label for="{{ $id }}" class="field-label">{{ $label }}@if ($isRequired)<span class="field-required" aria-hidden="true">*</span>@endif</label>
+        <label for="{{ $id }}" class="field-label"
+            >{{ $label }}
+            @if ($isRequired)
+                <span class="field-required" aria-hidden="true">*</span>
+            @endif
+        </label>
     @endif
 
     <div class="field-select-wrap">
@@ -84,7 +89,13 @@
             @if ($error)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
-                <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+                <span
+                    @if ($errId) id="{{ $errId }}" @endif
+                    class="field-error-text"
+                    x-show="!!({{ $alpineErrorExpr }})"
+                    x-text="{{ $alpineErrorExpr }}"
+                    x-cloak
+                ></span>
             @endif
         </div>
     @endif

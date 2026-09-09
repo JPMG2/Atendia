@@ -205,9 +205,13 @@ new #[Layout('layouts::wizard')] class extends Component
         at 02 and "your account" lives ticked in the checklist instead. --}}
         <nav class="wizard-steps" aria-label="{{ __('wizard.title') }}">
             @foreach (range(2, 5) as $n)
-                <button type="button" wire:key="tab-{{ $n }}" data-testid="wizard-tab-{{ $n }}"
-                        wire:click="goToStep({{ $n }})"
-                        @class(['wizard-tab', 'is-active' => $step === $n, 'is-done' => in_array($n, $done, true)])>
+                <button
+                    type="button"
+                    wire:key="tab-{{ $n }}"
+                    data-testid="wizard-tab-{{ $n }}"
+                    wire:click="goToStep({{ $n }})"
+                    @class(['wizard-tab', 'is-active' => $step === $n, 'is-done' => in_array($n, $done, true)])
+                >
                     <span class="n">{{ sprintf('%02d', $n - 1) }}</span>{{ __('wizard.steps.'.$n.'.label') }}
                     <span class="tick"><x-icon name="check" :size="14" /></span>
                 </button>
@@ -289,64 +293,67 @@ new #[Layout('layouts::wizard')] class extends Component
 </div>
 
 @script
-<script>
-    // Port of the static mock-up's preview: the assistant "types" before each
-    // reply. That one-second wait IS the demo.
-    const phone = $wire.$el.querySelector('[data-phone]');
-    const emptyHtml = () => `<div class="wizard-phone-empty">${phone.dataset.empty}</div>`;
+    <script>
+        // Port of the static mock-up's preview: the assistant "types" before each
+        // reply. That one-second wait IS the demo.
+        const phone = $wire.$el.querySelector('[data-phone]');
+        const emptyHtml = () => `<div class="wizard-phone-empty">${phone.dataset.empty}</div>`;
 
-    let painted = 0;
-    let token = 0;
+        let painted = 0;
+        let token = 0;
 
-    const bubble = (m) => `<div class="msg ${m.type}"><span class="who">${m.who}</span>${m.html}</div>`;
+        const bubble = (m) => `<div class="msg ${m.type}"><span class="who">${m.who}</span>${m.html}</div>`;
 
-    $wire.$on('preview-updated', ({ messages }) => render(messages));
+        $wire.$on('preview-updated', ({ messages }) => render(messages));
 
-    function render(messages) {
-        // Any repaint invalidates pending animation timers: without this, the
-        // bubbles scheduled for the FIRST keystroke fire after the silent
-        // repaint of the full name and the reply shows up twice.
-        if (messages.length === 0) {
-            token++;
-            phone.innerHTML = emptyHtml();
-            painted = 0;
+        function render(messages) {
+            // Any repaint invalidates pending animation timers: without this, the
+            // bubbles scheduled for the FIRST keystroke fire after the silent
+            // repaint of the full name and the reply shows up twice.
+            if (messages.length === 0) {
+                token++;
+                phone.innerHTML = emptyHtml();
+                painted = 0;
 
-            return;
-        }
-
-        // While the name is being typed nothing re-animates: text only.
-        if (messages.length === painted) {
-            token++;
-            phone.innerHTML = messages.map(bubble).join('');
-
-            return;
-        }
-
-        const current = ++token;
-        painted = messages.length;
-        phone.innerHTML = '';
-
-        let delay = 0;
-
-        messages.forEach((m) => {
-            if (m.type === 'out') {
-                const typingAt = delay;
-                setTimeout(() => {
-                    if (current !== token) return;
-                    phone.insertAdjacentHTML('beforeend', '<div class="typing" data-typing><i></i><i></i><i></i></div>');
-                    phone.scrollTop = phone.scrollHeight;
-                }, typingAt);
-                delay += 900;
+                return;
             }
 
-            setTimeout(() => {
-                if (current !== token) return;
-                phone.querySelector('[data-typing]')?.remove();
-                phone.insertAdjacentHTML('beforeend', bubble(m));
-                phone.scrollTop = phone.scrollHeight;
-            }, delay);
-            delay += 450;
-        });
-    }
-</script>
+            // While the name is being typed nothing re-animates: text only.
+            if (messages.length === painted) {
+                token++;
+                phone.innerHTML = messages.map(bubble).join('');
+
+                return;
+            }
+
+            const current = ++token;
+            painted = messages.length;
+            phone.innerHTML = '';
+
+            let delay = 0;
+
+            messages.forEach((m) => {
+                if (m.type === 'out') {
+                    const typingAt = delay;
+                    setTimeout(() => {
+                        if (current !== token) return;
+                        phone.insertAdjacentHTML(
+                            'beforeend',
+                            '<div class="typing" data-typing><i></i><i></i><i></i></div>',
+                        );
+                        phone.scrollTop = phone.scrollHeight;
+                    }, typingAt);
+                    delay += 900;
+                }
+
+                setTimeout(() => {
+                    if (current !== token) return;
+                    phone.querySelector('[data-typing]')?.remove();
+                    phone.insertAdjacentHTML('beforeend', bubble(m));
+                    phone.scrollTop = phone.scrollHeight;
+                }, delay);
+                delay += 450;
+            });
+        }
+    </script>
 @endscript

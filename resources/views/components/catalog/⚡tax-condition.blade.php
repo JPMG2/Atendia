@@ -16,7 +16,8 @@ use Livewire\Component;
  * `catalogMaster()`, so only the server actions and this master's own fields
  * belong here.
  */
-new class extends Component {
+new class extends Component
+{
     use InteractsWithCatalogEditor;
 
     public TaxConditionForm $form;
@@ -48,35 +49,45 @@ new class extends Component {
 };
 ?>
 
-<x-catalog.master :rows="$initialRows"
+<x-catalog.master
+    :rows="$initialRows"
     :search="['code', 'name', 'country']"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 255], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'country_id' => ['required'],
-    ]">
-
+    ]"
+>
     {{-- Table view: the list. --}}
     <x-slot:list>
-        <x-catalog.toolbar :search-placeholder="__('catalog.tax_condition.search_placeholder')"
-            :search-label="__('catalog.tax_condition.search_label')" :singular="__('catalog.tax_condition.singular')"
-            :plural="__('catalog.tax_condition.plural')" :create="__('catalog.tax_condition.create')" />
+        <x-catalog.toolbar
+            :search-placeholder="__('catalog.tax_condition.search_placeholder')"
+            :search-label="__('catalog.tax_condition.search_label')"
+            :singular="__('catalog.tax_condition.singular')"
+            :plural="__('catalog.tax_condition.plural')"
+            :create="__('catalog.tax_condition.create')"
+        />
 
-        <x-catalog.table :empty="__('catalog.tax_condition.empty')" :columns="[
-            ['label' => __('catalog.tax_condition.columns.code')],
-            ['label' => __('catalog.tax_condition.columns.name'), 'class' => 'catalog-col-fill'],
-            ['label' => __('catalog.tax_condition.columns.country')],
-            ['label' => __('catalog.tax_condition.columns.discriminate_tax')],
-            ['label' => __('catalog.tax_condition.columns.status')],
-        ]">
+        <x-catalog.table
+            :empty="__('catalog.tax_condition.empty')"
+            :columns="[
+                ['label' => __('catalog.tax_condition.columns.code')],
+                ['label' => __('catalog.tax_condition.columns.name'), 'class' => 'catalog-col-fill'],
+                ['label' => __('catalog.tax_condition.columns.country')],
+                ['label' => __('catalog.tax_condition.columns.discriminate_tax')],
+                ['label' => __('catalog.tax_condition.columns.status')],
+            ]"
+        >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td class="catalog-cell-sym" x-text="row.country"></td>
             <td x-text="row.discriminates ? {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.discriminate.yes')) }} : {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.discriminate.no')) }}"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
-                    <span class="dot"></span><span
-                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.status.inactive')) }}"></span>
+                    <span class="dot"></span
+                    ><span
+                        x-text="row.active ? {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.status.active')) }} : {{ \Illuminate\Support\Js::from(__('catalog.tax_condition.status.inactive')) }}"
+                    ></span>
                 </span>
             </td>
         </x-catalog.table>
@@ -84,37 +95,70 @@ new class extends Component {
 
     {{-- Form view: create and edit. --}}
     <x-slot:form>
-        <x-catalog.form-shell :new="__('catalog.tax_condition.new')" :new-title="__('catalog.tax_condition.new_title')"
-            :edit-title="__('catalog.tax_condition.edit_title')" :create="__('catalog.tax_condition.create')"
-            title-key="code">
-
+        <x-catalog.form-shell
+            :new="__('catalog.tax_condition.new')"
+            :new-title="__('catalog.tax_condition.new_title')"
+            :edit-title="__('catalog.tax_condition.edit_title')"
+            :create="__('catalog.tax_condition.create')"
+            title-key="code"
+        >
             {{-- Row 1: the short code and the name, which takes all the rest. --}}
             <x-catalog.form-row>
-                <x-inputsform.input span="code" :label="__('catalog.tax_condition.fields.code')" required name="code"
-                    :hint="__('catalog.tax_condition.fields.code_hint')" maxlength="10" alpine-error="code"
-                    style="text-transform:uppercase" wire:model="form.data.code" />
+                <x-inputsform.input
+                    span="code"
+                    :label="__('catalog.tax_condition.fields.code')"
+                    required
+                    name="code"
+                    :hint="__('catalog.tax_condition.fields.code_hint')"
+                    maxlength="10"
+                    alpine-error="code"
+                    style="text-transform: uppercase"
+                    wire:model="form.data.code"
+                />
 
-                <x-inputsform.input span="text" :label="__('catalog.tax_condition.fields.name')" required name="name"
-                    :placeholder="__('catalog.tax_condition.fields.name_placeholder')" alpine-error="name"
-                    wire:model="form.data.name" />
+                <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.tax_condition.fields.name')"
+                    required
+                    name="name"
+                    :placeholder="__('catalog.tax_condition.fields.name_placeholder')"
+                    alpine-error="name"
+                    wire:model="form.data.name"
+                />
             </x-catalog.form-row>
 
             {{-- Row 2: the rest sharing the full width, both booleans
             included. --}}
             <x-catalog.form-row>
-                <x-inputsform.combobox span="text" :label="__('catalog.tax_condition.fields.country')" required
-                    name="country_id" :placeholder="__('catalog.tax_condition.fields.country_placeholder')"
-                    :options="$this->countryOptions" :value="$form->data?->country_id"
-                    alpine-error="country_id" wire:model="form.data.country_id" />
+                <x-inputsform.combobox
+                    span="text"
+                    :label="__('catalog.tax_condition.fields.country')"
+                    required
+                    name="country_id"
+                    :placeholder="__('catalog.tax_condition.fields.country_placeholder')"
+                    :options="$this->countryOptions"
+                    :value="$form->data?->country_id"
+                    alpine-error="country_id"
+                    wire:model="form.data.country_id"
+                />
 
-                <x-inputsform.switch-field span="short" :label="__('catalog.tax_condition.fields.discriminate_tax')"
-                    name="discriminate_tax" :on="__('catalog.tax_condition.discriminate.yes')"
+                <x-inputsform.switch-field
+                    span="short"
+                    :label="__('catalog.tax_condition.fields.discriminate_tax')"
+                    name="discriminate_tax"
+                    :on="__('catalog.tax_condition.discriminate.yes')"
                     :off="__('catalog.tax_condition.discriminate.no')"
-                    wire:model="form.data.discriminate_tax" />
+                    wire:model="form.data.discriminate_tax"
+                />
 
-                <x-inputsform.switch-field span="short" :label="__('catalog.tax_condition.fields.status')"
-                    name="is_active" :on="__('catalog.tax_condition.status.active')"
-                    :off="__('catalog.tax_condition.status.inactive')" wire:model="form.data.is_active" />
+                <x-inputsform.switch-field
+                    span="short"
+                    :label="__('catalog.tax_condition.fields.status')"
+                    name="is_active"
+                    :on="__('catalog.tax_condition.status.active')"
+                    :off="__('catalog.tax_condition.status.inactive')"
+                    wire:model="form.data.is_active"
+                />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>

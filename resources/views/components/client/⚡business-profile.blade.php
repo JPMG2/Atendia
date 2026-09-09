@@ -66,7 +66,12 @@ new class extends Component
     <div class="page-head">
         <div class="bp-head">
             {{-- From a single section the arrow returns to the full profile; from there, home. --}}
-            <a href="{{ $section ? route('my-business') : route('dashboard') }}" wire:navigate class="bp-back" aria-label="{{ __('client.business.back') }}">
+            <a
+                href="{{ $section ? route('my-business') : route('dashboard') }}"
+                wire:navigate
+                class="bp-back"
+                aria-label="{{ __('client.business.back') }}"
+            >
                 <x-icon name="chevron-left" :size="18" />
             </a>
             <div>
@@ -110,13 +115,20 @@ new class extends Component
                         <b>{{ __('client.business.meter.title', ['percent' => $percent]) }}</b>
                         <span class="font-mono">{{ __('client.business.meter.count', ['done' => $strength['done'], 'total' => $strength['total']]) }}</span>
                     </div>
-                    <div class="setup-bar" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100">
+                    <div
+                        class="setup-bar"
+                        role="progressbar"
+                        aria-valuenow="{{ $percent }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                    >
                         <i style="width: {{ $percent }}%"></i>
                     </div>
                     {{-- Each pending piece deep-links straight to its section. --}}
                     @foreach ($this->meterSections() as $piece => $slug)
                         @if (in_array($piece, $strength['missing'], true))
-                            <a href="{{ route('my-business.'.$slug) }}" wire:navigate class="bp-todo"><em></em>{{ __('client.business.meter.'.$piece) }}</a>
+                            <a href="{{ route('my-business.'.$slug) }}" wire:navigate class="bp-todo"
+                                ><em></em>{{ __('client.business.meter.'.$piece) }}</a>
                         @else
                             <div class="bp-todo is-done"><em></em>{{ __('client.business.meter.'.$piece) }}</div>
                         @endif
@@ -146,13 +158,27 @@ new class extends Component
     </div>
 
     {{-- Escape and the backdrop close without acting, like every overlay here. --}}
-    <div class="bp-try-overlay" x-cloak x-show="tryOpen" x-transition.opacity
-        x-on:keydown.escape.window="tryOpen = false" x-on:click.self="tryOpen = false"
-        role="dialog" aria-modal="true" aria-label="{{ __('client.business.try.title') }}">
+    <div
+        class="bp-try-overlay"
+        x-cloak
+        x-show="tryOpen"
+        x-transition.opacity
+        x-on:keydown.escape.window="tryOpen = false"
+        x-on:click.self="tryOpen = false"
+        role="dialog"
+        aria-modal="true"
+        aria-label="{{ __('client.business.try.title') }}"
+    >
         <div class="bp-try-panel">
             <div class="bp-try-head">
                 <h2>{{ __('client.business.try.title') }}</h2>
-                <x-ui.icon-button icon="x" size="sm" variant="ghost" :label="__('client.business.try.close')" x-on:click="tryOpen = false" />
+                <x-ui.icon-button
+                    icon="x"
+                    size="sm"
+                    variant="ghost"
+                    :label="__('client.business.try.close')"
+                    x-on:click="tryOpen = false"
+                />
             </div>
             <div class="wizard-phone-frame">
                 <div class="wizard-phone-screen">
@@ -176,93 +202,97 @@ new class extends Component
     </div>
 
     @script
-    <script>
-        // Shopify-style unsaved guard: typing in a card arms it, that card's
-        // save disarms it, and leaving asks through the system dialog. State
-        // lives on window so the once-bound navigate listener survives SPA
-        // visits without stacking copies of itself.
-        window.bpUnsaved = false;
-
-        // The rail preview is ALIVE: identity fields repaint the bubble on
-        // every keystroke, and a saved section earns a thank-you message —
-        // filling the profile reads as teaching, not form-filling.
-        const template = @js(__('client.business.preview.message'));
-        const thanksCopy = @js(__('client.business.preview.thanks'));
-        const fallbackName = @js(__('client.business.mock.name'));
-        const fallbackDescription = @js(__('client.business.mock.description'));
-
-        const nameEl = $wire.$el.querySelector('[data-bp-preview="name"]');
-        const messageEl = $wire.$el.querySelector('[data-bp-preview="message"]');
-        const thanksEl = $wire.$el.querySelector('[data-bp-preview="thanks"]');
-        let previewName = fallbackName;
-        let previewDescription = fallbackDescription;
-        let thanksTimer = null;
-
-        const paintPreview = () => {
-            if (! nameEl || ! messageEl) return;
-            nameEl.textContent = previewName;
-            messageEl.textContent = template.replace(':name', previewName).replace(':description', previewDescription);
-        };
-
-        $wire.$el.addEventListener('input', (event) => {
-            if (! event.target.closest('.bp-card')) return;
-
-            window.bpUnsaved = true;
-
-            const field = event.target.getAttribute('name');
-            if (field === 'name') {
-                previewName = event.target.value.trim() || fallbackName;
-                paintPreview();
-            } else if (field === 'description') {
-                previewDescription = event.target.value.trim() || fallbackDescription;
-                paintPreview();
-            }
-        });
-
-        $wire.$el.addEventListener('click', (event) => {
-            const actions = event.target.closest('.bp-card-actions');
-            if (! actions) return;
-
+        <script>
+            // Shopify-style unsaved guard: typing in a card arms it, that card's
+            // save disarms it, and leaving asks through the system dialog. State
+            // lives on window so the once-bound navigate listener survives SPA
+            // visits without stacking copies of itself.
             window.bpUnsaved = false;
 
-            const section = actions.closest('[data-section]')?.dataset.section;
-            if (thanksEl && thanksCopy[section]) {
-                thanksEl.textContent = thanksCopy[section];
-                thanksEl.hidden = false;
-                clearTimeout(thanksTimer);
-                thanksTimer = setTimeout(() => { thanksEl.hidden = true; }, 4000);
-            }
-        });
+            // The rail preview is ALIVE: identity fields repaint the bubble on
+            // every keystroke, and a saved section earns a thank-you message —
+            // filling the profile reads as teaching, not form-filling.
+            const template = @js(__('client.business.preview.message'));
+            const thanksCopy = @js(__('client.business.preview.thanks'));
+            const fallbackName = @js(__('client.business.mock.name'));
+            const fallbackDescription = @js(__('client.business.mock.description'));
 
-        if (! window.bpGuardBound) {
-            window.bpGuardBound = true;
+            const nameEl = $wire.$el.querySelector('[data-bp-preview="name"]');
+            const messageEl = $wire.$el.querySelector('[data-bp-preview="message"]');
+            const thanksEl = $wire.$el.querySelector('[data-bp-preview="thanks"]');
+            let previewName = fallbackName;
+            let previewDescription = fallbackDescription;
+            let thanksTimer = null;
 
-            document.addEventListener('livewire:navigate', (event) => {
-                if (! window.bpUnsaved) {
-                    return;
+            const paintPreview = () => {
+                if (!nameEl || !messageEl) return;
+                nameEl.textContent = previewName;
+                messageEl.textContent = template.replace(':name', previewName).replace(':description', previewDescription);
+            };
+
+            $wire.$el.addEventListener('input', (event) => {
+                if (!event.target.closest('.bp-card')) return;
+
+                window.bpUnsaved = true;
+
+                const field = event.target.getAttribute('name');
+                if (field === 'name') {
+                    previewName = event.target.value.trim() || fallbackName;
+                    paintPreview();
+                } else if (field === 'description') {
+                    previewDescription = event.target.value.trim() || fallbackDescription;
+                    paintPreview();
                 }
-
-                event.preventDefault();
-                const url = event.detail.url.href;
-
-                dialog.confirm({
-                    title: @js(__('client.business.unsaved.title')),
-                    message: @js(__('client.business.unsaved.message')),
-                    accept: @js(__('client.business.unsaved.accept')),
-                    type: 'warning',
-                }).then((leave) => {
-                    if (leave) {
-                        window.bpUnsaved = false;
-                        Livewire.navigate(url);
-                    }
-                });
             });
 
-            // Arriving anywhere means the pending navigation was allowed.
-            document.addEventListener('livewire:navigated', () => {
+            $wire.$el.addEventListener('click', (event) => {
+                const actions = event.target.closest('.bp-card-actions');
+                if (!actions) return;
+
                 window.bpUnsaved = false;
+
+                const section = actions.closest('[data-section]')?.dataset.section;
+                if (thanksEl && thanksCopy[section]) {
+                    thanksEl.textContent = thanksCopy[section];
+                    thanksEl.hidden = false;
+                    clearTimeout(thanksTimer);
+                    thanksTimer = setTimeout(() => {
+                        thanksEl.hidden = true;
+                    }, 4000);
+                }
             });
-        }
-    </script>
+
+            if (!window.bpGuardBound) {
+                window.bpGuardBound = true;
+
+                document.addEventListener('livewire:navigate', (event) => {
+                    if (!window.bpUnsaved) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const url = event.detail.url.href;
+
+                    dialog
+                        .confirm({
+                            title: @js(__('client.business.unsaved.title')),
+                            message: @js(__('client.business.unsaved.message')),
+                            accept: @js(__('client.business.unsaved.accept')),
+                            type: 'warning',
+                        })
+                        .then((leave) => {
+                            if (leave) {
+                                window.bpUnsaved = false;
+                                Livewire.navigate(url);
+                            }
+                        });
+                });
+
+                // Arriving anywhere means the pending navigation was allowed.
+                document.addEventListener('livewire:navigated', () => {
+                    window.bpUnsaved = false;
+                });
+            }
+        </script>
     @endscript
 </div>

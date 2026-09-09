@@ -153,27 +153,56 @@ new class extends Component
     <p class="lead">{{ __('wizard.steps.2.lead') }}</p>
 
     <x-ui.card>
-        <x-inputsform.input span="long" required style="text-transform: capitalize;" name="name" alpine-error="name"
-            wire:model.live="form.data.name" :label="__('wizard.fields.business_name')" :placeholder="__('wizard.fields.business_name_placeholder')" :hint="__('wizard.fields.business_name_hint')" />
+        <x-inputsform.input
+            span="long"
+            required
+            style="text-transform: capitalize"
+            name="name"
+            alpine-error="name"
+            wire:model.live="form.data.name"
+            :label="__('wizard.fields.business_name')"
+            :placeholder="__('wizard.fields.business_name_placeholder')"
+            :hint="__('wizard.fields.business_name_hint')"
+        />
 
         <div class="wizard-frow">
-            <x-inputsform.combobox span="text" required name="country_id" alpine-error="country_id"
-                :label="__('wizard.fields.country')" :placeholder="__('wizard.fields.country_placeholder')"
-                :options="$this->countryOptions" :value="$form->data?->country_id" wire:model.live="form.data.country_id" />
+            <x-inputsform.combobox
+                span="text"
+                required
+                name="country_id"
+                alpine-error="country_id"
+                :label="__('wizard.fields.country')"
+                :placeholder="__('wizard.fields.country_placeholder')"
+                :options="$this->countryOptions"
+                :value="$form->data?->country_id"
+                wire:model.live="form.data.country_id"
+            />
 
-            <x-inputsform.combobox span="text" required name="province_id" alpine-error="province_id"
-                :label="__('wizard.fields.province')" :placeholder="__('wizard.fields.province_placeholder')"
+            <x-inputsform.combobox
+                span="text"
+                required
+                name="province_id"
+                alpine-error="province_id"
+                :label="__('wizard.fields.province')"
+                :placeholder="__('wizard.fields.province_placeholder')"
                 :hint="__('wizard.fields.province_hint')"
-                :options="$this->provinceOptions" :value="$form->data?->province_id"
-                loading="form.data.country_id" wire:model.live="form.data.province_id" />
+                :options="$this->provinceOptions"
+                :value="$form->data?->province_id"
+                loading="form.data.country_id"
+                wire:model.live="form.data.province_id"
+            />
         </div>
 
         <div class="field">
             <span class="field-label">{{ __('wizard.fields.sector') }}</span>
             <div class="wizard-chips">
                 @foreach ($this->sectorOptions as $option)
-                    <button type="button" wire:key="sector-{{ $option['value'] }}"
-                        wire:click="choose('{{ $option['value'] }}')" @class(['wizard-chip', 'is-on' => $form->data?->sector === $option['value']])>
+                    <button
+                        type="button"
+                        wire:key="sector-{{ $option['value'] }}"
+                        wire:click="choose('{{ $option['value'] }}')"
+                        @class(['wizard-chip', 'is-on' => $form->data?->sector === $option['value']])
+                    >
                         {{ $option['label'] }}
                     </button>
                 @endforeach
@@ -190,8 +219,12 @@ new class extends Component
                 <span class="field-label">{{ $this->activityLabel }}</span>
                 <div class="wizard-chips">
                     @foreach ($this->activityOptions as $option)
-                        <button type="button" wire:key="activity-{{ $option['value'] }}"
-                            wire:click="chooseActivity('{{ $option['value'] }}')" @class(['wizard-chip', 'is-on' => $form->data?->activity === $option['value']])>
+                        <button
+                            type="button"
+                            wire:key="activity-{{ $option['value'] }}"
+                            wire:click="chooseActivity('{{ $option['value'] }}')"
+                            @class(['wizard-chip', 'is-on' => $form->data?->activity === $option['value']])
+                        >
                             {{ $option['label'] }}
                         </button>
                     @endforeach
@@ -206,48 +239,49 @@ new class extends Component
 
         <div class="wizard-foot">
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" x-on:click="guard">
-                {{ __('wizard.continue') }}
-            </x-ui.button>
+            <x-ui.button variant="primary" x-on:click="guard"> {{ __('wizard.continue') }} </x-ui.button>
         </div>
     </x-ui.card>
 </div>
 
 @script
-<script>
-    // Front mirror of BusinessForm's identity rules: a doomed request never
-    // leaves; the server stays the authority.
-    Alpine.data('stepBusinessGuard', () => ({
-        errors: {},
+    <script>
+        // Front mirror of BusinessForm's identity rules: a doomed request never
+        // leaves; the server stays the authority.
+        Alpine.data('stepBusinessGuard', () => ({
+            errors: {},
 
-        guard() {
-            const data = this.$wire.form.data ?? {};
+            guard() {
+                const data = this.$wire.form.data ?? {};
 
-            const rules = {
-                name: ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
-                country_id: ['required'],
-                province_id: ['required'],
-                sector: ['required'],
-            };
+                const rules = {
+                    name: ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
+                    country_id: ['required'],
+                    province_id: ['required'],
+                    sector: ['required'],
+                };
 
-            // The trade question only renders once a sector is picked: its
-            // error must never point at something invisible.
-            if (data.sector) {
-                rules.activity = ['required'];
-            }
+                // The trade question only renders once a sector is picked: its
+                // error must never point at something invisible.
+                if (data.sector) {
+                    rules.activity = ['required'];
+                }
 
-            this.errors = validate({
-                name: data.name,
-                country_id: data.country_id,
-                province_id: data.province_id,
-                sector: data.sector,
-                activity: data.activity,
-            }, rules);
+                this.errors = validate(
+                    {
+                        name: data.name,
+                        country_id: data.country_id,
+                        province_id: data.province_id,
+                        sector: data.sector,
+                        activity: data.activity,
+                    },
+                    rules,
+                );
 
-            if (Object.keys(this.errors).length === 0) {
-                this.$wire.finish();
-            }
-        },
-    }));
-</script>
+                if (Object.keys(this.errors).length === 0) {
+                    this.$wire.finish();
+                }
+            },
+        }));
+    </script>
 @endscript

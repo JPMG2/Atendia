@@ -11,7 +11,10 @@
 
 <span {{ $attributes->merge(['class' => $classes]) }}>
     @if ($dot)
-        <span class="inline-block" style="width:.375rem;height:.375rem;border-radius:var(--radius-pill);background:{{ $dotColor }};"></span>
+        <span
+            class="inline-block"
+            style="width:.375rem;height:.375rem;border-radius:var(--radius-pill);background:{{ $dotColor }};"
+        ></span>
     @endif
     {{ $slot }}
 </span>

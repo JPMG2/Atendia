@@ -27,25 +27,36 @@
         <label for="{{ $id }}" class="field-label">{{ $label }}</label>
     @endif
 
-    <div class="{{ $controlClasses }}"
-        @if ($alpineErrorExpr) x-bind:class="{ 'field-error': !!({{ $alpineErrorExpr }}) }" @endif>
-        @if ($icon)<span class="field-icon"><x-icon :name="$icon" :size="18" /></span>@endif
+    <div
+        class="{{ $controlClasses }}"
+        @if ($alpineErrorExpr) x-bind:class="{ 'field-error': !!({{ $alpineErrorExpr }}) }" @endif
+    >
+        @if ($icon)
+            <span class="field-icon"><x-icon :name="$icon" :size="18" /></span>
+        @endif
         <input
             id="{{ $id }}"
             @if ($name) name="{{ $name }}" @endif
             {{ $attributes->merge(['class' => 'field-input']) }}
         />
-        @if ($iconRight)<span class="field-icon"><x-icon :name="$iconRight" :size="18" /></span>@endif
+        @if ($iconRight)
+            <span class="field-icon"><x-icon :name="$iconRight" :size="18" /></span>
+        @endif
     </div>
 
     @if ($error)
         <span class="field-error-text">{{ $error }}</span>
     @else
         @if ($alpineErrorExpr)
-            <span class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+            <span
+                class="field-error-text"
+                x-show="!!({{ $alpineErrorExpr }})"
+                x-text="{{ $alpineErrorExpr }}"
+                x-cloak
+            ></span>
         @endif
         @if ($hint)
-            <span class="field-hint" @if ($alpineErrorExpr) x-show="!({{ $alpineErrorExpr }})" @endif>{{ $hint }}</span>
+            <span class="field-hint" @if ($alpineErrorExpr) x-show="! ({{ $alpineErrorExpr }})" @endif>{{ $hint }}</span>
         @endif
     @endif
 </div>

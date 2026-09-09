@@ -23,7 +23,6 @@
         @if ($name) name="{{ $name }}" @endif
         {{ $attributes->merge(['class' => 'field-textarea'.($error ? ' field-error' : '')]) }}
     >{{ $slot }}</textarea>
-
     @if ($error)
         <span class="field-error-text">{{ $error }}</span>
     @elseif ($hint)

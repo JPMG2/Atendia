@@ -80,9 +80,16 @@
         @if ($removable)
             {{-- Removing is the SCREEN's decision: the button only announces it,
             and the zone resets when the screen says it went through. --}}
-            <x-ui.icon-button icon="trash-2" size="sm" variant="ghost" class="field-drop-remove"
-                :label="__('forms.file.remove')" x-show="preview" x-cloak
-                x-on:click.stop="remove()" />
+            <x-ui.icon-button
+                icon="trash-2"
+                size="sm"
+                variant="ghost"
+                class="field-drop-remove"
+                :label="__('forms.file.remove')"
+                x-show="preview"
+                x-cloak
+                x-on:click.stop="remove()"
+            />
         @endif
 
         <span class="field-drop-icon" x-show="! preview">
@@ -91,7 +98,7 @@
 
         <span x-show="! preview">{{ $slot->isNotEmpty() ? $slot : __('forms.file.upload') }}</span>
 
-        <span class="field-drop-name" x-show="!! name" x-cloak x-text="name"></span>
+        <span class="field-drop-name" x-show="!!name" x-cloak x-text="name"></span>
 
         @if ($note)
             <span class="field-drop-note" x-show="! preview">{{ $note }}</span>
@@ -114,7 +121,13 @@
             @if ($error)
                 <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text">{{ $error }}</span>
             @elseif ($alpineErrorExpr)
-                <span @if ($errId) id="{{ $errId }}" @endif class="field-error-text" x-show="!!({{ $alpineErrorExpr }})" x-text="{{ $alpineErrorExpr }}" x-cloak></span>
+                <span
+                    @if ($errId) id="{{ $errId }}" @endif
+                    class="field-error-text"
+                    x-show="!!({{ $alpineErrorExpr }})"
+                    x-text="{{ $alpineErrorExpr }}"
+                    x-cloak
+                ></span>
             @endif
         </div>
     @endif

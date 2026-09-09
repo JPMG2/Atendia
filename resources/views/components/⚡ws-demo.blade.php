@@ -10,7 +10,8 @@ use Livewire\Component;
  * Liveness check for the WebSocket over a PRIVATE per-business channel.
  * Throwaway: it goes the day the real chat exists.
  */
-new class extends Component {
+new class extends Component
+{
     /** @var array<int, string> */
     public array $messages = [];
 
@@ -67,23 +68,23 @@ new class extends Component {
 };
 ?>
 
-<div class="card" style="padding:20px; max-width:520px">
+<div class="card" style="padding: 20px; max-width: 520px">
     <h2 class="page-head-title">Prueba de WebSocket</h2>
 
     @if ($businessId === null)
         <x-ui.alert>No hay ningún negocio cargado, así que no hay canal privado que escuchar.</x-ui.alert>
     @else
         <p class="page-head-sub">
-            Canal privado del negocio <b class="mono">{{ $this->business?->name }}</b>.
-            Abrí esta pantalla en dos pestañas: lo que escribas en una aparece en la otra sin recargar.
+            Canal privado del negocio <b class="mono">{{ $this->business?->name }}</b>. Abrí esta pantalla en dos
+            pestañas: lo que escribas en una aparece en la otra sin recargar.
         </p>
 
-        <div style="display:flex; gap:8px; align-items:flex-end; margin:16px 0">
+        <div style="display: flex; gap: 8px; align-items: flex-end; margin: 16px 0">
             <x-inputsform.input name="draft" label="Mensaje" wire:model="draft" wire:keydown.enter="send" />
             <x-ui.button variant="primary" icon="send" wire:click="send">Enviar</x-ui.button>
         </div>
 
-        <ul style="display:flex; flex-direction:column; gap:6px">
+        <ul style="display: flex; flex-direction: column; gap: 6px">
             @forelse ($messages as $message)
                 <li class="code-chip">{{ $message }}</li>
             @empty

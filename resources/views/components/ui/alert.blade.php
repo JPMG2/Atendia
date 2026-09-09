@@ -24,9 +24,9 @@
         <span class="alert-icon" style="color:{{ $fg }};"><x-icon :name="$icon" :size="20" /></span>
     @endif
 
-    <div class="flex-1 min-w-0">
+    <div class="min-w-0 flex-1">
         @if ($title)
-            <div class="alert-title" @if (! $slot->isEmpty()) style="margin-bottom:3px;" @endif>{{ $title }}</div>
+            <div class="alert-title" @if (! $slot->isEmpty()) style="margin-bottom: 3px" @endif>{{ $title }}</div>
         @endif
         @if (! $slot->isEmpty())
             <div class="alert-body">{{ $slot }}</div>

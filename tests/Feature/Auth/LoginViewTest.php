@@ -37,7 +37,7 @@ test('the login screen ships the theme toggle for light and dark', function (): 
     expect($html)
         ->toContain('atendia-theme')
         ->toContain('toggleTheme')
-        ->toContain('x-show="!dark"')
+        ->toContain('x-show="! dark"')
         ->toContain('x-show="dark"');
 });
 

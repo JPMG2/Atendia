@@ -14,13 +14,27 @@ use Livewire\Component;
 new class extends Component {};
 ?>
 
-<div class="toast-stack" x-data="toastStack()" x-on:notify.window="push($event.detail)" role="status"
-    aria-live="polite" aria-atomic="false">
+<div
+    class="toast-stack"
+    x-data="toastStack()"
+    x-on:notify.window="push($event.detail)"
+    role="status"
+    aria-live="polite"
+    aria-atomic="false"
+>
     <template x-for="toast in toasts" :key="toast.id">
-        <div class="toast" x-bind:class="'toast-' + toast.type" x-show="toast.visible" x-cloak
-            x-transition:enter="toast-trans" x-transition:enter-start="toast-off" x-transition:enter-end="toast-on"
-            x-transition:leave="toast-trans" x-transition:leave-start="toast-on" x-transition:leave-end="toast-off">
-
+        <div
+            class="toast"
+            x-bind:class="'toast-' + toast.type"
+            x-show="toast.visible"
+            x-cloak
+            x-transition:enter="toast-trans"
+            x-transition:enter-start="toast-off"
+            x-transition:enter-end="toast-on"
+            x-transition:leave="toast-trans"
+            x-transition:leave-start="toast-on"
+            x-transition:leave-end="toast-off"
+        >
             <span class="toast-icon">
                 <template x-if="toast.type === 'success'"><x-icon name="circle-check" :size="18" /></template>
                 <template x-if="toast.type === 'error'"><x-icon name="circle-x" :size="18" /></template>
@@ -30,8 +44,12 @@ new class extends Component {};
 
             <p class="toast-message" x-text="toast.message"></p>
 
-            <button type="button" class="toast-close" aria-label="{{ __('toast.dismiss') }}"
-                x-on:click="dismiss(toast.id)">
+            <button
+                type="button"
+                class="toast-close"
+                aria-label="{{ __('toast.dismiss') }}"
+                x-on:click="dismiss(toast.id)"
+            >
                 <x-icon name="x" :size="16" />
             </button>
         </div>
@@ -84,12 +102,12 @@ new class extends Component {};
 
                 // Dropped from the array only once the leave transition has finished.
                 setTimeout(() => {
-                    this.toasts = this.toasts.filter(t => t.id !== id);
+                    this.toasts = this.toasts.filter((t) => t.id !== id);
                 }, this.leaveDuration);
             },
 
             find(id) {
-                return this.toasts.find(t => t.id === id);
+                return this.toasts.find((t) => t.id === id);
             },
         }));
     </script>

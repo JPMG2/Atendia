@@ -57,25 +57,54 @@ new class extends Component
 
     <div class="bp-form">
         <x-catalog.form-row>
-            <x-inputsform.combobox span="text" :label="__('client.business.billing.currency')" name="currency_id"
-                :options="$this->currencyOptions" :value="$form->currency_id" wire:model="form.currency_id" />
-            <x-inputsform.combobox span="text" :label="__('client.business.billing.reference').' · '.__('client.business.optional')"
-                name="reference_currency_id" :options="$this->currencyOptions" :value="$form->reference_currency_id"
-                wire:model="form.reference_currency_id" :hint="__('client.business.billing.reference_hint')" />
+            <x-inputsform.combobox
+                span="text"
+                :label="__('client.business.billing.currency')"
+                name="currency_id"
+                :options="$this->currencyOptions"
+                :value="$form->currency_id"
+                wire:model="form.currency_id"
+            />
+            <x-inputsform.combobox
+                span="text"
+                :label="__('client.business.billing.reference').' · '.__('client.business.optional')"
+                name="reference_currency_id"
+                :options="$this->currencyOptions"
+                :value="$form->reference_currency_id"
+                wire:model="form.reference_currency_id"
+                :hint="__('client.business.billing.reference_hint')"
+            />
         </x-catalog.form-row>
         <x-catalog.form-row>
-            <x-inputsform.combobox span="text" :label="__('client.business.billing.tax_condition').' · '.__('client.business.optional')"
-                name="tax_condition_id" :options="$this->taxConditionOptions" :value="$form->tax_condition_id"
-                wire:model="form.tax_condition_id" :placeholder="__('client.business.billing.tax_condition_placeholder')" />
-            <x-inputsform.input span="text" :label="__('client.business.billing.tax_id').' · '.__('client.business.optional')"
-                name="tax_id" alpine-error="tax_id" wire:model="form.tax_id"
-                :placeholder="__('client.business.billing.tax_id_placeholder')" class="font-mono" />
+            <x-inputsform.combobox
+                span="text"
+                :label="__('client.business.billing.tax_condition').' · '.__('client.business.optional')"
+                name="tax_condition_id"
+                :options="$this->taxConditionOptions"
+                :value="$form->tax_condition_id"
+                wire:model="form.tax_condition_id"
+                :placeholder="__('client.business.billing.tax_condition_placeholder')"
+            />
+            <x-inputsform.input
+                span="text"
+                :label="__('client.business.billing.tax_id').' · '.__('client.business.optional')"
+                name="tax_id"
+                alpine-error="tax_id"
+                wire:model="form.tax_id"
+                :placeholder="__('client.business.billing.tax_id_placeholder')"
+                class="font-mono"
+            />
         </x-catalog.form-row>
     </div>
     <p class="bp-hint">{{ __('client.business.billing.natural_hint') }}</p>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button
+            variant="primary"
+            size="sm"
+            x-on:click="submit()"
+        >
+            {{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
 

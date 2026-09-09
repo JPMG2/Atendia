@@ -28,7 +28,11 @@
     @if ($href) href="{{ $href }}" @else type="{{ $type }}" @endif
     {{ $attributes->merge(['class' => $classes]) }}
 >
-    @if ($icon)<x-icon :name="$icon" :size="$iconSize" />@endif
+    @if ($icon)
+        <x-icon :name="$icon" :size="$iconSize" />
+    @endif
     {{ $slot }}
-    @if ($iconRight)<x-icon :name="$iconRight" :size="$iconSize" />@endif
+    @if ($iconRight)
+        <x-icon :name="$iconRight" :size="$iconSize" />
+    @endif
 </{{ $tag }}>

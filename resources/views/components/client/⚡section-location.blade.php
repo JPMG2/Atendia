@@ -50,10 +50,18 @@ new class extends Component
     <div class="bp-question">
         <span>{{ __('client.business.location.question') }}</span>
         <div class="mock-switch" role="group" aria-label="{{ __('client.business.location.question') }}">
-            <button type="button" wire:click="$set('form.hasPremises', true)" @class(['is-active' => $form->hasPremises === true])>
+            <button
+                type="button"
+                wire:click="$set('form.hasPremises', true)"
+                @class(['is-active' => $form->hasPremises === true])
+            >
                 {{ __('client.business.location.yes') }}
             </button>
-            <button type="button" wire:click="$set('form.hasPremises', false)" @class(['is-active' => $form->hasPremises === false])>
+            <button
+                type="button"
+                wire:click="$set('form.hasPremises', false)"
+                @class(['is-active' => $form->hasPremises === false])
+            >
                 {{ __('client.business.location.no') }}
             </button>
         </div>
@@ -62,22 +70,49 @@ new class extends Component
     @if ($form->hasPremises)
         <div class="bp-form">
             <x-catalog.form-row>
-                <x-inputsform.input span="long" :label="__('client.business.location.address')" name="address"
-                    alpine-error="address" :placeholder="__('client.business.location.address_placeholder')" wire:model="form.address" />
-                <x-inputsform.input span="short" :label="__('client.business.location.city')" name="city"
-                    alpine-error="city" :placeholder="__('client.business.location.city_placeholder')" wire:model="form.city" />
+                <x-inputsform.input
+                    span="long"
+                    :label="__('client.business.location.address')"
+                    name="address"
+                    alpine-error="address"
+                    :placeholder="__('client.business.location.address_placeholder')"
+                    wire:model="form.address"
+                />
+                <x-inputsform.input
+                    span="short"
+                    :label="__('client.business.location.city')"
+                    name="city"
+                    alpine-error="city"
+                    :placeholder="__('client.business.location.city_placeholder')"
+                    wire:model="form.city"
+                />
             </x-catalog.form-row>
             <x-catalog.form-row>
-                <x-inputsform.input span="short" :label="__('client.business.location.country')" name="country"
-                    :value="$this->countryName" disabled />
-                <x-inputsform.input span="short" :label="__('client.business.location.province')" name="province"
-                    :value="$this->provinceName" disabled />
+                <x-inputsform.input
+                    span="short"
+                    :label="__('client.business.location.country')"
+                    name="country"
+                    :value="$this->countryName"
+                    disabled
+                />
+                <x-inputsform.input
+                    span="short"
+                    :label="__('client.business.location.province')"
+                    name="province"
+                    :value="$this->provinceName"
+                    disabled
+                />
             </x-catalog.form-row>
         </div>
     @endif
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button
+            variant="primary"
+            size="sm"
+            x-on:click="submit()"
+        >
+            {{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
 
@@ -96,8 +131,14 @@ new class extends Component
             path: 'form',
 
             rules: {
-                address: [['minLength', 3], ['maxLength', 255]],
-                city: [['minLength', 3], ['maxLength', 255]],
+                address: [
+                    ['minLength', 3],
+                    ['maxLength', 255],
+                ],
+                city: [
+                    ['minLength', 3],
+                    ['maxLength', 255],
+                ],
             },
 
             async submit() {
