@@ -65,7 +65,7 @@ new class extends Component
             </div>
         </x-client.offer-empty>
     @else
-        <x-ui.card class="p-5 sm:p-6">
+        <x-ui.card class="p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="font-mono text-sm text-subtle">{{ trans_choice('client.services.count', count($services), ['count' => count($services)]) }}</p>
                 <x-ui.button variant="primary" size="sm" icon="plus">{{ __('client.services.add') }}</x-ui.button>
@@ -73,7 +73,7 @@ new class extends Component
 
             {{-- Quick add mirrors the wizard step: type a name, or tap what the
             trade already suggests — same vocabulary on both screens. --}}
-            <div class="mt-4 flex flex-wrap items-end gap-3">
+            <div class="mt-3 flex flex-wrap items-end gap-3">
                 <x-inputsform.input span="long" name="service_draft" maxlength="255"
                     :aria-label="__('client.services.add')" :placeholder="__('client.services.add_placeholder')" />
                 <x-ui.button variant="secondary" size="sm">{{ __('client.services.add_short') }}</x-ui.button>
@@ -84,7 +84,7 @@ new class extends Component
                 @endforeach
             </div>
 
-            <ul class="mt-5 divide-y divide-[color:var(--border-subtle)]">
+            <ul class="mt-4 divide-y divide-[color:var(--border-subtle)]">
                 @foreach ($services as $service)
                     <li class="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg px-2 py-2.5 transition hover:bg-sunken" wire:key="service-{{ $loop->index }}">
                         <div class="min-w-0 flex-1">

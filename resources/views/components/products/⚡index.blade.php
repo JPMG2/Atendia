@@ -61,14 +61,14 @@ new class extends Component
             <p class="text-sm text-subtle">{{ __('client.products.empty_or') }}</p>
         </x-client.offer-empty>
     @else
-        <div class="flex flex-col gap-4">
-        <x-ui.card class="p-5 sm:p-6">
+        <div class="flex flex-col gap-3">
+        <x-ui.card class="p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="font-mono text-sm text-subtle">{{ trans_choice('client.products.count', count($products), ['count' => count($products)]) }}</p>
                 <x-ui.button variant="primary" size="sm" icon="plus">{{ __('client.products.add') }}</x-ui.button>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-end gap-3">
+            <div class="mt-3 flex flex-wrap items-end gap-3">
                 <x-inputsform.input span="long" name="product_draft" maxlength="255"
                     :aria-label="__('client.products.add')" :placeholder="__('client.products.add_placeholder')" />
                 <x-ui.button variant="secondary" size="sm">{{ __('client.products.add_short') }}</x-ui.button>
@@ -86,7 +86,7 @@ new class extends Component
 
         {{-- The import lane lives beside the list, not inside it: a spreadsheet
         of hundreds must never feel like typing them one by one. --}}
-        <x-ui.card class="p-5 sm:p-6">
+        <x-ui.card class="p-5">
             <div class="flex flex-wrap items-center gap-4">
                 <div class="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
                     <x-icon name="upload" :size="20" style="color:var(--brand)" />

@@ -68,25 +68,10 @@ new class extends Component
     </div>
 
     @if ($form->hasPremises)
+        {{-- Broad to narrow, same order the company screen documents: country
+        and province come first (read-only, set at registration), then the
+        city, and only then the street — which absorbs the row's slack. --}}
         <div class="bp-form">
-            <x-catalog.form-row>
-                <x-inputsform.input
-                    span="long"
-                    :label="__('client.business.location.address')"
-                    name="address"
-                    alpine-error="address"
-                    :placeholder="__('client.business.location.address_placeholder')"
-                    wire:model="form.address"
-                />
-                <x-inputsform.input
-                    span="short"
-                    :label="__('client.business.location.city')"
-                    name="city"
-                    alpine-error="city"
-                    :placeholder="__('client.business.location.city_placeholder')"
-                    wire:model="form.city"
-                />
-            </x-catalog.form-row>
             <x-catalog.form-row>
                 <x-inputsform.input
                     span="short"
@@ -101,6 +86,24 @@ new class extends Component
                     name="province"
                     :value="$this->provinceName"
                     disabled
+                />
+            </x-catalog.form-row>
+            <x-catalog.form-row>
+                <x-inputsform.input
+                    span="short"
+                    :label="__('client.business.location.city')"
+                    name="city"
+                    alpine-error="city"
+                    :placeholder="__('client.business.location.city_placeholder')"
+                    wire:model="form.city"
+                />
+                <x-inputsform.input
+                    span="long"
+                    :label="__('client.business.location.address')"
+                    name="address"
+                    alpine-error="address"
+                    :placeholder="__('client.business.location.address_placeholder')"
+                    wire:model="form.address"
                 />
             </x-catalog.form-row>
         </div>

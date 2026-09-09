@@ -53,7 +53,7 @@ new class extends Component
 
     <div class="bp-card-head">
         <h2>{{ __('client.business.hours.title') }}</h2>
-        <span class="bp-chip">{{ __('client.business.recommended') }}</span>
+        <span class="bp-chip"><x-icon name="star" :size="12" /> {{ __('client.business.recommended') }}</span>
         <span class="bp-head-action">
             <x-ui.button
                 variant="secondary"
