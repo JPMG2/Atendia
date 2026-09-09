@@ -1,84 +1,27 @@
 <?php
 
-use App\Classes\Main\Client;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
+use App\Livewire\Forms\Client\BillingForm;
 use App\Models\Currency;
 use App\Models\TaxCondition;
-use App\Services\NotificationService;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Currency and billing card of "Mi negocio". Everything optional: no tax
- * data means the invoice goes out to a natural person, and the reference
- * currency mirrors the Venezuelan "Ref" habit. Reads and saves through the
- * client's main class — the same door the wizard uses.
+ * Currency and billing card of "Mi negocio". The state, validation and save
+ * live in {@see BillingForm}; the component only wires the screen to it and
+ * feeds the comboboxes.
  */
 new class extends Component
 {
     use HasNotifications;
 
-    public ?int $currency_id = null;
-
-    public ?int $reference_currency_id = null;
-
-    public ?int $tax_condition_id = null;
-
-    public ?string $tax_id = null;
+    public BillingForm $form;
 
     public function mount(): void
     {
-        $details = $this->client()->taxDetails();
-
-        if ($details === null) {
-            return;
-        }
-
-        foreach ($details->data() as $field => $value) {
-            $this->{$field} = $value;
-        }
-
-        // A fresh card suggests the registration country's currency; it only
-        // sticks when the client saves.
-        $this->currency_id ??= Auth::user()->business?->country?->currency_id;
-    }
-
-    /** Rebuilt per request: a Livewire component cannot hold it in a constructor. */
-    protected function client(): Client
-    {
-        return Client::for(Auth::user());
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function rules(): array
-    {
-        return [
-            'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')->where('is_active', true)],
-            'reference_currency_id' => ['nullable', 'integer', 'different:currency_id', Rule::exists('currencies', 'id')->where('is_active', true)],
-            // Scoped to the business's country: an id posted by hand must not
-            // cross borders.
-            'tax_condition_id' => ['nullable', 'integer', Rule::exists('tax_conditions', 'id')->where('country_id', Auth::user()?->business?->country_id)],
-            'tax_id' => ['nullable', 'string', 'max:20'],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function validationAttributes(): array
-    {
-        return [
-            'currency_id' => __('client.business.billing.currency'),
-            'reference_currency_id' => __('client.business.billing.reference'),
-            'tax_condition_id' => __('client.business.billing.tax_condition'),
-            'tax_id' => __('client.business.billing.tax_id'),
-        ];
+        $this->form->setup();
     }
 
     /**
@@ -101,24 +44,12 @@ new class extends Component
 
     public function save(): void
     {
-        $details = $this->client()->taxDetails();
-
-        if ($details === null) {
-            $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
-
-            return;
-        }
-
-        $validated = $this->validate();
-
-        $business = $details->save($validated);
-
-        $this->dispatchNotification(resolve(NotificationService::class)->notificationFor($business, 'updated'));
+        $this->dispatchNotification($this->form->save());
     }
 };
 ?>
 
-<x-ui.card class="bp-card" data-section="facturacion">
+<x-ui.card class="bp-card" data-section="facturacion" x-data="clientBillingForm">
     <div class="bp-card-head">
         <h2>{{ __('client.business.billing.title') }}</h2>
     </div>
@@ -127,22 +58,60 @@ new class extends Component
     <div class="bp-form">
         <x-catalog.form-row>
             <x-inputsform.combobox span="text" :label="__('client.business.billing.currency')" name="currency_id"
-                :options="$this->currencyOptions" :value="$currency_id" wire:model="currency_id" />
+                :options="$this->currencyOptions" :value="$form->currency_id" wire:model="form.currency_id" />
             <x-inputsform.combobox span="text" :label="__('client.business.billing.reference').' · '.__('client.business.optional')"
-                name="reference_currency_id" :options="$this->currencyOptions" :value="$reference_currency_id"
-                wire:model="reference_currency_id" :hint="__('client.business.billing.reference_hint')" />
+                name="reference_currency_id" :options="$this->currencyOptions" :value="$form->reference_currency_id"
+                wire:model="form.reference_currency_id" :hint="__('client.business.billing.reference_hint')" />
         </x-catalog.form-row>
         <x-catalog.form-row>
             <x-inputsform.combobox span="text" :label="__('client.business.billing.tax_condition').' · '.__('client.business.optional')"
-                name="tax_condition_id" :options="$this->taxConditionOptions" :value="$tax_condition_id"
-                wire:model="tax_condition_id" :placeholder="__('client.business.billing.tax_condition_placeholder')" />
+                name="tax_condition_id" :options="$this->taxConditionOptions" :value="$form->tax_condition_id"
+                wire:model="form.tax_condition_id" :placeholder="__('client.business.billing.tax_condition_placeholder')" />
             <x-inputsform.input span="text" :label="__('client.business.billing.tax_id').' · '.__('client.business.optional')"
-                name="tax_id" wire:model="tax_id" :placeholder="__('client.business.billing.tax_id_placeholder')" class="font-mono" />
+                name="tax_id" alpine-error="tax_id" wire:model="form.tax_id"
+                :placeholder="__('client.business.billing.tax_id_placeholder')" class="font-mono" />
         </x-catalog.form-row>
     </div>
     <p class="bp-hint">{{ __('client.business.billing.natural_hint') }}</p>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" wire:click="save">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
+
+@script
+    <script>
+        /*
+         * FRONT validation of the billing card, same criterion as the company
+         * screen: the rules mirror the server's replicable half. The three
+         * comboboxes are `exists` checks, so they still bounce from the server.
+         */
+        Alpine.data('clientBillingForm', () => ({
+            errors: {},
+
+            // Where the form lives on the server: values are read from there,
+            // since wire:model is the card's only state.
+            path: 'form',
+
+            rules: {
+                tax_id: [['maxLength', 20]],
+            },
+
+            async submit() {
+                const values = {};
+
+                for (const field in this.rules) {
+                    values[field] = this.$wire.get(`${this.path}.${field}`);
+                }
+
+                this.errors = validate(values, this.rules);
+
+                if (Object.keys(this.errors).length > 0) {
+                    return;
+                }
+
+                await this.$wire.save();
+            },
+        }));
+    </script>
+@endscript

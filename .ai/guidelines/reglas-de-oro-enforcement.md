@@ -69,6 +69,13 @@ Cuando se suma un set de reglas de oro:
   `tests/Feature/GoldenRulesBladeQueriesTest.php` · hook
   `.claude/hooks/check-blade-query-golden-rules.sh`. Allowlists espejados
   (tocar de a dos); los verbos compartidos con Collection no se prohíben.
+- **Validación en un Form, nunca inline en el componente** →
+  `.ai/guidelines/formularios.md` §1 · test guardián
+  `tests/Feature/GoldenRulesFormValidationTest.php` · hook
+  `.claude/hooks/check-form-validation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-09, cuando las 6
+  cards del perfil salieron con `rules()` inline mientras la guía escrita
+  todavía PRESCRIBÍA ese patrón: la regla vivía solo en el código.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

@@ -100,11 +100,7 @@ new class extends Component
     /** A fresh file opens the review: read the shape, propose the mapping. */
     public function updatedUpload(): void
     {
-        $this->validate(
-            ['upload' => ['required', 'file', 'mimes:xlsx,csv,txt', 'max:10240']],
-            [],
-            ['upload' => __('wizard.fields.import_file')],
-        );
+        $this->form->validateImportUpload($this->upload);
 
         try {
             $summary = app(ImportFileReader::class)->read($this->upload->getRealPath());

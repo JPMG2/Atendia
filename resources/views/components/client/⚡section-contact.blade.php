@@ -1,80 +1,32 @@
 <?php
 
-use App\Classes\Main\Client;
-use App\Dto\NotificationDto;
-use App\Enums\NotificationType;
-use App\Services\NotificationService;
+use App\Livewire\Forms\Client\ContactForm;
 use App\Traits\HasNotifications;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 /**
- * Contact card of "Mi negocio": the public channels besides WhatsApp, both
- * optional. Writes through the connection slice, the same socket the wizard
- * uses, sending only its own fields.
+ * Contact card of "Mi negocio". The state, validation and save live in
+ * {@see ContactForm}; the component only wires the screen to it.
  */
 new class extends Component
 {
     use HasNotifications;
 
-    public ?string $email = null;
-
-    public ?string $web = null;
+    public ContactForm $form;
 
     public function mount(): void
     {
-        $data = $this->client()->personalData()->data();
-
-        $this->email = $data->email;
-        $this->web = $data->web;
-    }
-
-    /** Rebuilt per request: a Livewire component cannot hold it in a constructor. */
-    protected function client(): Client
-    {
-        return Client::for(Auth::user());
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function rules(): array
-    {
-        return [
-            'email' => ['nullable', 'email:rfc', 'max:255'],
-            'web' => ['nullable', 'url:http,https', 'max:255'],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function validationAttributes(): array
-    {
-        return [
-            'email' => config('nicename.email'),
-            'web' => config('nicename.web'),
-        ];
+        $this->form->setup();
     }
 
     public function save(): void
     {
-        $validated = $this->validate();
-
-        $business = $this->client()->personalData()->saveConnection($validated);
-
-        if ($business === null) {
-            $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
-
-            return;
-        }
-
-        $this->dispatchNotification(resolve(NotificationService::class)->notificationFor($business, 'updated'));
+        $this->dispatchNotification($this->form->save());
     }
 };
 ?>
 
-<x-ui.card class="bp-card" data-section="contacto">
+<x-ui.card class="bp-card" data-section="contacto" x-data="clientContactForm">
     <div class="bp-card-head">
         <h2>{{ __('client.business.contact.title') }}</h2>
     </div>
@@ -82,12 +34,50 @@ new class extends Component
 
     <x-catalog.form-row>
         <x-inputsform.input span="text" :label="__('client.business.contact.email').' · '.__('client.business.optional')"
-            name="email" wire:model="email" />
+            name="email" alpine-error="email" wire:model="form.email" />
         <x-inputsform.input span="text" :label="__('client.business.contact.web').' · '.__('client.business.optional')"
-            name="web" :placeholder="__('client.business.contact.web_placeholder')" wire:model="web" />
+            name="web" alpine-error="web" :placeholder="__('client.business.contact.web_placeholder')" wire:model="form.web" />
     </x-catalog.form-row>
 
     <div class="bp-card-actions">
-        <x-ui.button variant="primary" size="sm" wire:click="save">{{ __('client.business.actions.save') }}</x-ui.button>
+        <x-ui.button variant="primary" size="sm" x-on:click="submit()">{{ __('client.business.actions.save') }}</x-ui.button>
     </div>
 </x-ui.card>
+
+@script
+    <script>
+        /*
+         * FRONT validation of the contact card, same criterion as the company
+         * screen: the rules mirror the server's replicable half. The URL
+         * format is Laravel's `url:` and still bounces from the server.
+         */
+        Alpine.data('clientContactForm', () => ({
+            errors: {},
+
+            // Where the form lives on the server: values are read from there,
+            // since wire:model is the card's only state.
+            path: 'form',
+
+            rules: {
+                email: ['email', ['maxLength', 255]],
+                web: [['maxLength', 255], 'noMarkup'],
+            },
+
+            async submit() {
+                const values = {};
+
+                for (const field in this.rules) {
+                    values[field] = this.$wire.get(`${this.path}.${field}`);
+                }
+
+                this.errors = validate(values, this.rules);
+
+                if (Object.keys(this.errors).length > 0) {
+                    return;
+                }
+
+                await this.$wire.save();
+            },
+        }));
+    </script>
+@endscript

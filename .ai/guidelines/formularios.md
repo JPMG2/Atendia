@@ -26,9 +26,19 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 
 - Componente **SFC** por defecto (`resources/views/livewire/...`), no clase+vista
   separada. (Ver memoria `livewire-convenciones`; MFC/class solo por caso justificado.)
-- Propiedades públicas **tipadas**, una por campo. `mount()` carga el estado inicial.
-- `rules()` con validación **server-side** (Livewire valida como una request HTTP).
-- `save()`: `validate()` → persistir → feedback (`$this->dispatch('...')` para el toast).
+- **El estado, las reglas y el guardado viven en un FORM** (`app/Livewire/Forms/...`)
+  que extiende `BaseForm`, como TODOS los catálogos, el wizard y Compañía. El
+  componente solo delega: `public XForm $form` + `mount()` → `$form->setup()` +
+  `save()` → `dispatchNotification($form->save())`. Propiedades tipadas en el Form.
+- **Validación en el Form**: `validateServiceData()` (contrato de `BaseForm`:
+  `transformServiceData()` + `getValidationRules()` con `AttributeValidator` +
+  `getValidationAttributes()`), persistencia envuelta en `tryAction()`. **PROHIBIDO**
+  `rules()`/`validationAttributes()` inline o `$this->validate()` en el componente —
+  blindado por `tests/Feature/GoldenRulesFormValidationTest.php` y el hook
+  `check-form-validation-golden-rules.sh` (sin allowlist: nació en cero).
+- El `wire:model` apunta al Form (`form.campo`); el `name` del campo queda SIN
+  prefijo — los errores salen del Validator con la clave cruda y el `<x-ui.*>`
+  los autocablea por `name`.
 - **Autorización dentro de la acción** (policy / `can`), NUNCA solo ocultando el botón.
   Ocultar un control es UX; la cerradura va en middleware de ruta y/o policy.
 
@@ -150,6 +160,8 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 ## 7. Checklist de salida (verificar uno por uno antes de cerrar)
 
 - [ ] Campos 100% vía `<x-ui.*>` — cero controles crudos.
+- [ ] **Validación en un Form (`BaseForm`)** — cero `rules()`/`$this->validate()`
+      inline en el componente; el componente delega en `$form->save()`.
 - [ ] **Orden lógico** de los campos (identificador → nombre → formato → estado).
 - [ ] **Filas declaradas** con `<x-catalog.form-row>`; ninguna queda a medias.
 - [ ] **Ancho por contenido** (`span=`), nunca `col-N`; el form no topea su ancho.

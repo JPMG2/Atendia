@@ -216,6 +216,21 @@ class BusinessForm extends BaseForm
     }
 
     /**
+     * Validates the products-import spreadsheet before the reader opens it.
+     * The upload itself lives on the COMPONENT (`wire:model="upload"`), so
+     * the file arrives as an argument; the error still lands on `upload`.
+     */
+    public function validateImportUpload(mixed $file): void
+    {
+        Validator::make(
+            ['upload' => $file],
+            ['upload' => ['required', 'file', 'mimes:xlsx,csv,txt', 'max:10240']],
+            [],
+            ['upload' => __('wizard.fields.import_file')],
+        )->validate();
+    }
+
+    /**
      * Changing the country invalidates the province: the old one no longer
      * belongs. Only front-driven changes fire the hook, so loading an
      * existing business does not wipe itself.
