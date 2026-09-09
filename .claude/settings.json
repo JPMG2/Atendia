@@ -70,6 +70,10 @@
           },
           {
             "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-tenancy-golden-rules.sh"
+          },
+          {
+            "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/remind-form-checklist.sh"
           }
         ]

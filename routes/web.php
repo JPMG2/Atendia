@@ -37,6 +37,15 @@ foreach (['identidad', 'ubicacion', 'horarios', 'contacto', 'redes', 'facturacio
         ->name("my-business.{$slug}");
 }
 
+// Services and products of the business: living mock-ups behind the same lock.
+Route::get('/servicios', fn () => view('my-services'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-services');
+
+Route::get('/productos', fn () => view('my-products'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-products');
+
 // Client onboarding wizard. It writes real data now, so it sits behind the
 // client-panel lock. No 'verified': the welcome tour must not wait for the
 // verification mail.

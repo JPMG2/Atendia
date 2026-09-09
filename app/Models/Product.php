@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\BelongsToBusiness;
 use App\Traits\TracksUserActions;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -24,6 +24,8 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['name', 'description', 'price', 'stock', 'is_active'])]
 class Product extends Model
 {
+    use BelongsToBusiness;
+
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
@@ -54,13 +56,5 @@ class Product extends Model
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return BelongsTo<Business, $this>
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 }

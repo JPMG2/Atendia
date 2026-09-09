@@ -76,6 +76,13 @@ Cuando se suma un set de reglas de oro:
   (tocar de a dos); sin allowlist — nació en cero el 2026-09-09, cuando las 6
   cards del perfil salieron con `rules()` inline mientras la guía escrita
   todavía PRESCRIBÍA ese patrón: la regla vivía solo en el código.
+- **Tenancy (un cliente jamás ve a otro)** → `.ai/guidelines/tenancy.md` ·
+  guardianes `tests/Feature/GoldenRulesTenancyTest.php` (trait obligatorio por
+  INTROSPECCIÓN del esquema — la lista no se mantiene a mano — y cero
+  `withoutGlobalScope`) + `tests/Feature/BusinessIsolationTest.php` (dataset
+  de dos negocios sobre los 6 modelos tenant) · hook
+  `.claude/hooks/check-tenancy-golden-rules.sh`. Sin allowlist de patrones;
+  la única excepción razonada es `User` (membresía, no dato tenant).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

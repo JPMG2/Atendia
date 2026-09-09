@@ -40,8 +40,10 @@ class MenuSeeder extends Seeder
         foreach ($profileSections as $order => [$labelKey, $icon, $routeName]) {
             Menu::create(['parent_id' => $myBusiness->id, 'label_key' => $labelKey, 'icon' => $icon, 'route_name' => $routeName, 'sort_order' => $order + 1]);
         }
-        Menu::create(['label_key' => 'menu.services', 'icon' => 'briefcase', 'sort_order' => 4]);
-        Menu::create(['label_key' => 'menu.products', 'icon' => 'package', 'sort_order' => 5]);
+        // Both are leaves by the owner's call (2026-09-09): a child only ever
+        // joins when a real second destination earns its place.
+        Menu::create(['label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'sort_order' => 4]);
+        Menu::create(['label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'sort_order' => 5]);
         Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'sort_order' => 6]);
 
         // Bottom navigation group.

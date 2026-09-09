@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\KnowledgeDocument;
 use App\Services\Knowledge\KnowledgeIndexer;
+use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
@@ -28,8 +29,10 @@ class IndexKnowledgeDocument implements ShouldQueue
             return;
         }
 
+        // The worker has no session: the job adopts the document's business so
+        // both the Eloquent scope and the RLS fence apply while it runs.
         try {
-            $indexer->index($document);
+            app(Tenant::class)->for((int) $document->business_id, fn () => $indexer->index($document));
         } catch (Throwable $e) {
             $document->forceFill(['status' => 'failed'])->save();
 

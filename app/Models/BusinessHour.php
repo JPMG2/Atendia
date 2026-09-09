@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\BelongsToBusiness;
 use Database\Factories\BusinessHourFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -22,6 +22,8 @@ use Illuminate\Support\Str;
 #[Fillable(['day_of_week', 'opens_at', 'closes_at'])]
 class BusinessHour extends Model
 {
+    use BelongsToBusiness;
+
     /** @use HasFactory<BusinessHourFactory> */
     use HasFactory;
 
@@ -51,13 +53,5 @@ class BusinessHour extends Model
                 $day => Str::ucfirst(Carbon::create(2024, 9, $day + 1)->locale(app()->getLocale())->dayName),
             ])
             ->all();
-    }
-
-    /**
-     * @return BelongsTo<Business, $this>
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 }

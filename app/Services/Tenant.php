@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Closure;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Which business is the current one.
@@ -38,12 +39,27 @@ class Tenant
     {
         $this->businessId = $businessId;
         $this->overridden = true;
+
+        $this->syncDatabase();
     }
 
     public function forget(): void
     {
         $this->businessId = null;
         $this->overridden = false;
+
+        $this->syncDatabase();
+    }
+
+    /**
+     * Pushes the current tenant into the DATABASE session, where the RLS
+     * policies read it: from there even raw SQL is fenced by Postgres
+     * itself. Empty string means "no tenant" — admin, console, seeders —
+     * and the policies open up, mirroring the Eloquent scope.
+     */
+    public function syncDatabase(): void
+    {
+        DB::selectOne('select set_config(?, ?, false)', ['app.current_tenant', (string) $this->id()]);
     }
 
     /**
@@ -62,6 +78,8 @@ class Tenant
         } finally {
             $this->businessId = $previousId;
             $this->overridden = $previousOverridden;
+
+            $this->syncDatabase();
         }
     }
 }

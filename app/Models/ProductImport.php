@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\BelongsToBusiness;
 use Database\Factories\ProductImportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A spreadsheet a business handed over, with its confirmed column mapping.
@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['original_name', 'path', 'mapping', 'corrections', 'total_rows', 'status'])]
 class ProductImport extends Model
 {
+    use BelongsToBusiness;
+
     /** @use HasFactory<ProductImportFactory> */
     use HasFactory;
 
@@ -33,13 +35,5 @@ class ProductImport extends Model
             'corrections' => 'array',
             'total_rows' => 'integer',
         ];
-    }
-
-    /**
-     * @return BelongsTo<Business, $this>
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 }

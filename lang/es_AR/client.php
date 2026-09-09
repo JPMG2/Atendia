@@ -54,4 +54,17 @@ return [
             'caption' => 'La descripción y el logo salen acá.',
         ],
     ],
+
+    'services' => [
+        'sub' => 'Lo que ofrecés, tal como tu asistente lo cuenta cuando se lo preguntan.',
+        'add_placeholder' => 'Escribí un servicio, por ejemplo "Corte de dama"',
+    ],
+
+    'products' => [
+        'sub' => 'Lo que vendés; tu asistente responde "¿tienen tal cosa?" con esta lista.',
+        'add_placeholder' => 'Escribí un producto, por ejemplo "Bujía NGK"',
+        'empty_body' => 'Subí tu Excel y tu asistente aprende el catálogo completo en minutos.',
+        'empty_or' => 'O escribilos de a uno cuando quieras.',
+        'import_body' => 'Subí la planilla que ya usás: leemos las columnas y tu asistente aprende cada fila.',
+    ],
 ];

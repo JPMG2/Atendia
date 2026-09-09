@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetTenantDatabaseContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Resuelve el locale (sesión › geolocalización › default) en cada request web.
         $middleware->web(append: [
             SetLocale::class,
+            SetTenantDatabaseContext::class,
         ]);
 
         // Aliases de spatie/laravel-permission para usar en rutas.

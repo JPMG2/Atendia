@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\BelongsToBusiness;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,6 +25,8 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['service_type_id', 'name', 'description', 'price', 'duration_minutes', 'is_active'])]
 class Service extends Model
 {
+    use BelongsToBusiness;
+
     /** @use HasFactory<ServiceFactory> */
     use HasFactory;
 
@@ -55,14 +58,6 @@ class Service extends Model
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return BelongsTo<Business, $this>
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 
     /**

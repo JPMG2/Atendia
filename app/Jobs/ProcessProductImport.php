@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\KnowledgeDocument;
 use App\Models\ProductImport;
 use App\Services\ProductImport\ImportFileReader;
+use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
@@ -35,13 +36,17 @@ class ProcessProductImport implements ShouldQueue
 
         $import->forceFill(['status' => 'processing'])->save();
 
+        // The worker has no session: the job adopts the import's business so
+        // both the Eloquent scope and the RLS fence apply while it writes.
         try {
-            $rows = $this->applyCorrections($import, $reader->rows(Storage::disk('local')->path($import->path)));
+            app(Tenant::class)->for((int) $import->business_id, function () use ($import, $reader): void {
+                $rows = $this->applyCorrections($import, $reader->rows(Storage::disk('local')->path($import->path)));
 
-            $this->upsertProducts($import, $rows);
-            $this->feedKnowledge($import, $rows);
+                $this->upsertProducts($import, $rows);
+                $this->feedKnowledge($import, $rows);
 
-            $import->forceFill(['status' => 'done', 'total_rows' => count($rows)])->save();
+                $import->forceFill(['status' => 'done', 'total_rows' => count($rows)])->save();
+            });
         } catch (Throwable $e) {
             $import->forceFill(['status' => 'failed'])->save();
 
