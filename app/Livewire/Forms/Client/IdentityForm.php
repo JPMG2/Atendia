@@ -113,7 +113,6 @@ class IdentityForm extends BaseForm
         return [
             'name' => AttributeValidator::stringValid(true, '3'),
             'description' => ['nullable', 'string', 'max:500'],
-            // SVG is in because a brand mark is vector: it scales without blurring.
             'logo_file' => ['nullable', 'file', 'mimes:png,webp,jpg,jpeg,svg', 'max:2048'],
         ];
     }

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Client;
 
 use App\Classes\Main\Client;
+use App\Dto\DtoCast;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
+use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -65,17 +67,17 @@ class LocationForm extends BaseForm
     {
         return [
             'hasPremises' => $this->hasPremises,
-            'address' => $this->address,
-            'city' => $this->city,
+            'address' => DtoCast::squish($this->address),
+            'city' => DtoCast::squish($this->city),
         ];
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
         return [
-            'hasPremises' => ['nullable', 'boolean'],
-            'address' => ['nullable', 'string', 'min:3', 'max:255'],
-            'city' => ['nullable', 'string', 'min:3', 'max:255'],
+            'hasPremises' => ['nullable', ...AttributeValidator::booleanValue(false)],
+            'address' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
+            'city' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
         ];
     }
 

@@ -7,7 +7,9 @@ namespace App\Livewire\Forms\Client;
 use App\Classes\Main\Client;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Events\BusinessConnectionSaved;
 use App\Livewire\Forms\BaseForm;
+use App\Models\Business;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -34,17 +36,31 @@ class ContactForm extends BaseForm
     {
         $validated = $this->validateServiceData();
 
-        return $this->tryAction(function () use ($validated): NotificationDto {
+        // Taken BEFORE the save: afterwards the model can no longer tell a
+        // first address from a corrected one.
+        $hadEmail = filled(Auth::user()->business?->email);
 
-            $business = $this->client()->personalData()->saveConnection($validated);
+        // Leaves the closure by reference: the event fires OUTSIDE tryAction,
+        // where a listener's failure cannot turn a good save into an error.
+        $saved = null;
 
-            if ($business === null) {
+        $notification = $this->tryAction(function () use ($validated, &$saved): NotificationDto {
+
+            $saved = $this->client()->personalData()->saveConnection($validated);
+
+            if ($saved === null) {
                 return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
             }
 
-            return $this->notificationService()->notificationFor($business, 'updated');
+            return $this->notificationService()->notificationFor($saved, 'updated');
 
         }, __('notifications.not_updated'));
+
+        if ($saved instanceof Business) {
+            BusinessConnectionSaved::dispatch($saved, $hadEmail);
+        }
+
+        return $notification;
     }
 
     /** Rebuilt per request: a Livewire form cannot hold it in a constructor. */

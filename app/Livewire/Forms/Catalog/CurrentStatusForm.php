@@ -27,14 +27,8 @@ class CurrentStatusForm extends BaseCatalogForm
     {
         return [
 
-            // `name` is UNIQUE and the master's only real data: without the rule a
-            // repeated status is a database crash caught by tryAction, not a field
-            // error.
             'name' => AttributeValidator::uniqueIdNameLength('3', 'current_statuses', 'name', $excludeId),
 
-            // What is stored is a token KEY, not a hex. Validating against the
-            // palette is what stops a value the CSS cannot paint from leaving the
-            // tag transparent with no warning.
             'color' => ['required', Rule::in(CurrentStatus::COLORS)],
         ];
     }

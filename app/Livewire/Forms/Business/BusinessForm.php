@@ -11,6 +11,7 @@ use App\Classes\Main\Client;
 use App\Dto\BusinessDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Events\BusinessConnectionSaved;
 use App\Events\BusinessCreated;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
@@ -141,13 +142,27 @@ class BusinessForm extends BaseForm
 
         $validated = $this->validateStep(self::STEP_CONNECTION);
 
-        return $this->tryAction(function () use ($validated, $user, $business): NotificationDto {
+        // Taken BEFORE the save: afterwards the model can no longer tell a
+        // first address from a corrected one.
+        $hadEmail = filled($business->email);
 
-            Client::for($user)->personalData()->saveConnection($validated);
+        // Leaves the closure by reference: the event fires OUTSIDE tryAction,
+        // where a listener's failure cannot turn a good save into an error.
+        $saved = null;
+
+        $notification = $this->tryAction(function () use ($validated, $user, $business, &$saved): NotificationDto {
+
+            $saved = Client::for($user)->personalData()->saveConnection($validated);
 
             return $this->notificationService()->notificationFor($business, 'updated');
 
         }, __('notifications.not_updated'));
+
+        if ($saved instanceof Business) {
+            BusinessConnectionSaved::dispatch($saved, $hadEmail);
+        }
+
+        return $notification;
     }
 
     /**
@@ -303,22 +318,14 @@ class BusinessForm extends BaseForm
 
                 'country_id' => AttributeValidator::requireAndExists('countries', 'id', 'country_id', true),
 
-                // Scoped to the chosen country: the combobox already narrows
-                // the list, but an id posted by hand must not cross countries.
                 'province_id' => [
                     'required',
                     'integer',
                     Rule::exists('provinces', 'id')->where('country_id', $this->data?->country_id),
                 ],
 
-                // Not a column — it GATES the step: the services step builds
-                // its suggestions from it, so without one there is nothing to
-                // offer there. The catalog is the source, never a hardcoded list.
                 'sector' => ['required', Rule::exists('business_sectors', 'code')->where('is_active', true)],
 
-                // The trade itself — what tunes the assistant and narrows the
-                // suggestions. Scoped to the chosen sector: a code posted by
-                // hand must not cross trades.
                 'activity' => [
                     'required',
                     Rule::exists('business_activities', 'code')
@@ -329,9 +336,6 @@ class BusinessForm extends BaseForm
 
             self::STEP_CONNECTION => [
 
-                // The three are the product's core when actually CONNECTING:
-                // the AI's number, a human to hand off to, and the inbox.
-                // "Conectar después" stays honest — skipping never validates.
                 'whatsapp_number' => [...AttributeValidator::digitValid('6', true), 'max:30'],
 
                 'fallback_whatsapp_number' => [...AttributeValidator::digitValid('6', true), 'max:30'],

@@ -26,8 +26,6 @@ class ServiceAttributeForm extends BaseCatalogForm
     {
         return [
 
-            // Globally unique: the key the assistant and the pivot reference the
-            // attribute by. The column is varchar(40).
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('3', 'service_attributes', 'code', $excludeId),
                 'max:40',
@@ -41,25 +39,18 @@ class ServiceAttributeForm extends BaseCatalogForm
                 'max:255',
             ],
 
-            // Only the types config knows how to draw are valid. Once a service type
-            // uses the attribute it stops being editable: changing it would break the
-            // values already stored, which is what Drupal and commercetools do too.
             'data_type' => [
                 'required',
                 'string',
                 'in:'.implode(',', $this->editableDataTypes($excludeId)),
             ],
 
-            // The column is varchar(15) and a unit is a short symbol: without this
-            // cap the helper's max:255 let it through and Postgres blew up.
             'unit' => [
                 'nullable',
                 'string',
                 'max:15',
             ],
 
-            // Already normalised to a list by the DTO, or null when the type is not
-            // a list. The cap keeps an endless list out of a jsonb column.
             'options' => ['nullable', 'array', 'max:100'],
             'options.*' => ['string', 'max:60'],
 

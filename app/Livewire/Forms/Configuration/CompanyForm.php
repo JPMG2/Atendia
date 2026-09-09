@@ -533,7 +533,6 @@ class CompanyForm extends BaseForm
             'email' => config('nicename.email'),
             'phone' => config('nicename.phone'),
             'web' => config('nicename.web'),
-            // Laravel resolves `social.0.url` against the wildcard key.
             'social.*.social_network_id' => config('nicename.social_network_id'),
             'social.*.url' => config('nicename.url'),
         ];
@@ -641,34 +640,21 @@ class CompanyForm extends BaseForm
 
             self::STEP_MAIN => [
 
-                // The name the invoice is issued under. No `unique`: the table
-                // holds one row, there is nobody to clash with.
                 'legal_name' => AttributeValidator::stringValid(true, '3'),
 
-                // Optional, as the column is nullable: without it a company with
-                // no tagline would bounce off the `min` in stringValid().
                 'tagline' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
 
-                // The table stores ONLY the region; the country and province on
-                // screen are derived from it and are not columns.
                 'region_id' => AttributeValidator::requireAndExists('regions', 'id', 'region_id', true),
 
                 'address' => AttributeValidator::stringValid(true, '3'),
 
                 'tax_condition_id' => AttributeValidator::requireAndExists('tax_conditions', 'id', 'tax_condition_id', true),
 
-                // The column is varchar(20) and the input caps at 20: without
-                // this the max:255 in stringValid let through a number that
-                // then blew up in Postgres.
                 'tax_id' => [...AttributeValidator::stringValid(true, '3'), 'max:20'],
 
-                // The columns hold the PATH, which the form never types: it is
-                // written from the file below. They keep their rule because what
-                // has none is never saved.
                 'logo_path_light' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
                 'logo_path_dark' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
 
-                // Optional: saving the rest of the step cannot demand a logo.
                 'logo_light_file' => self::LOGO_RULES,
                 'logo_dark_file' => self::LOGO_RULES,
 
@@ -677,29 +663,16 @@ class CompanyForm extends BaseForm
 
             self::STEP_COMMERCIAL => [
 
-                // All three are optional, as the columns are nullable: a company
-                // may publish no phone at all.
                 'email' => ['nullable', 'email:rfc', 'max:255'],
 
-                // The column is varchar(30); digitValid lets through the
-                // separators people actually type.
                 'phone' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
 
-                // webValid() is NOT used: it adds `active_url`, which resolves DNS
-                // on every save — a company's site cannot have to be online for
-                // its details to be saved.
                 'web' => ['nullable', 'url:http,https', 'max:255'],
 
                 'social' => ['array', 'max:20'],
 
-                // `distinct` is the on-screen half of the table's unique per owner:
-                // without it two rows on the same network would be a database
-                // crash caught by tryAction, not a field error.
                 'social.*.social_network_id' => ['required', 'integer', 'distinct', 'exists:social_networks,id'],
 
-                // The field is called "link or handle" and that is what it takes:
-                // demanding a full URL would bounce the handle the screen itself
-                // invites people to type.
                 'social.*.url' => [...AttributeValidator::stringValid(true, '3'), 'max:255'],
             ],
 

@@ -131,14 +131,8 @@ new class extends Component
             path: 'form',
 
             rules: {
-                address: [
-                    ['minLength', 3],
-                    ['maxLength', 255],
-                ],
-                city: [
-                    ['minLength', 3],
-                    ['maxLength', 255],
-                ],
+                address: [['minLength', 3], ['maxLength', 255], 'noMarkup'],
+                city: [['minLength', 3], ['maxLength', 255], 'noMarkup'],
             },
 
             async submit() {

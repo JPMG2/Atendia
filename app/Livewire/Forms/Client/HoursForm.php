@@ -169,7 +169,6 @@ class HoursForm extends BaseForm
      */
     protected function getValidationAttributes(): array
     {
-        // Laravel resolves `week.1.0.opens_at` against the wildcard key.
         return [
             'week.*.*.opens_at' => config('nicename.opens_at'),
             'week.*.*.closes_at' => config('nicename.closes_at'),

@@ -115,6 +115,7 @@ new class extends Component
         <x-inputsform.input
             span="long"
             name="service_draft"
+            maxlength="255"
             wire:model="draft"
             wire:keydown.enter.prevent="add"
             :label="__('wizard.fields.service')"

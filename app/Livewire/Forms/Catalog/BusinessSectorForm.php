@@ -26,9 +26,6 @@ class BusinessSectorForm extends BaseCatalogForm
     {
         return [
 
-            // Globally unique, and what the assistant's profiles reference: without
-            // the rule a repeated code surfaces as a Postgres crash instead of a
-            // field error. The column is varchar(30).
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('2', 'business_sectors', 'code', $excludeId),
                 'max:30',
@@ -36,16 +33,12 @@ class BusinessSectorForm extends BaseCatalogForm
 
             'name' => AttributeValidator::uniqueIdNameLength('3', 'business_sectors', 'name', $excludeId),
 
-            // The column is nullable: without `nullable` a sector with no description
-            // would bounce off the min in stringValid().
             'description' => [
                 'nullable',
                 ...AttributeValidator::stringValid(false, '3'),
                 'max:255',
             ],
 
-            // The cap is the column's (smallint). Explicit because on an integer
-            // `max` compares the VALUE, not the length.
             'sort_order' => [
                 ...AttributeValidator::numericInteger(true, 0),
                 'max:32767',

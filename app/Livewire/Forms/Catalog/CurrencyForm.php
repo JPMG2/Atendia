@@ -33,9 +33,6 @@ class CurrencyForm extends BaseCatalogForm
 
             'name' => AttributeValidator::stringValid(true, '3'),
 
-            // The column is varchar(10) and the input caps at 5: without this the
-            // max:255 from stringValid let through a symbol that then blew up in
-            // Postgres.
             'symbol' => [
                 ...AttributeValidator::stringValid(true, '1'),
                 'max:5',

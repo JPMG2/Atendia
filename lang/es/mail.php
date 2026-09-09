@@ -64,4 +64,18 @@ return [
         'reason' => 'Recibiste este correo porque creaste tu negocio en AtendIa con esta dirección.',
     ],
 
+    'contact_updated' => [
+        'subject' => ':name tiene un nuevo correo de contacto',
+        'preheader' => 'Este es el nuevo punto de encuentro entre tu negocio y AtendIa.',
+        'eyebrow' => 'Seguimos de la mano',
+        'title' => 'Tu contacto quedó al día',
+        'intro' => 'El correo de contacto de :name se actualizó, y esta es su nueva dirección.',
+        'body' => 'Aquí van a llegar las novedades de tu asistente y los avisos importantes de tu cuenta.',
+        'alert' => 'Si no hiciste este cambio, entra a tu panel y revisa tus datos de contacto.',
+        'cta' => 'Abrir mi panel',
+        'closing' => 'Gracias por mantener tu negocio al día.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque esta dirección quedó como el contacto de :name en AtendIa.',
+    ],
+
 ];

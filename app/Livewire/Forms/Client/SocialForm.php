@@ -159,7 +159,6 @@ class SocialForm extends BaseForm
      */
     protected function getValidationAttributes(): array
     {
-        // Laravel resolves `social.0.url` against the wildcard key.
         return [
             'social.*.social_network_id' => config('nicename.social_network_id'),
             'social.*.url' => config('nicename.url'),

@@ -29,12 +29,8 @@ class RegionForm extends BaseCatalogForm
 
         return [
 
-            // The FK is required on the table, so without `required` a row with no
-            // province would blow up in Postgres instead of flagging the field.
             'province_id' => AttributeValidator::requireAndExists('provinces', 'id', 'province_id', true),
 
-            // Unique WITHIN the province, not globally: the same region name repeats
-            // across provinces and both are valid.
             'name' => AttributeValidator::requiredExistModelRelation(
                 'regions',
                 'name',

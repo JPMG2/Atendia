@@ -123,7 +123,7 @@ new class extends Component
             path: 'form',
 
             rules: {
-                tax_id: [['maxLength', 20]],
+                tax_id: [['maxLength', 20], 'noMarkup'],
             },
 
             async submit() {

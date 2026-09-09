@@ -10,4 +10,8 @@ return [
         'next' => 'Un solo paso lo separa de atender de verdad: conectá el WhatsApp de tu negocio.',
     ],
 
+    'contact_updated' => [
+        'alert' => 'Si no hiciste este cambio, entrá a tu panel y revisá tus datos de contacto.',
+    ],
+
 ];

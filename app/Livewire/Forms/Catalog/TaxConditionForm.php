@@ -31,13 +31,8 @@ class TaxConditionForm extends BaseCatalogForm
 
         return [
 
-            // The FK is required on the table, so without `required` a row with no
-            // country would blow up in Postgres instead of flagging the field.
             'country_id' => AttributeValidator::requireAndExists('countries', 'id', 'country_id', true),
 
-            // The table is UNIQUE per country on both code and name: a standing
-            // belongs to a country, so the same code can exist in two. A global unique
-            // would reject the second; none at all would let a clash reach Postgres.
             'code' => AttributeValidator::requiredExistModelRelation(
                 'tax_conditions',
                 'code',

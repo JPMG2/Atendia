@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Client;
 
 use App\Classes\Main\Client;
+use App\Dto\DtoCast;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
+use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -76,7 +78,7 @@ class BillingForm extends BaseForm
             'currency_id' => $this->currency_id,
             'reference_currency_id' => $this->reference_currency_id,
             'tax_condition_id' => $this->tax_condition_id,
-            'tax_id' => $this->tax_id,
+            'tax_id' => DtoCast::squish($this->tax_id),
         ];
     }
 
@@ -85,10 +87,8 @@ class BillingForm extends BaseForm
         return [
             'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')->where('is_active', true)],
             'reference_currency_id' => ['nullable', 'integer', 'different:currency_id', Rule::exists('currencies', 'id')->where('is_active', true)],
-            // Scoped to the business's country: an id posted by hand must not
-            // cross borders.
             'tax_condition_id' => ['nullable', 'integer', Rule::exists('tax_conditions', 'id')->where('country_id', Auth::user()?->business?->country_id)],
-            'tax_id' => ['nullable', 'string', 'max:20'],
+            'tax_id' => ['nullable', ...AttributeValidator::stringValid(false, '1'), 'max:20'],
         ];
     }
 

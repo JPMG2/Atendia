@@ -26,13 +26,8 @@ class CountryForm extends BaseCatalogForm
     {
         return [
 
-            // The FK is required on the table, so without `required` a row with no
-            // currency would blow up in Postgres instead of flagging the field.
             'currency_id' => AttributeValidator::requireAndExists('currencies', 'id', 'currency_id', true),
 
-            // `name` is UNIQUE on the table: without the rule a repeated country is
-            // not a field error but a database crash caught by tryAction — a vague
-            // toast instead of a useful message.
             'name' => AttributeValidator::uniqueIdNameLength('3', 'countries', 'name', $excludeId),
 
             'code' => [
@@ -40,16 +35,11 @@ class CountryForm extends BaseCatalogForm
                 'size:3',
             ],
 
-            // The 2-letter twin of `code`: PHP's timezone-per-country list and
-            // geo-IP only take this variant, so the row has to carry both.
             'iso2' => [
                 ...AttributeValidator::uniqueAlpha(true, '2', false, 'countries', 'iso2', $excludeId),
                 'size:2',
             ],
 
-            // Optional and capped at what the UI asks for: without `nullable` a
-            // country with no dialling code would bounce off the `min:1` in
-            // digitValid().
             'phone_code' => [
                 'nullable',
                 ...AttributeValidator::digitValid('1', false),

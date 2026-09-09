@@ -29,20 +29,13 @@ class BusinessActivityForm extends BaseCatalogForm
 
         return [
 
-            // The FK is required on the table: without `required` a row with no
-            // sector would blow up in Postgres instead of flagging the field.
             'business_sector_id' => AttributeValidator::requireAndExists('business_sectors', 'id', 'business_sector_id', true),
 
-            // Globally unique on purpose: it is the key the assistant's profile for
-            // the trade is looked up by. The column is varchar(40).
             'code' => [
                 ...AttributeValidator::uniqueIdNameLength('2', 'business_activities', 'code', $excludeId),
                 'max:40',
             ],
 
-            // The name is unique WITHIN the sector: the same one can exist under two
-            // sectors, but not twice under one. A global unique would reject the
-            // second; none at all would allow the duplicate.
             'name' => AttributeValidator::requiredExistModelRelation(
                 'business_activities',
                 'name',
