@@ -92,6 +92,11 @@
                             x-transition:enter-end="opacity-100 translate-y-0"
                         >
                             <div class="flex items-baseline gap-1.5">
+                                {{-- The old monthly price, struck through: the discount reads at a glance. --}}
+                                <span
+                                    class="text-subtle line-through"
+                                    style="font-size: var(--text-xl); font-weight: 600"
+                                >{{ $p['price'] }}</span>
                                 <span
                                     class="text-strong font-display"
                                     style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
