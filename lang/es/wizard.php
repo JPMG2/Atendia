@@ -41,7 +41,7 @@ return [
     'fields' => [
         'business_name' => 'Nombre del negocio',
         'business_name_placeholder' => 'Clínica Vida',
-        'business_name_hint' => 'Como lo conocen tus clientes: es el nombre con el que el asistente se presenta.',
+        'business_name_hint' => 'Escríbelo tal como aparece en tu marca: así lo va a mostrar WhatsApp y así se presenta tu asistente.',
 
         'country' => 'País',
         'country_placeholder' => 'Elige el país',

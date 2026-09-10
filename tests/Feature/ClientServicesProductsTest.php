@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
+use App\Models\BusinessActivity;
 use App\Models\Menu;
+use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -43,17 +46,48 @@ test('the services screen lists the offer and never demands price or duration', 
         ->assertSee('Corte de caballero')
         // A service without a price shows a dash, not a requirement.
         ->assertSee('—')
-        ->assertSee(__('client.services.paused'));
+        ->assertSee(__('client.services.active'))
+        ->assertSee(__('client.services.paused'))
+        // Row actions live on the row itself — no modal to open first.
+        ->assertSee(__('client.services.edit', ['name' => 'Corte de caballero']))
+        ->assertSee(__('client.services.resume', ['name' => 'Peinado para eventos']));
 });
 
-test('the empty services state teaches and suggests the trade vocabulary', function (): void {
+test('the services screen offers the ai hand for the descriptions', function (): void {
+    $this->actingAs(User::factory()->create()->refresh());
+
+    Livewire::test('goods.index')
+        ->assertSee(__('client.services.ai_title'))
+        ->assertSee(__('client.services.ai_action'));
+});
+
+test('the empty services state teaches without inventing suggestions', function (): void {
+    // No business yet means no trade: the chips section simply stays out.
     $this->actingAs(User::factory()->create()->refresh());
 
     Livewire::test('goods.index')
         ->call('switchTo', 'empty')
         ->assertSee(__('client.services.empty_title'))
-        ->assertSee(__('client.services.suggestions'))
+        ->assertDontSee(__('client.services.suggestions'))
         ->assertDontSee(__('client.services.add_short'));
+});
+
+test('the suggestion chips speak the trade vocabulary straight from the catalog', function (): void {
+    $user = User::factory()->create()->refresh();
+    $business = Business::factory()->create();
+    $user->business()->associate($business)->save();
+
+    $activity = BusinessActivity::factory()->create();
+    SuggestedService::factory()->create(['business_activity_id' => $activity->id, 'name' => 'Corte de dama']);
+    $business->syncActivities($activity->id);
+
+    $this->actingAs($user);
+
+    Livewire::test('goods.index')
+        ->assertSee('Corte de dama')
+        ->call('switchTo', 'empty')
+        ->assertSee(__('client.services.suggestions'))
+        ->assertSee('Corte de dama');
 });
 
 test('the products screen shows the pills and the import lane side by side', function (): void {
@@ -61,6 +95,8 @@ test('the products screen shows the pills and the import lane side by side', fun
 
     Livewire::test('products.index')
         ->assertSee('Alternador Fiat Palio')
+        ->assertSee(__('client.products.ai_title'))
+        ->assertSee(__('client.products.ai_action'))
         ->assertSee(__('client.products.import_title'))
         ->assertSee(__('client.products.import_last', ['file' => 'repuestos-2026.xlsx', 'rows' => 152]));
 });

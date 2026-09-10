@@ -146,7 +146,8 @@ test('the preview asks for the last real product, not the canned joke', function
         ->assertDispatched('preview-updated', function (string $event, array $params): bool {
             $conversation = json_encode($params['messages']);
 
-            return str_contains($conversation, 'alfajor triple')
+            // Exactly as the owner loaded it — the builder never re-cases a name.
+            return str_contains($conversation, 'Alfajor triple')
                 && ! str_contains($conversation, 'Fiat Palio');
         });
 });

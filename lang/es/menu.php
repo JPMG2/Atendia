@@ -19,6 +19,14 @@ return [
 
     // Upsell card del footer del sidebar (skeleton temporal)
     'profile_progress' => 'Tu perfil, al :percent%',
+    'profile_missing' => [
+        'personal_data' => 'Faltan tus datos personales',
+        'tax_details' => 'Faltan tus datos fiscales',
+        'schedule' => 'Faltan tus horarios de atención',
+        'social_media' => 'Faltan tus redes sociales',
+    ],
+    'profile_done' => 'Listo. Tu asistente ya responde por ti.',
+    'profile_done_close' => 'Ocultar el aviso',
     'plan_name' => 'Plan Inicial',
     'plan_trial' => 'Quedan 9 días de prueba.',
     'plan_cta' => 'Mejorar plan',

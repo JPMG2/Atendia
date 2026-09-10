@@ -62,6 +62,14 @@ new class extends Component
         </x-client.offer-empty>
     @else
         <div class="flex flex-col gap-3">
+        {{-- Same humanity note as the services screen, aimed at THIS screen's
+        magic moment: the list the owner already keeps, loaded without typing. --}}
+        <x-ui.ai-banner
+            :title="__('client.products.ai_title')"
+            :body="__('client.products.ai_body')"
+            :action="__('client.products.ai_action')"
+        />
+
         <x-ui.card class="p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="font-mono text-sm text-subtle">{{ trans_choice('client.products.count', count($products), ['count' => count($products)]) }}</p>

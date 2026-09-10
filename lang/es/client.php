@@ -91,8 +91,12 @@ return [
             'logo' => 'Logo',
             'logo_hint' => 'PNG o JPG. Aparece en tu perfil y junto a las respuestas del asistente.',
             'name' => 'Nombre del negocio',
+            'name_hint' => 'Escríbelo tal como aparece en tu marca: así lo va a mostrar WhatsApp.',
             'description' => 'Descripción',
             'description_hint' => 'Tu asistente la usa para presentarse. Cuenta qué haces y qué te hace distinto.',
+            'ai_title' => '¿Te cuesta describir tu negocio?',
+            'ai_body' => 'Dinos tres palabras clave y nuestra inteligencia artificial redacta la presentación por ti.',
+            'ai_action' => 'Optimizar con IA',
         ],
 
         'location' => [
@@ -225,8 +229,14 @@ return [
         'suggestions' => 'Sugerencias de tu rubro:',
         'empty_title' => 'Todavía no cargaste servicios',
         'empty_body' => 'Cuando cargues el primero, tu asistente va a responder "¿hacen tal cosa?" con tu propia lista.',
-        'active' => 'Activo',
+        'active' => 'Activo en WhatsApp',
         'paused' => 'Pausado',
+        'edit' => 'Editar :name',
+        'pause' => 'Pausar :name',
+        'resume' => 'Reactivar :name',
+        'ai_title' => '¿No sabes cómo redactar las descripciones?',
+        'ai_body' => 'Nuestra inteligencia artificial puede escribir por ti textos claros y atractivos para tus servicios.',
+        'ai_action' => 'Optimizar con IA',
     ],
 
     'products' => [
@@ -247,5 +257,14 @@ return [
         'import_body' => 'Sube la planilla que ya usas: leemos las columnas y tu asistente aprende cada fila.',
         'import_cta' => 'Subir Excel',
         'import_last' => 'Última importación: :file · :rows filas procesadas',
+        'ai_title' => '¿Tu lista de productos vive en un Excel o en papel?',
+        'ai_body' => 'Envíala tal como la tienes: nuestra inteligencia artificial ordena nombres y precios por ti en segundos.',
+        'ai_action' => 'Organizar con IA',
+    ],
+
+    'simulator' => [
+        'tag' => 'Simulador de WhatsApp en vivo',
+        'sub' => 'Así le responde tu asistente a un cliente, con lo que ya cargaste.',
+        'empty' => 'Carga tus servicios o productos y mira cómo responde tu asistente.',
     ],
 ];

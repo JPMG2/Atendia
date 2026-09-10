@@ -173,6 +173,31 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
       lo accionable; bloques repetidos extraídos a componente.
 - [ ] **Test Pest (en inglés)** que cubra el render y la regla relevante.
 - [ ] **Responsive + dark/light** verificados (los 3 mandatos de arriba).
+- [ ] **Cerrar con ideas para ENAMORAR (obligatorio, no opcional).** Toda tarea de
+      UI termina ofreciendo 2–3 mejoras atractivas de UNA línea cada una — sacadas
+      de patrones reales del mercado (SaaS conocidos, GBP, WhatsApp Business), no
+      inventos genéricos. El dueño decide cuáles entran; NUNCA se implementan sin
+      su OK. Ver la sección de abajo.
+
+## Enamorar al cliente — el diseño también se investiga (regla de oro, 2026-09-10)
+
+> Nació de un reclamo real del dueño: tenía que ir a OTRAS IAs a buscar ideas de
+> diseño atractivas porque acá "nunca das mejoras atractivas". Construir exacto lo
+> pedido (regla no-mediocre §1) NO significa callarse las ideas: la regla §2 dice
+> que se OFRECEN en una línea y él decide. Ofrecerlas es parte del trabajo.
+
+- **El estándar no es "funciona", es "enamora al potencial cliente".** Un panel
+  correcto pero frío es una tarea a medias: humanidad (la IA que se ofrece a
+  ayudar, el copy que celebra, el dato que le ahorra tipeo) es requisito.
+- **Investigar antes de proponer.** Las ideas salen de estudiar cómo lo resuelven
+  los productos que la gente ya ama (onboarding de SaaS, Google Business Profile,
+  WhatsApp Business, los patrones de `reference/`) — si hace falta, buscar en la
+  web ejemplos concretos ANTES de proponer.
+- **Formato fijo:** al cerrar la tarea, 2–3 ideas numeradas de UNA línea, listas
+  para decir "dale, la 2". Sin implementar nada por adelantado.
+- Ejemplos que nacieron así y quedaron: banners de IA por pantalla (cada uno con
+  el momento mágico de SU pantalla), la despedida del medidor al 100%, la triple
+  señal del menú activo.
 
 ## Cómo aplicarlo en este proyecto (Laravel + Blade + Livewire)
 

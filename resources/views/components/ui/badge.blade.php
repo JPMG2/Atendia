@@ -1,12 +1,13 @@
 @props([
-    'variant' => 'brand',  // brand | accent
+    'variant' => 'brand',  // brand | accent | neutral
     'dot' => false,        // shows a dot in the variant's colour
 ])
 
 @php
-    $variants = ['brand' => 'badge-brand', 'accent' => 'badge-accent'];
+    $variants = ['brand' => 'badge-brand', 'accent' => 'badge-accent', 'neutral' => 'badge-neutral'];
+    $dots = ['brand' => 'var(--brand)', 'accent' => 'var(--accent)', 'neutral' => 'var(--text-subtle)'];
     $classes = 'badge '.($variants[$variant] ?? $variants['brand']);
-    $dotColor = $variant === 'accent' ? 'var(--accent)' : 'var(--brand)';
+    $dotColor = $dots[$variant] ?? $dots['brand'];
 @endphp
 
 <span {{ $attributes->merge(['class' => $classes]) }}>

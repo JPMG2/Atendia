@@ -31,13 +31,21 @@ new class extends Component
         return Menu::tree($this->panel);
     }
 
-    /** The real profile strength, from the one class that sees every piece. */
+    /**
+     * The real profile strength, from the one class that sees every piece.
+     *
+     * @return array{done: int, total: int, missing: list<string>}
+     */
+    #[Computed]
+    public function strength(): array
+    {
+        return Client::for(Auth::user())->profileStrength();
+    }
+
     #[Computed]
     public function profilePercent(): int
     {
-        $strength = Client::for(Auth::user())->profileStrength();
-
-        return (int) round($strength['done'] / max(1, $strength['total']) * 100);
+        return (int) round($this->strength['done'] / max(1, $this->strength['total']) * 100);
     }
 };
 ?>
@@ -59,7 +67,29 @@ new class extends Component
                     <x-icon name="chevron-right" :size="14" />
                 </span>
                 <span class="setup-bar"><i style="width: {{ $this->profilePercent }}%"></i></span>
+                {{-- Below 100% the missing list is never empty; naming the
+                next piece turns the meter into a to-do, not a grade. --}}
+                <span class="sidebar-progress-hint">{{ __('menu.profile_missing.'.$this->strength['missing'][0]) }}</span>
             </a>
+        @elseif ($panel === 'client' && auth()->check())
+            {{-- At 100% the meter bows out with one goodbye instead of
+            vanishing in silence; the dismissal sticks per browser. --}}
+            <div
+                class="sidebar-done"
+                x-data="{ shown: localStorage.getItem('atendia-profile-done') !== '1' }"
+                x-show="shown"
+                x-cloak
+            >
+                <x-icon name="circle-check" :size="16" />
+                <p>{{ __('menu.profile_done') }}</p>
+                <button
+                    type="button"
+                    aria-label="{{ __('menu.profile_done_close') }}"
+                    @click="shown = false; localStorage.setItem('atendia-profile-done', '1')"
+                >
+                    <x-icon name="x" :size="14" />
+                </button>
+            </div>
         @endif
 
         {{-- The plan upsell talks to a CLIENT on a trial; the admin panel is

@@ -57,6 +57,29 @@ test('the badge renders its variant class and an optional dot', function (): voi
 
     $withDot = Blade::render('<x-ui.badge dot>New</x-ui.badge>');
     expect($withDot)->toContain('var(--brand)'); // the dot uses the brand token
+
+    $neutral = Blade::render('<x-ui.badge variant="neutral" dot>Paused</x-ui.badge>');
+    expect($neutral)->toContain('badge-neutral')->toContain('var(--text-subtle)');
+});
+
+/*
+|--------------------------------------------------------------------------
+| <x-ui.ai-banner>
+|--------------------------------------------------------------------------
+*/
+test('the ai banner renders its copy, the sparkles icon and the optional action', function (): void {
+    $html = Blade::render('<x-ui.ai-banner title="Need a hand?" body="We write it." action="Optimize" />');
+
+    expect($html)
+        ->toContain('ai-banner')
+        ->toContain('Need a hand?')
+        ->toContain('We write it.')
+        ->toContain('Optimize')
+        ->toContain('<svg');
+});
+
+test('the ai banner without an action stays a plain informative block', function (): void {
+    expect(Blade::render('<x-ui.ai-banner title="T" body="B" />'))->not->toContain('<button');
 });
 
 /*
@@ -110,6 +133,7 @@ test('ui components style themselves through tokens, never hardcoded hex colors'
         '<x-ui.button>Go</x-ui.button>',
         '<x-ui.card interactive>Hi</x-ui.card>',
         '<x-ui.icon-button icon="x" label="Close" />',
+        '<x-ui.ai-banner title="T" body="B" action="Go" />',
     ] as $template) {
         expect(Blade::render($template))->not->toContain('#');
     }

@@ -17,6 +17,14 @@
    hasta el OK. Yo construyo la CAPACIDAD en el componente; el usuario decide dónde y
    cuándo usarla en sus vistas.
 
+2-bis. **Ofrecer esas mejoras es OBLIGACIÓN, no permiso (2026-09-10).** No es solo
+   programar: es INVESTIGAR y enamorar al potencial cliente. Toda tarea de UI/diseño
+   CIERRA ofreciendo 2–3 mejoras atractivas de UNA línea cada una, sacadas de
+   productos reales (SaaS, Google Business Profile, WhatsApp Business) — buscar en
+   la web si hace falta. Nació de un reclamo real: el dueño tenía que ir a OTRAS IAs
+   a buscar ideas que acá nunca se ofrecían. Detalle y formato: skill `atendiadesign`
+   §"Enamorar al cliente".
+
 3. **Antes de construir: repetir la spec en una línea** para que confirme o corrija.
    Cazar el malentendido en 10 segundos, no en 3 rondas.
 

@@ -51,7 +51,7 @@
 
     {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
     own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/livewire-failures.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/livewire-failures.js'])
     @livewireStyles
 </head>
 {{-- data-*: config for livewire-failures.js — JS can resolve neither routes

@@ -38,7 +38,9 @@ return [
             'button' => 'Probalo ahora',
         ],
         'identity' => [
+            'name_hint' => 'Escribilo tal como aparece en tu marca: así lo va a mostrar WhatsApp.',
             'description_hint' => 'Tu asistente la usa para presentarse. Contá qué hacés y qué te hace distinto.',
+            'ai_body' => 'Decinos tres palabras clave y nuestra inteligencia artificial redacta la presentación por vos.',
         ],
         'location' => [
             'sub' => 'Si atendés en un local, tu asistente puede pasar la dirección cuando se la pidan.',
@@ -58,6 +60,8 @@ return [
     'services' => [
         'sub' => 'Lo que ofrecés, tal como tu asistente lo cuenta cuando se lo preguntan.',
         'add_placeholder' => 'Escribí un servicio, por ejemplo "Corte de dama"',
+        'ai_title' => '¿No sabés cómo redactar las descripciones?',
+        'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus servicios.',
     ],
 
     'products' => [
@@ -66,5 +70,10 @@ return [
         'empty_body' => 'Subí tu Excel y tu asistente aprende el catálogo completo en minutos.',
         'empty_or' => 'O escribilos de a uno cuando quieras.',
         'import_body' => 'Subí la planilla que ya usás: leemos las columnas y tu asistente aprende cada fila.',
+        'ai_body' => 'Enviala tal como la tenés: nuestra inteligencia artificial ordena nombres y precios por vos en segundos.',
+    ],
+
+    'simulator' => [
+        'empty' => 'Cargá tus servicios o productos y mirá cómo responde tu asistente.',
     ],
 ];

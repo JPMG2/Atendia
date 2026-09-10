@@ -1,5 +1,6 @@
 <?php
 
+use App\Classes\Main\AssistantPreview;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -137,48 +138,14 @@ new #[Layout('layouts::wizard')] class extends Component
     }
 
     /**
-     * The preview conversation, built from what the wizard knows so far.
-     * Values typed by the user are escaped HERE: the phone paints raw HTML.
+     * The preview conversation, built from what the wizard knows so far by
+     * the builder it shares with the dashboard simulator.
      *
      * @return list<array{type: string, who: string, html: string}>
      */
     private function phoneMessages(): array
     {
-        if ($this->businessName === '') {
-            return [];
-        }
-
-        $business = e($this->businessName);
-
-        $messages = [
-            ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_open')],
-            [
-                'type' => 'out',
-                'who' => __('wizard.phone.assistant_of', ['business' => $business]),
-                'html' => __('wizard.phone.a_open', ['business' => $business]),
-            ],
-        ];
-
-        if ($this->services !== []) {
-            $last = e(mb_strtolower(end($this->services)));
-            $list = '<b>'.implode('</b>, <b>', array_map(e(...), $this->services)).'</b>';
-
-            $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_service', ['service' => $last])];
-            $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_service', ['business' => $business, 'services' => $list])];
-        }
-
-        if ($this->products !== []) {
-            // Always something the business actually loaded — a manual pill
-            // or the sheet's own first row, never a canned demo product.
-            $messages[] = ['type' => 'in', 'who' => __('wizard.phone.client'), 'html' => __('wizard.phone.q_product_named', ['product' => e(mb_strtolower(end($this->products)))])];
-            $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.a_product')];
-        }
-
-        if ($this->connected) {
-            $messages[] = ['type' => 'out', 'who' => __('wizard.phone.assistant'), 'html' => __('wizard.phone.connected')];
-        }
-
-        return $messages;
+        return AssistantPreview::messages($this->businessName, $this->services, $this->products, $this->connected);
     }
 };
 ?>
@@ -251,24 +218,7 @@ new #[Layout('layouts::wizard')] class extends Component
             <div class="wizard-preview">
                 <h3>{{ __('wizard.preview.title') }}</h3>
                 <p class="pdesc">{{ __('wizard.preview.description') }}</p>
-                {{-- The landing's phone mock, shrunk to the rail: dark bezel,
-                chat header, and the same live canvas inside. --}}
-                <div class="wizard-phone-frame">
-                    <div class="wizard-phone-screen">
-                        <div class="wizard-phone-top">
-                            <span class="pavatar"><x-icon name="bot" :size="18" /></span>
-                            <span class="pmeta">
-                                <span class="pname">{{ $businessName !== '' ? $businessName : __('wizard.preview.header') }}</span>
-                                <span class="pstatus"><i></i>{{ __('wizard.preview.online') }}</span>
-                            </span>
-                        </div>
-                        {{-- wire:ignore: the conversation is painted by the script
-                        below and a morph would wipe it. --}}
-                        <div class="wizard-phone" data-phone wire:ignore data-empty="{{ __('wizard.preview.empty') }}">
-                            <div class="wizard-phone-empty">{{ __('wizard.preview.empty') }}</div>
-                        </div>
-                    </div>
-                </div>
+                <x-client.ws-phone :name="$businessName !== '' ? $businessName : __('wizard.preview.header')" />
             </div>
 
             <div class="wizard-tip">
@@ -294,66 +244,10 @@ new #[Layout('layouts::wizard')] class extends Component
 
 @script
     <script>
-        // Port of the static mock-up's preview: the assistant "types" before each
-        // reply. That one-second wait IS the demo.
+        // The painting lives in ws-phone.js, shared with the dashboard
+        // simulator; the wizard only forwards its live updates.
         const phone = $wire.$el.querySelector('[data-phone]');
-        const emptyHtml = () => `<div class="wizard-phone-empty">${phone.dataset.empty}</div>`;
 
-        let painted = 0;
-        let token = 0;
-
-        const bubble = (m) => `<div class="msg ${m.type}"><span class="who">${m.who}</span>${m.html}</div>`;
-
-        $wire.$on('preview-updated', ({ messages }) => render(messages));
-
-        function render(messages) {
-            // Any repaint invalidates pending animation timers: without this, the
-            // bubbles scheduled for the FIRST keystroke fire after the silent
-            // repaint of the full name and the reply shows up twice.
-            if (messages.length === 0) {
-                token++;
-                phone.innerHTML = emptyHtml();
-                painted = 0;
-
-                return;
-            }
-
-            // While the name is being typed nothing re-animates: text only.
-            if (messages.length === painted) {
-                token++;
-                phone.innerHTML = messages.map(bubble).join('');
-
-                return;
-            }
-
-            const current = ++token;
-            painted = messages.length;
-            phone.innerHTML = '';
-
-            let delay = 0;
-
-            messages.forEach((m) => {
-                if (m.type === 'out') {
-                    const typingAt = delay;
-                    setTimeout(() => {
-                        if (current !== token) return;
-                        phone.insertAdjacentHTML(
-                            'beforeend',
-                            '<div class="typing" data-typing><i></i><i></i><i></i></div>',
-                        );
-                        phone.scrollTop = phone.scrollHeight;
-                    }, typingAt);
-                    delay += 900;
-                }
-
-                setTimeout(() => {
-                    if (current !== token) return;
-                    phone.querySelector('[data-typing]')?.remove();
-                    phone.insertAdjacentHTML('beforeend', bubble(m));
-                    phone.scrollTop = phone.scrollHeight;
-                }, delay);
-                delay += 450;
-            });
-        }
+        $wire.$on('preview-updated', ({ messages }) => wsPhone.render(phone, messages));
     </script>
 @endscript

@@ -349,9 +349,19 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 
 - Componente **SFC** por defecto (`resources/views/livewire/...`), no clase+vista
   separada. (Ver memoria `livewire-convenciones`; MFC/class solo por caso justificado.)
-- Propiedades públicas **tipadas**, una por campo. `mount()` carga el estado inicial.
-- `rules()` con validación **server-side** (Livewire valida como una request HTTP).
-- `save()`: `validate()` → persistir → feedback (`$this->dispatch('...')` para el toast).
+- **El estado, las reglas y el guardado viven en un FORM** (`app/Livewire/Forms/...`)
+  que extiende `BaseForm`, como TODOS los catálogos, el wizard y Compañía. El
+  componente solo delega: `public XForm $form` + `mount()` → `$form->setup()` +
+  `save()` → `dispatchNotification($form->save())`. Propiedades tipadas en el Form.
+- **Validación en el Form**: `validateServiceData()` (contrato de `BaseForm`:
+  `transformServiceData()` + `getValidationRules()` con `AttributeValidator` +
+  `getValidationAttributes()`), persistencia envuelta en `tryAction()`. **PROHIBIDO**
+  `rules()`/`validationAttributes()` inline o `$this->validate()` en el componente —
+  blindado por `tests/Feature/GoldenRulesFormValidationTest.php` y el hook
+  `check-form-validation-golden-rules.sh` (sin allowlist: nació en cero).
+- El `wire:model` apunta al Form (`form.campo`); el `name` del campo queda SIN
+  prefijo — los errores salen del Validator con la clave cruda y el `<x-ui.*>`
+  los autocablea por `name`.
 - **Autorización dentro de la acción** (policy / `can`), NUNCA solo ocultando el botón.
   Ocultar un control es UX; la cerradura va en middleware de ruta y/o policy.
 
@@ -473,6 +483,8 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
 ## 7. Checklist de salida (verificar uno por uno antes de cerrar)
 
 - [ ] Campos 100% vía `<x-ui.*>` — cero controles crudos.
+- [ ] **Validación en un Form (`BaseForm`)** — cero `rules()`/`$this->validate()`
+      inline en el componente; el componente delega en `$form->save()`.
 - [ ] **Orden lógico** de los campos (identificador → nombre → formato → estado).
 - [ ] **Filas declaradas** con `<x-catalog.form-row>`; ninguna queda a medias.
 - [ ] **Ancho por contenido** (`span=`), nunca `col-N`; el form no topea su ancho.
@@ -591,6 +603,14 @@ Relacionado: la receta de enforcement de 3 capas — ver `.ai/guidelines/reglas-
 2. **Si se me ocurre una mejora, la digo en UNA línea y decide él.** No la implemento
    hasta el OK. Yo construyo la CAPACIDAD en el componente; el usuario decide dónde y
    cuándo usarla en sus vistas.
+
+2-bis. **Ofrecer esas mejoras es OBLIGACIÓN, no permiso (2026-09-10).** No es solo
+   programar: es INVESTIGAR y enamorar al potencial cliente. Toda tarea de UI/diseño
+   CIERRA ofreciendo 2–3 mejoras atractivas de UNA línea cada una, sacadas de
+   productos reales (SaaS, Google Business Profile, WhatsApp Business) — buscar en
+   la web si hace falta. Nació de un reclamo real: el dueño tenía que ir a OTRAS IAs
+   a buscar ideas que acá nunca se ofrecían. Detalle y formato: skill `atendiadesign`
+   §"Enamorar al cliente".
 
 3. **Antes de construir: repetir la spec en una línea** para que confirme o corrija.
    Cazar el malentendido en 10 segundos, no en 3 rondas.
@@ -746,10 +766,84 @@ Cuando se suma un set de reglas de oro:
   `tests/Feature/GoldenRulesBladeQueriesTest.php` · hook
   `.claude/hooks/check-blade-query-golden-rules.sh`. Allowlists espejados
   (tocar de a dos); los verbos compartidos con Collection no se prohíben.
+- **Validación en un Form, nunca inline en el componente** →
+  `.ai/guidelines/formularios.md` §1 · test guardián
+  `tests/Feature/GoldenRulesFormValidationTest.php` · hook
+  `.claude/hooks/check-form-validation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-09, cuando las 6
+  cards del perfil salieron con `rules()` inline mientras la guía escrita
+  todavía PRESCRIBÍA ese patrón: la regla vivía solo en el código.
+- **Tenancy (un cliente jamás ve a otro)** → `.ai/guidelines/tenancy.md` ·
+  guardianes `tests/Feature/GoldenRulesTenancyTest.php` (trait obligatorio por
+  INTROSPECCIÓN del esquema — la lista no se mantiene a mano — y cero
+  `withoutGlobalScope`) + `tests/Feature/BusinessIsolationTest.php` (dataset
+  de dos negocios sobre los 6 modelos tenant) · hook
+  `.claude/hooks/check-tenancy-golden-rules.sh`. Sin allowlist de patrones;
+  la única excepción razonada es `User` (membresía, no dato tenant).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
 Ver también: [[documentacion-y-memoria]] (un tema por archivo, legibilidad).
+
+=== .ai/tenancy rules ===
+
+# Tenancy — un cliente JAMÁS ve a otro (regla de oro)
+
+> El aislamiento por negocio NO es disciplina ("acordate de filtrar"): es el
+> trait `BelongsToBusiness` + el singleton `Tenant`. Un tema por archivo: acá
+> vive el *cómo* del aislamiento; los paneles/roles en `arquitectura-paneles.md`
+> y el enforcement de 3 capas en `reglas-de-oro-enforcement.md`.
+
+Esta regla está **blindada**: `tests/Feature/GoldenRulesTenancyTest.php`
+(trait obligatorio por INTROSPECCIÓN del esquema — sin lista a mano — y cero
+`withoutGlobalScope` en `app/`+vistas), `tests/Feature/BusinessIsolationTest.php`
+(dataset con dos negocios que PRUEBA el aislamiento en los 6 modelos tenant)
+y el hook `check-tenancy-golden-rules.sh`.
+
+## Las piezas
+
+- **`App\Traits\BelongsToBusiness`**: global scope `business_id = tenant actual`
+  + sello de `business_id` al crear (solo si venía null) + la relación
+  `business()`. Va en TODO modelo cuya tabla tenga `business_id` — el guardián
+  lo exige solo, el día que el modelo nace (conversaciones incluidas).
+- **`App\Services\Tenant`** (singleton): el negocio actual sale del usuario
+  logueado; donde no hay sesión (jobs, consola, seeders) se adopta explícito
+  con `Tenant::for($businessId, fn () => ...)` — restaura al salir, explote o no.
+- **Excepciones con razón**: `users.business_id` es MEMBRESÍA, no dato tenant
+  (scopearlo rompería auth y admin) — allowlist del guardián. `social_links`
+  es polimórfica sin `business_id`: su aislamiento es que un link solo se
+  alcanza A TRAVÉS de su dueño (`$business->socialLinks()`), nunca por
+  `SocialLink::find($id)` suelto.
+
+## Reglas al construir lo nuevo
+
+1. **Modelo tenant nuevo** → columna `business_id` en su migración create +
+   el trait. Nada más: el resto lo dan el scope y el sello.
+2. **Jobs y colas**: el scope por auth es INERTE en un worker. El job viaja
+   con el modelo o el `business_id` en el payload y adopta contexto con
+   `Tenant::for()` — jamás `Auth::user()` dentro de `handle()`.
+3. **Canales de broadcast (Reverb)**: el nombre SIEMPRE lleva el tenant
+   (`private-business.{id}.…`) y la autorización compara contra
+   `$user->business_id`. Nunca un canal keyed solo por id de conversación.
+4. **Archivos**: bajo `businesses/{business_id}/…`; servir re-chequeando
+   dueño (una URL firmada autentica la URL, no autoriza al que mira).
+5. **`withoutGlobalScope` está PROHIBIDO** en `app/` y vistas (guardián +
+   hook). El escape legítimo es `Tenant::for()`, que deja rastro y restaura.
+6. **RLS de Postgres — ACTIVO desde el 2026-09-09** (migración
+   `enable_tenant_row_level_security`): Postgres mismo cerca cada query —
+   SQL crudo incluido — por `app.current_tenant`, que empuja `Tenant`
+   (middleware `SetTenantDatabaseContext` en cada request web; `Tenant::for()`
+   en jobs). `FORCE` porque la app conecta como DUEÑO de las tablas. Sin
+   tenant seteado la policy abre (admin/consola/seeders), espejo del scope.
+   Tabla tenant nueva → sumarla a la migración RLS (el guardián avisa si
+   falta). Complementa al scope, nunca lo reemplaza.
+
+## Checklist de salida
+
+- [ ] ¿Tabla nueva con `business_id`? → trait puesto (el guardián avisa igual).
+- [ ] ¿Job nuevo que toca datos tenant? → `Tenant::for()` + id en el payload.
+- [ ] ¿Query cruda / join? → cada tabla joineada filtra su `business_id`.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesTenancy` y `--filter=BusinessIsolation` en verde.
 
 === foundation rules ===
 
@@ -832,13 +926,16 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
 
 === tests rules ===
 
 # Test Enforcement
 
-- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
-- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
+- Test every code change by adding or updating a test.
+- Run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
 
 === laravel/core rules ===
 
@@ -874,7 +971,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Livewire
 
-- Livewire allow to build dynamic, reactive interfaces in PHP without writing JavaScript.
+- Livewire allows you to build dynamic, reactive interfaces in PHP without writing JavaScript.
 - You can use Alpine.js for client-side interactions instead of JavaScript frameworks.
 - Keep state server-side so the UI reflects it. Validate and authorize in actions as you would in HTTP requests.
 
@@ -887,11 +984,18 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 === pest/core rules ===
 
-## Pest
+# Pest
 
-- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
-- The `{name}` argument should not include the test suite directory. Use `php artisan make:test --pest SomeFeatureTest` instead of `php artisan make:test --pest Feature/SomeFeatureTest`.
-- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
+- This project uses Pest. Create tests with `php artisan make:test --pest {name}`.
+- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
+- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
+- Do not delete tests or test files without approval. They are part of the application.
+
+## Running Tests
+
+- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `php artisan test --compact`.
+- Rerun a test after each change to it.
+- Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
+- After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
 
 </laravel-boost-guidelines>

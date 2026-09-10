@@ -182,6 +182,10 @@ return [
         'b2' => '¡Hola! Sí 😊 Tengo el jueves 10:30 o el viernes 16:00. ¿Cuál te queda mejor?',
         'b3' => 'El jueves 10:30',
         'b4' => 'Listo, te reservé el <b>jueves 10:30</b> con el Dr. Paz. Te llega el recordatorio el día anterior 👍',
+        'b5' => '¿Puedo pagar con tarjeta?',
+        'b6' => '¡Claro! Aceptamos tarjeta, transferencia o efectivo 😊',
+        'b7' => '¿Me pasas la dirección?',
+        'b8' => 'Av. Libertad 742, a una cuadra de la plaza. ¡Te esperamos! 📍',
     ],
 
 ];

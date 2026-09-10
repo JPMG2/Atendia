@@ -5,9 +5,18 @@
         ['side' => 'in',  'time' => '09:42', 'text' => __('landing.phone.b3')],
         ['side' => 'out', 'time' => '09:42', 'text' => __('landing.phone.b4')],
     ];
+
+    // Extra exchanges hero.js keeps appending so the demo chat never looks
+    // dead; their timestamps come from the visitor's real clock.
+    $livePool = [
+        ['side' => 'in',  'text' => __('landing.phone.b5')],
+        ['side' => 'out', 'text' => __('landing.phone.b6')],
+        ['side' => 'in',  'text' => __('landing.phone.b7')],
+        ['side' => 'out', 'text' => __('landing.phone.b8')],
+    ];
 @endphp
 
-<div class="relative">
+<div class="relative hero-phone-enter">
     {{-- glow jade --}}
     <div
         class="absolute"
@@ -23,29 +32,53 @@
         "
     ></div>
 
+    {{-- Bezel in surface + hairline ring, same family as the dashboard
+    phones: a near-black frame swallowed the hero in light mode. --}}
     <div
         class="relative mx-auto"
         style="
             z-index: 1;
             width: 300px;
-            background: var(--ink-900);
+            background: var(--surface-card);
             border-radius: 36px;
             padding: 10px;
-            box-shadow: var(--shadow-xl);
+            box-shadow: 0 0 0 1px var(--border-default), var(--shadow-xl);
         "
     >
         <div style="background: var(--chat-canvas); border-radius: 28px; overflow: hidden">
+            {{-- Status bar: the tiny realism cue; hero.js sets the real time. --}}
+            <div
+                class="flex items-center justify-between"
+                style="
+                    background: var(--bubble-out);
+                    padding: 8px 16px 0;
+                    color: color-mix(in srgb, var(--bubble-out-text) 90%, transparent);
+                    font-family: var(--font-mono);
+                    font-size: 11px;
+                "
+            >
+                <span data-hero-clock>09:41</span>
+                <span class="flex items-center gap-1.5">
+                    <x-icon name="signal" :size="12" />
+                    5G
+                    <x-icon name="battery-full" :size="14" />
+                </span>
+            </div>
+
             {{-- header --}}
-            <div class="flex items-center gap-2.5" style="background: var(--bubble-out); padding: 14px 14px 12px">
+            <div class="flex items-center gap-2.5" style="background: var(--bubble-out); padding: 10px 14px 12px">
                 <span
                     class="inline-flex items-center justify-center"
                     style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.18)"
                 >
-                    <x-icon name="bot" :size="20" style="color: #fff" />
+                    <x-icon name="bot" :size="20" style="color: var(--bubble-out-text)" />
                 </span>
                 <div style="line-height: 1.2">
-                    <div style="color: #fff; font-weight: 700; font-size: 14px">{{ __('landing.phone.header') }}</div>
-                    <div class="flex items-center gap-1.5" style="color: rgba(255, 255, 255, 0.8); font-size: 11px">
+                    <div style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">{{ __('landing.phone.header') }}</div>
+                    <div
+                        class="flex items-center gap-1.5"
+                        style="color: color-mix(in srgb, var(--bubble-out-text) 80%, transparent); font-size: 11px"
+                    >
                         <span style="width: 7px; height: 7px; border-radius: 50%; background: #7cffc4"></span
                         >{{ __('landing.phone.online') }}
                     </div>
@@ -53,27 +86,17 @@
             </div>
 
             {{-- mensajes --}}
-            <div class="flex flex-col" style="padding: 14px 12px; gap: 9px; min-height: 300px">
+            <div
+                class="flex flex-col"
+                data-phone-live
+                data-live-pool="{{ json_encode($livePool, JSON_UNESCAPED_UNICODE) }}"
+                style="padding: 14px 12px; gap: 9px; min-height: 300px"
+            >
                 @foreach ($bubbles as $b)
-                    @php $out = $b['side'] === 'out'; @endphp
-                    <div class="flex {{ $out ? 'justify-end' : 'justify-start' }}">
-                        <div
-                            style="max-width:78%; padding:9px 12px 7px; border-radius:14px;
-                            border-bottom-right-radius: {{ $out ? '4px' : '14px' }}; border-bottom-left-radius: {{ $out ? '14px' : '4px' }};
-                            background: {{ $out ? 'var(--bubble-out)' : 'var(--bubble-in)' }};
-                            color: {{ $out ? 'var(--bubble-out-text)' : 'var(--bubble-in-text)' }};
-                            box-shadow: var(--shadow-xs); font-size: var(--text-sm); line-height:1.4;"
-                        >
+                    <div class="pm-row {{ $b['side'] }}">
+                        <div class="pm-bubble {{ $b['side'] }} phone-bubble phone-bubble-{{ $loop->iteration }}">
                             {!! $b['text'] !!}
-                            <span
-                                style="
-                                    display: block;
-                                    text-align: right;
-                                    font-size: 10px;
-                                    opacity: 0.7;
-                                    margin-top: 2px;
-                                "
-                            >{{ $b['time'] }}</span>
+                            <span class="pm-time">{{ $b['time'] }}</span>
                         </div>
                     </div>
                 @endforeach

@@ -43,11 +43,21 @@ new class extends Component
     </div>
     <p class="bp-card-sub">{{ __('client.business.identity.sub') }}</p>
 
+    {{-- The assistant offers to write the bio; the fields below stay the
+    manual path — an offer, never a gate. --}}
+    <x-ui.ai-banner
+        class="mb-4"
+        :title="__('client.business.identity.ai_title')"
+        :body="__('client.business.identity.ai_body')"
+        :action="__('client.business.identity.ai_action')"
+    />
+
     <div class="bp-form">
         <x-catalog.form-row>
             <x-inputsform.input
                 span="full"
                 :label="__('client.business.identity.name')"
+                :hint="__('client.business.identity.name_hint')"
                 name="name"
                 alpine-error="name"
                 wire:model="form.name"

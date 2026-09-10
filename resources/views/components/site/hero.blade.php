@@ -1,21 +1,27 @@
-<section id="top" class="flex w-full justify-center pb-16 pt-16">
+{{-- overflow-x clip: the phone glides in from beyond the right edge and
+must never leave a horizontal scrollbar behind. --}}
+<section id="top" class="flex w-full justify-center overflow-x-clip pb-16 pt-16">
     <div class="w-full px-6" style="max-width: var(--container-xl)">
         <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
             {{-- Texto --}}
             <div class="flex flex-col gap-5">
-                <x-ui.badge variant="brand" dot class="self-start">{{ __('landing.hero.badge') }}</x-ui.badge>
+                <x-ui.badge variant="brand" dot class="hero-enter hero-enter-1 self-start">{{ __('landing.hero.badge') }}</x-ui.badge>
 
-                <h1 class="font-display" style="font-size: var(--text-6xl); line-height: 1.04; letter-spacing: -0.03em">
+                <h1
+                    class="hero-enter hero-enter-2 font-display"
+                    style="font-size: var(--text-6xl); line-height: 1.04; letter-spacing: -0.03em"
+                >
                     {{ __('landing.hero.title_1') }}<br /><span
-                        class="text-brand"
+                        class="text-brand hero-type"
+                        data-hero-type
                         >{{ __('landing.hero.title_2') }}</span>
                 </h1>
 
-                <p class="text-muted" style="font-size: var(--text-lg); max-width: 460px">
+                <p class="hero-enter hero-enter-3 text-muted" style="font-size: var(--text-lg); max-width: 460px">
                     {{ __('landing.hero.subtitle') }}
                 </p>
 
-                <div class="flex flex-wrap gap-3">
+                <div class="hero-enter hero-enter-4 flex flex-wrap gap-3">
                     <x-ui.button
                         variant="primary"
                         size="lg"
@@ -33,7 +39,7 @@
                         {{ __('landing.hero.cta_secondary') }}</x-ui.button>
                 </div>
 
-                <div class="text-muted flex flex-wrap items-center gap-4" style="font-size: var(--text-sm)">
+                <div class="hero-enter hero-enter-5 text-muted flex flex-wrap items-center gap-4" style="font-size: var(--text-sm)">
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_trial') }}</span>

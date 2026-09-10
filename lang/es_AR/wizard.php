@@ -32,6 +32,7 @@ return [
     ],
 
     'fields' => [
+        'business_name_hint' => 'Escribilo tal como aparece en tu marca: así lo va a mostrar WhatsApp y así se presenta tu asistente.',
         'country_placeholder' => 'Elegí el país',
         'province_placeholder' => 'Elegí la provincia',
         'service_placeholder' => 'Escribí uno y apretá Enter — ej. Ecodoppler',

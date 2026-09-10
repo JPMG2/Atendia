@@ -343,11 +343,28 @@ test('apply weekdays stamps monday onto tuesday to friday', function (): void {
         ->assertSet('form.week.6', []);
 });
 
+test('the business name keeps its casing sacred and only sheds stray spaces', function (): void {
+    // Meta's display-name rule: the name must match the brand EXACTLY,
+    // so hygiene stops at whitespace — "KFC" and "YUCA" are the owner's call.
+    $business = Business::factory()->create(['name' => '  KFC   Empanadas  ']);
+
+    expect($business->name)->toBe('KFC Empanadas');
+
+    $business->update(['name' => 'YUCA store']);
+
+    expect($business->fresh()->name)->toBe('YUCA store');
+});
+
 test('the identity card hydrates from the business and saves through the identity slice', function (): void {
     $business = Business::factory()->create(['name' => 'Costuras Mary', 'whatsapp_number' => '+584140000000']);
     $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
 
     Livewire::test('client.section-identity')
+        // The ai hand rides on the card; the fields stay the manual path.
+        ->assertSee(__('client.business.identity.ai_title'))
+        ->assertSee(__('client.business.identity.ai_action'))
+        // The hint teaches WHY the casing is kept exactly as typed.
+        ->assertSee(__('client.business.identity.name_hint'))
         ->assertSet('form.name', 'Costuras Mary')
         ->set('form.name', 'Costuras Mary e Hijas')
         ->set('form.description', 'Arreglos y confección a medida.')
@@ -478,7 +495,28 @@ test('the sidebar carries the profile-strength pill from any client screen', fun
 
     $this->get(route('my-business'))
         ->assertSeeHtml('sidebar-progress')
-        ->assertSee(__('menu.profile_progress', ['percent' => 0]));
+        ->assertSee(__('menu.profile_progress', ['percent' => 0]))
+        // Naming the next missing piece turns the meter into a to-do.
+        ->assertSee(__('menu.profile_missing.personal_data'));
+});
+
+test('at 100% the sidebar meter bows out with the farewell note', function (): void {
+    $this->seed(MenuSeeder::class);
+
+    $business = Business::factory()->create([
+        'whatsapp_number' => '+58 412 5551234',
+        'fallback_whatsapp_number' => '+58 412 5555678',
+        'email' => 'hola@esquina.com',
+        'currency_id' => Currency::factory()->create()->id,
+    ]);
+    $business->hours()->create(['day_of_week' => 1, 'opens_at' => '09:00', 'closes_at' => '13:00']);
+    SocialLink::factory()->for($business, 'linkable')->create();
+
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    $this->get(route('my-business'))
+        ->assertSee(__('menu.profile_done'))
+        ->assertDontSeeHtml('sidebar-progress-head');
 });
 
 test('the try-it-now overlay ships the simulated chat', function (): void {

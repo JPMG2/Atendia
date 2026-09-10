@@ -62,6 +62,7 @@ return [
 
     'phone' => [
         'b1' => 'Hola, ¿tenés turno para un electro esta semana?',
+        'b7' => '¿Me pasás la dirección?',
     ],
 
 ];

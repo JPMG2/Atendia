@@ -8,8 +8,8 @@
         "infer-conventions",
         "ai-sdk-development",
         "laravel-best-practices",
+        "testing-best-practices",
         "livewire-development",
-        "pest-testing",
         "echo-development",
         "tailwindcss-development"
     ]
