@@ -123,6 +123,7 @@ return [
         'billing_monthly' => 'Mensual',
         'billing_yearly' => 'Anual',
         'billing_yearly_badge' => '2 meses gratis',
+        'save_yearly' => 'Ahorras :amount al año',
         'trust' => 'Sin tarjeta para empezar · Cancelas cuando quieras',
         'starter' => [
             'name' => 'Inicial',

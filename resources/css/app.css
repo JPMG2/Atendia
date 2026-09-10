@@ -888,7 +888,7 @@
 .cta-spark:hover svg { animation:cta-spark .45s var(--ease-spring); }
 
 @media (prefers-reduced-motion:reduce) {
-  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse { animation:none; }
+  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce { animation:none; }
   .cta-spark:hover svg { animation:none; }
   .reveal-pending { opacity:1; transform:none; }
 }
@@ -916,6 +916,11 @@
                       color:var(--text-muted); transition:all var(--dur-fast) var(--ease-out); }
 .pricing-period-btn:hover { color:var(--text-strong); }
 .pricing-period-btn.is-active { background:var(--surface-card); color:var(--text-strong); box-shadow:var(--shadow-xs); }
+
+/* Switching to yearly gives the savings badge one springy hop: the eye
+   lands on the discount exactly when it becomes true. */
+@keyframes badge-bounce { 40% { transform:scale(1.18); } }
+.badge-bounce { animation:badge-bounce .45s var(--ease-spring); }
 
 /* Hero phone bubbles as classes, not inline styles: hero.js appends live
    exchanges and must speak the exact same markup as the Blade ones. */

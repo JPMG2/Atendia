@@ -11,8 +11,8 @@
     // Yearly = 2 months free: the monthly equivalent of paying 10 of 12.
     $plans = [
         ['name' => __('landing.pricing.starter.name'), 'price' => '$0', 'price_year' => '$0', 'per' => __('landing.pricing.per_trial'), 'per_year' => __('landing.pricing.per_trial'), 'desc' => __('landing.pricing.starter.desc'), 'includes' => null, 'feats' => __('landing.pricing.starter.feats'), 'cta' => __('landing.pricing.starter.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.business.name'), 'price' => '$29', 'price_year' => '$24', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.business.desc'), 'includes' => __('landing.pricing.business.includes'), 'feats' => __('landing.pricing.business.feats'), 'cta' => __('landing.pricing.business.cta'), 'variant' => 'primary', 'featured' => true, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.pro.name'), 'price' => '$79', 'price_year' => '$66', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.pro.desc'), 'includes' => __('landing.pricing.pro.includes'), 'feats' => __('landing.pricing.pro.feats'), 'cta' => __('landing.pricing.pro.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $salesHref, 'external' => (bool) $salesWhatsapp],
+        ['name' => __('landing.pricing.business.name'), 'price' => '$29', 'price_year' => '$24', 'save_year' => '$58', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.business.desc'), 'includes' => __('landing.pricing.business.includes'), 'feats' => __('landing.pricing.business.feats'), 'cta' => __('landing.pricing.business.cta'), 'variant' => 'primary', 'featured' => true, 'href' => $registerHref, 'external' => false],
+        ['name' => __('landing.pricing.pro.name'), 'price' => '$79', 'price_year' => '$66', 'save_year' => '$158', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.pro.desc'), 'includes' => __('landing.pricing.pro.includes'), 'feats' => __('landing.pricing.pro.feats'), 'cta' => __('landing.pricing.pro.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $salesHref, 'external' => (bool) $salesWhatsapp],
     ];
 @endphp
 
@@ -36,7 +36,8 @@
                 </button>
                 <button type="button" class="pricing-period-btn" :class="yearly && 'is-active'" @click="yearly = true">
                     {{ __('landing.pricing.billing_yearly') }}
-                    <x-ui.badge variant="brand">{{ __('landing.pricing.billing_yearly_badge') }}</x-ui.badge>
+                    <x-ui.badge variant="brand" ::class="yearly && 'badge-bounce'">
+                        {{ __('landing.pricing.billing_yearly_badge') }}</x-ui.badge>
                 </button>
             </div>
         </div>
@@ -84,18 +85,22 @@
                             <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
                         </div>
                         <div
-                            class="flex items-baseline gap-1.5"
                             x-show="yearly"
                             x-cloak
                             x-transition:enter="transition duration-200"
                             x-transition:enter-start="opacity-0 translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
                         >
-                            <span
-                                class="text-strong font-display"
-                                style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-                            >{{ $p['price_year'] }}</span>
-                            <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per_year'] }}</span>
+                            <div class="flex items-baseline gap-1.5">
+                                <span
+                                    class="text-strong font-display"
+                                    style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
+                                >{{ $p['price_year'] }}</span>
+                                <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per_year'] }}</span>
+                            </div>
+                            <p class="text-brand mt-1 font-semibold" style="font-size: var(--text-xs)">
+                                {{ __('landing.pricing.save_yearly', ['amount' => $p['save_year']]) }}
+                            </p>
                         </div>
                     @endif
 

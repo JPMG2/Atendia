@@ -94,6 +94,19 @@ test('pricing charms: yearly toggle, incremental features and a trust line', fun
         ->assertSee(__('landing.pricing.trust'));
 });
 
+test('the yearly choice celebrates itself: bouncing badge and the money saved', function (): void {
+    $this->get('/')
+        ->assertSee('badge-bounce', false)
+        ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$58']))
+        ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$158']));
+});
+
+test('the closing pitch shows the product still talking: a pocket phone mid-chat', function (): void {
+    $this->get('/')
+        ->assertSee('closing-phone', false)
+        ->assertSee(__('landing.phone.b6'));
+});
+
 test('the Pro CTA opens a WhatsApp chat with sales, or falls back to register', function (): void {
     // No number configured yet: the CTA quietly points at register.
     $this->get('/')->assertDontSee('wa.me', false);
