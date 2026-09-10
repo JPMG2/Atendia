@@ -60,6 +60,9 @@ test('the badge renders its variant class and an optional dot', function (): voi
 
     $neutral = Blade::render('<x-ui.badge variant="neutral" dot>Paused</x-ui.badge>');
     expect($neutral)->toContain('badge-neutral')->toContain('var(--text-subtle)');
+
+    $pulsing = Blade::render('<x-ui.badge dot pulse>Live</x-ui.badge>');
+    expect($pulsing)->toContain('badge-dot-pulse');
 });
 
 /*

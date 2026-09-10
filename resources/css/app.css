@@ -869,9 +869,53 @@
 .phone-bubble-2 { animation-delay:.95s; }
 .phone-bubble-3 { animation-delay:1.25s; }
 .phone-bubble-4 { animation-delay:1.55s; }
+.hero-enter-6 { animation-delay:.45s; }
+
+/* Anchor landings clear the frosted navbar (sticky, ~68px tall): without
+   this the section title arrives hidden underneath it. */
+#funciones, #como-funciona, #casos, #precios, #clientes { scroll-margin-top:88px; }
+
+/* Scroll reveal: each section rises as the visitor reaches it. hero.js arms
+   it (adds .reveal-pending) only when it can animate — JS off = page at rest. */
+.reveal-pending { opacity:0; transform:translateY(18px); }
+.reveal-in { animation:hero-rise .6s var(--ease-out); }
+
+/* The "en línea" dot breathes; the primary CTA's zap gives one springy
+   wink on hover — micro-interactions only, calm everywhere else. */
+@keyframes badge-pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:.45; transform:scale(.75); } }
+.badge-dot-pulse { animation:badge-pulse 2.4s var(--ease-in-out) infinite; }
+@keyframes cta-spark { 40% { transform:rotate(-12deg) scale(1.15); } }
+.cta-spark:hover svg { animation:cta-spark .45s var(--ease-spring); }
+
 @media (prefers-reduced-motion:reduce) {
-  .hero-enter, .hero-phone-enter, .phone-bubble { animation:none; }
+  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse { animation:none; }
+  .cta-spark:hover svg { animation:none; }
+  .reveal-pending { opacity:1; transform:none; }
 }
+
+/* Pricing: Tailwind Plus emphasized-tier pattern. The middle plan floats
+   above the side panels, which butt flush against it on desktop; the poke
+   comes from items-center + the featured tier's extra vertical padding. */
+.pricing-grid { display:grid; grid-template-columns:1fr; align-items:center; gap:24px; }
+.pricing-tier { display:flex; flex-direction:column; gap:18px; background:var(--surface-card);
+                border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:32px 28px; }
+.pricing-tier-featured { position:relative; z-index:1; box-shadow:var(--shadow-xl); }
+@media (min-width:1024px) {
+  .pricing-grid { grid-template-columns:repeat(3, 1fr); gap:0; }
+  .pricing-tier-left { border-radius:var(--radius-xl) 0 0 var(--radius-xl); border-right:0; }
+  .pricing-tier-right { border-radius:0 var(--radius-xl) var(--radius-xl) 0; border-left:0; }
+  .pricing-tier-featured { padding-block:44px; }
+}
+
+/* Billing period toggle: a sunken pill where the active option floats on a
+   card surface — the segmented-control pattern of Notion/Linear pricing. */
+.pricing-period { display:inline-flex; gap:4px; padding:4px; background:var(--surface-sunken);
+                  border:1px solid var(--border-subtle); border-radius:var(--radius-pill); }
+.pricing-period-btn { display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
+                      border-radius:var(--radius-pill); font-size:var(--text-sm); font-weight:600;
+                      color:var(--text-muted); transition:all var(--dur-fast) var(--ease-out); }
+.pricing-period-btn:hover { color:var(--text-strong); }
+.pricing-period-btn.is-active { background:var(--surface-card); color:var(--text-strong); box-shadow:var(--shadow-xs); }
 
 /* Hero phone bubbles as classes, not inline styles: hero.js appends live
    exchanges and must speak the exact same markup as the Blade ones. */

@@ -118,6 +118,34 @@ function liveChat() {
     }, 2400);
 }
 
+function revealSections() {
+    if (reduced || !('IntersectionObserver' in window)) return;
+
+    // Every landing section below the hero; hiding happens HERE, not in the
+    // markup, so a browser without JS still shows the whole page at rest.
+    const sections = document.querySelectorAll('main section:not(#top)');
+
+    if (sections.length === 0) return;
+
+    const io = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.remove('reveal-pending');
+                entry.target.classList.add('reveal-in');
+                io.unobserve(entry.target);
+            });
+        },
+        { rootMargin: '0px 0px -10% 0px' },
+    );
+
+    sections.forEach((section) => {
+        section.classList.add('reveal-pending');
+        io.observe(section);
+    });
+}
+
 startClock();
 typeHeadline();
 liveChat();
+revealSections();

@@ -5,7 +5,7 @@ must never leave a horizontal scrollbar behind. --}}
         <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
             {{-- Texto --}}
             <div class="flex flex-col gap-5">
-                <x-ui.badge variant="brand" dot class="hero-enter hero-enter-1 self-start">{{ __('landing.hero.badge') }}</x-ui.badge>
+                <x-ui.badge variant="brand" dot pulse class="hero-enter hero-enter-1 self-start">{{ __('landing.hero.badge') }}</x-ui.badge>
 
                 <h1
                     class="hero-enter hero-enter-2 font-display"
@@ -26,6 +26,7 @@ must never leave a horizontal scrollbar behind. --}}
                         variant="primary"
                         size="lg"
                         icon="zap"
+                        class="cta-spark"
                         :href="Route::has('register') ? route('register') : '#'"
                         style="box-shadow: var(--shadow-brand)"
                     >
@@ -50,6 +51,19 @@ must never leave a horizontal scrollbar behind. --}}
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_any') }}</span>
                 </div>
+
+                {{-- Social proof from the real table, hidden below 10: a
+                near-empty room would un-charm instead of charming. --}}
+                @php($served = App\Models\Business::servedCount())
+                @if ($served >= 10)
+                    <p
+                        class="hero-enter hero-enter-6 text-muted inline-flex items-center gap-1.5"
+                        style="font-size: var(--text-sm)"
+                    >
+                        <x-icon name="store" :size="16" style="color: var(--brand)" />
+                        {{ __('landing.hero.social_proof', ['count' => $served]) }}
+                    </p>
+                @endif
             </div>
 
             {{-- Phone mockup. --}}

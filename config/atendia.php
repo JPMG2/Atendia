@@ -17,4 +17,17 @@ return [
 
     'admin_email' => env('ADMIN_EMAIL'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sales WhatsApp
+    |--------------------------------------------------------------------------
+    |
+    | Digits only, with country code (e.g. 5491100000000). Powers the Pro
+    | plan's "talk to sales" CTA on the landing; while unset, that CTA
+    | falls back to the register route.
+    |
+    */
+
+    'sales_whatsapp' => env('SALES_WHATSAPP'),
+
 ];

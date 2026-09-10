@@ -68,6 +68,16 @@ class Business extends Model
     }
 
     /**
+     * The landing's social proof: how many businesses already answer through
+     * the assistant. The view hides it below a floor so the early days never
+     * read as an empty room.
+     */
+    public static function servedCount(): int
+    {
+        return self::query()->count();
+    }
+
+    /**
      * Non-destructive hygiene only: outer spaces trimmed, inner runs
      * collapsed. Casing is sacred — it must match the owner's real-world
      * branding exactly (Meta's display-name rule), so it is never re-cased.

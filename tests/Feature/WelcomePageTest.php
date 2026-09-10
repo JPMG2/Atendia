@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
 test('the landing page loads successfully', function (): void {
     $this->get('/')->assertOk();
 });
@@ -31,6 +36,26 @@ test('the hero phone wears the house bezel and the page enters animated', functi
         ->assertDontSee('background: var(--ink-900)', false);
 });
 
+test('the hero charms in the details: pulsing dot, sparking cta and clear anchors', function (): void {
+    $this->get('/')
+        ->assertSee('badge-dot-pulse', false)
+        ->assertSee('cta-spark', false)
+        // Both hero CTAs stand wired: register and the how-it-works anchor.
+        ->assertSee(__('landing.hero.cta_primary'))
+        ->assertSee(__('landing.hero.cta_secondary'))
+        ->assertSee('href="#como-funciona"', false)
+        ->assertSee(route('register'), false);
+});
+
+test('the social proof waits for a real crowd before it speaks', function (): void {
+    // Early days: no count is better than a sad count.
+    $this->get('/')->assertDontSee('negocios ya atienden');
+
+    Business::factory()->count(10)->create();
+
+    $this->get('/')->assertSee(__('landing.hero.social_proof', ['count' => 10]));
+});
+
 test('the hero keeps breathing: typed headline, live clock and a chat pool', function (): void {
     $this->get('/')
         ->assertSee('data-hero-type', false)
@@ -39,6 +64,45 @@ test('the hero keeps breathing: typed headline, live clock and a chat pool', fun
         // One live exchange straight from the translations.
         ->assertSee(__('landing.phone.b5'))
         ->assertSee('5G', false);
+});
+
+test('the pricing section emphasizes the business plan, Tailwind Plus style', function (): void {
+    $response = $this->get('/');
+
+    // One floating middle tier between two flush side panels.
+    expect(substr_count($response->getContent(), 'pricing-tier-featured'))->toBe(1);
+
+    $response
+        ->assertSee('pricing-tier-left', false)
+        ->assertSee('pricing-tier-right', false)
+        ->assertSee(__('landing.pricing.featured_badge'))
+        ->assertSee(__('landing.pricing.business.name'))
+        ->assertSee(__('landing.pricing.starter.name'))
+        ->assertSee(__('landing.pricing.pro.name'));
+});
+
+test('pricing charms: yearly toggle, incremental features and a trust line', function (): void {
+    $this->get('/')
+        // Both billing periods render server-side; Alpine only swaps visibility.
+        ->assertSee(__('landing.pricing.billing_monthly'))
+        ->assertSee(__('landing.pricing.billing_yearly_badge'))
+        ->assertSee('$29', false)
+        ->assertSee('$24', false)
+        ->assertSee('$66', false)
+        ->assertSee(__('landing.pricing.business.includes'))
+        ->assertSee(__('landing.pricing.pro.includes'))
+        ->assertSee(__('landing.pricing.trust'));
+});
+
+test('the Pro CTA opens a WhatsApp chat with sales, or falls back to register', function (): void {
+    // No number configured yet: the CTA quietly points at register.
+    $this->get('/')->assertDontSee('wa.me', false);
+
+    config(['atendia.sales_whatsapp' => '5491100000000']);
+
+    $this->get('/')
+        ->assertSee('https://wa.me/5491100000000?text=', false)
+        ->assertSee('target="_blank"', false);
 });
 
 test('it supports dark mode and is not a React prototype', function (): void {

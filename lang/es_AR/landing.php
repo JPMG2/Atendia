@@ -51,6 +51,7 @@ return [
 
     'pricing' => [
         'subtitle' => 'Empezá gratis. Cambiá o cancelá cuando quieras.',
+        'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
         'starter' => [
             'desc' => 'Probá Atendia con tu propio número.',
         ],
