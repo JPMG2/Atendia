@@ -29,7 +29,7 @@ return [
             'body' => 'Cargá productos con precio y foto. Si preguntan, responde con la info y el link de compra al instante.',
         ],
         'always' => [
-            'body' => 'Contesta consultas frecuentes en segundos, en tu tono, incluso cuando dormís o estás con un cliente.',
+            'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea. Vos lo leés todo en español.',
         ],
         'alerts' => [
             'body' => 'Recibís un resumen de turnos y conversaciones. Intervenís solo cuando hace falta.',

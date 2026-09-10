@@ -34,6 +34,14 @@ test('registra el prompt enviado al asistente', function (): void {
     AsistenteAtendia::assertPrompted('¿Cuál es el horario de atención?');
 });
 
+test('the instructions mirror the customer language but keep handoffs in Spanish', function (): void {
+    $instructions = (string) new AsistenteAtendia()->instructions();
+
+    expect($instructions)
+        ->toContain('contestá en ese mismo idioma')
+        ->toContain('derivación dirigido al equipo del negocio va SIEMPRE en español');
+});
+
 test('an answer that skipped the knowledge search is re-asked with a firm reminder', function (): void {
     $business = Business::factory()->create();
 

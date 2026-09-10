@@ -50,6 +50,9 @@ must never leave a horizontal scrollbar behind. --}}
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_any') }}</span>
+                    <span class="inline-flex items-center gap-1.5"
+                        ><x-icon name="check" :size="16" style="color: var(--brand)" />
+                        {{ __('landing.hero.perk_lang') }}</span>
                 </div>
 
                 {{-- Social proof from the real table, hidden below 10: a

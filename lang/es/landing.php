@@ -38,6 +38,7 @@ return [
         'perk_trial' => '14 días gratis',
         'perk_card' => 'Sin tarjeta',
         'perk_any' => 'Para cualquier rubro',
+        'perk_lang' => 'En cualquier idioma',
     ],
 
     'logos' => [
@@ -57,8 +58,8 @@ return [
             'body' => 'Carga productos con precio y foto. Si preguntan, responde con la info y el link de compra al instante.',
         ],
         'always' => [
-            'title' => 'Responde 24/7',
-            'body' => 'Contesta consultas frecuentes en segundos, en tu tono, incluso cuando duermes o estás con un cliente.',
+            'title' => 'Responde 24/7 en cualquier idioma',
+            'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea. Tú lo lees todo en español.',
         ],
         'alerts' => [
             'title' => 'Te avisa lo importante',
@@ -196,6 +197,10 @@ return [
         'b6' => '¡Claro! Aceptamos tarjeta, transferencia o efectivo 😊',
         'b7' => '¿Me pasas la dirección?',
         'b8' => 'Av. Libertad 742, a una cuadra de la plaza. ¡Te esperamos! 📍',
+        // En inglés a propósito: la demo muestra que el asistente responde
+        // en el idioma del cliente. Igual en todas las variantes regionales.
+        'b9' => 'Hi! Can I book a check-up for tomorrow?',
+        'b10' => 'Of course! 😊 Tomorrow at 11:00 is free — booked! See you then 👍',
     ],
 
 ];

@@ -47,6 +47,16 @@ test('the hero charms in the details: pulsing dot, sparking cta and clear anchor
         ->assertSee(route('register'), false);
 });
 
+test('the landing sells the any-language plus in the hero and the features', function (): void {
+    $this->get('/')
+        ->assertSee(__('landing.hero.perk_lang'))
+        ->assertSee(__('landing.features.always.title'))
+        ->assertSee(__('landing.features.always.body'))
+        // The hero phone demos the switch: an English exchange in the live pool.
+        ->assertSee(__('landing.phone.b9'))
+        ->assertSee(__('landing.phone.b10'));
+});
+
 test('the social proof waits for a real crowd before it speaks', function (): void {
     // Early days: no count is better than a sad count.
     $this->get('/')->assertDontSee('negocios ya atienden');
@@ -97,6 +107,8 @@ test('pricing charms: yearly toggle, incremental features and a trust line', fun
 test('the yearly choice celebrates itself: bouncing badge and the money saved', function (): void {
     $this->get('/')
         ->assertSee('badge-bounce', false)
+        // The struck-through monthly price sits beside the yearly one.
+        ->assertSee('line-through', false)
         ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$58']))
         ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$158']));
 });

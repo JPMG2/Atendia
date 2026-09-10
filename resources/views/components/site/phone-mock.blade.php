@@ -13,6 +13,8 @@
         ['side' => 'out', 'text' => __('landing.phone.b6')],
         ['side' => 'in',  'text' => __('landing.phone.b7')],
         ['side' => 'out', 'text' => __('landing.phone.b8')],
+        ['side' => 'in',  'text' => __('landing.phone.b9')],
+        ['side' => 'out', 'text' => __('landing.phone.b10')],
     ];
 @endphp
 
