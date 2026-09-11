@@ -97,7 +97,7 @@ class BusinessForm extends BaseForm
 
         $notification = $this->tryAction(function () use ($user, $validated, $isBirth, &$born): NotificationDto {
 
-            $business = Client::for($user)->personalData()->saveIdentity($validated);
+            $business = Client::for($user)->personalData->saveIdentity($validated);
 
             // The locked recordId is display state, the relation the Action
             // walked is the authority.
@@ -152,7 +152,7 @@ class BusinessForm extends BaseForm
 
         $notification = $this->tryAction(function () use ($validated, $user, $business, &$saved): NotificationDto {
 
-            $saved = Client::for($user)->personalData()->saveConnection($validated);
+            $saved = Client::for($user)->personalData->saveConnection($validated);
 
             return $this->notificationService()->notificationFor($business, 'updated');
 

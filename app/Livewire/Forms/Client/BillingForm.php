@@ -32,13 +32,13 @@ class BillingForm extends BaseForm
     /** Called from the component's `mount()`, not a Form hook. */
     public function setup(): void
     {
-        $details = $this->client()->taxDetails();
+        $details = $this->client()->taxDetails;
 
         if ($details === null) {
             return;
         }
 
-        foreach ($details->data() as $field => $value) {
+        foreach ($details->data as $field => $value) {
             $this->{$field} = $value;
         }
 
@@ -49,7 +49,7 @@ class BillingForm extends BaseForm
 
     public function save(): NotificationDto
     {
-        $details = $this->client()->taxDetails();
+        $details = $this->client()->taxDetails;
 
         if ($details === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);

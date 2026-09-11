@@ -20,16 +20,14 @@ class SocialMedia
     /**
      * Ordered as the public site shows them (`sort_order`).
      *
-     * @return Collection<int, SocialLink>
+     * @var Collection<int, SocialLink>
      */
-    public function links(): Collection
-    {
-        return $this->business->socialLinks;
+    public Collection $links {
+        get => $this->business->socialLinks;
     }
 
-    public function isComplete(): bool
-    {
-        return $this->business->socialLinks->isNotEmpty();
+    public bool $isComplete {
+        get => $this->business->socialLinks->isNotEmpty();
     }
 
     /**

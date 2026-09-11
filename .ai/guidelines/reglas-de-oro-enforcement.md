@@ -83,6 +83,13 @@ Cuando se suma un set de reglas de oro:
   de dos negocios sobre los 6 modelos tenant) · hook
   `.claude/hooks/check-tenancy-golden-rules.sh`. Sin allowlist de patrones;
   la única excepción razonada es `User` (membresía, no dato tenant).
+- **Getters como property hooks (clases PHP puras)** →
+  `.ai/guidelines/clases-php-modernas.md` · test guardián
+  `tests/Feature/GoldenRulesPropertyHooksTest.php` · hook
+  `.claude/hooks/check-php-getter-golden-rules.sh`. Patrón espejado (tocar de
+  a dos); sin allowlist — nació en cero el 2026-09-11 al migrar las piezas de
+  `Client` y `RetrievedChunkDto`. Alcance: `app/Classes` + `app/Dto`; Eloquent
+  y Livewire quedan fuera a propósito.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

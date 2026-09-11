@@ -26,7 +26,7 @@ class ContactForm extends BaseForm
     /** Called from the component's `mount()`, not a Form hook. */
     public function setup(): void
     {
-        $data = $this->client()->personalData()->data();
+        $data = $this->client()->personalData->data;
 
         $this->email = $data->email;
         $this->web = $data->web;
@@ -46,7 +46,7 @@ class ContactForm extends BaseForm
 
         $notification = $this->tryAction(function () use ($validated, &$saved): NotificationDto {
 
-            $saved = $this->client()->personalData()->saveConnection($validated);
+            $saved = $this->client()->personalData->saveConnection($validated);
 
             if ($saved === null) {
                 return new NotificationDto(__('notifications.not_found'), NotificationType::Error);

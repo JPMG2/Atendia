@@ -64,7 +64,7 @@ class SocialForm extends BaseForm
 
     public function save(): NotificationDto
     {
-        $media = $this->client()->socialMedia();
+        $media = $this->client()->socialMedia;
 
         if ($media === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -119,7 +119,7 @@ class SocialForm extends BaseForm
      */
     private function rowsFromStore(): array
     {
-        $rows = ($this->client()->socialMedia()?->links() ?? collect())
+        $rows = ($this->client()->socialMedia?->links ?? collect())
             ->map(fn (SocialLink $link): array => [
                 'key' => $this->nextSocialKey++,
                 'id' => $link->id,

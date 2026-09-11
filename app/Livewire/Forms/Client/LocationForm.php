@@ -28,7 +28,7 @@ class LocationForm extends BaseForm
     /** Called from the component's `mount()`, not a Form hook. */
     public function setup(): void
     {
-        $data = $this->client()->personalData()->data();
+        $data = $this->client()->personalData->data;
 
         $this->hasPremises = $data->has_premises;
         $this->address = $data->address;
@@ -46,7 +46,7 @@ class LocationForm extends BaseForm
         return $this->tryAction(function () use ($validated): NotificationDto {
 
             // The screen speaks camelCase; the slice speaks columns.
-            $business = $this->client()->personalData()->saveIdentity([
+            $business = $this->client()->personalData->saveIdentity([
                 'address' => $validated['address'],
                 'city' => $validated['city'],
                 'has_premises' => $validated['hasPremises'],

@@ -15,10 +15,10 @@ use App\Models\User;
 class Client
 {
     public function __construct(
-        private PersonalData $personalData,
-        private ?TaxDetails $taxDetails = null,
-        private ?Schedule $schedule = null,
-        private ?SocialMedia $socialMedia = null,
+        public readonly PersonalData $personalData,
+        public readonly ?TaxDetails $taxDetails = null,
+        public readonly ?Schedule $schedule = null,
+        public readonly ?SocialMedia $socialMedia = null,
     ) {}
 
     /**
@@ -38,47 +38,28 @@ class Client
         );
     }
 
-    public function personalData(): PersonalData
-    {
-        return $this->personalData;
-    }
-
-    public function taxDetails(): ?TaxDetails
-    {
-        return $this->taxDetails;
-    }
-
-    public function schedule(): ?Schedule
-    {
-        return $this->schedule;
-    }
-
-    public function socialMedia(): ?SocialMedia
-    {
-        return $this->socialMedia;
-    }
-
     /**
      * The aggregate view no single piece can give: how finished the profile
      * is and which pieces still miss — what the "finish your profile" meter
      * feeds on. Each piece judges its own completeness; a piece the business
      * has not grown into yet simply counts as missing.
      *
-     * @return array{done: int, total: int, missing: list<string>}
+     * @var array{done: int, total: int, missing: list<string>}
      */
-    public function profileStrength(): array
-    {
-        $checks = [
-            'personal_data' => $this->personalData->isComplete(),
-            'tax_details' => $this->taxDetails?->isComplete() ?? false,
-            'schedule' => $this->schedule?->isComplete() ?? false,
-            'social_media' => $this->socialMedia?->isComplete() ?? false,
-        ];
+    public array $profileStrength {
+        get {
+            $checks = [
+                'personal_data' => $this->personalData->isComplete,
+                'tax_details' => $this->taxDetails?->isComplete ?? false,
+                'schedule' => $this->schedule?->isComplete ?? false,
+                'social_media' => $this->socialMedia?->isComplete ?? false,
+            ];
 
-        return [
-            'done' => count(array_filter($checks)),
-            'total' => count($checks),
-            'missing' => array_keys(array_filter($checks, fn (bool $done): bool => ! $done)),
-        ];
+            return [
+                'done' => count(array_filter($checks)),
+                'total' => count($checks),
+                'missing' => array_keys(array_filter($checks, fn (bool $done): bool => ! $done)),
+            ];
+        }
     }
 }

@@ -9,17 +9,18 @@ namespace App\Dto;
  * `distance` is the cosine distance (0 = identical); the matching similarity
  * is 1 - distance.
  */
-final readonly class RetrievedChunkDto
+final class RetrievedChunkDto
 {
+    // Readonly sits on each field, not the class: a hooked property may not
+    // be readonly, and $similarity below is one.
     public function __construct(
-        public int $documentId,
-        public string $documentTitle,
-        public string $content,
-        public float $distance,
+        public readonly int $documentId,
+        public readonly string $documentTitle,
+        public readonly string $content,
+        public readonly float $distance,
     ) {}
 
-    public function similarity(): float
-    {
-        return 1.0 - $this->distance;
+    public float $similarity {
+        get => 1.0 - $this->distance;
     }
 }

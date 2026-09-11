@@ -41,7 +41,7 @@ class IdentityForm extends BaseForm
     /** Called from the component's `mount()`, not a Form hook. */
     public function setup(): void
     {
-        $data = $this->client()->personalData()->data();
+        $data = $this->client()->personalData->data;
 
         $this->name = $data->name;
         $this->description = $data->description;
@@ -66,7 +66,7 @@ class IdentityForm extends BaseForm
                 $payload['logo_path'] = $this->storeLogo($validated['logo_file']);
             }
 
-            $business = $this->client()->personalData()->saveIdentity($payload);
+            $business = $this->client()->personalData->saveIdentity($payload);
 
             $this->logo_path = $business->logo_path;
             $this->logo_file = null;

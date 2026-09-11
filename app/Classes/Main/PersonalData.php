@@ -20,23 +20,23 @@ class PersonalData
     public function __construct(private User $user) {}
 
     /** The slice as the forms consume it; empty while the business is unborn. */
-    public function data(): BusinessDto
-    {
-        return BusinessDto::fromArray($this->user->business?->toArray() ?? []);
+    public BusinessDto $data {
+        get => BusinessDto::fromArray($this->user->business?->toArray() ?? []);
     }
 
     /**
      * Mirrors what the connection step demands: the AI's number, a human to
      * hand off to and the inbox. Identity alone is only a born business.
      */
-    public function isComplete(): bool
-    {
-        $business = $this->user->business;
+    public bool $isComplete {
+        get {
+            $business = $this->user->business;
 
-        return $business !== null
-            && $business->whatsapp_number !== null
-            && $business->fallback_whatsapp_number !== null
-            && $business->email !== null;
+            return $business !== null
+                && $business->whatsapp_number !== null
+                && $business->fallback_whatsapp_number !== null
+                && $business->email !== null;
+        }
     }
 
     /**

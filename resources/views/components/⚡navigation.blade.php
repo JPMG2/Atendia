@@ -39,7 +39,7 @@ new class extends Component
     #[Computed]
     public function strength(): array
     {
-        return Client::for(Auth::user())->profileStrength();
+        return Client::for(Auth::user())->profileStrength;
     }
 
     #[Computed]

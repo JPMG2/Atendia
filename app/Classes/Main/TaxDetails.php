@@ -16,11 +16,10 @@ class TaxDetails
     public function __construct(private Business $business) {}
 
     /**
-     * @return array{currency_id: ?int, reference_currency_id: ?int, tax_condition_id: ?int, tax_id: ?string}
+     * @var array{currency_id: ?int, reference_currency_id: ?int, tax_condition_id: ?int, tax_id: ?string}
      */
-    public function data(): array
-    {
-        return [
+    public array $data {
+        get => [
             'currency_id' => $this->business->currency_id,
             'reference_currency_id' => $this->business->reference_currency_id,
             'tax_condition_id' => $this->business->tax_condition_id,
@@ -32,9 +31,8 @@ class TaxDetails
      * A chosen currency is the one thing an invoice cannot go out without;
      * the rest stays optional (natural person).
      */
-    public function isComplete(): bool
-    {
-        return $this->business->currency_id !== null;
+    public bool $isComplete {
+        get => $this->business->currency_id !== null;
     }
 
     /**

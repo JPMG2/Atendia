@@ -20,21 +20,21 @@ class Schedule
      * The week as the screens paint it: Monday first, closed days as empty
      * lists, 0 = Sunday like date("w").
      *
-     * @return array<int, list<BusinessHour>>
+     * @var array<int, list<BusinessHour>>
      */
-    public function week(): array
-    {
-        $byDay = $this->business->hours->groupBy('day_of_week');
+    public array $week {
+        get {
+            $byDay = $this->business->hours->groupBy('day_of_week');
 
-        return collect([1, 2, 3, 4, 5, 6, 0])
-            ->mapWithKeys(fn (int $day): array => [$day => ($byDay->get($day) ?? collect())->values()->all()])
-            ->all();
+            return collect([1, 2, 3, 4, 5, 6, 0])
+                ->mapWithKeys(fn (int $day): array => [$day => ($byDay->get($day) ?? collect())->values()->all()])
+                ->all();
+        }
     }
 
     /** One declared shift is enough: an always-closed business has no hours. */
-    public function isComplete(): bool
-    {
-        return $this->business->hours->isNotEmpty();
+    public bool $isComplete {
+        get => $this->business->hours->isNotEmpty();
     }
 
     /**

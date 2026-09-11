@@ -74,6 +74,10 @@
           },
           {
             "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-php-getter-golden-rules.sh"
+          },
+          {
+            "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/remind-form-checklist.sh"
           }
         ]

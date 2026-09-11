@@ -70,7 +70,7 @@ class HoursForm extends BaseForm
 
     public function save(): NotificationDto
     {
-        $schedule = $this->client()->schedule();
+        $schedule = $this->client()->schedule;
 
         if ($schedule === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -118,7 +118,7 @@ class HoursForm extends BaseForm
      */
     private function weekFromStore(): array
     {
-        $stored = $this->client()->schedule()?->week() ?? [];
+        $stored = $this->client()->schedule?->week ?? [];
 
         return collect(self::DAYS)
             ->mapWithKeys(fn (int $day): array => [$day => array_map(

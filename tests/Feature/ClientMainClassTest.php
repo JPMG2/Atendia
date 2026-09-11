@@ -36,10 +36,10 @@ function clientWithBusiness(array $attributes = []): array
 test('a user without a business composes only the personal data piece', function (): void {
     $client = Client::for(User::factory()->create()->refresh());
 
-    expect($client->personalData()->data()->name)->toBe('')
-        ->and($client->taxDetails())->toBeNull()
-        ->and($client->schedule())->toBeNull()
-        ->and($client->socialMedia())->toBeNull();
+    expect($client->personalData->data->name)->toBe('')
+        ->and($client->taxDetails)->toBeNull()
+        ->and($client->schedule)->toBeNull()
+        ->and($client->socialMedia)->toBeNull();
 });
 
 test('a user with a business gets every piece, each reading its own slice', function (): void {
@@ -47,11 +47,11 @@ test('a user with a business gets every piece, each reading its own slice', func
     $business->hours()->create(['day_of_week' => 1, 'opens_at' => '09:00', 'closes_at' => '13:00']);
     SocialLink::factory()->for($business, 'linkable')->create();
 
-    expect($client->personalData()->data()->name)->toBe($business->name)
-        ->and($client->taxDetails()->data()['tax_id'])->toBe('J-12345678-9')
-        ->and($client->schedule()->week()[1])->toHaveCount(1)
-        ->and($client->schedule()->week()[0])->toBe([])
-        ->and($client->socialMedia()->links())->toHaveCount(1);
+    expect($client->personalData->data->name)->toBe($business->name)
+        ->and($client->taxDetails->data['tax_id'])->toBe('J-12345678-9')
+        ->and($client->schedule->week[1])->toHaveCount(1)
+        ->and($client->schedule->week[0])->toBe([])
+        ->and($client->socialMedia->links)->toHaveCount(1);
 });
 
 test('personal data saves through the same identity action the wizard uses', function (): void {
@@ -60,7 +60,7 @@ test('personal data saves through the same identity action the wizard uses', fun
     $province = Province::factory()->create(['country_id' => $country->id]);
     $activity = BusinessActivity::factory()->create();
 
-    $business = Client::for($user)->personalData()->saveIdentity([
+    $business = Client::for($user)->personalData->saveIdentity([
         'name' => 'La Esquina',
         'country_id' => $country->id,
         'province_id' => $province->id,
@@ -74,22 +74,22 @@ test('personal data saves through the same identity action the wizard uses', fun
 test('the connection save refuses to invent a business', function (): void {
     $client = Client::for(User::factory()->create()->refresh());
 
-    expect($client->personalData()->saveConnection(['email' => 'hola@esquina.com']))->toBeNull();
+    expect($client->personalData->saveConnection(['email' => 'hola@esquina.com']))->toBeNull();
 });
 
 test('the tax details piece saves its slice and completes with a chosen currency', function (): void {
     [$client, $business] = clientWithBusiness();
 
-    expect($client->taxDetails()->isComplete())->toBeFalse();
+    expect($client->taxDetails->isComplete)->toBeFalse();
 
-    $client->taxDetails()->save([
+    $client->taxDetails->save([
         'currency_id' => Currency::factory()->create()->id,
         'tax_condition_id' => TaxCondition::factory()->create()->id,
         'tax_id' => 'J-12345678-9',
         'name' => 'ignorada',
     ]);
 
-    expect($client->taxDetails()->isComplete())->toBeTrue()
+    expect($client->taxDetails->isComplete)->toBeTrue()
         ->and($business->fresh())
         ->tax_id->toBe('J-12345678-9')
         ->name->toBe($business->name);
@@ -99,16 +99,16 @@ test('the schedule piece replaces the week whole, so no stale shift survives', f
     [$client, $business] = clientWithBusiness();
     $business->hours()->create(['day_of_week' => 3, 'opens_at' => '08:00', 'closes_at' => '12:00']);
 
-    $client->schedule()->save([
+    $client->schedule->save([
         1 => [['opens_at' => '09:00', 'closes_at' => '13:00'], ['opens_at' => '16:00', 'closes_at' => '20:00']],
         0 => [],
     ]);
 
-    $week = $client->schedule()->week();
+    $week = $client->schedule->week;
 
     expect($week[1])->toHaveCount(2)
         ->and($week[3])->toBe([])
-        ->and($client->schedule()->isComplete())->toBeTrue();
+        ->and($client->schedule->isComplete)->toBeTrue();
 });
 
 test('the social media piece upserts by network, orders by screen position and drops what left', function (): void {
@@ -117,11 +117,11 @@ test('the social media piece upserts by network, orders by screen position and d
     $facebook = SocialNetwork::factory()->create();
     SocialLink::factory()->for($business, 'linkable')->create(['social_network_id' => $facebook->id]);
 
-    $changed = $client->socialMedia()->save([
+    $changed = $client->socialMedia->save([
         ['social_network_id' => $instagram->id, 'url' => 'https://instagram.com/esquina'],
     ]);
 
-    $links = $client->socialMedia()->links();
+    $links = $client->socialMedia->links;
 
     expect($changed)->toBeTrue()
         ->and($links)->toHaveCount(1)
@@ -132,7 +132,7 @@ test('the social media piece upserts by network, orders by screen position and d
 test('the profile meter counts every piece as missing while the business is unborn', function (): void {
     $client = Client::for(User::factory()->create()->refresh());
 
-    expect($client->profileStrength())->toBe([
+    expect($client->profileStrength)->toBe([
         'done' => 0,
         'total' => 4,
         'missing' => ['personal_data', 'tax_details', 'schedule', 'social_media'],
@@ -148,7 +148,7 @@ test('the profile meter fills as the pieces do, and names what is left', functio
     ]);
     $business->hours()->create(['day_of_week' => 1, 'opens_at' => '09:00', 'closes_at' => '13:00']);
 
-    expect($client->profileStrength())->toBe([
+    expect($client->profileStrength)->toBe([
         'done' => 3,
         'total' => 4,
         'missing' => ['social_media'],
