@@ -110,6 +110,24 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 - **Sin emoji** en la chrome de la UI.
 - Ejemplos: CTA *"Empezar gratis"* / *"Crear mi asistente"*; éxito *"Listo. Tu asistente ya responde por vos."*; error *"No pudimos conectar tu número. Revisá el QR e intentá de nuevo."*
 
+## 6. Señales de confianza — la landing le pide plata a un desconocido (2026-09-11)
+
+> AtendIa es una marca nueva pidiéndole una suscripción a un negocio chico: la
+> confianza no se declama, se muestra. Aplica a la landing y a toda pantalla
+> donde el visitante decide pagar o dejar sus datos.
+
+- **Contacto real visible:** una vía de contacto humana (WhatsApp de ventas) a un
+  click desde la landing, no escondida. Nadie paga si no sabe a quién reclamarle.
+- **Prueba social honesta:** reseñas y números REALES o nada — jamás testimonios
+  inventados ni contadores inflados (ya es la línea de la landing actual).
+- **Política clara antes del CTA de pago:** qué pasa si cancela, si cambia de plan
+  y cuándo se cobra, dicho en una línea cerca del botón — no solo en los términos.
+- **Pago que se reconoce:** el medio de pago (Mercado Pago) con su marca visible
+  junto al checkout; un pago anónimo asusta más que un precio alto.
+
+Origen: guía de e-commerce de Shopify (https://www.shopify.com/blog/best-ecommerce-sites),
+adaptada — solo se adoptó lo de confianza; lo de fotografía de producto no aplica a un SaaS.
+
 ---
 
 ## Librería de componentes UI reutilizables (DRY — usar SIEMPRE, no reinventar)
