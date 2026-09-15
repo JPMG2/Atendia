@@ -153,10 +153,11 @@ new class extends Component
     <p class="lead">{{ __('wizard.steps.2.lead') }}</p>
 
     <x-ui.card>
+        {{-- No cosmetic text-transform: the glass must show EXACTLY what is
+        stored, or the preview looks like it lowercased the name. --}}
         <x-inputsform.input
             span="long"
             required
-            style="text-transform: capitalize"
             name="name"
             alpine-error="name"
             wire:model.live="form.data.name"

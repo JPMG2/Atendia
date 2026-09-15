@@ -62,6 +62,7 @@ return [
         'add_placeholder' => 'Escribí un servicio, por ejemplo "Corte de dama"',
         'ai_title' => '¿No sabés cómo redactar las descripciones?',
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus servicios.',
+        'sheet_hint' => 'Todo lo que cargues acá, tu asistente lo responde en WhatsApp.',
     ],
 
     'products' => [
@@ -71,6 +72,10 @@ return [
         'empty_or' => 'O escribilos de a uno cuando quieras.',
         'import_body' => 'Subí la planilla que ya usás: leemos las columnas y tu asistente aprende cada fila.',
         'ai_body' => 'Enviala tal como la tenés: nuestra inteligencia artificial ordena nombres y precios por vos en segundos.',
+        'review_bad_price' => 'El precio no es un número: corregilo y la fila entra.',
+        'review_no_name' => 'La fila :row vino sin nombre: completala o descartala.',
+        'review_dupe' => 'Ya existe en tu lista: si confirmás, actualiza el precio.',
+        'review_note' => 'Las filas con error no entran; podés confirmar las demás y arreglarlas después.',
     ],
 
     'simulator' => [
