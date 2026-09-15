@@ -458,7 +458,10 @@ new class extends Component
             </div>
 
             <x-slot:footer>
-                <x-ui.button variant="ghost" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_cancel') }}</x-ui.button>
+                {{-- Cancel wears the danger colour by the owner's call
+                (2026-09-15): the universal "watch out" cue, never a plain
+                ghost that reads as loose text. --}}
+                <x-ui.button variant="danger" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_cancel') }}</x-ui.button>
                 <span class="flex-1"></span>
                 <x-ui.button variant="primary" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_save') }}</x-ui.button>
             </x-slot:footer>

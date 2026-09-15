@@ -73,6 +73,8 @@ test('the service sheet slides over the list with price, prep and deposit', func
         ->assertSee(__('client.services.field_prep'))
         ->assertSee(__('client.services.deposit_help'))
         ->assertSee(__('client.services.offered'))
+        // Cancel wears the universal watch-out colour (owner's call).
+        ->assertSeeHtml('btn-danger')
         ->call('closeSheet')
         ->assertDontSee(__('client.services.sheet_title', ['name' => 'Corte y barba']));
 });
