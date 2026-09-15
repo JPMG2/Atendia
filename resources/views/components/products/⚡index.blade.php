@@ -1,18 +1,28 @@
 <?php
 
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Tus productos" — living mock-up, zero persistence. Three states like the
- * home: 'empty' teaches the two ways in (type them, or import the Excel the
- * business already keeps); 'loaded' is the inventory the assistant answers
- * from; 'review' is the import staging table where rows get fixed before
- * anything is saved. The switch is a mock-up affordance.
+ * "Tus productos" — living mock-up, zero persistence. Same Fresha/Shopify
+ * split as the services screen: the LIST finds and operates (search, filter,
+ * load more), the SHEET edits in a slide-over. 'review' is the import staging
+ * table where rows get fixed before anything is saved.
  */
 new class extends Component
 {
     public string $mode = 'loaded';
+
+    public string $search = '';
+
+    public string $filter = 'all';
+
+    /** Rows on screen; "load more" grows it by a page. */
+    public int $visible = 8;
+
+    /** Open sheet: null closed, -1 a new product, >= 0 the row index. */
+    public ?int $editing = null;
 
     /**
      * Mock rows an auto-parts shop would load. `available` off means the
@@ -27,6 +37,25 @@ new class extends Component
         ['name' => 'Correa de distribución', 'code' => 'COR-114', 'price' => 24500, 'available' => false, 'waiting' => 3],
         ['name' => 'Filtro de aceite Mann', 'code' => 'FIL-098', 'price' => 8900, 'available' => true, 'waiting' => 0],
         ['name' => 'Pastillas de freno delanteras', 'code' => null, 'price' => null, 'available' => true, 'waiting' => 0],
+        ['name' => 'Amortiguador delantero Corsa', 'code' => 'AMO-215', 'price' => 78000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Batería 12x75 Willard', 'code' => 'BAT-075', 'price' => 145000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Kit de embrague Gol Trend', 'code' => 'EMB-207', 'price' => 165000, 'available' => false, 'waiting' => 1],
+        ['name' => 'Radiador Clio 1.2', 'code' => 'RAD-330', 'price' => 98000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Bomba de agua Peugeot 208', 'code' => 'BOM-118', 'price' => 52000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Filtro de aire K&N', 'code' => 'FIL-201', 'price' => 32000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Termostato Ford Ka', 'code' => 'TER-044', 'price' => 18500, 'available' => true, 'waiting' => 0],
+        ['name' => 'Disco de freno ventilado', 'code' => 'DIS-092', 'price' => 41000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Sensor de oxígeno Bosch', 'code' => 'SEN-310', 'price' => 67000, 'available' => false, 'waiting' => 2],
+        ['name' => 'Aceite sintético 5W30 x4L', 'code' => 'ACE-530', 'price' => 38000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Lámpara H7 Philips', 'code' => 'LAM-007', 'price' => 6500, 'available' => true, 'waiting' => 0],
+        ['name' => 'Escobillas limpiaparabrisas', 'code' => 'ESC-026', 'price' => 12000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Bobina de encendido VW', 'code' => 'BOB-155', 'price' => 45000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Junta de tapa de cilindros', 'code' => 'JUN-089', 'price' => 28000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Rótula de suspensión', 'code' => 'ROT-063', 'price' => 21500, 'available' => true, 'waiting' => 0],
+        ['name' => 'Cable de bujía Fiat Uno', 'code' => 'CAB-012', 'price' => 15000, 'available' => false, 'waiting' => 0],
+        ['name' => 'Espejo retrovisor derecho', 'code' => null, 'price' => 33000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Bomba de nafta sumergible', 'code' => 'BOM-240', 'price' => 89000, 'available' => true, 'waiting' => 0],
+        ['name' => 'Kit de distribución completo', 'code' => 'KIT-114', 'price' => 125000, 'available' => true, 'waiting' => 0],
     ];
 
     /**
@@ -44,11 +73,74 @@ new class extends Component
         ['name' => 'Kit de embrague', 'code' => 'EMB-207', 'price' => '145.000', 'status' => 'ok'],
     ];
 
+    /**
+     * Search (name or code) and availability filter, ORIGINAL KEYS KEPT: the
+     * row actions address the real index, never the position on screen.
+     *
+     * @return array<int, array{name: string, code: ?string, price: ?int, available: bool, waiting: int}>
+     */
+    #[Computed]
+    public function filtered(): array
+    {
+        $needle = Str::ascii(mb_strtolower(trim($this->search)));
+
+        return array_filter($this->products, function (array $product) use ($needle): bool {
+            if ($this->filter === 'available' && ! $product['available']) {
+                return false;
+            }
+            if ($this->filter === 'out' && $product['available']) {
+                return false;
+            }
+
+            return $needle === ''
+                || str_contains(Str::ascii(mb_strtolower($product['name'])), $needle)
+                || str_contains(Str::ascii(mb_strtolower($product['code'] ?? '')), $needle);
+        });
+    }
+
+    /** @return array<int, array{name: string, code: ?string, price: ?int, available: bool, waiting: int}> */
+    #[Computed]
+    public function rows(): array
+    {
+        return array_slice($this->filtered, 0, $this->visible, preserve_keys: true);
+    }
+
     /** Rows that enter on confirm: everything not flagged as an error. */
     #[Computed]
     public function importable(): int
     {
         return count(array_filter($this->staged, fn (array $row): bool => ! str_starts_with($row['status'], 'error')));
+    }
+
+    public function loadMore(): void
+    {
+        $this->visible += 8;
+    }
+
+    /** A new search or filter restarts the window at the top. */
+    public function updatedSearch(): void
+    {
+        $this->visible = 8;
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->visible = 8;
+    }
+
+    public function edit(int $index): void
+    {
+        $this->editing = $index;
+    }
+
+    public function add(): void
+    {
+        $this->editing = -1;
+    }
+
+    public function closeSheet(): void
+    {
+        $this->editing = null;
     }
 
     public function switchTo(string $mode): void
@@ -150,46 +242,69 @@ new class extends Component
             :action="__('client.products.ai_action')"
         />
 
+        {{-- ONE surface: toolbar to find, list to act; the sheet slides over. --}}
         <x-ui.card class="p-5">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <p class="font-mono text-sm text-subtle">{{ trans_choice('client.products.count', count($products), ['count' => count($products)]) }}</p>
-                <x-ui.button variant="primary" size="sm" icon="plus">{{ __('client.products.add') }}</x-ui.button>
+            <div class="flex flex-wrap items-center gap-3">
+                <x-inputsform.input span="long" name="list_search" icon="search"
+                    wire:model.live.debounce.300ms="search"
+                    :aria-label="__('client.products.search_placeholder')"
+                    :placeholder="__('client.products.search_placeholder')" />
+                <div class="w-40">
+                    <x-ui.select name="filter" wire:model.live="filter"
+                        :aria-label="__('client.products.filter_label')" :options="[
+                            'all' => __('client.products.filter_all'),
+                            'available' => __('client.products.filter_available'),
+                            'out' => __('client.products.filter_out'),
+                        ]" />
+                </div>
+                <span class="flex-1"></span>
+                <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.products.add') }}</x-ui.button>
             </div>
 
-            <div class="mt-3 flex flex-wrap items-end gap-3">
-                <x-inputsform.input span="long" name="product_draft" maxlength="255"
-                    :aria-label="__('client.products.add')" :placeholder="__('client.products.add_placeholder')" />
-                <x-ui.button variant="secondary" size="sm">{{ __('client.products.add_short') }}</x-ui.button>
-            </div>
+            <p class="mt-3 border-b border-[color:var(--border-subtle)] pb-3 font-mono text-sm text-subtle">
+                {{ trans_choice('client.products.count', count($this->filtered), ['count' => count($this->filtered)]) }}
+            </p>
 
-            {{-- Out of stock switches OFF, never out: the assistant answers
-            "sin stock por ahora" and offers to ping whoever asked. --}}
-            <ul class="mt-4 divide-y divide-[color:var(--border-subtle)]">
-                @foreach ($products as $product)
-                    <li class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-2 py-2.5 transition hover:bg-sunken" wire:key="product-{{ $loop->index }}">
-                        <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p @class(['text-sm font-semibold', 'text-strong' => $product['available'], 'text-muted' => ! $product['available']])>
-                                    {{ $product['name'] }}
-                                </p>
-                                @if ($product['waiting'] > 0)
-                                    <span class="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-[color:var(--brand-soft-text)]">
-                                        {{ trans_choice('client.products.waiting', $product['waiting'], ['count' => $product['waiting']]) }}
-                                    </span>
+            @if ($this->rows === [])
+                <p class="py-6 text-center text-sm text-muted">{{ __('client.products.no_results') }}</p>
+            @else
+                {{-- Out of stock switches OFF, never out: the assistant answers
+                "sin stock por ahora" and offers to ping whoever asked. --}}
+                <ul class="divide-y divide-[color:var(--border-subtle)]">
+                    @foreach ($this->rows as $index => $product)
+                        <li class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-2 py-2.5 transition hover:bg-sunken" wire:key="product-{{ $index }}">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p @class(['text-sm font-semibold', 'text-strong' => $product['available'], 'text-muted' => ! $product['available']])>
+                                        <x-ui.match :text="$product['name']" :needle="$search" />
+                                    </p>
+                                    @if ($product['waiting'] > 0)
+                                        <span class="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-[color:var(--brand-soft-text)]">
+                                            {{ trans_choice('client.products.waiting', $product['waiting'], ['count' => $product['waiting']]) }}
+                                        </span>
+                                    @endif
+                                </div>
+                                @if (! $product['available'])
+                                    <p class="text-xs text-muted">{{ __('client.products.out_note') }}</p>
                                 @endif
                             </div>
-                            @if (! $product['available'])
-                                <p class="text-xs text-muted">{{ __('client.products.out_note') }}</p>
-                            @endif
-                        </div>
-                        <p class="hidden font-mono text-xs text-subtle sm:block">{{ $product['code'] ?? '—' }}</p>
-                        <p class="font-mono text-sm font-bold text-strong">{{ $product['price'] !== null ? '$ '.number_format($product['price'], 0, ',', '.') : '—' }}</p>
-                        <x-ui.switch name="available_{{ $loop->index }}" :checked="$product['available']" size="sm" />
-                        <x-ui.icon-button icon="pencil" size="sm" variant="ghost"
-                            :label="__('client.products.edit', ['name' => $product['name']])" />
-                    </li>
-                @endforeach
-            </ul>
+                            <p class="hidden font-mono text-xs text-subtle sm:block">
+                                @if ($product['code'] !== null)
+                                    <x-ui.match :text="$product['code']" :needle="$search" />
+                                @else
+                                    —
+                                @endif
+                            </p>
+                            <p class="font-mono text-sm font-bold text-strong">{{ $product['price'] !== null ? '$ '.number_format($product['price'], 0, ',', '.') : '—' }}</p>
+                            <x-ui.switch name="available_{{ $index }}" :checked="$product['available']" size="sm" />
+                            <x-ui.icon-button icon="pencil" size="sm" variant="ghost" wire:click="edit({{ $index }})"
+                                :label="__('client.products.edit', ['name' => $product['name']])" />
+                        </li>
+                    @endforeach
+                </ul>
+
+                <x-ui.load-more :shown="count($this->rows)" :total="count($this->filtered)" action="loadMore" />
+            @endif
         </x-ui.card>
 
         {{-- The import lane lives beside the list, not inside it: a spreadsheet
@@ -210,5 +325,32 @@ new class extends Component
             </p>
         </x-ui.card>
         </div>
+    @endif
+
+    {{-- The sheet slides over the list: editing never loses the place. -1 is
+    a blank sheet for a new product. --}}
+    @if ($editing !== null)
+        @php $sheet = $products[$editing] ?? ['name' => '', 'code' => null, 'price' => null, 'available' => true, 'waiting' => 0]; @endphp
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeSheet()"
+            :title="$editing >= 0 ? __('client.products.sheet_title', ['name' => $sheet['name']]) : __('client.products.sheet_new_title')"
+            :subtitle="__('client.products.sheet_hint')"
+        >
+            <div class="flex flex-wrap items-start gap-3">
+                <x-inputsform.input span="full" name="sheet_name" :label="__('client.products.field_name')"
+                    :value="$sheet['name']" />
+                <x-inputsform.input span="short" name="sheet_code" :label="__('client.products.field_code')"
+                    :value="$sheet['code']" class="font-mono" />
+                <x-inputsform.input span="short" name="sheet_price" :label="__('client.products.field_price')"
+                    :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+                <x-ui.switch name="sheet_available" :label="__('client.products.sheet_available')" :checked="$sheet['available']" />
+            </div>
+
+            <x-slot:footer>
+                <x-ui.button variant="ghost" size="sm" wire:click="closeSheet">{{ __('client.products.sheet_cancel') }}</x-ui.button>
+                <span class="flex-1"></span>
+                <x-ui.button variant="primary" size="sm" wire:click="closeSheet">{{ __('client.products.sheet_save') }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.slide-over>
     @endif
 </div>

@@ -69,11 +69,14 @@ test('the seeder builds the blessed client menu in its logical order', function 
 
     $tree = Menu::tree();
 
-    // See first, then feed the assistant, then connect (blessed 2026-09-06).
+    // See first, then feed the assistant, then connect (blessed 2026-09-06);
+    // the catalog groups its two real screens since 2026-09-14.
     expect($tree->where('placement', 'main')->pluck('label_key')->values()->all())->toBe([
         'menu.home', 'menu.conversations', 'menu.my_business',
-        'menu.services', 'menu.products', 'menu.whatsapp',
-    ])->and($tree->where('placement', 'bottom'))->toHaveCount(2);
+        'menu.catalog', 'menu.whatsapp',
+    ])->and($tree->firstWhere('label_key', 'menu.catalog')->childrenRecursive->pluck('label_key')->all())
+        ->toBe(['menu.services', 'menu.products'])
+        ->and($tree->where('placement', 'bottom'))->toHaveCount(2);
 });
 
 test('the tree nests children to arbitrary depth', function (): void {

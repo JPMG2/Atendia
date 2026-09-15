@@ -59,7 +59,8 @@ return [
 
     'services' => [
         'sub' => 'Lo que ofrecés, tal como tu asistente lo cuenta cuando se lo preguntan.',
-        'add_placeholder' => 'Escribí un servicio, por ejemplo "Corte de dama"',
+        'search_placeholder' => 'Buscá por nombre',
+        'no_results' => 'Nada coincide con tu búsqueda. Probá con otro nombre.',
         'ai_title' => '¿No sabés cómo redactar las descripciones?',
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus servicios.',
         'sheet_hint' => 'Todo lo que cargues acá, tu asistente lo responde en WhatsApp.',
@@ -67,7 +68,8 @@ return [
 
     'products' => [
         'sub' => 'Lo que vendés; tu asistente responde "¿tienen tal cosa?" con esta lista.',
-        'add_placeholder' => 'Escribí un producto, por ejemplo "Bujía NGK"',
+        'search_placeholder' => 'Buscá por nombre o código',
+        'no_results' => 'Nada coincide con tu búsqueda. Probá con otro nombre o código.',
         'empty_body' => 'Subí tu Excel y tu asistente aprende el catálogo completo en minutos.',
         'empty_or' => 'O escribilos de a uno cuando quieras.',
         'import_body' => 'Subí la planilla que ya usás: leemos las columnas y tu asistente aprende cada fila.',

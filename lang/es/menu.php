@@ -34,6 +34,7 @@ return [
     'home' => 'Inicio',
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
+    'catalog' => 'Catálogo',
     'services' => 'Servicios',
     'products' => 'Productos',
     'whatsapp' => 'WhatsApp',

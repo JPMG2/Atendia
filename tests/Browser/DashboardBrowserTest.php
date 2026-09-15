@@ -24,7 +24,7 @@ test('the dashboard loads with no JS errors and renders the recursive menu', fun
     $page->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs()
         ->assertSee('Inicio')
-        ->assertSee('Productos')
+        ->assertSee('Catálogo')
         ->assertSee('Tu asistente está listo al 20%');
 });
 

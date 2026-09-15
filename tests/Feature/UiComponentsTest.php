@@ -127,6 +127,72 @@ test('the icon button lets a slot override the default icon', function (): void 
 
 /*
 |--------------------------------------------------------------------------
+| <x-ui.slide-over>
+|--------------------------------------------------------------------------
+*/
+test('the slide-over renders a dialog panel with title, subtitle and close', function (): void {
+    $html = Blade::render('<x-ui.slide-over title="Ficha" subtitle="Detalle">Body</x-ui.slide-over>');
+
+    expect($html)
+        ->toContain('slide-over-backdrop')
+        ->toContain('role="dialog"')
+        ->toContain('aria-modal="true"')
+        ->toContain('Ficha')
+        ->toContain('Detalle')
+        ->toContain('Body')
+        ->toContain(__('dialog.close'));
+});
+
+test('the slide-over closes by dispatching one event the caller listens to', function (): void {
+    $html = Blade::render('<x-ui.slide-over title="Ficha">Body</x-ui.slide-over>');
+
+    // Escape, backdrop and the X all speak the same event; closing never saves.
+    expect(substr_count($html, "\$dispatch('slide-over-close')"))->toBeGreaterThanOrEqual(3);
+});
+
+test('the slide-over renders its footer slot when given one', function (): void {
+    $html = Blade::render('<x-ui.slide-over title="F"><x-slot:footer>Guardar</x-slot:footer>Body</x-ui.slide-over>');
+
+    expect($html)->toContain('slide-over-foot')->toContain('Guardar');
+});
+
+/*
+|--------------------------------------------------------------------------
+| <x-ui.load-more>
+|--------------------------------------------------------------------------
+*/
+test('the load more footer offers the button and the scroll sentinel together', function (): void {
+    $html = Blade::render('<x-ui.load-more :shown="8" :total="22" action="loadMore" />');
+
+    expect($html)
+        ->toContain(__('pagination.showing', ['shown' => 8, 'total' => 22]))
+        ->toContain(__('pagination.load_more'))
+        ->toContain('wire:click.preserve-scroll="loadMore"')
+        ->toContain('wire:intersect');
+});
+
+test('the load more footer disappears once everything is on screen', function (): void {
+    expect(trim(Blade::render('<x-ui.load-more :shown="22" :total="22" action="loadMore" />')))->toBe('');
+});
+
+/*
+|--------------------------------------------------------------------------
+| <x-ui.match>
+|--------------------------------------------------------------------------
+*/
+test('the match component marks the hit, folding accents on both sides', function (): void {
+    $html = Blade::render('<x-ui.match text="Coloración" needle="oracion" />');
+
+    expect($html)->toContain('class="match-hit">oración</span');
+});
+
+test('the match component stays quiet under three characters or without a hit', function (): void {
+    expect(Blade::render('<x-ui.match text="Coloración" needle="co" />'))->not->toContain('match-hit')
+        ->and(Blade::render('<x-ui.match text="Coloración" needle="zzz" />'))->not->toContain('match-hit');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Golden rule: theme-aware, no hardcoded colors
 |--------------------------------------------------------------------------
 */
