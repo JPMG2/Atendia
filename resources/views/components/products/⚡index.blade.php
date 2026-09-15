@@ -244,22 +244,23 @@ new class extends Component
 
         {{-- ONE surface: toolbar to find, list to act; the sheet slides over. --}}
         <x-ui.card class="p-5">
-            <div class="flex flex-wrap items-center gap-3">
+            {{-- A declared row: the search absorbs the slack so the toolbar
+            always reaches the right edge (golden rule, formularios §5). --}}
+            <x-catalog.form-row>
                 <x-inputsform.input span="long" name="list_search" icon="search"
                     wire:model.live.debounce.300ms="search"
                     :aria-label="__('client.products.search_placeholder')"
                     :placeholder="__('client.products.search_placeholder')" />
-                <div class="w-40">
-                    <x-ui.select name="filter" wire:model.live="filter"
-                        :aria-label="__('client.products.filter_label')" :options="[
-                            'all' => __('client.products.filter_all'),
-                            'available' => __('client.products.filter_available'),
-                            'out' => __('client.products.filter_out'),
-                        ]" />
+                <x-inputsform.combobox span="short" name="filter" wire:model.live="filter"
+                    :value="$filter" :placeholder="__('client.products.filter_label')" :options="[
+                        'all' => __('client.products.filter_all'),
+                        'available' => __('client.products.filter_available'),
+                        'out' => __('client.products.filter_out'),
+                    ]" />
+                <div class="flex flex-none items-center self-center">
+                    <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.products.add') }}</x-ui.button>
                 </div>
-                <span class="flex-1"></span>
-                <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.products.add') }}</x-ui.button>
-            </div>
+            </x-catalog.form-row>
 
             <p class="mt-3 border-b border-[color:var(--border-subtle)] pb-3 font-mono text-sm text-subtle">
                 {{ trans_choice('client.products.count', count($this->filtered), ['count' => count($this->filtered)]) }}
@@ -336,13 +337,17 @@ new class extends Component
             :title="$editing >= 0 ? __('client.products.sheet_title', ['name' => $sheet['name']]) : __('client.products.sheet_new_title')"
             :subtitle="__('client.products.sheet_hint')"
         >
-            <div class="flex flex-wrap items-start gap-3">
-                <x-inputsform.input span="full" name="sheet_name" :label="__('client.products.field_name')"
-                    :value="$sheet['name']" />
-                <x-inputsform.input span="short" name="sheet_code" :label="__('client.products.field_code')"
-                    :value="$sheet['code']" class="font-mono" />
-                <x-inputsform.input span="short" name="sheet_price" :label="__('client.products.field_price')"
-                    :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+            <div class="flex flex-col gap-4">
+                <x-catalog.form-row>
+                    <x-inputsform.input span="full" name="sheet_name" :label="__('client.products.field_name')"
+                        :value="$sheet['name']" />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <x-inputsform.input span="code" name="sheet_code" :label="__('client.products.field_code')"
+                        :value="$sheet['code']" class="font-mono" />
+                    <x-inputsform.input span="short" name="sheet_price" :label="__('client.products.field_price')"
+                        :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+                </x-catalog.form-row>
                 <x-ui.switch name="sheet_available" :label="__('client.products.sheet_available')" :checked="$sheet['available']" />
             </div>
 

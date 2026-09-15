@@ -319,23 +319,24 @@ new class extends Component
         {{-- ONE surface: toolbar to find, meter to nudge, list to act. The
         sheet lives in the slide-over — the list never breaks apart. --}}
         <x-ui.card class="p-5">
-            <div class="flex flex-wrap items-center gap-3">
+            {{-- A declared row: the search absorbs the slack so the toolbar
+            always reaches the right edge (golden rule, formularios §5). --}}
+            <x-catalog.form-row>
                 <x-inputsform.input span="long" name="list_search" icon="search"
                     wire:model.live.debounce.300ms="search"
                     :aria-label="__('client.services.search_placeholder')"
                     :placeholder="__('client.services.search_placeholder')" />
-                <div class="w-40">
-                    <x-ui.select name="filter" wire:model.live="filter"
-                        :aria-label="__('client.services.filter_label')" :options="[
-                            'all' => __('client.services.filter_all'),
-                            'active' => __('client.services.filter_active'),
-                            'paused' => __('client.services.filter_paused'),
-                        ]" />
+                <x-inputsform.combobox span="short" name="filter" wire:model.live="filter"
+                    :value="$filter" :placeholder="__('client.services.filter_label')" :options="[
+                        'all' => __('client.services.filter_all'),
+                        'active' => __('client.services.filter_active'),
+                        'paused' => __('client.services.filter_paused'),
+                    ]" />
+                <div class="flex flex-none items-center gap-3 self-center">
+                    <x-ui.button variant="secondary" size="sm" icon="plus">{{ __('client.services.add_category') }}</x-ui.button>
+                    <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.services.add') }}</x-ui.button>
                 </div>
-                <span class="flex-1"></span>
-                <x-ui.button variant="secondary" size="sm" icon="plus">{{ __('client.services.add_category') }}</x-ui.button>
-                <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.services.add') }}</x-ui.button>
-            </div>
+            </x-catalog.form-row>
 
             {{-- Per-row completeness, GBP-style: it nudges, it never blocks. --}}
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[color:var(--border-subtle)] pb-3">
@@ -407,42 +408,50 @@ new class extends Component
             :title="$editing >= 0 ? __('client.services.sheet_title', ['name' => $sheet['name']]) : __('client.services.sheet_new_title')"
             :subtitle="__('client.services.sheet_hint')"
         >
-            <div class="flex flex-wrap items-start gap-3">
-                <x-inputsform.input span="full" name="sheet_name" :label="__('client.services.field_name')"
-                    :value="$sheet['name']" />
-                <div class="w-full">
-                    <x-ui.select name="sheet_category" :label="__('client.services.field_category')">
-                        @foreach ($categories as $category)
-                            <option value="{{ $category }}" @selected($sheet['category'] === $category)>{{ $category }}</option>
-                        @endforeach
-                        <option value="" @selected($sheet['category'] === null)>{{ __('client.services.uncategorized') }}</option>
-                    </x-ui.select>
-                </div>
-                <x-inputsform.input span="code" name="sheet_minutes" :label="__('client.services.field_minutes')"
-                    :value="$sheet['minutes']" class="font-mono" inputmode="numeric" />
-                <div class="min-w-36 flex-1">
-                    <x-ui.select name="sheet_price_type" :label="__('client.services.field_price_type')" :options="[
-                        'fixed' => __('client.services.price_fixed'),
-                        'from' => __('client.services.price_from'),
-                        'free' => __('client.services.price_free'),
-                        'talk' => __('client.services.price_talk'),
-                    ]" />
-                </div>
-                <x-inputsform.input span="code" name="sheet_price" :label="__('client.services.field_amount')"
-                    :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
-                <x-inputsform.input span="short" name="sheet_deposit" :label="__('client.services.field_deposit')"
-                    :hint="__('client.services.deposit_help')"
-                    :value="$sheet['deposit'] !== null ? number_format($sheet['deposit'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
-                <div class="w-full">
-                    <x-ui.textarea name="sheet_description" :rows="2" :label="__('client.services.field_description')"
-                        :hint="__('client.services.description_help')">{{ $sheet['description'] }}</x-ui.textarea>
-                </div>
-                <div class="w-full">
-                    <x-ui.textarea name="sheet_prep" :rows="2" :label="__('client.services.field_prep')"
-                        :hint="__('client.services.prep_help')">{{ $sheet['prep'] }}</x-ui.textarea>
-                </div>
+            <div class="flex flex-col gap-4">
+                <x-catalog.form-row>
+                    <x-inputsform.input span="full" name="sheet_name" :label="__('client.services.field_name')"
+                        :value="$sheet['name']" />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <x-inputsform.combobox span="full" name="sheet_category" :label="__('client.services.field_category')"
+                        :value="$sheet['category'] ?? ''" :options="[
+                            ...array_combine($categories, $categories),
+                            '' => __('client.services.uncategorized'),
+                        ]" />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <x-inputsform.input span="code" name="sheet_minutes" :label="__('client.services.field_minutes')"
+                        :value="$sheet['minutes']" class="font-mono" inputmode="numeric" />
+                    <x-inputsform.combobox span="text" name="sheet_price_type" :label="__('client.services.field_price_type')"
+                        value="fixed" :options="[
+                            'fixed' => __('client.services.price_fixed'),
+                            'from' => __('client.services.price_from'),
+                            'free' => __('client.services.price_free'),
+                            'talk' => __('client.services.price_talk'),
+                        ]" />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <x-inputsform.input span="short" name="sheet_price" :label="__('client.services.field_amount')"
+                        :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+                    <x-inputsform.input span="short" name="sheet_deposit" :label="__('client.services.field_deposit')"
+                        :hint="__('client.services.deposit_help')"
+                        :value="$sheet['deposit'] !== null ? number_format($sheet['deposit'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <div class="f-full">
+                        <x-ui.textarea name="sheet_description" :rows="2" :label="__('client.services.field_description')"
+                            :hint="__('client.services.description_help')">{{ $sheet['description'] }}</x-ui.textarea>
+                    </div>
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <div class="f-full">
+                        <x-ui.textarea name="sheet_prep" :rows="2" :label="__('client.services.field_prep')"
+                            :hint="__('client.services.prep_help')">{{ $sheet['prep'] }}</x-ui.textarea>
+                    </div>
+                </x-catalog.form-row>
                 <x-ui.switch name="sheet_active" :label="__('client.services.offered')" :checked="$sheet['active']" />
-                <div class="w-full">
+                <div>
                     <x-ui.switch name="sheet_featured" :label="__('client.services.featured')" :checked="$sheet['featured']" />
                     <p class="mt-1 text-sm text-muted">{{ __('client.services.featured_help') }}</p>
                 </div>
