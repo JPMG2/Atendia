@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Finder\SplFileInfo;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +54,72 @@ function gapPx(string $declarations, int $part = 0): int
 
     return (int) $values[$part];
 }
+
+/**
+ * Screens frozen BEFORE the declared-rows rule went repo-wide (2026-09-14,
+ * after the client toolbars shipped with inert spans). Ratchet: NEVER add an
+ * entry — fix the file. Mirrored in check-catalog-form-layout.sh; touch both.
+ *
+ * @return list<string>
+ */
+function declaredRowsRatchet(): array
+{
+    return [
+        // Wizard steps predate the rule and are visually approved as-is.
+        'components/business/⚡step-business.blade.php',
+        'components/business/⚡step-products.blade.php',
+        'components/business/⚡step-services.blade.php',
+        'components/business/⚡step-whatsapp.blade.php',
+        // The hours grid is a layout of its own, not a row of fields.
+        'components/client/⚡section-hours.blade.php',
+        // Dev-only demo; dies at go-live.
+        'components/⚡ws-demo.blade.php',
+        // The shared chrome's lone `q` search box, sanctioned since day one.
+        'components/catalog/toolbar.blade.php',
+        'components/catalog/⚡manager.blade.php',
+    ];
+}
+
+/** @return Collection<int, SplFileInfo> */
+function bladeScreens(): Collection
+{
+    return collect(File::allFiles(resource_path('views')))
+        ->filter(fn ($file): bool => str_ends_with($file->getFilename(), '.blade.php'));
+}
+
+test('every screen with form fields declares its rows — client panel included', function (): void {
+    // Born from the services/products toolbars (2026-09-14): a span= outside a
+    // row wrapper is inert, so the row silently stops short of the right edge.
+    $offenders = bladeScreens()
+        ->reject(fn ($file): bool => str_contains($file->getPathname(), 'components/inputsform'))
+        ->reject(fn ($file): bool => in_array(
+            str_replace(resource_path('views').'/', '', $file->getPathname()),
+            declaredRowsRatchet(),
+            true,
+        ))
+        ->filter(function ($file): bool {
+            $blade = $file->getContents();
+
+            return preg_match('/^\s*<x-inputsform\./m', $blade) === 1
+                && ! str_contains($blade, '<x-catalog.form-row')
+                && ! str_contains($blade, 'config-social-row');
+        })
+        ->map(fn ($file): string => $file->getFilename());
+
+    expect($offenders->implode("\n"))->toBe('');
+});
+
+test('every select in a screen is the house combobox, never x-ui.select', function (): void {
+    // The project standardized on <x-inputsform.combobox> (accent-folding
+    // search, clear button, hidden value): a native select breaks the pattern.
+    $offenders = bladeScreens()
+        ->reject(fn ($file): bool => str_contains($file->getPathname(), 'components/ui/select.blade.php'))
+        ->reject(fn ($file): bool => str_contains($file->getPathname(), 'components/business/⚡step-products.blade.php'))
+        ->filter(fn ($file): bool => str_contains($file->getContents(), '<x-ui.select'))
+        ->map(fn ($file): string => $file->getFilename());
+
+    expect($offenders->implode("\n"))->toBe('');
+});
 
 test('the master form never caps its width, so no dead space is left on the right', function (): void {
     // A `max-width` here was leaving ~490px unused inside a 1170px panel while

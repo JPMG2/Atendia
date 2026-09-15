@@ -54,7 +54,13 @@ Cuando se suma un set de reglas de oro:
   incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
-  hook `.claude/hooks/check-catalog-form-layout.sh`.
+  hook `.claude/hooks/check-catalog-form-layout.sh`. **Desde el 2026-09-14 alcanza
+  TODO el repo** (panel cliente incluido, toolbars incluidas): un blade con
+  `<x-inputsform.*>` sin `<x-catalog.form-row>` falla (los `span=` son inertes
+  fuera de `.form-row`), y `<x-ui.select>` está prohibido — el estándar es
+  `<x-inputsform.combobox>`. Nació de las toolbars de Servicios/Productos que
+  salieron sin fila declarada DOS veces prometidas. Ratchet congelado (wizard,
+  section-hours, ws-demo, chrome `q`) espejado test+hook: tocar de a dos.
 - **Comentarios / PHPDoc en inglés y cortos** → `.ai/guidelines/comentarios.md` ·
   test guardián `tests/Feature/GoldenRulesCommentsTest.php` · hook
   `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el

@@ -69,6 +69,42 @@ case "$file" in
         ;;
 esac
 
+# ---------------------------------------------------------------------------
+# TODO blade con campos (panel cliente incluido, 2026-09-14): las filas se
+# declaran y los selects son el combobox de la casa. Espejo del guardián
+# GoldenRulesFormLayoutTest (ratchet congelado ahí; tocar de a dos).
+# ---------------------------------------------------------------------------
+case "$file" in
+    *resources/views/*.blade.php)
+        skip=0
+        case "$rel" in
+            *components/inputsform/*) skip=1 ;;
+            *components/business/⚡step-*.blade.php) skip=1 ;;
+            *components/client/⚡section-hours.blade.php) skip=1 ;;
+            *components/⚡ws-demo.blade.php) skip=1 ;;
+            *components/catalog/toolbar.blade.php) skip=1 ;;
+            *components/catalog/⚡manager.blade.php) skip=1 ;;
+        esac
+
+        if [ "$skip" -eq 0 ]; then
+            if grep -qE '^\s*<x-inputsform\.' "$file" \
+                && ! grep -q '<x-catalog.form-row' "$file" \
+                && ! grep -q 'config-social-row' "$file"; then
+                violations="${violations}- Tiene campos <x-inputsform.*> sin UNA fila declarada. Los span= son INERTES fuera de .form-row: la fila queda corta. Envolvé los campos (toolbars incluidas) en <x-catalog.form-row>.\n"
+            fi
+
+            case "$rel" in
+                *components/ui/select.blade.php) : ;;
+                *)
+                    if grep -q '<x-ui.select' "$file"; then
+                        violations="${violations}- Usa <x-ui.select>. El estándar del proyecto es <x-inputsform.combobox> (búsqueda sin acentos, limpiar, hidden con wire:model).\n"
+                    fi
+                    ;;
+            esac
+        fi
+        ;;
+esac
+
 if [ -n "$violations" ]; then
     printf 'Reglas de oro de layout incumplidas en %s:\n%b\nCorregí el archivo antes de continuar.\n' "$rel" "$violations" >&2
     exit 2
