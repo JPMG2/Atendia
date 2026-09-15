@@ -32,11 +32,13 @@ services:
       - easypanel              # red de Traefik + alcanza postgres/redis
       - easypanel-ai_project   # red compartida de la infra (postgres/redis)
 
-    # Acceso directo opcional para pruebas: http://IP:8081
+    # Solo loopback: el mundo entra por Traefik (80/443). Docker se saltea el
+    # ufw, así que publicar en 0.0.0.0 dejaba estos puertos abiertos a internet.
     ports:
-      - "8081:80"
-      # Reverb (WebSocket). El navegador se conecta directo a este puerto.
-      - "8080:8080"
+      # Acceso directo opcional para pruebas DESDE el servidor: http://127.0.0.1:8081
+      - "127.0.0.1:8081:80"
+      # Reverb (WebSocket). El navegador va por el mismo origen (nginx proxea /app/).
+      - "127.0.0.1:8080:8080"
 
     labels:
       - "traefik.enable=true"
