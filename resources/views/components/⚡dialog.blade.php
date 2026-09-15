@@ -66,7 +66,9 @@ new class extends Component {};
                 place. A notice carries no cancel — there is nothing to
                 decide. --}}
                 <div class="dialog-foot">
-                    <x-ui.button variant="ghost" x-show="current.mode !== 'notify'" x-on:click="cancel()">
+                    {{-- Cancel wears the universal watch-out colour (owner's
+                    convention, 2026-09-15). --}}
+                    <x-ui.button variant="danger" x-show="current.mode !== 'notify'" x-on:click="cancel()">
                         <span x-text="cancelLabel()"></span>
                     </x-ui.button>
 

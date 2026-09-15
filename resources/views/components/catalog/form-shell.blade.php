@@ -41,7 +41,9 @@
             {{ __('catalog.common.delete') }}</x-ui.button>
     </template>
     <span class="catalog-foot-grow"></span>
-    <x-ui.button variant="ghost" x-on:click="backToList()">{{ __('catalog.common.cancel') }}</x-ui.button>
+    {{-- Cancel wears the universal watch-out colour (owner's convention,
+    2026-09-15) — never a ghost that reads as loose text. --}}
+    <x-ui.button variant="danger" x-on:click="backToList()">{{ __('catalog.common.cancel') }}</x-ui.button>
     <x-ui.button variant="primary" icon="check" x-on:click="submit()">
         <span x-text="mode === 'edit' ? {{ \Illuminate\Support\Js::from(__('catalog.common.save')) }} : {{ \Illuminate\Support\Js::from($create) }}"></span>
     </x-ui.button>

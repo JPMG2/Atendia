@@ -600,7 +600,9 @@ field in red from an attempt you had stopped looking at. --}}
         person is on, which is what decides who the button hits. --}}
         <div class="catalog-form-foot config-foot">
             <span class="catalog-foot-grow"></span>
-            <x-ui.button variant="ghost" x-on:click="discard(step)">{{ __('company.discard') }}</x-ui.button>
+            {{-- Discard wears the universal watch-out colour (owner's
+            convention, 2026-09-15). --}}
+            <x-ui.button variant="danger" x-on:click="discard(step)">{{ __('company.discard') }}</x-ui.button>
 
             {{-- With no company yet, saving step one is what opens step two, and
             the label says so instead of leaving people guessing why the
