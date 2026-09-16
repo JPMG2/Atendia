@@ -35,6 +35,8 @@ class NotificationService
             'service_modalities' => ['entity' => __('notifications.entities.service_modality'), 'gender' => 'female'],
             'service_attributes' => ['entity' => __('notifications.entities.service_attribute'), 'gender' => 'male'],
             'service_types' => ['entity' => __('notifications.entities.service_type'), 'gender' => 'male'],
+            'services' => ['entity' => __('notifications.entities.service'), 'gender' => 'male'],
+            'service_categories' => ['entity' => __('notifications.entities.service_category'), 'gender' => 'female'],
             'blood_types' => ['entity' => __('notifications.entities.blood_type'), 'gender' => 'female'],
             'document_types' => ['entity' => __('notifications.entities.document_type'), 'gender' => 'male'],
             'genders' => ['entity' => __('notifications.entities.gender'), 'gender' => 'male'],

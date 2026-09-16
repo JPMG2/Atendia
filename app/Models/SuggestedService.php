@@ -56,6 +56,17 @@ class SuggestedService extends Model
     }
 
     /**
+     * The catalog type a hand-typed name adopts when the curated suggestions
+     * know it — shared by every writer so no service saver re-invents it.
+     */
+    public static function typeIdFor(string $name): ?int
+    {
+        return self::query()
+            ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            ->value('service_type_id');
+    }
+
+    /**
      * @return BelongsTo<BusinessActivity, $this>
      */
     public function activity(): BelongsTo

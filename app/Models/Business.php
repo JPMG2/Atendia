@@ -249,6 +249,16 @@ class Business extends Model
         return $this->hasMany(Service::class);
     }
 
+    /**
+     * The shelves this business groups its services under.
+     *
+     * @return HasMany<ServiceCategory, $this>
+     */
+    public function serviceCategories(): HasMany
+    {
+        return $this->hasMany(ServiceCategory::class);
+    }
+
     /** @return list<string> service names in creation order, as the wizard shows them */
     public function serviceNames(): array
     {

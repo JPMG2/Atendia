@@ -21,6 +21,7 @@ return new class extends Migration
      * @var list<string>
      */
     private const array TABLES = [
+        'service_categories',
         'services',
         'products',
         'product_imports',

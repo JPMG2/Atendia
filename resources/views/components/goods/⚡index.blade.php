@@ -1,20 +1,32 @@
 <?php
 
+use App\Classes\Main\Client;
+use App\Classes\Main\ServiceMenu;
+use App\Enums\NotificationType;
+use App\Livewire\Forms\Client\ServiceCategoryForm;
+use App\Livewire\Forms\Client\ServiceForm;
 use App\Models\BusinessActivity;
+use App\Models\Service;
+use App\Traits\HasNotifications;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Tus servicios" — living mock-up, zero persistence. The screen follows the
- * Fresha/Shopify split: the LIST is for finding and operating (search, filter,
- * load more), the SHEET is for editing and slides over the list. The mock
- * carries enough rows to make the scale pattern visible.
+ * "Tus servicios" — the real screen over the tenant's rows. It keeps the
+ * Fresha/Shopify split the mock-up blessed: the LIST is for finding and
+ * operating (search, filter, load more), the SHEET edits over it. State,
+ * validation and saves live in the Forms; queries in the ServiceMenu piece.
  */
 new class extends Component
 {
-    public string $mode = 'loaded';
+    use HasNotifications;
+
+    public ServiceForm $form;
+
+    public ServiceCategoryForm $categoryForm;
 
     public string $search = '';
 
@@ -23,116 +35,105 @@ new class extends Component
     /** Rows on screen; "load more" grows it by a page. */
     public int $visible = 8;
 
-    /** Open sheet: null closed, -1 a new service, >= 0 the row index. */
-    public ?int $editing = null;
+    /** Open sheet: null closed, the service editor or the category one. */
+    public ?string $sheet = null;
 
-    /**
-     * Display order of the client's own categories (Fresha pattern; they map
-     * to WhatsApp catalog collections later). Uncategorized rows close the
-     * list under their own bucket.
-     *
-     * @var list<string>
-     */
-    public array $categories = ['Cortes', 'Barba', 'Color', 'Peinados', 'Tratamientos', 'Estética'];
+    /** The category sheet was born from the service sheet: go back to it. */
+    public bool $returnToService = false;
 
     /** @var list<string> Groups folded away; the header stays visible. */
     public array $collapsed = [];
 
-    /**
-     * Mock rows a big barber shop would load: price and duration stay optional
-     * on purpose — "ofrecemos, no obligamos". `prep` is what the client must
-     * know or bring; `deposit` is the booking down payment.
-     *
-     * @var list<array{name: string, description: ?string, price: ?int, minutes: ?int, deposit: ?int, prep: ?string, category: ?string, featured: bool, active: bool}>
-     */
-    public array $services = [
-        ['name' => 'Corte de caballero', 'description' => 'Tijera o máquina, con lavado incluido.', 'price' => 12000, 'minutes' => 30, 'deposit' => null, 'prep' => null, 'category' => 'Cortes', 'featured' => false, 'active' => true],
-        ['name' => 'Corte y barba', 'description' => 'El combo completo, con toalla caliente.', 'price' => 16500, 'minutes' => 45, 'deposit' => 5000, 'prep' => 'Llega con el pelo seco; la toalla caliente hace el resto.', 'category' => 'Barba', 'featured' => true, 'active' => true],
-        ['name' => 'Coloración', 'description' => null, 'price' => null, 'minutes' => 90, 'deposit' => null, 'prep' => 'No laves tu pelo el día anterior.', 'category' => 'Color', 'featured' => false, 'active' => true],
-        ['name' => 'Peinado para eventos', 'description' => 'Se reserva con seña.', 'price' => 20000, 'minutes' => null, 'deposit' => 8000, 'prep' => null, 'category' => 'Peinados', 'featured' => false, 'active' => false],
-        ['name' => 'Corte de dama', 'description' => 'Incluye lavado y secado.', 'price' => 15000, 'minutes' => 45, 'deposit' => null, 'prep' => null, 'category' => 'Cortes', 'featured' => false, 'active' => true],
-        ['name' => 'Corte de niños', 'description' => 'Hasta 12 años.', 'price' => 9000, 'minutes' => 25, 'deposit' => null, 'prep' => null, 'category' => 'Cortes', 'featured' => false, 'active' => true],
-        ['name' => 'Perfilado de barba', 'description' => 'Navaja y aceite.', 'price' => 8000, 'minutes' => 20, 'deposit' => null, 'prep' => null, 'category' => 'Barba', 'featured' => false, 'active' => true],
-        ['name' => 'Afeitado clásico', 'description' => 'Toalla caliente y after shave.', 'price' => 10000, 'minutes' => 30, 'deposit' => null, 'prep' => null, 'category' => 'Barba', 'featured' => false, 'active' => true],
-        ['name' => 'Mechas', 'description' => 'Con papel o gorra según el largo.', 'price' => null, 'minutes' => 120, 'deposit' => 10000, 'prep' => 'Trae fotos de referencia si tienes.', 'category' => 'Color', 'featured' => false, 'active' => true],
-        ['name' => 'Alisado permanente', 'description' => null, 'price' => 45000, 'minutes' => 150, 'deposit' => 15000, 'prep' => 'No laves tu pelo 48 horas después.', 'category' => 'Tratamientos', 'featured' => true, 'active' => true],
-        ['name' => 'Tratamiento capilar', 'description' => 'Hidratación profunda con ampolla.', 'price' => 18000, 'minutes' => 60, 'deposit' => null, 'prep' => null, 'category' => 'Tratamientos', 'featured' => false, 'active' => true],
-        ['name' => 'Peinado con brushing', 'description' => null, 'price' => 12000, 'minutes' => 40, 'deposit' => null, 'prep' => null, 'category' => 'Peinados', 'featured' => false, 'active' => true],
-        ['name' => 'Diseño de cejas', 'description' => 'Con navaja o cera.', 'price' => 5000, 'minutes' => 15, 'deposit' => null, 'prep' => null, 'category' => 'Estética', 'featured' => false, 'active' => true],
-        ['name' => 'Limpieza facial', 'description' => 'Vapor, extracción y máscara.', 'price' => 16000, 'minutes' => 50, 'deposit' => null, 'prep' => 'Ven con la cara lavada, sin cremas.', 'category' => 'Estética', 'featured' => false, 'active' => true],
-        ['name' => 'Tintura de barba', 'description' => null, 'price' => 7000, 'minutes' => 25, 'deposit' => null, 'prep' => null, 'category' => 'Barba', 'featured' => false, 'active' => true],
-        ['name' => 'Corte con diseño', 'description' => 'Líneas y dibujos a máquina.', 'price' => 14000, 'minutes' => 40, 'deposit' => null, 'prep' => null, 'category' => 'Cortes', 'featured' => false, 'active' => true],
-        ['name' => 'Rapado completo', 'description' => null, 'price' => 7000, 'minutes' => 15, 'deposit' => null, 'prep' => null, 'category' => 'Cortes', 'featured' => false, 'active' => true],
-        ['name' => 'Manicura express', 'description' => 'Lima, cutícula y esmalte.', 'price' => 8000, 'minutes' => 30, 'deposit' => null, 'prep' => null, 'category' => 'Estética', 'featured' => false, 'active' => false],
-        ['name' => 'Masaje capilar', 'description' => null, 'price' => null, 'minutes' => 20, 'deposit' => null, 'prep' => null, 'category' => 'Tratamientos', 'featured' => false, 'active' => true],
-        ['name' => 'Botox capilar', 'description' => 'Repara puntas y da brillo.', 'price' => 30000, 'minutes' => 90, 'deposit' => 10000, 'prep' => null, 'category' => 'Tratamientos', 'featured' => false, 'active' => true],
-        ['name' => 'Peinado de novia', 'description' => 'Incluye prueba previa.', 'price' => 55000, 'minutes' => null, 'deposit' => 20000, 'prep' => 'La prueba se agenda dos semanas antes.', 'category' => 'Peinados', 'featured' => true, 'active' => true],
-        ['name' => 'Depilación de rostro', 'description' => null, 'price' => 6000, 'minutes' => 20, 'deposit' => null, 'prep' => null, 'category' => 'Estética', 'featured' => false, 'active' => false],
-    ];
+    public function mount(): void
+    {
+        // The Wireable DTO must exist before hydration, or it type-errors.
+        $this->form->setup();
+    }
+
+    private function menu(): ?ServiceMenu
+    {
+        return Client::for(Auth::user())->serviceMenu;
+    }
+
+    /** @return Collection<int, Service> */
+    #[Computed]
+    public function services(): Collection
+    {
+        return $this->menu()?->services ?? new Collection;
+    }
+
+    /** @return Collection<int, \App\Models\ServiceCategory> */
+    #[Computed]
+    public function categories(): Collection
+    {
+        return $this->menu()?->categories ?? new Collection;
+    }
 
     /**
-     * Search and state filter over the full set, ORIGINAL KEYS KEPT: the row
-     * actions address the real index, never the position on screen.
+     * Search and state filter over the full set, ORIGINAL KEYS KEPT: the
+     * windows slice positions, the rows themselves carry the model.
      *
-     * @return array<int, array{name: string, description: ?string, price: ?int, minutes: ?int, deposit: ?int, prep: ?string, category: ?string, featured: bool, active: bool}>
+     * @return Collection<int, Service>
      */
     #[Computed]
-    public function filtered(): array
+    public function filtered(): Collection
     {
         $needle = Str::ascii(mb_strtolower(trim($this->search)));
 
-        return array_filter($this->services, function (array $service) use ($needle): bool {
-            if ($this->filter === 'active' && ! $service['active']) {
+        return $this->services->filter(function (Service $service) use ($needle): bool {
+            if ($this->filter === 'active' && ! $service->is_active) {
                 return false;
             }
-            if ($this->filter === 'paused' && $service['active']) {
+            if ($this->filter === 'paused' && $service->is_active) {
                 return false;
             }
 
-            return $needle === '' || str_contains(Str::ascii(mb_strtolower($service['name'])), $needle);
+            return $needle === '' || str_contains(Str::ascii(mb_strtolower($service->name)), $needle);
         });
     }
 
-    /** Groups only rest state: searching or filtering flattens the shelves. */
+    /**
+     * Groups only rest state, and only once a shelf EXISTS: searching or
+     * filtering flattens them, and a business yet to create its first
+     * category gets a plain list instead of one lonely "Sin categoría".
+     */
     #[Computed]
     public function grouped(): bool
     {
-        return trim($this->search) === '' && $this->filter === 'all';
+        return trim($this->search) === '' && $this->filter === 'all' && $this->categories->isNotEmpty();
     }
 
-    /** @return list<int> The flat window while searching or filtering. */
+    /** @return list<Service> The flat window, destacados leading as promised. */
     #[Computed]
     public function flatRows(): array
     {
-        return array_slice(array_keys($this->filtered), 0, $this->visible);
+        return $this->filtered->sortByDesc('is_featured')->values()->take($this->visible)->all();
     }
 
     /**
      * The grouped view: Destacados pinned first (WhatsApp collections repeat
      * a product across collections, so featured rows also keep their shelf),
-     * then the client's categories. A collapsed group keeps its header and
-     * hides its rows; groups past the window appear as "load more" reaches.
+     * then the client's shelves in drag order. A collapsed group keeps its
+     * header and hides its rows; groups past the window come with "load more".
      *
-     * @return list<array{key: string, name: string, count: int, collapsed: bool, featured: bool, rows: list<int>}>
+     * @return list<array{key: string, name: string, count: int, collapsed: bool, featured: bool, rows: list<Service>}>
      */
     #[Computed]
     public function groups(): array
     {
-        $buckets = [['_featured', __('client.services.featured_title'), array_keys(array_filter($this->services, fn (array $service): bool => $service['featured']))]];
+        $buckets = [['_featured', __('client.services.featured_title'), $this->services->filter(fn (Service $service): bool => $service->is_featured)]];
 
-        foreach ([...$this->categories, null] as $category) {
-            $buckets[] = [
-                $category ?? '',
-                $category ?? __('client.services.uncategorized'),
-                array_keys(array_filter($this->services, fn (array $service): bool => $service['category'] === $category)),
-            ];
+        foreach ($this->categories as $category) {
+            $buckets[] = [(string) $category->id, $category->name, $this->services->where('service_category_id', $category->id)];
         }
+
+        $buckets[] = ['', __('client.services.uncategorized'), $this->services->whereNull('service_category_id')];
 
         $groups = [];
         $shown = 0;
 
-        foreach ($buckets as [$key, $name, $indexes]) {
-            if ($indexes === []) {
+        foreach ($buckets as [$key, $name, $members]) {
+            if ($members->isEmpty()) {
                 continue;
             }
 
@@ -144,12 +145,12 @@ new class extends Component
             $rows = [];
 
             if (! $collapsed) {
-                foreach ($indexes as $index) {
+                foreach ($members as $service) {
                     if ($shown >= $this->visible) {
                         break;
                     }
 
-                    $rows[] = $index;
+                    $rows[] = $service;
                     $shown++;
                 }
             }
@@ -157,7 +158,7 @@ new class extends Component
             $groups[] = [
                 'key' => $key,
                 'name' => $name,
-                'count' => count($indexes),
+                'count' => $members->count(),
                 'collapsed' => $collapsed,
                 'featured' => $key === '_featured',
                 'rows' => $rows,
@@ -183,17 +184,16 @@ new class extends Component
     public function listTotal(): int
     {
         if (! $this->grouped) {
-            return count($this->filtered);
+            return $this->filtered->count();
         }
 
         $featured = in_array('_featured', $this->collapsed, true)
             ? 0
-            : count(array_filter($this->services, fn (array $service): bool => $service['featured']));
+            : $this->services->filter(fn (Service $service): bool => $service->is_featured)->count();
 
-        return $featured + count(array_filter(
-            $this->services,
-            fn (array $service): bool => ! in_array($service['category'] ?? '', $this->collapsed, true),
-        ));
+        return $featured + $this->services->filter(
+            fn (Service $service): bool => ! in_array((string) ($service->service_category_id ?? ''), $this->collapsed, true),
+        )->count();
     }
 
     public function toggleGroup(string $category): void
@@ -203,23 +203,34 @@ new class extends Component
             : [...$this->collapsed, $category];
     }
 
-    /** wire:sort drops a dragged category at its new position. */
-    public function reorderCategories(string $category, int $position): void
+    /** wire:sort drops a dragged shelf at its new position, persisted. */
+    public function reorderCategories(int $category, int $position): void
     {
-        if (! in_array($category, $this->categories, true)) {
+        $ids = $this->categories->pluck('id')->all();
+
+        if (! in_array($category, $ids, true)) {
             return;
         }
 
-        $order = array_values(array_diff($this->categories, [$category]));
+        $order = array_values(array_diff($ids, [$category]));
         array_splice($order, max(0, $position), 0, [$category]);
-        $this->categories = $order;
+
+        $this->menu()?->reorderCategories($order);
+        $this->refreshList();
     }
 
-    /** How many rows carry a price — what the completeness meter reads. */
+    /** Pauses or resumes from the row; the badge flipping is the feedback. */
+    public function toggle(int $id): void
+    {
+        $this->menu()?->toggle($id);
+        $this->refreshList();
+    }
+
+    /** How many rows have their price resolved — what the meter reads. */
     #[Computed]
     public function priced(): int
     {
-        return count(array_filter($this->services, fn (array $service): bool => $service['price'] !== null));
+        return $this->services->filter(fn (Service $service): bool => $service->hasResolvedPrice())->count();
     }
 
     public function loadMore(): void
@@ -238,19 +249,100 @@ new class extends Component
         $this->visible = 8;
     }
 
-    public function edit(int $index): void
+    public function edit(int $id): void
     {
-        $this->editing = $index;
+        $this->form->setup($id);
+        $this->returnToService = false;
+        $this->sheet = 'service';
     }
 
     public function add(): void
     {
-        $this->editing = -1;
+        $this->form->setup();
+        $this->returnToService = false;
+        $this->sheet = 'service';
     }
 
+    /** A trade chip opens the blank sheet with the name already typed. */
+    public function addFromSuggestion(string $name): void
+    {
+        $this->form->setup(name: $name);
+        $this->returnToService = false;
+        $this->sheet = 'service';
+    }
+
+    public function openCategorySheet(): void
+    {
+        $this->categoryForm->reset();
+        $this->categoryForm->resetErrorBag();
+        $this->returnToService = false;
+        $this->sheet = 'category';
+    }
+
+    /**
+     * "Nueva categoría" inside the service sheet detours to the category one
+     * WITHOUT losing what was typed: the service form stays hydrated and the
+     * save trip comes back to it (Fresha's create-in-place).
+     */
+    public function openCategoryFromSheet(): void
+    {
+        $this->categoryForm->reset();
+        $this->categoryForm->resetErrorBag();
+        $this->returnToService = true;
+        $this->sheet = 'category';
+    }
+
+    /** Closing the detour lands back on the service sheet, never on nothing. */
     public function closeSheet(): void
     {
-        $this->editing = null;
+        if ($this->sheet === 'category' && $this->returnToService) {
+            $this->returnToService = false;
+            $this->sheet = 'service';
+
+            return;
+        }
+
+        $this->sheet = null;
+    }
+
+    public function saveService(): void
+    {
+        $notification = $this->form->save();
+        $this->dispatchNotification($notification);
+
+        if ($notification->type !== NotificationType::Error) {
+            $this->sheet = null;
+            $this->refreshList();
+        }
+    }
+
+    public function saveCategory(): void
+    {
+        $notification = $this->categoryForm->save();
+        $this->dispatchNotification($notification);
+
+        if ($notification->type === NotificationType::Error) {
+            return;
+        }
+
+        $this->refreshList();
+
+        // Born from the service sheet: hand the new shelf straight to it.
+        if ($this->returnToService) {
+            $this->form->data->service_category_id = $this->categoryForm->savedId;
+            $this->returnToService = false;
+            $this->sheet = 'service';
+
+            return;
+        }
+
+        $this->sheet = null;
+    }
+
+    /** Busts every computed that reads the tenant's rows after a write. */
+    private function refreshList(): void
+    {
+        unset($this->services, $this->categories, $this->filtered, $this->flatRows, $this->groups, $this->shownRows, $this->listTotal, $this->priced);
     }
 
     /**
@@ -267,11 +359,6 @@ new class extends Component
 
         return $activity === null ? [] : BusinessActivity::suggestionsName(code: $activity->code);
     }
-
-    public function switchTo(string $mode): void
-    {
-        $this->mode = in_array($mode, ['empty', 'loaded'], true) ? $mode : 'loaded';
-    }
 };
 ?>
 
@@ -281,17 +368,9 @@ new class extends Component
             <h1 class="page-head-title">{{ __('client.services.title') }}</h1>
             <p class="page-head-sub">{{ __('client.services.sub') }}</p>
         </div>
-        <div class="mock-switch" role="group" aria-label="{{ __('client.services.state_label') }}">
-            <button type="button" wire:click="switchTo('empty')" @class(['is-active' => $mode === 'empty'])>
-                {{ __('client.services.state_empty') }}
-            </button>
-            <button type="button" wire:click="switchTo('loaded')" @class(['is-active' => $mode === 'loaded'])>
-                {{ __('client.services.state_loaded') }}
-            </button>
-        </div>
     </div>
 
-    @if ($mode === 'empty')
+    @if ($this->services->isEmpty())
         <x-client.offer-empty
             icon="briefcase"
             :title="__('client.services.empty_title')"
@@ -302,7 +381,7 @@ new class extends Component
                 <p class="wizard-suggest">{{ __('client.services.suggestions') }}</p>
                 <div class="wizard-chips">
                     @foreach ($this->suggestions as $suggestion)
-                        <button type="button" class="wizard-chip">{{ $suggestion }}</button>
+                        <button type="button" class="wizard-chip" wire:click="addFromSuggestion(@js($suggestion))">{{ $suggestion }}</button>
                     @endforeach
                 </div>
             @endif
@@ -333,17 +412,17 @@ new class extends Component
                         'paused' => __('client.services.filter_paused'),
                     ]" />
                 <div class="flex flex-none items-center gap-3 self-center">
-                    <x-ui.button variant="secondary" size="sm" icon="plus">{{ __('client.services.add_category') }}</x-ui.button>
+                    <x-ui.button variant="secondary" size="sm" icon="plus" wire:click="openCategorySheet">{{ __('client.services.add_category') }}</x-ui.button>
                     <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.services.add') }}</x-ui.button>
                 </div>
             </x-catalog.form-row>
 
             {{-- Per-row completeness, GBP-style: it nudges, it never blocks. --}}
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[color:var(--border-subtle)] pb-3">
-                <p class="font-mono text-sm text-subtle">{{ trans_choice('client.services.count', count($this->filtered), ['count' => count($this->filtered)]) }}</p>
-                <p class="text-sm text-muted">{{ __('client.services.meter', ['done' => $this->priced, 'total' => count($services)]) }}</p>
+                <p class="font-mono text-sm text-subtle">{{ trans_choice('client.services.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}</p>
+                <p class="text-sm text-muted">{{ __('client.services.meter', ['done' => $this->priced, 'total' => $this->services->count()]) }}</p>
                 <div class="h-1.5 min-w-24 max-w-40 flex-1 overflow-hidden rounded-full bg-sunken">
-                    <div class="h-full rounded-full bg-[color:var(--brand)]" style="width: {{ count($services) > 0 ? round($this->priced / count($services) * 100) : 0 }}%"></div>
+                    <div class="h-full rounded-full bg-[color:var(--brand)]" style="width: {{ $this->services->isNotEmpty() ? round($this->priced / $this->services->count() * 100) : 0 }}%"></div>
                 </div>
             </div>
 
@@ -354,13 +433,15 @@ new class extends Component
                 <ul wire:sort="reorderCategories">
                     @foreach ($this->groups as $group)
                         <li
-                            @if (! $group['featured']) wire:sort:item="{{ $group['key'] }}" @endif
+                            @if (! $group['featured'] && $group['key'] !== '') wire:sort:item="{{ $group['key'] }}" @endif
                             wire:key="group-{{ $group['key'] }}"
                             class="border-b border-[color:var(--border-subtle)] py-1 last:border-0"
                         >
                             <div class="flex items-center gap-1">
                                 @if ($group['featured'])
                                     <span class="px-1"><x-icon name="star" :size="16" style="color:var(--brand)" /></span>
+                                @elseif ($group['key'] === '')
+                                    <span class="px-1 text-subtle"><x-icon name="folder" :size="16" /></span>
                                 @else
                                     <span wire:sort:handle class="cursor-grab px-1 text-subtle"><x-icon name="grip-vertical" :size="16" /></span>
                                 @endif
@@ -374,8 +455,8 @@ new class extends Component
                             </div>
                             @if ($group['rows'] !== [])
                                 <ul class="divide-y divide-[color:var(--border-subtle)]">
-                                    @foreach ($group['rows'] as $index)
-                                        <x-goods.row :service="$services[$index]" :index="$index" wire:key="row-{{ $group['key'] }}-{{ $index }}" />
+                                    @foreach ($group['rows'] as $service)
+                                        <x-goods.row :service="$service" wire:key="row-{{ $group['key'] }}-{{ $service->id }}" />
                                     @endforeach
                                 </ul>
                             @endif
@@ -389,8 +470,8 @@ new class extends Component
             @else
                 {{-- Searching or filtering flattens the shelves: hits stand alone. --}}
                 <ul class="divide-y divide-[color:var(--border-subtle)]">
-                    @foreach ($this->flatRows as $index)
-                        <x-goods.row :service="$services[$index]" :index="$index" :needle="$search" wire:key="flat-{{ $index }}" />
+                    @foreach ($this->flatRows as $service)
+                        <x-goods.row :service="$service" :needle="$search" wire:key="flat-{{ $service->id }}" />
                     @endforeach
                 </ul>
 
@@ -400,31 +481,40 @@ new class extends Component
     @endif
 
     {{-- The sheet slides over the list (Fresha pattern): editing never loses
-    the place in a long list. -1 is a blank sheet for a new service. --}}
-    @if ($editing !== null)
-        @php $sheet = $services[$editing] ?? ['name' => '', 'description' => null, 'price' => null, 'minutes' => null, 'deposit' => null, 'prep' => null, 'category' => null, 'featured' => false, 'active' => true]; @endphp
+    the place in a long list. --}}
+    @if ($sheet === 'service')
         <x-ui.slide-over
             x-on:slide-over-close="$wire.closeSheet()"
-            :title="$editing >= 0 ? __('client.services.sheet_title', ['name' => $sheet['name']]) : __('client.services.sheet_new_title')"
+            :title="$form->editingId !== null ? __('client.services.sheet_title', ['name' => $form->data->name]) : __('client.services.sheet_new_title')"
             :subtitle="__('client.services.sheet_hint')"
         >
             <div class="flex flex-col gap-4">
                 <x-catalog.form-row>
-                    <x-inputsform.input span="full" name="sheet_name" :label="__('client.services.field_name')"
-                        :value="$sheet['name']" />
+                    <x-inputsform.input span="full" name="name" :label="__('client.services.field_name')"
+                        wire:model="form.data.name" :value="$form->data->name" />
                 </x-catalog.form-row>
+                {{-- No shelves yet means nothing to choose: the select waits
+                until the first category exists; creating one never needs to
+                leave the sheet — the detour returns with it picked. --}}
+                <div>
+                    @if ($this->categories->isNotEmpty())
+                        <x-catalog.form-row>
+                            <x-inputsform.combobox span="full" name="service_category_id" :label="__('client.services.field_category')"
+                                wire:model="form.data.service_category_id"
+                                :value="$form->data->service_category_id"
+                                :options="$this->categories->pluck('name', 'id')->put('', __('client.services.uncategorized'))->all()" />
+                        </x-catalog.form-row>
+                    @endif
+                    <x-ui.button variant="ghost" size="sm" icon="plus" class="{{ $this->categories->isNotEmpty() ? 'mt-1' : '' }}"
+                        wire:click="openCategoryFromSheet">{{ __('client.services.category_new_option') }}</x-ui.button>
+                </div>
                 <x-catalog.form-row>
-                    <x-inputsform.combobox span="full" name="sheet_category" :label="__('client.services.field_category')"
-                        :value="$sheet['category'] ?? ''" :options="[
-                            ...array_combine($categories, $categories),
-                            '' => __('client.services.uncategorized'),
-                        ]" />
-                </x-catalog.form-row>
-                <x-catalog.form-row>
-                    <x-inputsform.input span="code" name="sheet_minutes" :label="__('client.services.field_minutes')"
-                        :value="$sheet['minutes']" class="font-mono" inputmode="numeric" />
-                    <x-inputsform.combobox span="text" name="sheet_price_type" :label="__('client.services.field_price_type')"
-                        value="fixed" :options="[
+                    <x-inputsform.input span="code" name="duration_minutes" :label="__('client.services.field_minutes')"
+                        wire:model="form.data.duration_minutes"
+                        :value="$form->data->duration_minutes" class="font-mono" inputmode="numeric" />
+                    <x-inputsform.combobox span="text" name="price_type" :label="__('client.services.field_price_type')"
+                        wire:model="form.data.price_type"
+                        :value="$form->data->price_type" :options="[
                             'fixed' => __('client.services.price_fixed'),
                             'from' => __('client.services.price_from'),
                             'free' => __('client.services.price_free'),
@@ -432,27 +522,33 @@ new class extends Component
                         ]" />
                 </x-catalog.form-row>
                 <x-catalog.form-row>
-                    <x-inputsform.input span="short" name="sheet_price" :label="__('client.services.field_amount')"
-                        :value="$sheet['price'] !== null ? number_format($sheet['price'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
-                    <x-inputsform.input span="short" name="sheet_deposit" :label="__('client.services.field_deposit')"
+                    <x-inputsform.input span="short" name="price" :label="__('client.services.field_amount')"
+                        wire:model="form.data.price"
+                        :value="$form->data->price" class="font-mono" inputmode="numeric" />
+                    <x-inputsform.input span="short" name="deposit" :label="__('client.services.field_deposit')"
                         :hint="__('client.services.deposit_help')"
-                        :value="$sheet['deposit'] !== null ? number_format($sheet['deposit'], 0, ',', '.') : ''" class="font-mono" inputmode="numeric" />
+                        wire:model="form.data.deposit"
+                        :value="$form->data->deposit" class="font-mono" inputmode="numeric" />
                 </x-catalog.form-row>
                 <x-catalog.form-row>
                     <div class="f-full">
-                        <x-ui.textarea name="sheet_description" :rows="2" :label="__('client.services.field_description')"
-                            :hint="__('client.services.description_help')">{{ $sheet['description'] }}</x-ui.textarea>
+                        <x-ui.textarea name="description" :rows="2" :label="__('client.services.field_description')"
+                            wire:model="form.data.description"
+                            :hint="__('client.services.description_help')">{{ $form->data->description }}</x-ui.textarea>
                     </div>
                 </x-catalog.form-row>
                 <x-catalog.form-row>
                     <div class="f-full">
-                        <x-ui.textarea name="sheet_prep" :rows="2" :label="__('client.services.field_prep')"
-                            :hint="__('client.services.prep_help')">{{ $sheet['prep'] }}</x-ui.textarea>
+                        <x-ui.textarea name="prep_note" :rows="2" :label="__('client.services.field_prep')"
+                            wire:model="form.data.prep_note"
+                            :hint="__('client.services.prep_help')">{{ $form->data->prep_note }}</x-ui.textarea>
                     </div>
                 </x-catalog.form-row>
-                <x-ui.switch name="sheet_active" :label="__('client.services.offered')" :checked="$sheet['active']" />
+                <x-ui.switch name="is_active" :label="__('client.services.offered')"
+                    wire:model="form.data.is_active" :checked="$form->data->is_active" />
                 <div>
-                    <x-ui.switch name="sheet_featured" :label="__('client.services.featured')" :checked="$sheet['featured']" />
+                    <x-ui.switch name="is_featured" :label="__('client.services.featured')"
+                        wire:model="form.data.is_featured" :checked="$form->data->is_featured" />
                     <p class="mt-1 text-sm text-muted">{{ __('client.services.featured_help') }}</p>
                 </div>
             </div>
@@ -463,7 +559,24 @@ new class extends Component
                 ghost that reads as loose text. --}}
                 <x-ui.button variant="danger" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_cancel') }}</x-ui.button>
                 <span class="flex-1"></span>
-                <x-ui.button variant="primary" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_save') }}</x-ui.button>
+                <x-ui.button variant="primary" size="sm" wire:click="saveService">{{ __('client.services.sheet_save') }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.slide-over>
+    @elseif ($sheet === 'category')
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeSheet()"
+            :title="__('client.services.category_sheet_title')"
+            :subtitle="__('client.services.category_sheet_hint')"
+        >
+            <x-catalog.form-row>
+                <x-inputsform.input span="full" name="name" :label="__('client.services.field_category_name')"
+                    wire:model="categoryForm.name" :value="$categoryForm->name" />
+            </x-catalog.form-row>
+
+            <x-slot:footer>
+                <x-ui.button variant="danger" size="sm" wire:click="closeSheet">{{ __('client.services.sheet_cancel') }}</x-ui.button>
+                <span class="flex-1"></span>
+                <x-ui.button variant="primary" size="sm" wire:click="saveCategory">{{ __('client.services.category_save') }}</x-ui.button>
             </x-slot:footer>
         </x-ui.slide-over>
     @endif

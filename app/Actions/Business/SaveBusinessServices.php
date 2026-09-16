@@ -20,8 +20,6 @@ class SaveBusinessServices extends ReconcileBusinessList
      */
     protected function decorate(Model $row): void
     {
-        $row->service_type_id ??= SuggestedService::query()
-            ->whereRaw('lower(name) = ?', [mb_strtolower((string) $row->name)])
-            ->value('service_type_id');
+        $row->service_type_id ??= SuggestedService::typeIdFor((string) $row->name);
     }
 }

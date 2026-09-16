@@ -19,6 +19,7 @@ class Client
         public readonly ?TaxDetails $taxDetails = null,
         public readonly ?Schedule $schedule = null,
         public readonly ?SocialMedia $socialMedia = null,
+        public readonly ?ServiceMenu $serviceMenu = null,
     ) {}
 
     /**
@@ -35,6 +36,7 @@ class Client
             $business === null ? null : new TaxDetails($business),
             $business === null ? null : new Schedule($business),
             $business === null ? null : new SocialMedia($business),
+            $business === null ? null : new ServiceMenu($business),
         );
     }
 

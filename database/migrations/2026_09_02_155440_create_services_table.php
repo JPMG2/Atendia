@@ -28,15 +28,33 @@ return new class extends Migration
             // catalog does not know waits untyped for a later classification.
             $table->foreignId('service_type_id')->nullable()->constrained()->restrictOnDelete();
 
+            // The client's own shelf. Losing it leaves the service uncategorized.
+            $table->foreignId('service_category_id')->nullable()->constrained()->nullOnDelete();
+
             $table->string('name')->comment('El nombre que le pone el negocio: Ecodoppler, Dobladillo, Torta de bodas');
             $table->string('description')->nullable();
+
+            // What the client must know or bring; the assistant says it on booking.
+            $table->string('prep_note')->nullable();
+
+            // Fresha's price semantics: fixed | from | free | talk. The amount
+            // only means something for the first two.
+            $table->string('price_type')->default('fixed');
 
             // Nullable ON PURPOSE: the client is never forced to publish a
             // price or a length just to have the service exist.
             $table->decimal('price', 12, 2)->nullable();
+
+            // Booking down payment, independent of the price: an unpriced
+            // wedding hairdo still takes a deposit.
+            $table->decimal('deposit', 12, 2)->nullable();
+
             $table->unsignedSmallInteger('duration_minutes')->nullable();
 
             $table->boolean('is_active')->default(true)->comment('Dejar de ofrecerlo sin borrarlo');
+
+            // Pinned first on the list and when the assistant offers.
+            $table->boolean('is_featured')->default(false);
 
             // Deleting the user leaves the service: only the author is lost.
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

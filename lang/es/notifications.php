@@ -22,6 +22,8 @@ return [
         'service_modality' => 'Modalidad',
         'service_attribute' => 'Atributo',
         'service_type' => 'Tipo de servicio',
+        'service' => 'Servicio',
+        'service_category' => 'Categoría',
         'blood_type' => 'Tipo sangre',
         'document_type' => 'Tipo documento',
         'gender' => 'Género',

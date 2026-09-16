@@ -8,11 +8,16 @@ test('a fresh dto carries the service defaults', function (): void {
     $dto = new ServiceDto;
 
     expect($dto->service_type_id)->toBeNull()
+        ->and($dto->service_category_id)->toBeNull()
         ->and($dto->name)->toBe('')
         ->and($dto->description)->toBeNull()
+        ->and($dto->prep_note)->toBeNull()
+        ->and($dto->price_type)->toBe('fixed')
         ->and($dto->price)->toBeNull()
+        ->and($dto->deposit)->toBeNull()
         ->and($dto->duration_minutes)->toBeNull()
-        ->and($dto->is_active)->toBeTrue();
+        ->and($dto->is_active)->toBeTrue()
+        ->and($dto->is_featured)->toBeFalse();
 });
 
 test('the dto never carries the tenant, so a request cannot move a service to another business', function (): void {
@@ -52,6 +57,15 @@ test('the payload squishes hand-typed text and empties nullable columns to null'
         'name' => 'Corte de pelo',
         'description' => null,
     ]);
+});
+
+test('a free or to-be-agreed type drops the amount from the payload', function (): void {
+    // Keeping an amount the type denies would make the assistant quote it.
+    expect((new ServiceDto(price_type: 'free', price: '9000'))->toPayload()['price'])->toBeNull()
+        ->and((new ServiceDto(price_type: 'talk', price: '9000'))->toPayload()['price'])->toBeNull()
+        ->and((new ServiceDto(price_type: 'from', price: '9000'))->toPayload()['price'])->toBe('9000')
+        // The deposit is independent: an unpriced booking still takes one.
+        ->and((new ServiceDto(price_type: 'talk', deposit: '5000'))->toPayload()['deposit'])->toBe('5000');
 });
 
 test('the livewire round-trip preserves the dto', function (): void {

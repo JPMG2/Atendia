@@ -9,6 +9,7 @@ use App\Models\KnowledgeDocument;
 use App\Models\Product;
 use App\Models\ProductImport;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\SocialLink;
 use App\Models\User;
 use App\Services\Tenant;
@@ -30,6 +31,7 @@ beforeEach(function (): void {
  */
 dataset('tenant models', [
     Service::class,
+    ServiceCategory::class,
     Product::class,
     ProductImport::class,
     BusinessHour::class,

@@ -64,6 +64,9 @@ return [
         'ai_title' => '¿No sabés cómo redactar las descripciones?',
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus servicios.',
         'sheet_hint' => 'Todo lo que cargues acá, tu asistente lo responde en WhatsApp.',
+        // "Adelanto" is the neutral base; Argentina says "seña".
+        'field_deposit' => 'Seña',
+        'deposit_short' => 'seña $ :amount',
     ],
 
     'products' => [
