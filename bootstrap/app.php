@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\LogoutRevokedDevice;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantDatabaseContext;
 use Illuminate\Foundation\Application;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
             SetTenantDatabaseContext::class,
+            LogoutRevokedDevice::class,
         ]);
 
         // Aliases de spatie/laravel-permission para usar en rutas.

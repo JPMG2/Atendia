@@ -123,6 +123,14 @@ class BusinessForm extends BaseForm
         return $notification;
     }
 
+    /** Whether the connection step holds anything worth keeping on exit. */
+    public function hasConnectionData(): bool
+    {
+        return filled($this->data?->whatsapp_number)
+            || filled($this->data?->fallback_whatsapp_number)
+            || filled($this->data?->email);
+    }
+
     /**
      * Saves the connection step: the two WhatsApp numbers and the contact
      * email — the address the welcome will land on.
@@ -136,9 +144,14 @@ class BusinessForm extends BaseForm
         $user = Auth::user();
         $business = $user?->business;
 
-        if ($this->recordId === null || $user === null || $business === null) {
+        if ($user === null || $business === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
         }
+
+        // The steps mount together BEFORE the identity step births the
+        // business, so this recordId is stale null on a first run: re-adopt
+        // the live business or the first connection save dies as "gone".
+        $this->recordId = $business->id;
 
         $validated = $this->validateStep(self::STEP_CONNECTION);
 

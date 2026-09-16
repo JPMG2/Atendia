@@ -50,6 +50,11 @@ const CHECKS = {
     // Mirrors Laravel's `confirmed`: the caller passes the OTHER value when
     // assembling the rules, e.g. [['same', values.password]].
     same: (v, other) => v === String(other ?? '') || 'Los valores no coinciden.',
+    // The password trio, mirroring Password::defaults(): symbols() counts
+    // Unicode punctuation, symbols and spaces, so the front does too.
+    hasUpper: (v) => /\p{Lu}/u.test(v) || 'Incluí al menos una letra mayúscula.',
+    hasNumber: (v) => /\d/.test(v) || 'Incluí al menos un número.',
+    hasSymbol: (v) => /[\p{Z}\p{S}\p{P}]/u.test(v) || 'Incluí al menos un carácter especial (ej. ! @ #).',
 };
 
 /**
@@ -86,4 +91,40 @@ function validate(values, rules) {
     return errors;
 }
 
+/*
+ * suggestEmail — Mailcheck pattern, shared by register and login: a domain one
+ * slip away from a big provider is a typo, not a choice, so offer the fix
+ * instead of mailing into the void. Returns the corrected address, or ''.
+ */
+const KNOWN_DOMAINS = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.com'];
+
+// Plain Levenshtein; inputs are domains, never longer than a word.
+function editDistance(a, b) {
+    let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+        let prev = row[0];
+        row[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+            const tmp = row[j];
+            row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+            prev = tmp;
+        }
+    }
+    return row[b.length];
+}
+
+function suggestEmail(value) {
+    const at = value.indexOf('@');
+    if (at < 1) {
+        return '';
+    }
+    const domain = value.slice(at + 1).toLowerCase();
+    if (KNOWN_DOMAINS.includes(domain)) {
+        return '';
+    }
+    const match = KNOWN_DOMAINS.find((candidate) => editDistance(domain, candidate) <= 2);
+    return match ? value.slice(0, at + 1) + match : '';
+}
+
 window.validate = validate;
+window.suggestEmail = suggestEmail;

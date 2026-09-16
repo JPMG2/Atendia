@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
+use App\Services\DeviceChallenge;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,21 +28,34 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        if (($user = $this->userOnUnknownDevice($request)) !== null) {
+            DeviceChallenge::start($user, $request->boolean('remember'));
+
+            return redirect()->route('device.challenge');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        return redirect()->intended($this->panelHomeFor($request->user()));
+        return redirect()->intended($request->user()->panelHome());
     }
 
     /**
-     * Landing panel by capability: admin → /admin, everyone else → /dashboard.
+     * The e-mail code gate: right credentials from a browser the account has
+     * never seen stop HERE, before any session opens. Wrong credentials fall
+     * through to authenticate(), which throttles and answers as always.
      */
-    private function panelHomeFor(User $user): string
+    private function userOnUnknownDevice(LoginRequest $request): ?User
     {
-        return $user->can('access-admin-panel')
-            ? route('admin.dashboard', absolute: false)
-            : route('dashboard', absolute: false);
+        if (! Auth::guard('web')->validate($request->only('email', 'password'))) {
+            return null;
+        }
+
+        /** @var User $user */
+        $user = Auth::guard('web')->getLastAttempted();
+
+        return $user->deviceIsUnknown($request->userAgent()) ? $user : null;
     }
 
     /**

@@ -26,8 +26,7 @@ return [
         ],
         5 => [
             'label' => 'Conexión',
-            'heading' => 'Conectá tu WhatsApp',
-            'lead' => 'El último paso: a partir de acá, tu asistente atiende de verdad.',
+            'lead' => 'Dejá listos los números y el correo de tu negocio: la conexión se enciende desde el panel cuando quieras.',
         ],
     ],
 
@@ -51,16 +50,10 @@ return [
         'skip' => 'Saltar este paso',
     ],
 
-    'whatsapp' => [
-        'qr_step_1' => 'Abrí <b>WhatsApp</b> en el teléfono del negocio.',
-        'qr_step_2' => 'Andá a <b>Dispositivos vinculados</b>.',
-        'qr_step_3' => 'Escaneá este código y listo: tu asistente queda de guardia.',
-    ],
-
     'done' => [
         'heading' => 'Listo. Tu asistente ya responde por vos.',
         'text_connected' => 'Tu número quedó conectado. Lo que salteaste te espera en el panel, sin apuro.',
-        'text_pending' => 'Todo lo que cargaste quedó guardado. Conectá tu WhatsApp desde el panel cuando quieras.',
+        'text_pending' => 'Lo pendiente te espera en el panel. Conectá tu WhatsApp desde ahí cuando quieras.',
         'cta' => 'Ir a mi panel',
     ],
 

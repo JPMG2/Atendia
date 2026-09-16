@@ -314,6 +314,29 @@ class Business extends Model
      *
      * @return MorphMany<SocialLink, $this>
      */
+    /** Nothing connects yet: flips for real when the Cloud API switch-on lands. */
+    public function isConnected(): bool
+    {
+        return false;
+    }
+
+    /**
+     * What the wizard actually persisted, for its closing recap.
+     *
+     * @return array{name: string, activity: ?string, services: int, products: int, phones: bool, email: bool}
+     */
+    public function wizardSummary(): array
+    {
+        return [
+            'name' => $this->name,
+            'activity' => $this->primaryActivity()?->name,
+            'services' => $this->services()->count(),
+            'products' => $this->products()->count(),
+            'phones' => filled($this->whatsapp_number) && filled($this->fallback_whatsapp_number),
+            'email' => filled($this->email),
+        ];
+    }
+
     public function socialLinks(): MorphMany
     {
         return $this->morphMany(SocialLink::class, 'linkable')->orderBy('sort_order');

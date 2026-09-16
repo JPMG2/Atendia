@@ -80,6 +80,20 @@ new class extends Component
         $this->dispatch('wizard:services-updated', services: $this->services);
     }
 
+    /** Chips behave like checkboxes: a second tap on a picked one un-picks it. */
+    public function toggle(string $name): void
+    {
+        $index = array_search($name, $this->services, true);
+
+        if ($index === false) {
+            $this->add($name);
+
+            return;
+        }
+
+        $this->remove($index);
+    }
+
     public function remove(int $index): void
     {
         unset($this->services[$index]);
@@ -126,15 +140,27 @@ new class extends Component
             <p class="wizard-suggest">{{ __('wizard.services.suggest') }}</p>
             <div class="wizard-chips">
                 @foreach ($this->suggestions as $suggestion)
+                    @php
+                        // Same exact comparison add() dedupes with: a picked
+                        // suggestion must read as picked among many chips.
+                        $picked = in_array($suggestion, $services, true);
+                    @endphp
+
                     {{-- @js, not an inline quote: an apostrophe in the name would
                     close the JS string and break the whole expression. --}}
                     <button
                         type="button"
                         wire:key="suggest-{{ $suggestion }}"
-                        wire:click="add(@js($suggestion))"
-                        class="wizard-pill-suggest"
+                        wire:click="toggle(@js($suggestion))"
+                        @class(['wizard-pill-suggest', 'is-on' => $picked])
+                        aria-pressed="{{ $picked ? 'true' : 'false' }}"
                     >
-                        + {{ $suggestion }}
+                        @if ($picked)
+                            <x-icon name="check" :size="12" />
+                        @else
+                            +
+                        @endif
+                        {{ $suggestion }}
                     </button>
                 @endforeach
             </div>

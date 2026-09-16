@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
+// Security notices are personal, never per business: only the account's own
+// sessions hear that a new device joined.
+Broadcast::channel('security.user.{userId}', function (User $user, int|string $userId): bool {
+    return $user->id === (int) $userId;
+});
+
 // Mind the type: the parameter comes from the channel NAME, so it arrives as
 // a string. Under strict_types an `int` throws a TypeError, the broadcaster
 // swallows it and answers 403 — nobody joins and the error shows nowhere.

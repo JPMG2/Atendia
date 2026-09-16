@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    {{-- security-alerts.js keys its private Echo channel on this id. --}}
+    <meta name="auth-user-id" content="{{ auth()->id() }}" />
 
     <title>{{ $title ?? config('app.name', 'Atendia') }}</title>
 
@@ -51,7 +53,7 @@
 
     {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
     own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/livewire-failures.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/livewire-failures.js'])
     @livewireStyles
 </head>
 {{-- data-*: config for livewire-failures.js — JS can resolve neither routes

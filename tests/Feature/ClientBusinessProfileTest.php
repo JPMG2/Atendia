@@ -32,6 +32,19 @@ beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
+test('every card wears the unsaved-changes pill wiring', function (): void {
+    // The owner typed a description, never hit that card's own Guardar and
+    // lost it (2026-09-16): each card now lights an amber pill on any
+    // keystroke and only its OWN successful save puts it out.
+    $this->actingAs(User::factory()->create()->refresh());
+
+    $response = $this->get(route('my-business'))->assertSuccessful();
+
+    expect(substr_count($response->getContent(), 'x-data="sectionDirty"'))->toBe(6)
+        ->and(substr_count($response->getContent(), "'is-idle': ! dirty"))->toBe(6)
+        ->and($response->getContent())->toContain(__('client.business.unsaved_pill'));
+});
+
 test('the profile screen sits behind the client panel lock', function (): void {
     $this->get(route('my-business'))->assertRedirect(route('login'));
 
@@ -426,6 +439,34 @@ test('the contact card hydrates from the business and saves through the connecti
         ->email->toBe('hola@negocio.com')
         ->web->toBe('https://negocio.com')
         ->whatsapp_number->toBe('+584140000000');
+});
+
+test('the contact card also edits the two whatsapp numbers', function (): void {
+    // They lived only in the wizard until the owner skipped that step and
+    // had no door left in the panel (2026-09-16).
+    $business = Business::factory()->create(['whatsapp_number' => '+584140000000']);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    Livewire::test('client.section-contact')
+        ->assertSet('form.whatsapp_number', '+584140000000')
+        ->set('form.whatsapp_number', '+549341512440')
+        ->set('form.fallback_whatsapp_number', '+549341555019')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($business->fresh())
+        ->whatsapp_number->toBe('+549341512440')
+        ->fallback_whatsapp_number->toBe('+549341555019');
+});
+
+test('the contact card rejects a malformed whatsapp number', function (): void {
+    $business = Business::factory()->create();
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    Livewire::test('client.section-contact')
+        ->set('form.whatsapp_number', 'no-es-un-numero')
+        ->call('save')
+        ->assertHasErrors(['whatsapp_number']);
 });
 
 test('the contact card rejects a malformed email and website', function (): void {

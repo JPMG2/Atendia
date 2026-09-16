@@ -44,7 +44,12 @@
             :value="old('email')"
             placeholder="vos@tunegocio.com"
             autocomplete="username"
+            x-ref="emailInput"
+            x-on:blur="mailHint = suggestEmail($event.target.value)"
+            x-on:input="mailHint = ''"
         />
+
+        <x-ui.email-suggest />
 
         <x-ui.input
             :label="__('Password')"
@@ -52,9 +57,43 @@
             type="password"
             alpine-error="password"
             icon="lock"
-            placeholder="Mínimo 8 caracteres"
+            placeholder="Ej. MiClave#2026"
             autocomplete="new-password"
+            x-on:input="pw = $event.target.value"
         />
+
+        {{-- The bar grows and warms as the checklist fills: one glance says
+        how close the password is before reading a single rule. --}}
+        <div class="pw-meter" x-bind:data-strength="pwStrength">
+            <div class="pw-meter-track" aria-hidden="true">
+                <div class="pw-meter-fill" x-bind:style="{ width: (pwScore / 4) * 100 + '%' }"></div>
+            </div>
+            <span
+                class="pw-meter-label"
+                x-text="pw === '' ? '' : pwScore <= 1 ? 'Débil' : pwScore < 4 ? 'Buena' : 'Fuerte'"
+            ></span>
+        </div>
+
+        {{-- Each rule checks itself off as the password meets it: the
+        pattern is taught by watching it happen, not by reading a hint. --}}
+        <ul class="pw-rules" aria-live="polite">
+            <li class="pw-rule" :class="{ 'is-ok': pw.length >= 8 }">
+                <x-icon name="check" :size="14" />
+                8 caracteres o más
+            </li>
+            <li class="pw-rule" :class="{ 'is-ok': /[A-ZÁÉÍÓÚÑÜ]/.test(pw) }">
+                <x-icon name="check" :size="14" />
+                Una letra mayúscula
+            </li>
+            <li class="pw-rule" :class="{ 'is-ok': /[0-9]/.test(pw) }">
+                <x-icon name="check" :size="14" />
+                Un número
+            </li>
+            <li class="pw-rule" :class="{ 'is-ok': /[^A-Za-z0-9ÁÉÍÓÚÑÜáéíóúñü]/.test(pw) }">
+                <x-icon name="check" :size="14" />
+                Un carácter especial (ej. ! @ #)
+            </li>
+        </ul>
 
         <x-ui.input
             :label="__('Confirm Password')"
@@ -75,7 +114,9 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <x-ui.button variant="primary">{{ __('Register') }}</x-ui.button>
+            {{-- type="submit" explicit: the component defaults to "button"
+            (right for wire:click) and a default here is a dead form. --}}
+            <x-ui.button type="submit" variant="primary">{{ __('Register') }}</x-ui.button>
         </div>
     </form>
 
@@ -96,6 +137,28 @@
             Alpine.data('registerGuard', () => ({
                 errors: {},
 
+                // What the live rule checklist watches while the user types.
+                pw: '',
+
+                // What the x-ui.email-suggest button shows; form-guard's
+                // global suggestEmail() fills it on blur.
+                mailHint: '',
+
+                // The four checklist rules folded into one score, so the
+                // meter and the checklist can never disagree.
+                get pwScore() {
+                    return [
+                        this.pw.length >= 8,
+                        /[A-ZÁÉÍÓÚÑÜ]/.test(this.pw),
+                        /[0-9]/.test(this.pw),
+                        /[^A-Za-z0-9ÁÉÍÓÚÑÜáéíóúñü]/.test(this.pw),
+                    ].filter(Boolean).length;
+                },
+
+                get pwStrength() {
+                    return this.pwScore <= 1 ? 'weak' : this.pwScore < 4 ? 'good' : 'strong';
+                },
+
                 guard(event) {
                     const values = Object.fromEntries(
                         ['name', 'email', 'password', 'password_confirmation'].map((field) => [
@@ -107,7 +170,7 @@
                     this.errors = validate(values, {
                         name: ['required', ['maxLength', 255], 'noMarkup'],
                         email: ['required', 'email', ['maxLength', 255]],
-                        password: ['required', ['minLength', 8]],
+                        password: ['required', ['minLength', 8], 'hasUpper', 'hasNumber', 'hasSymbol'],
                         password_confirmation: ['required', ['same', values.password]],
                     });
 

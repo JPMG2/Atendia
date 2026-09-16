@@ -4,14 +4,15 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
 use App\Models\Country;
 use App\Traits\HasNotifications;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Wizard step 5 — the connection, wired to {@see BusinessForm}: the two
+ * Wizard step 5 — the connection DATA, wired to {@see BusinessForm}: the two
  * WhatsApp numbers (the one the AI answers on, and a human's phone for what
- * it cannot answer) plus the business email, where the welcome lands.
- * The QR is still a prop: nothing connects yet.
+ * it cannot answer) plus the business email, where the welcome lands. No QR
+ * and no "connected" claim: the real switch-on lives in the panel, later.
  */
 new class extends Component
 {
@@ -44,10 +45,34 @@ new class extends Component
         return Country::dialCode($this->form->data?->country_id);
     }
 
-    /** Skipping saves nothing — "conectar después" is a promise kept. */
-    public function finish(bool $skipped = false): void
+    /**
+     * The three fields, validated and saved. `connected` stays false on
+     * purpose: nothing connects here — that claim returns with the real
+     * Cloud API switch-on.
+     */
+    public function finish(): void
     {
-        if (! $skipped) {
+        $notification = $this->form->saveConnection();
+
+        $this->dispatchChangeNotification($notification);
+
+        if ($notification->type === NotificationType::Error) {
+            return;
+        }
+
+        $this->dispatch('wizard:step-completed', step: 5, skipped: false, connected: false);
+    }
+
+    /**
+     * "Conectar después" defers the CONNECTION, never the data: whatever is
+     * typed saves on the way out — the owner lost her real numbers to the
+     * old discard (2026-09-16). `$discard` is her explicit choice when what
+     * is typed cannot be saved, and with no business yet there is nowhere
+     * to save into, so the exit stays open.
+     */
+    public function finishLater(bool $discard = false): void
+    {
+        if (! $discard && $this->form->hasConnectionData() && Auth::user()?->business !== null) {
             $notification = $this->form->saveConnection();
 
             $this->dispatchChangeNotification($notification);
@@ -57,7 +82,7 @@ new class extends Component
             }
         }
 
-        $this->dispatch('wizard:step-completed', step: 5, skipped: $skipped, connected: ! $skipped);
+        $this->dispatch('wizard:step-completed', step: 5, skipped: true, connected: false);
     }
 };
 ?>
@@ -108,46 +133,10 @@ new class extends Component
             />
         </div>
 
-        <div class="wizard-qrbox">
-            {{-- The mock QR from the maqueta, not an icon: a QR plate stays
-            light in dark mode, like the real one will. --}}
-            <div class="wizard-qr" aria-label="{{ __('wizard.whatsapp.qr_alt') }}">
-                <svg viewBox="0 0 100 100" fill="currentColor">
-                    <rect x="4" y="4" width="26" height="26" rx="3" />
-                    <rect x="10" y="10" width="14" height="14" fill="var(--ink-0)" />
-                    <rect x="70" y="4" width="26" height="26" rx="3" />
-                    <rect x="76" y="10" width="14" height="14" fill="var(--ink-0)" />
-                    <rect x="4" y="70" width="26" height="26" rx="3" />
-                    <rect x="10" y="76" width="14" height="14" fill="var(--ink-0)" />
-                    <rect x="40" y="8" width="8" height="8" />
-                    <rect x="52" y="16" width="8" height="8" />
-                    <rect x="40" y="28" width="8" height="8" />
-                    <rect x="8" y="40" width="8" height="8" />
-                    <rect x="24" y="44" width="8" height="8" />
-                    <rect x="40" y="44" width="8" height="8" />
-                    <rect x="56" y="40" width="8" height="8" />
-                    <rect x="72" y="44" width="8" height="8" />
-                    <rect x="88" y="40" width="8" height="8" />
-                    <rect x="44" y="58" width="8" height="8" />
-                    <rect x="60" y="56" width="8" height="8" />
-                    <rect x="80" y="60" width="8" height="8" />
-                    <rect x="44" y="74" width="8" height="8" />
-                    <rect x="58" y="82" width="8" height="8" />
-                    <rect x="74" y="76" width="8" height="8" />
-                    <rect x="88" y="88" width="8" height="8" />
-                </svg>
-            </div>
-            <ol class="wizard-qr-steps">
-                <li>{!! __('wizard.whatsapp.qr_step_1') !!}</li>
-                <li>{!! __('wizard.whatsapp.qr_step_2') !!}</li>
-                <li>{!! __('wizard.whatsapp.qr_step_3') !!}</li>
-            </ol>
-        </div>
-
         <div class="wizard-foot">
-            <x-ui.button variant="ghost" wire:click="finish(true)"> {{ __('wizard.whatsapp.later') }} </x-ui.button>
+            <x-ui.button variant="ghost" x-on:click="guardLater"> {{ __('wizard.whatsapp.later') }} </x-ui.button>
             <span class="wizard-spacer"></span>
-            <x-ui.button variant="primary" x-on:click="guard"> {{ __('wizard.whatsapp.scanned') }} </x-ui.button>
+            <x-ui.button variant="primary" x-on:click="guard"> {{ __('wizard.whatsapp.save') }} </x-ui.button>
         </div>
     </x-ui.card>
 </div>
@@ -177,6 +166,50 @@ new class extends Component
 
                 if (Object.keys(this.errors).length === 0) {
                     this.$wire.finish();
+                }
+            },
+
+            // "Conectar después" keeps whatever is typed: complete data saves
+            // on the way out; only an incomplete set asks before discarding.
+            async guardLater() {
+                const data = this.$wire.form.data ?? {};
+                const typed = [data.whatsapp_number, data.fallback_whatsapp_number, data.email].some(
+                    (value) => String(value ?? '').trim() !== '',
+                );
+
+                if (! typed) {
+                    this.$wire.finishLater(true);
+                    return;
+                }
+
+                this.errors = validate(
+                    {
+                        whatsapp_number: data.whatsapp_number,
+                        fallback_whatsapp_number: data.fallback_whatsapp_number,
+                        email: data.email,
+                    },
+                    {
+                        whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                        fallback_whatsapp_number: ['required', 'phone', ['minLength', 6], ['maxLength', 30]],
+                        email: ['required', 'email', ['maxLength', 255]],
+                    },
+                );
+
+                if (Object.keys(this.errors).length === 0) {
+                    this.$wire.finishLater();
+                    return;
+                }
+
+                if (
+                    await dialog.confirm({
+                        title: @js(__('wizard.whatsapp.discard_title')),
+                        message: @js(__('wizard.whatsapp.discard_message')),
+                        accept: @js(__('wizard.whatsapp.discard_accept')),
+                        type: 'warning',
+                    })
+                ) {
+                    this.errors = {};
+                    this.$wire.finishLater(true);
                 }
             },
         }));

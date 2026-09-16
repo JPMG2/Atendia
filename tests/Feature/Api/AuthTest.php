@@ -15,8 +15,8 @@ it('registra un usuario y devuelve un token de acceso', function (): void {
     $response = $this->postJson('/api/v1/register', [
         'name' => 'Ana Pérez',
         'email' => 'ana@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password#123',
+        'password_confirmation' => 'Password#123',
         'device_name' => 'iphone-de-ana',
     ]);
 
@@ -33,8 +33,8 @@ it('rechaza el registro con email duplicado', function (): void {
     $this->postJson('/api/v1/register', [
         'name' => 'Otro',
         'email' => 'dup@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password#123',
+        'password_confirmation' => 'Password#123',
     ])->assertStatus(422)->assertJsonValidationErrors('email');
 });
 

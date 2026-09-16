@@ -8,7 +8,13 @@ return [
 
     'title' => 'Alta de cliente',
     'progress' => 'Paso :current de :total',
-    'save_exit' => 'Guardar y salir',
+    'save_exit' => 'Salir al panel',
+
+    'exit_confirm' => [
+        'title' => '¿Salir con cambios sin guardar?',
+        'message' => 'Lo que escribiste en este paso todavía no se guardó y se pierde al salir.',
+        'accept' => 'Salir igual',
+    ],
     'continue' => 'Continuar',
     'optional' => 'Opcional',
 
@@ -33,8 +39,8 @@ return [
         ],
         5 => [
             'label' => 'Conexión',
-            'heading' => 'Conecta tu WhatsApp',
-            'lead' => 'El último paso: a partir de aquí, tu asistente atiende de verdad.',
+            'heading' => 'Los números de tu WhatsApp',
+            'lead' => 'Deja listos los números y el correo de tu negocio: la conexión se enciende desde el panel cuando quieras.',
         ],
     ],
 
@@ -113,19 +119,26 @@ return [
     ],
 
     'whatsapp' => [
-        'qr_alt' => 'Código QR de ejemplo',
-        'qr_step_1' => 'Abre <b>WhatsApp</b> en el teléfono del negocio.',
-        'qr_step_2' => 'Ve a <b>Dispositivos vinculados</b>.',
-        'qr_step_3' => 'Escanea este código y listo: tu asistente queda de guardia.',
-        'later' => 'Conectar más tarde',
-        'scanned' => 'Ya escaneé el código',
+        'discard_title' => '¿Salir sin completar?',
+        'discard_message' => 'Lo que escribiste está incompleto y no se puede guardar: al salir se pierde.',
+        'discard_accept' => 'Salir y descartar',
+        'later' => 'Completar después',
+        'save' => 'Guardar y continuar',
     ],
 
     'done' => [
         'heading' => 'Listo. Tu asistente ya responde por ti.',
         'text_connected' => 'Tu número quedó conectado. Lo que saltaste te espera en el panel, sin apuro.',
-        'text_pending' => 'Todo lo que cargaste quedó guardado. Conecta tu WhatsApp desde el panel cuando quieras.',
+        'text_pending' => 'Lo pendiente te espera en el panel. Conecta tu WhatsApp desde ahí cuando quieras.',
         'cta' => 'Ir a mi panel',
+        'recap' => [
+            'name' => 'Tu negocio: :name',
+            'activity' => 'Rubro y actividad',
+            'services' => '{0} Servicios|{1} Un servicio cargado|[2,*] :count servicios cargados',
+            'products' => '{0} Productos|{1} Un producto|[2,*] :count productos',
+            'phones' => 'Teléfonos de WhatsApp',
+            'email' => 'Correo del negocio',
+        ],
     ],
 
     'preview' => [

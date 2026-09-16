@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,13 @@ Route::get('/idioma/{locale}', function (string $locale) {
 
     return back();
 })->name('locale.switch');
+
+// "This wasn't me" in the new-device mail. Signed and unauthenticated on
+// purpose: the victim may hold no session while the intruder holds the only
+// live one. Worst misuse of a leaked link is kicking that device out.
+Route::get('/seguridad/dispositivos/{device}/cerrar', RevokeDeviceController::class)
+    ->middleware('signed')
+    ->name('security.devices.revoke');
 
 Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])

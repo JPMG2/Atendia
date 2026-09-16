@@ -15,6 +15,16 @@ declare(strict_types=1);
 
 return [
 
+    'password' => [
+        'show' => 'Mostrar la contraseña',
+        'hide' => 'Ocultar la contraseña',
+        'caps' => 'Bloq Mayús está activado',
+    ],
+
+    'email' => [
+        'suggest' => '¿Quisiste decir',
+    ],
+
     'combobox' => [
         'empty' => 'No hay resultados para esa búsqueda.',
         'loading' => 'Cargando opciones…',

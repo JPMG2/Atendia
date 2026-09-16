@@ -47,6 +47,43 @@ test('the input renders a left icon when given one', function (): void {
     expect(Blade::render('<x-ui.input icon="bell" />'))->toContain('<svg');
 });
 
+test('a password input ships the peek toggle and a text one does not', function (): void {
+    // Seeing what you typed is the difference between a typo caught and a
+    // login locked out; the toggle flips the type without ever submitting.
+    $password = Blade::render('<x-ui.input name="password" type="password" />');
+
+    expect($password)
+        ->toContain('field-peek')
+        ->toContain('type="button"')
+        ->toContain("showPw ? 'text' : 'password'")
+        ->toContain(__('forms.password.show'));
+
+    expect(Blade::render('<x-ui.input name="email" type="email" />'))->not->toContain('field-peek');
+});
+
+test('a password input warns about caps lock and a text one does not', function (): void {
+    // The classic saver: Caps Lock types SHOUTING into a masked field, so
+    // the field itself watches the modifier and says so while it happens.
+    $password = Blade::render('<x-ui.input name="password" type="password" />');
+
+    expect($password)
+        ->toContain('field-caps')
+        ->toContain("getModifierState?.('CapsLock')")
+        ->toContain(__('forms.password.caps'));
+
+    expect(Blade::render('<x-ui.input name="email" type="email" />'))->not->toContain('field-caps');
+});
+
+test('the email suggest button offers the fix and writes it back on click', function (): void {
+    // Shared by register and login; the detection lives in form-guard.js,
+    // this half only shows the hint and applies it to the field.
+    expect(Blade::render('<x-ui.email-suggest />'))
+        ->toContain('field-suggest')
+        ->toContain('type="button"')
+        ->toContain(__('forms.email.suggest'))
+        ->toContain('$refs.emailInput.value = mailHint');
+});
+
 /*
 |--------------------------------------------------------------------------
 | <x-ui.textarea> & <x-ui.select>

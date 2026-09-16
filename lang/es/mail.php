@@ -78,4 +78,35 @@ return [
         'reason' => 'Recibiste este correo porque esta dirección quedó como el contacto de :name en AtendIa.',
     ],
 
+    'challenge' => [
+        'subject' => ':code es tu código para entrar',
+        'preheader' => 'Alguien intenta entrar a tu cuenta desde un dispositivo nuevo. Este código lo confirma.',
+        'eyebrow' => 'Código de acceso',
+        'title' => 'Tu código para entrar',
+        'intro' => 'Hola :name, tu cuenta intenta iniciar sesión desde un dispositivo nuevo. Este es el código para confirmarlo.',
+        'body' => 'El código vence en 10 minutos y sirve una sola vez.',
+        'alert' => 'Si no intentaste entrar, no compartas este código con nadie y cambia tu contraseña.',
+        'closing' => 'Cuidar tu cuenta también es atenderte bien.',
+        'reason' => 'Recibiste este correo porque tu cuenta de AtendIa intentó iniciar sesión en un dispositivo nuevo.',
+    ],
+
+    'new_device' => [
+        'subject' => 'Nuevo inicio de sesión en tu cuenta',
+        'preheader' => 'Detectamos un acceso desde un dispositivo que no habías usado antes.',
+        'eyebrow' => 'Aviso de seguridad',
+        'title' => 'Nuevo inicio de sesión',
+        'intro' => 'Hola :name, tu cuenta inició sesión desde un dispositivo que no habíamos visto antes.',
+        'browser' => 'Navegador',
+        'ip' => 'Dirección IP',
+        'location' => 'Ubicación aproximada',
+        'time' => 'Fecha y hora',
+        'body_ok' => 'Si fuiste tú, no hay nada que hacer: vamos a recordar este dispositivo.',
+        'body_alert' => 'Si no reconoces este acceso, cambia tu contraseña ahora mismo.',
+        'not_me' => 'No fui yo — cerrar ese dispositivo',
+        'cta' => 'Cambiar mi contraseña',
+        'closing' => 'Cuidar tu cuenta también es atenderte bien.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque tu cuenta de AtendIa inició sesión en un dispositivo nuevo.',
+    ],
+
 ];

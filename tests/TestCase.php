@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -22,6 +23,23 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->guardAgainstProductionDatabase();
+        $this->fakeLeakedPasswordCheck();
+    }
+
+    /**
+     * Password::defaults() asks HIBP over the network whether a password
+     * leaked; the suite must never depend on that. Every password passes
+     * here — the test that proves the gate rebinds a failing verifier.
+     */
+    private function fakeLeakedPasswordCheck(): void
+    {
+        $this->app->bind(UncompromisedVerifier::class, fn (): UncompromisedVerifier => new class implements UncompromisedVerifier
+        {
+            public function verify($data): bool
+            {
+                return true;
+            }
+        });
     }
 
     private function guardAgainstProductionDatabase(): void

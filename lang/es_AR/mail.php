@@ -14,4 +14,13 @@ return [
         'alert' => 'Si no hiciste este cambio, entrá a tu panel y revisá tus datos de contacto.',
     ],
 
+    'challenge' => [
+        'alert' => 'Si no intentaste entrar, no compartas este código con nadie y cambiá tu contraseña.',
+    ],
+
+    'new_device' => [
+        'body_ok' => 'Si fuiste vos, no hay nada que hacer: vamos a recordar este dispositivo.',
+        'body_alert' => 'Si no reconocés este acceso, cambiá tu contraseña ahora mismo.',
+    ],
+
 ];

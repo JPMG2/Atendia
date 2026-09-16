@@ -44,6 +44,11 @@ new class extends Component {};
 
             <p class="toast-message" x-text="toast.message"></p>
 
+            {{-- Optional jump from the notice to the screen that solves it. --}}
+            <template x-if="toast.action">
+                <a class="toast-action" x-bind:href="toast.action.url" x-text="toast.action.label"></a>
+            </template>
+
             <button
                 type="button"
                 class="toast-close"
@@ -76,9 +81,13 @@ new class extends Component {};
 
                 const id = ++this.lastId;
 
+                // An action needs reading AND clicking: it earns extra life.
+                const action = detail?.action?.url && detail?.action?.label ? detail.action : null;
+
                 this.toasts.push({
                     id,
                     message,
+                    action,
                     type: this.types.includes(detail?.type) ? detail.type : 'info',
                     visible: false,
                 });
@@ -90,7 +99,7 @@ new class extends Component {};
                     if (toast) toast.visible = true;
                 });
 
-                setTimeout(() => this.dismiss(id), this.duration);
+                setTimeout(() => this.dismiss(id), action ? this.duration * 2 : this.duration);
             },
 
             dismiss(id) {

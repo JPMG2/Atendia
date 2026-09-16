@@ -93,8 +93,8 @@ test('a suggestion with an apostrophe renders a valid click expression', functio
     // The chip must reach the page as a safe JS literal — a raw quote would
     // close the wire:click string and break the expression.
     Livewire::test('business.step-services', ['activity' => $suggestion->activity->code])
-        ->assertSeeHtml('add('.Js::from("Corte D'Angelo")->toHtml().')')
-        ->call('add', "Corte D'Angelo")
+        ->assertSeeHtml('toggle('.Js::from("Corte D'Angelo")->toHtml().')')
+        ->call('toggle', "Corte D'Angelo")
         ->assertSet('services', ["Corte D'Angelo"]);
 });
 

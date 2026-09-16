@@ -22,7 +22,30 @@
         <x-ui.alert variant="success" icon="message-circle" class="mb-6"> {{ session('status') }} </x-ui.alert>
     @endif
 
-    <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5">
+    {{-- Same Mailcheck as the register: the typo that slipped in at
+    sign-up comes straight back here. The form also remembers the last
+    email used on this device, one typing less every day. --}}
+    <form
+        method="POST"
+        action="{{ route('login') }}"
+        class="flex flex-col gap-5"
+        x-data="{
+            mailHint: '',
+            recallEmail() {
+                try {
+                    return localStorage.getItem('atendia-login-email') ?? '';
+                } catch {
+                    return '';
+                }
+            },
+            rememberEmail(value) {
+                try {
+                    localStorage.setItem('atendia-login-email', value);
+                } catch {}
+            },
+        }"
+        x-on:submit="rememberEmail($refs.emailInput.value)"
+    >
         @csrf
 
         <x-ui.input
@@ -35,7 +58,13 @@
             required
             autofocus
             autocomplete="username"
+            x-ref="emailInput"
+            x-init="$el.value = $el.value || recallEmail()"
+            x-on:blur="mailHint = suggestEmail($event.target.value)"
+            x-on:input="mailHint = ''"
         />
+
+        <x-ui.email-suggest />
 
         <div>
             <x-ui.input

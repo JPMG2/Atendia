@@ -19,6 +19,16 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_the_login_screen_suggests_the_fix_for_a_typoed_email(): void
+    {
+        // Same Mailcheck as the register: the typo that slipped in at
+        // sign-up comes straight back here.
+        $this->get('/login')
+            ->assertSee('¿Quisiste decir')
+            ->assertSee('suggestEmail', false)
+            ->assertSee('mailHint', false);
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();

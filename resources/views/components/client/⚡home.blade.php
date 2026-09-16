@@ -43,7 +43,21 @@ new class extends Component
 
     <div class="page-head">
         <div>
-            <h1 class="page-head-title">{{ __('client.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="page-head-title">{{ __('client.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
+                {{-- The "conectar después" promise, kept in sight: the pill
+                dies the day isConnected() turns real. --}}
+                @if (($business = auth()->user()?->business) && ! $business->isConnected())
+                    <a
+                        href="{{ route('my-business.contacto') }}"
+                        wire:navigate
+                        class="status-tag is-warning"
+                    >
+                        <span class="dot"></span>
+                        {{ $business->name }} · {{ __('client.home.disconnected') }}
+                    </a>
+                @endif
+            </div>
             <p class="page-head-sub">
                 {{ $mode === 'new' ? __('client.home.sub_new') : __('client.home.sub_active') }}
             </p>

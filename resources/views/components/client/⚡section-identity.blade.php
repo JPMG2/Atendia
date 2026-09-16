@@ -38,8 +38,16 @@ new class extends Component
 ?>
 
 <x-ui.card class="bp-card" data-section="identidad" x-data="clientIdentityForm">
+    <div
+        x-data="sectionDirty"
+        x-on:input="markDirty()"
+        x-on:change="markDirty()"
+        x-on:click="trackSave($event)"
+        x-on:notify.window="settle($event.detail)"
+    >
     <div class="bp-card-head">
         <h2>{{ __('client.business.identity.title') }}</h2>
+            <span class="status-tag is-warning" x-show="dirty" x-cloak>{{ __('client.business.unsaved_pill') }}</span>
     </div>
     <p class="bp-card-sub">{{ __('client.business.identity.sub') }}</p>
 
@@ -89,12 +97,13 @@ new class extends Component
     </div>
 
     <div class="bp-card-actions">
-        <x-ui.button
+        <x-ui.button x-bind:class="{ 'is-idle': ! dirty }"
             variant="primary"
             size="sm"
             x-on:click="submit()"
         >
             {{ __('client.business.actions.save') }}</x-ui.button>
+    </div>
     </div>
 </x-ui.card>
 

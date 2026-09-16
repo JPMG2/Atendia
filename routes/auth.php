@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\DeviceChallengeController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -24,6 +25,17 @@ Route::middleware('guest')->group(function (): void {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    // Unknown-device gate: the e-mailed six-digit code. Throttled on top of
+    // the challenge's own five tries, so guessing has no oxygen at all.
+    Route::get('codigo-de-acceso', [DeviceChallengeController::class, 'show'])
+        ->name('device.challenge');
+    Route::post('codigo-de-acceso', [DeviceChallengeController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('device.challenge.verify');
+    Route::post('codigo-de-acceso/reenviar', [DeviceChallengeController::class, 'resend'])
+        ->middleware('throttle:3,1')
+        ->name('device.challenge.resend');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

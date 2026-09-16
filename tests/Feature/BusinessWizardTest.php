@@ -51,6 +51,41 @@ test('registering lands straight in the wizard', function (): void {
     ])->assertRedirect(route('onboarding', absolute: false));
 });
 
+test('the exit link never claims to save', function (): void {
+    // It is a plain exit — each step saves through its own button — so the
+    // old "Guardar y salir" label was a lie waiting for a victim, flagged
+    // by the owner on 2026-09-16.
+    actingAsClient();
+
+    $this->get('/alta')
+        ->assertSee(__('wizard.save_exit'))
+        ->assertDontSee('Guardar y salir');
+});
+
+test('the exit asks first when the step holds unsaved keystrokes', function (): void {
+    // Editor pattern: typing flips a dirty flag, a real save resets it, and
+    // the exit detours through dialog.confirm while it is up.
+    actingAsClient();
+
+    $this->get('/alta')
+        ->assertSee('exitToPanel', false)
+        ->assertSee('dirty = true', false)
+        ->assertSee('wizard:step-completed.window', false);
+});
+
+test('a second tap on a picked suggestion un-picks it', function (): void {
+    $sector = BusinessSector::factory()->create(['code' => 'gastronomia']);
+    $bakery = BusinessActivity::factory()->create(['code' => 'panaderia', 'business_sector_id' => $sector->id]);
+    SuggestedService::factory()->create(['business_activity_id' => $bakery->id, 'name' => 'Pan del día']);
+
+    Livewire::test('business.step-services', ['sector' => 'gastronomia', 'activity' => 'panaderia'])
+        ->call('toggle', 'Pan del día')
+        ->assertSet('services', ['Pan del día'])
+        ->call('toggle', 'Pan del día')
+        ->assertSet('services', [])
+        ->assertDispatched('wizard:services-updated', services: []);
+});
+
 test('the wizard shows every mounted step', function (): void {
     actingAsClient();
 
@@ -166,6 +201,34 @@ test('finishing step five connected shows the connected closing text', function 
         ->assertSet('step', 6)
         ->assertSet('connected', true)
         ->assertSee(__('wizard.done.text_connected'));
+});
+
+test('the closing screen recaps what the database actually holds', function (): void {
+    // Stripe-style receipt: saved items tick, pending ones wait — never
+    // again a generic "todo quedó guardado" over discarded data.
+    $client = actingAsClient();
+    $business = Business::factory()->create([
+        'name' => 'Clínica Vida',
+        'whatsapp_number' => '+54 3415124408',
+        'fallback_whatsapp_number' => '+54 3415550199',
+    ]);
+    $client->business()->associate($business)->save();
+
+    Livewire::test('business.wizard')
+        ->set('step', 6)
+        ->assertSee(__('wizard.done.recap.name', ['name' => 'Clínica Vida']))
+        ->assertSee(__('wizard.done.recap.phones'))
+        ->assertSee('wizard-recap', false)
+        ->assertSee('is-pending', false);
+});
+
+test('with no business the closing screen skips the recap', function (): void {
+    actingAsClient();
+
+    Livewire::test('business.wizard')
+        ->set('step', 6)
+        ->assertDontSee('wizard-recap', false)
+        ->assertSee(__('wizard.done.text_pending'));
 });
 
 test('skipping the connection shows the pending closing text', function (): void {
@@ -296,6 +359,21 @@ test('the services step suggests the sector\'s concrete services', function (): 
         ->assertDontSee('Servicio de otro rubro');
 });
 
+test('a picked suggestion chip reads as picked among the rest', function (): void {
+    // With many chips on screen the owner could not tell chosen from not
+    // (2026-09-16): the picked ones now flip to the solid is-on state.
+    $sector = BusinessSector::factory()->create(['code' => 'gastronomia']);
+    $bakery = BusinessActivity::factory()->create(['code' => 'panaderia', 'business_sector_id' => $sector->id]);
+    SuggestedService::factory()->create(['business_activity_id' => $bakery->id, 'name' => 'Pan del día']);
+    SuggestedService::factory()->create(['business_activity_id' => $bakery->id, 'name' => 'Facturas']);
+
+    Livewire::test('business.step-services', ['sector' => 'gastronomia', 'activity' => 'panaderia'])
+        ->assertDontSee('is-on', false)
+        ->call('add', 'Pan del día')
+        ->assertSee('is-on', false)
+        ->assertSee('aria-pressed', false);
+});
+
 test('a sector with nothing to suggest hides the suggestion block', function (): void {
     BusinessSector::factory()->create(['code' => 'automotor']);
 
@@ -326,11 +404,32 @@ test('the connection step saves numbers and email before reporting the connectio
         ->set('form.data.fallback_whatsapp_number', '+54 3415550199')
         ->set('form.data.email', 'hola@laesquina.com')
         ->call('finish')
-        ->assertDispatched('wizard:step-completed', step: 5, skipped: false, connected: true);
+        ->assertDispatched('wizard:step-completed', step: 5, skipped: false, connected: false);
 
     expect($business->refresh()->whatsapp_number)->toBe('+54 3415124408')
         ->and($business->fallback_whatsapp_number)->toBe('+54 3415550199')
         ->and($business->email)->toBe('hola@laesquina.com');
+});
+
+test('the connection saves even when the step mounted before the business was born', function (): void {
+    // /alta mounts every step before identity births the business, leaving
+    // a stale null recordId here. The owner lost her typed numbers to it
+    // live on 2026-09-16: the save must re-adopt the signed-in business.
+    $client = actingAsClient();
+
+    $component = Livewire::test('business.step-whatsapp');
+
+    $business = Business::factory()->create();
+    $client->business()->associate($business)->save();
+
+    $component
+        ->set('form.data.whatsapp_number', '+54 3415124408')
+        ->set('form.data.fallback_whatsapp_number', '+54 3415550199')
+        ->set('form.data.email', 'hola@laesquina.com')
+        ->call('finish')
+        ->assertDispatched('wizard:step-completed', step: 5, skipped: false, connected: false);
+
+    expect($business->refresh()->whatsapp_number)->toBe('+54 3415124408');
 });
 
 test('connecting for real demands the three fields; skipping demands none', function (): void {
@@ -346,12 +445,58 @@ test('connecting for real demands the three fields; skipping demands none', func
         ->assertHasErrors(['fallback_whatsapp_number', 'email']);
 });
 
-test('skipping the connection saves nothing and still moves on', function (): void {
+test('conectar después keeps a complete set of typed data', function (): void {
+    // The owner typed her two real numbers, chose "conectar después" (the
+    // only honest exit while the QR is a mock) and lost everything
+    // (2026-09-16). Deferring the connection must never discard the data.
+    $client = actingAsClient();
+    $business = Business::factory()->create();
+    $client->business()->associate($business)->save();
+
+    Livewire::test('business.step-whatsapp')
+        ->set('form.data.whatsapp_number', '+54 3415124408')
+        ->set('form.data.fallback_whatsapp_number', '+54 3415550199')
+        ->set('form.data.email', 'hola@laesquina.com')
+        ->call('finishLater')
+        ->assertDispatched('wizard:step-completed', step: 5, skipped: true, connected: false);
+
+    expect($business->refresh()->whatsapp_number)->toBe('+54 3415124408')
+        ->and($business->fallback_whatsapp_number)->toBe('+54 3415550199')
+        ->and($business->email)->toBe('hola@laesquina.com');
+});
+
+test('an explicit discard leaves the fields untouched and moves on', function (): void {
+    $client = actingAsClient();
+    $business = Business::factory()->create();
+    $client->business()->associate($business)->save();
+
+    Livewire::test('business.step-whatsapp')
+        ->set('form.data.whatsapp_number', '+54 3415124408')
+        ->call('finishLater', true)
+        ->assertDispatched('wizard:step-completed', step: 5, skipped: true, connected: false);
+
+    expect($business->refresh()->whatsapp_number)->toBeNull();
+});
+
+test('the skip exit still warns before discarding an incomplete set', function (): void {
+    // The dialog wiring lives in @script, which the test render strips:
+    // the button hook and the translated copy are what can be pinned.
+    actingAsClient();
+
+    Livewire::test('business.step-whatsapp')->assertSeeHtml('guardLater');
+
+    expect(__('wizard.whatsapp.discard_title'))->toBe('¿Salir sin completar?')
+        ->and(__('wizard.whatsapp.discard_accept'))->toBe('Salir y descartar');
+});
+
+test('skipping with no business yet saves nothing and still moves on', function (): void {
+    // Typed data with no business to hold it: the exit stays open instead
+    // of trapping the user behind a save that cannot land anywhere.
     actingAsClient();
 
     Livewire::test('business.step-whatsapp')
         ->set('form.data.whatsapp_number', '+54 9 341 512 4408')
-        ->call('finish', true)
+        ->call('finishLater')
         ->assertDispatched('wizard:step-completed', step: 5, skipped: true, connected: false);
 
     expect(Business::count())->toBe(0);

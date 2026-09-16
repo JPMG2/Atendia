@@ -47,6 +47,14 @@
             <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
         </div>
 
+        {{-- GitHub pattern: a fresh password is the moment to kick every
+        other session; LogoutRevokedDevice makes it bite on their next request. --}}
+        <x-ui.checkbox
+            name="logout_others"
+            :label="__('profile.password.logout_others')"
+            :description="__('profile.password.logout_others_hint')"
+        />
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

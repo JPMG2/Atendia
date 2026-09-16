@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Blaze\Blaze;
 use Livewire\Livewire;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -48,10 +50,33 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->configureLivewire();
+        $this->configurePasswords();
         Model::preventLazyLoading(! app()->isProduction());
         Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
         Model::preventAccessingMissingAttributes(! app()->isProduction());
         Blaze::optimize()->in(resource_path('views/components'));
+    }
+
+    /**
+     * ONE password policy for every door that sets one (register, reset,
+     * update, API): min 8, a number, a symbol, an uppercase letter, and
+     * never seen in a data leak (HIBP k-anonymity; tests swap the verifier
+     * so the suite stays off the network). Uppercase rides as a closure
+     * because the stock rule only knows mixedCase, which demands a lowercase.
+     */
+    private function configurePasswords(): void
+    {
+        Password::defaults(fn (): Password => Password::min(8)
+            ->numbers()
+            ->symbols()
+            ->uncompromised()
+            ->rules([
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! preg_match('/\p{Lu}/u', (string) $value)) {
+                        $fail('validation.password.uppercase')->translate();
+                    }
+                },
+            ]));
     }
 
     private function configureCommands(): void

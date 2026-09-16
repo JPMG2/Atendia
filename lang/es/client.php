@@ -15,6 +15,7 @@ return [
     'home' => [
         'title' => 'Inicio',
         'greeting' => 'Hola, :name',
+        'disconnected' => 'Sin conectar',
         'sub_new' => 'Tu asistente está casi listo. Esto es lo que falta.',
         'sub_active' => 'Así viene tu negocio hoy.',
         'mock_label' => 'Vista de maqueta',
@@ -84,6 +85,7 @@ return [
         'sub' => 'Todo lo que completes aquí ayuda a tu asistente a presentarse y responder mejor. Nada es obligatorio.',
         'optional' => 'opcional',
         'recommended' => 'Recomendado',
+        'unsaved_pill' => 'Cambios sin guardar',
 
         'identity' => [
             'title' => 'Identidad',

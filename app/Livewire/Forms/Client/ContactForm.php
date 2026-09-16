@@ -10,15 +10,21 @@ use App\Enums\NotificationType;
 use App\Events\BusinessConnectionSaved;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
+use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Contact card of "Mi negocio": the public channels besides WhatsApp, both
- * optional. Writes through the connection slice, the same socket the wizard
- * uses, sending only its own fields.
+ * Contact card of "Mi negocio": every channel the business is reached on —
+ * the two WhatsApp numbers included, so a skipped wizard step has a door
+ * here. All optional. Writes through the connection slice, the same socket
+ * the wizard uses, sending only its own fields.
  */
 class ContactForm extends BaseForm
 {
+    public ?string $whatsapp_number = null;
+
+    public ?string $fallback_whatsapp_number = null;
+
     public ?string $email = null;
 
     public ?string $web = null;
@@ -28,6 +34,8 @@ class ContactForm extends BaseForm
     {
         $data = $this->client()->personalData->data;
 
+        $this->whatsapp_number = $data->whatsapp_number;
+        $this->fallback_whatsapp_number = $data->fallback_whatsapp_number;
         $this->email = $data->email;
         $this->web = $data->web;
     }
@@ -72,6 +80,8 @@ class ContactForm extends BaseForm
     protected function transformServiceData(): array
     {
         return [
+            'whatsapp_number' => $this->whatsapp_number,
+            'fallback_whatsapp_number' => $this->fallback_whatsapp_number,
             'email' => $this->email,
             'web' => $this->web,
         ];
@@ -80,6 +90,10 @@ class ContactForm extends BaseForm
     protected function getValidationRules(?int $excludeId = null): array
     {
         return [
+            // Optional HERE on purpose: the wizard demands the trio to
+            // "connect"; the card just edits what exists.
+            'whatsapp_number' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
+            'fallback_whatsapp_number' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
             'email' => ['nullable', 'email:rfc', 'max:255'],
             'web' => ['nullable', 'url:http,https', 'max:255'],
         ];
@@ -91,6 +105,8 @@ class ContactForm extends BaseForm
     protected function getValidationAttributes(): array
     {
         return [
+            'whatsapp_number' => config('nicename.whatsapp_number'),
+            'fallback_whatsapp_number' => config('nicename.fallback_whatsapp_number'),
             'email' => config('nicename.email'),
             'web' => config('nicename.web'),
         ];

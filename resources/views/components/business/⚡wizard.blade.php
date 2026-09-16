@@ -1,6 +1,7 @@
 <?php
 
 use App\Classes\Main\AssistantPreview;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -43,6 +44,18 @@ new #[Layout('layouts::wizard')] class extends Component
         $this->done = [1];
         $this->step = 2;
         $this->businessName = auth()->user()?->business?->name ?? '';
+    }
+
+    /**
+     * The closing recap reads the BUSINESS, not the event mirrors: what the
+     * database holds is what actually got saved (Stripe-style receipt).
+     *
+     * @return array{name: string, activity: ?string, services: int, products: int, phones: bool, email: bool}|null
+     */
+    #[Computed]
+    public function summary(): ?array
+    {
+        return auth()->user()?->business?->wizardSummary();
     }
 
     public function goToStep(int $step): void
@@ -150,7 +163,31 @@ new #[Layout('layouts::wizard')] class extends Component
 };
 ?>
 
-<div>
+{{-- The dirty flag watches typing anywhere in the steps and resets when a
+step actually saves: the exit can then ask before losing real keystrokes. --}}
+<div
+    x-data="{
+        dirty: false,
+        async exitToPanel() {
+            if (
+                this.dirty &&
+                ! (await dialog.confirm({
+                    title: @js(__('wizard.exit_confirm.title')),
+                    message: @js(__('wizard.exit_confirm.message')),
+                    accept: @js(__('wizard.exit_confirm.accept')),
+                    type: 'warning',
+                }))
+            ) {
+                return;
+            }
+
+            window.location.href = @js(route('dashboard'));
+        },
+    }"
+    x-on:input="dirty = true"
+    x-on:change="dirty = true"
+    x-on:wizard:step-completed.window="dirty = false"
+>
     <header class="wizard-top">
         <div class="wizard-top-in">
             <a class="wizard-wordmark" href="{{ url('/') }}">Atend<b>ia</b></a>
@@ -159,8 +196,11 @@ new #[Layout('layouts::wizard')] class extends Component
             {{-- On screen the account stage does not count: steps 2..5 read as 1..4. --}}
             <span class="wizard-count">{!! __('wizard.progress', ['current' => '<b>'.(min($step, 5) - 1).'</b>', 'total' => '<b>4</b>']) !!}</span>
             <x-ui.theme-toggle />
+            {{-- It saves NOTHING (each step saves through its own button),
+            so the label never claims "guardar" and the dirty guard asks
+            before dropping unsaved keystrokes. Secondary on purpose. --}}
             @if ($step > 1)
-                <x-ui.button variant="primary" size="sm" :href="route('dashboard')">
+                <x-ui.button variant="secondary" size="sm" x-on:click="exitToPanel">
                     {{ __('wizard.save_exit') }}
                 </x-ui.button>
             @endif
@@ -206,6 +246,38 @@ new #[Layout('layouts::wizard')] class extends Component
                 <x-ui.card class="wizard-done">
                     <div class="wizard-seal"><x-icon name="check" :size="34" /></div>
                     <h2>{{ __('wizard.done.heading') }}</h2>
+
+                    {{-- Stripe-style receipt: what the database actually
+                    holds, item by item, instead of a generic reassurance. --}}
+                    @if ($this->summary)
+                        <ul class="wizard-recap">
+                            <li>
+                                <x-icon name="check" :size="16" />
+                                {{ __('wizard.done.recap.name', ['name' => $this->summary['name']]) }}
+                            </li>
+                            <li @class(['is-pending' => $this->summary['activity'] === null])>
+                                <x-icon :name="$this->summary['activity'] !== null ? 'check' : 'clock'" :size="16" />
+                                {{ __('wizard.done.recap.activity') }}
+                            </li>
+                            <li @class(['is-pending' => $this->summary['services'] === 0])>
+                                <x-icon :name="$this->summary['services'] > 0 ? 'check' : 'clock'" :size="16" />
+                                {{ trans_choice('wizard.done.recap.services', $this->summary['services'], ['count' => $this->summary['services']]) }}
+                            </li>
+                            <li @class(['is-pending' => $this->summary['products'] === 0])>
+                                <x-icon :name="$this->summary['products'] > 0 ? 'check' : 'clock'" :size="16" />
+                                {{ trans_choice('wizard.done.recap.products', $this->summary['products'], ['count' => $this->summary['products']]) }}
+                            </li>
+                            <li @class(['is-pending' => ! $this->summary['phones']])>
+                                <x-icon :name="$this->summary['phones'] ? 'check' : 'clock'" :size="16" />
+                                {{ __('wizard.done.recap.phones') }}
+                            </li>
+                            <li @class(['is-pending' => ! $this->summary['email']])>
+                                <x-icon :name="$this->summary['email'] ? 'check' : 'clock'" :size="16" />
+                                {{ __('wizard.done.recap.email') }}
+                            </li>
+                        </ul>
+                    @endif
+
                     <p>{{ $connected ? __('wizard.done.text_connected') : __('wizard.done.text_pending') }}</p>
                     <x-ui.button variant="primary" size="lg" :href="route('dashboard')">
                         {{ __('wizard.done.cta') }}

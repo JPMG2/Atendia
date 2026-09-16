@@ -416,6 +416,28 @@
   /* No native resize grip: the height is the component's, set by `rows`. */
   .field-control-multiline .field-input { resize:none; line-height:1.5; }
   .field-icon { color:var(--text-subtle); display:inline-flex; flex-shrink:0; }
+  /* The password peek: a real button, so it needs its chrome stripped. */
+  .field-peek { display:inline-flex; flex-shrink:0; border:0; background:none; padding:0; cursor:pointer; color:var(--text-subtle); transition:color var(--dur-fast) var(--ease-out); }
+  .field-peek:hover { color:var(--text-strong); }
+  /* Live password rules: each line turns jade as its requirement is met. */
+  .pw-meter { display:flex; align-items:center; gap:10px; margin-top:-8px; }
+  .pw-meter-track { flex:1; height:4px; border-radius:999px; background:var(--surface-sunken); overflow:hidden; }
+  .pw-meter-fill { height:100%; border-radius:999px; background:var(--danger); transition:width var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out); }
+  .pw-meter[data-strength="good"] .pw-meter-fill { background:var(--warning); }
+  .pw-meter[data-strength="strong"] .pw-meter-fill { background:var(--brand); }
+  .pw-meter-label { min-width:3em; text-align:right; font-size:var(--text-xs); font-weight:600; color:var(--danger); }
+  .pw-meter[data-strength="good"] .pw-meter-label { color:var(--warning); }
+  .pw-meter[data-strength="strong"] .pw-meter-label { color:var(--brand); }
+  .pw-rules { display:flex; flex-direction:column; gap:2px; margin-top:-8px; }
+  .pw-meter + .pw-rules { margin-top:-12px; }
+  .field-caps { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-xs); font-weight:600; color:var(--warning); }
+  .field-suggest { align-self:flex-start; display:inline-flex; gap:4px; margin-top:-12px; border:0; background:none; padding:0; cursor:pointer; font-size:var(--text-xs); color:var(--text-muted); }
+  .field-suggest span { color:var(--brand); font-weight:600; }
+  .field-suggest:hover span { text-decoration:underline; }
+  .pw-rule { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-xs); color:var(--text-subtle); transition:color var(--dur-fast) var(--ease-out); }
+  .pw-rule.is-ok { color:var(--brand); }
+  .pw-rule svg { opacity:.35; transition:opacity var(--dur-fast) var(--ease-out); }
+  .pw-rule.is-ok svg { opacity:1; }
   .field-hint { font-size:var(--text-xs); color:var(--text-muted); }
   .field-error-text { font-size:var(--text-xs); color:var(--danger); }
 
@@ -847,6 +869,12 @@
     transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
   }
   .toast-close:hover { background:var(--surface-sunken); color:var(--text-body); }
+  .toast-action {
+    flex-shrink:0; align-self:center; font-size:var(--text-sm); font-weight:600;
+    color:var(--brand); text-decoration:none; padding:4px 6px; border-radius:var(--radius-sm);
+    transition:background var(--dur-fast) var(--ease-out);
+  }
+  .toast-action:hover { background:var(--brand-soft); text-decoration:underline; }
 
   /* Transición de entrada/salida (Alpine aplica las clases) */
   .toast-trans { transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
@@ -1145,6 +1173,9 @@
   .bp-main > .bp-card { margin-bottom:12px; }
   .bp-card { padding:var(--space-5); }
   .bp-card-head { display:flex; align-items:center; gap:10px; }
+  /* Shopify-style: a save with nothing to save sits dimmed; the dirty flag
+     wakes it. Still clickable on purpose — dimming is a hint, not a lock. */
+  .bp-card-actions .btn.is-idle { opacity:.55; }
   .bp-card-head h2 { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong); }
   .bp-card-sub { color:var(--text-muted); font-size:var(--text-sm); margin:2px 0 10px; }
   .bp-chip { display:inline-flex; align-items:center; gap:5px; font-size:var(--text-xs); font-weight:600;
@@ -1956,8 +1987,10 @@
   .wizard-chip { border:1px solid var(--border-default); border-radius:var(--radius-pill);
                  padding:7px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text-body);
                  background:var(--surface-card); transition:all var(--dur-fast) var(--ease-out); }
-  .wizard-chip:hover { border-color:var(--brand); background:var(--brand-soft); }
-  .wizard-chip.is-on { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); }
+  /* Hover is border-only so the jade WASH belongs to selected alone: the
+     owner found solid jade too loud, and hover ≡ selected was unreadable. */
+  .wizard-chip:hover { border-color:var(--brand); }
+  .wizard-chip.is-on { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); font-weight:var(--weight-bold); }
   .wizard-suggest { margin:2px 0 10px; font-size:var(--text-sm); color:var(--text-subtle); }
   .wizard-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; min-height:34px; }
   .wizard-pill { display:inline-flex; align-items:center; gap:8px; background:var(--brand-soft);
@@ -1966,10 +1999,16 @@
                  font-weight:var(--weight-semibold); font-size:var(--text-sm); }
   .wizard-pill button { line-height:1; border-radius:var(--radius-pill); padding:2px 7px; color:inherit; }
   .wizard-pill button:hover { background:var(--surface-sunken); }
-  .wizard-pill-suggest { background:var(--surface-sunken); color:var(--text-muted);
+  /* inline-flex + nowrap: the check glyph must ride the SAME line as the
+     name, never push it onto a second one. */
+  .wizard-pill-suggest { display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+                         background:var(--surface-sunken); color:var(--text-muted);
                          border:1px dashed var(--border-default); border-radius:var(--radius-pill);
                          padding:7px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); }
   .wizard-pill-suggest:hover { border-color:var(--brand); color:var(--brand-soft-text); }
+  .wizard-pill-suggest.is-on { background:var(--brand-soft); border-style:solid; border-color:var(--brand);
+                               color:var(--brand-soft-text); font-weight:var(--weight-bold); }
+  .wizard-pill-suggest svg { flex:none; }
 
   /* Panel de confirmación del mapeo (paso 4): columna → destino. */
   .wizard-map { border:1px solid var(--border-subtle); border-radius:var(--radius-md);
@@ -1998,7 +2037,6 @@
                       font-size:var(--text-sm); }
 
   /* QR del paso 5. */
-  .wizard-qrbox { display:flex; gap:26px; align-items:center; flex-wrap:wrap; margin-top:6px; }
   /* La placa del QR queda clara también en oscuro, como un QR de verdad. */
   .wizard-qr { width:168px; height:168px; border-radius:var(--radius-md);
                border:1px solid var(--border-default); background:var(--ink-0);
@@ -2016,6 +2054,14 @@
   .wizard-done h2 { font-family:var(--font-display); font-weight:var(--weight-extra);
                     color:var(--text-strong); font-size:clamp(1.5rem,3vw,2rem); }
   .wizard-done p { margin:10px auto 26px; max-width:420px; color:var(--text-muted); }
+  .wizard-recap { list-style:none; margin:16px auto 4px; padding:0; display:inline-flex; flex-direction:column;
+    gap:7px; text-align:left; }
+  .wizard-recap li { display:flex; align-items:center; gap:9px; font-size:var(--text-sm); color:var(--text-body); }
+  .wizard-recap li svg { color:var(--brand); flex:none; }
+  .wizard-recap li.is-pending { color:var(--text-subtle); }
+  .wizard-recap li.is-pending svg { color:var(--text-subtle); }
+  a.status-tag { text-decoration:none; transition:filter var(--dur-fast) var(--ease-out); }
+  a.status-tag:hover { filter:brightness(.94); }
 
   /* Riel derecho: preview, tip y checklist. */
   .wizard-rail { display:flex; flex-direction:column; gap:18px; position:sticky; top:76px; }
