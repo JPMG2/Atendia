@@ -22,6 +22,7 @@ class ColumnMapper
      */
     private const array SYNONYMS = [
         'name' => ['nombre', 'producto', 'productos', 'articulo', 'articulos', 'item', 'items', 'nombre del producto', 'product', 'title'],
+        'code' => ['codigo', 'cod', 'cod.', 'codigo de producto', 'codigo interno', 'sku', 'referencia', 'ref', 'ref.', 'code'],
         'price' => ['precio', 'precio unitario', 'importe', 'valor', 'monto', 'pvp', 'price', '$'],
         'stock' => ['stock', 'cantidad', 'cant', 'cant.', 'unidades', 'existencia', 'existencias', 'disponible', 'disponibles', 'qty', 'quantity'],
         'description' => ['descripcion', 'detalle', 'detalles', 'observaciones', 'notas', 'description'],

@@ -30,6 +30,10 @@ abstract class BaseCatalogForm extends BaseForm
     #[Locked]
     public ?int $recordId = null;
 
+    /** What the last save touched — a child syncing relations picks it up. */
+    #[Locked]
+    public ?int $savedId = null;
+
     /**
      * The master's DTO, holding the form state.
      *
@@ -59,6 +63,7 @@ abstract class BaseCatalogForm extends BaseForm
         return $this->tryAction(function () use ($validated): NotificationDto {
 
             $model = app($this->wiring()->create)->handle($validated);
+            $this->savedId = $model->getKey();
 
             return $this->notificationService()->notificationFor($model, 'created');
 
@@ -76,6 +81,7 @@ abstract class BaseCatalogForm extends BaseForm
         return $this->tryAction(function () use ($validated): NotificationDto {
 
             $model = app($this->wiring()->update)->handle($this->recordId, $validated);
+            $this->savedId = $model->getKey();
 
             return $this->notificationService()->notificationFor($model, 'updated');
 

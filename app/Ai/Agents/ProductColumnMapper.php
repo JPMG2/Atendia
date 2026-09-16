@@ -28,7 +28,7 @@ use Stringable;
 #[Temperature(0.0)]
 class ProductColumnMapper implements Agent, HasStructuredOutput
 {
-    public const array TARGETS = ['name', 'price', 'stock', 'description', 'extra'];
+    public const array TARGETS = ['name', 'code', 'price', 'stock', 'description', 'extra'];
 
     use Promptable;
 
@@ -38,10 +38,11 @@ class ProductColumnMapper implements Agent, HasStructuredOutput
             You classify the columns of a small business inventory or price
             list spreadsheet, written in Spanish or any language. For each
             given column (its header plus sample values) pick exactly one
-            target: "name" (the product's name), "price" (unit price),
-            "stock" (available quantity), "description", or "extra" for
-            anything else — never invent another target and never drop a
-            column. At most one column may map to each of name, price, stock
+            target: "name" (the product's name), "code" (the shop's own
+            product code, SKU or reference), "price" (unit price), "stock"
+            (available quantity), "description", or "extra" for anything
+            else — never invent another target and never drop a column. At
+            most one column may map to each of name, code, price, stock
             and description; when in doubt, prefer "extra". Also return
             "label": the header with spelling mistakes fixed, in the header's
             own language ("Prescio" becomes "Precio"); when the header is

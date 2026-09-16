@@ -345,6 +345,20 @@ new class extends Component
         unset($this->services, $this->categories, $this->filtered, $this->flatRows, $this->groups, $this->shownRows, $this->listTotal, $this->priced);
     }
 
+    /** @return array<int, string> The sheet's type picker, suggested first. */
+    #[Computed]
+    public function typeOptions(): array
+    {
+        return $this->menu()?->typeOptions ?? [];
+    }
+
+    /** @return list<array<string, mixed>> The picked type's own fields. */
+    #[Computed]
+    public function sheetAttributes(): array
+    {
+        return $this->menu()?->attributeSet($this->form->data->service_type_id) ?? [];
+    }
+
     /**
      * The trade's suggested names — the same vocabulary the wizard chips
      * speak, straight from the signed-in business's primary activity. No
@@ -508,6 +522,19 @@ new class extends Component
                     <x-ui.button variant="ghost" size="sm" icon="plus" class="{{ $this->categories->isNotEmpty() ? 'mt-1' : '' }}"
                         wire:click="openCategoryFromSheet">{{ __('client.services.category_new_option') }}</x-ui.button>
                 </div>
+                {{-- The catalog mould: picking one grows the sheet with ITS
+                fields (a lab's fasting, a table's seats), curated in the
+                admin catalog — the sheet adapts, code never changes. --}}
+                @if ($this->typeOptions !== [])
+                    <x-catalog.form-row>
+                        <x-inputsform.combobox span="full" name="service_type_id" :label="__('client.services.field_type')"
+                            :hint="__('client.services.type_help')"
+                            wire:model.live="form.data.service_type_id"
+                            :value="$form->data->service_type_id"
+                            :options="$this->typeOptions" />
+                    </x-catalog.form-row>
+                    <x-client.attribute-fields :set="$this->sheetAttributes" :values="$form->data->attribute_values" />
+                @endif
                 <x-catalog.form-row>
                     <x-inputsform.input span="code" name="duration_minutes" :label="__('client.services.field_minutes')"
                         wire:model="form.data.duration_minutes"

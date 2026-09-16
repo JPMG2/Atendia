@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
@@ -163,4 +164,115 @@ test('many types share one modality without breaking the relation', function ():
 
     expect($producto->types()->count())->toBe(2)
         ->and($producto->isInUse())->toBeTrue();
+});
+
+test('the editor assigns attributes to the type with required, order and overrides', function (): void {
+    $modality = ServiceModality::factory()->create();
+    $people = ServiceAttribute::factory()->create(['name' => 'Personas']);
+    $zone = ServiceAttribute::factory()->create(['name' => 'Zona']);
+
+    Livewire::test('catalog.service-type')
+        ->set('form.data.code', 'mesa')
+        ->set('form.data.name', 'Mesa')
+        ->set('form.data.service_modality_id', $modality->id)
+        ->call('addAttributeRow')
+        ->call('addAttributeRow')
+        ->set('form.attributeRows.0.service_attribute_id', $zone->id)
+        ->set('form.attributeRows.1.service_attribute_id', $people->id)
+        ->set('form.attributeRows.1.is_required', true)
+        ->set('form.attributeRows.1.label_override', 'Comensales')
+        ->call('create')
+        ->assertHasNoErrors();
+
+    $type = ServiceType::query()->firstWhere('code', 'mesa');
+    $pivot = $type->serviceAttributes()->get();
+
+    // The row position IS the pivot order; the override belongs to this type.
+    expect($pivot->pluck('name')->all())->toBe(['Zona', 'Personas'])
+        ->and($pivot->firstWhere('id', $people->id)->pivot->is_required)->toBeTrue()
+        ->and($pivot->firstWhere('id', $people->id)->pivot->label_override)->toBe('Comensales')
+        ->and($pivot->firstWhere('id', $people->id)->pivot->sort_order)->toBe(1)
+        ->and($pivot->firstWhere('id', $zone->id)->pivot->sort_order)->toBe(0);
+});
+
+test('editing loads the set and a removed row leaves the pivot on save', function (): void {
+    $type = ServiceType::factory()->create();
+    $people = ServiceAttribute::factory()->create(['name' => 'Personas']);
+    $zone = ServiceAttribute::factory()->create(['name' => 'Zona']);
+    $type->serviceAttributes()->attach($people, ['sort_order' => 0, 'is_required' => true]);
+    $type->serviceAttributes()->attach($zone, ['sort_order' => 1]);
+
+    Livewire::test('catalog.service-type')
+        ->call('openEdit', $type->id)
+        ->assertSet('form.attributeRows.0.service_attribute_id', $people->id)
+        ->assertSet('form.attributeRows.0.is_required', true)
+        ->call('removeAttributeRow', 1)
+        ->call('update')
+        ->assertHasNoErrors();
+
+    // What left the screen left the pivot: the social rows contract.
+    expect($type->serviceAttributes()->pluck('service_attributes.id')->all())->toBe([$people->id]);
+});
+
+test('a half-picked attribute row never blocks saving the type itself', function (): void {
+    $modality = ServiceModality::factory()->create();
+
+    Livewire::test('catalog.service-type')
+        ->set('form.data.code', 'mesa')
+        ->set('form.data.name', 'Mesa')
+        ->set('form.data.service_modality_id', $modality->id)
+        ->call('addAttributeRow')
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect(ServiceType::query()->firstWhere('code', 'mesa')->serviceAttributes()->count())->toBe(0);
+});
+
+test('dragging an attribute row persists the new order on save', function (): void {
+    $type = ServiceType::factory()->create();
+    $people = ServiceAttribute::factory()->create(['name' => 'Personas']);
+    $zone = ServiceAttribute::factory()->create(['name' => 'Zona']);
+    $type->serviceAttributes()->attach($people, ['sort_order' => 0]);
+    $type->serviceAttributes()->attach($zone, ['sort_order' => 1]);
+
+    Livewire::test('catalog.service-type')
+        ->call('openEdit', $type->id)
+        ->call('reorderAttributeRows', 1, 0)
+        ->assertSet('form.attributeRows.0.service_attribute_id', $zone->id)
+        ->call('update')
+        ->assertHasNoErrors();
+
+    expect($type->serviceAttributes()->pluck('name')->all())->toBe(['Zona', 'Personas']);
+});
+
+test('one click suggests the type to every activity of its sector, forcing nobody', function (): void {
+    $sector = BusinessSector::factory()->create();
+    $type = ServiceType::factory()->create(['business_sector_id' => $sector->id]);
+    $activities = BusinessActivity::factory()->count(3)->create(['business_sector_id' => $sector->id]);
+    BusinessActivity::factory()->create();
+    $type->activities()->attach($activities->first()->id, ['sort_order' => 0]);
+
+    Livewire::test('catalog.service-type')
+        ->call('openEdit', $type->id)
+        ->call('applyToSector');
+
+    // The whole trade, existing suggestions kept, other sectors untouched.
+    expect($type->activities()->count())->toBe(3);
+
+    Livewire::test('catalog.service-type')
+        ->call('openEdit', $type->id)
+        ->call('applyToSector');
+
+    expect($type->activities()->count())->toBe(3);
+});
+
+test('suggesting to the sector needs a sector to aim at', function (): void {
+    $type = ServiceType::factory()->create(['business_sector_id' => null]);
+    $orphan = BusinessActivity::factory()->create();
+
+    Livewire::test('catalog.service-type')
+        ->call('openEdit', $type->id)
+        ->call('applyToSector');
+
+    expect($type->activities()->count())->toBe(0);
 });

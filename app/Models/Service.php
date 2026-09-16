@@ -22,7 +22,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * created THROUGH its owner (`$business->services()->create()`), so an id
  * arriving from a request can never move a service to another tenant.
  */
-#[Fillable(['service_type_id', 'service_category_id', 'name', 'description', 'prep_note', 'price_type', 'price', 'deposit', 'duration_minutes', 'is_active', 'is_featured'])]
+#[Fillable(['service_type_id', 'service_category_id', 'name', 'description', 'prep_note', 'price_type', 'price', 'deposit', 'duration_minutes', 'attribute_values', 'is_active', 'is_featured'])]
 class Service extends Model
 {
     /**
@@ -48,7 +48,7 @@ class Service extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['service_type_id', 'service_category_id', 'name', 'description', 'prep_note', 'price_type', 'price', 'deposit', 'duration_minutes', 'is_active', 'is_featured'])
+            ->logOnly(['service_type_id', 'service_category_id', 'name', 'description', 'prep_note', 'price_type', 'price', 'deposit', 'duration_minutes', 'attribute_values', 'is_active', 'is_featured'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('service');
@@ -65,6 +65,7 @@ class Service extends Model
             'price' => 'decimal:2',
             'deposit' => 'decimal:2',
             'duration_minutes' => 'integer',
+            'attribute_values' => 'array',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'deleted_at' => 'datetime',

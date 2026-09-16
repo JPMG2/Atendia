@@ -5,10 +5,13 @@ declare(strict_types=1);
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\Service;
+use App\Models\ServiceAttribute;
 use App\Models\ServiceCategory;
+use App\Models\ServiceType;
 use App\Models\SuggestedService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -24,6 +27,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     app()->setLocale('es');
+    // Saving the offer publishes knowledge, whose indexing would call the
+    // embeddings API.
+    Queue::fake();
 });
 
 /** A signed-in client whose business the screen reads and writes. */
@@ -410,6 +416,48 @@ test('cancelling the category detour lands back on the service sheet', function 
         ->assertSet('sheet', 'service')
         ->assertSet('form.data.name', 'Peinado de novia')
         ->assertSet('form.data.service_category_id', null);
+});
+
+test('picking a type grows the sheet with its curated fields and stores the values', function (): void {
+    $user = servicesScreenUser();
+    Service::factory()->create(['business_id' => $user->business->id, 'name' => 'Corte de caballero', 'service_type_id' => null]);
+
+    $type = ServiceType::factory()->create(['name' => 'Mesa', 'is_active' => true]);
+    $seats = ServiceAttribute::factory()->create(['name' => 'Personas', 'data_type' => 'number', 'is_active' => true]);
+    $fasting = ServiceAttribute::factory()->create(['name' => 'Requiere ayuno', 'data_type' => 'boolean', 'is_active' => true]);
+
+    // The pivot overrides win over the attribute's own words (Drupal pattern).
+    $type->serviceAttributes()->attach($seats->id, ['is_required' => true, 'sort_order' => 0, 'label_override' => 'Comensales']);
+    $type->serviceAttributes()->attach($fasting->id, ['is_required' => false, 'sort_order' => 1]);
+
+    Livewire::test('goods.index')
+        ->call('add')
+        ->assertSee(__('client.services.field_type'))
+        ->set('form.data.name', 'Mesa para dos')
+        ->set('form.data.service_type_id', $type->id)
+        ->assertSee('Comensales')
+        ->assertSee('Requiere ayuno')
+        // The required curated field holds the save until it is answered.
+        ->call('saveService')
+        ->assertHasErrors(['attribute_values.'.$seats->id])
+        ->set('form.data.attribute_values.'.$seats->id, '4')
+        ->call('saveService')
+        ->assertHasNoErrors();
+
+    $service = $user->business->services()->where('name', 'Mesa para dos')->sole();
+
+    // Values key by attribute id, never by code: renames cannot orphan them.
+    expect($service->service_type_id)->toBe($type->id)
+        ->and($service->attribute_values)->toBe([(string) $seats->id => '4']);
+});
+
+test('without catalog types the sheet simply keeps its universal core', function (): void {
+    $user = servicesScreenUser();
+    Service::factory()->create(['business_id' => $user->business->id, 'name' => 'Corte de caballero', 'service_type_id' => null]);
+
+    Livewire::test('goods.index')
+        ->call('add')
+        ->assertDontSee(__('client.services.field_type'));
 });
 
 test('closing the sheet never saves', function (): void {

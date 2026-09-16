@@ -13,8 +13,15 @@ use App\Models\Province;
 use App\Models\SuggestedService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    // Reconciling the offer publishes knowledge, whose indexing would call
+    // the embeddings API.
+    Queue::fake();
+});
 
 /*
 |--------------------------------------------------------------------------

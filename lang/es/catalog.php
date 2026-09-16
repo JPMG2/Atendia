@@ -338,6 +338,30 @@ return [
             'inactive' => 'Inactivo',
         ],
 
+        'attributes' => [
+            'title' => 'Atributos del tipo',
+            'hint' => 'Los campos que un negocio completa al adoptar este tipo. El orden de las filas es el orden en la ficha.',
+            'field' => 'Atributo',
+            'placeholder' => 'Elegir atributo…',
+            'label' => 'Etiqueta',
+            'label_placeholder' => 'Vacía = el nombre del atributo',
+            'hint_field' => 'Ayuda',
+            'hint_placeholder' => 'Vacía = la descripción del atributo',
+            'required' => 'Obligatorio',
+            'required_on' => 'Sí',
+            'required_off' => 'No',
+            'add' => 'Agregar atributo',
+            'remove' => 'Quitar este atributo',
+        ],
+
+        'suggest' => [
+            'hint' => 'Sugiere este tipo a todas las actividades de su rubro. Ninguna queda obligada: el catálogo sugiere, no impone.',
+            'button' => 'Sugerir a todo el rubro',
+            'done' => '{1}Sugerido a :count actividad nueva del rubro.|[2,*]Sugerido a :count actividades nuevas del rubro.',
+            'none' => 'Ya estaba sugerido a todo su rubro.',
+            'needs_sector' => 'Falta elegir el rubro del tipo.',
+        ],
+
         'fields' => [
             'code' => 'Clave',
             'code_hint' => 'Sin espacios ni acentos: consulta, pedido-llevar',

@@ -71,6 +71,35 @@ class ServiceAttribute extends Model implements DataTable
     }
 
     /**
+     * An empty `states` does NOT filter, on purpose: the combobox resolves the
+     * chosen option inside `options`, so hiding a deactivated row would blank
+     * the field when editing a pivot row that uses it.
+     *
+     * @param  list<bool>  $states  `is_active` values to include; empty = all
+     * @return array<int, array{value: int, label: string}>
+     */
+    public static function options(array $states = []): array
+    {
+        $query = self::query();
+
+        if ($states !== []) {
+            $query->whereIn('is_active', $states);
+        }
+
+        return $query
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (self $attribute): array => [
+                    'value' => $attribute->id,
+                    'label' => $attribute->name,
+                ],
+            )
+            ->all();
+    }
+
+    /**
      * Whether any service type already uses it.
      *
      * It marks the line of what can still be touched: unused, the attribute is

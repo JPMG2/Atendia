@@ -5,35 +5,30 @@ declare(strict_types=1);
 namespace App\Dto;
 
 use App\Interfaces\Catalog\FormData;
-use App\Models\Service;
+use App\Models\Product;
 
 /**
- * State of a service form — what the tenant offers ({@see Service}).
- *
- * Full row on purpose: the wizard only captures the name, the service editor
- * fills the rest later, both through this same shape. `business_id` never
- * travels here — a service is created THROUGH its owner, so a request can
- * never move it to another tenant.
+ * State of a product form ({@see Product}), full row on purpose: the import
+ * fills what the sheet knows, the editor the rest, through this same shape.
+ * `business_id` never travels here — a product is created THROUGH its owner,
+ * so a request can never move it to another tenant.
  */
-class ServiceDto implements FormData
+class ProductDto implements FormData
 {
     /**
      * Create a new class instance.
      */
     public function __construct(
         public ?int $service_type_id = null,
-        public ?int $service_category_id = null,
         public string $name = '',
+        public ?string $code = null,
         public ?string $description = null,
-        public ?string $prep_note = null,
-        public string $price_type = 'fixed',
         public ?string $price = null,
-        public ?string $deposit = null,
-        public ?int $duration_minutes = null,
+        public ?string $stock = null,
         /** @var array<int|string, mixed> Keyed by service_attribute_id. */
         public array $attribute_values = [],
+        public bool $in_stock = true,
         public bool $is_active = true,
-        public bool $is_featured = false,
     ) {}
 
     /**
@@ -56,17 +51,14 @@ class ServiceDto implements FormData
     {
         return [
             'service_type_id' => $this->service_type_id,
-            'service_category_id' => $this->service_category_id,
             'name' => $this->name,
+            'code' => $this->code,
             'description' => $this->description,
-            'prep_note' => $this->prep_note,
-            'price_type' => $this->price_type,
             'price' => $this->price,
-            'deposit' => $this->deposit,
-            'duration_minutes' => $this->duration_minutes,
+            'stock' => $this->stock,
             'attribute_values' => $this->attribute_values,
+            'in_stock' => $this->in_stock,
             'is_active' => $this->is_active,
-            'is_featured' => $this->is_featured,
         ];
     }
 
@@ -74,19 +66,16 @@ class ServiceDto implements FormData
     {
         return new self(
             service_type_id: DtoCast::toNullableId($data['service_type_id'] ?? null),
-            service_category_id: DtoCast::toNullableId($data['service_category_id'] ?? null),
             name: $data['name'] ?? '',
+            code: DtoCast::toNullableString($data['code'] ?? null),
             description: DtoCast::toNullableString($data['description'] ?? null),
-            prep_note: DtoCast::toNullableString($data['prep_note'] ?? null),
-            price_type: $data['price_type'] ?? 'fixed',
-            // Kept as a string: the column is decimal and Eloquent casts it to
-            // string too, so a float here would lose cents on the way through.
+            // Kept as strings: the columns are decimal and Eloquent casts
+            // them to string too, so a float here would lose cents en route.
             price: DtoCast::toNullableString($data['price'] ?? null),
-            deposit: DtoCast::toNullableString($data['deposit'] ?? null),
-            duration_minutes: DtoCast::toNullableId($data['duration_minutes'] ?? null),
+            stock: DtoCast::toNullableString($data['stock'] ?? null),
             attribute_values: is_array($data['attribute_values'] ?? null) ? $data['attribute_values'] : [],
+            in_stock: $data['in_stock'] ?? true,
             is_active: $data['is_active'] ?? true,
-            is_featured: $data['is_featured'] ?? false,
         );
     }
 
@@ -98,19 +87,14 @@ class ServiceDto implements FormData
     {
         return [
             'service_type_id' => $this->service_type_id,
-            'service_category_id' => $this->service_category_id,
             'name' => DtoCast::squish($this->name) ?? '',
+            'code' => DtoCast::squish($this->code),
             'description' => DtoCast::squish($this->description),
-            'prep_note' => DtoCast::squish($this->prep_note),
-            'price_type' => $this->price_type,
-            // A free or to-be-agreed service carries no amount: keeping one
-            // would make the assistant quote a price the type denies.
-            'price' => in_array($this->price_type, ['free', 'talk'], true) ? null : DtoCast::squish($this->price),
-            'deposit' => DtoCast::squish($this->deposit),
-            'duration_minutes' => $this->duration_minutes,
+            'price' => DtoCast::squish($this->price),
+            'stock' => DtoCast::squish($this->stock),
             'attribute_values' => $this->attribute_values,
+            'in_stock' => $this->in_stock,
             'is_active' => $this->is_active,
-            'is_featured' => $this->is_featured,
         ];
     }
 }

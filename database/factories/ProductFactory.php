@@ -24,6 +24,7 @@ class ProductFactory extends Factory
         return [
             'business_id' => Business::factory(),
             'name' => ucfirst($this->faker->unique()->words(2, true)),
+            'in_stock' => true,
             'is_active' => true,
         ];
     }

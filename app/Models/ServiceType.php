@@ -8,6 +8,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -108,6 +109,92 @@ class ServiceType extends Model implements DataTable
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The type's attribute set as the tenant sheet paints it: pivot overrides
+     * win over the attribute's own words. Image and file attributes stay out
+     * until value uploads exist — a field nobody can fill must not demand.
+     *
+     * @return list<array{id: int, label: string, hint: ?string, data_type: string, is_required: bool, is_multiple: bool, options: ?array<int, string>, unit: ?string}>
+     */
+    public function attributeSet(): array
+    {
+        return $this->serviceAttributes()
+            ->where('service_attributes.is_active', true)
+            ->whereNotIn('service_attributes.data_type', ['image', 'file'])
+            ->get()
+            ->map(fn (ServiceAttribute $attribute): array => [
+                'id' => $attribute->id,
+                'label' => $attribute->pivot->label_override ?? $attribute->name,
+                'hint' => $attribute->pivot->hint_override ?? $attribute->description,
+                'data_type' => array_key_exists($attribute->data_type, ServiceAttribute::dataTypes()) ? $attribute->data_type : ServiceAttribute::FALLBACK_DATA_TYPE,
+                'is_required' => (bool) $attribute->pivot->is_required,
+                'is_multiple' => $attribute->is_multiple,
+                'options' => $attribute->options,
+                'unit' => $attribute->unit,
+            ])
+            ->all();
+    }
+
+    /**
+     * The same set for a nullable id — what the sheets ask with the picked
+     * type in hand. No type simply means no extra fields.
+     *
+     * @return list<array{id: int, label: string, hint: ?string, data_type: string, is_required: bool, is_multiple: bool, options: ?array<int, string>, unit: ?string}>
+     */
+    public static function attributeSetFor(?int $typeId): array
+    {
+        if ($typeId === null) {
+            return [];
+        }
+
+        return self::query()->find($typeId)?->attributeSet() ?? [];
+    }
+
+    /**
+     * The picker's options, suggested types FIRST and every other active one
+     * below: the catalog suggests, it never forbids (GBP pattern). `$goods`
+     * splits the two screens: producto-modality types belong to /productos.
+     *
+     * @return array<int, string> id => name, insertion-ordered.
+     */
+    public static function adoptableBy(Business $business, bool $goods): array
+    {
+        $suggested = $business->suggestedServiceTypes()->pluck('id');
+
+        return self::query()
+            ->where('is_active', true)
+            ->whereHas('modality', fn (Builder $query): Builder => $goods
+                ? $query->where('code', 'producto')
+                : $query->where('code', '!=', 'producto'))
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->sortBy(fn (self $type): int => $suggested->contains($type->id) ? 0 : 1)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    /**
+     * Suggests this type to EVERY activity of its sector in one move — the
+     * "apply to the whole trade" the pivot loads one by one. Suggesting,
+     * never forcing: existing rows stay, nobody is obliged to adopt.
+     *
+     * @return int How many activities were newly suggested.
+     */
+    public function suggestToSector(): int
+    {
+        if ($this->business_sector_id === null) {
+            return 0;
+        }
+
+        $activityIds = BusinessActivity::query()
+            ->where('business_sector_id', $this->business_sector_id)
+            ->pluck('id')
+            ->all();
+
+        return count($this->activities()->syncWithoutDetaching($activityIds)['attached']);
     }
 
     /** A proper name: kept as the admin typed it, only the spacing is cleaned. */

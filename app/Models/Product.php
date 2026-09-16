@@ -10,6 +10,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -21,7 +22,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * is created THROUGH its owner (`$business->products()->create()`), so an id
  * arriving from a request can never move a product to another tenant.
  */
-#[Fillable(['name', 'description', 'price', 'stock', 'is_active'])]
+#[Fillable(['service_type_id', 'name', 'code', 'description', 'price', 'stock', 'attribute_values', 'in_stock', 'is_active'])]
 class Product extends Model
 {
     use BelongsToBusiness;
@@ -39,7 +40,7 @@ class Product extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'description', 'price', 'stock', 'is_active'])
+            ->logOnly(['service_type_id', 'name', 'code', 'description', 'price', 'stock', 'attribute_values', 'in_stock', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('product');
@@ -51,10 +52,23 @@ class Product extends Model
     protected function casts(): array
     {
         return [
+            'service_type_id' => 'integer',
             'price' => 'decimal:2',
             'stock' => 'decimal:2',
+            'attribute_values' => 'array',
+            'in_stock' => 'boolean',
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The catalog mould this product borrows its attribute set from.
+     *
+     * @return BelongsTo<ServiceType, $this>
+     */
+    public function serviceType(): BelongsTo
+    {
+        return $this->belongsTo(ServiceType::class);
     }
 }

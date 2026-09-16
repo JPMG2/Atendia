@@ -115,6 +115,44 @@ class AttributeValidator
         ];
     }
 
+    /** The house XSS fence, for rule builders living outside this class. */
+    public static function xssFree(): string
+    {
+        return 'regex:'.self::XSS_PREVENTION_PATTERN;
+    }
+
+    /** The bare digits-and-dot shape, for rule builders outside this class. */
+    public static function plainDecimal(): string
+    {
+        return 'regex:'.self::DECIMAL_PATTERN;
+    }
+
+    /**
+     * A long free-text column (a text column, not a varchar): same XSS fence
+     * as stringValid, caller-provided cap.
+     *
+     * @return array<int, string>
+     */
+    public static function longTextValid(int $max): array
+    {
+        return [
+            'sometimes',
+            'regex:'.self::XSS_PREVENTION_PATTERN,
+            'max:'.$max,
+        ];
+    }
+
+    /**
+     * The products spreadsheet, ONE definition for every screen accepting
+     * one (wizard step and products screen): the contract must never fork.
+     *
+     * @return array<int, string>
+     */
+    public static function spreadsheetUpload(): array
+    {
+        return ['required', 'file', 'mimes:xlsx,csv,txt', 'max:10240'];
+    }
+
     /**
      * Build a length-bounded string rule, required or optional.
      *

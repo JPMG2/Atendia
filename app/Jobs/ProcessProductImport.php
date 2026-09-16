@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Business\SyncOfferKnowledge;
 use App\Models\KnowledgeDocument;
 use App\Models\ProductImport;
 use App\Services\ProductImport\ImportFileReader;
@@ -44,6 +45,10 @@ class ProcessProductImport implements ShouldQueue
 
                 $this->upsertProducts($import, $rows);
                 $this->feedKnowledge($import, $rows);
+
+                // The imported rows must also reach the offer document the
+                // assistant reads for hand-typed products.
+                app(SyncOfferKnowledge::class)->handle($import->business, 'products');
 
                 $import->forceFill(['status' => 'done', 'total_rows' => count($rows)])->save();
             });
@@ -110,9 +115,11 @@ class ProcessProductImport implements ShouldQueue
 
                 match (true) {
                     $value === '' => null,
+                    $target === 'code' => $product->code = $this->claimCode($import, $product, $value),
                     $target === 'price' => $product->price = $this->toNumber($value),
                     $target === 'stock' => $product->stock = $this->toNumber($value),
-                    $target === 'description' => $product->description = mb_substr($value, 0, 255),
+                    // Meta's catalog cap; the column is text now, not varchar.
+                    $target === 'description' => $product->description = mb_substr($value, 0, 9999),
                     default => null,
                 };
             }
@@ -157,6 +164,23 @@ class ProcessProductImport implements ShouldQueue
             ],
             ['content' => $content],
         );
+    }
+
+    /**
+     * A code is a per-business identity (future retailer_id): when the
+     * sheet hands the same code to a second product, the tolerant path is
+     * keeping that row codeless, never failing the whole import.
+     */
+    private function claimCode(ProductImport $import, mixed $product, string $value): ?string
+    {
+        $code = mb_substr(trim($value), 0, 100);
+
+        $taken = $import->business->products()->withTrashed()
+            ->where('code', $code)
+            ->when($product->exists, fn ($query) => $query->whereKeyNot($product->id))
+            ->exists();
+
+        return $taken ? $product->code : $code;
     }
 
     /**

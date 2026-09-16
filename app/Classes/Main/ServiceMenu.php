@@ -7,10 +7,12 @@ namespace App\Classes\Main;
 use App\Actions\Business\SaveBusinessCategoryOrder;
 use App\Actions\Business\SaveBusinessService;
 use App\Actions\Business\SaveBusinessServiceCategory;
+use App\Actions\Business\SyncOfferKnowledge;
 use App\Actions\Business\ToggleBusinessService;
 use App\Models\Business;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceType;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -42,16 +44,42 @@ class ServiceMenu
     }
 
     /**
+     * The sheet's type picker: suggested types first, all below.
+     *
+     * @var array<int, string>
+     */
+    public array $typeOptions {
+        get => ServiceType::adoptableBy($this->business, goods: false);
+    }
+
+    /**
+     * @return list<array{id: int, label: string, hint: ?string, data_type: string, is_required: bool, is_multiple: bool, options: ?array<int, string>, unit: ?string}>
+     */
+    public function attributeSet(?int $typeId): array
+    {
+        return ServiceType::attributeSetFor($typeId);
+    }
+
+    /**
      * @param  array<string, mixed>  $data  Already validated by the calling form.
      */
     public function save(array $data, ?int $id = null): Service
     {
-        return app(SaveBusinessService::class)->handle($this->business, $data, $id);
+        $service = app(SaveBusinessService::class)->handle($this->business, $data, $id);
+
+        // Every offer change reaches the assistant's knowledge in the act.
+        app(SyncOfferKnowledge::class)->handle($this->business, 'services');
+
+        return $service;
     }
 
     public function toggle(int $id): Service
     {
-        return app(ToggleBusinessService::class)->handle($this->business, $id);
+        $service = app(ToggleBusinessService::class)->handle($this->business, $id);
+
+        app(SyncOfferKnowledge::class)->handle($this->business, 'services');
+
+        return $service;
     }
 
     public function addCategory(string $name): ServiceCategory

@@ -239,7 +239,7 @@ class BusinessForm extends BaseForm
     {
         Validator::make(
             ['upload' => $file],
-            ['upload' => ['required', 'file', 'mimes:xlsx,csv,txt', 'max:10240']],
+            ['upload' => AttributeValidator::spreadsheetUpload()],
             [],
             ['upload' => __('wizard.fields.import_file')],
         )->validate();

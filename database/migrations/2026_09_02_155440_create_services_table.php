@@ -51,6 +51,10 @@ return new class extends Migration
 
             $table->unsignedSmallInteger('duration_minutes')->nullable();
 
+            // Values of the type's attribute set, keyed by service_attribute_id
+            // (never by code: renaming a code must not orphan values).
+            $table->jsonb('attribute_values')->nullable();
+
             $table->boolean('is_active')->default(true)->comment('Dejar de ofrecerlo sin borrarlo');
 
             // Pinned first on the list and when the assistant offers.

@@ -10,7 +10,9 @@ use App\Dto\ServiceDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Service;
+use App\Models\ServiceType;
 use App\Rules\AttributeValidator;
+use App\Rules\AttributeValueRules;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -58,6 +60,9 @@ class ServiceForm extends BaseForm
 
         $validated = $this->validateServiceData($this->editingId);
 
+        // The empty keys validation needed are noise on the stored row.
+        $validated['attribute_values'] = AttributeValueRules::strip($validated['attribute_values'] ?? []);
+
         return $this->tryAction(function () use ($menu, $validated): NotificationDto {
 
             $service = $menu->save($validated, $this->editingId);
@@ -80,7 +85,16 @@ class ServiceForm extends BaseForm
 
     protected function transformServiceData(): array
     {
-        return $this->data->toPayload();
+        $payload = $this->data->toPayload();
+        $payload['attribute_values'] = AttributeValueRules::normalize($this->attributeSet(), $this->data->attribute_values);
+
+        return $payload;
+    }
+
+    /** The picked type's attribute set — what the dynamic rules hang on. */
+    private function attributeSet(): array
+    {
+        return ServiceType::attributeSetFor($this->data->service_type_id);
     }
 
     protected function getValidationRules(?int $excludeId = null): array
@@ -96,6 +110,7 @@ class ServiceForm extends BaseForm
                     ->ignore($excludeId),
             ],
             'service_category_id' => ['nullable', 'integer', Rule::exists('service_categories', 'id')->where('business_id', $businessId)],
+            'service_type_id' => ['nullable', 'integer', Rule::exists('service_types', 'id')->where('is_active', true)],
             'price_type' => ['required', Rule::in(Service::PRICE_TYPES)],
             'price' => [...AttributeValidator::numericDecimal(false), 'max:9999999999'],
             'deposit' => [...AttributeValidator::numericDecimal(false), 'max:9999999999'],
@@ -104,6 +119,7 @@ class ServiceForm extends BaseForm
             'prep_note' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            ...AttributeValueRules::rules($this->attributeSet()),
         ];
     }
 
@@ -115,6 +131,7 @@ class ServiceForm extends BaseForm
         return [
             'name' => __('client.services.field_name'),
             'service_category_id' => __('client.services.field_category'),
+            'service_type_id' => __('client.services.field_type'),
             'price_type' => __('client.services.field_price_type'),
             'price' => __('client.services.field_amount'),
             'deposit' => __('client.services.field_deposit'),
@@ -123,6 +140,7 @@ class ServiceForm extends BaseForm
             'prep_note' => __('client.services.field_prep'),
             'is_active' => __('client.services.offered'),
             'is_featured' => __('client.services.featured'),
+            ...AttributeValueRules::attributes($this->attributeSet()),
         ];
     }
 }

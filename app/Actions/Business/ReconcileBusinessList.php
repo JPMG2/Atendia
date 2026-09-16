@@ -56,6 +56,11 @@ abstract class ReconcileBusinessList
             $changed = $changed || $row->wasRecentlyCreated || $row->wasChanged();
         }
 
+        if ($changed) {
+            // The wizard's lists feed the assistant like the editor does.
+            app(SyncOfferKnowledge::class)->handle($business, $relation);
+        }
+
         return $changed;
     }
 }

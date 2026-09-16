@@ -75,7 +75,8 @@ test('the job turns the mapped core into products and every column into knowledg
         ->price->toBe('15000.50')
         ->and($import->fresh()->status)->toBe('done');
 
-    $document = KnowledgeDocument::query()->sole();
+    // The job now writes TWO documents: the raw sheet and the offer one.
+    $document = KnowledgeDocument::query()->where('source_type', 'import')->sole();
 
     expect($document->business_id)->toBe($business->id)
         ->and($document->source_type)->toBe('import')
@@ -95,8 +96,8 @@ test('re-importing the same file replaces its knowledge instead of duplicating i
     $second = importOnDisk($business, [['Producto'], ['Pan integral']], $mapping);
     new ProcessProductImport($second->id)->handle(app(ImportFileReader::class));
 
-    expect(KnowledgeDocument::query()->count())->toBe(1)
-        ->and(KnowledgeDocument::query()->sole()->content)->toContain('Pan integral');
+    expect(KnowledgeDocument::query()->where('source_type', 'import')->count())->toBe(1)
+        ->and(KnowledgeDocument::query()->where('source_type', 'import')->sole()->content)->toContain('Pan integral');
 });
 
 test('confirmed fixes rewrite the name for both products and knowledge', function (): void {
@@ -119,8 +120,8 @@ test('confirmed fixes rewrite the name for both products and knowledge', functio
 
     // Products and knowledge must tell the SAME corrected name.
     expect($business->products()->pluck('name')->all())->toBe(['Eco doppler'])
-        ->and(KnowledgeDocument::query()->sole()->content)->toContain('Eco doppler')
-        ->and(KnowledgeDocument::query()->sole()->content)->not->toContain('Eco dobler');
+        ->and(KnowledgeDocument::query()->where('source_type', 'import')->sole()->content)->toContain('Eco doppler')
+        ->and(KnowledgeDocument::query()->where('source_type', 'import')->sole()->content)->not->toContain('Eco dobler');
 });
 
 test('an import never deletes what the business already loaded', function (): void {
@@ -146,7 +147,7 @@ test('with every column steered to extra there are no products, but the knowledg
     new ProcessProductImport($import->id)->handle(app(ImportFileReader::class));
 
     expect($business->products()->count())->toBe(0)
-        ->and(KnowledgeDocument::query()->sole()->content)->toContain('Algo importante')
+        ->and(KnowledgeDocument::query()->where('source_type', 'import')->sole()->content)->toContain('Algo importante')
         ->and($import->fresh()->status)->toBe('done');
 });
 

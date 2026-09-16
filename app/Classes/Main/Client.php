@@ -20,6 +20,7 @@ class Client
         public readonly ?Schedule $schedule = null,
         public readonly ?SocialMedia $socialMedia = null,
         public readonly ?ServiceMenu $serviceMenu = null,
+        public readonly ?Inventory $inventory = null,
     ) {}
 
     /**
@@ -37,6 +38,7 @@ class Client
             $business === null ? null : new Schedule($business),
             $business === null ? null : new SocialMedia($business),
             $business === null ? null : new ServiceMenu($business),
+            $business === null ? null : new Inventory($business),
         );
     }
 

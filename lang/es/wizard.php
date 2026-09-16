@@ -104,6 +104,7 @@ return [
         'queued' => '✓ :file — :rows productos en cola. Tu asistente los está aprendiendo.',
         'targets' => [
             'name' => 'Nombre del producto',
+            'code' => 'Código',
             'price' => 'Precio',
             'stock' => 'Cantidad',
             'description' => 'Descripción',

@@ -85,6 +85,11 @@ class ServiceModality extends Model implements DataTable
         return mb_strtolower(trim($value));
     }
 
+    public static function idFromCode(string $code): ?int
+    {
+        return self::query()->where('code', $code)->value('id');
+    }
+
     protected function name(): Attribute
     {
         return Attribute::make(
