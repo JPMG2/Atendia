@@ -10,9 +10,16 @@ use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
+
+// The profile now syncs into the knowledge base on save: fake the queue or
+// the indexing job would ride the network for embeddings.
+beforeEach(function (): void {
+    Queue::fake();
+});
 
 /*
 |--------------------------------------------------------------------------

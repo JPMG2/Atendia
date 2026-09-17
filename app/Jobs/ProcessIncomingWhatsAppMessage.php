@@ -7,10 +7,12 @@ namespace App\Jobs;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\GuardVerdict;
 use App\Enums\MessageDirection;
+use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
+use App\Services\Knowledge\KnowledgeEmbedder;
 use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -85,9 +87,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        // Best effort, never at the reply's expense: the 👍 "heard you", the
-        // read receipt and the early "typing…" while the model thinks.
-        rescue(fn () => $evolution->react($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId, '👍'), report: false);
+        // Best effort, never at the reply's expense: the read receipt and the
+        // early "typing…" while the model thinks. No auto-reactions: a thumbs
+        // up on a QUESTION reads wrong (owner's call, 2026-09-17).
         rescue(fn () => $evolution->markRead($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId), report: false);
         rescue(fn () => $evolution->markComposing($this->instance, $this->from), report: false);
 
@@ -109,6 +111,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage);
             $this->rememberForDigest($business, $text, $reply);
+
+            WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
         });
     }
 
@@ -118,12 +122,17 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      */
     private function rememberExchange(Conversation $conversation, string $question, string $reply, ?Usage $usage): void
     {
-        $conversation->messages()->create([
+        $inbound = $conversation->messages()->create([
             'direction' => MessageDirection::In,
             'wa_message_id' => $this->messageId,
             'body' => $question,
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
+
+        // Best effort: search is a luxury, the stored thread is not.
+        rescue(fn () => $inbound->update([
+            'embedding' => app(KnowledgeEmbedder::class)->embedOne($question),
+        ]), report: false);
         // The exchange's bill lives on the reply row: it is what the plan
         // caps will be priced against.
         $conversation->messages()->create([
@@ -140,8 +149,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     }
 
     /**
-     * The owner's nightly digest reads from this short-lived tally: until
-     * the conversations table exists, cache is the only ledger of the day.
+     * The owner's nightly digest reads from this short-lived tally: cheaper
+     * than re-querying the day's threads, and gone by itself after sending.
      */
     private function rememberForDigest(Business $business, string $question, string $reply): void
     {

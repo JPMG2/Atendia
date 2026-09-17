@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** One turn of a thread: the customer's text or the assistant's reply. */
-#[Fillable(['business_id', 'conversation_id', 'direction', 'wa_message_id', 'body', 'prompt_tokens', 'completion_tokens', 'audio_seconds'])]
+#[Fillable(['business_id', 'conversation_id', 'direction', 'wa_message_id', 'body', 'prompt_tokens', 'completion_tokens', 'audio_seconds', 'embedding'])]
 class ConversationMessage extends Model
 {
     use BelongsToBusiness;
@@ -28,6 +28,7 @@ class ConversationMessage extends Model
     {
         return [
             'direction' => MessageDirection::class,
+            'embedding' => 'array',
         ];
     }
 

@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -26,6 +27,8 @@ uses(RefreshDatabase::class);
 */
 
 beforeEach(function (): void {
+    // The profile sync queues an indexing job on save: faked, no network.
+    Queue::fake();
     app()->setLocale('es');
 });
 

@@ -26,6 +26,9 @@ return new class extends Migration
             $table->unsignedInteger('prompt_tokens')->nullable()->comment('Tokens de entrada del intercambio (solo filas out; suma sus pasadas): el costo real que decide los paquetes');
             $table->unsignedInteger('completion_tokens')->nullable()->comment('Tokens de salida del intercambio (solo filas out)');
             $table->unsignedSmallInteger('audio_seconds')->nullable()->comment('Duración de la nota de voz transcripta (solo filas in de audio)');
+            // Same space as the RAG chunks (model + dimensions from rag.php):
+            // powers "who asked about X" search over customer questions.
+            $table->vector('embedding', dimensions: config('rag.embedding.dimensions'))->nullable()->index();
             $table->timestamps();
 
             // The thread reads oldest-first; id already carries that order.

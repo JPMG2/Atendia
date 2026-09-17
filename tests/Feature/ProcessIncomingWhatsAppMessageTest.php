@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\MessageDirection;
+use App\Events\WhatsAppExchangeArrived;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Transcription;
@@ -23,6 +26,13 @@ beforeEach(function (): void {
     config()->set('ai.providers.openai.key', 'test-openai');
 
     Cache::flush();
+
+    // The inbound embedding is best effort, but the suite never rides the
+    // network: the embedder is stubbed for every path that stores a turn.
+    $this->mock(KnowledgeEmbedder::class)
+        ->shouldReceive('embedOne')
+        ->andReturn(array_fill(0, 1536, 0.001))
+        ->byDefault();
 });
 
 /** @param  bool  $flagged  what the faked moderation endpoint answers */
@@ -95,18 +105,17 @@ test('a job outrun by a newer message dies silently instead of double-replying',
     expect(sentTexts())->toBeEmpty();
 });
 
-test('the customer message gets a thumbs up and is marked as read before the reply', function (): void {
+test('the customer message is marked as read before the reply, and never auto-reacted', function (): void {
     fakeWhatsAppHttp();
     Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
     AsistenteAtendia::fake(['…', 'Listo.']);
 
     runIncoming('Hola', 'MSG-7');
 
-    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/message/sendReaction/atendia-demo')
-        && $request['reaction'] === '👍'
-        && $request['key']['id'] === 'MSG-7');
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/chat/markMessageAsRead/atendia-demo')
         && $request['readMessages'][0]['id'] === 'MSG-7');
+    // A thumbs up on a question reads wrong: the owner killed the idea live.
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/message/sendReaction/'));
 });
 
 test('the exchange is persisted as a thread the assistant will remember', function (): void {
@@ -135,6 +144,24 @@ test('the exchange is persisted as a thread the assistant will remember', functi
         // but the columns must be written, never left null.
         ->and($turns[1]->prompt_tokens)->not->toBeNull()
         ->and($turns[1]->completion_tokens)->not->toBeNull();
+});
+
+test('a new exchange is broadcast to the business channel and the question keeps its embedding', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Listo.']);
+    Event::fake([WhatsAppExchangeArrived::class]);
+
+    runIncoming('¿Tienen turnos?');
+
+    $conversation = Conversation::query()->sole();
+
+    Event::assertDispatched(
+        WhatsAppExchangeArrived::class,
+        fn (WhatsAppExchangeArrived $event): bool => $event->conversationId === $conversation->id,
+    );
+
+    expect($conversation->messages()->whereNotNull('embedding')->count())->toBe(1);
 });
 
 test('a second message from the same contact grows the same thread', function (): void {

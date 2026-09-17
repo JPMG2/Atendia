@@ -330,4 +330,19 @@ return [
         'sub' => 'Así le responde tu asistente a un cliente, con lo que ya cargaste.',
         'empty' => 'Carga tus servicios o productos y mira cómo responde tu asistente.',
     ],
+
+    'conversations' => [
+        'title' => 'Conversaciones',
+        'sub' => 'Todo lo que tu asistente conversa con tus clientes.',
+        'search' => 'Buscar por nombre o teléfono',
+        'empty_title' => 'Todavía no hay conversaciones',
+        'empty_body' => 'Cuando tu asistente atienda el WhatsApp, aquí verás cada conversación.',
+        'select' => 'Elige una conversación para leerla.',
+        'read_only' => 'Solo lectura: tu asistente responde por ti.',
+        'assistant_prefix' => 'Asistente:',
+        'anonymous' => 'Sin nombre',
+        'today' => ':count hoy',
+        'semantic' => 'Resultados por significado',
+        'back' => 'Volver',
+    ],
 ];

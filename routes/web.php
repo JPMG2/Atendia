@@ -59,6 +59,11 @@ Route::get('/whatsapp', fn () => view('whatsapp'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('whatsapp');
 
+// Every thread the assistant holds with the business's customers.
+Route::get('/conversaciones', fn () => view('conversations'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('conversations');
+
 // Client onboarding wizard. It writes real data now, so it sits behind the
 // client-panel lock. No 'verified': the welcome tour must not wait for the
 // verification mail.

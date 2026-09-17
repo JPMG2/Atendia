@@ -32,6 +32,8 @@ class SaveBusinessSchedule
         }
 
         // The cached relation still holds the old week; the next read reloads.
+        app(SyncProfileKnowledge::class)->handle($business);
+
         return $business->unsetRelation('hours');
     }
 }

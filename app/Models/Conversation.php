@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * One WhatsApp thread between a business and one customer. The reply
@@ -39,5 +40,16 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ConversationMessage::class);
+    }
+
+    /**
+     * The inbox row's preview: one eager load for the whole list instead of
+     * a query per thread.
+     *
+     * @return HasOne<ConversationMessage, $this>
+     */
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(ConversationMessage::class)->latestOfMany();
     }
 }

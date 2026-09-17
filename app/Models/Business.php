@@ -308,6 +308,14 @@ class Business extends Model
     }
 
     /**
+     * @return HasMany<Conversation, $this>
+     */
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
+    /**
      * The networks the account is on, in display order.
      *
      * The relation is polymorphic: one table holds the company's networks and

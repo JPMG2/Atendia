@@ -82,4 +82,10 @@ return [
     'simulator' => [
         'empty' => 'Cargá tus servicios o productos y mirá cómo responde tu asistente.',
     ],
+
+    'conversations' => [
+        'empty_body' => 'Cuando tu asistente atienda el WhatsApp, acá vas a ver cada conversación.',
+        'select' => 'Elegí una conversación para leerla.',
+        'read_only' => 'Solo lectura: tu asistente responde por vos.',
+    ],
 ];

@@ -24,7 +24,7 @@ class MenuSeeder extends Seeder
 
         // Client panel, main group (items default to the 'client' panel).
         Menu::create(['label_key' => 'menu.home', 'icon' => 'layout-dashboard', 'route_name' => 'dashboard', 'sort_order' => 1]);
-        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'sort_order' => 2]);
+        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 2]);
         // "Mi negocio" opens the whole profile; its children deep-link one
         // section each (LinkedIn-style: update just the piece you came for).
         // Labels reuse the section titles so menu and screen never diverge.

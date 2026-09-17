@@ -37,6 +37,8 @@ class SaveBusinessSocialLinks
 
         $business->unsetRelation('socialLinks');
 
+        app(SyncProfileKnowledge::class)->handle($business);
+
         return $changed || $removed > 0;
     }
 }

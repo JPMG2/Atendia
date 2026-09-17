@@ -6,9 +6,14 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Enums\Lab;
+
+// Factories commit without it and leak businesses into the files that run
+// after this one — caught live when an unrelated count assertion broke.
+uses(RefreshDatabase::class);
 
 test('the assistant is pinned to the OpenAI provider and gpt-6-astra model', function (): void {
     $reflection = new ReflectionClass(AsistenteAtendia::class);
@@ -53,7 +58,8 @@ test('with a business the assistant speaks as that business, and introduces itse
         ->toContain('asistente virtual de *Laboratorio Vida*')
         ->toContain('presentate en una línea')
         ->toContain('🤖')
-        ->toContain('podés cometer algún error');
+        ->toContain('el equipo de Laboratorio Vida te lo confirma')
+        ->toContain('jamás pidiendo permiso para equivocarte');
 });
 
 test('the assistant remembers the thread, previous turns only and oldest first', function (): void {

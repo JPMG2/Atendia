@@ -25,6 +25,8 @@ class SaveBusinessConnection
     {
         $business->fill(Arr::only($data, self::COLUMNS))->save();
 
+        app(SyncProfileKnowledge::class)->handle($business);
+
         return $business;
     }
 }

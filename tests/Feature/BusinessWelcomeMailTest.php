@@ -14,10 +14,17 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 uses(RefreshDatabase::class);
+
+// The profile now syncs into the knowledge base on save: fake the queue or
+// the indexing job would ride the network for embeddings.
+beforeEach(function (): void {
+    Queue::fake();
+});
 
 /*
 |--------------------------------------------------------------------------

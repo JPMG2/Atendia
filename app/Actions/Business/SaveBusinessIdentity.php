@@ -51,6 +51,8 @@ class SaveBusinessIdentity
             );
         }
 
+        app(SyncProfileKnowledge::class)->handle($business);
+
         return $business;
     }
 }

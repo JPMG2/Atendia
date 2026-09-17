@@ -13,8 +13,15 @@ use App\Models\SocialNetwork;
 use App\Models\TaxCondition;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
+
+// The profile now syncs into the knowledge base on save: fake the queue or
+// the indexing job would ride the network for embeddings.
+beforeEach(function (): void {
+    Queue::fake();
+});
 
 /*
 |--------------------------------------------------------------------------
