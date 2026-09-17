@@ -65,6 +65,7 @@ class EvolutionWebhookController extends Controller
             ProcessIncomingWhatsAppMessage::dispatch(
                 instance: $instance, from: $from, senderName: $senderName,
                 text: '', messageId: $messageId, audioBase64: $audio,
+                audioSeconds: (int) $request->input('data.message.audioMessage.seconds', 0),
             );
 
             return true;

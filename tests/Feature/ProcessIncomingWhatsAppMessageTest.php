@@ -34,9 +34,9 @@ function fakeWhatsAppHttp(bool $flagged = false): void
     ]);
 }
 
-function runIncoming(string $text = 'Hola', string $messageId = 'MSG-1', ?string $audio = null): void
+function runIncoming(string $text = 'Hola', string $messageId = 'MSG-1', ?string $audio = null, int $seconds = 0): void
 {
-    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', $text, $messageId, $audio))->handle();
+    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', $text, $messageId, $audio, $seconds))->handle();
 }
 
 /** @return list<Request> */
@@ -130,7 +130,11 @@ test('the exchange is persisted as a thread the assistant will remember', functi
         ->and($turns[0]->body)->toBe('¿Tienen turnos?')
         ->and($turns[0]->wa_message_id)->toBe('MSG-1')
         ->and($turns[1]->direction)->toBe(MessageDirection::Out)
-        ->and($turns[1]->body)->toBe('Sí, mañana a las 9.');
+        ->and($turns[1]->body)->toBe('Sí, mañana a las 9.')
+        // The bill of the exchange, measured: the fake reports zero tokens,
+        // but the columns must be written, never left null.
+        ->and($turns[1]->prompt_tokens)->not->toBeNull()
+        ->and($turns[1]->completion_tokens)->not->toBeNull();
 });
 
 test('a second message from the same contact grows the same thread', function (): void {
@@ -233,11 +237,12 @@ test('a voice note is transcribed and answered as text', function (): void {
     AsistenteAtendia::fake(['…', 'Sí, atendemos mañana.']);
     Transcription::fake(['¿Atienden mañana?']);
 
-    runIncoming('', 'MSG-9', base64_encode('opus-bytes'));
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
 
     AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, '¿Atienden mañana?'));
     expect(sentTexts())->toHaveCount(1)
-        ->and(sentTexts()[0]['text'])->toBe('Sí, atendemos mañana.');
+        ->and(sentTexts()[0]['text'])->toBe('Sí, atendemos mañana.')
+        ->and(Conversation::query()->sole()->messages()->whereNotNull('audio_seconds')->sole()->audio_seconds)->toBe(7);
 });
 
 test('a message for an unclaimed instance warns and answers nobody', function (): void {

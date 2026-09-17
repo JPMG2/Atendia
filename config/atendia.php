@@ -30,4 +30,22 @@ return [
 
     'sales_whatsapp' => env('SALES_WHATSAPP'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI rates (USD)
+    |--------------------------------------------------------------------------
+    |
+    | Prices for turning measured usage into money: input/output per MILLION
+    | tokens and audio transcription per minute. Null token rates mean the
+    | cost report shows tokens only — set them when the provider's price for
+    | the active model is confirmed.
+    |
+    */
+
+    'ai_rates' => [
+        'prompt_per_million' => env('AI_RATE_PROMPT'),
+        'completion_per_million' => env('AI_RATE_COMPLETION'),
+        'audio_per_minute' => env('AI_RATE_AUDIO', 0.003),
+    ],
+
 ];

@@ -23,6 +23,9 @@ return new class extends Migration
             $table->string('direction', 8)->comment('in = el cliente escribe, out = el asistente responde');
             $table->string('wa_message_id', 100)->nullable()->comment('El id del mensaje en WhatsApp, para reacciones y trazas');
             $table->text('body');
+            $table->unsignedInteger('prompt_tokens')->nullable()->comment('Tokens de entrada del intercambio (solo filas out; suma sus pasadas): el costo real que decide los paquetes');
+            $table->unsignedInteger('completion_tokens')->nullable()->comment('Tokens de salida del intercambio (solo filas out)');
+            $table->unsignedSmallInteger('audio_seconds')->nullable()->comment('Duración de la nota de voz transcripta (solo filas in de audio)');
             $table->timestamps();
 
             // The thread reads oldest-first; id already carries that order.

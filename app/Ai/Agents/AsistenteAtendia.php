@@ -19,6 +19,7 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\Usage;
 use Stringable;
 
 // No Temperature attribute on purpose: the reasoning family behind this
@@ -43,6 +44,9 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
         public ?Conversation $conversation = null,
     ) {}
 
+    /** The whole exchange's bill: the re-ask pass must not lose the first one. */
+    public ?Usage $exchangeUsage = null;
+
     /**
      * Answer a customer question, guaranteeing the knowledge search ran.
      *
@@ -53,18 +57,23 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     public function answer(string $question): AgentResponse
     {
         $response = $this->prompt($question);
+        $this->exchangeUsage = $response->usage;
 
         if ($this->business === null || $response->toolCalls->isNotEmpty()) {
             return $response;
         }
 
-        return $this->prompt(
+        $second = $this->prompt(
             'Recordatorio del sistema: antes de responder, usá la herramienta de búsqueda '
             .'en la base de conocimiento del negocio si la consulta puede referirse a algo '
             .'que el negocio ofrece (productos, servicios, precios, disponibilidad). '
             ."Si la consulta no habla del negocio, respondé normalmente.\n\n"
             .'Consulta del cliente: '.$question,
         );
+
+        $this->exchangeUsage = $response->usage->add($second->usage);
+
+        return $second;
     }
 
     /**

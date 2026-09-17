@@ -16,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Transcription;
 
 /**
@@ -40,6 +41,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         public string $text,
         public string $messageId,
         public ?string $audioBase64 = null,
+        public int $audioSeconds = 0,
     ) {}
 
     public function handle(): void
@@ -98,13 +100,14 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 ['contact_name' => $this->senderName !== '' ? $this->senderName : null],
             );
 
-            $reply = new AsistenteAtendia($business, $conversation)->answer($text)->text;
+            $agent = new AsistenteAtendia($business, $conversation);
+            $reply = $agent->answer($text)->text;
 
             foreach ($this->bubbles($reply) as $bubble) {
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
-            $this->rememberExchange($conversation, $text, $reply);
+            $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage);
             $this->rememberForDigest($business, $text, $reply);
         });
     }
@@ -113,16 +116,21 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      * Persists the turn AFTER answering: the agent's memory hands over
      * previous turns only, so the current text never rides twice.
      */
-    private function rememberExchange(Conversation $conversation, string $question, string $reply): void
+    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?Usage $usage): void
     {
         $conversation->messages()->create([
             'direction' => MessageDirection::In,
             'wa_message_id' => $this->messageId,
             'body' => $question,
+            'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
+        // The exchange's bill lives on the reply row: it is what the plan
+        // caps will be priced against.
         $conversation->messages()->create([
             'direction' => MessageDirection::Out,
             'body' => $reply,
+            'prompt_tokens' => $usage?->promptTokens,
+            'completion_tokens' => $usage?->completionTokens,
         ]);
 
         $conversation->fill([
