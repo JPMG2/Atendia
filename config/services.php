@@ -40,6 +40,8 @@ return [
     'evolution' => [
         'url' => env('EVOLUTION_API_URL'),
         'key' => env('EVOLUTION_API_KEY'),
+        'instance' => env('EVOLUTION_INSTANCE'),
+        'webhook_secret' => env('EVOLUTION_WEBHOOK_SECRET'),
     ],
 
     'n8n' => [

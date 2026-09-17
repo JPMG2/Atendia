@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Webhooks\EvolutionWebhookController;
+use App\Http\Middleware\VerifyEvolutionWebhook;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 | rutas de auth suman 'throttle:auth' (estricto, anti fuerza bruta).
 |
 */
+
+// Evolution delivers here over the internal Docker network. No throttle: a
+// busy WhatsApp must never have messages dropped by a rate limiter, and the
+// shared-secret middleware is the lock.
+Route::post('webhooks/evolution', EvolutionWebhookController::class)
+    ->middleware(VerifyEvolutionWebhook::class);
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     // Public.
