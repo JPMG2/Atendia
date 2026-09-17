@@ -116,7 +116,7 @@ return [
     'pricing' => [
         'eyebrow' => 'Precios',
         'title' => 'Simple y por adelantado',
-        'subtitle' => 'Empieza gratis. Cambia o cancela cuando quieras.',
+        'subtitle' => 'Prueba gratis 14 días el plan Negocio, sin tarjeta. Cambia o cancela cuando quieras.',
         'featured_badge' => 'Más elegido',
         'per_trial' => '/ 14 días',
         'per_month' => '/ mes',
@@ -126,26 +126,27 @@ return [
         'billing_yearly_badge' => '2 meses gratis',
         'save_yearly' => 'Ahorras :amount al año',
         'trust' => 'Sin tarjeta para empezar · Cancelas cuando quieras',
-        'starter' => [
-            'name' => 'Inicial',
-            'desc' => 'Prueba Atendia con tu propio número.',
+        'multilang' => 'En cualquier idioma — tú lo lees todo en español',
+        'emprende' => [
+            'name' => 'Emprende',
+            'desc' => 'Tu asistente atendiendo desde el primer día.',
             'cta' => 'Empezar gratis',
-            'feats' => ['1 número de WhatsApp', 'Respuestas automáticas', 'Agenda o catálogo', 'Panel de control'],
+            'feats' => ['1 número de WhatsApp', '300 conversaciones con IA al mes', 'Agenda o catálogo', 'Estadísticas del negocio', 'Usuarios del panel sin límite'],
         ],
-        'business' => [
+        'negocio' => [
             'name' => 'Negocio',
-            'desc' => 'Para quien ya vive de atender bien.',
+            'desc' => 'Para el negocio que conversa todos los días.',
             'cta' => 'Crear mi asistente',
-            'includes' => 'Todo lo de Inicial, más:',
-            'feats' => ['Turnos + catálogo juntos', 'Recordatorios automáticos', 'Reportes y métricas', 'Soporte prioritario'],
+            'includes' => 'Todo lo de Emprende, más:',
+            'feats' => ['1.000 conversaciones con IA al mes', '2 números de WhatsApp', 'Notas de voz de tus clientes', 'Resumen diario y reportes a pedido', 'Tu equipo entra cuando hace falta'],
         ],
-        'pro' => [
-            'name' => 'Pro',
-            'desc' => 'Equipos y múltiples sucursales.',
+        'premium' => [
+            'name' => 'Premium',
+            'desc' => 'Máximo volumen y tu IA a medida.',
             'cta' => 'Hablar con ventas',
-            'whatsapp_text' => 'Hola, quiero saber más del plan Pro de Atendia.',
+            'whatsapp_text' => 'Hola, quiero saber más del plan Premium de Atendia.',
             'includes' => 'Todo lo de Negocio, más:',
-            'feats' => ['Varios números', 'Roles de equipo', 'Integraciones a medida'],
+            'feats' => ['3.000 conversaciones con IA al mes', 'Hasta 5 números de WhatsApp', 'Tu asistente a tu medida', 'Analítica avanzada', 'Configuración asistida incluida'],
         ],
     ],
 

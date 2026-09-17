@@ -5,14 +5,15 @@
     // WhatsApp chat with sales. Unset number = quiet fallback to register.
     $salesWhatsapp = config('atendia.sales_whatsapp');
     $salesHref = $salesWhatsapp
-        ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__('landing.pricing.pro.whatsapp_text'))
+        ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__('landing.pricing.premium.whatsapp_text'))
         : $registerHref;
 
-    // Yearly = 2 months free: the monthly equivalent of paying 10 of 12.
+    // The three REAL packages (caps provisional until the measured AI cost
+    // settles them). Yearly = 2 months free: paying 10 of 12.
     $plans = [
-        ['name' => __('landing.pricing.starter.name'), 'price' => '$0', 'price_year' => '$0', 'per' => __('landing.pricing.per_trial'), 'per_year' => __('landing.pricing.per_trial'), 'desc' => __('landing.pricing.starter.desc'), 'includes' => null, 'feats' => __('landing.pricing.starter.feats'), 'cta' => __('landing.pricing.starter.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.business.name'), 'price' => '$29', 'price_year' => '$24', 'save_year' => '$58', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.business.desc'), 'includes' => __('landing.pricing.business.includes'), 'feats' => __('landing.pricing.business.feats'), 'cta' => __('landing.pricing.business.cta'), 'variant' => 'primary', 'featured' => true, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.pro.name'), 'price' => '$79', 'price_year' => '$66', 'save_year' => '$158', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.pro.desc'), 'includes' => __('landing.pricing.pro.includes'), 'feats' => __('landing.pricing.pro.feats'), 'cta' => __('landing.pricing.pro.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $salesHref, 'external' => (bool) $salesWhatsapp],
+        ['name' => __('landing.pricing.emprende.name'), 'price' => '$29', 'price_year' => '$24', 'save_year' => '$58', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.emprende.desc'), 'includes' => null, 'feats' => __('landing.pricing.emprende.feats'), 'cta' => __('landing.pricing.emprende.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $registerHref, 'external' => false],
+        ['name' => __('landing.pricing.negocio.name'), 'price' => '$79', 'price_year' => '$66', 'save_year' => '$158', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.negocio.desc'), 'includes' => __('landing.pricing.negocio.includes'), 'feats' => __('landing.pricing.negocio.feats'), 'cta' => __('landing.pricing.negocio.cta'), 'variant' => 'primary', 'featured' => true, 'href' => $registerHref, 'external' => false],
+        ['name' => __('landing.pricing.premium.name'), 'price' => '$149', 'price_year' => '$124', 'save_year' => '$298', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.premium.desc'), 'includes' => __('landing.pricing.premium.includes'), 'feats' => __('landing.pricing.premium.feats'), 'cta' => __('landing.pricing.premium.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $salesHref, 'external' => (bool) $salesWhatsapp],
     ];
 @endphp
 
@@ -120,6 +121,18 @@
                                 <x-icon name="check" :size="16" style="color: var(--brand)" />{{ $f }}
                             </div>
                         @endforeach
+                        {{-- In every tier by the owner's call: the languages
+                        plus is the pitch, nobody should have to infer it. --}}
+                        <div
+                            class="text-body flex items-center gap-2.5 font-semibold"
+                            style="font-size: var(--text-sm)"
+                        >
+                            <x-icon
+                                name="languages"
+                                :size="16"
+                                style="color: var(--brand)"
+                            />{{ __('landing.pricing.multilang') }}
+                        </div>
                     </div>
 
                     <x-ui.button

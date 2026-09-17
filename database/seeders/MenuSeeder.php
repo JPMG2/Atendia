@@ -24,11 +24,10 @@ class MenuSeeder extends Seeder
 
         // Client panel, main group (items default to the 'client' panel).
         Menu::create(['label_key' => 'menu.home', 'icon' => 'layout-dashboard', 'route_name' => 'dashboard', 'sort_order' => 1]);
-        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 2]);
         // "Mi negocio" opens the whole profile; its children deep-link one
         // section each (LinkedIn-style: update just the piece you came for).
         // Labels reuse the section titles so menu and screen never diverge.
-        $myBusiness = Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'route_name' => 'my-business', 'sort_order' => 3]);
+        $myBusiness = Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'route_name' => 'my-business', 'sort_order' => 2]);
         $profileSections = [
             ['client.business.identity.title', 'sparkles', 'my-business.identidad'],
             ['client.business.location.title', 'map-pin', 'my-business.ubicacion'],
@@ -43,10 +42,13 @@ class MenuSeeder extends Seeder
         // Grouped under the Catalog parent by the owner's call (2026-09-14),
         // the Fresha pattern: a submenu whose children are both REAL screens.
         // Badges mirror the mock counts until the real tables land.
-        $catalog = Menu::create(['label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 4]);
+        $catalog = Menu::create(['label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 3]);
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'badge' => '22', 'sort_order' => 1]);
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'badge' => '24', 'sort_order' => 2]);
-        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 6]);
+        // Setup-first order (owner's call, 2026-09-17): configure, then talk.
+        // Revisit post go-live, when the daily screen may deserve the top.
+        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 4]);
+        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 5]);
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'profile.edit', 'placement' => 'bottom', 'sort_order' => 1]);

@@ -86,9 +86,9 @@ test('the pricing section emphasizes the business plan, Tailwind Plus style', fu
         ->assertSee('pricing-tier-left', false)
         ->assertSee('pricing-tier-right', false)
         ->assertSee(__('landing.pricing.featured_badge'))
-        ->assertSee(__('landing.pricing.business.name'))
-        ->assertSee(__('landing.pricing.starter.name'))
-        ->assertSee(__('landing.pricing.pro.name'));
+        ->assertSee(__('landing.pricing.negocio.name'))
+        ->assertSee(__('landing.pricing.emprende.name'))
+        ->assertSee(__('landing.pricing.premium.name'));
 });
 
 test('pricing charms: yearly toggle, incremental features and a trust line', function (): void {
@@ -99,8 +99,8 @@ test('pricing charms: yearly toggle, incremental features and a trust line', fun
         ->assertSee('$29', false)
         ->assertSee('$24', false)
         ->assertSee('$66', false)
-        ->assertSee(__('landing.pricing.business.includes'))
-        ->assertSee(__('landing.pricing.pro.includes'))
+        ->assertSee(__('landing.pricing.negocio.includes'))
+        ->assertSee(__('landing.pricing.premium.includes'))
         ->assertSee(__('landing.pricing.trust'));
 });
 
