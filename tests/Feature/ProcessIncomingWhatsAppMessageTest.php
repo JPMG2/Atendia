@@ -93,15 +93,33 @@ test('a job outrun by a newer message dies silently instead of double-replying',
     expect(sentTexts())->toBeEmpty();
 });
 
-test('the customer message is marked as read before the reply', function (): void {
+test('the customer message gets a thumbs up and is marked as read before the reply', function (): void {
     fakeWhatsAppHttp();
     Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
     AsistenteAtendia::fake(['…', 'Listo.']);
 
     runIncoming('Hola', 'MSG-7');
 
+    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/message/sendReaction/atendia-demo')
+        && $request['reaction'] === '👍'
+        && $request['key']['id'] === 'MSG-7');
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/chat/markMessageAsRead/atendia-demo')
         && $request['readMessages'][0]['id'] === 'MSG-7');
+});
+
+test('an answered exchange is tallied for the owner digest', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Sí, tenemos turnos.']);
+
+    runIncoming('¿Tienen turnos?');
+
+    $entries = Cache::get('wa:digest:'.$business->id.':'.now()->format('Y-m-d'));
+
+    expect($entries)->toHaveCount(1)
+        ->and($entries[0]['q'])->toBe('¿Tienen turnos?')
+        ->and($entries[0]['a'])->toBe('Sí, tenemos turnos.')
+        ->and($entries[0]['from'])->toBe('5491122334455');
 });
 
 test('a long reply leaves in short bubbles, each with a human delay', function (): void {

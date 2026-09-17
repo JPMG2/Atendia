@@ -9,4 +9,8 @@ return [
         'too_many' => 'Estamos recibiendo muchos mensajes tuyos seguidos. Hagamos una pausa y en un rato seguimos con gusto.',
         'offensive' => 'Estamos para ayudarte con el negocio. Sigamos la conversación con respeto y con gusto te atendemos.',
     ],
+
+    'digest' => [
+        'header' => "🤖 Resumen del día — :business\nTu asistente atendió :messages mensajes de :contacts contactos.",
+    ],
 ];

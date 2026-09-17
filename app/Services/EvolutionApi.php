@@ -38,6 +38,19 @@ class EvolutionApi
     /**
      * @throws ConnectionException|RequestException
      */
+    public function react(string $instance, string $remoteJid, string $messageId, string $emoji): void
+    {
+        $this->request()
+            ->post("/message/sendReaction/{$instance}", [
+                'key' => ['remoteJid' => $remoteJid, 'fromMe' => false, 'id' => $messageId],
+                'reaction' => $emoji,
+            ])
+            ->throw();
+    }
+
+    /**
+     * @throws ConnectionException|RequestException
+     */
     public function markRead(string $instance, string $remoteJid, string $messageId): void
     {
         $this->request()

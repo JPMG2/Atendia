@@ -81,8 +81,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        // Best effort, never at the reply's expense: the read receipt and
-        // the early "typing…" while the model thinks.
+        // Best effort, never at the reply's expense: the 👍 "heard you", the
+        // read receipt and the early "typing…" while the model thinks.
+        rescue(fn () => $evolution->react($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId, '👍'), report: false);
         rescue(fn () => $evolution->markRead($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId), report: false);
         rescue(fn () => $evolution->markComposing($this->instance, $this->from), report: false);
 
@@ -95,7 +96,31 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             foreach ($this->bubbles($reply) as $bubble) {
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
+
+            $this->rememberForDigest($business, $text, $reply);
         });
+    }
+
+    /**
+     * The owner's nightly digest reads from this short-lived tally: until
+     * the conversations table exists, cache is the only ledger of the day.
+     */
+    private function rememberForDigest(Business $business, string $question, string $reply): void
+    {
+        $key = 'wa:digest:'.$business->id.':'.now()->format('Y-m-d');
+        $entries = (array) Cache::get($key, []);
+
+        if (count($entries) >= 200) {
+            return;
+        }
+
+        $entries[] = [
+            'from' => $this->from,
+            'q' => mb_substr($question, 0, 200),
+            'a' => mb_substr($reply, 0, 200),
+        ];
+
+        Cache::put($key, $entries, now()->addHours(36));
     }
 
     /**

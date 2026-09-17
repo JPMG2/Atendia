@@ -48,7 +48,7 @@ test('with a business the assistant speaks as that business, and introduces itse
     $instructions = (string) new AsistenteAtendia($business)->instructions();
 
     expect($instructions)
-        ->toContain('asistente virtual de Laboratorio Vida')
+        ->toContain('asistente virtual de *Laboratorio Vida*')
         ->toContain('presentate en una línea')
         ->toContain('🤖')
         ->toContain('podés cometer algún error');
