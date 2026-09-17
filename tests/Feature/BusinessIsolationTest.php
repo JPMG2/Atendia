@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Models\Business;
 use App\Models\BusinessHour;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
 use App\Models\Product;
@@ -37,6 +39,8 @@ dataset('tenant models', [
     BusinessHour::class,
     KnowledgeDocument::class,
     KnowledgeChunk::class,
+    Conversation::class,
+    ConversationMessage::class,
 ]);
 
 test('a business never sees another business records', function (): void {

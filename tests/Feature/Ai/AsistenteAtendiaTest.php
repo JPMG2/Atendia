@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Enums\Lab;
@@ -52,6 +54,28 @@ test('with a business the assistant speaks as that business, and introduces itse
         ->toContain('presentate en una línea')
         ->toContain('🤖')
         ->toContain('podés cometer algún error');
+});
+
+test('the assistant remembers the thread, previous turns only and oldest first', function (): void {
+    $conversation = Conversation::factory()->create();
+    ConversationMessage::factory()->for($conversation)->create([
+        'business_id' => $conversation->business_id, 'body' => '¿Tienen turnos?',
+    ]);
+    ConversationMessage::factory()->out()->for($conversation)->create([
+        'business_id' => $conversation->business_id, 'body' => 'Sí, mañana a las 9.',
+    ]);
+
+    $messages = new AsistenteAtendia($conversation->business, $conversation)->messages();
+
+    expect($messages)->toHaveCount(2)
+        ->and($messages[0]->role->value)->toBe('user')
+        ->and($messages[0]->content)->toBe('¿Tienen turnos?')
+        ->and($messages[1]->role->value)->toBe('assistant')
+        ->and($messages[1]->content)->toBe('Sí, mañana a las 9.');
+});
+
+test('without a conversation there is no memory', function (): void {
+    expect(new AsistenteAtendia()->messages())->toBe([]);
 });
 
 test('the guardrails scope the assistant to the business and to its knowledge alone', function (): void {

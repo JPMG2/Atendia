@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Ai\Agents;
 
 use App\Ai\Tools\SearchBusinessKnowledge;
+use App\Enums\MessageDirection;
 use App\Models\Business;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
@@ -27,12 +30,17 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
 {
     use Promptable;
 
+    /** Turns of memory handed to the model; enough thread, bounded cost. */
+    private const int MEMORY_LIMIT = 12;
+
     /**
      * Nullable: prompted with no business (AtendIa's own site) the assistant
-     * simply carries no knowledge tool, instead of failing to build.
+     * simply carries no knowledge tool, instead of failing to build. Same
+     * for the conversation — without one there is simply no memory.
      */
     public function __construct(
         public ?Business $business = null,
+        public ?Conversation $conversation = null,
     ) {}
 
     /**
@@ -116,11 +124,28 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     /**
      * Get the list of messages comprising the conversation so far.
      *
+     * The customer's current text travels as the prompt, so this hands over
+     * only the PREVIOUS turns — the worker stores the new pair afterwards.
+     *
      * @return Message[]
      */
     public function messages(): iterable
     {
-        return [];
+        if ($this->conversation === null) {
+            return [];
+        }
+
+        return $this->conversation->messages()
+            ->latest('id')
+            ->limit(self::MEMORY_LIMIT)
+            ->get()
+            ->reverse()
+            ->map(fn (ConversationMessage $message): Message => new Message(
+                $message->direction === MessageDirection::In ? 'user' : 'assistant',
+                $message->body,
+            ))
+            ->values()
+            ->all();
     }
 
     /**

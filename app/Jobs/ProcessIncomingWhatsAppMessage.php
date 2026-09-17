@@ -6,7 +6,9 @@ namespace App\Jobs;
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\GuardVerdict;
+use App\Enums\MessageDirection;
 use App\Models\Business;
+use App\Models\Conversation;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
 use App\Services\Tenant;
@@ -91,14 +93,42 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         // assistant's knowledge search runs inside the right tenant. A failed
         // send throws out of here and the queue retries the whole exchange.
         app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
-            $reply = new AsistenteAtendia($business)->answer($text)->text;
+            $conversation = Conversation::query()->firstOrCreate(
+                ['contact_phone' => $this->from],
+                ['contact_name' => $this->senderName !== '' ? $this->senderName : null],
+            );
+
+            $reply = new AsistenteAtendia($business, $conversation)->answer($text)->text;
 
             foreach ($this->bubbles($reply) as $bubble) {
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
+            $this->rememberExchange($conversation, $text, $reply);
             $this->rememberForDigest($business, $text, $reply);
         });
+    }
+
+    /**
+     * Persists the turn AFTER answering: the agent's memory hands over
+     * previous turns only, so the current text never rides twice.
+     */
+    private function rememberExchange(Conversation $conversation, string $question, string $reply): void
+    {
+        $conversation->messages()->create([
+            'direction' => MessageDirection::In,
+            'wa_message_id' => $this->messageId,
+            'body' => $question,
+        ]);
+        $conversation->messages()->create([
+            'direction' => MessageDirection::Out,
+            'body' => $reply,
+        ]);
+
+        $conversation->fill([
+            'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
+            'last_message_at' => now(),
+        ])->save();
     }
 
     /**

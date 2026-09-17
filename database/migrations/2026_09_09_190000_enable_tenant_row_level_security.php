@@ -28,6 +28,8 @@ return new class extends Migration
         'business_hours',
         'knowledge_documents',
         'knowledge_chunks',
+        'conversations',
+        'conversation_messages',
     ];
 
     /**

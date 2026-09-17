@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Enums\MessageDirection;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
+use App\Models\Conversation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
@@ -105,6 +107,42 @@ test('the customer message gets a thumbs up and is marked as read before the rep
         && $request['key']['id'] === 'MSG-7');
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/chat/markMessageAsRead/atendia-demo')
         && $request['readMessages'][0]['id'] === 'MSG-7');
+});
+
+test('the exchange is persisted as a thread the assistant will remember', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Sí, mañana a las 9.']);
+
+    runIncoming('¿Tienen turnos?');
+
+    $conversation = Conversation::query()->sole();
+
+    expect($conversation->business_id)->toBe($business->id)
+        ->and($conversation->contact_phone)->toBe('5491122334455')
+        ->and($conversation->contact_name)->toBe('Carla')
+        ->and($conversation->last_message_at)->not->toBeNull();
+
+    $turns = $conversation->messages()->orderBy('id')->get();
+
+    expect($turns)->toHaveCount(2)
+        ->and($turns[0]->direction)->toBe(MessageDirection::In)
+        ->and($turns[0]->body)->toBe('¿Tienen turnos?')
+        ->and($turns[0]->wa_message_id)->toBe('MSG-1')
+        ->and($turns[1]->direction)->toBe(MessageDirection::Out)
+        ->and($turns[1]->body)->toBe('Sí, mañana a las 9.');
+});
+
+test('a second message from the same contact grows the same thread', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Sí.', '…', 'De 8 a 12.']);
+
+    runIncoming('¿Tienen turnos?', 'MSG-1');
+    runIncoming('¿En qué horario?', 'MSG-2');
+
+    expect(Conversation::query()->count())->toBe(1)
+        ->and(Conversation::query()->sole()->messages()->count())->toBe(4);
 });
 
 test('an answered exchange is tallied for the owner digest', function (): void {
