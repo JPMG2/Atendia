@@ -946,8 +946,17 @@
 @keyframes cta-spark { 40% { transform:rotate(-12deg) scale(1.15); } }
 .cta-spark:hover svg { animation:cta-spark .45s var(--ease-spring); }
 
+/* The connect screen's dedicated-number warning: its amber tile breathes a
+   halo so the one warning that prevents a ban is impossible to skim past. */
+@keyframes warn-beacon {
+  0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--warning) 85%, transparent); transform:scale(1); }
+  35% { transform:scale(1.12); }
+  70%, 100% { box-shadow:0 0 0 18px transparent; transform:scale(1); }
+}
+.warn-beacon { animation:warn-beacon 1.8s var(--ease-out) infinite; }
+
 @media (prefers-reduced-motion:reduce) {
-  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce { animation:none; }
+  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce, .warn-beacon { animation:none; }
   .cta-spark:hover svg { animation:none; }
   .reveal-pending { opacity:1; transform:none; }
 }

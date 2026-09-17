@@ -18,5 +18,7 @@ return [
         'qr_hint' => 'El código se renueva solo. No cierres esta pantalla.',
         'done' => 'Listo. Tu asistente ya responde por vos.',
         'failed' => 'No pudimos conectar con WhatsApp. Intentá de nuevo en un momento.',
+        'dedicated_title' => 'Usá un número exclusivo para tu negocio',
+        'dedicated_body' => 'Si conectás tu número personal, el asistente también les va a responder a tus familiares y amigos, y tus chats privados se van a mezclar con los de tus clientes.',
     ],
 ];

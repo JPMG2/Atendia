@@ -108,7 +108,7 @@ new class extends Component
     </div>
 
     @if ($this->business === null)
-        <x-ui.card class="max-w-2xl p-6">
+        <x-ui.card class="p-5">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <p class="text-body">{{ __('whatsapp.no_business') }}</p>
                 <x-ui.button variant="primary" size="sm" :href="route('onboarding')" wire:navigate>
@@ -117,7 +117,7 @@ new class extends Component
             </div>
         </x-ui.card>
     @elseif ($this->connected)
-        <x-ui.card class="max-w-2xl p-6">
+        <x-ui.card class="p-5">
             <div class="flex items-start gap-4">
                 <span
                     class="bg-brand-soft flex size-12 flex-none items-center justify-center rounded-2xl"
@@ -140,10 +140,29 @@ new class extends Component
             </div>
         </x-ui.card>
     @else
-        <x-ui.card class="p-6">
-            <div class="grid items-center gap-8 lg:grid-cols-2">
-                <div class="space-y-4">
-                    <h2 class="font-display text-strong text-lg">{{ __('whatsapp.connect.title') }}</h2>
+        <x-ui.card class="p-5">
+            <div class="space-y-4">
+            {{-- The consequence, not the rule: "it will answer your family"
+            convinces where "best practice" does not. Born from a real ban. --}}
+            <div
+                class="flex items-start gap-3 rounded-2xl border-2 p-3"
+                style="border-color: var(--warning); background: var(--warning-soft)"
+            >
+                <span
+                    class="warn-beacon flex size-10 flex-none items-center justify-center rounded-xl"
+                    style="background: var(--warning); color: var(--text-on-brand)"
+                >
+                    <x-icon name="triangle-alert" :size="20" />
+                </span>
+                <div class="min-w-0">
+                    <h3 class="font-display text-strong text-base">{{ __('whatsapp.connect.dedicated_title') }}</h3>
+                    <p class="text-body mt-0.5 text-sm">{{ __('whatsapp.connect.dedicated_body') }}</p>
+                </div>
+            </div>
+
+            <div class="grid items-center gap-6 lg:grid-cols-[1.6fr_1fr]">
+                <div class="space-y-3">
+                    <h2 class="font-display text-strong text-xl">{{ __('whatsapp.connect.title') }}</h2>
                     <p class="text-body text-sm">{{ __('whatsapp.connect.body') }}</p>
 
                     <ol class="space-y-2">
@@ -188,13 +207,19 @@ new class extends Component
                         </div>
                     @else
                         <div
-                            class="bg-brand-soft flex size-56 items-center justify-center rounded-[28px]"
+                            class="bg-brand-soft flex size-44 items-center justify-center rounded-[28px]"
                             style="color: var(--brand)"
                         >
-                            <x-icon name="whatsapp" :size="72" />
+                            <x-icon name="whatsapp" :size="56" />
                         </div>
                     @endif
                 </div>
+            </div>
+
+            <p class="text-muted flex items-start gap-2 text-xs">
+                <span class="mt-0.5 flex-none"><x-icon name="lock" :size="14" /></span>
+                {{ __('whatsapp.connect.privacy') }}
+            </p>
             </div>
         </x-ui.card>
     @endif

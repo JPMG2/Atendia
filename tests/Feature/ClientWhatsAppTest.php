@@ -49,7 +49,9 @@ test('an unconnected business sees the steps and the connect call', function ():
     $this->get(route('whatsapp'))
         ->assertSuccessful()
         ->assertSee(__('whatsapp.connect.title'))
-        ->assertSee(__('whatsapp.connect.cta'));
+        ->assertSee(__('whatsapp.connect.cta'))
+        ->assertSee(__('whatsapp.connect.dedicated_title'))
+        ->assertSee(__('whatsapp.connect.privacy'));
 });
 
 test('a connected business sees its state and since when', function (): void {
