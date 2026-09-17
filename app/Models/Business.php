@@ -26,7 +26,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Company}, which is AtendIa itself — the one
  * issuing the invoice, a single row. Every operational record hangs off here.
  */
-#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])]
+#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])]
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */
@@ -49,7 +49,7 @@ class Business extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])
+            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
@@ -314,6 +314,16 @@ class Business extends Model
      *
      * @return MorphMany<SocialLink, $this>
      */
+    /**
+     * The business a bridge instance delivers for. Resolved with no tenant in
+     * place on purpose: the webhook worker only holds the instance name, and
+     * this lookup is how it finds out WHICH tenant to adopt.
+     */
+    public static function forWhatsAppInstance(string $instance): ?self
+    {
+        return static::query()->where('whatsapp_instance', $instance)->first();
+    }
+
     /** Nothing connects yet: flips for real when the Cloud API switch-on lands. */
     public function isConnected(): bool
     {

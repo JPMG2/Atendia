@@ -55,6 +55,23 @@ class EvolutionApi
     }
 
     /**
+     * Shows "typing…" in the customer's chat while the assistant thinks.
+     * The delay is how long the bubble may live: the real reply cuts it off.
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function markComposing(string $instance, string $number, int $delaySeconds = 15): void
+    {
+        $this->request()
+            ->post("/chat/sendPresence/{$instance}", [
+                'number' => $number,
+                'presence' => 'composing',
+                'delay' => $delaySeconds * 1000,
+            ])
+            ->throw();
+    }
+
+    /**
      * @throws ConnectionException|RequestException
      */
     public function connectionState(string $instance): string
