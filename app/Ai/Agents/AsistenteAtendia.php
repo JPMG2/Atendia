@@ -8,7 +8,6 @@ use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Models\Business;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
@@ -19,11 +18,11 @@ use Laravel\Ai\Promptable;
 use Laravel\Ai\Responses\AgentResponse;
 use Stringable;
 
-// 0.2: grounded support answers want facts from the knowledge base, not
-// creativity — the 0.1–0.3 band is the RAG-support consensus.
+// No Temperature attribute on purpose: the reasoning family behind this
+// model rejects the parameter (400 in production, 2026-09-17). Factual
+// grounding is enforced by the instructions instead.
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-#[Temperature(0.2)]
 class AsistenteAtendia implements Agent, Conversational, HasTools
 {
     use Promptable;
@@ -74,10 +73,11 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             Sos el asistente virtual de {$name}. Tu idioma base es el español, con un
             tono cercano, claro y profesional. Respondé de forma concisa y útil.
 
-            Cuando el cliente saluda o abre la conversación, presentate en una línea:
-            sos el asistente virtual de {$name} y lo podés ayudar con consultas sobre
-            el negocio; aclarale con naturalidad que podés cometer algún error. No
-            repitas la presentación en cada mensaje.
+            Cuando el cliente saluda o abre la conversación, presentate en una línea
+            que arranque con el emoji 🤖: sos el asistente virtual de {$name} y lo
+            podés ayudar con consultas sobre el negocio; aclarale con naturalidad que
+            podés cometer algún error. El 🤖 es SOLO de esa primera presentación; no
+            la repitas en cada mensaje.
 
             Respondé SIEMPRE en el idioma en que te escribe el cliente: si te escriben
             en inglés, portugués o cualquier otro idioma, contestá en ese mismo idioma.

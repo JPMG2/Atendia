@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -66,6 +67,44 @@ test('an inbound text is parsed and queued', function (): void {
             && $job->text === 'Hola, ¿tienen turnos mañana?'
             && $job->messageId === 'MSG-1';
     });
+});
+
+test('a burst lands in the chat buffer so the job can answer it whole', function (): void {
+    $first = evolutionMessagePayload();
+    $second = evolutionMessagePayload(['data' => [
+        'key' => ['id' => 'MSG-2'],
+        'message' => ['conversation' => '¿Están?'],
+    ]]);
+
+    $this->postJson('/api/webhooks/evolution', $first, ['X-Webhook-Secret' => 'test-secret']);
+    $this->postJson('/api/webhooks/evolution', $second, ['X-Webhook-Secret' => 'test-secret']);
+
+    expect(Cache::get('wa:buf:atendia-demo:5491122334455'))
+        ->toBe(['Hola, ¿tienen turnos mañana?', '¿Están?'])
+        ->and(Cache::get('wa:last:atendia-demo:5491122334455'))->toBe('MSG-2');
+});
+
+test('a voice note is queued with its audio and skips the buffer', function (): void {
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = ['audioMessage' => ['seconds' => 4], 'base64' => 'b64-opus'];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    Queue::assertPushed(ProcessIncomingWhatsAppMessage::class, fn (ProcessIncomingWhatsAppMessage $job): bool => $job->audioBase64 === 'b64-opus'
+        && $job->text === '');
+
+    expect(Cache::get('wa:buf:atendia-demo:5491122334455'))->toBeNull();
+});
+
+test('a voice note without its audio payload is acknowledged but not processed', function (): void {
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = ['audioMessage' => ['seconds' => 4]];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => false]);
+
+    Queue::assertNothingPushed();
 });
 
 test('a quoted reply carries its text in extendedTextMessage', function (): void {

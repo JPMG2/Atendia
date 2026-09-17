@@ -17,14 +17,34 @@ use Illuminate\Support\Facades\Http;
 class EvolutionApi
 {
     /**
+     * A positive delay makes Evolution hold the message that long while
+     * showing "typing…": the human cadence WhatsApp expects from a person.
+     *
      * @throws ConnectionException|RequestException
      */
-    public function sendText(string $instance, string $number, string $text): void
+    public function sendText(string $instance, string $number, string $text, int $delayMs = 0): void
+    {
+        $payload = ['number' => $number, 'text' => $text];
+
+        if ($delayMs > 0) {
+            $payload['delay'] = $delayMs;
+        }
+
+        $this->request()
+            ->post("/message/sendText/{$instance}", $payload)
+            ->throw();
+    }
+
+    /**
+     * @throws ConnectionException|RequestException
+     */
+    public function markRead(string $instance, string $remoteJid, string $messageId): void
     {
         $this->request()
-            ->post("/message/sendText/{$instance}", [
-                'number' => $number,
-                'text' => $text,
+            ->post("/chat/markMessageAsRead/{$instance}", [
+                'readMessages' => [
+                    ['remoteJid' => $remoteJid, 'fromMe' => false, 'id' => $messageId],
+                ],
             ])
             ->throw();
     }
@@ -79,7 +99,9 @@ class EvolutionApi
                     'events' => $events,
                     'headers' => ['X-Webhook-Secret' => $secret],
                     'byEvents' => false,
-                    'base64' => false,
+                    // Media (voice notes) travels base64 inside the event
+                    // itself: the separate download endpoint is flaky.
+                    'base64' => true,
                 ],
             ])
             ->throw();

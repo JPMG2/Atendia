@@ -6,7 +6,6 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Enums\Lab;
 
 test('the assistant is pinned to the OpenAI provider and gpt-6-astra model', function (): void {
@@ -43,14 +42,6 @@ test('the instructions mirror the customer language but keep handoffs in Spanish
         ->toContain('derivación dirigido al equipo del negocio va SIEMPRE en español');
 });
 
-test('the temperature is pinned low, so answers stay factual over creative', function (): void {
-    $temperature = (new ReflectionClass(AsistenteAtendia::class))
-        ->getAttributes(Temperature::class)[0]
-        ->newInstance();
-
-    expect($temperature->value)->toBe(0.2);
-});
-
 test('with a business the assistant speaks as that business, and introduces itself', function (): void {
     $business = Business::factory()->create(['name' => 'Laboratorio Vida']);
 
@@ -59,6 +50,7 @@ test('with a business the assistant speaks as that business, and introduces itse
     expect($instructions)
         ->toContain('asistente virtual de Laboratorio Vida')
         ->toContain('presentate en una línea')
+        ->toContain('🤖')
         ->toContain('podés cometer algún error');
 });
 

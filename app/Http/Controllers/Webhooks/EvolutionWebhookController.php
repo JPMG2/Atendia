@@ -9,6 +9,7 @@ use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Receives Evolution's event deliveries. Always answers 200 fast: the ack
@@ -28,16 +29,45 @@ class EvolutionWebhookController extends Controller
         return response()->json(['handled' => $handled]);
     }
 
+    /**
+     * People type in bursts ("Hola" / "¿están?" / "¿tienen turnos?"): each
+     * text lands in a short-lived buffer and the job waits out the debounce
+     * window, so the burst gets ONE thought-out answer instead of three.
+     */
+    private const int DEBOUNCE_SECONDS = 8;
+
     private function queueIncomingMessage(Request $request): bool
     {
         $key = (array) $request->input('data.key', []);
         $remoteJid = (string) ($key['remoteJid'] ?? '');
 
-        // Only direct texts from customers: own echoes would loop the
+        // Only direct messages from customers: own echoes would loop the
         // assistant against itself, and groups/broadcasts are not a customer
         // asking the business something.
         if (($key['fromMe'] ?? false) === true || ! str_ends_with($remoteJid, '@s.whatsapp.net')) {
             return false;
+        }
+
+        $instance = (string) $request->input('instance', '');
+        $from = (string) strstr($remoteJid, '@', true);
+        $senderName = (string) $request->input('data.pushName', '');
+        $messageId = (string) ($key['id'] ?? '');
+
+        // A voice note skips the buffer — nobody sends them in bursts — and
+        // carries its audio along for the job to transcribe.
+        if ($request->input('data.message.audioMessage') !== null) {
+            $audio = (string) $request->input('data.message.base64', '');
+
+            if ($audio === '') {
+                return false;
+            }
+
+            ProcessIncomingWhatsAppMessage::dispatch(
+                instance: $instance, from: $from, senderName: $senderName,
+                text: '', messageId: $messageId, audioBase64: $audio,
+            );
+
+            return true;
         }
 
         $text = (string) ($request->input('data.message.conversation')
@@ -47,13 +77,16 @@ class EvolutionWebhookController extends Controller
             return false;
         }
 
+        $sender = "{$instance}:{$from}";
+        $buffered = (array) Cache::get("wa:buf:{$sender}", []);
+        $buffered[] = $text;
+        Cache::put("wa:buf:{$sender}", $buffered, now()->addMinutes(3));
+        Cache::put("wa:last:{$sender}", $messageId, now()->addMinutes(3));
+
         ProcessIncomingWhatsAppMessage::dispatch(
-            instance: (string) $request->input('instance', ''),
-            from: (string) strstr($remoteJid, '@', true),
-            senderName: (string) $request->input('data.pushName', ''),
-            text: $text,
-            messageId: (string) ($key['id'] ?? ''),
-        );
+            instance: $instance, from: $from, senderName: $senderName,
+            text: $text, messageId: $messageId,
+        )->delay(self::DEBOUNCE_SECONDS);
 
         return true;
     }

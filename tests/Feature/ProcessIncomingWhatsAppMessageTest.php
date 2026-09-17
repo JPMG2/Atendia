@@ -7,56 +7,190 @@ use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Transcription;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     config()->set('services.evolution.url', 'http://evolution.test');
     config()->set('services.evolution.key', 'test-key');
+    config()->set('ai.providers.openai.url', 'http://openai.test/v1');
+    config()->set('ai.providers.openai.key', 'test-openai');
+
+    Cache::flush();
 });
 
-test('an inbound text is answered by the assistant through the business instance', function (): void {
-    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
+/** @param  bool  $flagged  what the faked moderation endpoint answers */
+function fakeWhatsAppHttp(bool $flagged = false): void
+{
+    Http::fake([
+        'http://openai.test/*' => Http::response(['results' => [['flagged' => $flagged]]]),
+        'http://evolution.test/*' => Http::response(['status' => 'PENDING']),
+    ]);
+}
 
+function runIncoming(string $text = 'Hola', string $messageId = 'MSG-1', ?string $audio = null): void
+{
+    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', $text, $messageId, $audio))->handle();
+}
+
+/** @return list<Request> */
+function sentTexts(): array
+{
+    return array_values(array_filter(
+        array_map(fn (array $pair): Request => $pair[0], Http::recorded()->all()),
+        fn (Request $request): bool => str_contains($request->url(), '/message/sendText/'),
+    ));
+}
+
+test('an inbound text is answered by the assistant through the business instance', function (): void {
+    fakeWhatsAppHttp();
     Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
 
     // Two canned turns: the fake carries no tool calls, so answer() always
     // re-asks once and the customer receives the second, grounded pass.
     AsistenteAtendia::fake(['Creo que sí.', 'Sí, mañana tenemos turnos desde las 9.']);
 
-    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', '¿Tienen turnos mañana?', 'MSG-1'))->handle();
+    runIncoming('¿Tienen turnos mañana?');
 
-    Http::assertSent(function (Request $request): bool {
-        return str_ends_with($request->url(), '/message/sendText/atendia-demo')
-            && $request['number'] === '5491122334455'
-            && $request['text'] === 'Sí, mañana tenemos turnos desde las 9.';
-    });
+    expect(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toBe('Sí, mañana tenemos turnos desde las 9.')
+        ->and(sentTexts()[0]['number'])->toBe('5491122334455')
+        ->and(sentTexts()[0]['delay'])->toBeGreaterThan(0);
 });
 
-test('the customer sees typing while the assistant thinks', function (): void {
-    Http::fake(['http://evolution.test/*' => Http::response([])]);
-
+test('a burst of texts collapses into one prompt and one reply', function (): void {
+    fakeWhatsAppHttp();
     Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
-    AsistenteAtendia::fake(['Un momento.', 'Listo.']);
+    AsistenteAtendia::fake(['…', 'Sí, tenemos turnos.']);
 
-    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', 'Hola', 'MSG-1'))->handle();
+    Cache::put('wa:buf:atendia-demo:5491122334455', ['Hola', '¿Están?', '¿Tienen turnos?'], 60);
+    Cache::put('wa:last:atendia-demo:5491122334455', 'MSG-3', 60);
 
-    // Presence goes first: it is the "we heard you" the reply then replaces.
-    $urls = collect(Http::recorded())->map(fn (array $pair): string => $pair[0]->url());
+    runIncoming('¿Tienen turnos?', 'MSG-3');
 
-    expect($urls->first())->toEndWith('/chat/sendPresence/atendia-demo')
-        ->and($urls->last())->toEndWith('/message/sendText/atendia-demo');
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Hola')
+        && str_contains($prompt->prompt, '¿Están?')
+        && str_contains($prompt->prompt, '¿Tienen turnos?'));
+
+    expect(sentTexts())->toHaveCount(1);
+});
+
+test('a job outrun by a newer message dies silently instead of double-replying', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['nunca']);
+
+    // The debounce was re-armed: MSG-2's job owns the burst now.
+    Cache::put('wa:last:atendia-demo:5491122334455', 'MSG-2', 60);
+
+    runIncoming('Hola', 'MSG-1');
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts())->toBeEmpty();
+});
+
+test('the customer message is marked as read before the reply', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Listo.']);
+
+    runIncoming('Hola', 'MSG-7');
+
+    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/chat/markMessageAsRead/atendia-demo')
+        && $request['readMessages'][0]['id'] === 'MSG-7');
+});
+
+test('a long reply leaves in short bubbles, each with a human delay', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+
+    $long = implode("\n\n", [
+        str_repeat('Los análisis de sangre se hacen de lunes a viernes. ', 5),
+        str_repeat('Para el perfil tiroideo necesitás ayuno de 8 horas. ', 5),
+    ]);
+    AsistenteAtendia::fake(['…', $long]);
+
+    runIncoming('¿Qué análisis hacen?');
+
+    $texts = sentTexts();
+
+    expect(count($texts))->toBeGreaterThanOrEqual(2);
+
+    foreach ($texts as $request) {
+        expect(mb_strlen((string) $request['text']))->toBeLessThanOrEqual(320)
+            ->and($request['delay'])->toBeGreaterThan(0)
+            ->and($request['delay'])->toBeLessThanOrEqual(8000);
+    }
+});
+
+test('a muted sender is ignored without spending a token', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['nunca']);
+
+    Cache::put('wa:mute:atendia-demo:5491122334455', true, 600);
+
+    runIncoming();
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts())->toBeEmpty();
+});
+
+test('a flood hits the cooldown ladder with a fixed reply, no model call', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['nunca']);
+
+    Cache::put('wa:count:atendia-demo:5491122334455', 30, 3600);
+
+    runIncoming();
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toBe(__('assistant.guard.too_many'))
+        ->and(Cache::has('wa:mute:atendia-demo:5491122334455'))->toBeTrue();
+});
+
+test('offensive content gets a fixed nudge first and the mute on repeat', function (): void {
+    fakeWhatsAppHttp(flagged: true);
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['nunca']);
+
+    runIncoming('***', 'MSG-1');
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts()[0]['text'])->toBe(__('assistant.guard.offensive'))
+        ->and(Cache::has('wa:mute:atendia-demo:5491122334455'))->toBeFalse();
+
+    runIncoming('***', 'MSG-2');
+
+    expect(Cache::has('wa:mute:atendia-demo:5491122334455'))->toBeTrue();
+});
+
+test('a voice note is transcribed and answered as text', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Sí, atendemos mañana.']);
+    Transcription::fake(['¿Atienden mañana?']);
+
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'));
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, '¿Atienden mañana?'));
+    expect(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toBe('Sí, atendemos mañana.');
 });
 
 test('a message for an unclaimed instance warns and answers nobody', function (): void {
-    Http::fake();
+    fakeWhatsAppHttp();
     Log::spy();
 
     (new ProcessIncomingWhatsAppMessage('ghost-instance', '5491122334455', 'Carla', 'Hola', 'MSG-1'))->handle();
 
-    Http::assertNothingSent();
+    expect(sentTexts())->toBeEmpty();
     Log::shouldHaveReceived('warning')->withArgs(
         fn (string $message): bool => $message === 'whatsapp.incoming.unclaimed',
     )->once();
