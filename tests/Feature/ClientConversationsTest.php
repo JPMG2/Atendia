@@ -77,7 +77,7 @@ test('opening a thread shows the whole exchange, read only', function (): void {
     $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, mañana a las 9.');
     $this->actingAs($user);
 
-    livewire('client.conversations')
+    livewire('conversations.index')
         ->call('open', $thread->id)
         ->assertSee('Hola')
         ->assertSee('Sí, mañana a las 9.')
@@ -93,7 +93,7 @@ test('another tenant\'s thread cannot be opened even by id', function (): void {
     threadFor($user, 'Carla', '5491111111111', 'Lo mío.');
     $this->actingAs($user);
 
-    livewire('client.conversations')
+    livewire('conversations.index')
         ->call('open', $foreign->id)
         ->assertDontSee('Privado.')
         ->assertSee(__('client.conversations.select'));
@@ -125,7 +125,7 @@ test('when nothing matches literally the search falls back to meaning', function
 
     $this->actingAs($user);
 
-    livewire('client.conversations')
+    livewire('conversations.index')
         ->set('search', 'ecografias')
         ->assertSee('Carla')
         ->assertDontSee('Marcos')
@@ -138,7 +138,7 @@ test('the search narrows the list by name or phone', function (): void {
     threadFor($user, 'Marcos', '5493333333333', 'Precios.');
     $this->actingAs($user);
 
-    livewire('client.conversations')
+    livewire('conversations.index')
         ->set('search', 'perez')
         ->assertSee('Carla Pérez')
         ->assertDontSee('Marcos');

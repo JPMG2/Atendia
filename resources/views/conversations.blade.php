@@ -1,3 +1,3 @@
 <x-app-layout>
-    <livewire:client.conversations />
+    <livewire:conversations.index />
 </x-app-layout>
