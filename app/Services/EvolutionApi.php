@@ -30,6 +30,37 @@ class EvolutionApi
     }
 
     /**
+     * @throws ConnectionException|RequestException
+     */
+    public function createInstance(string $name): void
+    {
+        $this->request()
+            ->post('/instance/create', [
+                'instanceName' => $name,
+                'integration' => 'WHATSAPP-BAILEYS',
+                'qrcode' => true,
+            ])
+            ->throw();
+    }
+
+    /**
+     * The current pairing QR as a data URI, or null once the instance is
+     * linked (Evolution stops issuing codes). The code rotates server-side,
+     * so the screen polls this instead of framing a stale image.
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function qrCode(string $instance): ?string
+    {
+        $base64 = (string) $this->request()
+            ->get("/instance/connect/{$instance}")
+            ->throw()
+            ->json('base64', '');
+
+        return $base64 === '' ? null : $base64;
+    }
+
+    /**
      * Points the instance's webhook at us. The secret travels as a header on
      * every delivery: the endpoint is unauthenticated by nature, so the header
      * is the only proof the call really comes from our Evolution.

@@ -46,7 +46,7 @@ new class extends Component
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="page-head-title">{{ __('client.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
                 {{-- The "conectar después" promise, kept in sight: the pill
-                dies the day isConnected() turns real. --}}
+                dies by itself the moment the number connects. --}}
                 @if (($business = auth()->user()?->business) && ! $business->isConnected())
                     <a
                         href="{{ route('my-business.contacto') }}"

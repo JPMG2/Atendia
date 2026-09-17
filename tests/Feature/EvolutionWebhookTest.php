@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\Jobs\ProcessIncomingWhatsAppMessage;
+use App\Models\Business;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     config()->set('services.evolution.webhook_secret', 'test-secret');
@@ -101,6 +105,62 @@ test('events other than an inbound message are acknowledged but not processed', 
         ->assertJson(['handled' => false]);
 
     Queue::assertNothingPushed();
+});
+
+test('a connection opening stamps the business as connected', function (): void {
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+
+    $this->postJson('/api/webhooks/evolution', [
+        'event' => 'connection.update',
+        'instance' => 'atendia-demo',
+        'data' => ['state' => 'open'],
+    ], ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    expect($business->refresh()->isConnected())->toBeTrue();
+});
+
+test('a connection closing clears the stamp', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'atendia-demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+
+    $this->postJson('/api/webhooks/evolution', [
+        'event' => 'connection.update',
+        'instance' => 'atendia-demo',
+        'data' => ['state' => 'close'],
+    ], ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    expect($business->refresh()->isConnected())->toBeFalse();
+});
+
+test('a connecting blip changes nothing', function (): void {
+    // Baileys resyncs pass through "connecting": the dashboard must not
+    // flicker to "disconnected" on every blip.
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'atendia-demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+
+    $this->postJson('/api/webhooks/evolution', [
+        'event' => 'connection.update',
+        'instance' => 'atendia-demo',
+        'data' => ['state' => 'connecting'],
+    ], ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => false]);
+
+    expect($business->refresh()->isConnected())->toBeTrue();
+});
+
+test('a connection update for an unclaimed instance is acknowledged but not processed', function (): void {
+    $this->postJson('/api/webhooks/evolution', [
+        'event' => 'connection.update',
+        'instance' => 'ghost',
+        'data' => ['state' => 'open'],
+    ], ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => false]);
 });
 
 test('a message with no text is acknowledged but not processed', function (): void {

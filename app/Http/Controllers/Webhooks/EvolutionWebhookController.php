@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
+use App\Models\Business;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,10 +19,17 @@ class EvolutionWebhookController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        if ($request->input('event') !== 'messages.upsert') {
-            return response()->json(['handled' => false]);
-        }
+        $handled = match ($request->input('event')) {
+            'messages.upsert' => $this->queueIncomingMessage($request),
+            'connection.update' => $this->recordConnectionState($request),
+            default => false,
+        };
 
+        return response()->json(['handled' => $handled]);
+    }
+
+    private function queueIncomingMessage(Request $request): bool
+    {
         $key = (array) $request->input('data.key', []);
         $remoteJid = (string) ($key['remoteJid'] ?? '');
 
@@ -29,14 +37,14 @@ class EvolutionWebhookController extends Controller
         // assistant against itself, and groups/broadcasts are not a customer
         // asking the business something.
         if (($key['fromMe'] ?? false) === true || ! str_ends_with($remoteJid, '@s.whatsapp.net')) {
-            return response()->json(['handled' => false]);
+            return false;
         }
 
         $text = (string) ($request->input('data.message.conversation')
             ?? $request->input('data.message.extendedTextMessage.text', ''));
 
         if (trim($text) === '') {
-            return response()->json(['handled' => false]);
+            return false;
         }
 
         ProcessIncomingWhatsAppMessage::dispatch(
@@ -47,6 +55,32 @@ class EvolutionWebhookController extends Controller
             messageId: (string) ($key['id'] ?? ''),
         );
 
-        return response()->json(['handled' => true]);
+        return true;
+    }
+
+    /**
+     * Keeps `whatsapp_connected_at` honest: `open` stamps it, `close` clears
+     * it. The in-between `connecting` states change nothing — a blip while
+     * Baileys resyncs must not flicker the dashboard to "disconnected".
+     */
+    private function recordConnectionState(Request $request): bool
+    {
+        $business = Business::forWhatsAppInstance((string) $request->input('instance', ''));
+
+        if ($business === null) {
+            return false;
+        }
+
+        $state = (string) $request->input('data.state', '');
+
+        if ($state === 'open' && ! $business->isConnected()) {
+            $business->update(['whatsapp_connected_at' => now()]);
+        }
+
+        if ($state === 'close' && $business->isConnected()) {
+            $business->update(['whatsapp_connected_at' => null]);
+        }
+
+        return in_array($state, ['open', 'close'], true);
     }
 }

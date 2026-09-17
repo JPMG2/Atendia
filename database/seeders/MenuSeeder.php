@@ -46,7 +46,7 @@ class MenuSeeder extends Seeder
         $catalog = Menu::create(['label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 4]);
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'badge' => '22', 'sort_order' => 1]);
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'badge' => '24', 'sort_order' => 2]);
-        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'sort_order' => 6]);
+        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 6]);
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'profile.edit', 'placement' => 'bottom', 'sort_order' => 1]);

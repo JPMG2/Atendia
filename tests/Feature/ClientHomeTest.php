@@ -34,8 +34,7 @@ test('a fresh client lands on the setup guide, not on empty KPIs', function (): 
 });
 
 test('the business wears its "sin conectar" pill pointing at the contact card', function (): void {
-    // The "conectar después" promise kept in sight: the pill dies the day
-    // isConnected() turns real with the Cloud API.
+    // The "conectar después" promise kept in sight while nothing answers.
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create();
     $user->business()->associate(Business::factory()->create(['name' => 'Clínica Vida']))->save();
@@ -44,6 +43,17 @@ test('the business wears its "sin conectar" pill pointing at the contact card', 
     $this->get(route('dashboard'))
         ->assertSee('Clínica Vida · '.__('client.home.disconnected'))
         ->assertSee(route('my-business.contacto'), false);
+});
+
+test('a connected business wears no pill', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create([
+        'whatsapp_connected_at' => now(),
+    ]))->save();
+    $this->actingAs($user);
+
+    $this->get(route('dashboard'))->assertDontSee(__('client.home.disconnected'));
 });
 
 test('with no business there is no connection pill', function (): void {
