@@ -32,6 +32,8 @@ return [
         'failed' => 'No pudimos conectar con WhatsApp. Intenta de nuevo en un momento.',
         'dedicated_title' => 'Usa un número exclusivo para tu negocio',
         'dedicated_body' => 'Si conectas tu número personal, el asistente también les responderá a tus familiares y amigos, y tus chats privados se mezclarán con los de tus clientes.',
+        'tip_label' => 'Consejo',
+        'tip' => '¿Tu número es nuevo? WhatsApp confía más en los números con historia: úsalo unos días de forma normal antes de conectarlo y arrancas con la mejor reputación.',
         'privacy' => 'Tus conversaciones son privadas: solo tu negocio las ve. Las usamos únicamente para que el asistente responda a tus clientes; nunca las vendemos ni las usamos para publicidad.',
     ],
 ];

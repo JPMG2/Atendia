@@ -51,6 +51,7 @@ test('an unconnected business sees the steps and the connect call', function ():
         ->assertSee(__('whatsapp.connect.title'))
         ->assertSee(__('whatsapp.connect.cta'))
         ->assertSee(__('whatsapp.connect.dedicated_title'))
+        ->assertSee(__('whatsapp.connect.tip'))
         ->assertSee(__('whatsapp.connect.privacy'));
 });
 
