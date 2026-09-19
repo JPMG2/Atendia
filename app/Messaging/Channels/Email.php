@@ -22,6 +22,6 @@ class Email extends Channel
     {
         Mail::to($this->receives)
             ->locale($locale)
-            ->send(new $this->message($this->model));
+            ->send(new ($this->message)($this->model, ...$this->messageArguments));
     }
 }

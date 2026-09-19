@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Security\RevokeDeviceController;
+use App\Models\Business;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
@@ -13,14 +14,20 @@ use Illuminate\Support\Str;
 
 Route::get('/', fn () => view('welcome'));
 
-// "Gana con AtendIa": the shared link lands here. The code rides the session
-// for the same-visit signup and a 30-day cookie (the industry attribution
-// window) for the one who comes back later.
+// The referral code rides session + 30-day cookie (industry window). A real
+// code earns the personal invite page — a named invite converts, a cold form
+// does not (Dropbox pattern); a dead code falls through to plain register.
 Route::get('/r/{code}', function (string $code) {
+    $inviter = Business::query()->where('referral_code', $code)->first();
+
+    if ($inviter === null) {
+        return redirect()->route('register');
+    }
+
     session()->put('atendia_ref', $code);
     Cookie::queue('atendia_ref', $code, 60 * 24 * 30);
 
-    return redirect()->route('register');
+    return view('referral-invite', ['inviter' => $inviter->name]);
 })->name('referral.landing');
 
 Route::get('/idioma/{locale}', function (string $locale) {
@@ -74,6 +81,11 @@ Route::get('/whatsapp', fn () => view('whatsapp'))
 Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('conversations');
+
+// "Mis estadísticas": what the assistant handled, read at the plan's depth.
+Route::get('/estadisticas', fn () => view('statistics'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('statistics');
 
 // The subscription: entitlements, usage meters and the ladder with padlocks.
 Route::get('/plan', fn () => view('plan'))

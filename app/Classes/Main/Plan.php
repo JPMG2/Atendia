@@ -13,7 +13,7 @@ use App\Models\Business;
  */
 final class Plan
 {
-    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int} $limits */
+    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -41,6 +41,19 @@ final class Plan
 
     public bool $allowsAudio {
         get => $this->audioMinutesPerMonth > 0;
+    }
+
+    /** counts → patterns → trends: each level answers a bigger question. */
+    public string $statisticsLevel {
+        get => (string) ($this->limits['statistics'] ?? 'counts');
+    }
+
+    /** The statistics gate, in BOTH directions: never serve above the level paid. */
+    public function statisticsAtLeast(string $level): bool
+    {
+        $ladder = ['counts', 'patterns', 'trends'];
+
+        return array_search($this->statisticsLevel, $ladder, true) >= array_search($level, $ladder, true);
     }
 
     /** An unknown or missing code falls to the FLOOR plan: a typo must never gift Premium. */

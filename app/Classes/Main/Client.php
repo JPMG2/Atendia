@@ -22,6 +22,7 @@ class Client
         public readonly ?ServiceMenu $serviceMenu = null,
         public readonly ?Inventory $inventory = null,
         public readonly ?Inbox $inbox = null,
+        public readonly ?Statistics $statistics = null,
     ) {}
 
     /**
@@ -41,6 +42,7 @@ class Client
             $business === null ? null : new ServiceMenu($business),
             $business === null ? null : new Inventory($business),
             $business === null ? null : new Inbox($business),
+            $business === null ? null : new Statistics($business),
         );
     }
 

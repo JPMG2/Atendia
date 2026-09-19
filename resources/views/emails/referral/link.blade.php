@@ -22,6 +22,15 @@
                 <p style="margin:0; padding:12px 18px; background-color:#F0F7F4; border-radius:10px; font-family:'JetBrains Mono', 'Courier New', monospace; font-size:14px; line-height:1.5; color:#0A6B50; word-break:break-all;">{{ $model->referralLink() }}</p>
             </td>
         </tr>
+        @if (isset($message))
+            <tr>
+                {{-- CID-embedded: Gmail drops data URIs, an attached raster survives. --}}
+                <td align="center" style="padding:14px 40px 0;">
+                    <img src="{{ $message->embedData($qrPng, 'gana-con-atendia.png', 'image/png') }}" width="140" height="140" alt="{{ __('mail.referral_link.qr_alt') }}" style="display:block; width:140px; height:140px; border:1px solid #E2EDE8; border-radius:12px;" />
+                    <p style="margin:8px 0 0; font-family:'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; font-size:12px; line-height:1.5; color:#5B7A6E;">{{ __('mail.referral_link.qr_hint') }}</p>
+                </td>
+            </tr>
+        @endif
         <tr>
             <td align="center" style="padding:18px 40px 30px;">
                 <a href="{{ route('referrals') }}" style="display:inline-block; padding:12px 28px; background-color:#0EA47A; border-radius:12px; font-family:'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; font-size:15px; font-weight:700; color:#FFFFFF; text-decoration:none;">{{ __('mail.referral_link.cta') }}</a>

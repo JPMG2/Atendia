@@ -30,4 +30,16 @@ return [
     'qr_title' => 'Tu código QR',
     'qr_hint' => 'Imprímelo y pégalo en tu mostrador: quien lo escanea llega con tu enlace.',
     'download_qr' => 'Descargar el QR',
+
+    'founder_seats' => '{1} Queda 1 lugar de Socio fundador|[2,*] Quedan :count lugares de Socio fundador',
+
+    'invite' => [
+        'eyebrow' => 'Una invitación para tu negocio',
+        'title' => ':inviter te invita a probar AtendIa',
+        'sub' => 'Tu negocio, atendido por IA en WhatsApp. Empieza con :days días de prueba, sin tarjeta.',
+        'perk_trial' => ':days días de prueba gratis, por venir invitado',
+        'perk_always' => 'Responde a tus clientes 24/7, en cualquier idioma',
+        'perk_card' => 'Sin tarjeta: crea tu cuenta y pruébalo hoy',
+        'cta' => 'Crear mi cuenta gratis',
+    ],
 ];

@@ -11,4 +11,8 @@ return [
     'how_reward' => 'Cuando ese negocio paga su primer mes, vos ganás un :percent% de descuento en tu próxima factura.',
     'share_text' => 'Mirá AtendIa: atiende tu WhatsApp con inteligencia artificial, las 24 horas. Con mi enlace probás gratis :days días: :url',
     'qr_hint' => 'Imprimilo y pegalo en tu mostrador: quien lo escanea llega con tu enlace.',
+    'invite' => [
+        'sub' => 'Tu negocio, atendido por IA en WhatsApp. Empezá con :days días de prueba, sin tarjeta.',
+        'perk_card' => 'Sin tarjeta: creá tu cuenta y probalo hoy',
+    ],
 ];

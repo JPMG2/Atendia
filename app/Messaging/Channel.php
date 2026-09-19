@@ -31,13 +31,15 @@ abstract class Channel
      * @param  Model  $model  The record the message talks about.
      * @param  array<int, string>  $receives  Who it goes to. The channel decides, not the message.
      * @param  class-string  $message  The message class to build (a Mailable, for mail).
+     * @param  array<int, mixed>  $messageArguments  Extra constructor args after the model (e.g. a one-time code).
      *
      * @throws InvalidArgumentException when `$message` is not usable by this channel.
      */
     public function __construct(
         protected Model $model,
         protected array $receives,
-        protected string $message
+        protected string $message,
+        protected array $messageArguments = []
     ) {
         $this->guardMessage($message);
     }

@@ -149,6 +149,17 @@ class Business extends Model
             ->count();
     }
 
+    /** Open founder seats: honest scarcity for the /gana screen, never negative. */
+    public static function founderSeatsLeft(): int
+    {
+        $taken = self::query()
+            ->whereNotNull('referred_by_business_id')
+            ->distinct('referred_by_business_id')
+            ->count('referred_by_business_id');
+
+        return max(0, (int) config('atendia.referral.founders') - $taken);
+    }
+
     /**
      * Founding partner: among the first N businesses whose link brought a
      * signup, ranked by their earliest referral. Earned forever — the badge

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Mail\DeviceChallengeCode;
+use App\Messaging\Channels\Email;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * The e-mail code gate for logins from an unknown device. The session holds
@@ -33,9 +33,8 @@ class DeviceChallenge
             'attempts' => 0,
         ]);
 
-        Mail::to($user->email)
-            ->locale(app()->getLocale())
-            ->send(new DeviceChallengeCode($user, $code));
+        // Through the house channel like every mail: one ritual, one door.
+        (new Email($user, [$user->email], DeviceChallengeCode::class, [$code]))->send();
     }
 
     /** Whose login is waiting on the code, for the screen's masked address. */

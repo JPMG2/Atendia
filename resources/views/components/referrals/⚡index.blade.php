@@ -42,6 +42,12 @@ new class extends Component
     }
 
     #[Computed]
+    public function founderSeatsLeft(): int
+    {
+        return Business::founderSeatsLeft();
+    }
+
+    #[Computed]
     public function shareUrl(): ?string
     {
         if ($this->referralLink === null) {
@@ -113,13 +119,17 @@ new class extends Component
         </div>
         @if ($this->business?->isFoundingPartner())
             <x-ui.badge variant="accent" :dot="true">{{ __('referrals.founder') }}</x-ui.badge>
+        @elseif ($this->founderSeatsLeft > 0)
+            <x-ui.badge variant="brand" :dot="true">
+                {{ trans_choice('referrals.founder_seats', $this->founderSeatsLeft, ['count' => $this->founderSeatsLeft]) }}
+            </x-ui.badge>
         @endif
     </div>
 
     @if ($this->business !== null)
-        <div class="referral-grid">
+        <div class="duo-grid">
             <x-ui.card class="p-6">
-                <h2 class="referral-block-title">{{ __('referrals.link_title') }}</h2>
+                <h2 class="block-title">{{ __('referrals.link_title') }}</h2>
 
                 <div
                     x-data="{
@@ -160,7 +170,7 @@ new class extends Component
             </x-ui.card>
 
             <x-ui.card class="p-6">
-                <h2 class="referral-block-title">{{ __('referrals.how_title') }}</h2>
+                <h2 class="block-title">{{ __('referrals.how_title') }}</h2>
                 <ol class="referral-steps">
                     <li>{{ __('referrals.how_share') }}</li>
                     <li>{{ __('referrals.how_invited', ['days' => (int) config('atendia.referral.invited_trial_days')]) }}</li>

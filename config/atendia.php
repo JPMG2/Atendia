@@ -89,6 +89,7 @@ return [
             'whatsapp_numbers' => 1,
             'messages_per_hour' => 30,
             'audio_minutes_per_month' => 0,
+            'statistics' => 'counts',
         ],
         'negocio' => [
             'price' => 79,
@@ -96,6 +97,7 @@ return [
             'whatsapp_numbers' => 2,
             'messages_per_hour' => 60,
             'audio_minutes_per_month' => 200,
+            'statistics' => 'patterns',
         ],
         'premium' => [
             'price' => 149,
@@ -103,6 +105,7 @@ return [
             'whatsapp_numbers' => 4,
             'messages_per_hour' => 120,
             'audio_minutes_per_month' => 600,
+            'statistics' => 'trends',
         ],
     ],
 

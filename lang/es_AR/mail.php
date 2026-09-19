@@ -16,6 +16,7 @@ return [
 
     'referral_link' => [
         'preheader' => 'Compartilo con otros negocios y ganá descuentos en tu factura.',
+        'qr_hint' => 'Imprimí este código y pegalo en tu mostrador: quien lo escanea llega con tu enlace.',
         'title' => 'Este enlace es tuyo: compartilo y ganá',
         'body' => 'Reenviá este correo o compartí el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes vos ganás un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
     ],

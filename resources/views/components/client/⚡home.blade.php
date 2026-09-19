@@ -103,17 +103,12 @@ new class extends Component
 
     @if ($this->usage !== null)
         <a href="{{ route('my-plan') }}" wire:navigate class="home-usage">
-            <div class="plan-meter" data-state="{{ $this->usage['state'] }}">
-                <div class="plan-meter-head">
-                    <span>{{ __('plan.meters.conversations') }}</span>
-                    <b>
-                        {{ __('plan.meters.conversations_of', ['used' => number_format($this->usage['used'], 0, ',', '.'), 'cap' => number_format($this->usage['cap'], 0, ',', '.')]) }}
-                    </b>
-                </div>
-                <div class="plan-meter-track">
-                    <div class="plan-meter-fill" style="width: {{ $this->usage['percent'] }}%"></div>
-                </div>
-            </div>
+            <x-ui.usage-meter
+                :label="__('plan.meters.conversations')"
+                :text="__('plan.meters.conversations_of', ['used' => number_format($this->usage['used'], 0, ',', '.'), 'cap' => number_format($this->usage['cap'], 0, ',', '.')])"
+                :percent="$this->usage['percent']"
+                :state="$this->usage['state']"
+            />
         </a>
     @endif
 

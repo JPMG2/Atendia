@@ -133,42 +133,20 @@ new class extends Component
             </p>
         </div>
 
-        <div
-            class="plan-meter"
-            data-state="{{ $this->meterState($this->conversationsUsed, $this->plan->conversationsPerMonth) }}"
-        >
-            <div class="plan-meter-head">
-                <span>{{ __('plan.meters.conversations') }}</span>
-                <b>
-                    {{ __('plan.meters.conversations_of', ['used' => number_format($this->conversationsUsed, 0, ',', '.'), 'cap' => number_format($this->plan->conversationsPerMonth, 0, ',', '.')]) }}
-                </b>
-            </div>
-            <div class="plan-meter-track">
-                <div
-                    class="plan-meter-fill"
-                    style="width: {{ min(100, (int) round($this->conversationsUsed / max(1, $this->plan->conversationsPerMonth) * 100)) }}%"
-                ></div>
-            </div>
-        </div>
+        <x-ui.usage-meter
+            :label="__('plan.meters.conversations')"
+            :text="__('plan.meters.conversations_of', ['used' => number_format($this->conversationsUsed, 0, ',', '.'), 'cap' => number_format($this->plan->conversationsPerMonth, 0, ',', '.')])"
+            :percent="(int) round($this->conversationsUsed / max(1, $this->plan->conversationsPerMonth) * 100)"
+            :state="$this->meterState($this->conversationsUsed, $this->plan->conversationsPerMonth)"
+        />
 
         @if ($this->plan->allowsAudio)
-            <div
-                class="plan-meter"
-                data-state="{{ $this->meterState($this->audioMinutesUsed, $this->plan->audioMinutesPerMonth) }}"
-            >
-                <div class="plan-meter-head">
-                    <span>{{ __('plan.meters.audio') }}</span>
-                    <b>
-                        {{ __('plan.meters.audio_of', ['used' => $this->audioMinutesUsed, 'cap' => $this->plan->audioMinutesPerMonth]) }}
-                    </b>
-                </div>
-                <div class="plan-meter-track">
-                    <div
-                        class="plan-meter-fill"
-                        style="width: {{ min(100, (int) round($this->audioMinutesUsed / max(1, $this->plan->audioMinutesPerMonth) * 100)) }}%"
-                    ></div>
-                </div>
-            </div>
+            <x-ui.usage-meter
+                :label="__('plan.meters.audio')"
+                :text="__('plan.meters.audio_of', ['used' => $this->audioMinutesUsed, 'cap' => $this->plan->audioMinutesPerMonth])"
+                :percent="(int) round($this->audioMinutesUsed / max(1, $this->plan->audioMinutesPerMonth) * 100)"
+                :state="$this->meterState($this->audioMinutesUsed, $this->plan->audioMinutesPerMonth)"
+            />
         @endif
 
         <div class="plan-meter">

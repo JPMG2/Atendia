@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use BaconQrCode\Renderer\GDLibRenderer;
+use BaconQrCode\Writer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +42,16 @@ class ReferralLink extends Mailable implements ShouldQueue
         return new Content(
             view: 'emails.referral.link',
             text: 'emails.referral.link-text',
+            with: ['qrPng' => $this->qrPng()],
         );
+    }
+
+    /**
+     * PNG and not SVG on purpose: Gmail strips both inline SVG and data
+     * URIs, so the QR rides as a CID-embedded raster the view attaches.
+     */
+    private function qrPng(): string
+    {
+        return (new Writer(new GDLibRenderer(320)))->writeString($this->model->referralLink());
     }
 }

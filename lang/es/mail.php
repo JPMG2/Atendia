@@ -72,6 +72,8 @@ return [
         'intro' => 'Cada negocio que llegue a AtendIa gracias a :name te deja un premio.',
         'body' => 'Reenvía este correo o comparte el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes tú ganas un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
         'cta' => 'Ver mis referidos',
+        'qr_alt' => 'Código QR de tu enlace de recomendación',
+        'qr_hint' => 'Imprime este código y pégalo en tu mostrador: quien lo escanea llega con tu enlace.',
         'reason' => 'Recibiste este correo porque tu negocio tiene su enlace de recomendación en AtendIa.',
     ],
 

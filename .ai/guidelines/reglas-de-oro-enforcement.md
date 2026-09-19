@@ -96,6 +96,11 @@ Cuando se suma un set de reglas de oro:
   a dos); sin allowlist — nació en cero el 2026-09-11 al migrar las piezas de
   `Client` y `RetrievedChunkDto`. Alcance: `app/Classes` + `app/Dto`; Eloquent
   y Livewire quedan fuera a propósito.
+- **Correo por canal (cero `Mail::` fuera de app/Messaging)** →
+  `.ai/guidelines/correo-por-canal.md` · test guardián
+  `tests/Feature/GoldenRulesMailChannelTest.php` · hook
+  `.claude/hooks/check-mail-channel-golden-rules.sh`. Sin allowlist — nació
+  en cero el 2026-09-19 (la auditoría cazó a DeviceChallenge desviado).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

@@ -1425,9 +1425,10 @@
   .plan-locked-hint { font-size:var(--text-xs); color:var(--text-subtle); margin-left:auto; white-space:nowrap; }
 
   /* "Gana con AtendIa": enlace de recomendación y su conteo */
-  .referral-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
-  @media (max-width:900px) { .referral-grid { grid-template-columns:minmax(0,1fr); } }
-  .referral-block-title { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong); margin-bottom:12px; }
+  /* Grilla de dos cards, compartida (referidos, estadísticas): una sola definición */
+  .duo-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
+  @media (max-width:900px) { .duo-grid { grid-template-columns:minmax(0,1fr) } }
+  .block-title { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong); margin-bottom:12px; }
   .referral-link { background:var(--surface-sunken); border-radius:var(--radius-md); padding:10px 14px;
                    font-size:var(--text-sm); color:var(--text-strong); word-break:break-all; }
   .referral-count { display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px;
@@ -1451,6 +1452,35 @@
   .referral-qr-download { display:inline-block; margin-top:8px; font-size:var(--text-sm); font-weight:600;
                           color:var(--brand); }
   .referral-qr-download:hover { text-decoration:underline; }
+  .invite-card { display:flex; flex-direction:column; gap:14px; text-align:center; }
+  .invite-title { font-size:var(--text-2xl); line-height:1.25; color:var(--text-strong); }
+  .invite-sub { color:var(--text-muted); font-size:var(--text-sm); line-height:1.6; }
+  .invite-perks { display:flex; flex-direction:column; gap:8px; margin:4px 0 6px; text-align:left; }
+  .invite-perks li { display:flex; align-items:flex-start; gap:9px; font-size:var(--text-sm); color:var(--text-body); }
+  .invite-perks svg { flex-shrink:0; margin-top:2px; color:var(--brand); }
+
+  /* "Mis estadísticas": lecturas + gráficos SVG de la casa */
+  .stats-hero { display:flex; align-items:flex-start; gap:12px; background:var(--brand-soft);
+                border-radius:var(--radius-md); padding:14px 18px; margin-bottom:16px;
+                color:var(--brand-soft-text); }
+  .stats-hero svg { flex-shrink:0; margin-top:1px; }
+  .stats-hero p { font-size:var(--text-sm); line-height:1.6; }
+  .stats-hero b { font-family:var(--font-mono); font-weight:700; }
+  .stats-insight { font-size:var(--text-sm); color:var(--text-muted); margin-bottom:12px; }
+  .stats-empty { font-size:var(--text-sm); color:var(--text-subtle); }
+  .stats-chart svg { display:block; width:100%; height:auto; }
+  .stats-chart-tick { font-size:9px; fill:var(--text-subtle); font-family:var(--font-sans); }
+  .stats-chart-value { font-size:10px; font-weight:700; fill:var(--text-strong); font-family:var(--font-mono); }
+  .stats-top { display:flex; flex-direction:column; gap:12px; }
+  .stats-top-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:4px; }
+  .stats-top-text { font-size:var(--text-sm); color:var(--text-body); }
+  .stats-locked { border-style:dashed; }
+  .stats-locked-head { display:flex; align-items:center; gap:9px; color:var(--text-subtle); margin-bottom:8px; }
+  .stats-locked-head h2 { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-muted); }
+  .stats-locked-hint { font-size:var(--text-sm); color:var(--text-subtle); margin-bottom:10px; }
+  .stats-locked-link { font-size:var(--text-sm); font-weight:600; color:var(--brand); }
+  .stats-locked-link:hover { text-decoration:underline; }
+  .stats-gaps { margin-top:16px; border-color:var(--accent); }
 
   .sidebar-upsell { background:var(--brand-soft); border-radius:var(--radius-md); padding:14px; margin-top:8px; }
   .sidebar-upsell-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:var(--brand); }

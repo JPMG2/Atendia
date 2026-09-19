@@ -22,13 +22,22 @@ test('every business is born with a shareable code free of lookalike characters'
         ->and(Business::factory()->create()->referral_code)->not->toBe($business->referral_code);
 });
 
-test('the shared link drops the code and lands on the register form', function (): void {
-    $referrer = Business::factory()->create();
+test('a real code lands on the personal invite page and drops the code', function (): void {
+    $referrer = Business::factory()->create(['name' => 'Laboratorio Vida']);
 
     $this->get('/r/'.$referrer->referral_code)
-        ->assertRedirect(route('register'))
+        ->assertOk()
+        ->assertSee(__('referrals.invite.title', ['inviter' => 'Laboratorio Vida']))
+        ->assertSee(__('referrals.invite.cta'))
+        ->assertSee(route('register'))
         ->assertSessionHas('atendia_ref', $referrer->referral_code)
         ->assertCookie('atendia_ref', $referrer->referral_code, encrypted: false);
+});
+
+test('a dead code falls through to the plain register with nothing attributed', function (): void {
+    $this->get('/r/GHOSTCOD')
+        ->assertRedirect(route('register'))
+        ->assertSessionMissing('atendia_ref');
 });
 
 test('a business born with the code in session is attributed and gets the longer trial', function (): void {
@@ -97,6 +106,23 @@ test('the mail carries the shareable link ready to forward', function (): void {
         ->toContain(route('referrals'));
 });
 
+test('the mail rides a real PNG QR, the only raster Gmail will show', function (): void {
+    $mail = new ReferralLink(Business::factory()->create());
+
+    expect((string) $mail->content()->with['qrPng'])->toStartWith("\x89PNG");
+});
+
+test('open founder seats greet a business that has not referred yet', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $this->actingAs($user);
+
+    livewire('referrals.index')
+        ->assertSee(trans_choice('referrals.founder_seats', 10, ['count' => 10]));
+});
+
 test('the screen resends the link by mail on demand', function (): void {
     Mail::fake();
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -132,11 +158,14 @@ test('the founder badge greets only a business whose link already brought someon
 
     $this->actingAs($user);
 
-    livewire('referrals.index')->assertDontSee(__('referrals.founder'));
+    // Before referring: the open-seats invitation, not the badge itself.
+    livewire('referrals.index')->assertSee(trans_choice('referrals.founder_seats', 10, ['count' => 10]));
 
     session()->put('atendia_ref', $user->business->referral_code);
     Business::factory()->create();
     session()->forget('atendia_ref');
 
-    livewire('referrals.index')->assertSee(__('referrals.founder'));
+    livewire('referrals.index')
+        ->assertSee(__('referrals.founder'))
+        ->assertDontSee(trans_choice('referrals.founder_seats', 9, ['count' => 9]));
 });
