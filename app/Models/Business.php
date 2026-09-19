@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\Plan;
 use App\Traits\TracksUserActions;
 use Database\Factories\BusinessFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,9 +15,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -66,6 +69,114 @@ class Business extends Model
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Every business is born with its referral code and on the reverse
+     * trial: full taste of the trial plan, automatic fall to the floor when
+     * it expires (resolved by Plan, no downgrade job). One place, every
+     * creation path covered; a referred business gets the longer trial.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $business): void {
+            $business->referral_code ??= self::freshReferralCode();
+        });
+
+        static::created(function (self $business): void {
+            $business->adoptReferrer();
+
+            $days = $business->referred_by_business_id !== null
+                ? (int) config('atendia.referral.invited_trial_days')
+                : (int) config('atendia.trial.days');
+
+            $business->subscription()->create([
+                'business_id' => $business->id,
+                'plan' => config('atendia.trial.plan'),
+                'trial_ends_at' => now()->addDays($days),
+            ]);
+        });
+    }
+
+    /** Unmistakable in a WhatsApp message: no lookalike 0/O/1/I characters. */
+    private static function freshReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+            $code = strtr($code, ['0' => '2', 'O' => '3', '1' => '4', 'I' => '5', 'L' => '6']);
+        } while (self::query()->where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Ties the newborn business to whoever shared the link. The code rides
+     * the session (same-visit signup) or the 30-day cookie; outside a web
+     * request — seeders, jobs, factories — both read empty and nothing sticks.
+     */
+    private function adoptReferrer(): void
+    {
+        $code = session('atendia_ref') ?? request()->cookie('atendia_ref');
+
+        if (! is_string($code) || $code === '') {
+            return;
+        }
+
+        $referrer = self::query()
+            ->where('referral_code', $code)
+            ->whereKeyNot($this->id)
+            ->first();
+
+        // forceFill: the column stays out of $fillable so no public form can
+        // fake an attribution; only this hook writes it.
+        if ($referrer !== null) {
+            $this->forceFill(['referred_by_business_id' => $referrer->id])->save();
+        }
+    }
+
+    /** How many businesses signed up through this business's link. */
+    public function referredCount(): int
+    {
+        return self::query()->where('referred_by_business_id', $this->id)->count();
+    }
+
+    /** This week's referred signups — the nightly digest brags about them. */
+    public function referredThisWeek(): int
+    {
+        return self::query()
+            ->where('referred_by_business_id', $this->id)
+            ->where('created_at', '>=', now()->startOfWeek())
+            ->count();
+    }
+
+    /**
+     * Founding partner: among the first N businesses whose link brought a
+     * signup, ranked by their earliest referral. Earned forever — the badge
+     * never expires once won.
+     */
+    public function isFoundingPartner(): bool
+    {
+        $firstReferralAt = self::query()
+            ->where('referred_by_business_id', $this->id)
+            ->min('created_at');
+
+        if ($firstReferralAt === null) {
+            return false;
+        }
+
+        $earlierReferrers = self::query()
+            ->whereNotNull('referred_by_business_id')
+            ->where('created_at', '<', $firstReferralAt)
+            ->distinct('referred_by_business_id')
+            ->count('referred_by_business_id');
+
+        return $earlierReferrers < (int) config('atendia.referral.founders');
+    }
+
+    /** The shareable "Gana con AtendIa" URL. */
+    public function referralLink(): string
+    {
+        return route('referral.landing', ['code' => $this->referral_code]);
     }
 
     /**
@@ -313,6 +424,44 @@ class Business extends Model
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);
+    }
+
+    /**
+     * The CURRENT subscription: plan changes append rows, the latest rules.
+     *
+     * @return HasOne<Subscription, $this>
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
+    /** The effective entitlements, trial and floor already resolved. */
+    public function plan(): Plan
+    {
+        return Plan::for($this);
+    }
+
+    /**
+     * Active conversations this month — the market's metric and the plan's
+     * cap: threads with at least one message, not threads ever created.
+     */
+    public function conversationsThisMonth(): int
+    {
+        return ConversationMessage::query()
+            ->where('business_id', $this->id)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->distinct('conversation_id')
+            ->count('conversation_id');
+    }
+
+    /** Transcribed audio spent this month, in whole seconds. */
+    public function audioSecondsThisMonth(): int
+    {
+        return (int) ConversationMessage::query()
+            ->where('business_id', $this->id)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->sum('audio_seconds');
     }
 
     /**

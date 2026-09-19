@@ -14,17 +14,29 @@
     {{-- Theme and sidebar rail before the first paint: avoids both flashes. --}}
     <script>
         (function () {
-            try {
-                var t = localStorage.getItem('atendia-theme');
-                if (!t) {
-                    t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                }
-                document.documentElement.classList.toggle('dark', t === 'dark');
+            function atendiaPaintChrome() {
+                try {
+                    var t = localStorage.getItem('atendia-theme');
+                    if (!t) {
+                        t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    }
+                    document.documentElement.classList.toggle('dark', t === 'dark');
 
-                if (localStorage.getItem('atendia-sidebar') === 'rail') {
-                    document.documentElement.setAttribute('data-sidebar', 'rail');
-                }
-            } catch (e) {}
+                    if (localStorage.getItem('atendia-sidebar') === 'rail') {
+                        document.documentElement.setAttribute('data-sidebar', 'rail');
+                    }
+                } catch (e) {}
+            }
+
+            atendiaPaintChrome();
+
+            // wire:navigate swaps in server HTML whose <html> knows no theme,
+            // and this head script does not re-run on SPA visits: repaint from
+            // storage after every navigation (owner's catch, 2026-09-19).
+            if (!window.atendiaChromeHooked) {
+                window.atendiaChromeHooked = true;
+                document.addEventListener('livewire:navigated', atendiaPaintChrome);
+            }
 
             // Pure DOM on purpose: collapsing is a CSS state on <html>, so no
             // Livewire render and no lost component state.

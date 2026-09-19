@@ -35,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // (evita "contenido mixto" que rompia los estilos al entrar por https).
         $middleware->trustProxies(at: '*');
 
+        // The referral cookie is a public share code, nothing sensitive:
+        // plain text keeps it readable across the signup flow and in tests.
+        $middleware->encryptCookies(except: ['atendia_ref']);
+
         // Resuelve el locale (sesión › geolocalización › default) en cada request web.
         $middleware->web(append: [
             SetLocale::class,

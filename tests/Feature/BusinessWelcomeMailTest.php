@@ -88,7 +88,9 @@ test('walking back and saving again never greets twice', function (): void {
 
     $form->saveIdentity();
 
-    Mail::assertQueuedCount(1);
+    // One welcome and one referral-link mail: the pair rides the same event.
+    Mail::assertQueued(BusinessWelcome::class, 1);
+    Mail::assertQueuedCount(2);
 });
 
 test('the listener hangs off the event, so tomorrow\'s effects can join it', function (): void {

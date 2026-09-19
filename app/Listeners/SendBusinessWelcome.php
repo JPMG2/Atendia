@@ -6,6 +6,7 @@ namespace App\Listeners;
 
 use App\Events\BusinessCreated;
 use App\Mail\BusinessWelcome;
+use App\Mail\ReferralLink;
 use App\Messaging\Channels\Email;
 
 /**
@@ -22,5 +23,9 @@ class SendBusinessWelcome
         // At creation time the account's address IS the billing email: the
         // business's own contact is only asked steps later.
         (new Email($event->business, [$event->business->billing_email], BusinessWelcome::class))->send();
+
+        // The Starlink touch the owner asked for: the referral link lands in
+        // the inbox ONCE, as its own mail, ready to be forwarded as-is.
+        (new Email($event->business, [$event->business->billing_email], ReferralLink::class))->send();
     }
 }

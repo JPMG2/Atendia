@@ -30,6 +30,7 @@ return new class extends Migration
         'knowledge_chunks',
         'conversations',
         'conversation_messages',
+        'subscriptions',
     ];
 
     /**

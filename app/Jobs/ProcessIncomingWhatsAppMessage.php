@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Classes\Main\Plan;
 use App\Enums\GuardVerdict;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
@@ -67,15 +68,25 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
     private function reply(Business $business): void
     {
+        $plan = $business->plan();
+        $evolution = app(EvolutionApi::class);
+
+        // The plan gate on audio closes BEFORE transcription spends a cent.
+        // The customer only hears a courteous ask for text — the owner's
+        // plan is never their problem.
+        if ($this->audioBase64 !== null && ! $this->audioWithinPlan($business, $plan)) {
+            $evolution->sendText($this->instance, $this->from, __('assistant.plan.audio'), 1500);
+
+            return;
+        }
+
         $text = $this->audioBase64 !== null ? $this->transcribe() : $this->drainBuffer();
 
         if ($text === null || trim($text) === '') {
             return;
         }
 
-        $evolution = app(EvolutionApi::class);
-
-        $verdict = app(ConversationGuard::class)->verdict($this->instance, $this->from, $text);
+        $verdict = app(ConversationGuard::class)->verdict($this->instance, $this->from, $text, $plan->messagesPerHour);
 
         if ($verdict === GuardVerdict::Muted) {
             return;
@@ -111,9 +122,41 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage);
             $this->rememberForDigest($business, $text, $reply);
+            $this->warnOwnerNearCap($business, $evolution);
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
         });
+    }
+
+    /**
+     * One heads-up per month to the owner's human number when usage crosses
+     * 80% of the plan. Informative only: the assistant NEVER stops answering
+     * at the cap — the WhatsApp is the client's cash register.
+     */
+    private function warnOwnerNearCap(Business $business, EvolutionApi $evolution): void
+    {
+        $plan = $business->plan();
+        $used = $business->conversationsThisMonth();
+
+        if ($used < (int) ($plan->conversationsPerMonth * 0.8) || $business->fallback_whatsapp_number === null) {
+            return;
+        }
+
+        $sentKey = 'wa:cap80:'.$business->id.':'.now()->format('Y-m');
+
+        if (! Cache::add($sentKey, true, now()->addDays(45))) {
+            return;
+        }
+
+        rescue(fn () => $evolution->sendText(
+            $this->instance,
+            (string) preg_replace('/\D/', '', (string) $business->fallback_whatsapp_number),
+            __('assistant.plan.cap_warning', [
+                'used' => $used,
+                'cap' => $plan->conversationsPerMonth,
+                'url' => route('my-plan'),
+            ]),
+        ), report: true);
     }
 
     /**
@@ -190,6 +233,16 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         return trim(implode("\n", array_filter($texts, fn ($piece): bool => is_string($piece) && trim($piece) !== '')));
     }
 
+    /** Audio rides only while the plan includes it AND the month's minutes last. */
+    private function audioWithinPlan(Business $business, Plan $plan): bool
+    {
+        if (! $plan->allowsAudio) {
+            return false;
+        }
+
+        return $business->audioSecondsThisMonth() < $plan->audioMinutesPerMonth * 60;
+    }
+
     /** Voice notes become text and join the same pipeline; replies stay text. */
     private function transcribe(): ?string
     {
@@ -247,12 +300,14 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
     /**
      * Typing time a person would need: base plus per-character, jittered so
-     * no two replies land with machine-perfect cadence, capped at 8 s.
+     * no two replies land with machine-perfect cadence, capped at 4 s: the
+     * 2026 market median answers in under 5 s, and fast replies to inbound
+     * chats carry no ban risk — only mass outbound does.
      */
     private function humanDelay(string $bubble): int
     {
         $millis = (1200 + mb_strlen($bubble) * 55) * random_int(75, 125) / 100;
 
-        return (int) min($millis, 8000);
+        return (int) min($millis, 4000);
     }
 }

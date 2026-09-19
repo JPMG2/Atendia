@@ -8,6 +8,7 @@ use App\Events\WhatsAppExchangeArrived;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -210,7 +211,7 @@ test('a long reply leaves in short bubbles, each with a human delay', function (
     foreach ($texts as $request) {
         expect(mb_strlen((string) $request['text']))->toBeLessThanOrEqual(320)
             ->and($request['delay'])->toBeGreaterThan(0)
-            ->and($request['delay'])->toBeLessThanOrEqual(8000);
+            ->and($request['delay'])->toBeLessThanOrEqual(4000);
     }
 });
 
@@ -229,10 +230,11 @@ test('a muted sender is ignored without spending a token', function (): void {
 
 test('a flood hits the cooldown ladder with a fixed reply, no model call', function (): void {
     fakeWhatsAppHttp();
-    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
     AsistenteAtendia::fake(['nunca']);
 
-    Cache::put('wa:count:atendia-demo:5491122334455', 30, 3600);
+    // The hourly cap is a plan dial now: prime the counter right at it.
+    Cache::put('wa:count:atendia-demo:5491122334455', $business->plan()->messagesPerHour, 3600);
 
     runIncoming();
 
@@ -270,6 +272,87 @@ test('a voice note is transcribed and answered as text', function (): void {
     expect(sentTexts())->toHaveCount(1)
         ->and(sentTexts()[0]['text'])->toBe('Sí, atendemos mañana.')
         ->and(Conversation::query()->sole()->messages()->whereNotNull('audio_seconds')->sole()->audio_seconds)->toBe(7);
+});
+
+test('a voice note on a plan without audio gets a courteous ask for text, no transcription', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    // Expired trial: the business sits on the floor plan, which is text-only.
+    $business->subscription->update(['trial_ends_at' => now()->subDay()]);
+    AsistenteAtendia::fake(['nunca']);
+    Transcription::fake(['nunca']);
+
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toBe(__('assistant.plan.audio'));
+});
+
+test('a voice note past the month audio budget is asked as text too', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['nunca']);
+    Transcription::fake(['nunca']);
+
+    $cap = $business->plan()->audioMinutesPerMonth * 60;
+    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
+    ConversationMessage::factory()->create([
+        'business_id' => $business->id,
+        'conversation_id' => $conversation->id,
+        'audio_seconds' => $cap,
+    ]);
+
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toBe(__('assistant.plan.audio'));
+});
+
+test('the hourly cap is the plan dial, so the floor plan mutes earlier', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    $business->subscription->update(['trial_ends_at' => now()->subDay()]);
+    AsistenteAtendia::fake(['nunca']);
+
+    Cache::put('wa:count:atendia-demo:5491122334455', $business->fresh()->plan()->messagesPerHour, 3600);
+
+    runIncoming();
+
+    AsistenteAtendia::assertNeverPrompted();
+    expect(sentTexts()[0]['text'])->toBe(__('assistant.guard.too_many'));
+});
+
+test('crossing 80% of the month cap warns the owner once, and the assistant keeps answering', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'atendia-demo',
+        'fallback_whatsapp_number' => '+54 9 11 5555-0000',
+    ]);
+    AsistenteAtendia::fake(['…', 'Claro, te cuento.', '…', 'Sí, seguimos acá.']);
+
+    // A tiny cap keeps the test honest without seeding hundreds of threads.
+    config()->set('atendia.plans.negocio.conversations_per_month', 5);
+    ConversationMessage::factory()->count(4)->create(['business_id' => $business->id]);
+
+    runIncoming('¿Tienen stock?');
+
+    $warning = __('assistant.plan.cap_warning', ['used' => 5, 'cap' => 5, 'url' => route('my-plan')]);
+    $texts = array_map(fn ($request): string => (string) $request['text'], sentTexts());
+
+    expect($texts)->toContain('Claro, te cuento.')
+        ->toContain($warning);
+
+    // The flag makes it one heads-up per month, not one per message.
+    runIncoming('¿Y mañana?', 'MSG-2');
+
+    $warnings = array_filter(
+        array_map(fn ($request): string => (string) $request['text'], sentTexts()),
+        fn (string $text): bool => $text === $warning,
+    );
+
+    expect($warnings)->toHaveCount(1);
 });
 
 test('a message for an unclaimed instance warns and answers nobody', function (): void {

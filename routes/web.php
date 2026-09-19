@@ -6,11 +6,22 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 Route::get('/', fn () => view('welcome'));
+
+// "Gana con AtendIa": the shared link lands here. The code rides the session
+// for the same-visit signup and a 30-day cookie (the industry attribution
+// window) for the one who comes back later.
+Route::get('/r/{code}', function (string $code) {
+    session()->put('atendia_ref', $code);
+    Cookie::queue('atendia_ref', $code, 60 * 24 * 30);
+
+    return redirect()->route('register');
+})->name('referral.landing');
 
 Route::get('/idioma/{locale}', function (string $locale) {
     if (in_array($locale, config('locales.supported'), true)) {
@@ -63,6 +74,16 @@ Route::get('/whatsapp', fn () => view('whatsapp'))
 Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('conversations');
+
+// The subscription: entitlements, usage meters and the ladder with padlocks.
+Route::get('/plan', fn () => view('plan'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-plan');
+
+// "Gana con AtendIa": the client's referral link and its tally.
+Route::get('/gana', fn () => view('referrals'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('referrals');
 
 // Client onboarding wizard. It writes real data now, so it sits behind the
 // client-panel lock. No 'verified': the welcome tour must not wait for the

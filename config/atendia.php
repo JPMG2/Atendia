@@ -48,4 +48,62 @@ return [
         'audio_per_minute' => env('AI_RATE_AUDIO', 0.003),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Plans (entitlements)
+    |--------------------------------------------------------------------------
+    |
+    | The single source of truth every gate asks. Prices are the working
+    | hypothesis until the fiscal meeting; caps are the provisional ones
+    | already published on the landing. A business without a subscription
+    | falls to the FIRST plan: the floor, never a giveaway.
+    |
+    */
+
+    'trial' => [
+        'plan' => 'negocio',
+        'days' => 14,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Referral program ("Gana con AtendIa")
+    |--------------------------------------------------------------------------
+    |
+    | Payment-agnostic on purpose: the reward is a percent off the next
+    | invoice, whatever the payment rail turns out to be. These numbers are
+    | the launch defaults; the admin dashboard will manage them later.
+    |
+    */
+
+    'referral' => [
+        'reward_percent' => 25,
+        'invited_trial_days' => 21,
+        'founders' => 10,
+    ],
+
+    'plans' => [
+        'emprende' => [
+            'price' => 29,
+            'conversations_per_month' => 300,
+            'whatsapp_numbers' => 1,
+            'messages_per_hour' => 30,
+            'audio_minutes_per_month' => 0,
+        ],
+        'negocio' => [
+            'price' => 79,
+            'conversations_per_month' => 1000,
+            'whatsapp_numbers' => 2,
+            'messages_per_hour' => 60,
+            'audio_minutes_per_month' => 200,
+        ],
+        'premium' => [
+            'price' => 149,
+            'conversations_per_month' => 3000,
+            'whatsapp_numbers' => 4,
+            'messages_per_hour' => 120,
+            'audio_minutes_per_month' => 600,
+        ],
+    ],
+
 ];

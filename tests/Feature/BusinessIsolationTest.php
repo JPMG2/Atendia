@@ -13,6 +13,7 @@ use App\Models\ProductImport;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\SocialLink;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Tenant;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -41,6 +42,7 @@ dataset('tenant models', [
     KnowledgeChunk::class,
     Conversation::class,
     ConversationMessage::class,
+    Subscription::class,
 ]);
 
 test('a business never sees another business records', function (): void {
@@ -86,7 +88,10 @@ test('every tenant model hides the other business rows, even by id', function (s
 
     $this->actingAs(User::factory()->create(['business_id' => $mine->id]));
 
-    expect($model::query()->pluck('id')->all())->toBe([$ownRow->id])
+    // Contains, not equals: some models (Subscription) are born automatically
+    // with the business, so "my rows" can be more than the one created here.
+    expect($model::query()->pluck('id')->all())->toContain($ownRow->id)
+        ->not->toContain($foreignRow->id)
         ->and($model::query()->find($foreignRow->id))->toBeNull();
 })->with('tenant models');
 

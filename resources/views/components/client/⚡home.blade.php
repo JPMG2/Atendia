@@ -1,5 +1,7 @@
 <?php
 
+use App\Classes\Main\Plan;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
@@ -30,6 +32,32 @@ new class extends Component
     public function switchTo(string $mode): void
     {
         $this->mode = in_array($mode, ['new', 'active'], true) ? $mode : 'new';
+    }
+
+    /**
+     * The plan usage strip, REAL data amid the mock-up: Vercel keeps this
+     * meter always in sight and it upsells by itself. Null hides it.
+     *
+     * @return array{used: int, cap: int, percent: int, state: string}|null
+     */
+    #[Computed]
+    public function usage(): ?array
+    {
+        $business = auth()->user()?->business;
+
+        if ($business === null) {
+            return null;
+        }
+
+        $used = $business->conversationsThisMonth();
+        $cap = $business->plan()->conversationsPerMonth;
+
+        return [
+            'used' => $used,
+            'cap' => $cap,
+            'percent' => min(100, (int) round($used / max(1, $cap) * 100)),
+            'state' => Plan::usageState($used, $cap),
+        ];
     }
 };
 ?>
@@ -72,6 +100,22 @@ new class extends Component
             </button>
         </div>
     </div>
+
+    @if ($this->usage !== null)
+        <a href="{{ route('my-plan') }}" wire:navigate class="home-usage">
+            <div class="plan-meter" data-state="{{ $this->usage['state'] }}">
+                <div class="plan-meter-head">
+                    <span>{{ __('plan.meters.conversations') }}</span>
+                    <b>
+                        {{ __('plan.meters.conversations_of', ['used' => number_format($this->usage['used'], 0, ',', '.'), 'cap' => number_format($this->usage['cap'], 0, ',', '.')]) }}
+                    </b>
+                </div>
+                <div class="plan-meter-track">
+                    <div class="plan-meter-fill" style="width: {{ $this->usage['percent'] }}%"></div>
+                </div>
+            </div>
+        </a>
+    @endif
 
     @if ($mode === 'new')
         <x-ui.card class="setup-card">

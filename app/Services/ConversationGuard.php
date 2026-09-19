@@ -25,7 +25,7 @@ class ConversationGuard
 
     private const array MUTE_MINUTES = [10, 60, 1440];
 
-    public function verdict(string $instance, string $from, string $text): GuardVerdict
+    public function verdict(string $instance, string $from, string $text, ?int $hourlyCap = null): GuardVerdict
     {
         $sender = "{$instance}:{$from}";
 
@@ -33,7 +33,7 @@ class ConversationGuard
             return GuardVerdict::Muted;
         }
 
-        if ($this->countMessage($sender) > self::HOURLY_CAP) {
+        if ($this->countMessage($sender) > ($hourlyCap ?? self::HOURLY_CAP)) {
             $this->mute($sender);
 
             return GuardVerdict::TooMany;

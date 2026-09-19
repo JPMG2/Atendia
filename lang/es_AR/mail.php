@@ -14,6 +14,12 @@ return [
         'alert' => 'Si no hiciste este cambio, entrá a tu panel y revisá tus datos de contacto.',
     ],
 
+    'referral_link' => [
+        'preheader' => 'Compartilo con otros negocios y ganá descuentos en tu factura.',
+        'title' => 'Este enlace es tuyo: compartilo y ganá',
+        'body' => 'Reenviá este correo o compartí el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes vos ganás un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
+    ],
+
     'challenge' => [
         'alert' => 'Si no intentaste entrar, no compartas este código con nadie y cambiá tu contraseña.',
     ],

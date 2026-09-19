@@ -64,6 +64,17 @@ return [
         'reason' => 'Recibiste este correo porque creaste tu negocio en AtendIa con esta dirección.',
     ],
 
+    'referral_link' => [
+        'subject' => 'Tu enlace para ganar con AtendIa',
+        'preheader' => 'Compártelo con otros negocios y gana descuentos en tu factura.',
+        'eyebrow' => 'Gana con AtendIa',
+        'title' => 'Este enlace es tuyo: compártelo y gana',
+        'intro' => 'Cada negocio que llegue a AtendIa gracias a :name te deja un premio.',
+        'body' => 'Reenvía este correo o comparte el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes tú ganas un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
+        'cta' => 'Ver mis referidos',
+        'reason' => 'Recibiste este correo porque tu negocio tiene su enlace de recomendación en AtendIa.',
+    ],
+
     'contact_updated' => [
         'subject' => ':name tiene un nuevo correo de contacto',
         'preheader' => 'Este es el nuevo punto de encuentro entre tu negocio y AtendIa.',

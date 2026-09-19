@@ -17,7 +17,10 @@ test('the dto mirrors every column of the businesses table, so a profile slice c
     // The DTO's docblock promises "full row": this pins it, so a new column
     // cannot reach the table without reaching the DTO too.
     $columns = collect(Schema::getColumnListing('businesses'))
-        ->diff(['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by']);
+        ->diff(['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])
+        // The referral pair is machine-written by model hooks, like the audit
+        // trio: no profile form may ever carry it, so it stays out on purpose.
+        ->diff(['referral_code', 'referred_by_business_id']);
 
     expect((new BusinessDto)->toPayload())->toHaveKeys($columns->all());
 });

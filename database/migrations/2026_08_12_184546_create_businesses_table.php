@@ -32,6 +32,8 @@ return new class extends Migration
             $table->timestamp('whatsapp_connected_at')->nullable()->comment('Desde cuándo el número está vinculado y atendiendo; null = sin conectar (lo mantiene el webhook de conexión)');
             $table->string('email')->nullable()->comment('Correo de contacto del negocio: acá llega la bienvenida y el contacto público');
             $table->string('web')->nullable()->comment('Sitio web del negocio, para su perfil público');
+            $table->string('referral_code', 12)->nullable()->unique()->comment('Código del enlace "Gana con AtendIa"; se genera al crear el negocio');
+            $table->foreignId('referred_by_business_id')->nullable()->constrained('businesses')->nullOnDelete()->comment('Quién lo trajo con su enlace de recomendación');
             $table->string('logo_path')->nullable()->comment('Logo del negocio, uno solo para ambos temas');
             $table->string('address')->nullable()->comment('Calle y número del local, si atiende en uno');
             $table->string('city')->nullable()->comment('Ciudad del local: la provincia sola no lo ubica');

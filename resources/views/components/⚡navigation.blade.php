@@ -1,6 +1,7 @@
 <?php
 
 use App\Classes\Main\Client;
+use App\Classes\Main\Plan;
 use App\Models\Menu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,34 @@ new class extends Component
     {
         return (int) round($this->strength['done'] / max(1, $this->strength['total']) * 100);
     }
+
+    /**
+     * Sidebar upsell data; null hides the block: no business yet, or already
+     * on the top rung with nothing left to sell.
+     *
+     * @return array{name: string, days: int|null}|null
+     */
+    #[Computed]
+    public function planUpsell(): ?array
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null) {
+            return null;
+        }
+
+        $plan = $business->plan();
+        $ladder = Plan::ladder();
+
+        if (! $plan->isBelow(end($ladder))) {
+            return null;
+        }
+
+        return [
+            'name' => __('plan.names.'.$plan->code),
+            'days' => $business->subscription?->trialDaysLeft(),
+        ];
+    }
 };
 ?>
 
@@ -92,16 +121,28 @@ new class extends Component
             </div>
         @endif
 
-        {{-- The plan upsell talks to a CLIENT on a trial; the admin panel is
-        the owner's and has no plan to improve. --}}
-        @if ($panel === 'client')
+        {{-- The plan upsell talks to a CLIENT with rungs left to climb; the
+        admin panel is the owner's and has no plan to improve. --}}
+        @if ($panel === 'client' && $this->planUpsell !== null)
             <div class="sidebar-upsell">
                 <div class="sidebar-upsell-head">
-                    <x-icon name="zap" :size="16" />
-                    <span>{{ __('menu.plan_name') }}</span>
+                    <x-icon name="gem" :size="16" />
+                    <span>{{ __('menu.plan_name', ['plan' => $this->planUpsell['name']]) }}</span>
                 </div>
-                <p class="sidebar-upsell-text">{{ __('menu.plan_trial') }}</p>
-                <x-ui.button variant="primary" size="sm" :fullWidth="true">{{ __('menu.plan_cta') }}</x-ui.button>
+                @if ($this->planUpsell['days'] !== null)
+                    <p class="sidebar-upsell-text">
+                        {{ __('menu.plan_trial', ['days' => $this->planUpsell['days']]) }}
+                    </p>
+                @endif
+                <x-ui.button
+                    variant="primary"
+                    size="sm"
+                    :href="route('my-plan')"
+                    wire:navigate
+                    :fullWidth="true"
+                >
+                    {{ __('menu.plan_cta') }}
+                </x-ui.button>
             </div>
         @endif
     </div>

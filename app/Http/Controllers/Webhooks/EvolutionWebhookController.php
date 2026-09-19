@@ -34,7 +34,7 @@ class EvolutionWebhookController extends Controller
      * text lands in a short-lived buffer and the job waits out the debounce
      * window, so the burst gets ONE thought-out answer instead of three.
      */
-    private const int DEBOUNCE_SECONDS = 8;
+    private const int DEBOUNCE_SECONDS = 4;
 
     private function queueIncomingMessage(Request $request): bool
     {

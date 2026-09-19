@@ -70,6 +70,16 @@ class SendWhatsAppDigests extends Command
             return trim((string) DigestWriter::make()->prompt($log)->text);
         }, '', report: true);
 
-        return $summary === '' ? $header : $header."\n\n".$summary;
+        $digest = $summary === '' ? $header : $header."\n\n".$summary;
+
+        // The referral brag rides the mail everyone already reads: silent at
+        // zero — an empty cheer reads as pity, not as progress.
+        $referred = $business->referredThisWeek();
+
+        if ($referred > 0) {
+            $digest .= "\n\n".trans_choice('assistant.digest.referrals', $referred, ['count' => $referred]);
+        }
+
+        return $digest;
     }
 }

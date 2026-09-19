@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
 use App\Models\Menu;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -103,6 +104,17 @@ test('the client dashboard shows the client menu, not the admin menu', function 
         ->assertDontSee('Usuarios');
 });
 
+test('the layout repaints the stored theme after every SPA navigation', function (): void {
+    // wire:navigate swaps in server HTML that knows no theme: without this
+    // listener dark mode "forgets" itself on the first click (owner's catch).
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertSee('livewire:navigated', false);
+});
+
 test('the plan upsell talks only to clients, never in the admin panel', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
@@ -112,11 +124,12 @@ test('the plan upsell talks only to clients, never in the admin panel', function
     // The owner has no plan to improve; a client on a trial does.
     $this->actingAs($admin)
         ->get('/admin')
-        ->assertDontSee(__('menu.plan_name'))
         ->assertDontSee(__('menu.plan_cta'));
 
-    $this->actingAs(User::factory()->create())
+    $business = Business::factory()->create();
+
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]))
         ->get(route('dashboard'))
-        ->assertSee(__('menu.plan_name'))
+        ->assertSee(__('menu.plan_name', ['plan' => __('plan.names.'.$business->plan()->code)]))
         ->assertSee(__('menu.plan_cta'));
 });

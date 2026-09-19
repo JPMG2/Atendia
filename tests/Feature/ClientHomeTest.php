@@ -33,6 +33,25 @@ test('a fresh client lands on the setup guide, not on empty KPIs', function (): 
         ->assertDontSee(__('client.kpis.conversations'));
 });
 
+test('the home shows the real plan usage strip linking to the plan screen', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertSee(__('plan.meters.conversations'))
+        ->assertSee(__('plan.meters.conversations_of', ['used' => 0, 'cap' => '1.000']))
+        ->assertSee(route('my-plan'));
+});
+
+test('the usage strip stays away from a user without a business yet', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('dashboard'))->assertDontSee(__('plan.meters.conversations'));
+});
+
 test('the business wears its "sin conectar" pill pointing at the contact card', function (): void {
     // The "conectar después" promise kept in sight while nothing answers.
     $this->seed(RolesAndPermissionsSeeder::class);
