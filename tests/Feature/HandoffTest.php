@@ -130,6 +130,75 @@ test('the owner reply on WhatsApp is relayed to the waiting customer and confirm
         ->and($thread->messages()->sole()->author)->toBe(MessageAuthor::Human);
 });
 
+test('the owner follow-up still reaches a thread already waiting on the customer', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+        'fallback_whatsapp_number' => '+54 9 299 552-9100',
+    ]);
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5492994577237',
+        'status' => ConversationStatus::Customer,
+        'last_message_at' => now()->subMinutes(2),
+    ]);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', 'Y mañana tampoco abrimos.', 'MSG-91'))->handle();
+
+    expect(handoffSentTexts()[0]['number'])->toBe('5492994577237')
+        ->and($thread->refresh()->status)->toBe(ConversationStatus::Customer);
+});
+
+test('#resuelto from the owner closes the handoff thread without messaging the customer', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+        'fallback_whatsapp_number' => '+54 9 299 552-9100',
+    ]);
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_name' => 'Dpt Sistemas',
+        'contact_phone' => '5492994577237',
+        'status' => ConversationStatus::Customer,
+        'last_message_at' => now()->subMinutes(5),
+    ]);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', ' #Resuelto ', 'MSG-92'))->handle();
+
+    $texts = handoffSentTexts();
+
+    // Only the owner's receipt leaves: the customer hears nothing.
+    expect($texts)->toHaveCount(1)
+        ->and($texts[0]['number'])->toBe('5492995529100')
+        ->and($texts[0]['text'])->toContain('Dpt Sistemas')
+        ->and($thread->refresh()->status)->toBe(ConversationStatus::Resolved)
+        ->and($thread->messages()->count())->toBe(0);
+});
+
+test('a customer thread quiet past the idle window closes itself as resolved', function (): void {
+    config()->set('atendia.handoff.customer_idle_hours', 24);
+
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo']);
+    $stale = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'status' => ConversationStatus::Customer,
+        'last_message_at' => now()->subHours(25),
+    ]);
+    $fresh = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5493000000000',
+        'status' => ConversationStatus::Customer,
+        'last_message_at' => now()->subHours(2),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders');
+
+    // The close is silent: nobody is waiting on a message.
+    expect($stale->refresh()->status)->toBe(ConversationStatus::Resolved)
+        ->and($fresh->refresh()->status)->toBe(ConversationStatus::Customer)
+        ->and(handoffSentTexts())->toBe([]);
+});
+
 test('with no fallback number the escalation still lands, just unpinged', function (): void {
     $business = Business::factory()->create(['fallback_whatsapp_number' => null]);
     $thread = Conversation::factory()->create(['business_id' => $business->id]);

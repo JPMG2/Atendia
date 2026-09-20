@@ -178,9 +178,10 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
     /**
      * The owner answered the escalation ping right here on WhatsApp: the
-     * text rides to the MOST RECENTLY escalated thread through the same
-     * action the panel composer uses, and the owner gets a confirmation
-     * naming who received it. With nothing waiting, just the pointer.
+     * text rides to the handoff thread they were just handling, through the
+     * same action the panel composer uses, and the owner gets a receipt
+     * naming who received it. "#resuelto" closes that thread instead, and
+     * with no handoff in flight they just get the pointer.
      */
     private function relayOwnerReply(Business $business, EvolutionApi $evolution): void
     {
@@ -191,12 +192,32 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         }
 
         app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
+            // Follow-ups included: a thread already waiting on the customer
+            // is still the owner's live handoff, so it stays addressable.
             $thread = Conversation::query()
-                ->where('status', ConversationStatus::Team)
-                ->orderByDesc('escalated_at')
+                ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
+                ->orderByDesc('last_message_at')
                 ->first();
 
-            if ($thread === null || app(SendHumanReply::class)->handle($business, $thread, $text) === null) {
+            if ($thread === null) {
+                $this->hintOwnerChannel($evolution);
+
+                return;
+            }
+
+            if (in_array(mb_strtolower(trim($text)), ['#resuelto', '#resuelta'], true)) {
+                $thread->update(['status' => ConversationStatus::Resolved, 'escalated_at' => null, 'handoff_reminded_at' => null]);
+
+                $evolution->sendText($this->instance, $this->from, __('assistant.handoff.resolved_done', [
+                    'name' => $thread->contact_name ?? $thread->contact_phone,
+                ]));
+
+                WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $thread->id);
+
+                return;
+            }
+
+            if (app(SendHumanReply::class)->handle($business, $thread, $text) === null) {
                 $this->hintOwnerChannel($evolution);
 
                 return;

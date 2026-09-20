@@ -78,6 +78,9 @@ return [
         // Hours with no human word before the assistant takes the thread
         // back. Null = off: resuming over a human is the owner's call.
         'auto_resume_hours' => env('HANDOFF_AUTO_RESUME_HOURS'),
+        // Hours a thread waits on a silent customer before closing itself as
+        // resolved: the team answered, nobody replied — that IS a resolution.
+        'customer_idle_hours' => env('HANDOFF_CUSTOMER_IDLE_HOURS', 24),
     ],
 
     /*

@@ -26,8 +26,39 @@ class SendHandoffReminders extends Command
     {
         $this->remindForgotten($evolution);
         $this->autoResume($evolution);
+        $this->resolveIdleCustomerThreads();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A thread waiting on a customer who went quiet closes itself as
+     * resolved: the team answered, nobody replied — that IS a resolution,
+     * and the assistant takes that customer's NEXT question from scratch.
+     * Silent on purpose: there is nobody left to message.
+     */
+    private function resolveIdleCustomerThreads(): void
+    {
+        $hours = (int) config('atendia.handoff.customer_idle_hours');
+
+        if ($hours <= 0) {
+            return;
+        }
+
+        $idle = Conversation::query()
+            ->where('status', ConversationStatus::Customer)
+            ->where('last_message_at', '<=', now()->subHours($hours))
+            ->get();
+
+        foreach ($idle as $thread) {
+            $thread->forceFill([
+                'status' => ConversationStatus::Resolved,
+                'escalated_at' => null,
+                'handoff_reminded_at' => null,
+            ])->save();
+
+            $this->info("Idle-resolved {$thread->contact_phone}");
+        }
     }
 
     private function remindForgotten(EvolutionApi $evolution): void

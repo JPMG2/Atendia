@@ -10,6 +10,6 @@ return [
 
     'handoff' => [
         'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespondeme por acá y le reenvío tu mensaje, o atendelo desde tu panel: :url\nTu asistente quedó en pausa solo en ese chat.",
-        'relay_done' => '✅ Le envié tu respuesta a *:name*. Si querés seguir el hilo: :url',
+        'relay_done' => "✅ Le envié tu respuesta a *:name*.\nCuando el tema esté cerrado, escribime *#resuelto* y tu asistente retoma ese chat. También lo ves en tu panel: :url",
     ],
 ];
