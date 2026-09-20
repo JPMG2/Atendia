@@ -88,6 +88,7 @@ return [
     'assistant' => [
         'sub' => 'Todo lo que usa para responder, a la vista. Enseñale lo que tu catálogo no dice.',
         'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enseñásela y no vuelve a pasar.',
+        'no_drafts' => 'Tu conocimiento no tiene base para sugerir estas. Respondelas vos.',
         'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambiás.',
         'faq_title' => 'Lo que le enseñás vos',
         'faq_sub' => 'Preguntas y respuestas escritas por vos. Tu asistente las responde al minuto.',

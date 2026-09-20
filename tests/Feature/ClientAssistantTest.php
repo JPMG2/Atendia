@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Ai\Agents\FaqDrafter;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
@@ -154,6 +155,45 @@ test('the unanswered queue ranks by frequency, accent-blind, and prefills the sh
         ->call('teach', 'aceptan visa')
         ->assertSet('sheetOpen', true)
         ->assertSet('form.question', 'aceptan visa');
+});
+
+test('suggesting drafts answers only what near-miss knowledge can ground', function (): void {
+    $user = assistantClient();
+    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Aceptan Visa?']);
+    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Hacen resonancias?']);
+    $this->actingAs($user);
+
+    // Visa has a near-miss fragment; resonancias has nothing to stand on.
+    $this->mock(KnowledgeRetriever::class)
+        ->shouldReceive('context')
+        ->andReturnUsing(fn (string $query): string => str_contains($query, 'Visa')
+            ? '[Medios de pago] Se aceptan tarjetas Visa y Mastercard.'
+            : '');
+
+    FaqDrafter::fake([['answer' => 'Sí, aceptamos Visa y Mastercard.']]);
+
+    livewire('assistant.index')
+        ->call('suggest')
+        ->assertSee('Sí, aceptamos Visa y Mastercard.')
+        ->assertSee(__('client.assistant.use_draft'))
+        ->call('useDraft', '¿Aceptan Visa?')
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.question', '¿Aceptan Visa?')
+        ->assertSet('form.answer', 'Sí, aceptamos Visa y Mastercard.');
+});
+
+test('with nothing to ground on the sweep says so instead of inventing', function (): void {
+    $user = assistantClient();
+    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Hacen resonancias?']);
+    $this->actingAs($user);
+
+    $this->mock(KnowledgeRetriever::class)
+        ->shouldReceive('context')
+        ->andReturn('');
+
+    livewire('assistant.index')
+        ->call('suggest')
+        ->assertSet('drafts', []);
 });
 
 test('trying a taught answer runs the REAL assistant and shows the reply', function (): void {

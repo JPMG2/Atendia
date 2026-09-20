@@ -345,6 +345,9 @@ return [
         'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enséñasela y no vuelve a pasar.',
         'miss_count' => '{1}1 vez|[2,*]:count veces',
         'teach' => 'Enseñar la respuesta',
+        'suggest' => 'Sugerir respuestas',
+        'use_draft' => 'Usar borrador',
+        'no_drafts' => 'Tu conocimiento no tiene base para sugerir estas. Respóndelas tú.',
         'sources_title' => 'Lo que aprende solo',
         'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambias.',
         'sources' => [

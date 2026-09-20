@@ -26,14 +26,14 @@ class KnowledgeRetriever
      *
      * @return Collection<int, RetrievedChunkDto>
      */
-    public function retrieve(string $query, int $businessId, ?int $limit = null): Collection
+    public function retrieve(string $query, int $businessId, ?int $limit = null, ?float $minSimilarity = null): Collection
     {
         $limit ??= (int) config('rag.retrieval.top_k');
 
-        // Cosine distance = 1 - similarity: the configured floor becomes a
-        // ceiling. Without it, top_k pads the context with far-off chunks and
-        // the assistant improvises from noise instead of saying "not found".
-        $maxDistance = 1.0 - (float) config('rag.retrieval.min_similarity');
+        // Cosine distance = 1 - similarity: without the floor, top_k pads the
+        // context with far-off chunks and the assistant improvises from noise.
+        // Near-miss hunters (the FAQ drafter) may pass a lower floor.
+        $maxDistance = 1.0 - ($minSimilarity ?? (float) config('rag.retrieval.min_similarity'));
 
         $vector = $this->embedder->embedOne($query);
 
@@ -58,9 +58,9 @@ class KnowledgeRetriever
      * Builds a context block with [title] citations to ground the assistant.
      * Empty when that company has no knowledge yet.
      */
-    public function context(string $query, int $businessId, ?int $limit = null): string
+    public function context(string $query, int $businessId, ?int $limit = null, ?float $minSimilarity = null): string
     {
-        return $this->retrieve($query, $businessId, $limit)
+        return $this->retrieve($query, $businessId, $limit, $minSimilarity)
             ->map(static fn (RetrievedChunkDto $chunk): string => "[{$chunk->documentTitle}] {$chunk->content}")
             ->implode("\n\n");
     }

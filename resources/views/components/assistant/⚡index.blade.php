@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Business\DeleteAssistantFaq;
+use App\Actions\Business\DraftFaqSuggestions;
 use App\Actions\Business\ReindexKnowledgeSource;
 use App\Classes\Main\Client;
 use App\Classes\Main\KnowledgeBase;
@@ -64,6 +65,45 @@ new class extends Component
     {
         $this->form->setup();
         $this->form->question = $question;
+        $this->sheetOpen = true;
+    }
+
+    /** @var array<string, string> question => AI-drafted answer, this request's crop */
+    public array $drafts = [];
+
+    /**
+     * Hunts near-miss knowledge for every unanswered question and drafts a
+     * grounded suggestion. Owner-triggered on purpose: at most five model
+     * calls, and only when the queue is worth sweeping.
+     */
+    public function suggest(): void
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null) {
+            return;
+        }
+
+        $this->drafts = app(DraftFaqSuggestions::class)
+            ->handle($business, array_column($this->misses, 'question'));
+
+        if ($this->drafts === []) {
+            $this->dispatchNotification(new NotificationDto(__('client.assistant.no_drafts'), NotificationType::Warning));
+        }
+    }
+
+    /** The draft becomes the sheet's starting point; the owner edits and approves. */
+    public function useDraft(string $question): void
+    {
+        $draft = $this->drafts[$question] ?? null;
+
+        if ($draft === null) {
+            return;
+        }
+
+        $this->form->setup();
+        $this->form->question = $question;
+        $this->form->answer = $draft;
         $this->sheetOpen = true;
     }
 
@@ -171,21 +211,40 @@ new class extends Component
     answer. Teaching it makes the same question stop appearing by itself. --}}
     @if ($this->misses !== [])
         <x-ui.card class="mb-4 p-5">
-            <h2 class="font-display text-strong text-base">{{ __('client.assistant.misses_title') }}</h2>
-            <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.misses_sub') }}</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    <h2 class="font-display text-strong text-base">{{ __('client.assistant.misses_title') }}</h2>
+                    <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.misses_sub') }}</p>
+                </div>
+                <x-ui.button variant="secondary" size="sm" icon="bot" class="data-loading:opacity-50" wire:click="suggest">
+                    {{ __('client.assistant.suggest') }}
+                </x-ui.button>
+            </div>
 
             <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
                 @foreach ($this->misses as $miss)
                     <li wire:key="miss-{{ $loop->index }}" class="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-2.5">
                         <span class="min-w-0 flex-1">
                             <span class="text-strong block truncate text-sm font-semibold">{{ $miss['question'] }}</span>
+                            @if (isset($drafts[$miss['question']]))
+                                <span class="text-muted mt-0.5 flex items-start gap-1.5 text-xs">
+                                    <x-icon name="bot" :size="14" style="color: var(--brand)" class="mt-0.5 flex-none" />
+                                    {{ $drafts[$miss['question']] }}
+                                </span>
+                            @endif
                         </span>
                         <span class="text-subtle flex-none font-mono text-xs">
                             {{ trans_choice('client.assistant.miss_count', $miss['count'], ['count' => $miss['count']]) }}
                         </span>
-                        <x-ui.button variant="secondary" size="sm" icon="sparkles" wire:click="teach({{ \Illuminate\Support\Js::from($miss['question']) }})">
-                            {{ __('client.assistant.teach') }}
-                        </x-ui.button>
+                        @if (isset($drafts[$miss['question']]))
+                            <x-ui.button variant="primary" size="sm" icon="sparkles" wire:click="useDraft({{ \Illuminate\Support\Js::from($miss['question']) }})">
+                                {{ __('client.assistant.use_draft') }}
+                            </x-ui.button>
+                        @else
+                            <x-ui.button variant="secondary" size="sm" icon="sparkles" wire:click="teach({{ \Illuminate\Support\Js::from($miss['question']) }})">
+                                {{ __('client.assistant.teach') }}
+                            </x-ui.button>
+                        @endif
                     </li>
                 @endforeach
             </ul>
