@@ -389,6 +389,8 @@ return [
         'sheet_hint' => 'Al guardar queda en el cerebro de tu asistente.',
         'sheet_save' => 'Guardar',
         'sheet_cancel' => 'Cancelar',
+        'settings_title' => 'Configuración de tu asistente',
+        'settings_sub' => 'Cómo se comporta al atender. Lo que sabe vive en Conocimiento.',
         'handoff_title' => '¿Cuándo llamar a una persona?',
         'handoff_sub' => 'Tu asistente deriva la conversación a tu equipo según este ajuste. Te avisa a tu WhatsApp y se queda en silencio solo en ese chat.',
         'handoff_levels' => [

@@ -82,6 +82,11 @@ Route::get('/asistente', fn () => view('assistant'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('assistant');
 
+// The assistant's behaviour: the handoff dial and the owner's own cases.
+Route::get('/asistente/configuracion', fn () => view('assistant-settings'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('assistant.settings');
+
 // Every thread the assistant holds with the business's customers.
 Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])

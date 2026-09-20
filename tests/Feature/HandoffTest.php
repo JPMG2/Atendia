@@ -126,7 +126,7 @@ test('the owner writes their own cases and the briefing makes them absolute', fu
     $user->business()->associate(Business::factory()->create(['handoff_level' => HandoffLevel::Minimal]))->save();
     $this->actingAs($user);
 
-    livewire('assistant.index')
+    livewire('assistant.settings')
         ->assertSee(__('client.assistant.handoff_rules_label'))
         ->set('handoffForm.rules', "Si describe síntomas\nSi pide un diagnóstico")
         ->call('saveHandoffRules');
@@ -157,13 +157,17 @@ test('the owner tunes the dial from the assistant screen', function (): void {
     $user->business()->associate(Business::factory()->create())->save();
     $this->actingAs($user);
 
-    livewire('assistant.index')
+    $this->get(route('assistant.settings'))
+        ->assertSuccessful()
+        ->assertSee(__('client.assistant.settings_title'));
+
+    livewire('assistant.settings')
         ->assertSee(__('client.assistant.handoff_title'))
         ->set('handoffLevel', 'minimal');
 
     expect($user->business->refresh()->handoff_level)->toBe(HandoffLevel::Minimal);
 
-    livewire('assistant.index')
+    livewire('assistant.settings')
         ->set('handoffLevel', 'banana')
         ->assertSet('handoffLevel', 'minimal');
 

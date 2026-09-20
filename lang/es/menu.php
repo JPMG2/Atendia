@@ -34,6 +34,8 @@ return [
     'home' => 'Inicio',
     'plan' => 'Mi plan',
     'assistant' => 'Mi asistente',
+    'assistant_knowledge' => 'Conocimiento',
+    'assistant_settings' => 'Configuración',
     'customers' => 'Clientes',
     'statistics' => 'Mis estadísticas',
     'referrals' => 'Gana con Atendia',

@@ -47,10 +47,12 @@ class MenuSeeder extends Seeder
         // by the navigation (a static number that lies costs trust).
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'sort_order' => 1]);
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'sort_order' => 2]);
-        // Setup-first order (owner's call, 2026-09-17): configure, then talk.
-        // Revisit post go-live, when the daily screen may deserve the top.
-        // Right after the catalog on purpose: feed it, then see what it knows.
-        Menu::create(['label_key' => 'menu.assistant', 'icon' => 'bot', 'route_name' => 'assistant', 'sort_order' => 4]);
+        // Setup-first order (owner's call, 2026-09-17): configure, then talk;
+        // revisit post go-live. A parent (her call, 2026-09-20): knowledge and
+        // behaviour are different rooms, and more children will grow here.
+        $assistant = Menu::create(['label_key' => 'menu.assistant', 'icon' => 'bot', 'sort_order' => 4]);
+        Menu::create(['parent_id' => $assistant->id, 'label_key' => 'menu.assistant_knowledge', 'icon' => 'sparkles', 'route_name' => 'assistant', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $assistant->id, 'label_key' => 'menu.assistant_settings', 'icon' => 'settings', 'route_name' => 'assistant.settings', 'sort_order' => 2]);
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 5]);
         // Beside the inbox on purpose: the flow and the asset it leaves behind.
         Menu::create(['label_key' => 'menu.customers', 'icon' => 'users', 'route_name' => 'customers', 'sort_order' => 6]);
