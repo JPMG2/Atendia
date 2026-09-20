@@ -82,6 +82,11 @@ Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('conversations');
 
+// "Mis clientes": the directory every conversation feeds.
+Route::get('/clientes', fn () => view('customers'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('customers');
+
 // "Mis estadísticas": what the assistant handled, read at the plan's depth.
 Route::get('/estadisticas', fn () => view('statistics'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])

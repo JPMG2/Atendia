@@ -101,6 +101,11 @@ Cuando se suma un set de reglas de oro:
   `tests/Feature/GoldenRulesMailChannelTest.php` · hook
   `.claude/hooks/check-mail-channel-golden-rules.sh`. Sin allowlist — nació
   en cero el 2026-09-19 (la auditoría cazó a DeviceChallenge desviado).
+- **Fechas SIEMPRE con Flatpickr** → `.ai/guidelines/fechas.md` · test guardián
+  `tests/Feature/GoldenRulesDatepickerTest.php` · hook
+  `.claude/hooks/check-datepicker-golden-rules.sh`. Patrones espejados (tocar
+  de a dos); sin allowlist — nació en cero el 2026-09-20. Ojo: la documentación
+  del porqué se escribe SIN el atributo literal, o el guardián se caza a sí mismo.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Enums\MessageDirection;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Customer;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
@@ -42,6 +44,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     public function __construct(
         public ?Business $business = null,
         public ?Conversation $conversation = null,
+        public ?Customer $customer = null,
     ) {}
 
     /** The whole exchange's bill: the re-ask pass must not lose the first one. */
@@ -134,7 +137,64 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             ofrecé derivar con una persona del equipo. Todo resumen o mensaje de
             derivación dirigido al equipo del negocio va SIEMPRE en español, sin
             importar el idioma del cliente: el equipo atiende en español.
+            {$this->customerBriefing()}
             INSTRUCCIONES;
+    }
+
+    /**
+     * What the assistant knows about THIS customer, and the manners for
+     * learning more: ask only when the conversation warrants it, never
+     * re-ask what is already on file.
+     */
+    private function customerBriefing(): string
+    {
+        if ($this->customer === null) {
+            return '';
+        }
+
+        $known = collect($this->customer->knownFacts())
+            ->map(fn (string $value, string $field): string => "{$field}: {$value}")
+            ->implode(' · ');
+
+        $knownLine = $known === ''
+            ? 'Todavía no conocés ningún dato real de este cliente.'
+            : 'Datos del cliente que YA CONOCÉS — jamás los vuelvas a pedir; usalos con'
+                ." naturalidad (por ejemplo, saludalo por su nombre): {$known}.";
+
+        return <<<BRIEFING
+
+            {$knownLine}
+
+            Cuando la conversación lo JUSTIFIQUE — agendar un turno, preparar un
+            presupuesto, confirmar un pedido, enviar algo por correo — y te falte el
+            dato, pedilo de forma natural explicando el motivo ("¿a nombre de quién
+            lo agendo?", "¿a qué correo te lo mando?"). Nunca pidas datos porque sí,
+            ni más de un dato en un mismo mensaje, ni insistas si el cliente no
+            quiere darlo.
+
+            Cuando el cliente diga su nombre real, su correo o su cumpleaños,
+            guardalo con la herramienta de recordar datos del cliente, una sola
+            vez por dato.
+            {$this->optInBriefing()}
+            BRIEFING;
+    }
+
+    /**
+     * Only after the owner asked for permission: the assistant seals an
+     * explicit yes, and never brings marketing up on its own.
+     */
+    private function optInBriefing(): string
+    {
+        if ($this->customer?->marketing_opt_in_requested_at === null
+            || $this->customer->marketing_opt_in_at !== null) {
+            return '';
+        }
+
+        return "\nAl cliente se le pidió permiso para recibir ofertas y novedades. Si"
+            .' responde que ACEPTA (un sí claro), sellalo con la herramienta de'
+            .' recordar datos (campo "marketing_opt_in", valor "yes") y agradecele'
+            .' en una línea. Si dice que no, respetalo, agradecé igual y no insistas'
+            .' nunca más con el tema.';
     }
 
     /**
@@ -178,8 +238,9 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             return [];
         }
 
-        return [
+        return array_values(array_filter([
             new SearchBusinessKnowledge($this->business->id),
-        ];
+            $this->customer !== null ? new RememberCustomerFact($this->customer) : null,
+        ]));
     }
 }

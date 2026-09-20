@@ -88,8 +88,8 @@ new class extends Component
                 <div class="bp-hshifts">
                     @forelse ($form->week[$day] as $index => $shift)
                         <span class="bp-shift-edit" wire:key="shift-{{ $day }}-{{ $index }}">
-                            {{-- Plain text and not type="time": the native picker clips
-                            the minutes at this width; the server validates H:i. --}}
+                            {{-- Plain text and not a native time input: that picker
+                            clips the minutes at this width; the server validates H:i. --}}
                             <x-inputsform.input
                                 type="text"
                                 size="s"

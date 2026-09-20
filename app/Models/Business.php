@@ -438,6 +438,14 @@ class Business extends Model
     }
 
     /**
+     * @return HasMany<Customer, $this>
+     */
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    /**
      * The CURRENT subscription: plan changes append rows, the latest rules.
      *
      * @return HasOne<Subscription, $this>

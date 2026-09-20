@@ -194,4 +194,23 @@ class Country extends Model implements DataTable
 
         return $code === null ? null : (string) $code;
     }
+
+    /**
+     * The country behind a raw WhatsApp number. Longest dial-code prefix
+     * wins, so 1-268… resolves the island and not the whole NANP.
+     */
+    public static function iso2FromPhone(string $digits): ?string
+    {
+        if ($digits === '') {
+            return null;
+        }
+
+        return self::query()
+            ->whereNotNull('phone_code')
+            ->get(['iso2', 'phone_code'])
+            ->filter(fn (self $country): bool => str_starts_with($digits, ltrim((string) $country->phone_code, '+')))
+            ->sortByDesc(fn (self $country): int => mb_strlen((string) $country->phone_code))
+            ->first()
+            ?->iso2;
+    }
 }

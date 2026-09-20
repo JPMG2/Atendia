@@ -11,6 +11,8 @@ use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\Customer;
+use App\Models\PlatformContact;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
 use App\Services\Knowledge\KnowledgeEmbedder;
@@ -108,12 +110,21 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         // assistant's knowledge search runs inside the right tenant. A failed
         // send throws out of here and the queue retries the whole exchange.
         app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
+            $customer = $this->rememberCustomer();
+
             $conversation = Conversation::query()->firstOrCreate(
                 ['contact_phone' => $this->from],
-                ['contact_name' => $this->senderName !== '' ? $this->senderName : null],
+                ['contact_name' => $this->senderName !== '' ? $this->senderName : null, 'customer_id' => $customer->id],
             );
 
-            $agent = new AsistenteAtendia($business, $conversation);
+            // Threads older than the customer layer adopt their person here.
+            if ($conversation->customer_id === null) {
+                $conversation->update(['customer_id' => $customer->id]);
+            }
+
+            $this->rememberPlatformContact($customer, $conversation);
+
+            $agent = new AsistenteAtendia($business, $conversation, $customer);
             $reply = $agent->answer($text)->text;
 
             foreach ($this->bubbles($reply) as $bubble) {
@@ -126,6 +137,49 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
         });
+    }
+
+    /**
+     * The customer record behind this phone, born on the first message and
+     * freshened on every one after (tenant-scoped by the isolation layer).
+     */
+    private function rememberCustomer(): Customer
+    {
+        $customer = Customer::query()->firstOrCreate(
+            ['phone' => $this->from],
+            ['first_seen_at' => now()],
+        );
+
+        $customer->recordExchange($this->senderName !== '' ? $this->senderName : null);
+
+        return $customer;
+    }
+
+    /**
+     * AtendIa's own layer: the same person across every business. Linked by
+     * id and fed by increments, so no query ever reads across tenants.
+     */
+    private function rememberPlatformContact(Customer $customer, Conversation $conversation): void
+    {
+        $contact = PlatformContact::query()->firstOrCreate(
+            ['phone' => $this->from],
+            ['first_seen_at' => now()],
+        );
+
+        if ($customer->platform_contact_id === null) {
+            $customer->platformContact()->associate($contact)->save();
+        }
+
+        if ($conversation->wasRecentlyCreated) {
+            $customer->increment('conversations_count');
+        }
+
+        $contact->recordExchange(
+            newBusiness: $customer->wasRecentlyCreated,
+            newConversation: $conversation->wasRecentlyCreated,
+            language: $conversation->language,
+            countryCode: $customer->country_code,
+        );
     }
 
     /**

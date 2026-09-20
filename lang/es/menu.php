@@ -33,6 +33,7 @@ return [
 
     'home' => 'Inicio',
     'plan' => 'Mi plan',
+    'customers' => 'Clientes',
     'statistics' => 'Mis estadísticas',
     'referrals' => 'Gana con AtendIa',
     'conversations' => 'Conversaciones',

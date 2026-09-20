@@ -6,8 +6,10 @@ namespace App\Classes\Main;
 
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
 
 /**
  * The inbox piece: every thread the assistant holds with this tenant's
@@ -31,12 +33,29 @@ class Inbox
             ->get();
     }
 
-    /** One thread with its full history, or null when it is not this tenant's. */
-    public function thread(int $id): ?Conversation
+    /**
+     * One thread carrying only its latest exchanges, or null when it is not
+     * this tenant's. Windowed on purpose: a 200-message thread must not ride
+     * every render; `messages_count` tells the screen how far back it can walk.
+     */
+    public function thread(int $id, int $latest = 30): ?Conversation
     {
-        return $this->business->conversations()
-            ->with('messages')
+        $thread = $this->business->conversations()
+            ->withCount('messages')
             ->find($id);
+
+        if ($thread === null) {
+            return null;
+        }
+
+        $thread->setRelation('messages', $thread->messages()
+            ->latest('id')
+            ->limit($latest)
+            ->get()
+            ->reverse()
+            ->values());
+
+        return $thread;
     }
 
     /** Today's pulse for the inbox header. */
@@ -44,6 +63,30 @@ class Inbox
         get => $this->business->conversations()
             ->whereDate('last_message_at', today())
             ->count();
+    }
+
+    /**
+     * Every message of ONE thread whose text matches, accent-free, across
+     * the whole history: finding an old quote is the point of searching a
+     * thread, so the render window does not apply here.
+     *
+     * @return Collection<int, ConversationMessage>
+     */
+    public function threadMatches(int $id, string $needle): Collection
+    {
+        $thread = $this->business->conversations()->find($id);
+
+        if ($thread === null) {
+            return new Collection;
+        }
+
+        $folded = Str::ascii(mb_strtolower($needle));
+
+        return $thread->messages()
+            ->oldest('id')
+            ->get()
+            ->filter(fn (ConversationMessage $message): bool => str_contains(Str::ascii(mb_strtolower($message->body)), $folded))
+            ->values();
     }
 
     /**

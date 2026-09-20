@@ -88,4 +88,10 @@ return [
         'select' => 'Elegí una conversación para leerla.',
         'read_only' => 'Solo lectura: tu asistente responde por vos.',
     ],
+
+    'customers' => [
+        'empty_body' => 'Cuando tu asistente atienda el WhatsApp, cada persona que escriba va a aparecer acá con su ficha.',
+        'opt_in_unavailable' => 'Conectá tu WhatsApp para pedir permiso.',
+        'opt_in_message' => 'Hola:name 👋 Somos :business. ¿Te gustaría recibir por acá nuestras ofertas y novedades? Respondé "sí" y listo. Podés pedir salir cuando quieras.',
+    ],
 ];

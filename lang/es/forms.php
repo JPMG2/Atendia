@@ -31,6 +31,10 @@ return [
         'clear' => 'Limpiar la selección',
     ],
 
+    'datepicker' => [
+        'clear' => 'Limpiar la fecha',
+    ],
+
     'file' => [
         'upload' => 'Subir archivo',
         'remove' => 'Quitar el archivo',

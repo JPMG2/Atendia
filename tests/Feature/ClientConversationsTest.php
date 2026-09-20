@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Customer;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 use function Pest\Livewire\livewire;
 
@@ -140,6 +142,276 @@ test('the search narrows the list by name or phone', function (): void {
 
     livewire('conversations.index')
         ->set('search', 'perez')
-        ->assertSee('Carla Pérez')
+        ->assertSee('Carla')
         ->assertDontSee('Marcos');
+});
+
+test('the search paints what matched', function (): void {
+    $user = conversationsClient();
+    threadFor($user, 'Carla Pérez', '5491111111111', 'Turnos.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('search', 'perez')
+        ->assertSeeHtml('match-hit');
+});
+
+test('the search also reaches the last message of each thread', function (): void {
+    $user = conversationsClient();
+    threadFor($user, 'Carla', '5491111111111', 'Reservamos la eco doppler.');
+    threadFor($user, 'Marcos', '5493333333333', 'Precios.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('search', 'doppler')
+        ->assertSee('Carla')
+        ->assertDontSee('Marcos');
+});
+
+test('the date filter narrows the list to the picked range', function (): void {
+    $user = conversationsClient();
+    $old = threadFor($user, 'Antigua', '5495555555555', 'Enero.');
+    $old->forceFill(['last_message_at' => now()->subDays(20)])->save();
+    threadFor($user, 'Carla', '5491111111111', 'Turnos.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('dates', now()->subDays(2)->toDateString().'..'.now()->toDateString())
+        ->assertSee('Carla')
+        ->assertDontSee('Antigua');
+});
+
+test('a single picked day filters that day alone', function (): void {
+    $user = conversationsClient();
+    $old = threadFor($user, 'Antigua', '5495555555555', 'Enero.');
+    $old->forceFill(['last_message_at' => now()->subDays(20)])->save();
+    threadFor($user, 'Carla', '5491111111111', 'Turnos.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('dates', now()->subDays(20)->toDateString())
+        ->assertSee('Antigua')
+        ->assertDontSee('Carla');
+});
+
+test('a hand-crafted date payload filters nothing instead of blowing up', function (): void {
+    $user = conversationsClient();
+    threadFor($user, 'Carla', '5491111111111', 'Turnos.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('dates', 'garbage..worse')
+        ->assertSee('Carla');
+});
+
+test('with filters on and nothing left the list says so', function (): void {
+    $user = conversationsClient();
+    threadFor($user, 'Carla', '5491111111111', 'Turnos.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->set('dates', now()->subDays(30)->toDateString())
+        ->assertSee(__('client.conversations.no_results'));
+});
+
+test('the inbox walks in tranches of fifteen', function (): void {
+    $user = conversationsClient();
+
+    foreach (range(1, 18) as $i) {
+        Conversation::factory()->create([
+            'business_id' => $user->business_id,
+            'contact_name' => "Persona {$i}",
+            'contact_phone' => '54911'.str_pad((string) $i, 8, '0', STR_PAD_LEFT),
+            'last_message_at' => now()->subMinutes($i),
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->assertSee('Persona 1')
+        ->assertDontSee('Persona 16')
+        ->assertSee(__('pagination.load_more'))
+        ->call('loadMore')
+        ->assertSee('Persona 16')
+        ->assertDontSee(__('pagination.load_more'));
+});
+
+test('a long thread opens on its latest tranche and can walk back', function (): void {
+    $user = conversationsClient();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+        'contact_phone' => '5491111111111',
+    ]);
+
+    foreach (range(1, 35) as $i) {
+        ConversationMessage::factory()->for($thread)->create([
+            'business_id' => $user->business_id,
+            'body' => "Mensaje {$i}",
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee('Mensaje 35')
+        ->assertSee('Mensaje 6')
+        ->assertDontSee('Mensaje 5')
+        ->assertSee(__('client.conversations.older'))
+        ->call('loadOlder')
+        ->assertSee('Mensaje 5')
+        ->assertSee('Mensaje 1')
+        ->assertDontSee(__('client.conversations.older'));
+});
+
+test('the thread groups messages under day chips', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, mañana a las 9.');
+    $thread->messages()->oldest('id')->first()->forceFill(['created_at' => now()->subDay()])->save();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.day_yesterday'))
+        ->assertSee(__('client.conversations.day_today'));
+});
+
+test('searching inside a thread sweeps the whole history and paints the hits', function (): void {
+    $user = conversationsClient();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+        'contact_phone' => '5491111111111',
+    ]);
+
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => 'Necesito una eco doppler.',
+    ]);
+
+    foreach (range(1, 34) as $i) {
+        ConversationMessage::factory()->for($thread)->create([
+            'business_id' => $user->business_id,
+            'body' => "Relleno {$i}",
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    // The quote lives OUTSIDE the 30-message window: only a full-history
+    // sweep can find it. The walk-back button yields to the search.
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertDontSee('eco doppler')
+        ->set('threadSearch', 'doppler')
+        ->assertSee('eco')
+        ->assertSeeHtml('match-hit')
+        // "Relleno 34" stays as the LIST row's preview; 33 lives only in the
+        // canvas, so its absence proves the filter.
+        ->assertDontSee('Relleno 33')
+        ->assertDontSee(__('client.conversations.older'))
+        ->set('threadSearch', 'zzzz')
+        ->assertSee(__('client.conversations.thread_no_results'));
+});
+
+function customerThread(User $user, string $phone = '5491111111111'): array
+{
+    $customer = Customer::factory()->create([
+        'business_id' => $user->business_id,
+        'phone' => $phone,
+        'profile_name' => 'Carli',
+    ]);
+    $thread = threadFor($user, 'Carla', $phone, 'Turnos.');
+    $thread->update(['customer_id' => $customer->id]);
+
+    return [$customer, $thread];
+}
+
+test('the customer sheet opens, edits and saves the human side', function (): void {
+    $user = conversationsClient();
+    [$customer, $thread] = customerThread($user);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.customers.open'))
+        ->call('openCustomer')
+        ->assertSet('showCustomer', true)
+        ->set('customerForm.name', 'María Pérez')
+        ->set('customerForm.email', 'maria@example.com')
+        ->set('customerForm.birthday', '1990-05-04')
+        ->set('customerForm.notes', 'Prefiere turnos de mañana.')
+        ->call('saveCustomer');
+
+    $customer->refresh();
+
+    expect($customer->name)->toBe('María Pérez')
+        ->and($customer->email)->toBe('maria@example.com')
+        ->and($customer->birthday?->toDateString())->toBe('1990-05-04')
+        ->and($customer->notes)->toBe('Prefiere turnos de mañana.');
+});
+
+test('a malformed email never reaches the record', function (): void {
+    $user = conversationsClient();
+    [$customer, $thread] = customerThread($user);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openCustomer')
+        ->set('customerForm.email', 'no-es-correo')
+        ->call('saveCustomer')
+        ->assertHasErrors(['email']);
+
+    expect($customer->refresh()->email)->toBeNull();
+});
+
+test('merging moves the duplicate threads here and deletes its record', function (): void {
+    $user = conversationsClient();
+    [$customer, $thread] = customerThread($user);
+    $customer->forceFill(['email' => 'maria@example.com'])->save();
+
+    $duplicate = Customer::factory()->create([
+        'business_id' => $user->business_id,
+        'phone' => '5492222222222',
+        'email' => 'maria@example.com',
+        'notes' => 'Vieja ficha.',
+    ]);
+    $oldThread = threadFor($user, 'Maru', '5492222222222', 'Hola de nuevo.');
+    $oldThread->update(['customer_id' => $duplicate->id]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openCustomer')
+        ->assertSee(__('client.customers.merge_title'))
+        ->call('mergeCustomer');
+
+    expect(Customer::query()->count())->toBe(1)
+        ->and($oldThread->refresh()->customer_id)->toBe($customer->id)
+        ->and($customer->refresh()->notes)->toBe('Vieja ficha.')
+        ->and($customer->conversations_count)->toBe(2);
+});
+
+test('requesting the opt-in messages the customer and stamps the ask', function (): void {
+    config()->set('services.evolution.url', 'http://evolution.test');
+    config()->set('services.evolution.key', 'test-key');
+    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
+
+    $user = conversationsClient();
+    $user->business->forceFill(['whatsapp_instance' => 'demo', 'whatsapp_connected_at' => now()])->save();
+    [$customer, $thread] = customerThread($user);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openCustomer')
+        ->assertSee(__('client.customers.opt_in_button'))
+        ->call('requestOptIn');
+
+    expect($customer->refresh()->marketing_opt_in_requested_at)->not->toBeNull();
+    Http::assertSentCount(1);
 });

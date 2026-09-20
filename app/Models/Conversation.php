@@ -9,6 +9,7 @@ use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * One WhatsApp thread between a business and one customer. The reply
  * worker writes it; the assistant reads it back as memory.
  */
-#[Fillable(['business_id', 'contact_phone', 'contact_name', 'language', 'last_message_at'])]
+#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'last_message_at'])]
 class Conversation extends Model
 {
     use BelongsToBusiness;
@@ -32,6 +33,14 @@ class Conversation extends Model
         return [
             'last_message_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /**

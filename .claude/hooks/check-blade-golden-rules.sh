@@ -39,6 +39,7 @@ components/inputsform/combobox.blade.php
 components/inputsform/file.blade.php
 components/inputsform/phone.blade.php
 components/inputsform/textarea.blade.php
+components/inputsform/datepicker.blade.php
 components/text-input.blade.php
 auth/reset-password.blade.php
 "
