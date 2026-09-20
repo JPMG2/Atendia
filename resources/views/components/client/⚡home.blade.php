@@ -1,37 +1,66 @@
 <?php
 
+use App\Classes\Main\Client;
 use App\Classes\Main\Plan;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * Client home — living mock-up, blessed 2026-09-06. Two states and zero
- * persistence: 'new' is the Shopify-style setup guide (the checklist IS the
- * dashboard, KPIs would only depress at zero), 'active' is the day-to-day
- * with real numbers. The switch is a mock-up affordance standing in for the
- * demo client until the real wiring lands.
+ * Client home. Two states DERIVED from real data (the mock switch died with
+ * the audit, 2026-09-20): a fresh client meets the setup guide — the
+ * checklist IS the dashboard, KPIs at zero would only depress — and the
+ * first real thread earns the day-to-day view.
  */
 new class extends Component
 {
-    public string $mode = 'new';
-
     /**
-     * The account step arrives done on purpose: endowed progress makes
-     * people finish what did not start from zero.
+     * The real setup trail. The account step arrives done on purpose:
+     * endowed progress makes people finish what did not start from zero.
+     * "Try" counts as done once the assistant answered someone for real.
      *
-     * @var array<string, bool>
+     * @return array<string, bool>
      */
-    public array $steps = [
-        'account' => true,
-        'business' => false,
-        'catalog' => false,
-        'try' => false,
-        'whatsapp' => false,
-    ];
-
-    public function switchTo(string $mode): void
+    #[Computed]
+    public function steps(): array
     {
-        $this->mode = in_array($mode, ['new', 'active'], true) ? $mode : 'new';
+        $user = Auth::user();
+        $business = $user?->business;
+        $offer = $business?->offerCounts();
+        $strength = $user === null ? null : Client::for($user)->profileStrength;
+
+        return [
+            'account' => true,
+            'business' => $strength !== null && $strength['done'] === $strength['total'],
+            'catalog' => (($offer['my-services'] ?? 0) + ($offer['my-products'] ?? 0)) > 0,
+            'try' => $this->isActive,
+            'whatsapp' => $business?->isConnected() ?? false,
+        ];
+    }
+
+    /** The day-to-day view is earned by the first real thread. */
+    #[Computed]
+    public function isActive(): bool
+    {
+        return Auth::user()?->business?->conversations()->exists() ?? false;
+    }
+
+    /** @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int}|null */
+    #[Computed]
+    public function kpis(): ?array
+    {
+        $user = Auth::user();
+
+        return $user === null ? null : Client::for($user)->statistics?->monthKpis();
+    }
+
+    /** @return \Illuminate\Support\Collection<int, \App\Models\Conversation> */
+    #[Computed]
+    public function recent()
+    {
+        $user = Auth::user();
+
+        return ($user === null ? null : Client::for($user)->inbox?->threads->take(3)) ?? collect();
     }
 
     /**
@@ -64,6 +93,7 @@ new class extends Component
 
 <div>
     @php
+        $steps = $this->steps;
         $done = count(array_filter($steps));
         $total = count($steps);
         $percent = (int) round($done / max(1, $total) * 100);
@@ -87,17 +117,8 @@ new class extends Component
                 @endif
             </div>
             <p class="page-head-sub">
-                {{ $mode === 'new' ? __('client.home.sub_new') : __('client.home.sub_active') }}
+                {{ $this->isActive ? __('client.home.sub_active') : __('client.home.sub_new') }}
             </p>
-        </div>
-
-        <div class="mock-switch" role="group" aria-label="{{ __('client.home.mock_label') }}">
-            <button type="button" wire:click="switchTo('new')" @class(['is-active' => $mode === 'new'])>
-                {{ __('client.home.state_new') }}
-            </button>
-            <button type="button" wire:click="switchTo('active')" @class(['is-active' => $mode === 'active'])>
-                {{ __('client.home.state_active') }}
-            </button>
         </div>
     </div>
 
@@ -112,7 +133,7 @@ new class extends Component
         </a>
     @endif
 
-    @if ($mode === 'new')
+    @if (! $this->isActive)
         <x-ui.card class="setup-card">
             <div class="setup-head">
                 <div>
@@ -148,12 +169,19 @@ new class extends Component
                             <span>{{ __('client.setup.steps.'.$key.'.hint') }}</span>
                         </div>
                         @unless ($completed)
-                            @if ($key === 'business')
-                                <x-ui.button variant="secondary" size="sm" :href="route('my-business')" wire:navigate>
-                                    {{ __('client.setup.steps.'.$key.'.cta') }}
-                                </x-ui.button>
-                            @else
-                                <x-ui.button :variant="$key === 'whatsapp' ? 'primary' : 'secondary'" size="sm">
+                            @php
+                                // Every step leads somewhere real (audit, 2026-09-20):
+                                // trying the assistant lives beside the catalog.
+                                $stepRoute = ['business' => 'my-business', 'catalog' => 'my-services',
+                                    'try' => 'my-services', 'whatsapp' => 'whatsapp'][$key] ?? null;
+                            @endphp
+                            @if ($stepRoute !== null)
+                                <x-ui.button
+                                    :variant="$key === 'whatsapp' ? 'primary' : 'secondary'"
+                                    size="sm"
+                                    :href="route($stepRoute)"
+                                    wire:navigate
+                                >
                                     {{ __('client.setup.steps.'.$key.'.cta') }}
                                 </x-ui.button>
                             @endif
@@ -182,36 +210,29 @@ new class extends Component
             </x-ui.card>
         </div>
     @else
+        {{-- Real month numbers, same vocabulary as /estadisticas. --}}
         <div class="stat-grid">
             <x-ui.stat-card
-                :label="__('client.kpis.conversations')"
-                value="48"
-                delta="+12%"
-                trend="up"
+                :label="__('statistics.kpis.conversations')"
+                :value="(string) $this->kpis['conversations']"
                 icon="message-circle"
                 tint="brand"
             />
             <x-ui.stat-card
-                :label="__('client.kpis.handled')"
-                value="41"
-                delta="+9%"
-                trend="up"
+                :label="__('statistics.kpis.questions')"
+                :value="(string) $this->kpis['questions']"
                 icon="bot"
                 tint="info"
             />
             <x-ui.stat-card
-                :label="__('client.kpis.handoffs')"
-                value="7"
-                delta="+2"
-                trend="flat"
+                :label="__('statistics.kpis.new_contacts')"
+                :value="(string) $this->kpis['new_contacts']"
                 icon="users"
                 tint="warning"
             />
             <x-ui.stat-card
-                :label="__('client.kpis.response')"
-                value="2s"
-                delta="estable"
-                trend="flat"
+                :label="__('statistics.kpis.audio_minutes')"
+                :value="(string) $this->kpis['audio_minutes']"
                 icon="zap"
                 tint="accent"
             />
@@ -220,17 +241,21 @@ new class extends Component
         <x-ui.card class="recent-card">
             <div class="recent-head">
                 <h3>{{ __('client.recent.title') }}</h3>
-                <x-ui.button variant="ghost" size="sm">{{ __('client.recent.view_all') }}</x-ui.button>
+                <x-ui.button variant="ghost" size="sm" :href="route('conversations')" wire:navigate>
+                    {{ __('client.recent.view_all') }}
+                </x-ui.button>
             </div>
-            @foreach (__('client.recent.samples') as $index => $sample)
-                <div wire:key="recent-{{ $index }}" class="recent-row">
-                    <x-ui.avatar :name="$sample['name']" size="sm" />
+            @foreach ($this->recent as $thread)
+                <a href="{{ route('conversations') }}" wire:navigate wire:key="recent-{{ $thread->id }}" class="recent-row">
+                    <x-ui.avatar :name="$thread->contact_name ?? $thread->contact_phone" size="sm" />
                     <div class="recent-copy">
-                        <b>{{ $sample['name'] }}</b>
-                        <span>{{ $sample['text'] }}</span>
+                        <b>{{ $thread->contact_name ?? __('client.conversations.anonymous') }}</b>
+                        <span>{{ $thread->latestMessage?->body }}</span>
                     </div>
-                    <span class="recent-time font-mono">{{ $sample['time'] }}</span>
-                </div>
+                    <span class="recent-time font-mono">
+                        {{ $thread->last_message_at?->isToday() ? $thread->last_message_at->format('H:i') : $thread->last_message_at?->format('d/m') }}
+                    </span>
+                </a>
             @endforeach
         </x-ui.card>
     @endif

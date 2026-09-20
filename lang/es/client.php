@@ -18,9 +18,6 @@ return [
         'disconnected' => 'Sin conectar',
         'sub_new' => 'Tu asistente está casi listo. Esto es lo que falta.',
         'sub_active' => 'Así viene tu negocio hoy.',
-        'mock_label' => 'Vista de maqueta',
-        'state_new' => 'Recién llegado',
-        'state_active' => 'Activo',
     ],
 
     'setup' => [
@@ -62,21 +59,9 @@ return [
         'metrics_text' => 'Cuántos clientes escribieron y qué preguntaron, en vivo.',
     ],
 
-    'kpis' => [
-        'conversations' => 'Conversaciones hoy',
-        'handled' => 'Resueltas por la IA',
-        'handoffs' => 'Derivadas a ti',
-        'response' => 'Respuesta promedio',
-    ],
-
     'recent' => [
         'title' => 'Últimas conversaciones',
         'view_all' => 'Ver todas',
-        'samples' => [
-            ['name' => 'Mariana', 'text' => '¿Tienen turno para mañana a la tarde?', 'time' => '10:24'],
-            ['name' => 'Jorge', 'text' => '¿Cuánto sale el ecodoppler?', 'time' => '09:51'],
-            ['name' => 'Valeria', 'text' => '¿Hacen envíos a Palermo?', 'time' => '09:12'],
-        ],
     ],
 
     'business' => [

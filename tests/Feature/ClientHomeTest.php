@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
+use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,11 +15,11 @@ uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
-| Client home — the living mock-up (blessed 2026-09-06)
+| Client home — two states derived from real data (mock switch died 2026-09-20)
 |--------------------------------------------------------------------------
-| Two states, zero persistence: a fresh client meets the setup guide (the
-| checklist IS the dashboard — KPIs at zero would only depress), and the
-| active state shows the day-to-day numbers. These tests pin that contract.
+| A fresh client meets the setup guide (the checklist IS the dashboard —
+| KPIs at zero would only depress); the first real thread earns the
+| day-to-day view with the month's real numbers. These tests pin that.
 */
 
 beforeEach(function (): void {
@@ -30,7 +33,7 @@ test('a fresh client lands on the setup guide, not on empty KPIs', function (): 
     $this->get(route('dashboard'))
         ->assertSuccessful()
         ->assertSee('Tu asistente está listo al 20%')
-        ->assertDontSee(__('client.kpis.conversations'));
+        ->assertDontSee(__('statistics.kpis.conversations'));
 });
 
 test('the home shows the real plan usage strip linking to the plan screen', function (): void {
@@ -83,33 +86,57 @@ test('with no business there is no connection pill', function (): void {
 });
 
 test('the account step arrives already ticked, endowed-progress style', function (): void {
+    $this->actingAs(User::factory()->create());
+
     Livewire::test('client.home')
-        ->assertSet('steps.account', true)
         ->assertSee(__('client.setup.steps.account.label'))
         ->assertSee(__('client.setup.progress', ['done' => 1, 'total' => 5]));
 });
 
 test('the WhatsApp step is the hero with its own primary call to action', function (): void {
+    $this->actingAs(User::factory()->create());
+
     Livewire::test('client.home')
         ->assertSeeHtml('is-hero')
-        ->assertSee(__('client.setup.steps.whatsapp.cta'));
+        ->assertSee(__('client.setup.steps.whatsapp.cta'))
+        ->assertSeeHtml(route('whatsapp'));
 });
 
-test('the active state swaps the guide for the day-to-day numbers', function (): void {
+test('the setup steps tick themselves from real data', function (): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    Service::factory()->count(2)->create(['business_id' => $user->business_id]);
+    $this->actingAs($user);
+
+    // Account + catalog done, the rest honestly pending.
     Livewire::test('client.home')
-        ->call('switchTo', 'active')
-        ->assertSee(__('client.kpis.conversations'))
+        ->assertSee(__('client.setup.progress', ['done' => 2, 'total' => 5]));
+});
+
+test('the first real thread earns the day-to-day view with real numbers', function (): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => '¿Tienen turnos?',
+    ]);
+    $this->actingAs($user);
+
+    Livewire::test('client.home')
+        ->assertSee(__('statistics.kpis.conversations'))
         ->assertSee(__('client.recent.title'))
+        ->assertSee('Carla')
+        ->assertSee('¿Tienen turnos?')
         ->assertDontSee(__('client.setup.sub'));
 });
 
-test('an unknown state falls back to the setup guide', function (): void {
-    Livewire::test('client.home')
-        ->call('switchTo', 'hacked')
-        ->assertSet('mode', 'new');
-});
-
 test('empty widgets preview what will fill them instead of a naked zero', function (): void {
+    $this->actingAs(User::factory()->create());
+
     Livewire::test('client.home')
         ->assertSee(__('client.previews.conversations_text'))
         ->assertSee(__('client.previews.metrics_text'));

@@ -1,58 +1,66 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Atendia
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Tu negocio, atendido por IA.** Atendia es un SaaS multi-tenant que le da a un
+negocio chico —un laboratorio, una peluquería, un comercio— un asistente de IA
+que atiende su WhatsApp las 24 horas: responde con el catálogo real del negocio,
+en el idioma del cliente, con honestidad ante lo que no sabe, y construye de
+paso el activo más valioso del negocio: su directorio de clientes.
 
-## About Laravel
+## Qué hace hoy
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Asistente de WhatsApp con RAG propio**: responde solo con la base de
+  conocimiento del negocio (servicios, productos, precios, ficha) vía embeddings
+  + pgvector; si la búsqueda no lo confirma, lo dice y ofrece derivar.
+- **Onboarding guiado**: registro → wizard del negocio → catálogo (carga manual
+  o import Excel/CSV con mapeo asistido por IA) → simulador en vivo → conexión
+  del número por QR.
+- **Conversaciones en vivo**: bandeja por tenant con Reverb (WebSockets),
+  búsqueda literal y semántica, filtro por fechas, historial por tramos.
+- **Clientes (CRM)**: ficha auto-creada desde el primer mensaje; la IA captura
+  datos reales (nombre, correo, cumpleaños) con confianza y procedencia, sin
+  pisar jamás lo escrito por un humano; opt-in de marketing explícito.
+- **Planes y uso**: reverse trial de 14 días, entitlements por plan como fuente
+  única, medidores de uso, programa de referidos con QR.
+- **Estadísticas**: KPIs con lectura en una frase, tendencias, horas pico y
+  detección de temas que el catálogo no cubre (clustering de embeddings).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Laravel 13 · PHP 8.5 · Livewire 4 (SFC + islands) · Alpine.js · Tailwind 3 ·
+PostgreSQL + pgvector · Redis · Reverb · laravel/ai (OpenAI) · Evolution API
+(WhatsApp) · Pest 4 (incluye browser testing con Playwright).
 
-## Learning Laravel
+## Decisiones de arquitectura que importan
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Tenancy en dos cinturones**: global scope `BelongsToBusiness` + **Row-Level
+  Security de Postgres** (política por `app.current_tenant`, FORCE). Un tenant
+  no alcanza a otro ni con SQL crudo.
+- **Reglas de oro blindadas por 3 capas** (guía + test guardián + hook): campos
+  solo por componentes de la casa, cero avisos nativos, validación en Forms,
+  queries jamás en Blade, comentarios en inglés con el porqué, fechas siempre
+  con Flatpickr, correo solo por `app/Messaging`.
+- **Sistema de diseño con tokens semánticos** (jade + coral, Sora/Jakarta/
+  JetBrains Mono), claro/oscuro completo, español regional (`es` neutro con
+  overrides `es_AR` de voseo).
+- **La IA como capa, no como caja negra**: instrucciones interpoladas por
+  negocio, herramientas pinneadas al tenant en construcción (el modelo nunca
+  elige el tenant), costo medido por intercambio.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Desarrollo
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+El entorno vive en Docker (`atendia-app`); PHP, Composer, npm y Artisan corren
+dentro del contenedor:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+docker exec -w /var/www/html atendia-app php artisan migrate
+docker exec -w /var/www/html atendia-app npm run build
+docker exec -w /var/www/html atendia-app ./vendor/bin/pest --compact
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Los tests (1500+) corren sobre una base Postgres dedicada (`atendia_testing`),
+con guardas que impiden tocar la base de trabajo. Los browser tests son
+on-demand: `./vendor/bin/pest tests/Browser/... ` como `www-data`.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proyecto privado. © Atendia.

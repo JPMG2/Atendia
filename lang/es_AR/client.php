@@ -29,10 +29,6 @@ return [
         ],
     ],
 
-    'kpis' => [
-        'handoffs' => 'Derivadas a vos',
-    ],
-
     'business' => [
         'try' => [
             'button' => 'Probalo ahora',
