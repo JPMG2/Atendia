@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Ai\Agents\ReplyTranslator;
 use App\Enums\ConversationStatus;
 use App\Models\Conversation;
 use App\Services\EvolutionApi;
@@ -23,6 +24,14 @@ class SendHandoffReminders extends Command
 
     public function handle(EvolutionApi $evolution): int
     {
+        $this->remindForgotten($evolution);
+        $this->autoResume($evolution);
+
+        return self::SUCCESS;
+    }
+
+    private function remindForgotten(EvolutionApi $evolution): void
+    {
         $floor = now()->subMinutes((int) config('atendia.handoff.reminder_minutes'));
 
         $forgotten = Conversation::query()
@@ -40,13 +49,19 @@ class SendHandoffReminders extends Command
                 continue;
             }
 
+            // Quiet hours: "a person is on the way" is a promise — it only
+            // goes out while the business is actually open.
+            if (! $business->isOpenNow()) {
+                continue;
+            }
+
             $minutes = (int) $thread->escalated_at->diffInMinutes(now());
 
-            // The customer first: their wait is the one that costs trust.
+            // The customer first, in THEIR language: that wait costs trust.
             $evolution->sendText(
                 $business->whatsapp_instance,
                 $thread->contact_phone,
-                __('assistant.handoff.hold_customer', ['business' => $business->name]),
+                $this->inCustomerLanguage($thread, __('assistant.handoff.hold_customer', ['business' => $business->name])),
             );
 
             $owner = (string) preg_replace('/\D/', '', (string) $business->fallback_whatsapp_number);
@@ -66,7 +81,69 @@ class SendHandoffReminders extends Command
 
             $this->info("Reminded {$business->name} about {$thread->contact_phone} ({$minutes} min)");
         }
+    }
 
-        return self::SUCCESS;
+    /**
+     * The optional last net: after N hours with no human word, the assistant
+     * takes the thread back so the customer is never abandoned. Off unless
+     * the owner sets the hours.
+     */
+    private function autoResume(EvolutionApi $evolution): void
+    {
+        $hours = config('atendia.handoff.auto_resume_hours');
+
+        if ($hours === null) {
+            return;
+        }
+
+        $abandoned = Conversation::query()
+            ->with('business')
+            ->where('status', ConversationStatus::Team)
+            ->whereNotNull('handoff_reminded_at')
+            ->whereNotNull('escalated_at')
+            ->where('escalated_at', '<=', now()->subHours((int) $hours))
+            ->get();
+
+        foreach ($abandoned as $thread) {
+            $business = $thread->business;
+
+            if ($business === null || ! $business->isConnected() || $business->whatsapp_instance === null) {
+                continue;
+            }
+
+            $evolution->sendText(
+                $business->whatsapp_instance,
+                $thread->contact_phone,
+                $this->inCustomerLanguage($thread, __('assistant.handoff.auto_resume')),
+            );
+
+            $thread->forceFill([
+                'status' => ConversationStatus::Open,
+                'escalated_at' => null,
+                'handoff_reminded_at' => null,
+            ])->save();
+
+            $this->info("Auto-resumed {$thread->contact_phone} for {$business->name}");
+        }
+    }
+
+    /** Courtesy in the customer's tongue; a failed translation ships Spanish. */
+    private function inCustomerLanguage(Conversation $thread, string $text): string
+    {
+        $language = strtolower((string) $thread->language);
+
+        if ($language === '' || str_starts_with($language, 'es')) {
+            return $text;
+        }
+
+        return rescue(function () use ($language, $text): string {
+            $response = new ReplyTranslator()->prompt(
+                "Idioma del cliente: {$language}\n\nMensaje (en español):\n{$text}",
+            );
+
+            $translated = trim((string) ($response['text'] ?? ''));
+
+            return $translated !== '' ? $translated : $text;
+        }, $text, report: false);
     }
 }

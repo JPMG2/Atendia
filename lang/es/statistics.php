@@ -13,6 +13,7 @@ return [
 
     'kpis' => [
         'conversations' => 'Conversaciones del mes',
+        'resolution' => 'Resueltas por tu asistente',
         'new_contacts' => 'Clientes nuevos',
         'questions' => 'Consultas respondidas',
         'audio_minutes' => 'Minutos de audio',

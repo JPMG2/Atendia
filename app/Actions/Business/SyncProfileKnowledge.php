@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Business;
 
 use App\Models\Business;
-use App\Models\BusinessHour;
 use App\Models\KnowledgeDocument;
 use App\Models\SocialLink;
 
@@ -70,16 +69,7 @@ class SyncProfileKnowledge
      */
     private function hourLines(Business $business): array
     {
-        $days = BusinessHour::dayNames();
-
-        $lines = $business->hours()
-            ->get()
-            ->groupBy('day_of_week')
-            ->map(fn ($shifts, int $day): string => $days[$day].': '.$shifts
-                ->map(fn (BusinessHour $shift): string => mb_substr((string) $shift->opens_at, 0, 5).' a '.mb_substr((string) $shift->closes_at, 0, 5))
-                ->implode(' y '))
-            ->values()
-            ->all();
+        $lines = $business->scheduleLines();
 
         return $lines === [] ? [] : ['Horarios de atención:', ...$lines];
     }

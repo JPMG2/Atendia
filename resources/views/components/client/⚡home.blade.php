@@ -45,7 +45,7 @@ new class extends Component
         return Auth::user()?->business?->conversations()->exists() ?? false;
     }
 
-    /** @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int}|null */
+    /** @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int}|null */
     #[Computed]
     public function kpis(): ?array
     {
@@ -231,9 +231,9 @@ new class extends Component
                 tint="warning"
             />
             <x-ui.stat-card
-                :label="__('statistics.kpis.audio_minutes')"
-                :value="(string) $this->kpis['audio_minutes']"
-                icon="zap"
+                :label="__('statistics.kpis.resolution')"
+                :value="($this->kpis['resolution'] ?? 0).'%'"
+                icon="check"
                 tint="accent"
             />
         </div>

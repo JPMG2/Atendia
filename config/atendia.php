@@ -67,14 +67,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Handoff — el hilo olvidado
+    | Handoff — the forgotten thread
     |--------------------------------------------------------------------------
-    | Minutos de gracia esperando al equipo antes de re-avisar al dueño y
-    | decirle al cliente, una sola vez, que una persona está en camino.
+    | Grace minutes waiting for the team before re-pinging the owner and
+    | telling the customer, once, that a person is on the way.
     */
 
     'handoff' => [
         'reminder_minutes' => env('HANDOFF_REMINDER_MINUTES', 20),
+        // Hours with no human word before the assistant takes the thread
+        // back. Null = off: resuming over a human is the owner's call.
+        'auto_resume_hours' => env('HANDOFF_AUTO_RESUME_HOURS'),
     ],
 
     /*

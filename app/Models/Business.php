@@ -440,6 +440,45 @@ class Business extends Model
     }
 
     /**
+     * One line per day with hours, shift by shift: "Lunes: 09:00 a 13:00 y
+     * 17:00 a 20:00". Days with no row are simply not offered.
+     *
+     * @return list<string>
+     */
+    public function scheduleLines(): array
+    {
+        $days = BusinessHour::dayNames();
+
+        return $this->hours()
+            ->get()
+            ->groupBy('day_of_week')
+            ->map(fn ($shifts, int $day): string => $days[$day].': '.$shifts
+                ->map(fn (BusinessHour $shift): string => mb_substr((string) $shift->opens_at, 0, 5).' a '.mb_substr((string) $shift->closes_at, 0, 5))
+                ->implode(' y '))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Open right now, in the BUSINESS's own timezone. No hours on file means
+     * always open: silence must never mute the reminders.
+     */
+    public function isOpenNow(): bool
+    {
+        if (! $this->hours()->exists()) {
+            return true;
+        }
+
+        $now = now($this->timezone ?? config('app.timezone'));
+        $time = $now->format('H:i:s');
+
+        return $this->hours()
+            ->where('day_of_week', (int) $now->format('w'))
+            ->get()
+            ->contains(fn (BusinessHour $shift): bool => $time >= (string) $shift->opens_at && $time <= (string) $shift->closes_at);
+    }
+
+    /**
      * @return HasMany<Conversation, $this>
      */
     public function conversations(): HasMany

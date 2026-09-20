@@ -284,6 +284,43 @@ new class extends Component
         unset($this->thread, $this->threadDays, $this->humanHeld);
     }
 
+    /**
+     * One-tap answers built from what the owner already loaded: hours,
+     * address, the top of the menu. They drop INTO the box — the human
+     * always edits and sends; nothing fires on its own.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function quickReplies(): array
+    {
+        $user = Auth::user();
+        $business = $user?->business;
+
+        if ($business === null) {
+            return [];
+        }
+
+        $services = Client::for($user)->serviceMenu?->services
+            ->where('is_active', true)
+            ->take(3)
+            ->map(fn ($service): string => $service->price !== null
+                ? $service->name.': $ '.rtrim(rtrim((string) $service->price, '0'), '.')
+                : $service->name)
+            ->implode("\n") ?? '';
+
+        return array_filter([
+            __('client.conversations.qr_hours') => implode("\n", $business->scheduleLines()),
+            __('client.conversations.qr_address') => trim(implode(', ', array_filter([$business->address, $business->city]))),
+            __('client.conversations.qr_services') => $services,
+        ], fn (string $text): bool => $text !== '');
+    }
+
+    public function quickReply(string $text): void
+    {
+        $this->reply = trim($this->reply) === '' ? $text : rtrim($this->reply)."\n".$text;
+    }
+
     /** The same box, kept private: a margin note the customer never sees. */
     public function saveNote(): void
     {
@@ -559,6 +596,15 @@ new class extends Component
                         {{-- The composer: out through the business's own
                         WhatsApp, into the record and the AI's memory. --}}
                         <div class="bd-subtle border-t p-3">
+                            @if ($this->quickReplies !== [])
+                                <div class="mb-2 flex flex-wrap gap-2">
+                                    @foreach ($this->quickReplies as $label => $text)
+                                        <x-ui.button variant="ghost" size="sm" wire:key="qr-{{ $loop->index }}" wire:click="quickReply({{ \Illuminate\Support\Js::from($text) }})">
+                                            {{ $label }}
+                                        </x-ui.button>
+                                    @endforeach
+                                </div>
+                            @endif
                             <x-catalog.form-row>
                                 <x-inputsform.input
                                     span="long"

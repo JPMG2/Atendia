@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Models\Business;
 use App\Models\ConversationMessage;
 use App\Models\KnowledgeChunk;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -30,7 +33,7 @@ class Statistics
     public function __construct(private Business $business) {}
 
     /**
-     * @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int}
+     * @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int}
      */
     public function monthKpis(?CarbonImmutable $month = null): array
     {
@@ -38,13 +41,43 @@ class Statistics
         [$from, $to] = [$month->startOfMonth(), $month->endOfMonth()];
 
         $inbound = $this->inbound()->whereBetween('created_at', [$from, $to]);
+        $threadIds = (clone $inbound)->distinct('conversation_id')->pluck('conversation_id');
 
         return [
-            'conversations' => (clone $inbound)->distinct('conversation_id')->count('conversation_id'),
+            'conversations' => $threadIds->count(),
             'new_contacts' => $this->business->conversations()->whereBetween('created_at', [$from, $to])->count(),
             'questions' => (clone $inbound)->count(),
             'audio_minutes' => (int) ceil((clone $inbound)->sum('audio_seconds') / 60),
+            'resolution' => $this->resolutionRate($threadIds),
         ];
+    }
+
+    /**
+     * The number every competitor sells: % of the month's threads the
+     * assistant carried ALONE — no human turn, not waiting on the team.
+     *
+     * @param  Collection<int, int>  $threadIds
+     */
+    private function resolutionRate($threadIds): int
+    {
+        if ($threadIds->isEmpty()) {
+            return 0;
+        }
+
+        $humanTouched = ConversationMessage::query()
+            ->whereIn('conversation_id', $threadIds)
+            ->where('author', MessageAuthor::Human)
+            ->distinct('conversation_id')
+            ->pluck('conversation_id');
+
+        $waiting = $this->business->conversations()
+            ->whereIn('id', $threadIds)
+            ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
+            ->pluck('id');
+
+        $touched = $humanTouched->merge($waiting)->unique()->count();
+
+        return (int) round(($threadIds->count() - $touched) / $threadIds->count() * 100);
     }
 
     /**

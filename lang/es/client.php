@@ -348,6 +348,9 @@ return [
         'reply_placeholder' => 'Escribe tu respuesta…',
         'send' => 'Enviar',
         'note' => 'Nota',
+        'qr_hours' => 'Horarios',
+        'qr_address' => 'Dirección',
+        'qr_services' => 'Servicios',
         'human_tag' => 'Equipo',
     ],
 

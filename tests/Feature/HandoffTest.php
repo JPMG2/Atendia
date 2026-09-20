@@ -6,6 +6,7 @@ use App\Actions\Business\SendHumanReply;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\ReplyTranslator;
 use App\Ai\Tools\EscalateToHuman;
+use App\Classes\Main\Client;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageAuthor;
@@ -402,6 +403,153 @@ test('the escalation clock restarts when the customer sends the ball back', func
     expect($thread->status)->toBe(ConversationStatus::Team)
         ->and($thread->escalated_at)->not->toBeNull()
         ->and($thread->handoff_reminded_at)->toBeNull();
+});
+
+test('quick replies drop the loaded business into the box, never firing alone', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create([
+        'address' => 'Av. Bolívar 123',
+        'city' => 'Valencia',
+    ]))->save();
+    $user->business->hours()->create(['day_of_week' => 1, 'opens_at' => '09:00', 'closes_at' => '18:00']);
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'status' => ConversationStatus::Team,
+    ]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.qr_hours'))
+        ->call('quickReply', 'Lunes: 09:00 a 18:00')
+        ->assertSet('reply', 'Lunes: 09:00 a 18:00');
+
+    expect(handoffSentTexts())->toBe([]);
+});
+
+test('the month reads its resolution rate: threads the assistant carried alone', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    // One clean AI thread, one with a human turn: fifty-fifty.
+    foreach ([['5491111111111', null], ['5492222222222', MessageAuthor::Human]] as [$phone, $author]) {
+        $thread = Conversation::factory()->create([
+            'business_id' => $user->business_id,
+            'contact_phone' => $phone,
+        ]);
+        ConversationMessage::factory()->for($thread)->create([
+            'business_id' => $user->business_id, 'body' => 'Hola',
+        ]);
+
+        if ($author !== null) {
+            ConversationMessage::factory()->out()->for($thread)->create([
+                'business_id' => $user->business_id, 'body' => 'Te respondo yo', 'author' => $author,
+            ]);
+        }
+    }
+
+    $this->actingAs($user);
+
+    expect(Client::for($user)->statistics->monthKpis()['resolution'])->toBe(50);
+
+    $this->get(route('statistics'))->assertSee(__('statistics.kpis.resolution'));
+    $this->get(route('dashboard'))->assertSee(__('statistics.kpis.resolution'));
+});
+
+test('quiet hours hold the reminder until the business opens', function (): void {
+    config()->set('atendia.handoff.reminder_minutes', 20);
+
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+        'fallback_whatsapp_number' => '5492995550000',
+    ]);
+    // Hours exist but never today: the business is closed right now.
+    $business->hours()->create([
+        'day_of_week' => (int) now()->addDays(2)->format('w'),
+        'opens_at' => '09:00',
+        'closes_at' => '10:00',
+    ]);
+
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subMinutes(40),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    expect(handoffSentTexts())->toBe([]);
+});
+
+test('the hold message speaks the customer\'s language', function (): void {
+    config()->set('atendia.handoff.reminder_minutes', 20);
+
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491111111111',
+        'language' => 'en',
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subMinutes(40),
+    ]);
+
+    ReplyTranslator::fake([['text' => 'A teammate is on the way, thanks for your patience!']]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    expect(handoffSentTexts()[0]['text'])->toBe('A teammate is on the way, thanks for your patience!');
+});
+
+test('after the configured hours the assistant takes the thread back', function (): void {
+    config()->set('atendia.handoff.reminder_minutes', 20);
+    config()->set('atendia.handoff.auto_resume_hours', 2);
+
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491111111111',
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subHours(3),
+        'handoff_reminded_at' => now()->subHours(2),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    expect($thread->refresh()->status)->toBe(ConversationStatus::Open)
+        ->and($thread->escalated_at)->toBeNull()
+        ->and(handoffSentTexts()[0]['text'])->toContain('Retomo yo');
+});
+
+test('with auto-resume off the thread keeps waiting for the human', function (): void {
+    config()->set('atendia.handoff.auto_resume_hours', null);
+
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subHours(10),
+        'handoff_reminded_at' => now()->subHours(9),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    expect($thread->refresh()->status)->toBe(ConversationStatus::Team);
 });
 
 test('the owner hands the thread back with one click', function (): void {

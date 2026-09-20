@@ -93,6 +93,7 @@ new class extends Component
         <div class="stat-grid">
             @foreach ([
                 'conversations' => 'message-circle',
+                'resolution' => 'check',
                 'new_contacts' => 'users',
                 'questions' => 'bot',
                 'audio_minutes' => 'zap',
@@ -100,7 +101,7 @@ new class extends Component
                 @php($delta = $this->deltaFor($key))
                 <x-ui.stat-card
                     :label="__('statistics.kpis.'.$key)"
-                    :value="number_format((int) ($this->kpis[$key] ?? 0), 0, ',', '.')"
+                    :value="$key === 'resolution' ? ($this->kpis[$key] ?? 0).'%' : number_format((int) ($this->kpis[$key] ?? 0), 0, ',', '.')"
                     :delta="$delta['delta']"
                     :trend="$delta['trend']"
                     :icon="$icon"
