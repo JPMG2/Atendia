@@ -39,7 +39,7 @@ class SendWhatsAppDigests extends Command
 
             $evolution->sendText(
                 (string) $business->whatsapp_instance,
-                (string) preg_replace('/\D/', '', (string) $business->fallback_whatsapp_number),
+                $business->ownerWhatsAppDigits(),
                 $this->compose($business, $entries),
             );
 

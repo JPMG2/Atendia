@@ -64,7 +64,7 @@ class SendHandoffReminders extends Command
                 $this->inCustomerLanguage($thread, __('assistant.handoff.hold_customer', ['business' => $business->name])),
             );
 
-            $owner = (string) preg_replace('/\D/', '', (string) $business->fallback_whatsapp_number);
+            $owner = $business->ownerWhatsAppDigits();
 
             if ($owner !== '') {
                 $evolution->sendText(

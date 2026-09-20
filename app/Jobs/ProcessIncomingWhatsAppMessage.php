@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Business\SendHumanReply;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\Plan;
 use App\Enums\ConversationStatus;
@@ -74,6 +75,15 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     {
         $plan = $business->plan();
         $evolution = app(EvolutionApi::class);
+
+        // The owner's own phone is NEVER a customer: opening a thread for it
+        // made the assistant escalate the owner to the owner (2026-09-20).
+        // Their texts are relayed to the thread waiting for the team.
+        if ($business->isOwnerWhatsApp($this->from)) {
+            $this->relayOwnerReply($business, $evolution);
+
+            return;
+        }
 
         // The plan gate on audio closes BEFORE transcription spends a cent.
         // The customer only hears a courteous ask for text — the owner's
@@ -167,6 +177,58 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     }
 
     /**
+     * The owner answered the escalation ping right here on WhatsApp: the
+     * text rides to the MOST RECENTLY escalated thread through the same
+     * action the panel composer uses, and the owner gets a confirmation
+     * naming who received it. With nothing waiting, just the pointer.
+     */
+    private function relayOwnerReply(Business $business, EvolutionApi $evolution): void
+    {
+        $text = $this->audioBase64 !== null ? $this->transcribe() : $this->drainBuffer();
+
+        if ($text === null || trim($text) === '') {
+            return;
+        }
+
+        app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
+            $thread = Conversation::query()
+                ->where('status', ConversationStatus::Team)
+                ->orderByDesc('escalated_at')
+                ->first();
+
+            if ($thread === null || app(SendHumanReply::class)->handle($business, $thread, $text) === null) {
+                $this->hintOwnerChannel($evolution);
+
+                return;
+            }
+
+            $evolution->sendText($this->instance, $this->from, __('assistant.handoff.relay_done', [
+                'name' => $thread->contact_name ?? $thread->contact_phone,
+                'url' => route('conversations'),
+            ]));
+
+            WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $thread->id);
+        });
+    }
+
+    /**
+     * One pointer per hour, not one per text: the owner writing here is
+     * usually mid-confusion and a hint avalanche would only add to it.
+     */
+    private function hintOwnerChannel(EvolutionApi $evolution): void
+    {
+        if (! Cache::add("wa:ownerhint:{$this->instance}", true, now()->addHour())) {
+            return;
+        }
+
+        rescue(fn () => $evolution->sendText(
+            $this->instance,
+            $this->from,
+            __('assistant.handoff.owner_channel', ['url' => route('conversations')]),
+        ), report: false);
+    }
+
+    /**
      * The customer record behind this phone, born on the first message and
      * freshened on every one after (tenant-scoped by the isolation layer).
      */
@@ -231,7 +293,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
         rescue(fn () => $evolution->sendText(
             $this->instance,
-            (string) preg_replace('/\D/', '', (string) $business->fallback_whatsapp_number),
+            $business->ownerWhatsAppDigits(),
             __('assistant.plan.cap_warning', [
                 'used' => $used,
                 'cap' => $plan->conversationsPerMonth,

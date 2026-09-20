@@ -77,7 +77,57 @@ test('escalating flips the thread to team and pings the owner in Spanish', funct
     $alert = handoffSentTexts()[0];
     expect($alert['number'])->toBe('5492995550000')
         ->and($alert['text'])->toContain('Carla')
-        ->and($alert['text'])->toContain('Pide una cotización grande.');
+        ->and($alert['text'])->toContain('Pide una cotización grande.')
+        ->and($alert['text'])->toContain(route('conversations'));
+});
+
+test('escalating the owner own thread never pings the owner about themselves', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'fallback_whatsapp_number' => '+54 9 299 552-9100',
+    ]);
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5492995529100',
+    ]);
+
+    (new EscalateToHuman($business, $thread))->handle(new Request(['reason' => 'Pregunta el horario.']));
+
+    expect($thread->refresh()->status)->toBe(ConversationStatus::Team)
+        ->and(handoffSentTexts())->toBe([]);
+});
+
+test('the owner reply on WhatsApp is relayed to the waiting customer and confirmed', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+        'fallback_whatsapp_number' => '+54 9 299 552-9100',
+    ]);
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_name' => 'Dpt Sistemas',
+        'contact_phone' => '5492994577237',
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subMinutes(3),
+    ]);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', 'No, hoy estamos cerrados.', 'MSG-90'))->handle();
+
+    $texts = handoffSentTexts();
+
+    // First the customer gets the owner's words, then the owner gets the
+    // receipt — and no phantom thread is born for the owner's number.
+    expect($texts)->toHaveCount(2)
+        ->and($texts[0]['number'])->toBe('5492994577237')
+        ->and($texts[0]['text'])->toBe('No, hoy estamos cerrados.')
+        ->and($texts[1]['number'])->toBe('5492995529100')
+        ->and($texts[1]['text'])->toContain('Dpt Sistemas')
+        ->and(Conversation::query()->count())->toBe(1);
+
+    $thread->refresh();
+
+    expect($thread->status)->toBe(ConversationStatus::Customer)
+        ->and($thread->messages()->sole()->author)->toBe(MessageAuthor::Human);
 });
 
 test('with no fallback number the escalation still lands, just unpinged', function (): void {

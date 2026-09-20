@@ -68,9 +68,12 @@ class EscalateToHuman implements Tool
 
     private function alertOwner(string $reason): void
     {
-        $number = (string) preg_replace('/\D/', '', (string) $this->business->fallback_whatsapp_number);
+        $number = $this->business->ownerWhatsAppDigits();
 
-        if ($number === '' || $this->business->whatsapp_instance === null) {
+        // The last belt against the self-escalation loop: never ping the
+        // owner that THEY need the team.
+        if ($number === '' || $this->business->whatsapp_instance === null
+            || $this->business->isOwnerWhatsApp((string) $this->conversation->contact_phone)) {
             return;
         }
 
@@ -81,6 +84,7 @@ class EscalateToHuman implements Tool
                 'name' => $this->conversation->contact_name ?? $this->conversation->contact_phone,
                 'phone' => $this->conversation->contact_phone,
                 'reason' => $reason !== '' ? $reason : __('assistant.handoff.no_reason'),
+                'url' => route('conversations'),
             ]),
         );
     }

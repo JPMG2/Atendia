@@ -9,6 +9,7 @@ use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Customer;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -73,6 +74,35 @@ test('an inbound text is answered by the assistant through the business instance
         ->and(sentTexts()[0]['text'])->toBe('Sí, mañana tenemos turnos desde las 9.')
         ->and(sentTexts()[0]['number'])->toBe('5491122334455')
         ->and(sentTexts()[0]['delay'])->toBeGreaterThan(0);
+});
+
+test('a text from the owner own number never opens a customer thread, only the panel pointer', function (): void {
+    fakeWhatsAppHttp();
+    Business::factory()->create([
+        'whatsapp_instance' => 'atendia-demo',
+        'fallback_whatsapp_number' => '+54 9 11 2233-4455',
+    ]);
+
+    AsistenteAtendia::fake(['Nunca debería salir.', 'Nunca debería salir.']);
+
+    runIncoming('no estamos abiertos hoy');
+
+    expect(Conversation::query()->count())->toBe(0)
+        ->and(Customer::query()->count())->toBe(0)
+        ->and(sentTexts())->toHaveCount(1)
+        ->and(sentTexts()[0]['text'])->toContain(route('conversations'));
+
+    // A second text inside the hour stays silent: no hint avalanche.
+    runIncoming('¿hola?', 'MSG-2');
+
+    expect(sentTexts())->toHaveCount(1);
+});
+
+test('the owner saved nationally still matches the full international sender', function (): void {
+    $business = Business::factory()->make(['fallback_whatsapp_number' => '11 2233-4455']);
+
+    expect($business->isOwnerWhatsApp('5491122334455'))->toBeTrue()
+        ->and($business->isOwnerWhatsApp('5491199887766'))->toBeFalse();
 });
 
 test('a burst of texts collapses into one prompt and one reply', function (): void {

@@ -570,6 +570,30 @@ class Business extends Model
         return $this->whatsapp_connected_at !== null;
     }
 
+    /** The owner's alert number as bare digits; empty when unset. */
+    public function ownerWhatsAppDigits(): string
+    {
+        return (string) preg_replace('/\D/', '', (string) $this->fallback_whatsapp_number);
+    }
+
+    /**
+     * True when an inbound sender IS the owner's own phone. WhatsApp hands
+     * the full international number while owners may save the national one,
+     * so a long suffix match counts too — treating the owner as a customer
+     * is how the 2026-09-20 self-escalation loop was born.
+     */
+    public function isOwnerWhatsApp(string $digits): bool
+    {
+        $owner = $this->ownerWhatsAppDigits();
+        $digits = (string) preg_replace('/\D/', '', $digits);
+
+        if (strlen($owner) < 8 || strlen($digits) < 8) {
+            return false;
+        }
+
+        return str_ends_with($digits, $owner) || str_ends_with($owner, $digits);
+    }
+
     /**
      * What the wizard actually persisted, for its closing recap.
      *
