@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->string('direction', 8)->comment('in = el cliente escribe, out = el asistente responde');
             $table->string('author', 9)->nullable()->comment('En las filas out: assistant | human (respondió el dueño desde el panel)');
+            $table->string('kind', 8)->default('message')->comment('message | note — la nota interna jamás viaja al cliente');
             $table->string('wa_message_id', 100)->nullable()->comment('El id del mensaje en WhatsApp, para reacciones y trazas');
             $table->text('body');
             $table->unsignedInteger('prompt_tokens')->nullable()->comment('Tokens de entrada del intercambio (solo filas out; suma sus pasadas): el costo real que decide los paquetes');

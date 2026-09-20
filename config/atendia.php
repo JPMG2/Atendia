@@ -67,6 +67,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Handoff — el hilo olvidado
+    |--------------------------------------------------------------------------
+    | Minutos de gracia esperando al equipo antes de re-avisar al dueño y
+    | decirle al cliente, una sola vez, que una persona está en camino.
+    */
+
+    'handoff' => [
+        'reminder_minutes' => env('HANDOFF_REMINDER_MINUTES', 20),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Referral program ("Gana con AtendIa")
     |--------------------------------------------------------------------------
     |

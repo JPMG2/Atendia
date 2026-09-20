@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('contact_name')->nullable()->comment('El pushName que muestra WhatsApp; lo pisa cada mensaje');
             $table->string('language', 8)->nullable()->comment('Idioma detectado del cliente: la IA lo espeja y la derivación traduce de vuelta');
             $table->string('status', 12)->default('open')->comment('open | team | customer | resolved — en team la IA calla en ESTE hilo');
+            $table->timestamp('escalated_at')->nullable()->comment('Esperando al equipo DESDE; el reloj del recordatorio de hilo olvidado');
+            $table->timestamp('handoff_reminded_at')->nullable()->comment('Recordatorio enviado (una vez por entrada a team)');
             $table->timestamp('last_message_at')->nullable()->comment('Para ordenar la bandeja; lo sella cada intercambio');
             $table->timestamps();
 

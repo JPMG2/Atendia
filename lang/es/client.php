@@ -347,6 +347,7 @@ return [
         'resolved_done' => 'Conversación resuelta. Si el cliente vuelve a escribir, tu asistente la reabre.',
         'reply_placeholder' => 'Escribe tu respuesta…',
         'send' => 'Enviar',
+        'note' => 'Nota',
         'human_tag' => 'Equipo',
     ],
 

@@ -9,6 +9,7 @@ use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
+use App\Enums\MessageKind;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -273,7 +274,10 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             return [];
         }
 
+        // Internal notes are the owner's private margin: the model never
+        // reads them, so it can never repeat one to the customer.
         return $this->conversation->messages()
+            ->where('kind', MessageKind::Message)
             ->latest('id')
             ->limit(self::MEMORY_LIMIT)
             ->get()

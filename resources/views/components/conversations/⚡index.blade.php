@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Business\SaveInternalNote;
 use App\Actions\Business\SendHumanReply;
 use App\Classes\Main\Client;
 use App\Classes\Main\Inbox;
@@ -239,7 +240,7 @@ new class extends Component
             return;
         }
 
-        $this->thread?->update(['status' => ConversationStatus::Open]);
+        $this->thread?->update(['status' => ConversationStatus::Open, 'escalated_at' => null, 'handoff_reminded_at' => null]);
         unset($this->thread, $this->humanHeld);
 
         $this->dispatchNotification(new NotificationDto(__('client.conversations.resumed'), NotificationType::Success));
@@ -254,7 +255,7 @@ new class extends Component
             return;
         }
 
-        $thread->update(['status' => ConversationStatus::Team]);
+        $thread->update(['status' => ConversationStatus::Team, 'escalated_at' => now(), 'handoff_reminded_at' => null]);
         unset($this->thread, $this->humanHeld);
     }
 
@@ -283,6 +284,22 @@ new class extends Component
         unset($this->thread, $this->threadDays, $this->humanHeld);
     }
 
+    /** The same box, kept private: a margin note the customer never sees. */
+    public function saveNote(): void
+    {
+        $thread = $this->thread;
+        $text = trim($this->reply);
+
+        if ($thread === null || $text === '' || ! $this->humanHeld) {
+            return;
+        }
+
+        app(SaveInternalNote::class)->handle($thread, $text);
+
+        $this->reply = '';
+        unset($this->thread, $this->threadDays);
+    }
+
     /** Closing the loop by hand; the customer's next word reopens it for the AI. */
     public function markResolved(): void
     {
@@ -290,7 +307,7 @@ new class extends Component
             return;
         }
 
-        $this->thread?->update(['status' => ConversationStatus::Resolved]);
+        $this->thread?->update(['status' => ConversationStatus::Resolved, 'escalated_at' => null, 'handoff_reminded_at' => null]);
         unset($this->thread, $this->humanHeld);
 
         $this->dispatchNotification(new NotificationDto(__('client.conversations.resolved_done'), NotificationType::Success));
@@ -511,6 +528,14 @@ new class extends Component
                                             </span>
                                         </div>
                                         @foreach ($messages as $message)
+                                            @if ($message->kind === App\Enums\MessageKind::Note)
+                                                <div class="pm-note" wire:key="msg-{{ $message->id }}">
+                                                    <x-icon name="lock" :size="12" class="mt-1 flex-none" />
+                                                    <span class="min-w-0">{{ $message->body }}</span>
+                                                    <span class="pm-time font-mono">{{ $message->created_at?->format('H:i') }}</span>
+                                                </div>
+                                                @continue
+                                            @endif
                                             <div class="pm-row {{ $message->direction->value }}" wire:key="msg-{{ $message->id }}">
                                                 <div class="pm-bubble {{ $message->direction->value }}">
                                                     <x-ui.match :text="$message->body" :needle="$threadSearch" />
@@ -543,7 +568,10 @@ new class extends Component
                                     wire:model="reply"
                                     wire:keydown.enter="sendReply"
                                 />
-                                <div class="flex flex-none items-center self-center">
+                                <div class="flex flex-none items-center gap-2 self-center">
+                                    <x-ui.button variant="secondary" size="sm" icon="pencil" class="data-loading:opacity-50" wire:click="saveNote">
+                                        {{ __('client.conversations.note') }}
+                                    </x-ui.button>
                                     <x-ui.button variant="primary" size="sm" icon="send" class="data-loading:opacity-50" wire:click="sendReply">
                                         {{ __('client.conversations.send') }}
                                     </x-ui.button>

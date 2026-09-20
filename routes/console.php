@@ -13,3 +13,4 @@ Artisan::command('inspire', function (): void {
 // Evening, when the day's conversations are in and the owner still reads.
 Schedule::command('atendia:whatsapp-digest')->dailyAt('20:30');
 Schedule::command('atendia:birthday-greetings')->dailyAt('09:15');
+Schedule::command('atendia:handoff-reminders')->everyTenMinutes();

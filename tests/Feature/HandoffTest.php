@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Actions\Business\SendHumanReply;
 use App\Ai\Agents\AsistenteAtendia;
+use App\Ai\Agents\ReplyTranslator;
 use App\Ai\Tools\EscalateToHuman;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageAuthor;
+use App\Enums\MessageKind;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
@@ -270,6 +274,134 @@ test('marking resolved closes the loop from the panel', function (): void {
         ->call('markResolved');
 
     expect($thread->refresh()->status)->toBe(ConversationStatus::Resolved);
+});
+
+test('an internal note stays home: no WhatsApp, no assistant memory, no preview', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'status' => ConversationStatus::Team,
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id, 'body' => 'Hola',
+    ]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->set('reply', 'Le prometí 10% si confirma hoy.')
+        ->call('saveNote')
+        ->assertSee('Le prometí 10% si confirma hoy.')
+        ->assertSet('reply', '');
+
+    $note = $thread->messages()->where('kind', MessageKind::Note)->sole();
+
+    expect(handoffSentTexts())->toBe([])
+        ->and($thread->refresh()->latestMessage->body)->toBe('Hola')
+        ->and(collect((new AsistenteAtendia($user->business, $thread))->messages())
+            ->contains(fn ($message): bool => str_contains($message->content ?? '', '10%')))->toBeFalse()
+        ->and($note->author)->toBe(MessageAuthor::Human);
+});
+
+test('a human reply travels in the customer\'s language, recorded as sent', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]));
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491111111111',
+        'language' => 'en',
+        'status' => ConversationStatus::Team,
+    ]);
+
+    ReplyTranslator::fake([['text' => 'We ship tomorrow morning.']]);
+
+    app(SendHumanReply::class)->handle($business, $thread, 'Enviamos mañana a la mañana.');
+
+    expect(handoffSentTexts()[0]['text'])->toBe('We ship tomorrow morning.')
+        ->and($thread->messages()->sole()->body)->toBe('We ship tomorrow morning.');
+});
+
+test('a Spanish-speaking thread skips the translator entirely', function (): void {
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]));
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491111111111',
+        'language' => 'es',
+        'status' => ConversationStatus::Team,
+    ]);
+
+    app(SendHumanReply::class)->handle($business, $thread, 'Enviamos mañana.');
+
+    expect(handoffSentTexts()[0]['text'])->toBe('Enviamos mañana.');
+});
+
+test('a forgotten thread reminds owner and customer once, and only past the grace window', function (): void {
+    config()->set('atendia.handoff.reminder_minutes', 20);
+
+    $business = Business::factory()->create([
+        'name' => 'Laboratorio Vida',
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+        'fallback_whatsapp_number' => '5492995550000',
+    ]);
+
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_name' => 'Carla',
+        'contact_phone' => '5491111111111',
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subMinutes(30),
+    ]);
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5492222222222',
+        'status' => ConversationStatus::Team,
+        'escalated_at' => now()->subMinutes(5),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    $texts = handoffSentTexts();
+
+    // Only the 30-minute thread fires: customer hold + owner ping.
+    expect($texts)->toHaveCount(2)
+        ->and($texts[0]['number'])->toBe('5491111111111')
+        ->and($texts[0]['text'])->toContain('Laboratorio Vida')
+        ->and($texts[1]['number'])->toBe('5492995550000')
+        ->and($texts[1]['text'])->toContain('Carla');
+
+    // The second sweep stays silent: one reminder per escalation.
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+    expect(handoffSentTexts())->toHaveCount(2);
+});
+
+test('the escalation clock restarts when the customer sends the ball back', function (): void {
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo']);
+    $thread = Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491122334455',
+        'status' => ConversationStatus::Customer,
+        'handoff_reminded_at' => now()->subHour(),
+    ]);
+
+    AsistenteAtendia::fake(['Nunca.', 'Nunca.']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'Dale', 'MSG-90'))->handle();
+
+    $thread->refresh();
+
+    expect($thread->status)->toBe(ConversationStatus::Team)
+        ->and($thread->escalated_at)->not->toBeNull()
+        ->and($thread->handoff_reminded_at)->toBeNull();
 });
 
 test('the owner hands the thread back with one click', function (): void {

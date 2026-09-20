@@ -43,7 +43,11 @@ class EscalateToHuman implements Tool
     {
         $reason = trim((string) $request['reason']);
 
-        $this->conversation->update(['status' => ConversationStatus::Team]);
+        $this->conversation->update([
+            'status' => ConversationStatus::Team,
+            'escalated_at' => now(),
+            'handoff_reminded_at' => null,
+        ]);
 
         // Best effort: a failed ping must never break the escalation itself.
         rescue(fn () => $this->alertOwner($reason), report: false);

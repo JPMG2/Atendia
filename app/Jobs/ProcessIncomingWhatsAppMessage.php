@@ -138,7 +138,12 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $this->rememberInboundOnly($conversation, $text);
 
                 if ($conversation->status === ConversationStatus::Customer) {
-                    $conversation->update(['status' => ConversationStatus::Team]);
+                    // The clock restarts: the team owes an answer again.
+                    $conversation->update([
+                        'status' => ConversationStatus::Team,
+                        'escalated_at' => now(),
+                        'handoff_reminded_at' => null,
+                    ]);
                 }
 
                 WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);

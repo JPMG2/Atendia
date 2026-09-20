@@ -25,5 +25,7 @@ return [
     'handoff' => [
         'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespóndele desde tu WhatsApp; tu asistente quedó en pausa solo en ese chat.",
         'no_reason' => 'el cliente pidió hablar con una persona',
+        'reminder_owner' => '⏰ *:name* sigue esperando a tu equipo hace :minutes minutos. Le avisé que estás en camino.',
+        'hold_customer' => '🤖 Seguimos con tu consulta: una persona del equipo de :business está algo demorada, apenas se libere te escribe. ¡Gracias por la paciencia!',
     ],
 ];

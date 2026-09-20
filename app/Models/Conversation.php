@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ConversationStatus;
+use App\Enums\MessageKind;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * One WhatsApp thread between a business and one customer. The reply
  * worker writes it; the assistant reads it back as memory.
  */
-#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'status', 'last_message_at'])]
+#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'status', 'escalated_at', 'handoff_reminded_at', 'last_message_at'])]
 class Conversation extends Model
 {
     use BelongsToBusiness;
@@ -33,6 +34,8 @@ class Conversation extends Model
     {
         return [
             'status' => ConversationStatus::class,
+            'escalated_at' => 'datetime',
+            'handoff_reminded_at' => 'datetime',
             'last_message_at' => 'datetime',
         ];
     }
@@ -55,12 +58,13 @@ class Conversation extends Model
 
     /**
      * The inbox row's preview: one eager load for the whole list instead of
-     * a query per thread.
+     * a query per thread. Internal notes never pose as the last word.
      *
      * @return HasOne<ConversationMessage, $this>
      */
     public function latestMessage(): HasOne
     {
-        return $this->hasOne(ConversationMessage::class)->latestOfMany();
+        return $this->hasOne(ConversationMessage::class)
+            ->ofMany(['id' => 'max'], fn ($query) => $query->where('kind', MessageKind::Message));
     }
 }
