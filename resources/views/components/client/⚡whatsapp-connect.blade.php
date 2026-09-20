@@ -178,7 +178,7 @@ new class extends Component
                     </ol>
 
                     {{-- The aged-number advice sold as expertise: the caution is
-                    WhatsApp's nature, never AtendIa's limitation. --}}
+                    WhatsApp's nature, never Atendia's limitation. --}}
                     <p class="bg-brand-soft flex items-start gap-2 rounded-xl p-2.5 text-sm">
                         <span class="mt-0.5 flex-none" style="color: var(--brand)"><x-icon name="sparkles" :size="16" /></span>
                         <span class="text-body"><strong class="text-strong">{{ __('whatsapp.connect.tip_label') }}:</strong>

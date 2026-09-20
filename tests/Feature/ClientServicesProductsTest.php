@@ -46,6 +46,6 @@ test('the menu groups both screens under the catalog parent, with live badges', 
     $children = Menu::query()->where('parent_id', $catalog->id)->orderBy('sort_order')->get();
 
     expect($children->pluck('label_key')->all())->toBe(['menu.services', 'menu.products'])
-        // The counts mirror the mocks until the real tables land.
-        ->and($children->pluck('badge')->all())->toBe(['22', '24']);
+        // No seeded counts: the navigation overlays them LIVE per tenant.
+        ->and($children->pluck('badge')->all())->toBe([null, null]);
 });

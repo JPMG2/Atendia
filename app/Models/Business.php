@@ -446,6 +446,20 @@ class Business extends Model
     }
 
     /**
+     * Live sidebar badges for the catalog leaves: the static seeder numbers
+     * lied to the owner (audit, 2026-09-20).
+     *
+     * @return array{my-services: int, my-products: int}
+     */
+    public function offerCounts(): array
+    {
+        return [
+            'my-services' => $this->services()->count(),
+            'my-products' => $this->products()->count(),
+        ];
+    }
+
+    /**
      * The CURRENT subscription: plan changes append rows, the latest rules.
      *
      * @return HasOne<Subscription, $this>

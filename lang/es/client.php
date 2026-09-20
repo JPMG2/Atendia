@@ -148,7 +148,7 @@ return [
 
         'billing' => [
             'title' => 'Moneda y facturación',
-            'sub' => 'Cómo se muestran tus precios y a nombre de quién sale tu factura de AtendIa.',
+            'sub' => 'Cómo se muestran tus precios y a nombre de quién sale tu factura de Atendia.',
             'currency' => 'Moneda de tus precios',
             'reference' => 'Moneda de referencia',
             'reference_hint' => 'La referencia se muestra al lado del precio: Bs 4.200 · Ref $2',

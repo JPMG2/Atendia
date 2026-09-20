@@ -36,7 +36,7 @@ return [
         // así que explica QUÉ es un catálogo y PARA QUÉ sirve, en vez de repetir
         // la instrucción del encabezado.
         'empty_title' => 'Elige un catálogo para empezar',
-        'empty_body' => 'Los catálogos son las listas base del sistema: países, monedas, condiciones fiscales, estados. Lo que definas aquí es lo que después vas a poder elegir en el resto de AtendIa.',
+        'empty_body' => 'Los catálogos son las listas base del sistema: países, monedas, condiciones fiscales, estados. Lo que definas aquí es lo que después vas a poder elegir en el resto de Atendia.',
     ],
 
     'common' => [

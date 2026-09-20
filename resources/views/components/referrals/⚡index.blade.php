@@ -16,7 +16,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Gana con AtendIa" — the client's referral link, the double-sided deal
+ * "Gana con Atendia" — the client's referral link, the double-sided deal
  * (Dropbox pattern: both ends win) and the running tally. The reward math
  * stays in config so the admin dashboard can manage the rules later.
  */

@@ -7,14 +7,14 @@ declare(strict_types=1);
 | Integraciones (panel admin)
 |--------------------------------------------------------------------------
 |
-| La salud de todo lo que AtendIa consume. Base neutra (tuteo); los hints
+| La salud de todo lo que Atendia consume. Base neutra (tuteo); los hints
 | están escritos en impersonal a propósito, así `es_AR` no necesita override.
 |
 */
 
 return [
     'title' => 'Integraciones',
-    'subtitle' => 'La salud de todo lo que AtendIa tiene conectado: si está prendido, si responde y dónde mirar cuando algo falla.',
+    'subtitle' => 'La salud de todo lo que Atendia tiene conectado: si está prendido, si responde y dónde mirar cuando algo falla.',
 
     'refresh' => 'Actualizar todo',
     'recheck' => 'Volver a probar',

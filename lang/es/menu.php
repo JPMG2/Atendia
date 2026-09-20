@@ -35,7 +35,7 @@ return [
     'plan' => 'Mi plan',
     'customers' => 'Clientes',
     'statistics' => 'Mis estadísticas',
-    'referrals' => 'Gana con AtendIa',
+    'referrals' => 'Gana con Atendia',
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
     'catalog' => 'Catálogo',

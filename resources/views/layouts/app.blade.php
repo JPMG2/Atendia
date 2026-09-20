@@ -224,7 +224,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
     <livewire:toast />
 
     {{-- The system's dialog window: mounted ONCE and used by any component
-    through `dialog.*`. AtendIa has no native browser alerts — see
+    through `dialog.*`. Atendia has no native browser alerts — see
     .ai/guidelines/avisos-y-modales.md. --}}
     <livewire:dialog />
 

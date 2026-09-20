@@ -76,7 +76,7 @@ new class extends Component
     @if ($this->stats !== null)
         @php($sinceDayOne = $this->stats->sinceDayOne)
 
-        {{-- The retention counter: what AtendIa did since the day they hired it. --}}
+        {{-- The retention counter: what Atendia did since the day they hired it. --}}
         @if ($sinceDayOne['since'] !== null)
             <div class="stats-hero">
                 <x-icon name="bot" :size="20" />

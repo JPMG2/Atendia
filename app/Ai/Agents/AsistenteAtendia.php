@@ -87,7 +87,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        $name = $this->business?->name ?? 'AtendIa';
+        $name = $this->business?->name ?? 'Atendia';
 
         return <<<INSTRUCCIONES
             Sos el asistente virtual de {$name}. Tu idioma base es el español, con un

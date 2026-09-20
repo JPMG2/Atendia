@@ -36,7 +36,7 @@ return [
     'popular' => 'Más elegido',
     'locked_in' => 'Disponible en :plan',
     'cta' => 'Quiero este plan',
-    'cta_text' => 'Hola, quiero pasar mi negocio al plan :plan de AtendIa.',
+    'cta_text' => 'Hola, quiero pasar mi negocio al plan :plan de Atendia.',
     'cta_soon' => 'Muy pronto podrás cambiar de plan desde aquí.',
 
     'features' => [

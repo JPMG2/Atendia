@@ -157,6 +157,26 @@ test('the opt-in briefing appears only while an answer is pending', function ():
         ->not->toContain('marketing_opt_in');
 });
 
+test('pre-existing threads are adopted into customers, idempotently', function (): void {
+    $a = Business::factory()->create();
+    $b = Business::factory()->create();
+
+    // Same person talked to two businesses BEFORE the customer layer existed.
+    Conversation::factory()->create(['business_id' => $a->id, 'contact_phone' => '5491122334455', 'contact_name' => 'Carla']);
+    Conversation::factory()->create(['business_id' => $b->id, 'contact_phone' => '5491122334455', 'contact_name' => 'Carla']);
+
+    $this->artisan('atendia:adopt-customers')->assertSuccessful();
+    $this->artisan('atendia:adopt-customers')->assertSuccessful();
+
+    $contact = PlatformContact::query()->sole();
+
+    expect(Customer::query()->count())->toBe(2)
+        ->and(Conversation::query()->whereNull('customer_id')->count())->toBe(0)
+        ->and($contact->businesses_count)->toBe(2)
+        ->and($contact->conversations_count)->toBe(2)
+        ->and(Customer::query()->first()->profile_name)->toBe('Carla');
+});
+
 test('birthday greetings reach only today\'s celebrants on connected instances', function (): void {
     $business = Business::factory()->create([
         'whatsapp_instance' => 'demo',

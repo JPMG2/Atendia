@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Business;
 use App\Models\Menu;
+use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -28,6 +29,23 @@ test('the navigation renders the active menu tree to arbitrary depth', function 
         ->assertSee('Servicios')     // depth 2
         ->assertSee('WhatsApp')      // depth 3 — proves recursion
         ->assertSee('Ajustes');      // bottom group
+});
+
+test('the catalog badges are live per tenant and hide at zero', function (): void {
+    $this->seed(MenuSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    Service::factory()->count(3)->create(['business_id' => $user->business_id]);
+
+    $this->actingAs($user);
+
+    Livewire::test('navigation')->assertSeeHtml('menu-badge">3');
+
+    $empty = User::factory()->create();
+    $empty->business()->associate(Business::factory()->create())->save();
+    $this->actingAs($empty);
+
+    Livewire::test('navigation')->assertDontSeeHtml('menu-badge');
 });
 
 test('the navigation hides inactive menu items', function (): void {

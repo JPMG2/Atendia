@@ -15,7 +15,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 /**
- * Company: AtendIa's own data — a SINGLE record, not the client businesses.
+ * Company: Atendia's own data — a SINGLE record, not the client businesses.
  *
  * Loading goes in STEPS: the second opens only once the company exists,
  * because saving the first is what unlocks it. Each step validates, saves and
@@ -564,7 +564,7 @@ field in red from an attempt you had stopped looking at. --}}
                                 />
 
                                 {{-- Removing a saved network deletes it THERE AND THEN, so it
-                                warns first, through the system dialog — AtendIa
+                                warns first, through the system dialog — Atendia
                                 has no native browser confirmations. A row that
                                 was never saved goes without asking. --}}
                                 <x-ui.icon-button

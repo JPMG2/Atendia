@@ -1,6 +1,6 @@
 @props(['preheader' => null])
 
-{{-- The chrome every AtendIa mail wears: wordmark, card and rights. Styles are
+{{-- The chrome every Atendia mail wears: wordmark, card and rights. Styles are
 INLINE and colors are hex because mail clients strip <style> blocks and never
 load app.css — the one place the brand lives outside the tokens. --}}
 <!DOCTYPE html>

@@ -43,8 +43,10 @@ class MenuSeeder extends Seeder
         // the Fresha pattern: a submenu whose children are both REAL screens.
         // Badges mirror the mock counts until the real tables land.
         $catalog = Menu::create(['label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 3]);
-        Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'badge' => '22', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'badge' => '24', 'sort_order' => 2]);
+        // No seeded badges: the catalog counts are overlaid LIVE per tenant
+        // by the navigation (a static number that lies costs trust).
+        Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'sort_order' => 2]);
         // Setup-first order (owner's call, 2026-09-17): configure, then talk.
         // Revisit post go-live, when the daily screen may deserve the top.
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 4]);

@@ -22,14 +22,38 @@ new class extends Component
     }
 
     /**
-     * Menu tree of the active panel, memoized per request.
+     * Menu tree of the active panel, memoized per request, with the catalog
+     * badges overlaid LIVE per tenant: a static number that lies costs more
+     * trust than no badge (audit, 2026-09-20). Zero shows nothing.
      *
      * @return Collection<int, Menu>
      */
     #[Computed]
     public function tree()
     {
-        return Menu::tree($this->panel);
+        $tree = Menu::tree($this->panel);
+        $counts = Auth::user()?->business?->offerCounts();
+
+        if ($counts !== null) {
+            $this->overlayBadges($tree, $counts);
+        }
+
+        return $tree;
+    }
+
+    /**
+     * @param  Collection<int, Menu>  $items
+     * @param  array<string, int>  $counts
+     */
+    private function overlayBadges($items, array $counts): void
+    {
+        foreach ($items as $item) {
+            if (array_key_exists((string) $item->route_name, $counts)) {
+                $item->badge = $counts[$item->route_name] > 0 ? (string) $counts[$item->route_name] : null;
+            }
+
+            $this->overlayBadges($item->childrenRecursive ?? collect(), $counts);
+        }
     }
 
     /**

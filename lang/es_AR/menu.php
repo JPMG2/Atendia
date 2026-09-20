@@ -10,5 +10,5 @@ declare(strict_types=1);
 
 return [
     'profile_done' => 'Listo. Tu asistente ya responde por vos.',
-    'referrals' => 'Ganá con AtendIa',
+    'referrals' => 'Ganá con Atendia',
 ];

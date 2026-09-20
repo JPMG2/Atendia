@@ -5,7 +5,7 @@ use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 /**
- * Health board for everything AtendIa consumes: on, answering, or where to
+ * Health board for everything Atendia consumes: on, answering, or where to
  * look. The probes run AFTER the first paint (`wire:init`): eight checks with
  * timeouts must never hold the page hostage.
  */
