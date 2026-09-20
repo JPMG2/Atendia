@@ -23,6 +23,7 @@ class Client
         public readonly ?Inventory $inventory = null,
         public readonly ?Inbox $inbox = null,
         public readonly ?Directory $directory = null,
+        public readonly ?KnowledgeBase $knowledgeBase = null,
         public readonly ?Statistics $statistics = null,
     ) {}
 
@@ -44,6 +45,7 @@ class Client
             $business === null ? null : new Inventory($business),
             $business === null ? null : new Inbox($business),
             $business === null ? null : new Directory($business),
+            $business === null ? null : new KnowledgeBase($business),
             $business === null ? null : new Statistics($business),
         );
     }

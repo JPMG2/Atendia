@@ -1,0 +1,252 @@
+<?php
+
+use App\Actions\Business\DeleteAssistantFaq;
+use App\Actions\Business\ReindexKnowledgeSource;
+use App\Classes\Main\Client;
+use App\Classes\Main\KnowledgeBase;
+use App\Dto\NotificationDto;
+use App\Enums\NotificationType;
+use App\Livewire\Forms\Client\AssistantFaqForm;
+use App\Traits\HasNotifications;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
+
+/**
+ * "Lo que sabe tu asistente" — the knowledge base, visible and teachable.
+ * Automatic sources on top; below, the owner teaches Q&A by hand and every
+ * answer lands in the same pgvector space the assistant already searches.
+ */
+new class extends Component
+{
+    use HasNotifications;
+
+    public AssistantFaqForm $form;
+
+    public bool $sheetOpen = false;
+
+    private function knowledge(): ?KnowledgeBase
+    {
+        return Client::for(Auth::user())->knowledgeBase;
+    }
+
+    /** @return list<array{type: string, present: bool, chunks: int, indexed_at: ?\Illuminate\Support\Carbon}> */
+    #[Computed]
+    public function sources(): array
+    {
+        return $this->knowledge()?->sources ?? [];
+    }
+
+    /** @return Collection<int, \App\Models\KnowledgeDocument> */
+    #[Computed]
+    public function faqs(): Collection
+    {
+        return $this->knowledge()?->faqs ?? new Collection;
+    }
+
+    public function add(): void
+    {
+        $this->form->setup();
+        $this->sheetOpen = true;
+    }
+
+    public function edit(int $id): void
+    {
+        $faq = $this->knowledge()?->faq($id);
+
+        if ($faq === null) {
+            return;
+        }
+
+        $this->form->setup($faq);
+        $this->sheetOpen = true;
+    }
+
+    public function closeSheet(): void
+    {
+        $this->sheetOpen = false;
+    }
+
+    public function saveFaq(): void
+    {
+        $notification = $this->form->save();
+        $this->dispatchNotification($notification);
+
+        if ($notification->type !== NotificationType::Error) {
+            $this->sheetOpen = false;
+        }
+    }
+
+    /** The dialog confirmed; the assistant forgets the answer with the row. */
+    public function deleteFaq(int $id): void
+    {
+        $faq = $this->knowledge()?->faq($id);
+
+        if ($faq === null) {
+            return;
+        }
+
+        app(DeleteAssistantFaq::class)->handle($faq);
+
+        $this->dispatchNotification(new NotificationDto(__('client.assistant.deleted'), NotificationType::Success));
+    }
+
+    public function reindex(string $type): void
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null) {
+            return;
+        }
+
+        app(ReindexKnowledgeSource::class)->handle($business, $type);
+
+        $this->dispatchNotification(new NotificationDto(__('client.assistant.reindexed'), NotificationType::Success));
+    }
+
+    /** The tab title comes from translations; a PHP attribute cannot call __(). */
+    public function render(): View
+    {
+        return $this->view()->title(__('client.assistant.title'));
+    }
+};
+?>
+
+<div>
+    <div class="page-head">
+        <div>
+            <h1 class="page-head-title">{{ __('client.assistant.title') }}</h1>
+            <p class="page-head-sub">{{ __('client.assistant.sub') }}</p>
+        </div>
+    </div>
+
+    {{-- The automatic feeds: transparency kills the black-box fear. --}}
+    <x-ui.card class="p-5">
+        <h2 class="font-display text-strong text-base">{{ __('client.assistant.sources_title') }}</h2>
+        <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.sources_sub') }}</p>
+
+        <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
+            @foreach ($this->sources as $source)
+                @php($icon = ['profile' => 'store', 'services' => 'briefcase', 'products' => 'package', 'import' => 'layers'][$source['type']])
+                <li wire:key="source-{{ $source['type'] }}" class="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-2.5">
+                    <span class="bg-brand-soft flex size-9 flex-none items-center justify-center rounded-lg" style="color: var(--brand)">
+                        <x-icon :name="$icon" :size="18" />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="text-strong block text-sm font-semibold">{{ __('client.assistant.sources.'.$source['type']) }}</span>
+                        <span class="text-muted block text-xs">
+                            @if ($source['present'])
+                                {{ trans_choice('client.assistant.indexed', $source['chunks'], ['chunks' => $source['chunks']]) }}
+                                @if ($source['indexed_at'] !== null)
+                                    · {{ $source['indexed_at']->diffForHumans() }}
+                                @endif
+                            @else
+                                {{ __('client.assistant.source_empty') }}
+                            @endif
+                        </span>
+                    </span>
+                    @if ($source['present'])
+                        <x-ui.icon-button
+                            icon="refresh-cw"
+                            size="sm"
+                            variant="ghost"
+                            :label="__('client.assistant.reindex')"
+                            wire:click="reindex('{{ $source['type'] }}')"
+                        />
+                    @endif
+                </li>
+            @endforeach
+        </ul>
+    </x-ui.card>
+
+    {{-- The teachable half: what the catalog cannot say. --}}
+    <x-ui.card class="mt-4 p-5">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="min-w-0 flex-1">
+                <h2 class="font-display text-strong text-base">{{ __('client.assistant.faq_title') }}</h2>
+                <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.faq_sub') }}</p>
+            </div>
+            <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">
+                {{ __('client.assistant.add') }}
+            </x-ui.button>
+        </div>
+
+        @if ($this->faqs->isEmpty())
+            <div class="mt-4 flex items-start gap-4">
+                <div class="bg-brand-soft flex size-11 flex-none items-center justify-center rounded-xl" style="color: var(--brand)">
+                    <x-icon name="sparkles" :size="22" />
+                </div>
+                <div class="min-w-0">
+                    <h3 class="text-strong text-sm font-semibold">{{ __('client.assistant.faq_empty_title') }}</h3>
+                    <p class="text-body mt-1 text-sm">{{ __('client.assistant.faq_empty_body') }}</p>
+                </div>
+            </div>
+        @else
+            <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
+                @foreach ($this->faqs as $faq)
+                    <li wire:key="faq-{{ $faq->id }}" class="hover:bg-sunken flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-2 py-2.5 transition-colors">
+                        <button type="button" wire:click="edit({{ $faq->id }})" class="min-w-0 flex-1 text-left">
+                            <span class="text-strong block truncate text-sm font-semibold">{{ $faq->title }}</span>
+                            <span class="text-muted block truncate text-xs">{{ str($faq->content)->after("Respuesta: ") }}</span>
+                        </button>
+                        <span class="text-subtle flex-none font-mono text-xs">
+                            {{ $faq->indexed_at !== null ? __('client.assistant.learned') : __('client.assistant.learning') }}
+                        </span>
+                        <x-ui.icon-button
+                            icon="trash-2"
+                            size="sm"
+                            variant="ghost"
+                            :label="__('client.assistant.delete')"
+                            x-on:click="dialog.confirm({
+                                title: @js(__('client.assistant.delete_confirm_title')),
+                                message: @js(__('client.assistant.delete_confirm_body')),
+                                accept: @js(__('client.assistant.delete')),
+                                type: 'danger',
+                            }).then((ok) => ok && $wire.deleteFaq({{ $faq->id }}))"
+                        />
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-ui.card>
+
+    @if ($sheetOpen)
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeSheet()"
+            :title="$form->editingId !== null ? __('client.assistant.sheet_edit') : __('client.assistant.sheet_new')"
+            :subtitle="__('client.assistant.sheet_hint')"
+        >
+            <div class="flex flex-col gap-4">
+                <x-catalog.form-row>
+                    <x-inputsform.input
+                        span="full"
+                        name="question"
+                        :label="__('client.assistant.field_question')"
+                        :placeholder="__('client.assistant.question_placeholder')"
+                        wire:model="form.question"
+                        :value="$form->question"
+                    />
+                </x-catalog.form-row>
+                <x-catalog.form-row>
+                    <div class="f-full">
+                        <x-ui.textarea
+                            name="answer"
+                            :rows="4"
+                            :label="__('client.assistant.field_answer')"
+                            :hint="__('client.assistant.answer_hint')"
+                            wire:model="form.answer"
+                        >{{ $form->answer }}</x-ui.textarea>
+                    </div>
+                </x-catalog.form-row>
+            </div>
+
+            <x-slot:footer>
+                <x-ui.button variant="danger" size="sm" wire:click="closeSheet">{{ __('client.assistant.sheet_cancel') }}</x-ui.button>
+                <span class="flex-1"></span>
+                <x-ui.button variant="primary" size="sm" wire:click="saveFaq">{{ __('client.assistant.sheet_save') }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.slide-over>
+    @endif
+</div>

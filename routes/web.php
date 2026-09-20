@@ -77,6 +77,11 @@ Route::get('/whatsapp', fn () => view('whatsapp'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('whatsapp');
 
+// "Lo que sabe tu asistente": the knowledge base, visible and teachable.
+Route::get('/asistente', fn () => view('assistant'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('assistant');
+
 // Every thread the assistant holds with the business's customers.
 Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])

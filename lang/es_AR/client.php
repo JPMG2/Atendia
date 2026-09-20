@@ -85,6 +85,15 @@ return [
         'read_only' => 'Solo lectura: tu asistente responde por vos.',
     ],
 
+    'assistant' => [
+        'sub' => 'Todo lo que usa para responder, a la vista. Enseñale lo que tu catálogo no dice.',
+        'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambiás.',
+        'faq_title' => 'Lo que le enseñás vos',
+        'faq_sub' => 'Preguntas y respuestas escritas por vos. Tu asistente las responde al minuto.',
+        'faq_empty_body' => '¿Aceptan tarjeta? ¿Necesito ayuno? ¿Hacen envíos? Escribí la respuesta una vez y tu asistente la repite siempre.',
+        'answer_hint' => 'Escribila como se la dirías a un cliente; tu asistente la usa tal cual.',
+    ],
+
     'customers' => [
         'empty_body' => 'Cuando tu asistente atienda el WhatsApp, cada persona que escriba va a aparecer acá con su ficha.',
         'opt_in_unavailable' => 'Conectá tu WhatsApp para pedir permiso.',

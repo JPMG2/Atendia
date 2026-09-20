@@ -49,14 +49,16 @@ class MenuSeeder extends Seeder
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.products', 'icon' => 'package', 'route_name' => 'my-products', 'sort_order' => 2]);
         // Setup-first order (owner's call, 2026-09-17): configure, then talk.
         // Revisit post go-live, when the daily screen may deserve the top.
-        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 4]);
+        // Right after the catalog on purpose: feed it, then see what it knows.
+        Menu::create(['label_key' => 'menu.assistant', 'icon' => 'bot', 'route_name' => 'assistant', 'sort_order' => 4]);
+        Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 5]);
         // Beside the inbox on purpose: the flow and the asset it leaves behind.
-        Menu::create(['label_key' => 'menu.customers', 'icon' => 'users', 'route_name' => 'customers', 'sort_order' => 5]);
+        Menu::create(['label_key' => 'menu.customers', 'icon' => 'users', 'route_name' => 'customers', 'sort_order' => 6]);
         // Reading screens ride together: statistics right after the inbox.
-        Menu::create(['label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 6]);
-        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 7]);
-        Menu::create(['label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 8]);
-        Menu::create(['label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 9]);
+        Menu::create(['label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 7]);
+        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 8]);
+        Menu::create(['label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 9]);
+        Menu::create(['label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 10]);
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'profile.edit', 'placement' => 'bottom', 'sort_order' => 1]);
