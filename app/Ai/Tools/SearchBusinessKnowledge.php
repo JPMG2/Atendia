@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Models\KnowledgeMiss;
 use App\Services\Knowledge\KnowledgeRetriever;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -39,14 +40,22 @@ class SearchBusinessKnowledge implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        $context = app(KnowledgeRetriever::class)
-            ->context((string) $request['query'], $this->businessId);
+        $query = (string) $request['query'];
 
-        // Said out loud, so the model answers "I could not confirm it" instead
-        // of improvising from an empty context.
-        return $context === ''
-            ? 'No se encontró información sobre eso en la base de conocimiento del negocio.'
-            : $context;
+        $context = app(KnowledgeRetriever::class)
+            ->context($query, $this->businessId);
+
+        if ($context === '') {
+            // The exact moment a question goes unanswered: logged here, at
+            // the source, so the owner's teaching queue never guesses.
+            KnowledgeMiss::query()->create(['business_id' => $this->businessId, 'query' => mb_substr($query, 0, 500)]);
+
+            // Said out loud, so the model answers "I could not confirm it"
+            // instead of improvising from an empty context.
+            return 'No se encontró información sobre eso en la base de conocimiento del negocio.';
+        }
+
+        return $context;
     }
 
     /**

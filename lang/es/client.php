@@ -341,6 +341,10 @@ return [
     'assistant' => [
         'title' => 'Lo que sabe tu asistente',
         'sub' => 'Todo lo que usa para responder, a la vista. Enséñale lo que tu catálogo no dice.',
+        'misses_title' => 'Preguntas sin responder',
+        'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enséñasela y no vuelve a pasar.',
+        'miss_count' => '{1}1 vez|[2,*]:count veces',
+        'teach' => 'Enseñar la respuesta',
         'sources_title' => 'Lo que aprende solo',
         'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambias.',
         'sources' => [
@@ -364,6 +368,11 @@ return [
         'answer_hint' => 'Escríbela como se la dirías a un cliente; tu asistente la usa tal cual.',
         'learned' => 'Aprendida',
         'learning' => 'Aprendiendo…',
+        'try' => 'Probarla',
+        'try_title' => 'Así responde tu asistente',
+        'try_hint' => 'Respuesta real, recién generada con tu conocimiento.',
+        'try_close' => 'Listo',
+        'try_failed' => 'No pudimos probarla ahora. Intenta de nuevo en un momento.',
         'delete' => 'Eliminar',
         'delete_confirm_title' => '¿Eliminar esta pregunta?',
         'delete_confirm_body' => 'Tu asistente va a dejar de responderla.',

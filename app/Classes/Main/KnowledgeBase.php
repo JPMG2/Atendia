@@ -6,8 +6,10 @@ namespace App\Classes\Main;
 
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeMiss;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * The "Lo que sabe tu asistente" piece: every source the assistant answers
@@ -61,5 +63,28 @@ class KnowledgeBase
         return $this->business->knowledgeDocuments()
             ->where('source_type', 'faq')
             ->find($id);
+    }
+
+    /**
+     * The teaching queue: what customers asked and the knowledge could not
+     * answer, last 30 days, most-asked first. Folded so "¿aceptan visa?"
+     * and "Aceptan VISA" count as one question.
+     *
+     * @var list<array{question: string, count: int}>
+     */
+    public array $misses {
+        get => $this->business->knowledgeMisses()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->latest('id')
+            ->get()
+            ->groupBy(fn (KnowledgeMiss $miss): string => Str::ascii(mb_strtolower(trim($miss->query, ' ¿?.!'))))
+            ->map(fn (Collection $group): array => [
+                'question' => (string) $group->first()->query,
+                'count' => $group->count(),
+            ])
+            ->sortByDesc('count')
+            ->take(5)
+            ->values()
+            ->all();
     }
 }

@@ -9,6 +9,7 @@ use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeMiss;
 use App\Models\Product;
 use App\Models\ProductImport;
 use App\Models\Service;
@@ -41,6 +42,7 @@ dataset('tenant models', [
     BusinessHour::class,
     KnowledgeDocument::class,
     KnowledgeChunk::class,
+    KnowledgeMiss::class,
     Customer::class,
     Conversation::class,
     ConversationMessage::class,

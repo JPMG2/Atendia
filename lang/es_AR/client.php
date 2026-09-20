@@ -87,11 +87,13 @@ return [
 
     'assistant' => [
         'sub' => 'Todo lo que usa para responder, a la vista. Enseñale lo que tu catálogo no dice.',
+        'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enseñásela y no vuelve a pasar.',
         'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambiás.',
         'faq_title' => 'Lo que le enseñás vos',
         'faq_sub' => 'Preguntas y respuestas escritas por vos. Tu asistente las responde al minuto.',
         'faq_empty_body' => '¿Aceptan tarjeta? ¿Necesito ayuno? ¿Hacen envíos? Escribí la respuesta una vez y tu asistente la repite siempre.',
         'answer_hint' => 'Escribila como se la dirías a un cliente; tu asistente la usa tal cual.',
+        'try_failed' => 'No pudimos probarla ahora. Intentá de nuevo en un momento.',
     ],
 
     'customers' => [

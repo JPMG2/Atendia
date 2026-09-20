@@ -46,9 +46,24 @@ new class extends Component
         return $this->knowledge()?->faqs ?? new Collection;
     }
 
+    /** @return list<array{question: string, count: int}> */
+    #[Computed]
+    public function misses(): array
+    {
+        return $this->knowledge()?->misses ?? [];
+    }
+
     public function add(): void
     {
         $this->form->setup();
+        $this->sheetOpen = true;
+    }
+
+    /** From the unanswered queue: the sheet opens with the question filled in. */
+    public function teach(string $question): void
+    {
+        $this->form->setup();
+        $this->form->question = $question;
         $this->sheetOpen = true;
     }
 
@@ -77,6 +92,36 @@ new class extends Component
         if ($notification->type !== NotificationType::Error) {
             $this->sheetOpen = false;
         }
+    }
+
+    /** @var array{question: string, answer: string}|null */
+    public ?array $tryResult = null;
+
+    /**
+     * One REAL pass through the assistant with the taught question: seeing
+     * it answered kills any doubt that the teaching worked. Only offered
+     * once the embedding is indexed — earlier it would honestly miss.
+     */
+    public function tryNow(int $id): void
+    {
+        $faq = $this->knowledge()?->faq($id);
+        $business = Auth::user()?->business;
+
+        if ($faq === null || $business === null) {
+            return;
+        }
+
+        $answer = rescue(fn (): string => (new \App\Ai\Agents\AsistenteAtendia($business))->answer($faq->title)->text, report: false);
+
+        $this->tryResult = [
+            'question' => (string) $faq->title,
+            'answer' => $answer ?? __('client.assistant.try_failed'),
+        ];
+    }
+
+    public function closeTry(): void
+    {
+        $this->tryResult = null;
     }
 
     /** The dialog confirmed; the assistant forgets the answer with the row. */
@@ -121,6 +166,31 @@ new class extends Component
             <p class="page-head-sub">{{ __('client.assistant.sub') }}</p>
         </div>
     </div>
+
+    {{-- The teaching queue on top: what customers asked and nobody could
+    answer. Teaching it makes the same question stop appearing by itself. --}}
+    @if ($this->misses !== [])
+        <x-ui.card class="mb-4 p-5">
+            <h2 class="font-display text-strong text-base">{{ __('client.assistant.misses_title') }}</h2>
+            <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.misses_sub') }}</p>
+
+            <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
+                @foreach ($this->misses as $miss)
+                    <li wire:key="miss-{{ $loop->index }}" class="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-2.5">
+                        <span class="min-w-0 flex-1">
+                            <span class="text-strong block truncate text-sm font-semibold">{{ $miss['question'] }}</span>
+                        </span>
+                        <span class="text-subtle flex-none font-mono text-xs">
+                            {{ trans_choice('client.assistant.miss_count', $miss['count'], ['count' => $miss['count']]) }}
+                        </span>
+                        <x-ui.button variant="secondary" size="sm" icon="sparkles" wire:click="teach({{ \Illuminate\Support\Js::from($miss['question']) }})">
+                            {{ __('client.assistant.teach') }}
+                        </x-ui.button>
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
 
     {{-- The automatic feeds: transparency kills the black-box fear. --}}
     <x-ui.card class="p-5">
@@ -194,6 +264,11 @@ new class extends Component
                         <span class="text-subtle flex-none font-mono text-xs">
                             {{ $faq->indexed_at !== null ? __('client.assistant.learned') : __('client.assistant.learning') }}
                         </span>
+                        @if ($faq->indexed_at !== null)
+                            <x-ui.button variant="ghost" size="sm" icon="bot" class="data-loading:opacity-50" wire:click="tryNow({{ $faq->id }})">
+                                {{ __('client.assistant.try') }}
+                            </x-ui.button>
+                        @endif
                         <x-ui.icon-button
                             icon="trash-2"
                             size="sm"
@@ -211,6 +286,29 @@ new class extends Component
             </ul>
         @endif
     </x-ui.card>
+
+    {{-- The live proof: the taught question answered by the REAL assistant. --}}
+    @if ($tryResult !== null)
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeTry()"
+            :title="__('client.assistant.try_title')"
+            :subtitle="__('client.assistant.try_hint')"
+        >
+            <div class="space-y-2 rounded-xl p-4" style="background: var(--chat-canvas)">
+                <div class="pm-row in">
+                    <div class="pm-bubble in">{{ $tryResult['question'] }}</div>
+                </div>
+                <div class="pm-row out">
+                    <div class="pm-bubble out">{{ $tryResult['answer'] }}</div>
+                </div>
+            </div>
+
+            <x-slot:footer>
+                <span class="flex-1"></span>
+                <x-ui.button variant="primary" size="sm" wire:click="closeTry">{{ __('client.assistant.try_close') }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.slide-over>
+    @endif
 
     @if ($sheetOpen)
         <x-ui.slide-over

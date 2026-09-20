@@ -28,6 +28,7 @@ return new class extends Migration
         'business_hours',
         'knowledge_documents',
         'knowledge_chunks',
+        'knowledge_misses',
         'customers',
         'conversations',
         'conversation_messages',

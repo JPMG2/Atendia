@@ -430,6 +430,14 @@ class Business extends Model
     }
 
     /**
+     * @return HasMany<KnowledgeMiss, $this>
+     */
+    public function knowledgeMisses(): HasMany
+    {
+        return $this->hasMany(KnowledgeMiss::class);
+    }
+
+    /**
      * @return HasMany<Conversation, $this>
      */
     public function conversations(): HasMany

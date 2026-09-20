@@ -2,13 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Ai\Agents\AsistenteAtendia;
+use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeMiss;
 use App\Models\User;
+use App\Services\Knowledge\KnowledgeRetriever;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Ai\Tools\Request;
 
 use function Pest\Livewire\livewire;
 
@@ -116,6 +121,73 @@ test('deleting a taught answer makes the assistant forget it', function (): void
         ->call('deleteFaq', $faq->id);
 
     expect(KnowledgeDocument::query()->whereKey($faq->id)->exists())->toBeFalse();
+});
+
+test('an empty knowledge search logs the miss at the source', function (): void {
+    $business = Business::factory()->create();
+
+    $this->mock(KnowledgeRetriever::class)
+        ->shouldReceive('context')
+        ->andReturn('');
+
+    $tool = new SearchBusinessKnowledge($business->id);
+    $reply = (string) $tool->handle(new Request(['query' => '¿Hacen resonancias?']));
+
+    expect($reply)->toContain('No se encontró')
+        ->and(KnowledgeMiss::query()->sole()->query)->toBe('¿Hacen resonancias?');
+});
+
+test('the unanswered queue ranks by frequency, accent-blind, and prefills the sheet', function (): void {
+    $user = assistantClient();
+
+    foreach (['¿Aceptan Visa?', 'aceptan visa', '¿Hacen envíos?'] as $query) {
+        KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => $query]);
+    }
+
+    $this->actingAs($user);
+
+    // The freshest phrasing represents its group: "aceptan visa" (2 asks)
+    // outranks the single "¿Hacen envíos?".
+    livewire('assistant.index')
+        ->assertSee(__('client.assistant.misses_title'))
+        ->assertSeeInOrder(['aceptan visa', '¿Hacen envíos?'])
+        ->call('teach', 'aceptan visa')
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.question', 'aceptan visa');
+});
+
+test('trying a taught answer runs the REAL assistant and shows the reply', function (): void {
+    $user = assistantClient();
+    $faq = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'title' => '¿Aceptan tarjeta?',
+        'indexed_at' => now(),
+    ]);
+    $this->actingAs($user);
+
+    AsistenteAtendia::fake(['Buscando…', 'Sí, aceptamos débito y crédito.']);
+
+    livewire('assistant.index')
+        ->assertSee(__('client.assistant.try'))
+        ->call('tryNow', $faq->id)
+        ->assertSee(__('client.assistant.try_title'))
+        ->assertSee('Sí, aceptamos débito y crédito.');
+});
+
+test('an unindexed answer offers no try button yet', function (): void {
+    $user = assistantClient();
+    KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'title' => '¿Hacen envíos?',
+        'indexed_at' => null,
+    ]);
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee(__('client.assistant.learning'))
+        ->assertDontSee(__('client.assistant.try_title'));
 });
 
 test('another tenant\'s taught answers are out of reach even by id', function (): void {
