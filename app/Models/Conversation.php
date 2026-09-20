@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ConversationStatus;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * One WhatsApp thread between a business and one customer. The reply
  * worker writes it; the assistant reads it back as memory.
  */
-#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'last_message_at'])]
+#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'status', 'last_message_at'])]
 class Conversation extends Model
 {
     use BelongsToBusiness;
@@ -31,6 +32,7 @@ class Conversation extends Model
     protected function casts(): array
     {
         return [
+            'status' => ConversationStatus::class,
             'last_message_at' => 'datetime',
         ];
     }

@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\Plan;
+use App\Enums\ConversationStatus;
 use App\Enums\GuardVerdict;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
@@ -124,6 +125,15 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             $this->rememberPlatformContact($customer, $conversation);
 
+            // A thread handed to the team belongs to the team: the assistant
+            // stays quiet HERE (never account-wide), only keeping the record.
+            if ($conversation->status === ConversationStatus::Team) {
+                $this->rememberInboundOnly($conversation, $text);
+                WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
+
+                return;
+            }
+
             $agent = new AsistenteAtendia($business, $conversation, $customer);
             $reply = $agent->answer($text)->text;
 
@@ -238,6 +248,26 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'prompt_tokens' => $usage?->promptTokens,
             'completion_tokens' => $usage?->completionTokens,
         ]);
+
+        $conversation->fill([
+            'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
+            'last_message_at' => now(),
+        ])->save();
+    }
+
+    /** The paused thread still records what the customer says, reply-less. */
+    private function rememberInboundOnly(Conversation $conversation, string $text): void
+    {
+        $inbound = $conversation->messages()->create([
+            'direction' => MessageDirection::In,
+            'wa_message_id' => $this->messageId,
+            'body' => $text,
+            'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
+        ]);
+
+        rescue(fn () => $inbound->update([
+            'embedding' => app(KnowledgeEmbedder::class)->embedOne($text),
+        ]), report: false);
 
         $conversation->fill([
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,

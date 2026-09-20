@@ -2,6 +2,9 @@
 
 use App\Classes\Main\Client;
 use App\Classes\Main\Inbox;
+use App\Dto\NotificationDto;
+use App\Enums\ConversationStatus;
+use App\Enums\NotificationType;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
@@ -221,6 +224,21 @@ new class extends Component
         return $this->thread?->customer;
     }
 
+    /** The return leg of the handoff: the owner hands the thread back. */
+    public function resume(): void
+    {
+        $thread = $this->thread;
+
+        if ($thread === null || $thread->status !== ConversationStatus::Team) {
+            return;
+        }
+
+        $thread->update(['status' => ConversationStatus::Open]);
+        unset($this->thread);
+
+        $this->dispatchNotification(new NotificationDto(__('client.conversations.resumed'), NotificationType::Success));
+    }
+
     /** The tab title comes from translations; a PHP attribute cannot call __(). */
     public function render(): View
     {
@@ -310,6 +328,9 @@ new class extends Component
                                         <span class="text-strong truncate text-sm font-semibold">
                                             <x-ui.match :text="$row->contact_name ?? __('client.conversations.anonymous')" :needle="$search" />
                                         </span>
+                                        @if ($row->status === ConversationStatus::Team)
+                                            <x-ui.badge variant="accent">{{ __('client.conversations.status_team_chip') }}</x-ui.badge>
+                                        @endif
                                         <span class="text-subtle flex-none font-mono text-xs">
                                             {{ $row->last_message_at?->isToday() ? $row->last_message_at->format('H:i') : $row->last_message_at?->format('d/m') }}
                                         </span>
@@ -343,6 +364,15 @@ new class extends Component
                             </p>
                             <p class="text-muted font-mono text-xs">{{ $this->thread->contact_phone }}</p>
                         </div>
+                        @if ($this->thread->status === ConversationStatus::Team)
+                            <span class="status-tag is-warning">
+                                <span class="dot"></span>
+                                {{ __('client.conversations.status_team') }}
+                            </span>
+                            <x-ui.button variant="primary" size="sm" icon="bot" wire:click="resume">
+                                {{ __('client.conversations.resume') }}
+                            </x-ui.button>
+                        @endif
                         @if ($this->customer !== null)
                             <x-ui.button variant="secondary" size="sm" icon="user" wire:click="openCustomer">
                                 {{ __('client.customers.open') }}

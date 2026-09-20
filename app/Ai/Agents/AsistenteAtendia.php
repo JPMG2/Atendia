@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Tools\EscalateToHuman;
 use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
+use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -138,7 +140,51 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             derivación dirigido al equipo del negocio va SIEMPRE en español, sin
             importar el idioma del cliente: el equipo atiende en español.
             {$this->customerBriefing()}
+            {$this->handoffBriefing()}
             INSTRUCCIONES;
+    }
+
+    /**
+     * The owner's three trigger families plus THEIR dial: how eagerly this
+     * business hands a thread to a human. A doctor is not a realtor.
+     */
+    private function handoffBriefing(): string
+    {
+        if ($this->conversation === null || $this->business === null) {
+            return '';
+        }
+
+        $policy = match ($this->business->handoff_level ?? HandoffLevel::Balanced) {
+            HandoffLevel::Eager => 'Este negocio quiere derivar ENSEGUIDA: ante cualquiera de las'
+                .' tres señales, derivá sin dudar.',
+            HandoffLevel::Minimal => 'Este negocio NO puede ser interrumpido a cada rato: resolvé'
+                .' todo lo que puedas por tu cuenta. Derivá SOLO si el cliente lo pide explícita'
+                .' e insistentemente, o ante un tema crítico (pagos, seguridad, reclamos formales).',
+            default => 'Este negocio deriva con equilibrio: un pedido explícito, una frustración'
+                .' evidente o un tema crítico derivan; una pregunta difícil suelta, no.',
+        };
+
+        return <<<DERIVACION
+
+            DERIVACIÓN A UNA PERSONA DEL EQUIPO. Las tres señales:
+            (1) El cliente lo PIDE, en cualquier idioma o con cualquier variante:
+            "quiero hablar con una persona / un humano / un agente / un operador",
+            "atención al cliente", "no quiero hablar con un bot", "supervisor".
+            (2) FRUSTRACIÓN o reincidencia: "esto no responde mi pregunta", "no me
+            estás entendiendo", "repetís lo mismo", "pérdida de tiempo", mensajes
+            EN MAYÚSCULAS, enojo evidente, o la misma pregunta repetida sin avance.
+            (3) TEMAS CRÍTICOS del negocio: problemas o reclamos de pago o cobros,
+            cancelaciones, seguridad o privacidad, quejas formales, o pedidos
+            grandes y cotizaciones fuera de lo común.
+
+            {$policy}
+
+            Al derivar: llamá la herramienta de derivar con el motivo en UNA frase
+            EN ESPAÑOL, y despedite después con cortesía en el idioma del cliente
+            diciendo que una persona del equipo le escribe a la brevedad. Nunca
+            derives sin llamar la herramienta, y nunca sigas intentando resolver
+            la consulta después de derivar.
+            DERIVACION;
     }
 
     /**
@@ -241,6 +287,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
         return array_values(array_filter([
             new SearchBusinessKnowledge($this->business->id),
             $this->customer !== null ? new RememberCustomerFact($this->customer) : null,
+            $this->conversation !== null ? new EscalateToHuman($this->business, $this->conversation) : null,
         ]));
     }
 }

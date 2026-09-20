@@ -336,6 +336,10 @@ return [
         'older' => 'Ver mensajes anteriores',
         'search_thread' => 'Buscar en la conversación',
         'thread_no_results' => 'Sin mensajes con esa búsqueda.',
+        'status_team' => 'Esperando a tu equipo',
+        'status_team_chip' => 'Equipo',
+        'resume' => 'Que siga el asistente',
+        'resumed' => 'Listo. Tu asistente retoma esta conversación.',
     ],
 
     'assistant' => [
@@ -385,6 +389,14 @@ return [
         'sheet_hint' => 'Al guardar queda en el cerebro de tu asistente.',
         'sheet_save' => 'Guardar',
         'sheet_cancel' => 'Cancelar',
+        'handoff_title' => '¿Cuándo llamar a una persona?',
+        'handoff_sub' => 'Tu asistente deriva la conversación a tu equipo según este ajuste. Te avisa a tu WhatsApp y se queda en silencio solo en ese chat.',
+        'handoff_levels' => [
+            'eager' => 'Enseguida — deriva ante la primera señal',
+            'balanced' => 'Equilibrado — pedido claro, frustración o tema crítico',
+            'minimal' => 'Casi nunca — resuelve todo lo posible antes de derivar',
+        ],
+        'handoff_saved' => 'Listo. Tu asistente ya deriva así.',
     ],
 
     'customers' => [

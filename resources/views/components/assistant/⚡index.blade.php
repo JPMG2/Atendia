@@ -3,6 +3,8 @@
 use App\Actions\Business\DeleteAssistantFaq;
 use App\Actions\Business\DraftFaqSuggestions;
 use App\Actions\Business\ReindexKnowledgeSource;
+use App\Actions\Business\SaveHandoffLevel;
+use App\Enums\HandoffLevel;
 use App\Classes\Main\Client;
 use App\Classes\Main\KnowledgeBase;
 use App\Dto\NotificationDto;
@@ -27,6 +29,30 @@ new class extends Component
     public AssistantFaqForm $form;
 
     public bool $sheetOpen = false;
+
+    /** The handoff dial: eager | balanced | minimal (the owner's insight). */
+    public string $handoffLevel = 'balanced';
+
+    public function mount(): void
+    {
+        $this->handoffLevel = (Auth::user()?->business?->handoff_level ?? HandoffLevel::Balanced)->value;
+    }
+
+    public function updatedHandoffLevel(string $value): void
+    {
+        $level = HandoffLevel::tryFrom($value);
+        $business = Auth::user()?->business;
+
+        if ($level === null || $business === null) {
+            $this->handoffLevel = ($business?->handoff_level ?? HandoffLevel::Balanced)->value;
+
+            return;
+        }
+
+        app(SaveHandoffLevel::class)->handle($business, $level);
+
+        $this->dispatchNotification(new NotificationDto(__('client.assistant.handoff_saved'), NotificationType::Success));
+    }
 
     private function knowledge(): ?KnowledgeBase
     {
@@ -344,6 +370,28 @@ new class extends Component
                 @endforeach
             </ul>
         @endif
+    </x-ui.card>
+
+    {{-- The owner's dial: a doctor is not a realtor (her insight, 2026-09-20). --}}
+    <x-ui.card class="mt-4 p-5">
+        <h2 class="font-display text-strong text-base">{{ __('client.assistant.handoff_title') }}</h2>
+        <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.handoff_sub') }}</p>
+
+        <div class="mt-3">
+            <x-catalog.form-row>
+                <x-inputsform.combobox
+                    span="long"
+                    name="handoff_level"
+                    wire:model.live="handoffLevel"
+                    :value="$handoffLevel"
+                    :options="[
+                        'eager' => __('client.assistant.handoff_levels.eager'),
+                        'balanced' => __('client.assistant.handoff_levels.balanced'),
+                        'minimal' => __('client.assistant.handoff_levels.minimal'),
+                    ]"
+                />
+            </x-catalog.form-row>
+        </div>
     </x-ui.card>
 
     {{-- The live proof: the taught question answered by the REAL assistant. --}}

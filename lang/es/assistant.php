@@ -21,4 +21,9 @@ return [
         'header' => "🤖 Resumen del día — :business\nTu asistente atendió :messages mensajes de :contacts contactos.",
         'referrals' => '🎉 1 negocio llegó con tu enlace esta semana. ¡Sigue compartiéndolo!|🎉 :count negocios llegaron con tu enlace esta semana. ¡Sigue compartiéndolo!',
     ],
+
+    'handoff' => [
+        'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespóndele desde tu WhatsApp; tu asistente quedó en pausa solo en ese chat.",
+        'no_reason' => 'el cliente pidió hablar con una persona',
+    ],
 ];
