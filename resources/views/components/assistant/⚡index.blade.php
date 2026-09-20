@@ -10,6 +10,7 @@ use App\Classes\Main\KnowledgeBase;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\AssistantFaqForm;
+use App\Livewire\Forms\Client\HandoffRulesForm;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -28,6 +29,8 @@ new class extends Component
 
     public AssistantFaqForm $form;
 
+    public HandoffRulesForm $handoffForm;
+
     public bool $sheetOpen = false;
 
     /** The handoff dial: eager | balanced | minimal (the owner's insight). */
@@ -36,6 +39,12 @@ new class extends Component
     public function mount(): void
     {
         $this->handoffLevel = (Auth::user()?->business?->handoff_level ?? HandoffLevel::Balanced)->value;
+        $this->handoffForm->setup();
+    }
+
+    public function saveHandoffRules(): void
+    {
+        $this->dispatchNotification($this->handoffForm->save());
     }
 
     public function updatedHandoffLevel(string $value): void
@@ -377,7 +386,7 @@ new class extends Component
         <h2 class="font-display text-strong text-base">{{ __('client.assistant.handoff_title') }}</h2>
         <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.handoff_sub') }}</p>
 
-        <div class="mt-3">
+        <div class="mt-3 flex flex-col gap-4">
             <x-catalog.form-row>
                 <x-inputsform.combobox
                     span="long"
@@ -391,6 +400,24 @@ new class extends Component
                     ]"
                 />
             </x-catalog.form-row>
+            {{-- The owner's own cases, one per line; they ALWAYS escalate. --}}
+            <x-catalog.form-row>
+                <div class="f-full">
+                    <x-ui.textarea
+                        name="rules"
+                        :rows="3"
+                        :label="__('client.assistant.handoff_rules_label')"
+                        :hint="__('client.assistant.handoff_rules_hint')"
+                        :placeholder="__('client.assistant.handoff_rules_placeholder')"
+                        wire:model="handoffForm.rules"
+                    >{{ $handoffForm->rules }}</x-ui.textarea>
+                </div>
+            </x-catalog.form-row>
+            <div class="flex justify-end">
+                <x-ui.button variant="primary" size="sm" wire:click="saveHandoffRules">
+                    {{ __('client.assistant.handoff_rules_save') }}
+                </x-ui.button>
+            </div>
         </div>
     </x-ui.card>
 

@@ -397,6 +397,10 @@ return [
             'minimal' => 'Casi nunca — resuelve todo lo posible antes de derivar',
         ],
         'handoff_saved' => 'Listo. Tu asistente ya deriva así.',
+        'handoff_rules_label' => 'Tus casos de derivación',
+        'handoff_rules_hint' => 'Uno por línea, con tus palabras. Estos derivan siempre, sin importar el ajuste de arriba.',
+        'handoff_rules_placeholder' => "Si describe síntomas o pide un diagnóstico\nSi quiere cambiar un turno ya pagado",
+        'handoff_rules_save' => 'Guardar casos',
     ],
 
     'customers' => [

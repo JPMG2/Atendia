@@ -178,13 +178,29 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             grandes y cotizaciones fuera de lo común.
 
             {$policy}
-
+            {$this->ownerRules()}
             Al derivar: llamá la herramienta de derivar con el motivo en UNA frase
             EN ESPAÑOL, y despedite después con cortesía en el idioma del cliente
             diciendo que una persona del equipo le escribe a la brevedad. Nunca
             derives sin llamar la herramienta, y nunca sigas intentando resolver
             la consulta después de derivar.
             DERIVACION;
+    }
+
+    /**
+     * The owner's hand-written cases outrank the dial: if they bothered to
+     * write it, it escalates — a lab's "describe síntomas" cannot wait.
+     */
+    private function ownerRules(): string
+    {
+        $rules = trim((string) $this->business?->handoff_rules);
+
+        if ($rules === '') {
+            return '';
+        }
+
+        return "\nREGLAS PROPIAS de este negocio — estas SIEMPRE derivan, sin importar"
+            ." el ajuste general:\n{$rules}\n";
     }
 
     /**

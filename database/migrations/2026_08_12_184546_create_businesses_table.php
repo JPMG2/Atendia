@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('fallback_whatsapp_number', 30)->nullable()->comment('WhatsApp de una persona: acá se derivan los mensajes que la IA no puede responder');
             $table->string('whatsapp_instance', 100)->nullable()->unique()->comment('Instancia del puente de WhatsApp (Evolution) que atiende a este negocio; null = sin conectar');
             $table->string('handoff_level', 12)->default('balanced')->comment('eager | balanced | minimal: qué tan pronto la IA llama a un humano');
+            $table->text('handoff_rules')->nullable()->comment('Casos de derivación escritos por el dueño (uno por línea); SIEMPRE derivan');
             $table->timestamp('whatsapp_connected_at')->nullable()->comment('Desde cuándo el número está vinculado y atendiendo; null = sin conectar (lo mantiene el webhook de conexión)');
             $table->string('email')->nullable()->comment('Correo de contacto del negocio: acá llega la bienvenida y el contacto público');
             $table->string('web')->nullable()->comment('Sitio web del negocio, para su perfil público');

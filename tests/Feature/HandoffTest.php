@@ -120,6 +120,37 @@ test('the briefing carries the three families and obeys the dial', function (): 
         ->toContain(EscalateToHuman::class);
 });
 
+test('the owner writes their own cases and the briefing makes them absolute', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create(['handoff_level' => HandoffLevel::Minimal]))->save();
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee(__('client.assistant.handoff_rules_label'))
+        ->set('handoffForm.rules', "Si describe síntomas\nSi pide un diagnóstico")
+        ->call('saveHandoffRules');
+
+    $business = $user->business->refresh();
+    expect($business->handoff_rules)->toBe("Si describe síntomas\nSi pide un diagnóstico");
+
+    $thread = Conversation::factory()->create(['business_id' => $business->id]);
+    $instructions = (string) (new AsistenteAtendia($business, $thread))->instructions();
+
+    // The owner's cases outrank even the "almost never" dial.
+    expect($instructions)->toContain('REGLAS PROPIAS')
+        ->toContain('Si describe síntomas')
+        ->toContain('SIEMPRE derivan');
+});
+
+test('with no owner cases the briefing skips that section', function (): void {
+    $business = Business::factory()->create(['handoff_rules' => null]);
+    $thread = Conversation::factory()->create(['business_id' => $business->id]);
+
+    expect((string) (new AsistenteAtendia($business, $thread))->instructions())
+        ->not->toContain('REGLAS PROPIAS');
+});
+
 test('the owner tunes the dial from the assistant screen', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create();
