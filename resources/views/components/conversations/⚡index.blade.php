@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Business\SendHumanReply;
 use App\Classes\Main\Client;
 use App\Classes\Main\Inbox;
 use App\Dto\NotificationDto;
@@ -224,19 +225,75 @@ new class extends Component
         return $this->thread?->customer;
     }
 
+    /** True while a human holds the thread, whichever side has the ball. */
+    #[Computed]
+    public function humanHeld(): bool
+    {
+        return in_array($this->thread?->status, [ConversationStatus::Team, ConversationStatus::Customer], true);
+    }
+
     /** The return leg of the handoff: the owner hands the thread back. */
     public function resume(): void
     {
-        $thread = $this->thread;
-
-        if ($thread === null || $thread->status !== ConversationStatus::Team) {
+        if (! $this->humanHeld) {
             return;
         }
 
-        $thread->update(['status' => ConversationStatus::Open]);
-        unset($this->thread);
+        $this->thread?->update(['status' => ConversationStatus::Open]);
+        unset($this->thread, $this->humanHeld);
 
         $this->dispatchNotification(new NotificationDto(__('client.conversations.resumed'), NotificationType::Success));
+    }
+
+    /** The owner takes the thread by hand: same silence as an AI escalation. */
+    public function takeover(): void
+    {
+        $thread = $this->thread;
+
+        if ($thread === null || $thread->status !== ConversationStatus::Open) {
+            return;
+        }
+
+        $thread->update(['status' => ConversationStatus::Team]);
+        unset($this->thread, $this->humanHeld);
+    }
+
+    public string $reply = '';
+
+    /** The composer: out through the business's WhatsApp, into the record. */
+    public function sendReply(): void
+    {
+        $thread = $this->thread;
+        $business = Auth::user()?->business;
+        $text = trim($this->reply);
+
+        if ($thread === null || $business === null || $text === '' || ! $this->humanHeld) {
+            return;
+        }
+
+        $sent = app(SendHumanReply::class)->handle($business, $thread, $text);
+
+        if ($sent === null) {
+            $this->dispatchNotification(new NotificationDto(__('client.customers.opt_in_unavailable'), NotificationType::Error));
+
+            return;
+        }
+
+        $this->reply = '';
+        unset($this->thread, $this->threadDays, $this->humanHeld);
+    }
+
+    /** Closing the loop by hand; the customer's next word reopens it for the AI. */
+    public function markResolved(): void
+    {
+        if (! $this->humanHeld) {
+            return;
+        }
+
+        $this->thread?->update(['status' => ConversationStatus::Resolved]);
+        unset($this->thread, $this->humanHeld);
+
+        $this->dispatchNotification(new NotificationDto(__('client.conversations.resolved_done'), NotificationType::Success));
     }
 
     /** The tab title comes from translations; a PHP attribute cannot call __(). */
@@ -369,8 +426,27 @@ new class extends Component
                                 <span class="dot"></span>
                                 {{ __('client.conversations.status_team') }}
                             </span>
+                        @elseif ($this->thread->status === ConversationStatus::Customer)
+                            <span class="status-tag is-info">
+                                <span class="dot"></span>
+                                {{ __('client.conversations.status_customer') }}
+                            </span>
+                        @elseif ($this->thread->status === ConversationStatus::Resolved)
+                            <span class="status-tag is-success">
+                                <span class="dot"></span>
+                                {{ __('client.conversations.status_resolved') }}
+                            </span>
+                        @endif
+                        @if ($this->humanHeld)
+                            <x-ui.button variant="secondary" size="sm" icon="check" wire:click="markResolved">
+                                {{ __('client.conversations.mark_resolved') }}
+                            </x-ui.button>
                             <x-ui.button variant="primary" size="sm" icon="bot" wire:click="resume">
                                 {{ __('client.conversations.resume') }}
+                            </x-ui.button>
+                        @elseif ($this->thread->status === ConversationStatus::Open)
+                            <x-ui.button variant="secondary" size="sm" icon="user" wire:click="takeover">
+                                {{ __('client.conversations.takeover') }}
                             </x-ui.button>
                         @endif
                         @if ($this->customer !== null)
@@ -438,7 +514,12 @@ new class extends Component
                                             <div class="pm-row {{ $message->direction->value }}" wire:key="msg-{{ $message->id }}">
                                                 <div class="pm-bubble {{ $message->direction->value }}">
                                                     <x-ui.match :text="$message->body" :needle="$threadSearch" />
-                                                    <span class="pm-time font-mono">{{ $message->created_at?->format('H:i') }}</span>
+                                                    <span class="pm-time font-mono">
+                                                        @if ($message->author === App\Enums\MessageAuthor::Human)
+                                                            {{ __('client.conversations.human_tag') }} ·
+                                                        @endif
+                                                        {{ $message->created_at?->format('H:i') }}
+                                                    </span>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -449,10 +530,32 @@ new class extends Component
                 @endisland
 
                 @if ($this->thread !== null)
-                    <p class="bd-subtle text-muted flex items-center gap-2 border-t p-3 text-xs">
-                        <x-icon name="lock" :size="14" />
-                        {{ __('client.conversations.read_only') }}
-                    </p>
+                    @if ($this->humanHeld)
+                        {{-- The composer: out through the business's own
+                        WhatsApp, into the record and the AI's memory. --}}
+                        <div class="bd-subtle border-t p-3">
+                            <x-catalog.form-row>
+                                <x-inputsform.input
+                                    span="long"
+                                    name="reply"
+                                    :placeholder="__('client.conversations.reply_placeholder')"
+                                    :aria-label="__('client.conversations.reply_placeholder')"
+                                    wire:model="reply"
+                                    wire:keydown.enter="sendReply"
+                                />
+                                <div class="flex flex-none items-center self-center">
+                                    <x-ui.button variant="primary" size="sm" icon="send" class="data-loading:opacity-50" wire:click="sendReply">
+                                        {{ __('client.conversations.send') }}
+                                    </x-ui.button>
+                                </div>
+                            </x-catalog.form-row>
+                        </div>
+                    @else
+                        <p class="bd-subtle text-muted flex items-center gap-2 border-t p-3 text-xs">
+                            <x-icon name="lock" :size="14" />
+                            {{ __('client.conversations.read_only') }}
+                        </p>
+                    @endif
                 @else
                     <div class="grid min-h-[30vh] flex-1 place-items-center p-8">
                         <p class="text-muted text-sm">{{ __('client.conversations.select') }}</p>

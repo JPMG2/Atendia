@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\ConversationMessageFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** One turn of a thread: the customer's text or the assistant's reply. */
-#[Fillable(['business_id', 'conversation_id', 'direction', 'wa_message_id', 'body', 'prompt_tokens', 'completion_tokens', 'audio_seconds', 'embedding'])]
+#[Fillable(['business_id', 'conversation_id', 'direction', 'author', 'wa_message_id', 'body', 'prompt_tokens', 'completion_tokens', 'audio_seconds', 'embedding'])]
 class ConversationMessage extends Model
 {
     use BelongsToBusiness;
@@ -28,6 +29,7 @@ class ConversationMessage extends Model
     {
         return [
             'direction' => MessageDirection::class,
+            'author' => MessageAuthor::class,
             'embedding' => 'array',
         ];
     }

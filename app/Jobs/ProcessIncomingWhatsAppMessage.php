@@ -8,6 +8,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\Plan;
 use App\Enums\ConversationStatus;
 use App\Enums\GuardVerdict;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
@@ -125,10 +126,21 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             $this->rememberPlatformContact($customer, $conversation);
 
-            // A thread handed to the team belongs to the team: the assistant
-            // stays quiet HERE (never account-wide), only keeping the record.
-            if ($conversation->status === ConversationStatus::Team) {
+            // A resolved thread reopens on the customer's next word: the
+            // assistant takes it back like any fresh question.
+            if ($conversation->status === ConversationStatus::Resolved) {
+                $conversation->update(['status' => ConversationStatus::Open]);
+            }
+
+            // A thread in human hands stays human: keep the record, hand the
+            // ball back to the team when the customer answers, say nothing.
+            if (in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true)) {
                 $this->rememberInboundOnly($conversation, $text);
+
+                if ($conversation->status === ConversationStatus::Customer) {
+                    $conversation->update(['status' => ConversationStatus::Team]);
+                }
+
                 WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
 
                 return;
@@ -244,6 +256,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         // caps will be priced against.
         $conversation->messages()->create([
             'direction' => MessageDirection::Out,
+            'author' => MessageAuthor::Assistant,
             'body' => $reply,
             'prompt_tokens' => $usage?->promptTokens,
             'completion_tokens' => $usage?->completionTokens,

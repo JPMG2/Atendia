@@ -6,6 +6,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Tools\EscalateToHuman;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
+use App\Enums\MessageAuthor;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -172,6 +173,103 @@ test('the owner tunes the dial from the assistant screen', function (): void {
         ->assertSet('handoffLevel', 'minimal');
 
     expect($user->business->refresh()->handoff_level)->toBe(HandoffLevel::Minimal);
+});
+
+test('the composer answers from the panel and passes the ball to the customer', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create([
+        'whatsapp_instance' => 'demo',
+        'whatsapp_connected_at' => now(),
+    ]))->save();
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_phone' => '5491111111111',
+        'status' => ConversationStatus::Team,
+    ]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.reply_placeholder'))
+        ->set('reply', 'Te preparo la cotización y te escribo en una hora.')
+        ->call('sendReply')
+        ->assertSet('reply', '');
+
+    $thread->refresh();
+    $sent = handoffSentTexts()[0];
+
+    expect($thread->status)->toBe(ConversationStatus::Customer)
+        ->and($thread->messages()->sole()->author)->toBe(MessageAuthor::Human)
+        ->and($sent['number'])->toBe('5491111111111')
+        ->and($sent['text'])->toBe('Te preparo la cotización y te escribo en una hora.');
+});
+
+test('the owner can take an open thread by hand, and the composer stays away from open ones', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.takeover'))
+        ->assertDontSee(__('client.conversations.reply_placeholder'))
+        ->call('takeover');
+
+    expect($thread->refresh()->status)->toBe(ConversationStatus::Team);
+});
+
+test('the customer answering a human flips the ball back to the team, silently', function (): void {
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo']);
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491122334455',
+        'status' => ConversationStatus::Customer,
+    ]);
+
+    AsistenteAtendia::fake(['Nunca.', 'Nunca.']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'Dale, la espero', 'MSG-88'))->handle();
+
+    expect(handoffSentTexts())->toBe([])
+        ->and(Conversation::query()->sole()->status)->toBe(ConversationStatus::Team);
+});
+
+test('a resolved thread reopens for the assistant on the customer\'s next word', function (): void {
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo']);
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'contact_phone' => '5491122334455',
+        'status' => ConversationStatus::Resolved,
+    ]);
+
+    AsistenteAtendia::fake(['Hola.', 'Hola, ¿en qué te ayudo?']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'Otra consulta', 'MSG-89'))->handle();
+
+    expect(Conversation::query()->sole()->status)->toBe(ConversationStatus::Open)
+        ->and(handoffSentTexts())->toHaveCount(1);
+});
+
+test('marking resolved closes the loop from the panel', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'status' => ConversationStatus::Customer,
+    ]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.status_customer'))
+        ->call('markResolved');
+
+    expect($thread->refresh()->status)->toBe(ConversationStatus::Resolved);
 });
 
 test('the owner hands the thread back with one click', function (): void {

@@ -338,8 +338,16 @@ return [
         'thread_no_results' => 'Sin mensajes con esa búsqueda.',
         'status_team' => 'Esperando a tu equipo',
         'status_team_chip' => 'Equipo',
+        'status_customer' => 'Esperando al cliente',
+        'status_resolved' => 'Resuelta',
         'resume' => 'Que siga el asistente',
         'resumed' => 'Listo. Tu asistente retoma esta conversación.',
+        'takeover' => 'Tomo yo esta charla',
+        'mark_resolved' => 'Marcar resuelta',
+        'resolved_done' => 'Conversación resuelta. Si el cliente vuelve a escribir, tu asistente la reabre.',
+        'reply_placeholder' => 'Escribe tu respuesta…',
+        'send' => 'Enviar',
+        'human_tag' => 'Equipo',
     ],
 
     'assistant' => [
