@@ -128,8 +128,8 @@ test('an empty knowledge search logs the miss at the source', function (): void 
     $business = Business::factory()->create();
 
     $this->mock(KnowledgeRetriever::class)
-        ->shouldReceive('context')
-        ->andReturn('');
+        ->shouldReceive('retrieve')
+        ->andReturn(collect());
 
     $tool = new SearchBusinessKnowledge($business->id);
     $reply = (string) $tool->handle(new Request(['query' => '¿Hacen resonancias?']));

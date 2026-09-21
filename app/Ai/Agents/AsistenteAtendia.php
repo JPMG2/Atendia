@@ -53,6 +53,19 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     /** The whole exchange's bill: the re-ask pass must not lose the first one. */
     public ?Usage $exchangeUsage = null;
 
+    /** Memoized so the provenance survives the prompt (and the re-ask pass). */
+    private ?SearchBusinessKnowledge $knowledgeTool = null;
+
+    /**
+     * The documents that grounded this exchange, straight from the tool.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function knowledgeSources(): array
+    {
+        return $this->knowledgeTool?->sources() ?? [];
+    }
+
     /**
      * Answer a customer question, guaranteeing the knowledge search ran.
      *
@@ -305,7 +318,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
         }
 
         return array_values(array_filter([
-            new SearchBusinessKnowledge($this->business->id),
+            $this->knowledgeTool ??= new SearchBusinessKnowledge($this->business->id),
             $this->customer !== null ? new RememberCustomerFact($this->customer) : null,
             $this->conversation !== null ? new EscalateToHuman($this->business, $this->conversation) : null,
         ]));

@@ -7,6 +7,7 @@ use App\Classes\Main\Inbox;
 use App\Dto\NotificationDto;
 use App\Enums\ConversationStatus;
 use App\Enums\NotificationType;
+use App\Livewire\Forms\Client\AssistantFaqForm;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
@@ -218,6 +219,39 @@ new class extends Component
     {
         $this->selected = null;
         $this->showCustomer = false;
+    }
+
+    public AssistantFaqForm $form;
+
+    public bool $sheetOpen = false;
+
+    /** From the thread: the customer's own words become the taught question. */
+    public function teach(int $messageId): void
+    {
+        $message = $this->selected === null ? null : $this->inbox()?->customerMessage($this->selected, $messageId);
+
+        if ($message === null) {
+            return;
+        }
+
+        $this->form->setup();
+        $this->form->question = mb_substr(trim($message->body), 0, 200);
+        $this->sheetOpen = true;
+    }
+
+    public function closeSheet(): void
+    {
+        $this->sheetOpen = false;
+    }
+
+    public function saveFaq(): void
+    {
+        $notification = $this->form->save();
+        $this->dispatchNotification($notification);
+
+        if ($notification->type !== NotificationType::Error) {
+            $this->sheetOpen = false;
+        }
     }
 
     /** The sheet looks at whoever owns the open thread. */
@@ -573,9 +607,24 @@ new class extends Component
                                                 </div>
                                                 @continue
                                             @endif
-                                            <div class="pm-row {{ $message->direction->value }}" wire:key="msg-{{ $message->id }}">
+                                            <div class="pm-row {{ $message->direction->value }} group" wire:key="msg-{{ $message->id }}">
                                                 <div class="pm-bubble {{ $message->direction->value }}">
                                                     <x-ui.match :text="$message->body" :needle="$threadSearch" />
+                                                    @if ($message->author === App\Enums\MessageAuthor::Assistant && ($message->knowledge_sources ?? []) !== [])
+                                                        <div x-data="{ open: false }" class="mt-1">
+                                                            <button type="button" class="text-[11px] underline decoration-dotted opacity-70 transition-opacity hover:opacity-100" x-on:click="open = !open">
+                                                                {{ __('client.conversations.sources_toggle') }}
+                                                            </button>
+                                                            <ul x-show="open" x-cloak class="mt-1 space-y-0.5 text-[11px] opacity-80">
+                                                                @foreach ($message->knowledge_sources as $source)
+                                                                    <li class="flex items-start gap-1.5">
+                                                                        <x-icon name="book-open" :size="12" class="mt-0.5 flex-none" />
+                                                                        <span class="min-w-0">{{ $source['title'] }}</span>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
                                                     <span class="pm-time font-mono">
                                                         @if ($message->author === App\Enums\MessageAuthor::Human)
                                                             {{ __('client.conversations.human_tag') }} ·
@@ -583,11 +632,27 @@ new class extends Component
                                                         {{ $message->created_at?->format('H:i') }}
                                                     </span>
                                                 </div>
+                                                @if ($message->direction === App\Enums\MessageDirection::In)
+                                                    {{-- Hover-revealed on desktop; touch has no hover, so it stays faintly visible. --}}
+                                                    <x-ui.icon-button
+                                                        icon="graduation-cap"
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        class="ml-1 self-center opacity-60 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+                                                        :label="__('client.conversations.teach')"
+                                                        wire:click="teach({{ $message->id }})"
+                                                    />
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
                                 @endforeach
                             </div>
+
+                            {{-- Inside the island on purpose: "teach" fires from island
+                            context, and an island-scoped render never repaints
+                            markup that lives outside it. --}}
+                            <x-client.faq-sheet :form="$form" :show="$sheetOpen" />
                         @endif
                 @endisland
 

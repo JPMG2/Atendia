@@ -95,6 +95,58 @@ test('with nothing relevant the tool says so, instead of handing back silence', 
     expect($answer)->toContain('No se encontró información');
 });
 
+test('the tool keeps a provenance trail, one entry per document', function (): void {
+    Queue::fake();
+
+    $business = Business::factory()->create();
+    $inventory = KnowledgeDocument::factory()->for($business)->create(['title' => 'Inventario 2026']);
+    $faq = KnowledgeDocument::factory()->for($business)->create(['title' => '¿Aceptan tarjeta?']);
+
+    // Two chunks of one document must land as ONE source.
+    KnowledgeChunk::factory()->forDocument($inventory)->withEmbedding(knowledgeVector(0))->create();
+    KnowledgeChunk::factory()->forDocument($inventory)->withEmbedding(knowledgeVector(0))->create();
+    KnowledgeChunk::factory()->forDocument($faq)->withEmbedding(knowledgeVector(0))->create();
+
+    Embeddings::fake(fn () => [knowledgeVector(0)]);
+
+    $tool = new SearchBusinessKnowledge($business->id);
+    $tool->handle(new Request(['query' => 'alternador']));
+
+    expect(collect($tool->sources())->pluck('title')->sort()->values()->all())
+        ->toBe(['Inventario 2026', '¿Aceptan tarjeta?'])
+        ->and(collect($tool->sources())->pluck('id')->all())->each->toBeInt();
+});
+
+test('a miss leaves the provenance trail empty', function (): void {
+    Queue::fake();
+
+    $business = Business::factory()->create();
+    Embeddings::fake(fn () => [knowledgeVector(0)]);
+
+    $tool = new SearchBusinessKnowledge($business->id);
+    $tool->handle(new Request(['query' => 'algo que no existe']));
+
+    expect($tool->sources())->toBe([]);
+});
+
+test('the agent memoizes the search tool so the provenance survives the prompt', function (): void {
+    Queue::fake();
+
+    $business = Business::factory()->create();
+    $document = KnowledgeDocument::factory()->for($business)->create(['title' => 'Inventario 2026']);
+    KnowledgeChunk::factory()->forDocument($document)->withEmbedding(knowledgeVector(0))->create();
+
+    Embeddings::fake(fn () => [knowledgeVector(0)]);
+
+    $agent = new AsistenteAtendia($business);
+    $tool = iterator_to_array($agent->tools())[0];
+    $tool->handle(new Request(['query' => 'alternador']));
+
+    // A second tools() pass (the re-ask) must hand back the SAME instance.
+    expect(iterator_to_array($agent->tools())[0])->toBe($tool)
+        ->and($agent->knowledgeSources())->toBe([['id' => $document->id, 'title' => 'Inventario 2026']]);
+});
+
 test('the instructions demand searching before claiming, and honesty when not found', function (): void {
     $instructions = (string) (new AsistenteAtendia)->instructions();
 

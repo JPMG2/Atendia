@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Enums\MessageAuthor;
+use App\Enums\MessageDirection;
+use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
+use App\Models\KnowledgeDocument;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 use function Pest\Livewire\livewire;
 
@@ -414,4 +419,79 @@ test('requesting the opt-in messages the customer and stamps the ask', function 
 
     expect($customer->refresh()->marketing_opt_in_requested_at)->not->toBeNull();
     Http::assertSentCount(1);
+});
+
+test('a customer message can be taught to the assistant from the thread', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
+    $question = $thread->messages()->where('direction', MessageDirection::In)->first();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.teach'))
+        ->call('teach', $question->id)
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.question', $question->body)
+        ->set('form.question', '¿Hacen envíos a domicilio?')
+        ->set('form.answer', 'Sí, a todo el país.')
+        ->call('saveFaq')
+        ->assertSet('sheetOpen', false);
+
+    $faq = KnowledgeDocument::query()->where('source_type', 'faq')->sole();
+
+    expect($faq->title)->toBe('¿Hacen envíos a domicilio?')
+        ->and($faq->business_id)->toBe($user->business_id);
+
+    Queue::assertPushed(IndexKnowledgeDocument::class);
+});
+
+test('only the customer\'s own words open the teach sheet', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Respuesta del asistente.');
+    $reply = $thread->messages()->where('direction', MessageDirection::Out)->first();
+
+    $stranger = conversationsClient();
+    $foreign = threadFor($stranger, 'Ajena', '5492222222222', 'Otra cosa.');
+    $foreignQuestion = $foreign->messages()->where('direction', MessageDirection::In)->first();
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('teach', $reply->id)
+        ->assertSet('sheetOpen', false)
+        ->call('teach', $foreignQuestion->id)
+        ->assertSet('sheetOpen', false);
+});
+
+test('an assistant reply shows where its answer came from', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, mañana a las 9.');
+
+    ConversationMessage::factory()->out()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'author' => MessageAuthor::Assistant,
+        'body' => 'Sí, tenemos stock del alternador.',
+        'knowledge_sources' => [['id' => 7, 'title' => 'Inventario 2026']],
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.sources_toggle'))
+        ->assertSee('Inventario 2026');
+});
+
+test('a reply without provenance shows no trail', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Hola, ¿en qué te ayudo?');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertDontSee(__('client.conversations.sources_toggle'));
 });

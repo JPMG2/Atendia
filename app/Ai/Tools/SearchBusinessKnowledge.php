@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Dto\RetrievedChunkDto;
 use App\Models\KnowledgeMiss;
 use App\Services\Knowledge\KnowledgeRetriever;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -24,6 +25,23 @@ class SearchBusinessKnowledge implements Tool
         private readonly int $businessId,
     ) {}
 
+    /** @var array<int, string> document id => title, every search of this exchange */
+    private array $sourcesById = [];
+
+    /**
+     * The documents that grounded this exchange's answer, for the panel's
+     * "¿de dónde salió?" trail.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function sources(): array
+    {
+        return collect($this->sourcesById)
+            ->map(fn (string $title, int $id): array => ['id' => $id, 'title' => $title])
+            ->values()
+            ->all();
+    }
+
     /**
      * Get the description of the tool's purpose.
      */
@@ -42,10 +60,10 @@ class SearchBusinessKnowledge implements Tool
     {
         $query = (string) $request['query'];
 
-        $context = app(KnowledgeRetriever::class)
-            ->context($query, $this->businessId);
+        $chunks = app(KnowledgeRetriever::class)
+            ->retrieve($query, $this->businessId);
 
-        if ($context === '') {
+        if ($chunks->isEmpty()) {
             // The exact moment a question goes unanswered: logged here, at
             // the source, so the owner's teaching queue never guesses.
             KnowledgeMiss::query()->create(['business_id' => $this->businessId, 'query' => mb_substr($query, 0, 500)]);
@@ -55,7 +73,14 @@ class SearchBusinessKnowledge implements Tool
             return 'No se encontró información sobre eso en la base de conocimiento del negocio.';
         }
 
-        return $context;
+        // Several chunks may share one document; the trail keeps each once.
+        foreach ($chunks as $chunk) {
+            $this->sourcesById[$chunk->documentId] ??= $chunk->documentTitle;
+        }
+
+        return $chunks
+            ->map(static fn (RetrievedChunkDto $chunk): string => "[{$chunk->documentTitle}] {$chunk->content}")
+            ->implode("\n\n");
     }
 
     /**

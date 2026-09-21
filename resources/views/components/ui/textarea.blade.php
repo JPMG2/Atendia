@@ -22,7 +22,7 @@
         rows="{{ $rows }}"
         @if ($name) name="{{ $name }}" @endif
         {{ $attributes->merge(['class' => 'field-textarea'.($error ? ' field-error' : '')]) }}
-    >{{ $slot }}</textarea>
+    >{{ trim($slot) }}</textarea>{{-- Trimmed: formatters wrap the slot in whitespace a textarea would show as content. --}}
     @if ($error)
         <span class="field-error-text">{{ $error }}</span>
     @elseif ($hint)

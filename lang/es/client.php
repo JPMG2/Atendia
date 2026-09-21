@@ -352,6 +352,8 @@ return [
         'qr_address' => 'Dirección',
         'qr_services' => 'Servicios',
         'human_tag' => 'Equipo',
+        'teach' => 'Enseñarle esto a tu asistente',
+        'sources_toggle' => '¿De dónde salió?',
     ],
 
     'assistant' => [

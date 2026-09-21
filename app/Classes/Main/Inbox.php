@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Enums\MessageDirection;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -63,6 +64,19 @@ class Inbox
         get => $this->business->conversations()
             ->whereDate('last_message_at', today())
             ->count();
+    }
+
+    /**
+     * One customer message of one of this tenant's threads, or null: the
+     * "teach the assistant this" door only opens on the customer's own words.
+     */
+    public function customerMessage(int $threadId, int $messageId): ?ConversationMessage
+    {
+        return $this->business->conversations()->find($threadId)
+            ?->messages()
+            ->whereKey($messageId)
+            ->where('direction', MessageDirection::In)
+            ->first();
     }
 
     /**

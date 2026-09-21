@@ -168,7 +168,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
-            $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage);
+            $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage, $agent->knowledgeSources());
             $this->rememberForDigest($business, $text, $reply);
             $this->warnOwnerNearCap($business, $evolution);
 
@@ -326,8 +326,10 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     /**
      * Persists the turn AFTER answering: the agent's memory hands over
      * previous turns only, so the current text never rides twice.
+     *
+     * @param  list<array{id: int, title: string}>  $sources
      */
-    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?Usage $usage): void
+    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?Usage $usage, array $sources = []): void
     {
         $inbound = $conversation->messages()->create([
             'direction' => MessageDirection::In,
@@ -348,6 +350,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'body' => $reply,
             'prompt_tokens' => $usage?->promptTokens,
             'completion_tokens' => $usage?->completionTokens,
+            'knowledge_sources' => $sources === [] ? null : $sources,
         ]);
 
         $conversation->fill([
