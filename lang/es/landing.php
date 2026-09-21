@@ -29,16 +29,14 @@ return [
 
     'hero' => [
         'badge' => 'Atiende por ti en WhatsApp',
-        'title_1' => 'Tu negocio,',
-        'title_2' => 'atendido por IA',
-        'subtitle' => 'Conecta tu WhatsApp y deja que el asistente responda, agende turnos y muestre tus productos. Tú lo configuras en minutos desde un panel simple — sin saber de tecnología.',
+        'title_1' => 'Nunca más pierdas un cliente',
+        'title_2' => 'por no contestar',
+        'subtitle' => 'Atendia responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras haces lo tuyo. Lo conectas en minutos, sin saber de tecnología.',
         'cta_primary' => 'Crear mi asistente',
         'cta_secondary' => 'Ver cómo funciona',
         'social_proof' => ':count negocios ya atienden con su asistente',
         'perk_trial' => '14 días gratis',
         'perk_card' => 'Sin tarjeta',
-        'perk_any' => 'Para cualquier rubro',
-        'perk_lang' => 'En cualquier idioma',
     ],
 
     'logos' => [
@@ -154,6 +152,37 @@ return [
         'eyebrow' => 'Clientes',
         'title' => 'Negocios que ya no atienden solos',
         'subtitle' => 'Opiniones reales de negocios que atienden con Atendia.',
+    ],
+
+    'faq' => [
+        'eyebrow' => 'Preguntas frecuentes',
+        'title' => 'Lo que todos preguntan antes de conectar',
+        'items' => [
+            [
+                'q' => '¿Puede decirle algo equivocado a mis clientes?',
+                'a' => 'Responde solo con lo que tu negocio cargó: tus servicios, tus precios, tus respuestas. Si algo no está en su conocimiento, lo dice con honestidad y ofrece pasar con tu equipo — nunca inventa.',
+            ],
+            [
+                'q' => '¿Se nota que es un bot?',
+                'a' => 'Se presenta como el asistente de tu negocio desde el primer mensaje: nadie es engañado. Escribe con tono cercano, en el idioma del cliente, y tú decides cuándo deriva a una persona.',
+            ],
+            [
+                'q' => '¿Pierdo el control de mi WhatsApp?',
+                'a' => 'No: el número sigue siendo tuyo y ves cada conversación en tu panel. Puedes tomar cualquier charla cuando quieras y devolverla al asistente con un clic.',
+            ],
+            [
+                'q' => '¿Qué pasa con los datos de mis clientes?',
+                'a' => 'Quedan aislados en tu cuenta, con candado a nivel de base de datos: ningún otro negocio puede verlos y no se usan para nada más que atender tu WhatsApp.',
+            ],
+            [
+                'q' => '¿Cuándo se cobra y cómo cancelo?',
+                'a' => 'Pruebas 14 días gratis sin poner tarjeta. Después eliges un plan y puedes cambiarlo o cancelarlo cuando quieras: cancelas y no se te cobra el período siguiente.',
+            ],
+            [
+                'q' => '¿Necesito saber de tecnología?',
+                'a' => 'No. Conectas tu WhatsApp escaneando un código QR y cargas tus datos en un panel simple. La mayoría de los negocios queda atendiendo en minutos.',
+            ],
+        ],
     ],
 
     'closing' => [

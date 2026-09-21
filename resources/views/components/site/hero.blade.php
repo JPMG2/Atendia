@@ -5,7 +5,13 @@ must never leave a horizontal scrollbar behind. --}}
         <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
             {{-- Texto --}}
             <div class="flex flex-col gap-5">
-                <x-ui.badge variant="brand" dot pulse class="hero-enter hero-enter-1 self-start">{{ __('landing.hero.badge') }}</x-ui.badge>
+                <x-ui.badge
+                    variant="brand"
+                    dot
+                    pulse
+                    class="hero-enter hero-enter-1 self-start"
+                >
+                    {{ __('landing.hero.badge') }}</x-ui.badge>
 
                 <h1
                     class="hero-enter hero-enter-2 font-display"
@@ -31,28 +37,20 @@ must never leave a horizontal scrollbar behind. --}}
                         style="box-shadow: var(--shadow-brand)"
                     >
                         {{ __('landing.hero.cta_primary') }}</x-ui.button>
-                    <x-ui.button
-                        variant="secondary"
-                        size="lg"
-                        icon="play"
-                        href="#como-funciona"
-                    >
+                    <x-ui.button variant="secondary" size="lg" icon="play" href="#como-funciona">
                         {{ __('landing.hero.cta_secondary') }}</x-ui.button>
                 </div>
 
-                <div class="hero-enter hero-enter-5 text-muted flex flex-wrap items-center gap-4" style="font-size: var(--text-sm)">
+                <div
+                    class="hero-enter hero-enter-5 text-muted flex flex-wrap items-center gap-4"
+                    style="font-size: var(--text-sm)"
+                >
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_trial') }}</span>
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_card') }}</span>
-                    <span class="inline-flex items-center gap-1.5"
-                        ><x-icon name="check" :size="16" style="color: var(--brand)" />
-                        {{ __('landing.hero.perk_any') }}</span>
-                    <span class="inline-flex items-center gap-1.5"
-                        ><x-icon name="check" :size="16" style="color: var(--brand)" />
-                        {{ __('landing.hero.perk_lang') }}</span>
                 </div>
 
                 {{-- Social proof from the real table, hidden below 10: a

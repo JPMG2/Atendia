@@ -7,6 +7,7 @@
         <x-site.how-it-works />
         <x-site.use-cases />
         <x-site.pricing />
+        <x-site.faq />
         <x-site.carousel />
         <x-site.closing-cta />
     </main>

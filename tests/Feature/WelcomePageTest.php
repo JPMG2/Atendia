@@ -23,9 +23,30 @@ test('it renders every marketing section', function (): void {
     $response = $this->get('/');
 
     // "clientes" is not here: real testimonials or no section at all.
-    foreach (['funciones', 'como-funciona', 'casos', 'precios'] as $id) {
+    foreach (['funciones', 'como-funciona', 'casos', 'precios', 'preguntas'] as $id) {
         $response->assertSee('id="'.$id.'"', false);
     }
+});
+
+test('the hero opens with the loss, not the category', function (): void {
+    // The headline promises the outcome (landing audit); the tagline stays
+    // in the tab title. Two perks only: guarantees, not arguments.
+    $this->get('/')
+        ->assertSee(__('landing.hero.title_1'))
+        ->assertSee(__('landing.hero.title_2'))
+        ->assertSee('a las 3 de la mañana')
+        ->assertSee(__('landing.hero.perk_trial'))
+        ->assertDontSee('Para cualquier rubro');
+});
+
+test('the faq answers the four fears and carries the FAQPage schema', function (): void {
+    $this->get('/')
+        ->assertSee('¿Se nota que es un bot?')
+        ->assertSee('¿Pierdo el control de mi WhatsApp?')
+        ->assertSee('¿Qué pasa con los datos de mis clientes?')
+        ->assertSee('¿Cuándo se cobra y cómo cancelo?')
+        ->assertSee('"@type":"FAQPage"', false)
+        ->assertSee('acceptedAnswer', false);
 });
 
 test('the hero phone wears the house bezel and the page enters animated', function (): void {
@@ -49,9 +70,8 @@ test('the hero charms in the details: pulsing dot, sparking cta and clear anchor
         ->assertSee(route('register'), false);
 });
 
-test('the landing sells the any-language plus in the hero and the features', function (): void {
+test('the landing sells the any-language plus in the features and the live demo', function (): void {
     $this->get('/')
-        ->assertSee(__('landing.hero.perk_lang'))
         ->assertSee(__('landing.features.always.title'))
         ->assertSee(__('landing.features.always.body'))
         // The hero phone demos the switch: an English exchange in the live pool.
