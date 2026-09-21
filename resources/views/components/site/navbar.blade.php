@@ -4,6 +4,7 @@
         ['label' => __('landing.nav.features'), 'href' => '#funciones'],
         ['label' => __('landing.nav.cases'), 'href' => '#casos'],
         ['label' => __('landing.nav.pricing'), 'href' => '#precios'],
+        ['label' => __('landing.nav.faq'), 'href' => '#preguntas'],
     ];
 @endphp
 
@@ -42,17 +43,9 @@
             </x-ui.icon-button>
 
             <div class="hidden gap-2.5 sm:flex">
-                <x-ui.button
-                    variant="ghost"
-                    size="sm"
-                    :href="Route::has('login') ? route('login') : '#'"
-                >
+                <x-ui.button variant="ghost" size="sm" :href="Route::has('login') ? route('login') : '#'">
                     {{ __('landing.nav.login') }}</x-ui.button>
-                <x-ui.button
-                    variant="primary"
-                    size="sm"
-                    :href="Route::has('register') ? route('register') : '#'"
-                >
+                <x-ui.button variant="primary" size="sm" :href="Route::has('register') ? route('register') : '#'">
                     {{ __('landing.nav.register') }}</x-ui.button>
             </div>
 
@@ -95,12 +88,7 @@
                 >{{ $link['label'] }}</a>
             @endforeach
             <div class="mt-4 flex flex-col gap-2.5">
-                <x-ui.button
-                    variant="secondary"
-                    size="md"
-                    fullWidth
-                    :href="Route::has('login') ? route('login') : '#'"
-                >
+                <x-ui.button variant="secondary" size="md" fullWidth :href="Route::has('login') ? route('login') : '#'">
                     {{ __('landing.nav.login') }}</x-ui.button>
                 <x-ui.button
                     variant="primary"

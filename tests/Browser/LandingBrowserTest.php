@@ -11,6 +11,8 @@ beforeEach(function (): void {
 });
 
 test('the loss headline and the faq accordion, in the flesh', function (): void {
+    config()->set('atendia.sales_whatsapp', '5492995529100');
+
     $page = visit('/');
 
     $page->assertSee('Nunca más pierdas un cliente')
@@ -20,5 +22,6 @@ test('the loss headline and the faq accordion, in the flesh', function (): void 
     $page->assertDontSee('nunca inventa')
         ->click('¿Puede decirle algo equivocado a mis clientes?')
         ->assertSee('nunca inventa')
+        ->assertSee(__('landing.faq.more_cta'))
         ->screenshotElement('#preguntas', 'landing-faq-open');
 });

@@ -20,6 +20,7 @@ return [
         'features' => 'Funciones',
         'cases' => 'Casos',
         'pricing' => 'Precios',
+        'faq' => 'Preguntas',
         'login' => 'Ingresar',
         'register' => 'Crear mi asistente',
         'open_menu' => 'Abrir menú',
@@ -183,6 +184,9 @@ return [
                 'a' => 'No. Conectas tu WhatsApp escaneando un código QR y cargas tus datos en un panel simple. La mayoría de los negocios queda atendiendo en minutos.',
             ],
         ],
+        'more' => '¿Otra duda?',
+        'more_cta' => 'Escríbenos por WhatsApp',
+        'whatsapp_text' => 'Hola, tengo una pregunta sobre Atendia.',
     ],
 
     'closing' => [
@@ -199,6 +203,7 @@ return [
         'link_how' => 'Cómo funciona',
         'link_cases' => 'Casos',
         'link_pricing' => 'Precios',
+        'link_faq' => 'Preguntas',
         'copyright' => 'Hecho para los que atienden.',
         'language' => 'Idioma',
     ],

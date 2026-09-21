@@ -1,6 +1,9 @@
 @php
     $faqs = __('landing.faq.items');
 
+    // Same door as Pro's pricing CTA; unset number = the line simply hides.
+    $salesWhatsapp = config('atendia.sales_whatsapp');
+
     // The same items feed the visible accordion and the FAQPage structured
     // data: Google lifts these into rich results, one copy of the truth.
     $schema = [
@@ -56,6 +59,21 @@
                 </div>
             @endforeach
         </x-ui.card>
+
+        @if ($salesWhatsapp)
+            <p class="text-muted mt-6 text-center" style="font-size: var(--text-sm)">
+                {{ __('landing.faq.more') }}
+                <a
+                    href="https://wa.me/{{ $salesWhatsapp }}?text={{ rawurlencode(__('landing.faq.whatsapp_text')) }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-brand inline-flex items-center gap-1.5 font-semibold underline-offset-2 hover:underline"
+                >
+                    <x-icon name="message-circle" :size="16" />
+                    {{ __('landing.faq.more_cta') }}
+                </a>
+            </p>
+        @endif
     </div>
 </section>
 

@@ -83,6 +83,7 @@ return [
                 'a' => 'No. Conectás tu WhatsApp escaneando un código QR y cargás tus datos en un panel simple. La mayoría de los negocios queda atendiendo en minutos.',
             ],
         ],
+        'more_cta' => 'Escribinos por WhatsApp',
     ],
 
     'closing' => [

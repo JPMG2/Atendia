@@ -12,6 +12,7 @@
             '#como-funciona' => __('landing.footer.link_how'),
             '#casos' => __('landing.footer.link_cases'),
             '#precios' => __('landing.footer.link_pricing'),
+            '#preguntas' => __('landing.footer.link_faq'),
         ]],
     ];
 

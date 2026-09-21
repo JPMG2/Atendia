@@ -39,6 +39,24 @@ test('the hero opens with the loss, not the category', function (): void {
         ->assertDontSee('Para cualquier rubro');
 });
 
+test('the faq closes with a human door when sales WhatsApp is set, and hides it when not', function (): void {
+    config()->set('atendia.sales_whatsapp', '5492995529100');
+
+    $this->get('/')
+        ->assertSee(__('landing.faq.more_cta'))
+        ->assertSee('wa.me/5492995529100', false);
+
+    config()->set('atendia.sales_whatsapp', null);
+
+    $this->get('/')->assertDontSee(__('landing.faq.more_cta'));
+});
+
+test('the faq is one hop away from the navbar and the footer', function (): void {
+    $this->get('/')
+        ->assertSee(__('landing.nav.faq'))
+        ->assertSee('href="#preguntas"', false);
+});
+
 test('the faq answers the four fears and carries the FAQPage schema', function (): void {
     $this->get('/')
         ->assertSee('¿Se nota que es un bot?')
