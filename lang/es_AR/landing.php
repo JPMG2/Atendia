@@ -20,6 +20,7 @@ return [
         'rubro_label' => 'Elegí un negocio de ejemplo',
         'placeholder' => 'Escribí tu consulta…',
         'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, creá tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
+        'share_text' => "Mirá lo que me contestó el asistente de :name 🤖\n\n:chat\n\nProbalo vos también: :url",
         'error_reply' => 'No pude responder ahora. Intentá de nuevo en un momento.',
     ],
 

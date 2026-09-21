@@ -138,10 +138,13 @@ function interactiveDemo() {
     const sendBtn = box.querySelector('[data-demo-send]');
     const cta = box.querySelector('[data-demo-cta]');
     const left = box.querySelector('[data-demo-left]');
+    const share = box.querySelector('[data-demo-share]');
     const header = document.querySelector('[data-demo-header]');
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
     let rubro = 'clinica';
+    let currentName = document.querySelector('[data-demo-rubro]')?.dataset.demoName ?? '';
+    const exchanges = [];
 
     const settle = () => {
         while (chat.children.length > 12) chat.firstElementChild.remove();
@@ -187,6 +190,17 @@ function interactiveDemo() {
         left.style.display = 'none';
         box.querySelectorAll('[data-demo-chip]').forEach((chip) => chip.remove());
         cta.style.display = 'inline-flex';
+
+        // The chat itself becomes the pitch, shared on WhatsApp of course.
+        if (exchanges.length > 0) {
+            const chatText = exchanges.map((e) => `» ${e.q}\n🤖 ${e.a}`).join('\n\n');
+            const text = box.dataset.shareTemplate
+                .replace('__NAME__', currentName)
+                .replace('__CHAT__', chatText);
+
+            share.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+            share.style.display = 'inline-flex';
+        }
     };
 
     const paintLeft = (count) => {
@@ -227,7 +241,10 @@ function interactiveDemo() {
 
             dots.remove();
 
-            if (data.reply) bubble('out', data.reply);
+            if (data.reply) {
+                bubble('out', data.reply);
+                exchanges.push({ q: message, a: data.reply });
+            }
             if (data.error) bubble('out', box.dataset.errorReply);
 
             if (data.done) {
@@ -260,8 +277,12 @@ function interactiveDemo() {
             if (busy || pill.dataset.demoRubro === rubro) return;
 
             rubro = pill.dataset.demoRubro;
+            currentName = pill.dataset.demoName;
             demoActive = true;
+
+            // A fresh chat never sits empty: the new assistant says hello.
             chat.innerHTML = '';
+            bubble('out', pill.dataset.demoGreeting);
 
             if (header) header.textContent = pill.dataset.demoHeaderText;
 

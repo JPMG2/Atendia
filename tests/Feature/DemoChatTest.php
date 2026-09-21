@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
+use App\Models\DemoMetric;
 use App\Models\KnowledgeDocument;
 use Database\Seeders\DemoBusinessSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 
@@ -127,4 +129,53 @@ test('the hero phone offers the rubro selector and the english chip', function (
         ->assertSee('¿Cuánto sale el corte?')
         ->assertSee('How much is an ultrasound?')
         ->assertSee(trans_choice('landing.demo.left', 2, ['count' => '__N__']));
+});
+
+test('the funnel tallies sessions and messages per day', function (): void {
+    Queue::fake();
+    $this->seed(DemoBusinessSeeder::class);
+
+    AsistenteAtendia::fake(['Uno.', 'Uno.', 'Dos.', 'Dos.']);
+
+    $this->postJson(route('demo.message'), ['message' => '¿Tienen turnos?']);
+    $this->postJson(route('demo.message'), ['message' => '¿Y precios?']);
+
+    $metric = DemoMetric::query()->sole();
+
+    expect($metric->sessions)->toBe(1)
+        ->and($metric->messages)->toBe(2)
+        ->and($metric->registrations)->toBe(0);
+});
+
+test('a registration after trying the demo closes the funnel', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $this->withSession(['demo_messages' => 2])->post(route('register'), [
+        'name' => 'Carla Demo',
+        'email' => 'carla@example.com',
+        'password' => 'Segura#2026',
+        'password_confirmation' => 'Segura#2026',
+    ]);
+
+    expect(DemoMetric::query()->sole()->registrations)->toBe(1);
+});
+
+test('a registration with no demo behind it counts nothing', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $this->post(route('register'), [
+        'name' => 'Bruno Directo',
+        'email' => 'bruno@example.com',
+        'password' => 'Segura#2026',
+        'password_confirmation' => 'Segura#2026',
+    ]);
+
+    expect(DemoMetric::query()->count())->toBe(0);
+});
+
+test('the phone ships the per-rubro greeting and the share door', function (): void {
+    $this->get('/')
+        ->assertSee('Soy el asistente de Peluquería Lumen')
+        ->assertSee(__('landing.demo.share'))
+        ->assertSee('__NAME__', false);
 });

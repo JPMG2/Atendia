@@ -28,7 +28,9 @@
                 <button
                     type="button"
                     data-demo-rubro="{{ $slug }}"
+                    data-demo-name="{{ $rubro['name'] }}"
                     data-demo-header-text="{{ __('landing.demo.header', ['name' => $rubro['name']]) }}"
+                    data-demo-greeting="{{ __('landing.demo.greeting', ['name' => $rubro['name']]) }}"
                     @class([
                         'rounded-full font-semibold transition-colors',
                         'bg-brand-soft text-brand' => $loop->first,
@@ -139,6 +141,7 @@
                 data-endpoint="{{ route('demo.message') }}"
                 data-limit-reply="{{ __('landing.demo.limit_reply') }}"
                 data-error-reply="{{ __('landing.demo.error_reply') }}"
+                data-share-template="{{ __('landing.demo.share_text', ['name' => '__NAME__', 'chat' => '__CHAT__', 'url' => url('/')]) }}"
                 class="bd-subtle border-t"
                 style="background: var(--surface-card); padding: 8px 10px 12px"
             >
@@ -191,6 +194,17 @@
                     class="btn btn-primary btn-sm w-full"
                     style="display: none; margin-top: 8px"
                 >{{ __('landing.demo.cta_more') }}</a>
+                {{-- The visitor becomes the megaphone: the chat, shared on
+                the very channel the product lives on. --}}
+                {{-- Born without href on purpose: finish() builds the wa.me
+                link from the real transcript before showing it. --}}
+                <a
+                    data-demo-share
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-secondary btn-sm w-full"
+                    style="display: none; margin-top: 8px"
+                >{{ __('landing.demo.share') }}</a>
             </div>
         </div>
     </div>

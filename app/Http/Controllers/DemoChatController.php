@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
+use App\Models\DemoMetric;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -40,6 +41,12 @@ class DemoChatController extends Controller
         if ($reply === null) {
             return response()->json(['error' => true]);
         }
+
+        // The funnel's first two steps; the third lands on registration.
+        if ($used === 0) {
+            DemoMetric::bump('sessions');
+        }
+        DemoMetric::bump('messages');
 
         // `left` feeds the "te quedan :count preguntas" nudge under the box.
         return response()->json([

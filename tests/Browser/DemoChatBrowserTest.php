@@ -45,3 +45,22 @@ test('the visitor chats with the demo clinic inside the hero phone', function ()
         ->screenshotElement('.hero-phone-enter', 'hero-demo-rubro-switch')
         ->assertNoJavaScriptErrors();
 });
+
+test('the spent budget turns into the register invite and the share door', function (): void {
+    Queue::fake();
+    $this->seed(DemoBusinessSeeder::class);
+    config()->set('atendia.demo.session_cap', 1);
+
+    AsistenteAtendia::fake(['Buscando…', 'La ecografía abdominal cuesta $45.000.']);
+
+    $page = visit('/');
+
+    // One budgeted reply: the goodbye, the register CTA and the WhatsApp
+    // share link take over the composer.
+    $page->click('¿Cuánto sale una ecografía?')
+        ->assertSee('La ecografía abdominal cuesta $45.000')
+        ->assertSee(__('landing.demo.cta_more'))
+        ->assertSee(__('landing.demo.share'))
+        ->screenshotElement('.hero-phone-enter', 'hero-demo-finished')
+        ->assertVisible('[data-demo-share]');
+});
