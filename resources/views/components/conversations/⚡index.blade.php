@@ -541,11 +541,32 @@ new class extends Component
                             <p class="text-muted font-mono text-xs">{{ $this->thread->contact_phone }}</p>
                         </div>
                         @if (($this->thread->taught_faqs_count ?? 0) > 0)
-                            {{-- Reverse provenance: this chat made the assistant smarter. --}}
-                            <x-ui.badge variant="brand">
-                                <x-icon name="graduation-cap" :size="12" />
-                                {{ trans_choice('client.conversations.taught_badge', $this->thread->taught_faqs_count, ['count' => $this->thread->taught_faqs_count]) }}
-                            </x-ui.badge>
+                            {{-- Reverse provenance: this chat made the assistant smarter.
+                            Clicking unfolds WHICH answers, each a jump to its sheet. --}}
+                            <div class="relative" x-data="{ open: false }" x-on:click.outside="open = false">
+                                <button type="button" class="badge badge-brand cursor-pointer transition-[filter] hover:brightness-95" x-on:click="open = !open">
+                                    <x-icon name="graduation-cap" :size="12" />
+                                    {{ trans_choice('client.conversations.taught_badge', $this->thread->taught_faqs_count, ['count' => $this->thread->taught_faqs_count]) }}
+                                </button>
+                                <div x-show="open" x-cloak class="taught-popover bg-card bd-subtle absolute right-0 top-full z-20 mt-2 w-64 max-w-[80vw] rounded-xl border p-2 shadow-lg">
+                                    <p class="text-subtle px-2 pb-1 text-xs">{{ __('client.conversations.taught_list_title') }}</p>
+                                    <ul>
+                                        @foreach ($this->thread->taughtFaqs as $taught)
+                                            <li wire:key="taught-{{ $taught->id }}">
+                                                <button
+                                                    type="button"
+                                                    class="hover:bg-sunken text-strong flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors"
+                                                    x-on:click="open = false"
+                                                    wire:click="openSource({{ $taught->id }})"
+                                                >
+                                                    <x-icon name="book-open" :size="14" class="mt-0.5 flex-none" style="color: var(--brand)" />
+                                                    <span class="min-w-0">{{ $taught->title }}</span>
+                                                </button>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
                         @endif
                         @if ($this->thread->status === ConversationStatus::Team)
                             <span class="status-tag is-warning">

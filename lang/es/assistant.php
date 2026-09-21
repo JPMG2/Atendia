@@ -20,6 +20,10 @@ return [
     'digest' => [
         'header' => "🤖 Resumen del día — :business\nTu asistente atendió :messages mensajes de :contacts contactos.",
         'referrals' => '🎉 1 negocio llegó con tu enlace esta semana. ¡Sigue compartiéndolo!|🎉 :count negocios llegaron con tu enlace esta semana. ¡Sigue compartiéndolo!',
+        'knowledge_header' => '🎓 Lo que aprendió tu asistente esta semana — :business',
+        'knowledge_taught' => 'Le enseñaste 1 respuesta nueva y ya la usa al responder.|Le enseñaste :count respuestas nuevas y ya las usa al responder.',
+        'knowledge_missed' => '1 pregunta quedó sin respuesta: «:question».|:count preguntas quedaron sin respuesta. La más pedida: «:question».',
+        'knowledge_footer' => 'Enséñale las respuestas desde tu panel y no vuelve a pasar: :url',
     ],
 
     'handoff' => [

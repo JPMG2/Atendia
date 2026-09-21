@@ -7,8 +7,10 @@ namespace App\Classes\Main;
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeMiss;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -46,15 +48,40 @@ class KnowledgeBase
     }
 
     /**
-     * The hand-taught answers, newest first.
+     * The hand-taught answers, newest first, each carrying `times_used`:
+     * how often the assistant's replies cited it, read from the provenance
+     * trail. Proof that teaching pays.
      *
      * @var Collection<int, KnowledgeDocument>
      */
     public Collection $faqs {
-        get => $this->business->knowledgeDocuments()
-            ->where('source_type', 'faq')
-            ->latest('id')
-            ->get();
+        get {
+            $usage = $this->usageByDocument();
+
+            return $this->business->knowledgeDocuments()
+                ->where('source_type', 'faq')
+                ->latest('id')
+                ->get()
+                ->each(fn (KnowledgeDocument $faq) => $faq->setAttribute('times_used', $usage[$faq->id] ?? 0));
+        }
+    }
+
+    /**
+     * How many assistant replies cited each document, unrolled from the
+     * jsonb trail in one query.
+     *
+     * @return array<int, int> document id => citations
+     */
+    private function usageByDocument(): array
+    {
+        $rows = DB::select(<<<'SQL'
+            select (source->>'id')::bigint as document_id, count(*) as uses
+            from conversation_messages, jsonb_array_elements(knowledge_sources) as source
+            where business_id = ? and knowledge_sources is not null
+            group by 1
+            SQL, [$this->business->id]);
+
+        return collect($rows)->mapWithKeys(fn (object $row): array => [(int) $row->document_id => (int) $row->uses])->all();
     }
 
     /** One taught answer of THIS business, or null when it is not the tenant's. */
@@ -79,11 +106,7 @@ class KnowledgeBase
      * @var list<array{question: string, count: int, conversation_id: ?int}>
      */
     public array $misses {
-        get => $this->business->knowledgeMisses()
-            ->where('created_at', '>=', now()->subDays(30))
-            ->latest('id')
-            ->get()
-            ->groupBy(fn (KnowledgeMiss $miss): string => Str::ascii(mb_strtolower(trim($miss->query, ' ¿?.!'))))
+        get => $this->foldedMisses(now()->subDays(30))
             ->map(fn (Collection $group): array => [
                 'question' => (string) $group->first()->query,
                 'count' => $group->count(),
@@ -94,5 +117,46 @@ class KnowledgeBase
             ->take(5)
             ->values()
             ->all();
+    }
+
+    /** Answers taught by hand in the last seven days, for the weekly recap. */
+    public int $weeklyTaughtCount {
+        get => $this->business->knowledgeDocuments()
+            ->where('source_type', 'faq')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+    }
+
+    /**
+     * The week's unanswered questions, folded: how many distinct ones and
+     * the most asked, for the owner's WhatsApp recap.
+     *
+     * @var array{count: int, top: ?string}
+     */
+    public array $weeklyMissRecap {
+        get {
+            $groups = $this->foldedMisses(now()->subDays(7));
+
+            return [
+                'count' => $groups->count(),
+                'top' => $groups->sortByDesc(fn (Collection $group): int => $group->count())->first()?->first()->query,
+            ];
+        }
+    }
+
+    /**
+     * The misses since a date, grouped so "¿aceptan visa?" and "Aceptan
+     * VISA" fold into one question — the ONE folding rule, shared by the
+     * teaching queue and the weekly recap.
+     *
+     * @return \Illuminate\Support\Collection<string, Collection<int, KnowledgeMiss>>
+     */
+    private function foldedMisses(CarbonInterface $since): \Illuminate\Support\Collection
+    {
+        return $this->business->knowledgeMisses()
+            ->where('created_at', '>=', $since)
+            ->latest('id')
+            ->get()
+            ->groupBy(fn (KnowledgeMiss $miss): string => Str::ascii(mb_strtolower(trim($miss->query, ' ¿?.!'))));
     }
 }

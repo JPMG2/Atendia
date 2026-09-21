@@ -356,6 +356,7 @@ return [
         'sources_toggle' => '¿De dónde salió?',
         'source_open' => 'Abrir esta fuente para corregirla',
         'taught_badge' => '{1}Aprendida de esta charla|[2,*]:count aprendidas de esta charla',
+        'taught_list_title' => 'Lo que aprendió aquí',
     ],
 
     'assistant' => [
@@ -392,6 +393,7 @@ return [
         'answer_hint' => 'Escríbela como se la dirías a un cliente; tu asistente la usa tal cual.',
         'learned' => 'Aprendida',
         'learning' => 'Aprendiendo…',
+        'times_used' => '{1}Usada 1 vez|[2,*]Usada :count veces',
         'try' => 'Probarla',
         'try_title' => 'Así responde tu asistente',
         'try_hint' => 'Respuesta real, recién generada con tu conocimiento.',

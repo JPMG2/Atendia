@@ -43,6 +43,9 @@ class Inbox
     {
         $thread = $this->business->conversations()
             ->withCount(['messages', 'taughtFaqs'])
+            // Eager on purpose: the badge popover lists them, and a Blade
+            // must never trigger the lazy query itself.
+            ->with(['taughtFaqs' => fn ($query) => $query->select('id', 'conversation_id', 'title')->latest('id')])
             ->find($id);
 
         if ($thread === null) {

@@ -8,6 +8,7 @@ use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeMiss;
 use App\Models\User;
@@ -277,4 +278,43 @@ test('a miss with no thread offers no context door', function (): void {
     $this->actingAs($user);
 
     livewire('assistant.index')->assertDontSee(__('client.assistant.view_thread'));
+});
+
+test('a taught answer shows how many replies it grounded', function (): void {
+    Queue::fake();
+
+    $user = assistantClient();
+    $faq = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'title' => '¿Hacen envíos?',
+    ]);
+
+    $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+    ConversationMessage::factory()->out()->count(2)->for($thread)->create([
+        'business_id' => $user->business_id,
+        'knowledge_sources' => [['id' => $faq->id, 'title' => $faq->title]],
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee(trans_choice('client.assistant.times_used', 2, ['count' => 2]));
+});
+
+test('an answer never cited shows no usage tally', function (): void {
+    Queue::fake();
+
+    $user = assistantClient();
+    KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'title' => '¿Hacen envíos?',
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee('¿Hacen envíos?')
+        ->assertDontSee(trans_choice('client.assistant.times_used', 1, ['count' => 1]));
 });

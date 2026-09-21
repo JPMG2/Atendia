@@ -334,6 +334,9 @@ new class extends Component
                         </button>
                         <span class="text-subtle flex-none font-mono text-xs">
                             {{ $faq->indexed_at !== null ? __('client.assistant.learned') : __('client.assistant.learning') }}
+                            @if (($faq->times_used ?? 0) > 0)
+                                · {{ trans_choice('client.assistant.times_used', $faq->times_used, ['count' => $faq->times_used]) }}
+                            @endif
                         </span>
                         @if ($faq->indexed_at !== null)
                             <x-ui.button variant="ghost" size="sm" icon="bot" class="data-loading:opacity-50" wire:click="tryNow({{ $faq->id }})">

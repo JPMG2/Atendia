@@ -81,6 +81,7 @@ return [
 
     'conversations' => [
         'empty_body' => 'Cuando tu asistente atienda el WhatsApp, acá vas a ver cada conversación.',
+        'taught_list_title' => 'Lo que aprendió acá',
         'select' => 'Elegí una conversación para leerla.',
         'read_only' => 'Solo lectura: tu asistente responde por vos.',
         'reply_placeholder' => 'Escribí tu respuesta…',

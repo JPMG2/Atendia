@@ -213,19 +213,32 @@ test('a taught source opens its edit sheet and the thread wears the birth badge'
     // test server, pusher-js's script fallback 404s into a SyntaxError
     // given enough time. The short tests above keep that guard.
     $assistant->assertSee(__('client.assistant.view_thread'))
+        ->assertSee(trans_choice('client.assistant.times_used', 1, ['count' => 1]))
         ->screenshotElement('.card.mb-4', 'misses-thread-link')
+        ->screenshotElement('.card.mt-4', 'faq-usage-tally')
         ->click(__('client.assistant.view_thread'))
         ->assertQueryStringHas('hilo', (string) $thread->id)
         ->assertSee('¿Ustedes hacen envíos al interior?');
 
     $page = visit('/conversaciones');
 
+    // The badge is a door too: it unfolds the answers born here and each
+    // one opens its sheet — same jump the trail offers.
     $page->click('Carla')
         ->assertSee(trans_choice('client.conversations.taught_badge', 1, ['count' => 1]))
         ->screenshot(fullPage: true)
-        ->click(__('client.conversations.sources_toggle'))
+        ->click(trans_choice('client.conversations.taught_badge', 1, ['count' => 1]))
+        ->assertVisible('.taught-popover')
+        ->screenshotElement('.taught-popover', 'taught-popover')
+        ->click('.taught-popover li button')
+        ->assertSee(__('client.assistant.sheet_edit'))
+        ->assertValue('#if-question', '¿Hacen envíos?')
+        ->click(__('client.assistant.sheet_cancel'));
+
+    $page->click(__('client.conversations.sources_toggle'))
         ->screenshotElement('.pm-bubble.out', 'trail-clickable-source')
-        ->click('¿Hacen envíos?')
+        // By title, not text: the popover holds the same words, hidden.
+        ->click('[title="'.__('client.conversations.source_open').'"]')
         ->assertSee(__('client.assistant.sheet_edit'))
         ->assertValue('#if-question', '¿Hacen envíos?')
         ->screenshotElement('.slide-over', 'source-edit-sheet');

@@ -12,5 +12,7 @@ Artisan::command('inspire', function (): void {
 
 // Evening, when the day's conversations are in and the owner still reads.
 Schedule::command('atendia:whatsapp-digest')->dailyAt('20:30');
+// Monday morning: the week's learning recap opens the owner's planning.
+Schedule::command('atendia:knowledge-digest')->weeklyOn(1, '09:30');
 Schedule::command('atendia:birthday-greetings')->dailyAt('09:15');
 Schedule::command('atendia:handoff-reminders')->everyTenMinutes();

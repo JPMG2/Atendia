@@ -662,3 +662,29 @@ test('a foreign thread link opens nothing', function (): void {
         ->assertDontSee('Ajena')
         ->assertDontSee('Otra cosa.');
 });
+
+test('the badge unfolds which answers were born in the thread', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, hacemos envíos.');
+
+    $faq = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'conversation_id' => $thread->id,
+        'title' => '¿Hacen envíos al interior?',
+        'content' => "Pregunta: ¿Hacen envíos al interior?\nRespuesta: Sí.",
+    ]);
+
+    $this->actingAs($user);
+
+    // The popover lists the taught answers; picking one opens its sheet.
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.taught_list_title'))
+        ->assertSee('¿Hacen envíos al interior?')
+        ->call('openSource', $faq->id)
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.editingId', $faq->id);
+});
