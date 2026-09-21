@@ -23,6 +23,10 @@ class AssistantFaqForm extends BaseForm
     #[Locked]
     public ?int $editingId = null;
 
+    /** The thread a new answer is being taught from; edits never move it. */
+    #[Locked]
+    public ?int $conversationId = null;
+
     public string $question = '';
 
     public string $answer = '';
@@ -30,6 +34,7 @@ class AssistantFaqForm extends BaseForm
     public function setup(?KnowledgeDocument $faq = null): void
     {
         $this->editingId = $faq?->id;
+        $this->conversationId = null;
         $this->question = (string) $faq?->title;
         $this->answer = $faq === null
             ? ''
@@ -50,7 +55,7 @@ class AssistantFaqForm extends BaseForm
 
         return $this->tryAction(function () use ($business, $validated): NotificationDto {
 
-            $faq = app(SaveAssistantFaq::class)->handle($business, $validated, $this->editingId);
+            $faq = app(SaveAssistantFaq::class)->handle($business, $validated, $this->editingId, $this->conversationId);
 
             return $this->notificationService()->notificationFor($faq, $this->editingId === null ? 'created' : 'updated');
 

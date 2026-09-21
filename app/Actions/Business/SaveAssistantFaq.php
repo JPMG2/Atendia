@@ -14,12 +14,15 @@ use App\Models\KnowledgeDocument;
 class SaveAssistantFaq
 {
     /**
+     * Provenance only lands at birth: editing a taught answer later must not
+     * rewrite which chat it was learned from.
+     *
      * @param  array{question: string, answer: string}  $data
      */
-    public function handle(Business $business, array $data, ?int $id = null): KnowledgeDocument
+    public function handle(Business $business, array $data, ?int $id = null, ?int $conversationId = null): KnowledgeDocument
     {
         $document = $id === null
-            ? new KnowledgeDocument(['business_id' => $business->id, 'source_type' => 'faq'])
+            ? new KnowledgeDocument(['business_id' => $business->id, 'source_type' => 'faq', 'conversation_id' => $conversationId])
             : $business->knowledgeDocuments()->where('source_type', 'faq')->findOrFail($id);
 
         // The question travels INSIDE the content on purpose: retrieval

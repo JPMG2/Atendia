@@ -354,6 +354,8 @@ return [
         'human_tag' => 'Equipo',
         'teach' => 'Enseñarle esto a tu asistente',
         'sources_toggle' => '¿De dónde salió?',
+        'source_open' => 'Abrir esta fuente para corregirla',
+        'taught_badge' => '{1}Aprendida de esta charla|[2,*]:count aprendidas de esta charla',
     ],
 
     'assistant' => [
@@ -362,6 +364,7 @@ return [
         'misses_title' => 'Preguntas sin responder',
         'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enséñasela y no vuelve a pasar.',
         'miss_count' => '{1}1 vez|[2,*]:count veces',
+        'view_thread' => 'Ver el hilo',
         'teach' => 'Enseñar la respuesta',
         'suggest' => 'Sugerir respuestas',
         'use_draft' => 'Usar borrador',

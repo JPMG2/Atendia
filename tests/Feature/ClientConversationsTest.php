@@ -16,6 +16,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Livewire;
 
 use function Pest\Livewire\livewire;
 
@@ -494,4 +495,170 @@ test('a reply without provenance shows no trail', function (): void {
     livewire('conversations.index')
         ->call('open', $thread->id)
         ->assertDontSee(__('client.conversations.sources_toggle'));
+});
+
+test('a taught source opens its sheet from the trail for instant correction', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, hacemos envíos.');
+
+    $faq = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'title' => '¿Hacen envíos?',
+        'content' => "Pregunta: ¿Hacen envíos?\nRespuesta: Sí, a todo el país.",
+    ]);
+
+    ConversationMessage::factory()->out()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'author' => MessageAuthor::Assistant,
+        'body' => 'Sí, hacemos envíos.',
+        'knowledge_sources' => [['id' => $faq->id, 'title' => $faq->title]],
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openSource', $faq->id)
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.editingId', $faq->id)
+        ->assertSet('form.question', '¿Hacen envíos?')
+        ->assertSet('form.answer', 'Sí, a todo el país.');
+});
+
+test('an automatic source jumps to the screen that manages it', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Tenemos ecografías.');
+    $services = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'services',
+        'title' => 'Tus servicios',
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openSource', $services->id)
+        ->assertSet('sheetOpen', false)
+        ->assertRedirect(route('my-services'));
+});
+
+test('another tenant\'s document never opens from the trail', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Hola.');
+
+    $stranger = conversationsClient();
+    $foreign = KnowledgeDocument::factory()->create([
+        'business_id' => $stranger->business_id,
+        'source_type' => 'faq',
+        'title' => 'Ajena',
+        'content' => "Pregunta: Ajena\nRespuesta: Ajena.",
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openSource', $foreign->id)
+        ->assertSet('sheetOpen', false)
+        ->assertNoRedirect();
+});
+
+test('teaching from the thread records where the answer was born', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
+    $question = $thread->messages()->where('direction', MessageDirection::In)->first();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('teach', $question->id)
+        ->set('form.question', '¿Hacen envíos a domicilio?')
+        ->set('form.answer', 'Sí, a todo el país.')
+        ->call('saveFaq');
+
+    expect(KnowledgeDocument::query()->where('source_type', 'faq')->sole()->conversation_id)
+        ->toBe($thread->id);
+});
+
+test('editing a taught answer keeps its original provenance', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, hacemos envíos.');
+
+    $faq = KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'conversation_id' => $thread->id,
+        'title' => '¿Hacen envíos?',
+        'content' => "Pregunta: ¿Hacen envíos?\nRespuesta: Sí.",
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openSource', $faq->id)
+        ->set('form.answer', 'Sí, a todo el país.')
+        ->call('saveFaq');
+
+    expect($faq->refresh()->conversation_id)->toBe($thread->id);
+});
+
+test('the thread wears a badge when an answer was born in it', function (): void {
+    Queue::fake();
+
+    $user = conversationsClient();
+    $taught = threadFor($user, 'Carla', '5491111111111', 'Sí, hacemos envíos.');
+    $plain = threadFor($user, 'Bruno', '5493333333333', 'Hola.');
+
+    KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'conversation_id' => $taught->id,
+        'title' => '¿Hacen envíos?',
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $taught->id)
+        ->assertSee(trans_choice('client.conversations.taught_badge', 1))
+        ->call('open', $plain->id)
+        ->assertDontSee(trans_choice('client.conversations.taught_badge', 1));
+});
+
+test('a thread link in the URL opens that conversation straight away', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Sí, mañana a las 9.');
+    $this->actingAs($user);
+
+    Livewire::withQueryParams(['hilo' => $thread->id])
+        ->test('conversations.index')
+        ->assertSet('selected', $thread->id)
+        ->assertSee('Sí, mañana a las 9.');
+});
+
+test('a foreign thread link opens nothing', function (): void {
+    $user = conversationsClient();
+    $stranger = conversationsClient();
+    $foreign = threadFor($stranger, 'Ajena', '5492222222222', 'Otra cosa.');
+
+    $this->actingAs($user);
+    threadFor($user, 'Carla', '5491111111111', 'Hola.');
+
+    Livewire::withQueryParams(['hilo' => $foreign->id])
+        ->test('conversations.index')
+        ->assertDontSee('Ajena')
+        ->assertDontSee('Otra cosa.');
 });

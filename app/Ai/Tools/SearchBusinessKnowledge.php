@@ -23,6 +23,7 @@ class SearchBusinessKnowledge implements Tool
 {
     public function __construct(
         private readonly int $businessId,
+        private readonly ?int $conversationId = null,
     ) {}
 
     /** @var array<int, string> document id => title, every search of this exchange */
@@ -66,7 +67,11 @@ class SearchBusinessKnowledge implements Tool
         if ($chunks->isEmpty()) {
             // The exact moment a question goes unanswered: logged here, at
             // the source, so the owner's teaching queue never guesses.
-            KnowledgeMiss::query()->create(['business_id' => $this->businessId, 'query' => mb_substr($query, 0, 500)]);
+            KnowledgeMiss::query()->create([
+                'business_id' => $this->businessId,
+                'conversation_id' => $this->conversationId,
+                'query' => mb_substr($query, 0, 500),
+            ]);
 
             // Said out loud, so the model answers "I could not confirm it"
             // instead of improvising from an empty context.

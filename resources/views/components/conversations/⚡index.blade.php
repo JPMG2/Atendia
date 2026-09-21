@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -32,6 +33,8 @@ new class extends Component
     use HasNotifications;
     use ManagesCustomerSheet;
 
+    /** In the URL so "Ver el hilo" can land here with the thread open. */
+    #[Url(as: 'hilo', except: null)]
     public ?int $selected = null;
 
     public string $search = '';
@@ -236,7 +239,35 @@ new class extends Component
 
         $this->form->setup();
         $this->form->question = mb_substr(trim($message->body), 0, 200);
+        $this->form->conversationId = $this->selected;
         $this->sheetOpen = true;
+    }
+
+    /**
+     * A source names its document: a taught answer opens right here for an
+     * instant correction; an automatic feed jumps to the screen that owns it.
+     */
+    public function openSource(int $documentId): void
+    {
+        $document = Client::for(Auth::user())->knowledgeBase?->document($documentId);
+
+        if ($document === null) {
+            return;
+        }
+
+        if ($document->source_type === 'faq') {
+            $this->form->setup($document);
+            $this->sheetOpen = true;
+
+            return;
+        }
+
+        $this->redirect(route(match ($document->source_type) {
+            'profile' => 'my-business',
+            'services' => 'my-services',
+            'products' => 'my-products',
+            default => 'assistant',
+        }), navigate: true);
     }
 
     public function closeSheet(): void
@@ -509,6 +540,13 @@ new class extends Component
                             </p>
                             <p class="text-muted font-mono text-xs">{{ $this->thread->contact_phone }}</p>
                         </div>
+                        @if (($this->thread->taught_faqs_count ?? 0) > 0)
+                            {{-- Reverse provenance: this chat made the assistant smarter. --}}
+                            <x-ui.badge variant="brand">
+                                <x-icon name="graduation-cap" :size="12" />
+                                {{ trans_choice('client.conversations.taught_badge', $this->thread->taught_faqs_count, ['count' => $this->thread->taught_faqs_count]) }}
+                            </x-ui.badge>
+                        @endif
                         @if ($this->thread->status === ConversationStatus::Team)
                             <span class="status-tag is-warning">
                                 <span class="dot"></span>
@@ -617,9 +655,16 @@ new class extends Component
                                                             </button>
                                                             <ul x-show="open" x-cloak class="mt-1 space-y-0.5 text-[11px] opacity-80">
                                                                 @foreach ($message->knowledge_sources as $source)
-                                                                    <li class="flex items-start gap-1.5">
-                                                                        <x-icon name="book-open" :size="12" class="mt-0.5 flex-none" />
-                                                                        <span class="min-w-0">{{ $source['title'] }}</span>
+                                                                    <li wire:key="src-{{ $message->id }}-{{ $source['id'] }}">
+                                                                        <button
+                                                                            type="button"
+                                                                            class="flex items-start gap-1.5 text-left underline-offset-2 transition-opacity hover:underline hover:opacity-100"
+                                                                            title="{{ __('client.conversations.source_open') }}"
+                                                                            wire:click="openSource({{ $source['id'] }})"
+                                                                        >
+                                                                            <x-icon name="book-open" :size="12" class="mt-0.5 flex-none" />
+                                                                            <span class="min-w-0">{{ $source['title'] }}</span>
+                                                                        </button>
                                                                     </li>
                                                                 @endforeach
                                                             </ul>

@@ -318,7 +318,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
         }
 
         return array_values(array_filter([
-            $this->knowledgeTool ??= new SearchBusinessKnowledge($this->business->id),
+            $this->knowledgeTool ??= new SearchBusinessKnowledge($this->business->id, $this->conversation?->id),
             $this->customer !== null ? new RememberCustomerFact($this->customer) : null,
             $this->conversation !== null ? new EscalateToHuman($this->business, $this->conversation) : null,
         ]));

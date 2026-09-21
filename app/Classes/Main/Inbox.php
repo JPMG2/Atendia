@@ -42,7 +42,7 @@ class Inbox
     public function thread(int $id, int $latest = 30): ?Conversation
     {
         $thread = $this->business->conversations()
-            ->withCount('messages')
+            ->withCount(['messages', 'taughtFaqs'])
             ->find($id);
 
         if ($thread === null) {

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('conversation_id')->nullable()->constrained()->nullOnDelete()->comment('El hilo donde se preguntó; nullable porque el simulador y las pruebas no tienen hilo');
             $table->string('query', 500)->comment('Lo que el cliente preguntó y el conocimiento no cubrió');
 
             $table->timestamps();

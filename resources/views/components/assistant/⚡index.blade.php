@@ -236,6 +236,18 @@ new class extends Component
                         <span class="text-subtle flex-none font-mono text-xs">
                             {{ trans_choice('client.assistant.miss_count', $miss['count'], ['count' => $miss['count']]) }}
                         </span>
+                        @if ($miss['conversation_id'] !== null)
+                            {{-- The context door: read how it was asked before teaching the answer. --}}
+                            <x-ui.button
+                                variant="ghost"
+                                size="sm"
+                                icon="message-circle"
+                                :href="route('conversations', ['hilo' => $miss['conversation_id']])"
+                                wire:navigate
+                            >
+                                {{ __('client.assistant.view_thread') }}
+                            </x-ui.button>
+                        @endif
                         @if (isset($drafts[$miss['question']]))
                             <x-ui.button variant="primary" size="sm" icon="sparkles" wire:click="useDraft({{ \Illuminate\Support\Js::from($miss['question']) }})">
                                 {{ __('client.assistant.use_draft') }}

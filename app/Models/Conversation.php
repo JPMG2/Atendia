@@ -57,6 +57,17 @@ class Conversation extends Model
     }
 
     /**
+     * The answers the owner taught FROM this thread: the badge's reverse
+     * provenance ("this chat made the assistant smarter").
+     *
+     * @return HasMany<KnowledgeDocument, $this>
+     */
+    public function taughtFaqs(): HasMany
+    {
+        return $this->hasMany(KnowledgeDocument::class);
+    }
+
+    /**
      * The inbox row's preview: one eager load for the whole list instead of
      * a query per thread. Internal notes never pose as the last word.
      *

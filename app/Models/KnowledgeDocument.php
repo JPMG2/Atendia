@@ -24,6 +24,7 @@ class KnowledgeDocument extends Model
 
     protected $fillable = [
         'business_id',
+        'conversation_id',
         'title',
         'source_type',
         'content',

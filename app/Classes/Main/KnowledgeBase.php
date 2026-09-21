@@ -65,12 +65,18 @@ class KnowledgeBase
             ->find($id);
     }
 
+    /** One knowledge document of ANY source, or null when it is not the tenant's. */
+    public function document(int $id): ?KnowledgeDocument
+    {
+        return $this->business->knowledgeDocuments()->find($id);
+    }
+
     /**
      * The teaching queue: what customers asked and the knowledge could not
      * answer, last 30 days, most-asked first. Folded so "¿aceptan visa?"
      * and "Aceptan VISA" count as one question.
      *
-     * @var list<array{question: string, count: int}>
+     * @var list<array{question: string, count: int, conversation_id: ?int}>
      */
     public array $misses {
         get => $this->business->knowledgeMisses()
@@ -81,6 +87,8 @@ class KnowledgeBase
             ->map(fn (Collection $group): array => [
                 'question' => (string) $group->first()->query,
                 'count' => $group->count(),
+                // The freshest asking that has a thread: context to read before teaching.
+                'conversation_id' => $group->firstWhere('conversation_id', '!==', null)?->conversation_id,
             ])
             ->sortByDesc('count')
             ->take(5)

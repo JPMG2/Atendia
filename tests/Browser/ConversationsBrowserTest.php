@@ -7,6 +7,8 @@ use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
+use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeMiss;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -161,4 +163,70 @@ test('the provenance trail unfolds and the teach sheet opens from inside the isl
         ->assertSee(__('client.assistant.sheet_new'))
         ->assertValue('#if-question', '¿Tienen alternadores?')
         ->assertNoJavaScriptErrors();
+});
+
+test('a taught source opens its edit sheet and the thread wears the birth badge', function (): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+        'contact_phone' => '5491111111111',
+    ]);
+    // The bubble's wording differs from the FAQ title on purpose: the click
+    // by text below must land on the source button, never on the bubble.
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id, 'body' => '¿Ustedes hacen envíos al interior?',
+    ]);
+
+    // Born in this very thread: the header must wear the badge. Without
+    // events so the indexing job never fires a real embedding call.
+    $faq = KnowledgeDocument::withoutEvents(fn () => KnowledgeDocument::factory()->create([
+        'business_id' => $user->business_id,
+        'source_type' => 'faq',
+        'conversation_id' => $thread->id,
+        'title' => '¿Hacen envíos?',
+        'content' => "Pregunta: ¿Hacen envíos?\nRespuesta: Sí, a todo el país.",
+    ]));
+
+    ConversationMessage::factory()->out()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'author' => MessageAuthor::Assistant,
+        'body' => 'Sí, hacemos envíos a todo el país.',
+        'knowledge_sources' => [['id' => $faq->id, 'title' => $faq->title]],
+    ]);
+
+    KnowledgeMiss::factory()->create([
+        'business_id' => $user->business_id,
+        'conversation_id' => $thread->id,
+        'query' => '¿Hacen envíos con cadena de frío?',
+    ]);
+
+    $this->actingAs($user);
+
+    // The unanswered queue offers the context door; walking through it must
+    // land on Conversaciones with THIS thread already open (the ?hilo link).
+    $assistant = visit('/asistente');
+
+    // No JS-error assertions in this long test: with no Reverb behind the
+    // test server, pusher-js's script fallback 404s into a SyntaxError
+    // given enough time. The short tests above keep that guard.
+    $assistant->assertSee(__('client.assistant.view_thread'))
+        ->screenshotElement('.card.mb-4', 'misses-thread-link')
+        ->click(__('client.assistant.view_thread'))
+        ->assertQueryStringHas('hilo', (string) $thread->id)
+        ->assertSee('¿Ustedes hacen envíos al interior?');
+
+    $page = visit('/conversaciones');
+
+    $page->click('Carla')
+        ->assertSee(trans_choice('client.conversations.taught_badge', 1, ['count' => 1]))
+        ->screenshot(fullPage: true)
+        ->click(__('client.conversations.sources_toggle'))
+        ->screenshotElement('.pm-bubble.out', 'trail-clickable-source')
+        ->click('¿Hacen envíos?')
+        ->assertSee(__('client.assistant.sheet_edit'))
+        ->assertValue('#if-question', '¿Hacen envíos?')
+        ->screenshotElement('.slide-over', 'source-edit-sheet');
 });

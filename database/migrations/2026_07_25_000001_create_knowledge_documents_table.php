@@ -20,6 +20,8 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->string('source_type')->default('manual'); // manual | faq | file | url
+            // FK added by the conversations create migration: that table is born later.
+            $table->unsignedBigInteger('conversation_id')->nullable()->comment('El hilo donde se enseñó esta respuesta; null si nació fuera de una charla');
             $table->longText('content');
             $table->string('content_hash', 64)->nullable(); // re-index only when it changed
             $table->string('status')->default('pending');    // pending | indexed | failed

@@ -7,6 +7,7 @@ use App\Ai\Agents\FaqDrafter;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
+use App\Models\Conversation;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeMiss;
 use App\Models\User;
@@ -250,4 +251,30 @@ test('another tenant\'s taught answers are out of reach even by id', function ()
     // Checked as its owner: the tenant scope hides it from anyone else.
     $this->actingAs($stranger);
     expect(KnowledgeDocument::query()->whereKey($foreign->id)->exists())->toBeTrue();
+});
+
+test('an unanswered question links to the thread it was asked in', function (): void {
+    $user = assistantClient();
+    $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+
+    KnowledgeMiss::factory()->create([
+        'business_id' => $user->business_id,
+        'conversation_id' => $thread->id,
+        'query' => '¿Hacen envíos?',
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee(__('client.assistant.view_thread'))
+        ->assertSeeHtml('?hilo='.$thread->id);
+});
+
+test('a miss with no thread offers no context door', function (): void {
+    $user = assistantClient();
+    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Aceptan Visa?']);
+
+    $this->actingAs($user);
+
+    livewire('assistant.index')->assertDontSee(__('client.assistant.view_thread'));
 });

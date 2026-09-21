@@ -34,10 +34,20 @@ return new class extends Migration
             $table->unique(['business_id', 'contact_phone']);
             $table->index('last_message_at');
         });
+
+        // knowledge_documents predates this table, so its provenance column
+        // can only gain the constraint once conversations exists.
+        Schema::table('knowledge_documents', function (Blueprint $table): void {
+            $table->foreign('conversation_id')->references('id')->on('conversations')->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('knowledge_documents', function (Blueprint $table): void {
+            $table->dropForeign(['conversation_id']);
+        });
+
         Schema::dropIfExists('conversations');
     }
 };
