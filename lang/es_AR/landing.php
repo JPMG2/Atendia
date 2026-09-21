@@ -17,6 +17,7 @@ return [
 
     'demo' => [
         'try_label' => 'Probalo: escribile como si fueras un cliente',
+        'rubro_label' => 'Elegí un negocio de ejemplo',
         'placeholder' => 'Escribí tu consulta…',
         'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, creá tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
         'error_reply' => 'No pude responder ahora. Intentá de nuevo en un momento.',

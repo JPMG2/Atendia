@@ -193,25 +193,32 @@ class Business extends Model
     }
 
     /**
-     * The sentinel that marks the landing's demo business: seeded data, not
-     * a client. One constant so the seeder and the lookups cannot diverge.
+     * The sentinels that mark the landing's demo businesses — seeded data,
+     * one per rubro of the hero's selector, never clients. One constant so
+     * the seeder and the lookups cannot diverge.
      */
-    public const string DEMO_EMAIL = 'demo@atendia.app';
+    public const array DEMO_EMAILS = [
+        'clinica' => 'demo@atendia.app',
+        'peluqueria' => 'demo-peluqueria@atendia.app',
+        'kiosco' => 'demo-kiosco@atendia.app',
+    ];
 
-    /** The landing demo's business, or null while it was never seeded. */
-    public static function demo(): ?self
+    /** One rubro's demo business, or null while it was never seeded. */
+    public static function demo(string $rubro = 'clinica'): ?self
     {
-        return self::query()->where('billing_email', self::DEMO_EMAIL)->first();
+        $email = self::DEMO_EMAILS[$rubro] ?? null;
+
+        return $email === null ? null : self::query()->where('billing_email', $email)->first();
     }
 
     /**
      * The landing's social proof: how many businesses already answer through
      * the assistant. The view hides it below a floor so the early days never
-     * read as an empty room. The demo business is ours, so it never counts.
+     * read as an empty room. The demo businesses are ours, so they never count.
      */
     public static function servedCount(): int
     {
-        return self::query()->where('billing_email', '!=', self::DEMO_EMAIL)->orWhereNull('billing_email')->count();
+        return self::query()->whereNotIn('billing_email', self::DEMO_EMAILS)->orWhereNull('billing_email')->count();
     }
 
     /**

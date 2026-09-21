@@ -17,15 +17,31 @@ test('the visitor chats with the demo clinic inside the hero phone', function ()
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
 
-    // Two entries: the grounding re-ask may consume a second prompt.
-    AsistenteAtendia::fake(['Buscando…', 'La ecografía abdominal cuesta $45.000 y con obra social suele tener cobertura.']);
+    // Two entries per exchange: the grounding re-ask may consume a second.
+    AsistenteAtendia::fake([
+        'Buscando…', 'La ecografía abdominal cuesta $45.000 y con obra social suele tener cobertura.',
+        'Buscando…', 'El corte de dama cuesta $18.000 con lavado incluido.',
+    ]);
 
     $page = visit('/');
 
-    // A chip is the visitor's first word; the reply lands as a jade bubble.
+    // A chip is the visitor's first word; the reply lands as a jade bubble
+    // and the remaining-questions nudge appears under the box.
     $page->assertSee(__('landing.demo.try_label'))
         ->click('¿Cuánto sale una ecografía?')
         ->assertSee('La ecografía abdominal cuesta $45.000')
+        ->assertSee(trans_choice('landing.demo.left', 3, ['count' => 3]))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-chat')
+        ->assertNoJavaScriptErrors();
+
+    // Switching rubro hands the phone to the salon: new header, new chips,
+    // fresh chat — and the budget keeps counting down across rubros.
+    $page->click('Peluquería')
+        ->assertSee('Peluquería Lumen · Asistente')
+        ->assertDontSee('La ecografía abdominal cuesta $45.000')
+        ->click('¿Cuánto sale el corte?')
+        ->assertSee('El corte de dama cuesta $18.000')
+        ->assertSee(trans_choice('landing.demo.left', 2, ['count' => 2]))
+        ->screenshotElement('.hero-phone-enter', 'hero-demo-rubro-switch')
         ->assertNoJavaScriptErrors();
 });

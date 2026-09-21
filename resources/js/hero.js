@@ -137,7 +137,11 @@ function interactiveDemo() {
     const input = box.querySelector('[data-demo-input]');
     const sendBtn = box.querySelector('[data-demo-send]');
     const cta = box.querySelector('[data-demo-cta]');
+    const left = box.querySelector('[data-demo-left]');
+    const header = document.querySelector('[data-demo-header]');
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+    let rubro = 'clinica';
 
     const settle = () => {
         while (chat.children.length > 12) chat.firstElementChild.remove();
@@ -180,8 +184,17 @@ function interactiveDemo() {
     const finish = () => {
         finished = true;
         form.style.display = 'none';
+        left.style.display = 'none';
         box.querySelectorAll('[data-demo-chip]').forEach((chip) => chip.remove());
         cta.style.display = 'inline-flex';
+    };
+
+    const paintLeft = (count) => {
+        if (typeof count !== 'number' || count < 1) return;
+
+        left.textContent =
+            count === 1 ? left.dataset.leftOne : left.dataset.leftMany.replace('__N__', count);
+        left.style.display = 'block';
     };
 
     const send = async (text) => {
@@ -208,7 +221,7 @@ function interactiveDemo() {
             const response = await fetch(box.dataset.endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify({ message, rubro }),
             });
             const data = response.ok ? await response.json() : { error: true };
 
@@ -220,6 +233,8 @@ function interactiveDemo() {
             if (data.done) {
                 bubble('out', box.dataset.limitReply);
                 finish();
+            } else {
+                paintLeft(data.left);
             }
         } catch {
             dots.remove();
@@ -236,6 +251,33 @@ function interactiveDemo() {
     sendBtn.addEventListener('click', () => send(input.value));
     box.querySelectorAll('[data-demo-chip]').forEach((chip) =>
         chip.addEventListener('click', () => send(chip.textContent)),
+    );
+
+    // Picking a rubro hands the phone to THAT demo business: the scripted
+    // clinic chat clears, the header renames, its chips step forward.
+    document.querySelectorAll('[data-demo-rubro]').forEach((pill) =>
+        pill.addEventListener('click', () => {
+            if (busy || pill.dataset.demoRubro === rubro) return;
+
+            rubro = pill.dataset.demoRubro;
+            demoActive = true;
+            chat.innerHTML = '';
+
+            if (header) header.textContent = pill.dataset.demoHeaderText;
+
+            document.querySelectorAll('[data-demo-rubro]').forEach((other) => {
+                const active = other === pill;
+                other.classList.toggle('bg-brand-soft', active);
+                other.classList.toggle('text-brand', active);
+                other.classList.toggle('bg-sunken', !active);
+                other.classList.toggle('text-body', !active);
+                other.classList.toggle('hover:bg-brand-soft', !active);
+            });
+
+            box.querySelectorAll('[data-demo-chips]').forEach((group) => {
+                group.style.display = group.dataset.demoChips === rubro ? 'flex' : 'none';
+            });
+        }),
     );
 }
 

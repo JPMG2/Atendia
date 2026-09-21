@@ -20,7 +20,26 @@ test('the demo answers as the seeded clinic with the real assistant', function (
 
     $this->postJson(route('demo.message'), ['message' => '¿Tienen turno esta semana?'])
         ->assertOk()
-        ->assertJson(['reply' => 'Sí, tenemos turnos el jueves a la mañana.', 'done' => false]);
+        ->assertJson(['reply' => 'Sí, tenemos turnos el jueves a la mañana.', 'done' => false, 'left' => 3]);
+});
+
+test('the rubro selector answers with that rubro\'s demo business', function (): void {
+    Queue::fake();
+    $this->seed(DemoBusinessSeeder::class);
+
+    AsistenteAtendia::fake(['Buscando…', 'El corte de dama cuesta $18.000.']);
+
+    $this->postJson(route('demo.message'), ['message' => '¿Cuánto sale el corte?', 'rubro' => 'peluqueria'])
+        ->assertOk()
+        ->assertJsonPath('reply', 'El corte de dama cuesta $18.000.');
+
+    expect(Business::demo('peluqueria')->name)->toBe('Peluquería Lumen')
+        ->and(Business::demo('kiosco')->name)->toBe('Kiosco El Faro');
+});
+
+test('an unknown rubro is refused before it reaches the model', function (): void {
+    $this->postJson(route('demo.message'), ['message' => '¿Hola?', 'rubro' => 'banco'])
+        ->assertUnprocessable();
 });
 
 test('the session budget runs out into the register invite', function (): void {
@@ -77,14 +96,14 @@ test('the demo seeder is idempotent and feeds the clinic knowledge', function ()
     $this->seed(DemoBusinessSeeder::class);
     $this->seed(DemoBusinessSeeder::class);
 
-    $demo = Business::demo();
-
-    expect(Business::query()->where('billing_email', Business::DEMO_EMAIL)->count())->toBe(1)
-        ->and($demo->name)->toBe('Clínica Vida')
-        ->and(KnowledgeDocument::query()->where('business_id', $demo->id)->count())->toBe(6);
+    expect(Business::query()->whereIn('billing_email', Business::DEMO_EMAILS)->count())->toBe(3)
+        ->and(Business::demo()->name)->toBe('Clínica Vida')
+        ->and(KnowledgeDocument::query()->where('business_id', Business::demo()->id)->count())->toBe(6)
+        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('peluqueria')->id)->count())->toBe(4)
+        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('kiosco')->id)->count())->toBe(4);
 });
 
-test('the demo business never inflates the landing social proof', function (): void {
+test('the demo businesses never inflate the landing social proof', function (): void {
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
     Business::factory()->create();
@@ -98,4 +117,14 @@ test('the hero phone offers the interactive composer', function (): void {
         ->assertSee('¿Cuánto sale una ecografía?')
         ->assertSee(route('demo.message'), false)
         ->assertSee('csrf-token', false);
+});
+
+test('the hero phone offers the rubro selector and the english chip', function (): void {
+    $this->get('/')
+        ->assertSee(__('landing.demo.rubro_label'))
+        ->assertSee('Peluquería')
+        ->assertSee('Kiosco')
+        ->assertSee('¿Cuánto sale el corte?')
+        ->assertSee('How much is an ultrasound?')
+        ->assertSee(trans_choice('landing.demo.left', 2, ['count' => '__N__']));
 });

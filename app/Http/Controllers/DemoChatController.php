@@ -20,9 +20,12 @@ class DemoChatController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        $validated = $request->validate(['message' => ['required', 'string', 'max:200']]);
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:200'],
+            'rubro' => ['sometimes', 'string', 'in:'.implode(',', array_keys(Business::DEMO_EMAILS))],
+        ]);
 
-        $business = Business::demo();
+        $business = Business::demo($validated['rubro'] ?? 'clinica');
         $used = (int) $request->session()->get('demo_messages', 0);
         $sessionCap = (int) config('atendia.demo.session_cap');
 
@@ -38,7 +41,12 @@ class DemoChatController extends Controller
             return response()->json(['error' => true]);
         }
 
-        return response()->json(['reply' => $reply, 'done' => $used + 1 >= $sessionCap]);
+        // `left` feeds the "te quedan :count preguntas" nudge under the box.
+        return response()->json([
+            'reply' => $reply,
+            'done' => $used + 1 >= $sessionCap,
+            'left' => max(0, $sessionCap - ($used + 1)),
+        ]);
     }
 
     /** One counter per day; `add` seeds it with its TTL before the bump. */

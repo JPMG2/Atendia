@@ -42,13 +42,40 @@ return [
 
     'demo' => [
         'try_label' => 'Pruébalo: escríbele como si fueras un cliente',
+        'rubro_label' => 'Elige un negocio de ejemplo',
         'placeholder' => 'Escribe tu consulta…',
         'send' => 'Enviar',
-        'chips' => [
-            '¿Tienen turno esta semana?',
-            '¿Cuánto sale una ecografía?',
-            '¿Dónde están ubicados?',
+        'rubros' => [
+            'clinica' => [
+                'label' => 'Consultorio',
+                'name' => 'Clínica Vida',
+                'chips' => [
+                    '¿Tienen turno esta semana?',
+                    '¿Cuánto sale una ecografía?',
+                    'How much is an ultrasound?',
+                ],
+            ],
+            'peluqueria' => [
+                'label' => 'Peluquería',
+                'name' => 'Peluquería Lumen',
+                'chips' => [
+                    '¿Cuánto sale el corte?',
+                    '¿Atienden sin turno?',
+                    '¿Hacen color y mechas?',
+                ],
+            ],
+            'kiosco' => [
+                'label' => 'Kiosco',
+                'name' => 'Kiosco El Faro',
+                'chips' => [
+                    '¿Hacen envíos?',
+                    '¿A qué hora abren?',
+                    '¿Qué promos tienen hoy?',
+                ],
+            ],
         ],
+        'header' => ':name · Asistente',
+        'left' => '{1}Te queda 1 pregunta de prueba|[2,*]Te quedan :count preguntas de prueba',
         'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, crea tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
         'error_reply' => 'No pude responder ahora. Intenta de nuevo en un momento.',
         'cta_more' => 'Crear mi asistente gratis',

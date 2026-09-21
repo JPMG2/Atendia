@@ -19,6 +19,29 @@
 @endphp
 
 <div class="hero-phone-enter relative">
+    {{-- The rubro selector: "cualquier rubro" demonstrated, not claimed.
+    Switching hands the phone to that rubro's REAL demo business. --}}
+    <div class="relative mb-3 flex flex-col items-center gap-1.5" style="z-index: 1">
+        <p class="text-subtle" style="font-size: 11px">{{ __('landing.demo.rubro_label') }}</p>
+        <div class="flex gap-1.5" role="group" aria-label="{{ __('landing.demo.rubro_label') }}">
+            @foreach (__('landing.demo.rubros') as $slug => $rubro)
+                <button
+                    type="button"
+                    data-demo-rubro="{{ $slug }}"
+                    data-demo-header-text="{{ __('landing.demo.header', ['name' => $rubro['name']]) }}"
+                    @class([
+                        'rounded-full font-semibold transition-colors',
+                        'bg-brand-soft text-brand' => $loop->first,
+                        'bg-sunken text-body hover:bg-brand-soft' => ! $loop->first,
+                    ])
+                    style="font-size: 12px; padding: 5px 12px"
+                >
+                    {{ $rubro['label'] }}
+                </button>
+            @endforeach
+        </div>
+    </div>
+
     {{-- glow jade --}}
     <div
         class="absolute"
@@ -78,7 +101,7 @@
                     <x-icon name="bot" :size="20" style="color: var(--bubble-out-text)" />
                 </span>
                 <div style="line-height: 1.2">
-                    <div style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">
+                    <div data-demo-header style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">
                         {{ __('landing.phone.header') }}
                     </div>
                     <div
@@ -122,18 +145,24 @@
                 <p class="text-subtle" style="font-size: 11px; margin-bottom: 6px">
                     {{ __('landing.demo.try_label') }}
                 </p>
-                <div class="flex gap-1.5 overflow-x-auto" style="margin-bottom: 8px; scrollbar-width: none">
-                    @foreach (__('landing.demo.chips') as $chip)
-                        <button
-                            type="button"
-                            data-demo-chip
-                            class="bg-sunken text-body hover:bg-brand-soft flex-none rounded-full transition-colors"
-                            style="font-size: 11px; padding: 4px 10px"
-                        >
-                            {{ $chip }}
-                        </button>
-                    @endforeach
-                </div>
+                @foreach (__('landing.demo.rubros') as $slug => $rubro)
+                    <div
+                        data-demo-chips="{{ $slug }}"
+                        class="flex gap-1.5 overflow-x-auto"
+                        style="margin-bottom: 8px; scrollbar-width: none; {{ $loop->first ? '' : 'display: none' }}"
+                    >
+                        @foreach ($rubro['chips'] as $chip)
+                            <button
+                                type="button"
+                                data-demo-chip
+                                class="bg-sunken text-body hover:bg-brand-soft flex-none rounded-full transition-colors"
+                                style="font-size: 11px; padding: 4px 10px"
+                            >
+                                {{ $chip }}
+                            </button>
+                        @endforeach
+                    </div>
+                @endforeach
                 <form data-demo-form class="flex items-center gap-2">
                     <div class="min-w-0 flex-1">
                         <x-ui.input
@@ -148,6 +177,14 @@
                     </div>
                     <x-ui.icon-button icon="send" size="sm" :label="__('landing.demo.send')" data-demo-send />
                 </form>
+                {{-- Trial transparency that nudges: how many tries are left. --}}
+                <p
+                    data-demo-left
+                    data-left-one="{{ trans_choice('landing.demo.left', 1, ['count' => 1]) }}"
+                    data-left-many="{{ trans_choice('landing.demo.left', 2, ['count' => '__N__']) }}"
+                    class="text-subtle"
+                    style="display: none; font-size: 10px; margin-top: 6px; text-align: center"
+                ></p>
                 <a
                     data-demo-cta
                     href="{{ Route::has('register') ? route('register') : '#' }}"
