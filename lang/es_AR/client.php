@@ -79,6 +79,11 @@ return [
         'empty' => 'Cargá tus servicios o productos y mirá cómo responde tu asistente.',
     ],
 
+    'testimonial' => [
+        'body' => 'Contanos en una frase qué cambió en tu negocio. Tu opinión puede aparecer en la página de Atendia — solo si vos lo autorizás.',
+        'rating_placeholder' => 'Elegí un puntaje (opcional)',
+    ],
+
     'conversations' => [
         'empty_body' => 'Cuando tu asistente atienda el WhatsApp, acá vas a ver cada conversación.',
         'taught_list_title' => 'Lo que aprendió acá',

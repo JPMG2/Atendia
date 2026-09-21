@@ -27,6 +27,9 @@ Route::livewire('/company', 'configuration.company')->name('company');
 // Integrations: the health of everything the platform consumes.
 Route::livewire('/integrations', 'configuration.integrations')->name('integrations');
 
+// Testimonials: the moderation desk before an owner's word hits the landing.
+Route::livewire('/testimonios', 'admin.testimonials')->name('testimonials');
+
 // System logs: the latest entries, built to be copied into a help chat.
 Route::livewire('/logs', 'configuration.logs')->name('logs');
 

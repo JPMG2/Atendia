@@ -4,10 +4,15 @@
     // one that shows the default.
     $company = \App\Models\Company::current();
 
+    // Only anchors that exist: a footer of dead links reads as abandonment.
+    // Help, blog and the legal pages join here the day they are real.
     $cols = [
-        ['h' => __('landing.footer.col_product'), 'links' => __('landing.footer.links_product')],
-        ['h' => __('landing.footer.col_resources'), 'links' => __('landing.footer.links_resources')],
-        ['h' => __('landing.footer.col_company'), 'links' => __('landing.footer.links_company')],
+        ['h' => __('landing.footer.col_product'), 'links' => [
+            '#funciones' => __('landing.footer.link_features'),
+            '#como-funciona' => __('landing.footer.link_how'),
+            '#casos' => __('landing.footer.link_cases'),
+            '#precios' => __('landing.footer.link_pricing'),
+        ]],
     ];
 
     $locales = config('locales.supported');
@@ -17,7 +22,7 @@
 
 <footer class="bg-card bd-subtle border-t">
     <div
-        class="mx-auto grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr_1fr_1fr]"
+        class="mx-auto grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr]"
         style="max-width: var(--container-xl); padding: 48px 24px 28px"
     >
         <div class="col-span-2 flex flex-col gap-3 lg:col-span-1" style="max-width: 280px">
@@ -47,9 +52,9 @@
         @foreach ($cols as $col)
             <div class="flex flex-col gap-2.5">
                 <div class="text-strong" style="font-weight: 700; font-size: var(--text-sm)">{{ $col['h'] }}</div>
-                @foreach ($col['links'] as $l)
+                @foreach ($col['links'] as $anchor => $l)
                     <a
-                        href="#"
+                        href="{{ $anchor }}"
                         class="text-muted hover:text-brand transition"
                         style="font-size: var(--text-sm)"
                     >{{ $l }}</a>
@@ -63,9 +68,6 @@
     >
         <span>© {{ date('Y') }} {{ $company?->legal_name ?: 'Atendia' }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
-            <a href="#" class="text-subtle">{{ __('landing.footer.terms') }}</a>
-            <a href="#" class="text-subtle">{{ __('landing.footer.privacy') }}</a>
-
             {{-- Language picker: geolocation suggests, the person decides. --}}
             <span x-data="{ open: false }" class="relative">
                 <button

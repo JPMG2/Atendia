@@ -33,6 +33,7 @@ return new class extends Migration
         'conversations',
         'conversation_messages',
         'subscriptions',
+        'testimonials',
     ];
 
     /**

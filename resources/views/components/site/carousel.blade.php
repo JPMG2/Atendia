@@ -1,5 +1,9 @@
 @php
-    $testimonials = __('landing.carousel.testimonials');
+    // Real words or nothing (design rule §6): approved AND consented rows,
+    // and the whole section stays hidden until three businesses spoke.
+    $testimonials = \App\Models\Testimonial::published()
+        ->map(fn ($t) => ['name' => $t->display_name, 'who' => $t->display_role, 'quote' => $t->quote, 'rating' => $t->rating])
+        ->all();
 
     $initials = fn (string $name) => collect(explode(' ', $name))->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('');
 
@@ -9,64 +13,74 @@
     ];
 @endphp
 
-<section id="clientes" class="overflow-hidden pb-16 pt-14">
-    <div
-        class="mx-auto mb-9 flex w-full flex-col items-center gap-3 px-6 text-center"
-        style="max-width: var(--container-xl)"
-    >
-        <span class="eyebrow eyebrow-line">{{ __('landing.carousel.eyebrow') }}</span>
-        <h2 class="font-display" style="font-size: var(--text-4xl); max-width: 600px">
-            {{ __('landing.carousel.title') }}
-        </h2>
-        <p class="text-muted" style="font-size: var(--text-lg)">{{ __('landing.carousel.subtitle') }}</p>
-    </div>
+@if (count($testimonials) >= 3)
+    <section id="clientes" class="overflow-hidden pb-16 pt-14">
+        <div
+            class="mx-auto mb-9 flex w-full flex-col items-center gap-3 px-6 text-center"
+            style="max-width: var(--container-xl)"
+        >
+            <span class="eyebrow eyebrow-line">{{ __('landing.carousel.eyebrow') }}</span>
+            <h2 class="font-display" style="font-size: var(--text-4xl); max-width: 600px">
+                {{ __('landing.carousel.title') }}
+            </h2>
+            <p class="text-muted" style="font-size: var(--text-lg)">{{ __('landing.carousel.subtitle') }}</p>
+        </div>
 
-    <div class="flex flex-col gap-4">
-        @foreach ($rows as $row)
-            <div class="marquee w-full">
-                <div
-                    class="marquee-track"
-                    style="animation-duration: {{ $row['dur'] }}s; animation-direction: {{ $row['reverse'] ? 'reverse' : 'normal' }};"
-                >
-                    @foreach (array_merge($row['items'], $row['items']) as $t)
-                        <x-ui.card
-                            class="flex flex-col gap-3"
-                            style="flex: 0 0 auto; width: 332px; padding: 20px; margin-right: 16px"
-                        >
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2.5">
-                                    <span
-                                        class="inline-flex items-center justify-center font-display"
-                                        style="
-                                            width: 40px;
-                                            height: 40px;
-                                            border-radius: 999px;
-                                            background: var(--brand-soft);
-                                            color: var(--brand-soft-text);
-                                            font-weight: 700;
-                                            font-size: 14px;
-                                        "
-                                    >{{ $initials($t['name']) }}</span>
-                                    <div style="line-height: 1.25">
-                                        <div class="text-strong" style="font-weight: 700; font-size: var(--text-sm)">
-                                            {{ $t['name'] }}
+        <div class="flex flex-col gap-4">
+            @foreach ($rows as $row)
+                <div class="marquee w-full">
+                    <div
+                        class="marquee-track"
+                        style="animation-duration: {{ $row['dur'] }}s; animation-direction: {{ $row['reverse'] ? 'reverse' : 'normal' }};"
+                    >
+                        @foreach (array_merge($row['items'], $row['items']) as $t)
+                            <x-ui.card
+                                class="flex flex-col gap-3"
+                                style="flex: 0 0 auto; width: 332px; padding: 20px; margin-right: 16px"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <span
+                                            class="inline-flex items-center justify-center font-display"
+                                            style="
+                                                width: 40px;
+                                                height: 40px;
+                                                border-radius: 999px;
+                                                background: var(--brand-soft);
+                                                color: var(--brand-soft-text);
+                                                font-weight: 700;
+                                                font-size: 14px;
+                                            "
+                                        >{{ $initials($t['name']) }}</span>
+                                        <div style="line-height: 1.25">
+                                            <div
+                                                class="text-strong"
+                                                style="font-weight: 700; font-size: var(--text-sm)"
+                                            >
+                                                {{ $t['name'] }}
+                                            </div>
+                                            <div class="text-muted" style="font-size: var(--text-xs)">
+                                                {{ $t['who'] }}
+                                            </div>
                                         </div>
-                                        <div class="text-muted" style="font-size: var(--text-xs)">{{ $t['who'] }}</div>
                                     </div>
+                                    {{-- Only the stars the owner actually chose — none are invented. --}}
+                                    @if (($t['rating'] ?? null) !== null)
+                                        <div class="flex gap-0.5" style="color: var(--accent)">
+                                            @for ($i = 0; $i < $t['rating']; $i++)
+                                                <x-icon name="star" :size="14" />
+                                            @endfor
+                                        </div>
+                                    @endif
                                 </div>
-                                <div class="flex gap-0.5" style="color: var(--accent)">
-                                    @for ($i = 0; $i < 5; $i++)
-                                        <x-icon name="star" :size="14" />
-                                    @endfor
-                                </div>
-                            </div>
-                            <p class="text-body" style="font-size: var(--text-sm); line-height: 1.55">
-                                "{{ $t['quote'] }}"
-                            </p>
-                        </x-ui.card>
-                    @endforeach
+                                <p class="text-body" style="font-size: var(--text-sm); line-height: 1.55">
+                                    "{{ $t['quote'] }}"
+                                </p>
+                            </x-ui.card>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
-</section>
+            @endforeach
+        </div>
+    </section>
+@endif

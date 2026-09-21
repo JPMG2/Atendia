@@ -122,6 +122,8 @@ new class extends Component
         </div>
     </div>
 
+    <livewire:client.testimonial-card />
+
     @if ($this->usage !== null)
         <a href="{{ route('my-plan') }}" wire:navigate class="home-usage">
             <x-ui.usage-meter

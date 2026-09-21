@@ -359,6 +359,27 @@ return [
         'taught_list_title' => 'Lo que aprendió aquí',
     ],
 
+    'testimonial' => [
+        'title' => '¿Contento con tu asistente?',
+        'body' => 'Cuéntanos en una frase qué cambió en tu negocio. Tu opinión puede aparecer en la página de Atendia — solo si tú lo autorizas.',
+        'field_quote' => 'Tu opinión',
+        'quote_placeholder' => 'Dejé de perder clientes por no contestar a tiempo…',
+        'field_rating' => 'Tu puntaje',
+        'rating_placeholder' => 'Elige un puntaje (opcional)',
+        'ratings' => [
+            5 => '5 — Excelente',
+            4 => '4 — Muy bueno',
+            3 => '3 — Bueno',
+            2 => '2 — Regular',
+            1 => '1 — Malo',
+        ],
+        'field_consent' => 'Autorizo a Atendia a publicar mi opinión',
+        'consent_hint' => 'Con el nombre y rubro de tu negocio, en el sitio de Atendia. Sin tu permiso queda solo como comentario interno.',
+        'send' => 'Enviar mi opinión',
+        'not_now' => 'Ahora no',
+        'thanks' => '¡Gracias! Tu opinión nos ayuda a mejorar.',
+    ],
+
     'assistant' => [
         'title' => 'Lo que sabe tu asistente',
         'sub' => 'Todo lo que usa para responder, a la vista. Enséñale lo que tu catálogo no dice.',

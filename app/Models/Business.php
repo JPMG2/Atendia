@@ -495,6 +495,29 @@ class Business extends Model
     }
 
     /**
+     * @return HasOne<Testimonial, $this>
+     */
+    public function testimonial(): HasOne
+    {
+        return $this->hasOne(Testimonial::class);
+    }
+
+    /**
+     * Whether the testimonial ask is due: a success milestone crossed —
+     * 100 conversations held, or a month connected — and never asked
+     * before. Asked once, whatever the answer, it stays quiet forever.
+     */
+    public function testimonialPromptDue(): bool
+    {
+        if ($this->testimonial()->exists()) {
+            return false;
+        }
+
+        return $this->conversations()->count() >= 100
+            || ($this->whatsapp_connected_at !== null && $this->whatsapp_connected_at->lte(now()->subDays(30)));
+    }
+
+    /**
      * Live sidebar badges for the catalog leaves: the static seeder numbers
      * lied to the owner (audit, 2026-09-20).
      *

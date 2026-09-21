@@ -21,7 +21,7 @@ return [
         'cases' => 'Casos',
         'pricing' => 'Precios',
         'login' => 'Ingresar',
-        'register' => 'Empezar gratis',
+        'register' => 'Crear mi asistente',
         'open_menu' => 'Abrir menú',
         'close_menu' => 'Cerrar menú',
         'toggle_theme' => 'Cambiar tema',
@@ -97,17 +97,17 @@ return [
     ],
 
     'cases' => [
-        'eyebrow' => 'Casos reales',
+        'eyebrow' => 'Casos de uso',
         'title' => 'Un mismo asistente, mil negocios',
         'health' => [
             'who' => 'Profesionales y clínicas',
-            'title' => 'Dr. Luis Paz · Cardiología',
+            'title' => 'Consultorio de cardiología',
             'body' => 'Define estudios, duración y capacidad por día. Atendia agenda turnos, recuerda y reprograma.',
             'tags' => ['Turnos', 'Recordatorios', 'Estudios'],
         ],
         'shop' => [
             'who' => 'Comercios y emprendedoras',
-            'title' => 'Pastelería Mía',
+            'title' => 'Pastelería artesanal',
             'body' => 'Sube su catálogo con precios. Atendia responde por sabores, toma pedidos y comparte el menú.',
             'tags' => ['Catálogo', 'Pedidos', 'Horarios'],
         ],
@@ -130,7 +130,7 @@ return [
         'emprende' => [
             'name' => 'Emprende',
             'desc' => 'Tu asistente atendiendo desde el primer día.',
-            'cta' => 'Empezar gratis',
+            'cta' => 'Crear mi asistente',
             'feats' => ['1 número de WhatsApp', '300 conversaciones con IA al mes', 'Agenda o catálogo', 'Estadísticas del negocio', 'Usuarios del panel sin límite'],
         ],
         'negocio' => [
@@ -153,37 +153,24 @@ return [
     'carousel' => [
         'eyebrow' => 'Clientes',
         'title' => 'Negocios que ya no atienden solos',
-        'subtitle' => 'Miles de conversaciones respondidas cada día, en todos los rubros.',
-        'testimonials' => [
-            ['name' => 'Clínica Vida', 'who' => 'Centro médico', 'quote' => 'Dejamos de perder turnos por no contestar a tiempo. Ahora la agenda se llena sola.'],
-            ['name' => 'Pastelería Mía', 'who' => 'Repostería', 'quote' => 'Responde por precios y sabores aunque yo esté horneando. Vendí 30% más en un mes.'],
-            ['name' => 'Dr. Luis Paz', 'who' => 'Cardiología', 'quote' => 'Mis pacientes agendan por WhatsApp y reciben recordatorios. Cero ausencias.'],
-            ['name' => 'Kiosco Sol', 'who' => 'Comercio', 'quote' => 'Configurarlo me llevó una tarde. Atiende consultas hasta de madrugada.'],
-            ['name' => 'Estudio Lex', 'who' => 'Abogados', 'quote' => 'Filtra consultas y agenda reuniones. Llegamos solo a lo que importa.'],
-            ['name' => 'AutoFix', 'who' => 'Taller', 'quote' => 'Cotiza service y reserva el turno del auto sin que levante el teléfono.'],
-            ['name' => 'Dra. Ríos', 'who' => 'Odontología', 'quote' => 'El asistente habla como hablo yo. Los pacientes ni notan la diferencia.'],
-            ['name' => 'Glow Spa', 'who' => 'Estética', 'quote' => 'Reservas, paquetes y promos respondidas al toque. Una genialidad.'],
-        ],
+        'subtitle' => 'Opiniones reales de negocios que atienden con Atendia.',
     ],
 
     'closing' => [
         'title' => 'Tu próximo cliente está escribiendo ahora',
         'subtitle' => 'Conecta tu WhatsApp y que Atendia responda por ti en minutos.',
-        'cta_primary' => 'Empezar gratis',
-        'cta_secondary' => 'Agendar demo',
+        'cta_primary' => 'Crear mi asistente',
+        'cta_secondary' => 'Ver cómo funciona',
     ],
 
     'footer' => [
         'tagline' => 'Publicidad y atención automatizada por WhatsApp para cualquier negocio.',
         'col_product' => 'Producto',
-        'col_resources' => 'Recursos',
-        'col_company' => 'Empresa',
-        'links_product' => ['Funciones', 'Precios', 'Casos', 'Integraciones'],
-        'links_resources' => ['Cómo funciona', 'Ayuda', 'Estado', 'Blog'],
-        'links_company' => ['Nosotros', 'Contacto', 'Términos', 'Privacidad'],
+        'link_features' => 'Funciones',
+        'link_how' => 'Cómo funciona',
+        'link_cases' => 'Casos',
+        'link_pricing' => 'Precios',
         'copyright' => 'Hecho para los que atienden.',
-        'terms' => 'Términos',
-        'privacy' => 'Privacidad',
         'language' => 'Idioma',
     ],
 

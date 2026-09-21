@@ -12,16 +12,18 @@ test('the landing page loads successfully', function (): void {
 });
 
 test('it shows the Atendia brand and hero', function (): void {
+    // One register CTA wording for the whole page (landing audit, 2026-09-21).
     $this->get('/')
         ->assertSee('atendido por IA', false)
         ->assertSee('Crear mi asistente', false)
-        ->assertSee('Empezar gratis', false);
+        ->assertDontSee('Empezar gratis', false);
 });
 
 test('it renders every marketing section', function (): void {
     $response = $this->get('/');
 
-    foreach (['funciones', 'como-funciona', 'casos', 'precios', 'clientes'] as $id) {
+    // "clientes" is not here: real testimonials or no section at all.
+    foreach (['funciones', 'como-funciona', 'casos', 'precios'] as $id) {
         $response->assertSee('id="'.$id.'"', false);
     }
 });
