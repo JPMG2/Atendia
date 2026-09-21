@@ -15,6 +15,13 @@ declare(strict_types=1);
 
 return [
 
+    'demo' => [
+        'try_label' => 'Probalo: escribile como si fueras un cliente',
+        'placeholder' => 'Escribí tu consulta…',
+        'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, creá tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
+        'error_reply' => 'No pude responder ahora. Intentá de nuevo en un momento.',
+    ],
+
     'hero' => [
         'badge' => 'Atiende por vos en WhatsApp',
         'subtitle' => 'Atendia responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras hacés lo tuyo. Lo conectás en minutos, sin saber de tecnología.',

@@ -18,7 +18,7 @@
     ];
 @endphp
 
-<div class="relative hero-phone-enter">
+<div class="hero-phone-enter relative">
     {{-- glow jade --}}
     <div
         class="absolute"
@@ -44,7 +44,9 @@
             background: var(--surface-card);
             border-radius: 36px;
             padding: 10px;
-            box-shadow: 0 0 0 1px var(--border-default), var(--shadow-xl);
+            box-shadow:
+                0 0 0 1px var(--border-default),
+                var(--shadow-xl);
         "
     >
         <div style="background: var(--chat-canvas); border-radius: 28px; overflow: hidden">
@@ -76,7 +78,9 @@
                     <x-icon name="bot" :size="20" style="color: var(--bubble-out-text)" />
                 </span>
                 <div style="line-height: 1.2">
-                    <div style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">{{ __('landing.phone.header') }}</div>
+                    <div style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">
+                        {{ __('landing.phone.header') }}
+                    </div>
                     <div
                         class="flex items-center gap-1.5"
                         style="color: color-mix(in srgb, var(--bubble-out-text) 80%, transparent); font-size: 11px"
@@ -102,6 +106,54 @@
                         </div>
                     </div>
                 @endforeach
+            </div>
+
+            {{-- The interactive leg: the visitor writes as the customer and
+            the REAL assistant answers. hero.js drives it; the scripted pool
+            yields the moment the first real message lands. --}}
+            <div
+                data-demo
+                data-endpoint="{{ route('demo.message') }}"
+                data-limit-reply="{{ __('landing.demo.limit_reply') }}"
+                data-error-reply="{{ __('landing.demo.error_reply') }}"
+                class="bd-subtle border-t"
+                style="background: var(--surface-card); padding: 8px 10px 12px"
+            >
+                <p class="text-subtle" style="font-size: 11px; margin-bottom: 6px">
+                    {{ __('landing.demo.try_label') }}
+                </p>
+                <div class="flex gap-1.5 overflow-x-auto" style="margin-bottom: 8px; scrollbar-width: none">
+                    @foreach (__('landing.demo.chips') as $chip)
+                        <button
+                            type="button"
+                            data-demo-chip
+                            class="bg-sunken text-body hover:bg-brand-soft flex-none rounded-full transition-colors"
+                            style="font-size: 11px; padding: 4px 10px"
+                        >
+                            {{ $chip }}
+                        </button>
+                    @endforeach
+                </div>
+                <form data-demo-form class="flex items-center gap-2">
+                    <div class="min-w-0 flex-1">
+                        <x-ui.input
+                            size="sm"
+                            name="demo_message"
+                            maxlength="200"
+                            autocomplete="off"
+                            data-demo-input
+                            :placeholder="__('landing.demo.placeholder')"
+                            :aria-label="__('landing.demo.placeholder')"
+                        />
+                    </div>
+                    <x-ui.icon-button icon="send" size="sm" :label="__('landing.demo.send')" data-demo-send />
+                </form>
+                <a
+                    data-demo-cta
+                    href="{{ Route::has('register') ? route('register') : '#' }}"
+                    class="btn btn-primary btn-sm w-full"
+                    style="display: none; margin-top: 8px"
+                >{{ __('landing.demo.cta_more') }}</a>
             </div>
         </div>
     </div>

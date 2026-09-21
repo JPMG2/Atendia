@@ -54,7 +54,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // demo/* is the landing's fetch-only endpoint: its errors must come
+        // back as JSON, never as a redirect the browser fetch would follow.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->is('demo/*'),
         );
     })->create();

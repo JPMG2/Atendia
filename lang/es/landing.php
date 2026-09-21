@@ -40,6 +40,20 @@ return [
         'perk_card' => 'Sin tarjeta',
     ],
 
+    'demo' => [
+        'try_label' => 'Pruébalo: escríbele como si fueras un cliente',
+        'placeholder' => 'Escribe tu consulta…',
+        'send' => 'Enviar',
+        'chips' => [
+            '¿Tienen turno esta semana?',
+            '¿Cuánto sale una ecografía?',
+            '¿Dónde están ubicados?',
+        ],
+        'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, crea tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
+        'error_reply' => 'No pude responder ahora. Intenta de nuevo en un momento.',
+        'cta_more' => 'Crear mi asistente gratis',
+    ],
+
     'logos' => [
         'title' => 'Negocios de todos los rubros ya atienden con Atendia',
     ],

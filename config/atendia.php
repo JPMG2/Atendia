@@ -32,6 +32,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Landing demo chat
+    |--------------------------------------------------------------------------
+    |
+    | The hero's interactive demo answers with the REAL assistant over the
+    | seeded demo business, so every message costs tokens. Session cap is
+    | the per-visitor budget before the register invite; daily cap is the
+    | global fuse for the whole landing.
+    |
+    */
+
+    'demo' => [
+        'session_cap' => env('DEMO_SESSION_CAP', 4),
+        'daily_cap' => env('DEMO_DAILY_CAP', 300),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | AI rates (USD)
     |--------------------------------------------------------------------------
     |

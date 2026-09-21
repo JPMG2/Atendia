@@ -193,13 +193,25 @@ class Business extends Model
     }
 
     /**
+     * The sentinel that marks the landing's demo business: seeded data, not
+     * a client. One constant so the seeder and the lookups cannot diverge.
+     */
+    public const string DEMO_EMAIL = 'demo@atendia.app';
+
+    /** The landing demo's business, or null while it was never seeded. */
+    public static function demo(): ?self
+    {
+        return self::query()->where('billing_email', self::DEMO_EMAIL)->first();
+    }
+
+    /**
      * The landing's social proof: how many businesses already answer through
      * the assistant. The view hides it below a floor so the early days never
-     * read as an empty room.
+     * read as an empty room. The demo business is ours, so it never counts.
      */
     public static function servedCount(): int
     {
-        return self::query()->count();
+        return self::query()->where('billing_email', '!=', self::DEMO_EMAIL)->orWhereNull('billing_email')->count();
     }
 
     /**

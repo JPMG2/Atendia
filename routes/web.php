@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\DemoChatController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Models\Business;
@@ -13,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 Route::get('/', fn () => view('welcome'));
+
+// The hero's interactive demo: throttled hard — every reply costs tokens.
+Route::post('/demo/mensaje', DemoChatController::class)
+    ->middleware('throttle:6,1')
+    ->name('demo.message');
 
 // The referral code rides session + 30-day cookie (industry window). A real
 // code earns the personal invite page — a named invite converts, a cold form
