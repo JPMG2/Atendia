@@ -32,6 +32,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local-currency pricing reference
+    |--------------------------------------------------------------------------
+    |
+    | Prices stay in USD (LatAm buyers read USD as stable). Per visitor
+    | locale, an optional rate (local units per USD) adds one reference
+    | line under the landing pricing. Null rate = no line, nothing shown.
+    |
+    */
+
+    'pricing_reference' => [
+        'es_AR' => ['symbol' => 'AR$', 'rate' => env('PRICING_REFERENCE_RATE_AR')],
+        'es_VE' => ['symbol' => 'Bs.', 'rate' => env('PRICING_REFERENCE_RATE_VE')],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Landing demo chat
     |--------------------------------------------------------------------------
     |

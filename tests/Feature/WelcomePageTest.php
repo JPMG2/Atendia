@@ -97,6 +97,33 @@ test('the landing sells the any-language plus in the features and the live demo'
         ->assertSee(__('landing.phone.b10'));
 });
 
+test('the features bento leads with the owner panel and vignettes of the real screens', function (): void {
+    // Product-forward: the star tile mirrors the panel the owner buys, and
+    // every feature keeps its copy beside a glimpse of its real screen.
+    $this->get('/')
+        ->assertSee('mini-window', false)
+        ->assertSee(__('landing.features.control.title'))
+        ->assertSee(__('landing.features.vignettes.stat_resolution'))
+        ->assertSee(__('landing.features.vignettes.thread_2_text'))
+        ->assertSee(__('landing.features.vignettes.schedule_badge'))
+        ->assertSee(__('landing.features.vignettes.catalog_2_price'));
+});
+
+test('pricing clarifies USD and only grounds a local amount when a rate is configured', function (): void {
+    // No rate for the visitor's region: the USD note stands alone.
+    $this->get('/')
+        ->assertSee(__('landing.pricing.currency_note'))
+        ->assertDontSee('valor de referencia');
+
+    // A configured rate adds one reference line for the featured plan.
+    config()->set('atendia.pricing_reference.es', ['symbol' => 'AR$', 'rate' => 1500]);
+
+    $this->get('/')->assertSee(__('landing.pricing.local_reference', [
+        'plan' => __('landing.pricing.negocio.name'),
+        'amount' => 'AR$ 118.500',
+    ]));
+});
+
 test('the social proof waits for a real crowd before it speaks', function (): void {
     // Early days: no count is better than a sad count.
     $this->get('/')->assertDontSee('negocios ya atienden');

@@ -149,6 +149,26 @@
             @endforeach
         </div>
 
-        <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">{{ __('landing.pricing.trust') }}</p>
+        <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">
+            {{ __('landing.pricing.trust') }} · {{ __('landing.pricing.currency_note') }}
+        </p>
+
+        @php
+            // LatAm buyers read USD as stable, so USD stays canonical; when the
+            // owner sets a reference rate for the visitor's region, one line
+            // grounds the featured plan in the local currency.
+            $reference = config('atendia.pricing_reference.'.app()->getLocale());
+        @endphp
+
+        @if ($reference && $reference['rate'])
+            <p class="text-subtle mt-2 text-center" style="font-size: var(--text-xs)">
+                {{
+                    __('landing.pricing.local_reference', [
+                        'plan' => __('landing.pricing.negocio.name'),
+                        'amount' => $reference['symbol'].' '.number_format(config('atendia.plans.negocio.price') * $reference['rate'], 0, ',', '.'),
+                    ])
+                }}
+            </p>
+        @endif
     </div>
 </section>

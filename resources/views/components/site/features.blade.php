@@ -1,12 +1,7 @@
 @php
-    $items = [
-        ['icon' => 'calendar-check', 'title' => __('landing.features.schedule.title'), 'body' => __('landing.features.schedule.body')],
-        ['icon' => 'package', 'title' => __('landing.features.catalog.title'), 'body' => __('landing.features.catalog.body')],
-        ['icon' => 'message-circle', 'title' => __('landing.features.always.title'), 'body' => __('landing.features.always.body')],
-        ['icon' => 'bell', 'title' => __('landing.features.alerts.title'), 'body' => __('landing.features.alerts.body')],
-        ['icon' => 'sliders-horizontal', 'title' => __('landing.features.control.title'), 'body' => __('landing.features.control.body')],
-        ['icon' => 'shield-check', 'title' => __('landing.features.brand.title'), 'body' => __('landing.features.brand.body')],
-    ];
+    // Bento: the owner's panel is the star tile; the other features keep
+    // their copy and gain a small vignette of the screen they describe.
+    $vignette = fn (string $key): string => __('landing.features.vignettes.'.$key);
 @endphp
 
 <section id="funciones" class="flex w-full justify-center pb-16 pt-16">
@@ -21,25 +16,118 @@
             </p>
         </div>
 
-        <div class="gap-4.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style="gap: 18px">
-            @foreach ($items as $it)
-                <x-ui.card interactive style="padding: 24px">
-                    <span
-                        class="mb-4 inline-flex items-center justify-center"
-                        style="
-                            width: 46px;
-                            height: 46px;
-                            border-radius: var(--radius-md);
-                            background: var(--brand-soft);
-                            color: var(--brand);
-                        "
-                    >
-                        <x-icon :name="$it['icon']" :size="23" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6" style="gap: 18px">
+            {{-- Star tile: the panel the owner actually buys, mirrored live. --}}
+            <x-site.feature-tile
+                icon="sliders-horizontal"
+                :title="__('landing.features.control.title')"
+                :body="__('landing.features.control.body')"
+                class="flex flex-col sm:col-span-2 lg:col-span-4 lg:row-span-2"
+            >
+                <div class="mini-window mt-2 flex-1" aria-hidden="true">
+                    <div class="mini-window-bar">
+                        <i></i><i></i><i></i>
+                        <span>{{ $vignette('panel_tab') }}</span>
+                    </div>
+                    <div class="mini-window-body">
+                        <div class="flex gap-2.5">
+                            <div class="mini-stat">
+                                <b class="font-mono">128</b>
+                                <span>{{ $vignette('stat_conversations') }}</span>
+                            </div>
+                            <div class="mini-stat">
+                                <b class="font-mono">92%</b>
+                                <span>{{ $vignette('stat_resolution') }}</span>
+                            </div>
+                        </div>
+                        <div class="vignette-row" style="background: var(--surface-card)">
+                            <x-ui.avatar :name="$vignette('thread_1_name')" size="xs" />
+                            <span class="truncate">
+                                <b class="text-strong">{{ $vignette('thread_1_name') }}</b>
+                                · {{ $vignette('thread_1_text') }}
+                            </span>
+                            <span class="row-meta">
+                                <x-ui.badge variant="brand">{{ $vignette('thread_1_badge') }}</x-ui.badge>
+                            </span>
+                        </div>
+                        <div class="vignette-row" style="background: var(--surface-card)">
+                            <x-ui.avatar :name="$vignette('thread_2_name')" size="xs" />
+                            <span class="truncate">
+                                <b class="text-strong">{{ $vignette('thread_2_name') }}</b>
+                                · {{ $vignette('thread_2_text') }}
+                            </span>
+                            <span class="row-meta">
+                                <x-ui.badge variant="neutral">{{ $vignette('thread_2_badge') }}</x-ui.badge>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </x-site.feature-tile>
+
+            <x-site.feature-tile
+                icon="message-circle"
+                :title="__('landing.features.always.title')"
+                :body="__('landing.features.always.body')"
+                class="flex flex-col lg:col-span-2"
+            >
+                <div class="mt-auto flex flex-wrap gap-1.5" aria-hidden="true">
+                    @foreach (__('landing.features.vignettes.always_pills') as $pill)
+                        <x-ui.badge variant="neutral">{{ $pill }}</x-ui.badge>
+                    @endforeach
+                </div>
+            </x-site.feature-tile>
+
+            <x-site.feature-tile
+                icon="bell"
+                :title="__('landing.features.alerts.title')"
+                :body="__('landing.features.alerts.body')"
+                class="flex flex-col lg:col-span-2"
+            >
+                <div class="vignette-row mt-auto" aria-hidden="true">
+                    <x-icon name="bell" :size="14" style="color: var(--brand); flex-shrink: 0" />
+                    <span>{{ $vignette('alert_text') }}</span>
+                </div>
+            </x-site.feature-tile>
+
+            <x-site.feature-tile
+                icon="calendar-check"
+                :title="__('landing.features.schedule.title')"
+                :body="__('landing.features.schedule.body')"
+                class="flex flex-col lg:col-span-2"
+            >
+                <div class="vignette-row mt-auto" aria-hidden="true">
+                    <x-icon name="calendar-check" :size="14" style="color: var(--brand); flex-shrink: 0" />
+                    <span class="truncate">{{ $vignette('schedule_text') }}</span>
+                    <span class="row-meta">
+                        <x-ui.badge variant="brand">{{ $vignette('schedule_badge') }}</x-ui.badge>
                     </span>
-                    <h3 class="mb-2 font-display" style="font-size: var(--text-xl)">{{ $it['title'] }}</h3>
-                    <p class="text-muted" style="font-size: var(--text-sm); line-height: 1.55">{{ $it['body'] }}</p>
-                </x-ui.card>
-            @endforeach
+                </div>
+            </x-site.feature-tile>
+
+            <x-site.feature-tile
+                icon="package"
+                :title="__('landing.features.catalog.title')"
+                :body="__('landing.features.catalog.body')"
+                class="flex flex-col lg:col-span-2"
+            >
+                <div class="mt-auto flex flex-col gap-1.5" aria-hidden="true">
+                    <div class="vignette-row">
+                        <span class="truncate">{{ $vignette('catalog_1_name') }}</span>
+                        <span class="row-meta font-mono">{{ $vignette('catalog_1_price') }}</span>
+                    </div>
+                    <div class="vignette-row">
+                        <span class="truncate">{{ $vignette('catalog_2_name') }}</span>
+                        <span class="row-meta font-mono">{{ $vignette('catalog_2_price') }}</span>
+                    </div>
+                </div>
+            </x-site.feature-tile>
+
+            <x-site.feature-tile
+                icon="shield-check"
+                :title="__('landing.features.brand.title')"
+                :body="__('landing.features.brand.body')"
+                class="flex flex-col lg:col-span-2"
+            />
         </div>
     </div>
 </section>

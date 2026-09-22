@@ -983,6 +983,27 @@
   .pricing-tier-featured { padding-block:44px; }
 }
 
+/* Features bento: the star tile shows the OWNER's panel drawn with the house
+   tokens instead of a screenshot, so it stays sharp, responsive and theme-aware.
+   Product-forward sections out-convert illustrations (2026 landing research). */
+.mini-window { display:flex; flex-direction:column; border:1px solid var(--border-subtle);
+               border-radius:var(--radius-lg); background:var(--surface-page);
+               box-shadow:var(--shadow-sm); overflow:hidden; }
+.mini-window-bar { display:flex; align-items:center; gap:5px; padding:9px 14px;
+                   background:var(--surface-card); border-bottom:1px solid var(--border-subtle); }
+.mini-window-bar i { width:8px; height:8px; border-radius:999px; background:var(--border-default); }
+.mini-window-bar span { margin-left:8px; font-size:11px; font-weight:600; color:var(--text-subtle); }
+.mini-window-body { flex:1; display:flex; flex-direction:column; justify-content:center; gap:10px; padding:14px; }
+.mini-stat { flex:1; display:flex; flex-direction:column; gap:2px; padding:10px 14px;
+             background:var(--surface-card); border:1px solid var(--border-subtle);
+             border-radius:var(--radius-md); }
+.mini-stat b { font-size:var(--text-xl); font-weight:700; color:var(--text-strong); }
+.mini-stat span { font-size:11px; color:var(--text-muted); }
+.vignette-row { display:flex; align-items:center; gap:10px; padding:9px 12px;
+                background:var(--surface-sunken); border:1px solid var(--border-subtle);
+                border-radius:var(--radius-md); font-size:var(--text-xs); color:var(--text-body); }
+.vignette-row .row-meta { margin-left:auto; flex-shrink:0; }
+
 /* Billing period toggle: a sunken pill where the active option floats on a
    card surface — the segmented-control pattern of Notion/Linear pricing. */
 .pricing-period { display:inline-flex; gap:4px; padding:4px; background:var(--surface-sunken);
