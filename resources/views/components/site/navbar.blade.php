@@ -15,6 +15,8 @@
         open: false,
         active: '',
         progress: 0,
+        scrolled: false,
+        pastPricing: false,
         sections: @js(array_column($links, 'id')),
         track() {
             // The section whose top already passed under the bar is the one being read.
@@ -27,6 +29,12 @@
 
             const travel = document.documentElement.scrollHeight - window.innerHeight;
             this.progress = travel > 0 ? Math.min(1, window.scrollY / travel) : 0;
+
+            this.scrolled = window.scrollY > 24;
+
+            // The accent shows up once per view, and this is the moment: the
+            // price is already on the table.
+            this.pastPricing = this.sections.indexOf(this.active) >= this.sections.indexOf('precios');
         },
         toggleTheme() {
             this.dark = ! this.dark;
@@ -39,12 +47,13 @@
     x-init="track()"
     @scroll.window.passive="track()"
     @resize.window.passive="track()"
+    x-bind:class="scrolled && 'navbar-compact'"
     class="navbar-frosted sticky top-0 flex w-full justify-center"
     style="z-index: var(--z-sticky)"
 >
     <div class="nav-progress" aria-hidden="true" x-bind:style="`transform: scaleX(${progress})`"></div>
-    <div class="flex w-full items-center gap-6 px-6 py-3" style="max-width: var(--container-xl)">
-        <x-site.logo :size="24" />
+    <div class="navbar-row flex w-full items-center gap-6 px-6" style="max-width: var(--container-xl)">
+        <x-site.logo :size="24" class="navbar-logo" />
 
         <nav class="ml-2 hidden gap-1 md:flex">
             @foreach ($links as $link)
@@ -67,7 +76,12 @@
             <div class="hidden gap-2.5 sm:flex">
                 <x-ui.button variant="ghost" size="sm" :href="Route::has('login') ? route('login') : '#'">
                     {{ __('landing.nav.login') }}</x-ui.button>
-                <x-ui.button variant="primary" size="sm" :href="Route::has('register') ? route('register') : '#'">
+                <x-ui.button
+                    variant="primary"
+                    size="sm"
+                    x-bind:class="pastPricing && 'btn-accent'"
+                    :href="Route::has('register') ? route('register') : '#'"
+                >
                     {{ __('landing.nav.register') }}</x-ui.button>
             </div>
 
@@ -106,6 +120,8 @@
                 <a
                     href="#{{ $link['id'] }}"
                     @click="open = false"
+                    x-bind:class="active === '{{ $link['id'] }}' && 'nav-link-active'"
+                    x-bind:aria-current="active === '{{ $link['id'] }}' ? 'true' : null"
                     class="text-body hover:bg-sunken rounded-lg px-3 py-2.5 font-semibold transition"
                 >{{ $link['label'] }}</a>
             @endforeach

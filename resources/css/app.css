@@ -404,8 +404,16 @@
     transition:transform var(--dur-fast) linear;
   }
 
+  /* The bar gives the reader back some screen once the hero is gone. The
+     padding lives here, not in a utility, so the compact state just wins. */
+  .navbar-row { padding-top:12px; padding-bottom:12px; transition:padding var(--dur-base) var(--ease-out); }
+  .navbar-compact .navbar-row { padding-top:6px; padding-bottom:6px; }
+
+  .navbar-logo { transform-origin:left center; transition:transform var(--dur-base) var(--ease-out); }
+  .navbar-compact .navbar-logo { transform:scale(.86); }
+
   @media (prefers-reduced-motion:reduce) {
-    .nav-progress { transition:none; }
+    .nav-progress, .navbar-row, .navbar-logo { transition:none; }
   }
 
   /* ============================================================

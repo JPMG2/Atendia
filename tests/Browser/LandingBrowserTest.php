@@ -77,3 +77,45 @@ test('the sticky bar never covers a section title, and marks the one being read'
 
     expect($headroom)->toBeGreaterThan(0.0);
 });
+
+test('the bar shrinks, warms its cta past the price and marks the drawer', function (): void {
+    $page = visit('/')->resize(1280, 900);
+
+    // Transitions off: the computed value settles at once, with no sleep to tune.
+    $page->script(
+        'const s = document.createElement("style");'
+        .'s.textContent = "*{transition:none !important}";'
+        .'document.head.appendChild(s)'
+    );
+
+    $toPricing = fn () => $page->script(
+        'window.scrollTo({ top: document.getElementById("precios").offsetTop + 20, behavior: "instant" });'
+        .'window.dispatchEvent(new Event("scroll"))'
+    );
+
+    expect($page->script('getComputedStyle(document.querySelector(".navbar-row")).paddingTop'))->toBe('12px');
+
+    $toPricing();
+
+    expect($page->script('getComputedStyle(document.querySelector(".navbar-row")).paddingTop'))->toBe('6px');
+
+    $page->screenshotElement('header', 'landing-navbar-compact');
+
+    // The coral wins over the jade because .btn-accent is painted later.
+    $cta = $page->script(
+        'const el = document.querySelector(".navbar-row .btn-primary");'
+        .'[el.classList.contains("btn-accent"), getComputedStyle(el).backgroundColor]'
+    );
+
+    expect($cta[0])->toBeTrue()
+        ->and($cta[1])->not->toBe($page->script(
+            'getComputedStyle(document.querySelector(".navbar-row .btn-secondary, .navbar-row .btn-ghost")).backgroundColor'
+        ));
+
+    // The drawer says where the reader is, same as the desktop menu.
+    $page->resize(560, 900);
+    $toPricing();
+    $page->click('[aria-label="'.__('landing.nav.open_menu').'"]');
+
+    expect($page->script('document.querySelectorAll(".nav-link-active").length'))->toBe(2);
+});
