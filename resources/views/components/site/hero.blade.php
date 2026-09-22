@@ -2,7 +2,9 @@
 must never leave a horizontal scrollbar behind. --}}
 <section id="top" class="flex w-full justify-center overflow-x-clip pb-16 pt-16">
     <div class="w-full px-6" style="max-width: var(--container-xl)">
-        <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
+        {{-- items-start: both columns open at the same height — the phone's
+        rubro selector must not float above the headline. --}}
+        <div class="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-12">
             {{-- Texto --}}
             <div class="flex flex-col gap-5">
                 <x-ui.badge
