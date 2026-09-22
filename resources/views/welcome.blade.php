@@ -4,8 +4,8 @@
         <x-site.hero />
         <x-site.live-tally />
         <x-site.logo-strip />
-        <x-site.features />
         <x-site.how-it-works />
+        <x-site.features />
         <x-site.use-cases />
         <x-site.pricing />
         <x-site.faq />

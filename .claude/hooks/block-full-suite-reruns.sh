@@ -23,8 +23,10 @@ set -u
 command=$(jq -r '.tool_input.command // ""' 2>/dev/null)
 
 # Solo la suite de PHP entera. Los browser tests tienen su propio hook.
+# Se exige el BINARIO, no la palabra: con *pest* un `grep` sobre el paquete
+# vendor/pestphp/... gastaba la corrida del commit sin correr un solo test.
 case "$command" in
-    *pest*|*artisan\ test*) ;;
+    *vendor/bin/pest*|*artisan\ test*) ;;
     *) exit 0 ;;
 esac
 

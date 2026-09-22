@@ -234,6 +234,9 @@ return [
             'catalog_1_price' => '$18.000',
             'catalog_2_name' => 'Mechas',
             'catalog_2_price' => 'desde $55.000',
+            'brand_name' => 'Peluquería Lumen',
+            'brand_badge' => 'Tu número',
+            'brand_greeting' => 'Hola, soy el asistente de Peluquería Lumen',
         ],
     ],
 

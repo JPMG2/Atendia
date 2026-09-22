@@ -177,6 +177,10 @@
 @layer base {
   html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
 
+  /* The sticky navbar covers whatever an anchor lands on: without this the
+     section title arrives hidden behind the bar. */
+  section[id] { scroll-margin-top:88px; }
+
   body {
     margin:0;
     font-family:var(--font-sans);
@@ -388,6 +392,20 @@
     background:color-mix(in srgb, var(--surface-page) 78%, transparent);
     backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
     border-bottom:1px solid var(--border-subtle);
+  }
+
+  /* Scroll-spy: the menu item of the section being read. */
+  .nav-link-active { color:var(--brand); background:var(--brand-soft); }
+
+  /* Reading progress, riding the navbar's own bottom border. */
+  .nav-progress {
+    position:absolute; left:0; bottom:-1px; height:2px; width:100%;
+    transform:scaleX(0); transform-origin:left; background:var(--brand);
+    transition:transform var(--dur-fast) linear;
+  }
+
+  @media (prefers-reduced-motion:reduce) {
+    .nav-progress { transition:none; }
   }
 
   /* ============================================================

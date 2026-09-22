@@ -127,7 +127,22 @@
                 :title="__('landing.features.brand.title')"
                 :body="__('landing.features.brand.body')"
                 class="flex flex-col lg:col-span-2"
-            />
+            >
+                {{-- The contact card the customer sees: the owner's business, not ours. --}}
+                <div class="mt-auto flex flex-col gap-1.5" aria-hidden="true">
+                    <div class="vignette-row">
+                        <x-ui.avatar :name="$vignette('brand_name')" size="xs" />
+                        <b class="text-strong truncate">{{ $vignette('brand_name') }}</b>
+                        <span class="row-meta">
+                            <x-ui.badge variant="brand">{{ $vignette('brand_badge') }}</x-ui.badge>
+                        </span>
+                    </div>
+                    <div class="vignette-row">
+                        <x-icon name="message-circle" :size="14" style="color: var(--brand); flex-shrink: 0" />
+                        <span class="truncate">{{ $vignette('brand_greeting') }}</span>
+                    </div>
+                </div>
+            </x-site.feature-tile>
         </div>
     </div>
 </section>

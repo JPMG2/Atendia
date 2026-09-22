@@ -29,6 +29,52 @@ test('it renders every marketing section', function (): void {
     }
 });
 
+test('the navbar lists the sections in the order the page shows them', function (): void {
+    // A menu item must always land further down than the one above it: a link
+    // that scrolls the visitor back up reads as a broken page.
+    $html = $this->get('/')->getContent();
+
+    $sections = ['como-funciona', 'funciones', 'casos', 'precios', 'preguntas'];
+
+    // The navbar renders before <main>, so the first hit of each anchor is its menu link.
+    $positionOf = function (string $needle) use ($html): int {
+        $at = mb_strpos($html, $needle);
+
+        expect($at)->not->toBeFalse("Missing {$needle} on the landing page.");
+
+        return (int) $at;
+    };
+
+    $menuOrder = collect($sections)
+        ->sortBy(fn (string $id): int => $positionOf('href="#'.$id.'"'))
+        ->values()
+        ->all();
+
+    $pageOrder = collect($sections)
+        ->sortBy(fn (string $id): int => $positionOf('id="'.$id.'"'))
+        ->values()
+        ->all();
+
+    expect($menuOrder)->toBe($pageOrder);
+});
+
+test('the navbar follows the reader: it marks the section and how far the page went', function (): void {
+    $response = $this->get('/');
+
+    foreach (['como-funciona', 'funciones', 'casos', 'precios', 'preguntas'] as $id) {
+        $response->assertSee("active === '".$id."'", false);
+    }
+
+    $response->assertSee('nav-progress', false);
+});
+
+test('every feature tile carries a vignette, so none reads half empty', function (): void {
+    // The brand tile shipped without one and sat visibly emptier than its row mates.
+    $this->get('/')
+        ->assertSee(__('landing.features.vignettes.brand_badge'))
+        ->assertSee(__('landing.features.vignettes.brand_greeting'));
+});
+
 test('the hero opens with the loss, not the category', function (): void {
     // The headline promises the outcome (landing audit); the tagline stays
     // in the tab title. Two perks only: guarantees, not arguments.

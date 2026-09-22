@@ -1,10 +1,11 @@
 @php
+    // Menu order IS the page order: WelcomePageTest fails if they diverge.
     $links = [
-        ['label' => __('landing.nav.how'), 'href' => '#como-funciona'],
-        ['label' => __('landing.nav.features'), 'href' => '#funciones'],
-        ['label' => __('landing.nav.cases'), 'href' => '#casos'],
-        ['label' => __('landing.nav.pricing'), 'href' => '#precios'],
-        ['label' => __('landing.nav.faq'), 'href' => '#preguntas'],
+        ['label' => __('landing.nav.how'), 'id' => 'como-funciona'],
+        ['label' => __('landing.nav.features'), 'id' => 'funciones'],
+        ['label' => __('landing.nav.cases'), 'id' => 'casos'],
+        ['label' => __('landing.nav.pricing'), 'id' => 'precios'],
+        ['label' => __('landing.nav.faq'), 'id' => 'preguntas'],
     ];
 @endphp
 
@@ -12,6 +13,21 @@
     x-data="{
         dark: document.documentElement.classList.contains('dark'),
         open: false,
+        active: '',
+        progress: 0,
+        sections: @js(array_column($links, 'id')),
+        track() {
+            // The section whose top already passed under the bar is the one being read.
+            const line = window.scrollY + 96;
+            this.active = this.sections.reduce((current, id) => {
+                const el = document.getElementById(id);
+
+                return el && el.getBoundingClientRect().top + window.scrollY <= line ? id : current;
+            }, '');
+
+            const travel = document.documentElement.scrollHeight - window.innerHeight;
+            this.progress = travel > 0 ? Math.min(1, window.scrollY / travel) : 0;
+        },
         toggleTheme() {
             this.dark = ! this.dark;
             document.documentElement.classList.toggle('dark', this.dark);
@@ -20,16 +36,22 @@
             } catch (e) {}
         },
     }"
+    x-init="track()"
+    @scroll.window.passive="track()"
+    @resize.window.passive="track()"
     class="navbar-frosted sticky top-0 flex w-full justify-center"
     style="z-index: var(--z-sticky)"
 >
+    <div class="nav-progress" aria-hidden="true" x-bind:style="`transform: scaleX(${progress})`"></div>
     <div class="flex w-full items-center gap-6 px-6 py-3" style="max-width: var(--container-xl)">
         <x-site.logo :size="24" />
 
         <nav class="ml-2 hidden gap-1 md:flex">
             @foreach ($links as $link)
                 <a
-                    href="{{ $link['href'] }}"
+                    href="#{{ $link['id'] }}"
+                    x-bind:class="active === '{{ $link['id'] }}' && 'nav-link-active'"
+                    x-bind:aria-current="active === '{{ $link['id'] }}' ? 'true' : null"
                     class="text-body hover:bg-sunken rounded-lg px-3 py-2 text-sm font-semibold transition"
                 >{{ $link['label'] }}</a>
             @endforeach
@@ -82,7 +104,7 @@
             </div>
             @foreach ($links as $link)
                 <a
-                    href="{{ $link['href'] }}"
+                    href="#{{ $link['id'] }}"
                     @click="open = false"
                     class="text-body hover:bg-sunken rounded-lg px-3 py-2.5 font-semibold transition"
                 >{{ $link['label'] }}</a>
