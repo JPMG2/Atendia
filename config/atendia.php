@@ -48,6 +48,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Landing persuasion knobs
+    |--------------------------------------------------------------------------
+    |
+    | calculator_minutes: assumed owner minutes per answered enquiry, shown
+    | as the estimation note. tally_floor: the live weekly-replies line stays
+    | hidden until the real number reaches it (a small count un-charms).
+    |
+    */
+
+    'calculator_minutes' => env('LANDING_CALCULATOR_MINUTES', 3),
+    'tally_floor' => env('LANDING_TALLY_FLOOR', 50),
+
+    /*
+    |--------------------------------------------------------------------------
     | Landing demo chat
     |--------------------------------------------------------------------------
     |

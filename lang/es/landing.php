@@ -184,6 +184,10 @@ return [
         'title' => 'Negocios de todos los rubros ya atienden con Atendia',
     ],
 
+    'tally' => [
+        'line' => ':count conversación respondida esta semana|:count conversaciones respondidas esta semana',
+    ],
+
     'features' => [
         'eyebrow' => 'Funciones',
         'title' => 'Todo lo que tu negocio necesita para atender mejor',
@@ -286,6 +290,16 @@ return [
         'trust' => 'Sin tarjeta para empezar · Cancelas cuando quieras',
         'currency_note' => 'Precios en dólares (USD)',
         'local_reference' => 'En tu moneda, el plan :plan ronda los :amount al mes — valor de referencia.',
+        'calculator' => [
+            'title' => '¿Cuánto te cuesta contestar a mano?',
+            'subtitle' => 'Mueve el control y míralo con tus números.',
+            'slider_label' => 'Consultas que recibes por día',
+            'out_conversations' => 'conversaciones al mes',
+            'out_hours' => 'horas tuyas contestando',
+            'hours_note' => 'Atendia te las devuelve — también a las 3 a.m.',
+            'plan_hint' => 'Con ese volumen te alcanza el plan',
+            'assumption' => 'Estimación con :minutes min por consulta.',
+        ],
         'multilang' => 'En cualquier idioma — tú lo lees todo en español',
         'emprende' => [
             'name' => 'Emprende',

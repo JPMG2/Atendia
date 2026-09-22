@@ -63,6 +63,16 @@ return [
         'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
         'save_yearly' => 'Ahorrás :amount al año',
         'multilang' => 'En cualquier idioma — vos lo leés todo en español',
+        'calculator' => [
+            'title' => '¿Cuánto te cuesta contestar a mano?',
+            'subtitle' => 'Mové el control y miralo con tus números.',
+            'slider_label' => 'Consultas que recibís por día',
+            'out_conversations' => 'conversaciones al mes',
+            'out_hours' => 'horas tuyas contestando',
+            'hours_note' => 'Atendia te las devuelve — también a las 3 a.m.',
+            'plan_hint' => 'Con ese volumen te alcanza el plan',
+            'assumption' => 'Estimación con :minutes min por consulta.',
+        ],
     ],
 
     'faq' => [

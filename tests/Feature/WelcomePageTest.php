@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\ConversationMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -122,6 +123,38 @@ test('pricing clarifies USD and only grounds a local amount when a rate is confi
         'plan' => __('landing.pricing.negocio.name'),
         'amount' => 'AR$ 118.500',
     ]));
+});
+
+test('the pricing calculator argues with the visitor\'s own numbers, no invented stats', function (): void {
+    $this->get('/')
+        ->assertSee(__('landing.pricing.calculator.title'))
+        ->assertSee(__('landing.pricing.calculator.slider_label'))
+        ->assertSee('range-input', false)
+        ->assertSee(__('landing.pricing.calculator.plan_hint'))
+        ->assertSee(__('landing.pricing.calculator.assumption', [
+            'minutes' => config('atendia.calculator_minutes'),
+        ]));
+});
+
+test('a sticky register bar follows the phone reader once the hero scrolls away', function (): void {
+    $this->get('/')
+        ->assertSee('mobile-cta', false)
+        ->assertSee('lg:hidden', false);
+});
+
+test('the live tally speaks only from the floor up and never counts the demo', function (): void {
+    config()->set('atendia.tally_floor', 3);
+
+    // Two real replies plus two demo ones: still under the floor.
+    ConversationMessage::factory()->out()->count(2)->create();
+    $demo = Business::factory()->create(['billing_email' => Business::DEMO_EMAILS['clinica']]);
+    ConversationMessage::factory()->out()->count(2)->create(['business_id' => $demo->id]);
+
+    $this->get('/')->assertDontSee('conversaciones respondidas esta semana');
+
+    ConversationMessage::factory()->out()->create();
+
+    $this->get('/')->assertSee(trans_choice('landing.tally.line', 3, ['count' => 3]));
 });
 
 test('the social proof waits for a real crowd before it speaks', function (): void {

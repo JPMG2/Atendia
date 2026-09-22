@@ -33,6 +33,7 @@ components/ui/select.blade.php
 components/ui/textarea.blade.php
 components/ui/switch.blade.php
 components/ui/checkbox.blade.php
+components/ui/range.blade.php
 components/inputsform/input.blade.php
 components/inputsform/select.blade.php
 components/inputsform/combobox.blade.php

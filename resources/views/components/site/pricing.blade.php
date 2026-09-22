@@ -149,6 +149,72 @@
             @endforeach
         </div>
 
+        @php
+            // The calculator is plain arithmetic on the visitor's own input:
+            // no invented market stats, and the plan hint reuses the real caps.
+            $calcMinutes = (int) config('atendia.calculator_minutes');
+            $planCaps = [
+                'emprende' => (int) config('atendia.plans.emprende.conversations_per_month'),
+                'negocio' => (int) config('atendia.plans.negocio.conversations_per_month'),
+            ];
+        @endphp
+
+        <div class="mx-auto mt-10" style="max-width: 640px" x-data="{ perDay: 20, minutes: {{ $calcMinutes }} }">
+            <x-ui.card style="padding: 24px">
+                <h3 class="mb-1 text-center font-display" style="font-size: var(--text-xl)">
+                    {{ __('landing.pricing.calculator.title') }}
+                </h3>
+                <p class="text-muted mb-5 text-center" style="font-size: var(--text-sm)">
+                    {{ __('landing.pricing.calculator.subtitle') }}
+                </p>
+
+                <x-ui.range
+                    :label="__('landing.pricing.calculator.slider_label')"
+                    min="5"
+                    max="100"
+                    step="5"
+                    x-model.number="perDay"
+                />
+                <p
+                    class="text-brand mt-1 font-mono font-semibold"
+                    style="font-size: var(--text-sm)"
+                    x-text="perDay"
+                ></p>
+
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <div class="mini-stat">
+                        <b class="font-mono" x-text="(perDay * 30).toLocaleString('es')"></b>
+                        <span>{{ __('landing.pricing.calculator.out_conversations') }}</span>
+                    </div>
+                    <div class="mini-stat">
+                        <b class="font-mono" x-text="Math.round((perDay * 30 * minutes) / 60) + ' h'"></b>
+                        <span>{{ __('landing.pricing.calculator.out_hours') }}</span>
+                    </div>
+                </div>
+
+                <p class="text-body mt-3 text-center font-semibold" style="font-size: var(--text-sm)">
+                    {{ __('landing.pricing.calculator.hours_note') }}
+                </p>
+                <p class="text-muted mt-1 text-center" style="font-size: var(--text-sm)">
+                    {{ __('landing.pricing.calculator.plan_hint') }}
+                    <b class="text-brand">
+                        <span x-show="perDay * 30 <= {{ $planCaps['emprende'] }}">{{ __('landing.pricing.emprende.name') }}</span>
+                        <span
+                            x-show="perDay * 30 > {{ $planCaps['emprende'] }} && perDay * 30 <= {{ $planCaps['negocio'] }}"
+                            x-cloak
+                        >{{ __('landing.pricing.negocio.name') }}</span>
+                        <span
+                            x-show="perDay * 30 > {{ $planCaps['negocio'] }}"
+                            x-cloak
+                        >{{ __('landing.pricing.premium.name') }}</span>
+                    </b>
+                </p>
+                <p class="text-subtle mt-3 text-center" style="font-size: var(--text-xs)">
+                    {{ __('landing.pricing.calculator.assumption', ['minutes' => $calcMinutes]) }}
+                </p>
+            </x-ui.card>
+        </div>
+
         <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">
             {{ __('landing.pricing.trust') }} · {{ __('landing.pricing.currency_note') }}
         </p>

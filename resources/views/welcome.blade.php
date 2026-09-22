@@ -2,6 +2,7 @@
     <x-site.navbar />
     <main>
         <x-site.hero />
+        <x-site.live-tally />
         <x-site.logo-strip />
         <x-site.features />
         <x-site.how-it-works />
@@ -12,4 +13,5 @@
         <x-site.closing-cta />
     </main>
     <x-site.footer />
+    <x-site.mobile-cta />
 </x-layouts.marketing>

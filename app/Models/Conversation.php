@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ConversationStatus;
+use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
+use App\Services\Tenant;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -38,6 +40,24 @@ class Conversation extends Model
             'handoff_reminded_at' => 'datetime',
             'last_message_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Landing-facing tally: distinct threads answered platform-wide in the
+     * last 7 days. Public content, so it escapes the tenant scope on
+     * purpose (Tenant::for(null), the Testimonial::published() pattern);
+     * demo businesses never inflate it.
+     */
+    public static function answeredThisWeekCount(): int
+    {
+        return app(Tenant::class)->for(null, fn (): int => ConversationMessage::query()
+            ->where('direction', MessageDirection::Out)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->whereNotIn('business_id', Business::query()
+                ->whereIn('billing_email', Business::DEMO_EMAILS)
+                ->select('id'))
+            ->distinct('conversation_id')
+            ->count('conversation_id'));
     }
 
     /**

@@ -193,6 +193,27 @@ test('the match component stays quiet under three characters or without a hit', 
 
 /*
 |--------------------------------------------------------------------------
+| <x-ui.range>
+|--------------------------------------------------------------------------
+*/
+test('the range renders a slider with its bounds, step and label', function (): void {
+    $html = Blade::render('<x-ui.range label="Consultas" min="5" max="100" step="5" />');
+
+    expect($html)
+        ->toContain('type="range"')
+        ->toContain('range-input')
+        ->toContain('min="5"')
+        ->toContain('max="100"')
+        ->toContain('step="5"')
+        ->toContain('Consultas');
+});
+
+test('the range forwards extra attributes like an Alpine model', function (): void {
+    expect(Blade::render('<x-ui.range x-model.number="perDay" />'))->toContain('x-model.number="perDay"');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Golden rule: theme-aware, no hardcoded colors
 |--------------------------------------------------------------------------
 */
