@@ -9,6 +9,10 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Raised by the interactive demo: the scripted pool yields to the visitor.
 let demoActive = false;
 
+// Wires the carousel, the scripted player and the composer together: the
+// active tag, its business and its conversation always travel as one.
+const demoSync = { playPool: null, applyRubro: null };
+
 const nowTime = () =>
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
@@ -56,15 +60,17 @@ function liveChat() {
 
     if (!chat || reduced) return;
 
-    let pool;
+    let pools;
 
     try {
-        pool = JSON.parse(chat.dataset.livePool || '[]');
+        pools = JSON.parse(chat.dataset.livePools || '{}');
     } catch {
         return;
     }
 
-    if (pool.length === 0) return;
+    let pool = pools.clinica ?? [];
+    let i = 0;
+    let timer = null;
 
     const bubble = (m) => {
         const row = document.createElement('div');
@@ -80,11 +86,9 @@ function liveChat() {
         chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
     };
 
-    let i = 0;
-
     const tick = () => {
         // The visitor took the phone: the script never talks over them.
-        if (demoActive) return;
+        if (demoActive || pool.length === 0) return;
 
         // A hidden tab just waits: bubbles landing unseen are wasted charm.
         if (document.hidden) return schedule();
@@ -99,7 +103,9 @@ function liveChat() {
             chat.append(typing);
             settle();
 
-            setTimeout(() => {
+            // Tracked in the same timer so a rubro switch can cancel it: an
+            // old pool's reply must never land in the new business's chat.
+            timer = setTimeout(() => {
                 typing.remove();
 
                 if (demoActive) return;
@@ -115,7 +121,18 @@ function liveChat() {
         }
     };
 
-    const schedule = () => setTimeout(tick, 4200);
+    const schedule = (delay = 4200) => (timer = setTimeout(tick, delay));
+
+    // The carousel handed the phone to another rubro: its script starts over.
+    demoSync.playPool = (slug) => {
+        clearTimeout(timer);
+        pool = pools[slug] ?? [];
+        i = 0;
+
+        if (pool.length > 0) schedule(1300);
+    };
+
+    if (pool.length === 0) return;
 
     // Freezes the conversation's rendered height first, so new bubbles
     // scroll inside the screen instead of stretching the phone.
@@ -275,36 +292,48 @@ function interactiveDemo() {
         chip.addEventListener('click', () => send(chip.textContent)),
     );
 
-    // Picking a rubro hands the phone to THAT demo business: the scripted
-    // clinic chat clears, the header renames, its chips step forward.
+    // Handing the phone to a rubro is one move: header, live dot, chips and
+    // the composer's target switch together, whoever asked for it.
+    const applyRubro = (pill) => {
+        rubro = pill.dataset.demoRubro;
+        currentName = pill.dataset.demoName;
+        currentCtaLabel = pill.dataset.demoCtaLabel ?? '';
+
+        if (header) header.textContent = pill.dataset.demoHeaderText;
+
+        document.querySelectorAll('[data-demo-rubro]').forEach((other) => {
+            const active = other === pill;
+            other.setAttribute('aria-pressed', active ? 'true' : 'false');
+            other.classList.toggle('bg-brand-soft', active);
+            other.classList.toggle('text-brand', active);
+            other.classList.toggle('bg-sunken', !active);
+            other.classList.toggle('text-body', !active);
+            other.classList.toggle('hover:bg-brand-soft', !active);
+        });
+
+        box.querySelectorAll('[data-demo-chips]').forEach((group) => {
+            group.style.display = group.dataset.demoChips === rubro ? 'flex' : 'none';
+        });
+
+        // A fresh chat never sits empty: the new assistant says hello.
+        chat.innerHTML = '';
+        bubble('out', pill.dataset.demoGreeting);
+    };
+
+    // The carousel's scripted switch: same plumbing, no takeover.
+    demoSync.applyRubro = (pill) => {
+        if (demoActive || busy) return;
+
+        applyRubro(pill);
+    };
+
+    // Picking a rubro hands the phone to THAT demo business for real.
     document.querySelectorAll('[data-demo-rubro]').forEach((pill) =>
         pill.addEventListener('click', () => {
             if (busy || pill.dataset.demoRubro === rubro) return;
 
-            rubro = pill.dataset.demoRubro;
-            currentName = pill.dataset.demoName;
-            currentCtaLabel = pill.dataset.demoCtaLabel ?? '';
             demoActive = true;
-
-            // A fresh chat never sits empty: the new assistant says hello.
-            chat.innerHTML = '';
-            bubble('out', pill.dataset.demoGreeting);
-
-            if (header) header.textContent = pill.dataset.demoHeaderText;
-
-            document.querySelectorAll('[data-demo-rubro]').forEach((other) => {
-                const active = other === pill;
-                other.setAttribute('aria-pressed', active ? 'true' : 'false');
-                other.classList.toggle('bg-brand-soft', active);
-                other.classList.toggle('text-brand', active);
-                other.classList.toggle('bg-sunken', !active);
-                other.classList.toggle('text-body', !active);
-                other.classList.toggle('hover:bg-brand-soft', !active);
-            });
-
-            box.querySelectorAll('[data-demo-chips]').forEach((group) => {
-                group.style.display = group.dataset.demoChips === rubro ? 'flex' : 'none';
-            });
+            applyRubro(pill);
         }),
     );
 }
@@ -315,7 +344,7 @@ function rubroCarousel() {
 
     if (pills.length === 0) return;
 
-    let start = 0;
+    let idx = 0;
     let stopped = false;
 
     // The visitor took the selector: their rubro must never rotate away
@@ -326,9 +355,10 @@ function rubroCarousel() {
     document.querySelector('[data-demo-input]')?.addEventListener('focus', stop);
     document.querySelectorAll('[data-demo-chip]').forEach((chip) => chip.addEventListener('click', stop));
 
+    // The active pill leads the visible window of three.
     const paint = () =>
         pills.forEach((pill, i) => {
-            pill.style.display = (i - start + pills.length) % pills.length < 3 ? '' : 'none';
+            pill.style.display = (i - idx + pills.length) % pills.length < 3 ? '' : 'none';
         });
 
     // A campaign door: ?rubro=veterinaria lands with that demo already
@@ -337,7 +367,7 @@ function rubroCarousel() {
     const target = pills.find((pill) => pill.dataset.demoRubro === wanted);
 
     if (target) {
-        start = pills.indexOf(target);
+        idx = pills.indexOf(target);
         paint();
         target.click();
     }
@@ -351,10 +381,15 @@ function rubroCarousel() {
         track.style.opacity = '0';
 
         setTimeout(() => {
-            // A click may land during the fade: leave the window alone then.
+            // A click may land during the fade: leave the demo alone then.
             if (!stopped && !demoActive) {
-                start = (start + 1) % pills.length;
+                idx = (idx + 1) % pills.length;
                 paint();
+
+                // The whole demo travels with the tag: live dot, header,
+                // chips and a scripted chat that belongs to THIS business.
+                demoSync.applyRubro?.(pills[idx]);
+                demoSync.playPool?.(pills[idx].dataset.demoRubro);
             }
 
             track.style.opacity = '1';
@@ -363,7 +398,9 @@ function rubroCarousel() {
         schedule();
     };
 
-    const schedule = () => setTimeout(tick, 4500);
+    // Long enough for a rubro's greeting and both scripted exchanges to
+    // play out before the next business takes the phone.
+    const schedule = () => setTimeout(tick, 14000);
 
     schedule();
 }

@@ -65,6 +65,12 @@ return [
                     '¿Hacen color y mechas?',
                     'Do you take walk-ins?',
                 ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿Tienen turno el sábado a la tarde?'],
+                    ['side' => 'out', 'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te lo reservo? 😊'],
+                    ['side' => 'in', 'text' => 'Do you do balayage?'],
+                    ['side' => 'out', 'text' => 'Yes! Balayage from $55.000, hydration treatment included ✨'],
+                ],
             ],
             'kiosco' => [
                 'label' => 'Kiosco',
@@ -74,6 +80,12 @@ return [
                     '¿Hacen envíos?',
                     '¿Qué promos tienen hoy?',
                     'What time do you open?',
+                ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿Están abiertos ahora?'],
+                    ['side' => 'out', 'text' => '¡Sí! Hasta las 23 ⏰ ¿Te llevamos algo?'],
+                    ['side' => 'in', 'text' => '¿Qué promos hay hoy?'],
+                    ['side' => 'out', 'text' => 'Hoy 2x1 en alfajores y la gaseosa de 1,5 L a mitad de precio llevando dos 🎉'],
                 ],
             ],
             'dr-juan' => [
@@ -85,6 +97,12 @@ return [
                     '¿Cuánto sale la consulta?',
                     'How much is a consultation?',
                 ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿El doctor atiende mañana?'],
+                    ['side' => 'out', 'text' => 'Sí, de 14 a 19. Tengo libre 15:30, ¿te lo reservo?'],
+                    ['side' => 'in', 'text' => '¿Cuánto sale la consulta?'],
+                    ['side' => 'out', 'text' => 'La consulta particular sale <b>$25.000</b>. Con obra social suele tener cobertura 😊'],
+                ],
             ],
             'panaderia' => [
                 'label' => 'Panadería',
@@ -94,6 +112,12 @@ return [
                     '¿Hacen tortas por encargo?',
                     '¿Tienen productos sin TACC?',
                     'Do you deliver?',
+                ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿Hay medialunas para las 9?'],
+                    ['side' => 'out', 'text' => '¡Recién horneadas! 🥐 ¿Docena o media docena?'],
+                    ['side' => 'in', 'text' => 'Do you make custom cakes?'],
+                    ['side' => 'out', 'text' => 'Yes! From $28.000 per kilo — just order 48h ahead 🎂'],
                 ],
             ],
             'restaurante' => [
@@ -105,6 +129,12 @@ return [
                     '¿Tienen menú del día?',
                     'Do you have a table tonight?',
                 ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿Mesa para 4 hoy a las 21?'],
+                    ['side' => 'out', 'text' => '¡Confirmada! Mesa para 4 a las 21, a tu nombre 🍷'],
+                    ['side' => 'in', 'text' => '¿Tienen menú del día?'],
+                    ['side' => 'out', 'text' => 'Sí: entrada, principal y postre por <b>$22.000</b>, de martes a viernes al mediodía.'],
+                ],
             ],
             'ferreteria' => [
                 'label' => 'Ferretería',
@@ -115,6 +145,12 @@ return [
                     '¿Llevan pedidos a obra?',
                     'What time do you open?',
                 ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿Tienen cinta de teflón y llave del 14?'],
+                    ['side' => 'out', 'text' => 'Sí, las dos en stock. ¿Te las aparto en el mostrador?'],
+                    ['side' => 'in', 'text' => '¿Llevan pedidos a obra?'],
+                    ['side' => 'out', 'text' => 'Sí: gratis desde $50.000 en el barrio. Antes de las 14 sale el mismo día 🚚'],
+                ],
             ],
             'veterinaria' => [
                 'label' => 'Veterinaria',
@@ -124,6 +160,12 @@ return [
                     '¿Atienden urgencias?',
                     '¿Cuánto sale la consulta?',
                     'Do you do grooming?',
+                ],
+                'pool' => [
+                    ['side' => 'in', 'text' => 'Mi gato no quiere comer 😿'],
+                    ['side' => 'out', 'text' => 'Pobre 💚 Hoy a las 18:00 hay lugar con la doctora, ¿te lo agendo?'],
+                    ['side' => 'in', 'text' => 'Do you do grooming?'],
+                    ['side' => 'out', 'text' => 'Yes! Bath & cut from $18.000, with appointment 🐾'],
                 ],
             ],
         ],

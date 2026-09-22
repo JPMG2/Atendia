@@ -162,6 +162,18 @@ test('the rubro carousel ships all 8 pills but only the first 3 visible', functi
         ->and(preg_match_all('/data-demo-rubro=[^>]+display: none/', $response->getContent()))->toBe(5);
 });
 
+test('every rubro ships its own scripted conversation, some in english', function (): void {
+    $this->get('/')
+        ->assertSee('data-live-pools', false)
+        // A themed line per pool: the phone talks like THAT business.
+        ->assertSee('¿Están abiertos ahora?')
+        ->assertSee('Mi gato no quiere comer')
+        ->assertSee('¿Mesa para 4 hoy a las 21?')
+        // English exchanges beyond the clinic: the plus, demonstrated.
+        ->assertSee('Do you make custom cakes?')
+        ->assertSee('Do you do balayage?');
+});
+
 test('each pill carries its live dot, pressed state and rubro-named invite', function (): void {
     $response = $this->get('/')
         ->assertSee('pill-live-dot')

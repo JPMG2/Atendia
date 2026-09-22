@@ -6,16 +6,20 @@
         ['side' => 'out', 'time' => '09:42', 'text' => __('landing.phone.b4')],
     ];
 
-    // Extra exchanges hero.js keeps appending so the demo chat never looks
-    // dead; their timestamps come from the visitor's real clock.
-    $livePool = [
-        ['side' => 'in',  'text' => __('landing.phone.b5')],
-        ['side' => 'out', 'text' => __('landing.phone.b6')],
-        ['side' => 'in',  'text' => __('landing.phone.b7')],
-        ['side' => 'out', 'text' => __('landing.phone.b8')],
-        ['side' => 'in',  'text' => __('landing.phone.b9')],
-        ['side' => 'out', 'text' => __('landing.phone.b10')],
-    ];
+    // One scripted pool per rubro: the carousel replays the conversation of
+    // whichever tag is active. The clinic reuses the canonical
+    // landing.phone.b5..b10 lines (the closing section pins them too).
+    $livePools = collect(__('landing.demo.rubros'))
+        ->map(fn (array $rubro): array => $rubro['pool'] ?? [])
+        ->put('clinica', [
+            ['side' => 'in',  'text' => __('landing.phone.b5')],
+            ['side' => 'out', 'text' => __('landing.phone.b6')],
+            ['side' => 'in',  'text' => __('landing.phone.b7')],
+            ['side' => 'out', 'text' => __('landing.phone.b8')],
+            ['side' => 'in',  'text' => __('landing.phone.b9')],
+            ['side' => 'out', 'text' => __('landing.phone.b10')],
+        ])
+        ->toArray();
 @endphp
 
 <div class="hero-phone-enter relative">
@@ -130,7 +134,7 @@
             <div
                 class="flex flex-col"
                 data-phone-live
-                data-live-pool="{{ json_encode($livePool, JSON_UNESCAPED_UNICODE) }}"
+                data-live-pools="{{ json_encode($livePools, JSON_UNESCAPED_UNICODE) }}"
                 style="padding: 14px 12px; gap: 9px; min-height: 300px"
             >
                 @foreach ($bubbles as $b)
