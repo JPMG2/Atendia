@@ -949,6 +949,11 @@
 @keyframes cta-spark { 40% { transform:rotate(-12deg) scale(1.15); } }
 .cta-spark:hover svg { animation:cta-spark .45s var(--ease-spring); }
 
+/* The active rubro pill carries its own "en línea" dot, breathing like the
+   phone header's: that assistant is the one currently on the line. */
+.pill-live-dot { display:none; width:6px; height:6px; border-radius:999px; background:var(--success); }
+[aria-pressed="true"] .pill-live-dot { display:inline-block; animation:badge-pulse 2.4s var(--ease-in-out) infinite; }
+
 /* The connect screen's dedicated-number warning: its amber tile breathes a
    halo so the one warning that prevents a ban is impossible to skim past. */
 @keyframes warn-beacon {
@@ -959,7 +964,7 @@
 .warn-beacon { animation:warn-beacon 1.8s var(--ease-out) infinite; }
 
 @media (prefers-reduced-motion:reduce) {
-  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce, .warn-beacon { animation:none; }
+  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce, .warn-beacon, .pill-live-dot { animation:none; }
   .cta-spark:hover svg { animation:none; }
   .reveal-pending { opacity:1; transform:none; }
 }

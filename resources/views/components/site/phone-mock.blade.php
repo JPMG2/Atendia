@@ -39,14 +39,16 @@
                     data-demo-name="{{ $rubro['name'] }}"
                     data-demo-header-text="{{ __('landing.demo.header', ['name' => $rubro['name']]) }}"
                     data-demo-greeting="{{ __('landing.demo.greeting', ['name' => $rubro['name']]) }}"
+                    data-demo-cta-label="{{ __('landing.demo.cta_rubro', ['rubro' => $rubro['noun']]) }}"
+                    aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
                     @class([
-                        'rounded-full font-semibold transition-colors',
+                        'inline-flex items-center gap-1.5 rounded-full font-semibold transition-colors',
                         'bg-brand-soft text-brand' => $loop->first,
                         'bg-sunken text-body hover:bg-brand-soft' => ! $loop->first,
                     ])
                     style="font-size: 12px; padding: 5px 12px; {{ $loop->index > 2 ? 'display: none' : '' }}"
                 >
-                    {{ $rubro['label'] }}
+                    <span class="pill-live-dot"></span>{{ $rubro['label'] }}
                 </button>
             @endforeach
         </div>

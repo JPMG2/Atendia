@@ -162,6 +162,18 @@ test('the rubro carousel ships all 8 pills but only the first 3 visible', functi
         ->and(preg_match_all('/data-demo-rubro=[^>]+display: none/', $response->getContent()))->toBe(5);
 });
 
+test('each pill carries its live dot, pressed state and rubro-named invite', function (): void {
+    $response = $this->get('/')
+        ->assertSee('pill-live-dot')
+        ->assertSee('Crear el asistente de mi panadería')
+        ->assertSee('Crear el asistente de mi veterinaria');
+
+    // Exactly one pill is born pressed: the clinic, today's opening rubro.
+    expect(substr_count($response->getContent(), 'aria-pressed="true"'))->toBe(1)
+        ->and(substr_count($response->getContent(), 'aria-pressed="false"'))->toBe(7)
+        ->and(substr_count($response->getContent(), 'data-demo-cta-label='))->toBe(count(Business::DEMO_EMAILS));
+});
+
 test('the funnel tallies sessions and messages per day', function (): void {
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);

@@ -55,12 +55,24 @@ test('the spent budget turns into the register invite and the share door', funct
 
     $page = visit('/');
 
-    // One budgeted reply: the goodbye, the register CTA and the WhatsApp
-    // share link take over the composer.
+    // One budgeted reply: the goodbye, the rubro-named register CTA and the
+    // WhatsApp share link take over the composer.
     $page->click('¿Cuánto sale una ecografía?')
         ->assertSee('La ecografía abdominal cuesta $45.000')
-        ->assertSee(__('landing.demo.cta_more'))
+        ->assertSee(__('landing.demo.cta_rubro', ['rubro' => 'consultorio']))
         ->assertSee(__('landing.demo.share'))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-finished')
         ->assertVisible('[data-demo-share]');
+});
+
+test('a campaign deep link lands with its rubro already active', function (): void {
+    Queue::fake();
+    $this->seed(DemoBusinessSeeder::class);
+
+    // The vet lives beyond the visible window: the deep link must rotate
+    // its pill into view, greet as the vet and park the carousel.
+    visit('/?rubro=veterinaria')
+        ->assertSee('Veterinaria Patitas · Asistente')
+        ->assertSee('Soy el asistente de Veterinaria Patitas')
+        ->assertVisible('[data-demo-rubro="veterinaria"]');
 });

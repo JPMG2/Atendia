@@ -49,6 +49,7 @@ return [
             'clinica' => [
                 'label' => 'Consultorio',
                 'name' => 'Clínica Vida',
+                'noun' => 'consultorio',
                 'chips' => [
                     '¿Tienen turno esta semana?',
                     '¿Cuánto sale una ecografía?',
@@ -58,6 +59,7 @@ return [
             'peluqueria' => [
                 'label' => 'Peluquería',
                 'name' => 'Peluquería Lumen',
+                'noun' => 'peluquería',
                 'chips' => [
                     '¿Cuánto sale el corte?',
                     '¿Hacen color y mechas?',
@@ -67,6 +69,7 @@ return [
             'kiosco' => [
                 'label' => 'Kiosco',
                 'name' => 'Kiosco El Faro',
+                'noun' => 'kiosco',
                 'chips' => [
                     '¿Hacen envíos?',
                     '¿Qué promos tienen hoy?',
@@ -76,6 +79,7 @@ return [
             'dr-juan' => [
                 'label' => 'Dr. Juan',
                 'name' => 'Dr. Juan Herrera',
+                'noun' => 'consultorio',
                 'chips' => [
                     '¿Qué días atiende el doctor?',
                     '¿Cuánto sale la consulta?',
@@ -85,6 +89,7 @@ return [
             'panaderia' => [
                 'label' => 'Panadería',
                 'name' => 'Panadería La Espiga',
+                'noun' => 'panadería',
                 'chips' => [
                     '¿Hacen tortas por encargo?',
                     '¿Tienen productos sin TACC?',
@@ -94,6 +99,7 @@ return [
             'restaurante' => [
                 'label' => 'Restaurante',
                 'name' => 'Restaurante La Nona',
+                'noun' => 'restaurante',
                 'chips' => [
                     '¿Puedo reservar para hoy?',
                     '¿Tienen menú del día?',
@@ -103,6 +109,7 @@ return [
             'ferreteria' => [
                 'label' => 'Ferretería',
                 'name' => 'Ferretería El Tornillo',
+                'noun' => 'ferretería',
                 'chips' => [
                     '¿Hacen copias de llaves?',
                     '¿Llevan pedidos a obra?',
@@ -112,6 +119,7 @@ return [
             'veterinaria' => [
                 'label' => 'Veterinaria',
                 'name' => 'Veterinaria Patitas',
+                'noun' => 'veterinaria',
                 'chips' => [
                     '¿Atienden urgencias?',
                     '¿Cuánto sale la consulta?',
@@ -127,6 +135,7 @@ return [
         'limit_reply' => '¡Me encantó atenderte! 🤖 Para seguir, crea tu propio asistente con los datos de tu negocio: responde así de rápido, con tus precios y tus horarios.',
         'error_reply' => 'No pude responder ahora. Intenta de nuevo en un momento.',
         'cta_more' => 'Crear mi asistente gratis',
+        'cta_rubro' => 'Crear el asistente de mi :rubro',
     ],
 
     'logos' => [

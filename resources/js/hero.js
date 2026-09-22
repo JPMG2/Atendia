@@ -144,6 +144,7 @@ function interactiveDemo() {
 
     let rubro = 'clinica';
     let currentName = document.querySelector('[data-demo-rubro]')?.dataset.demoName ?? '';
+    let currentCtaLabel = document.querySelector('[data-demo-rubro]')?.dataset.demoCtaLabel ?? '';
     const exchanges = [];
 
     const settle = () => {
@@ -189,6 +190,10 @@ function interactiveDemo() {
         form.style.display = 'none';
         left.style.display = 'none';
         box.querySelectorAll('[data-demo-chip]').forEach((chip) => chip.remove());
+
+        // The invite names the visitor's own rubro: "mi peluquería" sells
+        // harder than a generic assistant.
+        if (currentCtaLabel) cta.textContent = currentCtaLabel;
         cta.style.display = 'inline-flex';
 
         // The chat itself becomes the pitch, shared on WhatsApp of course.
@@ -278,6 +283,7 @@ function interactiveDemo() {
 
             rubro = pill.dataset.demoRubro;
             currentName = pill.dataset.demoName;
+            currentCtaLabel = pill.dataset.demoCtaLabel ?? '';
             demoActive = true;
 
             // A fresh chat never sits empty: the new assistant says hello.
@@ -288,6 +294,7 @@ function interactiveDemo() {
 
             document.querySelectorAll('[data-demo-rubro]').forEach((other) => {
                 const active = other === pill;
+                other.setAttribute('aria-pressed', active ? 'true' : 'false');
                 other.classList.toggle('bg-brand-soft', active);
                 other.classList.toggle('text-brand', active);
                 other.classList.toggle('bg-sunken', !active);
@@ -306,7 +313,7 @@ function rubroCarousel() {
     const track = document.querySelector('[data-demo-rubro-track]');
     const pills = track ? [...track.querySelectorAll('[data-demo-rubro]')] : [];
 
-    if (pills.length <= 3 || reduced) return;
+    if (pills.length === 0) return;
 
     let start = 0;
     let stopped = false;
@@ -323,6 +330,19 @@ function rubroCarousel() {
         pills.forEach((pill, i) => {
             pill.style.display = (i - start + pills.length) % pills.length < 3 ? '' : 'none';
         });
+
+    // A campaign door: ?rubro=veterinaria lands with that demo already
+    // active, its pill in view and the carousel parked.
+    const wanted = new URLSearchParams(location.search).get('rubro');
+    const target = pills.find((pill) => pill.dataset.demoRubro === wanted);
+
+    if (target) {
+        start = pills.indexOf(target);
+        paint();
+        target.click();
+    }
+
+    if (stopped || pills.length <= 3 || reduced) return;
 
     const tick = () => {
         if (stopped || demoActive) return;
