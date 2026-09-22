@@ -97,6 +97,111 @@ class DemoBusinessSeeder extends Seeder
                     ],
                 ],
             ],
+            'dr-juan' => [
+                'name' => 'Dr. Juan Herrera',
+                'faqs' => [
+                    [
+                        'title' => 'Días y turnos del doctor',
+                        'content' => 'Pregunta: ¿Qué días atiende el doctor?'."\n".'Respuesta: El Dr. Juan Herrera atiende lunes, miércoles y viernes de 14 a 19 en su consultorio. Decime qué día te queda cómodo y te reservo el turno por acá.',
+                    ],
+                    [
+                        'title' => 'Precio de la consulta',
+                        'content' => 'Pregunta: ¿Cuánto sale la consulta?'."\n".'Respuesta: La consulta particular cuesta $25.000. Con obra social o prepaga puede tener cobertura total o un copago menor, según el plan.',
+                    ],
+                    [
+                        'title' => 'Dónde atiende',
+                        'content' => 'Pregunta: ¿Dónde queda el consultorio?'."\n".'Respuesta: El consultorio está en Av. Callao 456, piso 2, Buenos Aires, a una cuadra del subte.',
+                    ],
+                    [
+                        'title' => 'Recetas y estudios',
+                        'content' => 'Pregunta: ¿Puedo renovar una receta sin turno?'."\n".'Respuesta: Si sos paciente en seguimiento, el doctor renueva recetas sin turno presencial: pedila por acá y la retirás en secretaría. Los resultados de estudios se revisan en la consulta.',
+                    ],
+                ],
+            ],
+            'panaderia' => [
+                'name' => 'Panadería La Espiga',
+                'faqs' => [
+                    [
+                        'title' => 'Horarios',
+                        'content' => 'Pregunta: ¿A qué hora abren?'."\n".'Respuesta: Abrimos todos los días de 7 a 21, con pan recién horneado a la mañana y a media tarde.',
+                    ],
+                    [
+                        'title' => 'Tortas por encargo',
+                        'content' => 'Pregunta: ¿Hacen tortas por encargo?'."\n".'Respuesta: Sí, tortas personalizadas desde $28.000 el kilo. Pedilas con 48 horas de anticipación; se señan con transferencia.',
+                    ],
+                    [
+                        'title' => 'Productos sin TACC',
+                        'content' => 'Pregunta: ¿Tienen productos sin TACC?'."\n".'Respuesta: Sí: pan y facturas sin TACC los martes y jueves. Conviene reservarlos por acá porque vuelan.',
+                    ],
+                    [
+                        'title' => 'Envíos',
+                        'content' => 'Pregunta: ¿Hacen envíos?'."\n".'Respuesta: Hacemos envíos hasta 15 cuadras con un mínimo de $10.000. Los pedidos antes de las 11 llegan al mediodía.',
+                    ],
+                ],
+            ],
+            'restaurante' => [
+                'name' => 'Restaurante La Nona',
+                'faqs' => [
+                    [
+                        'title' => 'Reservas',
+                        'content' => 'Pregunta: ¿Puedo reservar para hoy?'."\n".'Respuesta: Sí, tomamos reservas hasta las 21:30. Decime cuántos son y a qué hora vienen y te confirmo la mesa.',
+                    ],
+                    [
+                        'title' => 'Horarios',
+                        'content' => 'Pregunta: ¿Qué días abren?'."\n".'Respuesta: Abrimos de martes a domingo: mediodía de 12 a 15 y noche de 20 a 24.',
+                    ],
+                    [
+                        'title' => 'Menú del día',
+                        'content' => 'Pregunta: ¿Tienen menú del día?'."\n".'Respuesta: Sí, el menú ejecutivo cuesta $22.000 e incluye entrada, principal y postre. Va de martes a viernes al mediodía.',
+                    ],
+                    [
+                        'title' => 'Delivery',
+                        'content' => 'Pregunta: ¿Hacen delivery?'."\n".'Respuesta: Sí, delivery propio hasta 20 cuadras y también por las apps. La demora ronda los 40 minutos.',
+                    ],
+                ],
+            ],
+            'ferreteria' => [
+                'name' => 'Ferretería El Tornillo',
+                'faqs' => [
+                    [
+                        'title' => 'Horarios',
+                        'content' => 'Pregunta: ¿A qué hora abren?'."\n".'Respuesta: Abrimos de lunes a sábado de 8 a 19, horario corrido.',
+                    ],
+                    [
+                        'title' => 'Copias de llaves',
+                        'content' => 'Pregunta: ¿Hacen copias de llaves?'."\n".'Respuesta: Sí, en el momento: la llave común cuesta $4.000 y la de auto $9.000.',
+                    ],
+                    [
+                        'title' => 'Envíos a obra',
+                        'content' => 'Pregunta: ¿Llevan pedidos a obra?'."\n".'Respuesta: Sí, el envío es gratis desde $50.000 dentro del barrio. Pedidos antes de las 14 salen el mismo día.',
+                    ],
+                    [
+                        'title' => 'Medios de pago',
+                        'content' => 'Pregunta: ¿Cómo puedo pagar?'."\n".'Respuesta: Aceptamos efectivo, tarjetas y billeteras por QR. Desde $30.000 tenés 3 cuotas sin interés.',
+                    ],
+                ],
+            ],
+            'veterinaria' => [
+                'name' => 'Veterinaria Patitas',
+                'faqs' => [
+                    [
+                        'title' => 'Turnos y urgencias',
+                        'content' => 'Pregunta: ¿Atienden urgencias?'."\n".'Respuesta: Consultas con turno de lunes a sábado de 9 a 20. Las urgencias se atienden en el día: avisá por acá y te esperamos.',
+                    ],
+                    [
+                        'title' => 'Precio de la consulta',
+                        'content' => 'Pregunta: ¿Cuánto sale la consulta?'."\n".'Respuesta: La consulta cuesta $20.000 e incluye el control general de tu mascota.',
+                    ],
+                    [
+                        'title' => 'Vacunas',
+                        'content' => 'Pregunta: ¿Qué vacunas aplican?'."\n".'Respuesta: Aplicamos todas: la antirrábica cuesta $15.000 y la quíntuple $25.000. Te recordamos el refuerzo cuando toca.',
+                    ],
+                    [
+                        'title' => 'Baño y peluquería canina',
+                        'content' => 'Pregunta: ¿Hacen baño y corte?'."\n".'Respuesta: Sí, baño y corte desde $18.000 según el tamaño, siempre con turno. Retiramos y llevamos a domicilio en la zona.',
+                    ],
+                ],
+            ],
             'kiosco' => [
                 'name' => 'Kiosco El Faro',
                 'faqs' => [

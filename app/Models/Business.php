@@ -201,6 +201,11 @@ class Business extends Model
         'clinica' => 'demo@atendia.app',
         'peluqueria' => 'demo-peluqueria@atendia.app',
         'kiosco' => 'demo-kiosco@atendia.app',
+        'dr-juan' => 'demo-dr-juan@atendia.app',
+        'panaderia' => 'demo-panaderia@atendia.app',
+        'restaurante' => 'demo-restaurante@atendia.app',
+        'ferreteria' => 'demo-ferreteria@atendia.app',
+        'veterinaria' => 'demo-veterinaria@atendia.app',
     ];
 
     /** One rubro's demo business, or null while it was never seeded. */

@@ -302,6 +302,52 @@ function interactiveDemo() {
     );
 }
 
+function rubroCarousel() {
+    const track = document.querySelector('[data-demo-rubro-track]');
+    const pills = track ? [...track.querySelectorAll('[data-demo-rubro]')] : [];
+
+    if (pills.length <= 3 || reduced) return;
+
+    let start = 0;
+    let stopped = false;
+
+    // The visitor took the selector: their rubro must never rotate away
+    // mid-chat, so any interaction parks the carousel for good.
+    const stop = () => (stopped = true);
+
+    pills.forEach((pill) => pill.addEventListener('click', stop));
+    document.querySelector('[data-demo-input]')?.addEventListener('focus', stop);
+    document.querySelectorAll('[data-demo-chip]').forEach((chip) => chip.addEventListener('click', stop));
+
+    const paint = () =>
+        pills.forEach((pill, i) => {
+            pill.style.display = (i - start + pills.length) % pills.length < 3 ? '' : 'none';
+        });
+
+    const tick = () => {
+        if (stopped || demoActive) return;
+        if (document.hidden) return schedule();
+
+        track.style.opacity = '0';
+
+        setTimeout(() => {
+            // A click may land during the fade: leave the window alone then.
+            if (!stopped && !demoActive) {
+                start = (start + 1) % pills.length;
+                paint();
+            }
+
+            track.style.opacity = '1';
+        }, 250);
+
+        schedule();
+    };
+
+    const schedule = () => setTimeout(tick, 4500);
+
+    schedule();
+}
+
 function revealSections() {
     if (reduced || !('IntersectionObserver' in window)) return;
 
@@ -333,4 +379,5 @@ startClock();
 typeHeadline();
 liveChat();
 interactiveDemo();
+rubroCarousel();
 revealSections();

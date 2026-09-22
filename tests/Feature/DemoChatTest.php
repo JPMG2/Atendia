@@ -39,6 +39,20 @@ test('the rubro selector answers with that rubro\'s demo business', function ():
         ->and(Business::demo('kiosco')->name)->toBe('Kiosco El Faro');
 });
 
+test('a carousel rubro answers with its own demo business', function (): void {
+    Queue::fake();
+    $this->seed(DemoBusinessSeeder::class);
+
+    AsistenteAtendia::fake(['Buscando…', 'Las tortas por encargo salen desde $28.000 el kilo.']);
+
+    $this->postJson(route('demo.message'), ['message' => '¿Hacen tortas por encargo?', 'rubro' => 'panaderia'])
+        ->assertOk()
+        ->assertJsonPath('reply', 'Las tortas por encargo salen desde $28.000 el kilo.');
+
+    expect(Business::demo('dr-juan')->name)->toBe('Dr. Juan Herrera')
+        ->and(Business::demo('veterinaria')->name)->toBe('Veterinaria Patitas');
+});
+
 test('an unknown rubro is refused before it reaches the model', function (): void {
     $this->postJson(route('demo.message'), ['message' => '¿Hola?', 'rubro' => 'banco'])
         ->assertUnprocessable();
@@ -98,10 +112,11 @@ test('the demo seeder is idempotent and feeds the clinic knowledge', function ()
     $this->seed(DemoBusinessSeeder::class);
     $this->seed(DemoBusinessSeeder::class);
 
-    expect(Business::query()->whereIn('billing_email', Business::DEMO_EMAILS)->count())->toBe(3)
+    expect(Business::query()->whereIn('billing_email', Business::DEMO_EMAILS)->count())->toBe(8)
         ->and(Business::demo()->name)->toBe('Clínica Vida')
         ->and(KnowledgeDocument::query()->where('business_id', Business::demo()->id)->count())->toBe(6)
         ->and(KnowledgeDocument::query()->where('business_id', Business::demo('peluqueria')->id)->count())->toBe(4)
+        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('panaderia')->id)->count())->toBe(4)
         ->and(KnowledgeDocument::query()->where('business_id', Business::demo('kiosco')->id)->count())->toBe(4);
 });
 
@@ -129,6 +144,22 @@ test('the hero phone offers the rubro selector and the english chip', function (
         ->assertSee('¿Cuánto sale el corte?')
         ->assertSee('How much is an ultrasound?')
         ->assertSee(trans_choice('landing.demo.left', 2, ['count' => '__N__']));
+});
+
+test('the rubro carousel ships all 8 pills but only the first 3 visible', function (): void {
+    $response = $this->get('/')
+        ->assertSee('data-demo-rubro-track', false)
+        ->assertSee('Dr. Juan')
+        ->assertSee('Panadería')
+        ->assertSee('Restaurante')
+        ->assertSee('Ferretería')
+        ->assertSee('Veterinaria')
+        ->assertSee('Do you do grooming?');
+
+    // Every pill beyond the original window is born hidden: the row keeps
+    // its 3-pill width and hero.js rotates the rest through.
+    expect(substr_count($response->getContent(), 'data-demo-rubro='))->toBe(count(Business::DEMO_EMAILS))
+        ->and(preg_match_all('/data-demo-rubro=[^>]+display: none/', $response->getContent()))->toBe(5);
 });
 
 test('the funnel tallies sessions and messages per day', function (): void {

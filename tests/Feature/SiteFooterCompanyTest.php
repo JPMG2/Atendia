@@ -113,7 +113,9 @@ test('the networks are listed in the order the screen set', function (): void {
 test('a company with no networks shows no empty row', function (): void {
     Company::factory()->create();
 
-    $this->get('/')->assertDontSee('rel="noopener noreferrer"', escape: false);
+    // The social anchors' own signature, not a page-wide rel check: the
+    // hero's share anchor legitimately carries noopener too.
+    $this->get('/')->assertDontSee('text-subtle hover:text-brand transition', escape: false);
 });
 
 test('the footer costs one query for the company, however many pages render it', function (): void {

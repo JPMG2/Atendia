@@ -23,7 +23,15 @@
     Switching hands the phone to that rubro's REAL demo business. --}}
     <div class="relative mb-3 flex flex-col items-center gap-1.5" style="z-index: 1">
         <p class="text-subtle" style="font-size: 11px">{{ __('landing.demo.rubro_label') }}</p>
-        <div class="flex gap-1.5" role="group" aria-label="{{ __('landing.demo.rubro_label') }}">
+        {{-- Only 3 pills show at a time — the row keeps its width and hero.js
+        rotates the rest through like a carousel until the visitor takes over. --}}
+        <div
+            class="flex gap-1.5"
+            role="group"
+            data-demo-rubro-track
+            style="transition: opacity 0.25s"
+            aria-label="{{ __('landing.demo.rubro_label') }}"
+        >
             @foreach (__('landing.demo.rubros') as $slug => $rubro)
                 <button
                     type="button"
@@ -36,7 +44,7 @@
                         'bg-brand-soft text-brand' => $loop->first,
                         'bg-sunken text-body hover:bg-brand-soft' => ! $loop->first,
                     ])
-                    style="font-size: 12px; padding: 5px 12px"
+                    style="font-size: 12px; padding: 5px 12px; {{ $loop->index > 2 ? 'display: none' : '' }}"
                 >
                     {{ $rubro['label'] }}
                 </button>

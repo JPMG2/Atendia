@@ -60,8 +60,8 @@ return [
                 'name' => 'Peluquería Lumen',
                 'chips' => [
                     '¿Cuánto sale el corte?',
-                    '¿Atienden sin turno?',
                     '¿Hacen color y mechas?',
+                    'Do you take walk-ins?',
                 ],
             ],
             'kiosco' => [
@@ -69,8 +69,53 @@ return [
                 'name' => 'Kiosco El Faro',
                 'chips' => [
                     '¿Hacen envíos?',
-                    '¿A qué hora abren?',
                     '¿Qué promos tienen hoy?',
+                    'What time do you open?',
+                ],
+            ],
+            'dr-juan' => [
+                'label' => 'Dr. Juan',
+                'name' => 'Dr. Juan Herrera',
+                'chips' => [
+                    '¿Qué días atiende el doctor?',
+                    '¿Cuánto sale la consulta?',
+                    'How much is a consultation?',
+                ],
+            ],
+            'panaderia' => [
+                'label' => 'Panadería',
+                'name' => 'Panadería La Espiga',
+                'chips' => [
+                    '¿Hacen tortas por encargo?',
+                    '¿Tienen productos sin TACC?',
+                    'Do you deliver?',
+                ],
+            ],
+            'restaurante' => [
+                'label' => 'Restaurante',
+                'name' => 'Restaurante La Nona',
+                'chips' => [
+                    '¿Puedo reservar para hoy?',
+                    '¿Tienen menú del día?',
+                    'Do you have a table tonight?',
+                ],
+            ],
+            'ferreteria' => [
+                'label' => 'Ferretería',
+                'name' => 'Ferretería El Tornillo',
+                'chips' => [
+                    '¿Hacen copias de llaves?',
+                    '¿Llevan pedidos a obra?',
+                    'What time do you open?',
+                ],
+            ],
+            'veterinaria' => [
+                'label' => 'Veterinaria',
+                'name' => 'Veterinaria Patitas',
+                'chips' => [
+                    '¿Atienden urgencias?',
+                    '¿Cuánto sale la consulta?',
+                    'Do you do grooming?',
                 ],
             ],
         ],
