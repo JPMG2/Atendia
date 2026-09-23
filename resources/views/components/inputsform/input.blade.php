@@ -22,6 +22,10 @@
     $isDisabled = $attributes->has('disabled') && $attributes->get('disabled') !== false;
     $isRequired = $attributes->has('required') && $attributes->get('required') !== false;
 
+    // Same peek and Caps Lock warning as <x-ui.input>: a masked field you
+    // cannot check is a typo waiting to lock the owner out.
+    $isPassword = $attributes->get('type') === 'password';
+
     // The prop takes only the key; the component builds the Alpine expression
     // against the `errors` bag, so no Blade ever writes that expression by hand.
     $alpineErrorExpr = $alpineError !== null ? 'errors.'.$alpineError : null;
@@ -46,7 +50,7 @@
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp
 
-<div class="field {{ $spanClass }}">
+<div class="field {{ $spanClass }}" @if ($isPassword) x-data="{ showPw: false, capsOn: false }" @endif>
     @if ($label)
         <label for="{{ $id }}" class="field-label"
             >{{ $label }}
@@ -68,13 +72,36 @@
             @if ($alpineErrorExpr) x-bind:aria-invalid="!!({{ $alpineErrorExpr }}) || null" @endif
             @if ($isRequired) aria-required="true" @endif
             @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif
+            @if ($isPassword)
+                x-bind:type="showPw ? 'text' : 'password'"
+                x-on:keydown="capsOn = $event.getModifierState?.('CapsLock') ?? false"
+                x-on:keyup="capsOn = $event.getModifierState?.('CapsLock') ?? false"
+                x-on:blur="capsOn = false"
+            @endif
             {{ $inputAttributes->merge(['class' => 'field-input']) }}
         />
 
-        @if ($iconRight)
+        @if ($isPassword)
+            <button
+                type="button"
+                class="field-peek"
+                x-on:click="showPw = ! showPw"
+                x-bind:aria-label="showPw ? @js(__('forms.password.hide')) : @js(__('forms.password.show'))"
+            >
+                <span x-show="! showPw"><x-icon name="eye" :size="$iconSize" /></span>
+                <span x-show="showPw" x-cloak><x-icon name="eye-off" :size="$iconSize" /></span>
+            </button>
+        @elseif ($iconRight)
             <span class="field-icon"><x-icon :name="$iconRight" :size="$iconSize" /></span>
         @endif
     </div>
+
+    @if ($isPassword)
+        <span class="field-caps" x-show="capsOn" x-cloak role="status">
+            <x-icon name="triangle-alert" :size="14" />
+            {{ __('forms.password.caps') }}
+        </span>
+    @endif
 
     {{-- Hint and error stack in .field-meta so they NEVER overlap. --}}
     @if ($hint || $error || $alpineErrorExpr)

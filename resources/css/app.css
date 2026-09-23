@@ -1237,9 +1237,6 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .topbar-spacer { margin-left:auto; }
   .topbar-burger { display:none; }
   .topbar-user { display:flex; align-items:center; gap:10px; }
-  .topbar-user-meta { display:flex; flex-direction:column; line-height:1.15; }
-  .topbar-user-org { font-weight:700; color:var(--text-strong); font-size:var(--text-sm); }
-  .topbar-user-name { color:var(--text-muted); font-size:var(--text-xs); }
 
   /* --- Encabezado de página + grilla de KPIs --- */
   .page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
@@ -1376,6 +1373,50 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bp-hrow:hover .bp-hadd, .bp-hadd:focus-visible { opacity:1; }
   .bp-social-add { margin-top:10px; }
   .bp-card-actions { display:flex; justify-content:flex-end; margin-top:10px; }
+  /* --- Ajustes: la cuenta de la persona, sobre la grilla de Mi negocio --- */
+  .bp-card-actions .bp-card-note { margin-right:auto; display:inline-flex; align-items:center; gap:6px;
+                                   color:var(--text-muted); font-size:var(--text-xs); }
+  .bp-card-actions { align-items:center; gap:10px; flex-wrap:wrap; }
+  /* The danger zone reads as one at a glance: red hairline, red title. */
+  .bp-card-danger { border-color:color-mix(in srgb, var(--danger) 35%, transparent); }
+  .bp-card-danger .bp-card-head h2 { color:var(--danger); }
+  .st-pending { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; margin-bottom:12px;
+                border-radius:var(--radius-md); background:var(--warning-soft); color:var(--warning); }
+  .st-pending p { color:var(--text-body); font-size:var(--text-sm); }
+  .st-pending-links { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:4px; }
+  .st-link { font-size:var(--text-sm); font-weight:600; color:var(--brand); }
+  .st-link:hover { text-decoration:underline; }
+  .st-link.is-muted { color:var(--text-muted); }
+  .st-current { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:12px;
+                color:var(--text-muted); font-size:var(--text-sm); }
+  .st-current b { color:var(--text-strong); word-break:break-all; }
+  /* Photo picker: round face + actions, the cropper opens under them. */
+  .avatar-field { display:flex; flex-direction:column; gap:12px; }
+  .avatar-field-row { display:flex; align-items:center; gap:16px; }
+  .avatar-field-face { width:72px; height:72px; border-radius:999px; overflow:hidden; flex-shrink:0;
+                       display:grid; place-items:center; background:var(--brand-soft); color:var(--brand-soft-text);
+                       font-family:var(--font-display); font-weight:700; font-size:var(--text-xl); }
+  .avatar-field-face img { width:100%; height:100%; object-fit:cover; }
+  .avatar-field-actions { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .avatar-field-crop { display:flex; flex-direction:column; gap:10px; padding:12px;
+                       border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--surface-sunken); }
+  .avatar-field-stage { height:320px; overflow:hidden; border-radius:var(--radius-md); }
+  .avatar-field-stage img { display:block; max-width:100%; }
+  /* The crop window reads as the round avatar it will become. */
+  .avatar-field-crop .cropper-view-box, .avatar-field-crop .cropper-face { border-radius:50%; }
+  .st-codes { display:flex; flex-direction:column; gap:10px; }
+  .st-codes-warn { display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:var(--radius-md);
+                   background:var(--warning-soft); color:var(--text-body); font-size:var(--text-sm); }
+  .st-codes-warn svg { color:var(--warning); flex-shrink:0; margin-top:2px; }
+  .st-codes-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }
+  .st-codes-grid li { padding:8px 10px; text-align:center; border:1px solid var(--border-subtle); border-radius:var(--radius-md);
+                      background:var(--surface-sunken); color:var(--text-strong); font-size:var(--text-sm); }
+  .st-nav { display:flex; flex-direction:column; gap:2px; }
+  .st-nav a { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--radius-md);
+              color:var(--text-body); font-size:var(--text-sm); font-weight:500;
+              transition:background var(--dur-fast) var(--ease-out); }
+  .st-nav a:hover { background:var(--surface-sunken); color:var(--text-strong); }
+  .st-nav a.is-danger { color:var(--danger); }
   .bp-meter-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
   .bp-meter-head b { color:var(--text-strong); font-family:var(--font-display); }
   .bp-meter-head span { font-size:var(--text-xs); color:var(--text-subtle); }
@@ -1506,7 +1547,6 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     .bp-rail { position:static; }
   }
   @media (max-width:600px) {
-    .topbar-user-meta { display:none; }
     .app-content { padding:20px 16px 40px; }
     .stat-grid > * { flex:1 1 140px; }
   }
@@ -1657,7 +1697,6 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                  border-radius:var(--radius-md); cursor:pointer; font-family:var(--font-sans);
                  transition:background var(--dur-fast) var(--ease-out); }
   .topbar-user:hover { background:var(--surface-sunken); }
-  .topbar-user-caret { color:var(--text-subtle); flex-shrink:0; }
   .topbar-user-dropdown { position:absolute; right:0; top:calc(100% + 8px); min-width:220px; z-index:60;
                           background:var(--surface-card); border:1px solid var(--border-subtle);
                           border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:6px; }

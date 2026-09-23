@@ -24,11 +24,11 @@ esac
 
 [ -f "$file" ] || exit 0
 
-if grep -qE '\bMail::|Facades\\\\Mail' "$file"; then
+if grep -qE '\bMail::|Facades\\\\Mail|->notify\(|\bNotification::|Facades\\\\Notification' "$file"; then
     {
         echo "Regla de oro incumplida en $file: el correo sale SOLO por el canal."
         echo "Usá (new Email(\$model, [\$destino], Mailable::class, [args extra]))->send()"
-        echo "de App\\Messaging\\Channels\\Email — jamás Mail:: directo."
+        echo "de App\\Messaging\\Channels\\Email — jamás Mail:: ni notificaciones (->notify, Notification::)."
         echo "Guía: .ai/guidelines/correo-por-canal.md"
     } >&2
     exit 2

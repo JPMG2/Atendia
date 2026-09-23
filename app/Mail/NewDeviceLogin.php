@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Services\SignedLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,6 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\URL;
 
 /**
  * The security notice a user gets when their account signs in from a device
@@ -47,7 +47,7 @@ class NewDeviceLogin extends Mailable implements ShouldQueue
             view: 'emails.security.new-device',
             text: 'emails.security.new-device-text',
             with: [
-                'revokeUrl' => URL::temporarySignedRoute(
+                'revokeUrl' => SignedLink::temporary(
                     'security.devices.revoke',
                     now()->addDays(7),
                     ['device' => $this->model->id],

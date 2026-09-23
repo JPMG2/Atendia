@@ -25,7 +25,22 @@ return [
         'sent_to' => 'Lo enviamos a',
         'resend' => 'Reenviar el código',
         'resent' => 'Listo. Te enviamos un código nuevo.',
+        'use_recovery' => '¿Sin acceso a tu WhatsApp? Usa un código de respaldo',
+        'recovery_label' => 'Código de respaldo',
+        'recovery_cta' => 'Entrar con el código de respaldo',
+        'wrong_recovery' => 'Ese código de respaldo no es válido o ya se usó.',
+        'whatsapp_failed' => 'WhatsApp no respondió, así que esta vez te mandamos el código por correo.',
     ],
+
+    // Login codes that go by WhatsApp once two-step verification is on.
+    'challenge_whatsapp' => [
+        'title' => 'Revisa tu WhatsApp',
+        'sub' => 'Este dispositivo es nuevo para tu cuenta: te enviamos un código de 6 dígitos por WhatsApp para confirmar que eres tú.',
+        'hint' => 'El código vence en 10 minutos.',
+        'wrong_code' => 'Ese código no es. Revisa tu WhatsApp e intenta de nuevo.',
+    ],
+
+    'whatsapp_code' => 'Tu código de Atendia es *:code*. Vence en 10 minutos. Si no fuiste tú, no lo compartas con nadie.',
 
     'revoked' => [
         'title' => 'Ese dispositivo quedó fuera',

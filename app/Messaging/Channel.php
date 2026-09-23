@@ -47,8 +47,10 @@ abstract class Channel
     /**
      * Sends the message through this channel. It is what the rest of the app
      * calls, and it is the same for every channel — what changes is `deliver()`.
+     * False when the channel failed: most callers ignore it, a login code
+     * uses it to fall back to another channel.
      */
-    public function send(): void
+    public function send(): bool
     {
         // Captured here, in the request: a queued message is built in the
         // worker, where there is no session, and would go out in the fallback
@@ -61,7 +63,11 @@ abstract class Channel
             // A dead channel cannot undo the operation that fired it: the
             // company was saved all the same.
             report($e);
+
+            return false;
         }
+
+        return true;
     }
 
     /**

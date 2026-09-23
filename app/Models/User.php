@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Actions\Account\SendEmailVerificationLink;
+use App\Actions\Account\SendPasswordResetLink;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -22,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * The business they belong to. NULL for the admin: AtendIa's owner is nobody's
@@ -137,6 +140,98 @@ class User extends Authenticatable
     }
 
     /**
+     * A closed account its owner can still bring back by signing in: only
+     * inside the restore window, after it the admin is the only way back.
+     */
+    public static function restorableByEmail(string $email): ?self
+    {
+        return self::onlyTrashed()
+            ->where('email', mb_strtolower($email))
+            ->where('deleted_at', '>=', now()->subDays((int) config('atendia.account_restore_days')))
+            ->first();
+    }
+
+    /** Closed accounts count: their address stays reserved for the restore. */
+    public static function emailIsTaken(string $email, ?int $exceptId = null): bool
+    {
+        return self::withTrashed()
+            ->where('email', mb_strtolower($email))
+            ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
+            ->exists();
+    }
+
+    /** Whether a closed account still sits inside its self-service restore window. */
+    public function isRestorable(): bool
+    {
+        return $this->trashed()
+            && $this->deleted_at->greaterThanOrEqualTo(now()->subDays((int) config('atendia.account_restore_days')));
+    }
+
+    /**
+     * Laravel's own senders (Breeze's resend button, "forgot my password")
+     * are routed through the house channel: every mail leaves by one door.
+     */
+    #[\Override]
+    public function sendEmailVerificationNotification(): void
+    {
+        app(SendEmailVerificationLink::class)->handle($this);
+    }
+
+    #[\Override]
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        app(SendPasswordResetLink::class)->handle($this, $token);
+    }
+
+    /** The profile photo, or null for the initials fallback. */
+    public function avatarUrl(): ?string
+    {
+        $path = $this->rawAttribute('avatar_path');
+
+        return $path === null ? null : Storage::disk('public')->url($path);
+    }
+
+    /**
+     * Where WhatsApp login codes go: the owner's own number from the business
+     * contact card. Null while there is none worth dialing.
+     */
+    public function secondFactorPhone(): ?string
+    {
+        $digits = $this->business?->ownerWhatsAppDigits() ?? '';
+
+        return strlen($digits) >= 8 ? $digits : null;
+    }
+
+    /** Switched on AND still reachable: a number deleted later falls back to e-mail. */
+    public function sendsLoginCodesByWhatsApp(): bool
+    {
+        return $this->rawAttribute('two_factor_whatsapp_at') !== null && $this->secondFactorPhone() !== null;
+    }
+
+    /** Backup codes still unspent, for the card's "N left" line. */
+    public function recoveryCodesLeft(): int
+    {
+        return count($this->rawAttribute('two_factor_recovery_codes') === null ? [] : $this->two_factor_recovery_codes);
+    }
+
+    /** "•••• 4455": enough for the owner to recognise the phone. */
+    public function maskedSecondFactorPhone(): ?string
+    {
+        $digits = $this->secondFactorPhone();
+
+        return $digits === null ? null : '•••• '.substr($digits, -4);
+    }
+
+    /**
+     * Columns born after the model was instantiated (a user created in this
+     * very request) are absent, and the strict-attributes guard would throw.
+     */
+    private function rawAttribute(string $key): mixed
+    {
+        return $this->getAttributes()[$key] ?? null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -147,6 +242,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_changed_at' => 'datetime',
+            'two_factor_whatsapp_at' => 'datetime',
+            'two_factor_recovery_codes' => 'array',
         ];
     }
 }

@@ -74,3 +74,13 @@ it('supports an Alpine-driven error via aria-invalid binding and x-show/x-text',
         ->assertSee('x-show', false)
         ->assertSee('x-text', false);
 });
+
+it('gives a password field the peek toggle and the Caps Lock warning', function () {
+    $this->blade('<x-inputsform.input name="current_password" type="password" />')
+        ->assertSee('field-peek', false)
+        ->assertSee('field-caps', false)
+        ->assertSee("showPw ? 'text' : 'password'", false);
+
+    $this->blade('<x-inputsform.input name="email" type="email" />')
+        ->assertDontSee('field-peek', false);
+});

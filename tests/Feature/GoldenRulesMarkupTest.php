@@ -31,6 +31,7 @@ const RAW_CONTROL_ALLOWLIST = [
     'components/inputsform/select.blade.php', // idem: the select sibling of that same library
     'components/inputsform/combobox.blade.php', // idem: autocomplete select (search input + hidden value)
     'components/inputsform/file.blade.php', // idem: the drop zone over a native file input
+    'components/inputsform/avatar.blade.php', // idem: round photo picker + cropper over a native file input
     'components/inputsform/phone.blade.php', // idem: dial select + national number over a hidden composite
     'components/inputsform/datepicker.blade.php', // idem: Flatpickr display input + hidden ISO value
     'components/inputsform/textarea.blade.php', // idem: the multiline sibling of input

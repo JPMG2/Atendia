@@ -62,6 +62,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Account settings
+    |--------------------------------------------------------------------------
+    |
+    | account_restore_days: a closed account (soft-deleted, never erased) can
+    | be restored by its owner for this many days. email_change_minutes: the
+    | lifetime of the link that confirms a new login email.
+    |
+    */
+
+    'account_restore_days' => 30,
+    'email_change_minutes' => 60,
+
+    /*
+    |--------------------------------------------------------------------------
     | Landing demo chat
     |--------------------------------------------------------------------------
     |

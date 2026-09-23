@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 use App\Models\LoginActivity;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
+
+// The settings page sits behind the client-panel lock: roles must exist.
+beforeEach(function (): void {
+    app()->setLocale('es');
+    $this->seed(RolesAndPermissionsSeeder::class);
+});
 
 test('every sign-in leaves an activity row, known device or not', function (): void {
     Mail::fake();
@@ -29,7 +36,7 @@ test('the profile shows the recent activity trail', function (): void {
         'location' => 'Buenos Aires, Argentina',
     ]);
 
-    $this->actingAs($user)->get('/profile')
+    $this->actingAs($user)->get('/ajustes')
         ->assertOk()
         ->assertSee(__('profile.activity.title'))
         ->assertSee('Chrome · Windows')

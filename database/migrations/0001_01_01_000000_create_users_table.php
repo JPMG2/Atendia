@@ -17,10 +17,23 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            // A new address waits here until its owner proves the inbox is
+            // theirs: the login email only switches once the link is clicked.
+            $table->string('pending_email')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Feeds the security checkup's "changed N months ago".
+            $table->timestamp('password_changed_at')->nullable();
+            // Null = login codes go by e-mail; a date = they go to the owner's WhatsApp.
+            $table->timestamp('two_factor_whatsapp_at')->nullable();
+            // Hashes only: the one-time backup codes are shown once and never stored in clear.
+            $table->json('two_factor_recovery_codes')->nullable();
+            $table->string('avatar_path')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            // Closing an account never erases it: the data stays for the
+            // restore window and, after it, for the admin.
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table): void {

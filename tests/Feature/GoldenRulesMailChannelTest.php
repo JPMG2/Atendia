@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Mail\AccountEmailVerification;
+use App\Mail\AccountPasswordReset;
+use App\Models\User;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,4 +36,31 @@ test('no app code outside the messaging layer touches the Mail facade', function
     }
 
     expect($offenders)->toBe([]);
+});
+
+test('no app code sends mail through Laravel notifications either', function (): void {
+    // ->notify() and Notification:: are a second, ritual-less mail door: the
+    // stock password-reset and verification mails leaked out that way.
+    $offenders = [];
+
+    foreach (File::allFiles(app_path()) as $file) {
+        $contents = $file->getContents();
+
+        if (preg_match('/->notify\(|\bNotification::|Facades\\Notification/', $contents) === 1) {
+            $offenders[] = str_replace(app_path().DIRECTORY_SEPARATOR, '', $file->getPathname());
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
+test('the stock password-reset and verification mails leave through the channel', function (): void {
+    Mail::fake();
+    $user = User::factory()->create();
+
+    $user->sendPasswordResetNotification('token');
+    $user->sendEmailVerificationNotification();
+
+    Mail::assertQueued(AccountPasswordReset::class);
+    Mail::assertQueued(AccountEmailVerification::class);
 });

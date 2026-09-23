@@ -7,9 +7,9 @@ use App\Mail\DeviceChallengeCode;
 use App\Mail\NewDeviceLogin;
 use App\Models\LoginDevice;
 use App\Models\User;
+use App\Services\SignedLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 use Stevebauman\Location\Facades\Location;
 use Stevebauman\Location\Position;
@@ -104,7 +104,7 @@ test('the alert mail carries the signed "this was not me" link', function (): vo
 
 test('the signed link kicks the device out and reassures', function (): void {
     $device = LoginDevice::factory()->create();
-    $url = URL::temporarySignedRoute('security.devices.revoke', now()->addDays(7), ['device' => $device->id]);
+    $url = SignedLink::temporary('security.devices.revoke', now()->addDays(7), ['device' => $device->id]);
 
     $this->get($url)
         ->assertOk()
@@ -131,7 +131,7 @@ test('the device broadcast targets the owner and speaks the toast', function ():
         ->and($event->broadcastAs())->toBe('device.added')
         ->and($event->broadcastWith()['message'])->toContain('Chrome · Windows')
         ->and($event->broadcastWith()['action']['label'])->toBe(__('profile.devices.review_action'))
-        ->and($event->broadcastWith()['action']['url'])->toContain('#dispositivos');
+        ->and($event->broadcastWith()['action']['url'])->toBe(route('settings.dispositivos'));
 });
 
 test('the toast can carry a jump to the screen that solves it', function (): void {

@@ -16,6 +16,7 @@ class Client
 {
     public function __construct(
         public readonly PersonalData $personalData,
+        public readonly Account $account,
         public readonly ?TaxDetails $taxDetails = null,
         public readonly ?Schedule $schedule = null,
         public readonly ?SocialMedia $socialMedia = null,
@@ -38,6 +39,7 @@ class Client
 
         return new self(
             new PersonalData($user),
+            new Account($user),
             $business === null ? null : new TaxDetails($business),
             $business === null ? null : new Schedule($business),
             $business === null ? null : new SocialMedia($business),

@@ -38,6 +38,7 @@ components/inputsform/input.blade.php
 components/inputsform/select.blade.php
 components/inputsform/combobox.blade.php
 components/inputsform/file.blade.php
+components/inputsform/avatar.blade.php
 components/inputsform/phone.blade.php
 components/inputsform/textarea.blade.php
 components/inputsform/datepicker.blade.php

@@ -44,7 +44,7 @@ class DeviceAdded implements ShouldBroadcast
             'message' => __('profile.devices.new_device_toast', ['label' => $this->device->label()]),
             'action' => [
                 'label' => __('profile.devices.review_action'),
-                'url' => route('profile.edit').'#dispositivos',
+                'url' => route('settings.dispositivos'),
             ],
         ];
     }

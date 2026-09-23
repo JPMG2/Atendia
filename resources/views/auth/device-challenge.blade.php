@@ -4,16 +4,21 @@
             class="text-strong font-display"
             style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
         >
-            {{ __('security.challenge.title') }}
+            {{ __($copy.'.title') }}
         </h2>
-        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('security.challenge.sub') }}</p>
-        @if ($maskedEmail)
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __($copy.'.sub') }}</p>
+        @if ($destination)
             <p class="text-body mt-1.5" style="font-size: var(--text-sm)">
                 {{ __('security.challenge.sent_to') }}
-                <span class="font-mono font-semibold">{{ $maskedEmail }}</span>
+                <span class="font-mono font-semibold">{{ $destination }}</span>
             </p>
         @endif
     </div>
+
+    @if ($whatsAppFailed)
+        <x-ui.alert variant="warning" icon="triangle-alert" class="mb-6">
+            {{ __('security.challenge.whatsapp_failed') }}</x-ui.alert>
+    @endif
 
     {{-- The resend confirmation, Breeze-status style. --}}
     @if (session('status'))
@@ -72,5 +77,36 @@
         </button>
     </form>
 
-    <p class="text-muted mt-4 text-center" style="font-size: var(--text-xs)">{{ __('security.challenge.hint') }}</p>
+    @if ($canUseRecovery)
+        {{-- GitHub-style way in when the phone is lost: one backup code, spent on use. --}}
+        <div class="mt-6" x-data="{ open: {{ $errors->has('recovery_code') ? 'true' : 'false' }} }">
+            <button
+                type="button"
+                class="text-brand w-full text-center font-semibold hover:underline"
+                style="font-size: var(--text-sm)"
+                x-on:click="open = ! open"
+            >
+                {{ __('security.challenge.use_recovery') }}
+            </button>
+            <form
+                method="POST"
+                action="{{ route('device.challenge.recovery') }}"
+                class="mt-3 flex flex-col gap-3"
+                x-show="open"
+                x-cloak
+            >
+                @csrf
+                <x-ui.input
+                    :label="__('security.challenge.recovery_label')"
+                    name="recovery_code"
+                    placeholder="xxxxx-xxxxx"
+                    class="font-mono"
+                    autocomplete="off"
+                />
+                <x-ui.button type="submit" variant="secondary">{{ __('security.challenge.recovery_cta') }}</x-ui.button>
+            </form>
+        </div>
+    @endif
+
+    <p class="text-muted mt-4 text-center" style="font-size: var(--text-xs)">{{ __($copy.'.hint') }}</p>
 </x-guest-layout>

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Actions\Account\RestoreAccount;
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -44,7 +47,8 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))
+            && ! $this->restoreClosedAccount()) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -53,6 +57,22 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * Signing in with the right password inside the restore window brings a
+     * closed account back (Notion-style): coming back must not need a mail.
+     */
+    private function restoreClosedAccount(): bool
+    {
+        $closed = User::restorableByEmail((string) $this->string('email'));
+
+        if ($closed === null || ! Hash::check((string) $this->string('password'), $closed->password)) {
+            return false;
+        }
+
+        return app(RestoreAccount::class)->handle($closed)
+            && Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
     }
 
     /**

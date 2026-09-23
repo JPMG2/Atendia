@@ -37,11 +37,6 @@ return [
         'review_action' => 'Revisar dispositivos',
     ],
 
-    'password' => [
-        'logout_others' => 'Cerrar las otras sesiones',
-        'logout_others_hint' => 'Al guardar, todas las sesiones menos esta quedan fuera de la cuenta.',
-    ],
-
     'checkup' => [
         'title' => 'Chequeo de seguridad',
         'email_ok' => 'Correo verificado',
@@ -49,7 +44,9 @@ return [
         'email_pending' => 'Correo sin verificar',
         'email_pending_detail' => 'Confirma tu dirección para proteger la cuenta.',
         'password' => 'Contraseña protegida',
-        'password_detail' => 'Política fuerte y chequeo contra filtraciones activos.',
+        'password_changed' => 'La cambiaste :ago.',
+        'password_since_signup' => 'Sin cambios desde que creaste la cuenta, :ago.',
+        'email_verify_link' => 'Verificarlo ahora',
         'devices' => 'Dispositivos conectados',
         'devices_detail' => ':count con acceso a tu cuenta.',
         'devices_warn_detail' => 'Hay un ingreso desde una ubicación inusual: revísalo abajo.',

@@ -25,7 +25,7 @@ class WhatsApp extends Channel
         app()->setLocale($locale);
 
         try {
-            $text = (new $this->message($this->model))->text();
+            $text = (new $this->message($this->model, ...$this->messageArguments))->text();
         } finally {
             app()->setLocale($original);
         }

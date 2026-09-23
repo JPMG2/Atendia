@@ -44,4 +44,12 @@ return [
         'country' => 'País del número',
     ],
 
+    'avatar' => [
+        'pick' => 'Elegir foto',
+        'remove' => 'Quitar',
+        'crop_hint' => 'Arrastra y acerca la foto hasta encuadrarla en el círculo.',
+        'cancel' => 'Cancelar',
+        'apply' => 'Usar esta foto',
+    ],
+
 ];

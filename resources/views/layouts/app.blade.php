@@ -65,7 +65,7 @@
 
     {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
     own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/livewire-failures.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/avatar-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/livewire-failures.js'])
     @livewireStyles
 </head>
 {{-- data-*: config for livewire-failures.js — JS can resolve neither routes
@@ -154,24 +154,23 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     </button>
 
                     <div class="topbar-user-menu" x-data="{ open: false }">
+                        {{-- Just the face (photo, or initials without one): the
+                        name lives in the menu's label, not across the topbar. --}}
                         <button
                             type="button"
                             class="topbar-user"
                             data-testid="user-menu"
+                            aria-label="{{ auth()->user()?->name }}"
                             @click="open = ! open"
                             :aria-expanded="open"
                         >
                             <x-ui.avatar
                                 :name="auth()->user()?->name ?? 'Atendia'"
+                                :src="auth()->user()?->avatarUrl()"
                                 size="sm"
                                 status="online"
                                 tint="brand"
                             />
-                            <div class="topbar-user-meta">
-                                <span class="topbar-user-org">{{ auth()->user()?->name }}</span>
-                                <span class="topbar-user-name">{{ auth()->user()?->email }}</span>
-                            </div>
-                            <x-icon name="chevron-down" :size="16" class="topbar-user-caret" />
                         </button>
 
                         <div
@@ -196,7 +195,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                                 @endif
                             @endcan
 
-                            <a href="{{ route('profile.edit') }}" wire:navigate class="dropdown-item">
+                            <a href="{{ route('settings') }}" wire:navigate class="dropdown-item">
                                 <x-icon name="settings" :size="16" /> {{ __('menu.settings') }}
                             </a>
                             <form method="POST" action="{{ route('logout') }}">

@@ -8,7 +8,6 @@ use App\Http\Controllers\Auth\DeviceChallengeController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -33,6 +32,10 @@ Route::middleware('guest')->group(function (): void {
     Route::post('codigo-de-acceso', [DeviceChallengeController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('device.challenge.verify');
+    Route::post('codigo-de-acceso/respaldo', [DeviceChallengeController::class, 'recovery'])
+        ->middleware('throttle:6,1')
+        ->name('device.challenge.recovery');
+
     Route::post('codigo-de-acceso/reenviar', [DeviceChallengeController::class, 'resend'])
         ->middleware('throttle:3,1')
         ->name('device.challenge.resend');
@@ -66,8 +69,6 @@ Route::middleware('auth')->group(function (): void {
         ->name('password.confirm');
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
-
-    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

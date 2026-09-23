@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DemoChatController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Security\RevokeDeviceController;
+use App\Http\Controllers\Settings\CancelEmailChangeController;
+use App\Http\Controllers\Settings\ConfirmEmailChangeController;
+use App\Http\Controllers\Settings\RestoreAccountController;
+use App\Http\Controllers\Settings\VerifyAccountEmailController;
 use App\Models\Business;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +51,7 @@ Route::get('/idioma/{locale}', function (string $locale) {
 // purpose: the victim may hold no session while the intruder holds the only
 // live one. Worst misuse of a leaked link is kicking that device out.
 Route::get('/seguridad/dispositivos/{device}/cerrar', RevokeDeviceController::class)
-    ->middleware('signed')
+    ->middleware('signed:relative')
     ->name('security.devices.revoke');
 
 Route::get('/dashboard', fn () => view('dashboard'))
@@ -147,10 +150,34 @@ if (app()->environment('local')) {
     })->name('onboarding.demo');
 }
 
-Route::middleware('auth')->group(function (): void {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// "Ajustes": the person behind the business — name, login email, password,
+// devices and closing the account. Same lock as every client screen.
+Route::get('/ajustes', fn () => view('settings'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('settings');
+
+// One deep link per card, the same pattern as "Mi negocio".
+foreach (['perfil', 'correo', 'contrasena', 'dos-pasos', 'dispositivos', 'actividad', 'cuenta'] as $slug) {
+    Route::get("/ajustes/{$slug}", fn () => view('settings', ['section' => $slug]))
+        ->middleware(['auth', 'verified', 'permission:access-client-app'])
+        ->name("settings.{$slug}");
+}
+
+// Breeze's old address keeps working for bookmarks and old mails.
+Route::redirect('/profile', '/ajustes', 301);
+
+// The account links mailed by the settings screen. Signed and without a
+// login on purpose (see each controller); throttled against link guessing.
+Route::middleware(['signed:relative', 'throttle:6,1'])->group(function (): void {
+    Route::get('/ajustes/correo/confirmar/{user}/{hash}', ConfirmEmailChangeController::class)
+        ->name('settings.email.confirm');
+    Route::get('/ajustes/correo/cancelar/{user}/{hash}', CancelEmailChangeController::class)
+        ->name('settings.email.cancel');
+    Route::get('/ajustes/correo/verificar/{user}/{hash}', VerifyAccountEmailController::class)
+        ->name('settings.email.verify');
+    Route::get('/cuenta/restaurar/{user}', RestoreAccountController::class)
+        ->withTrashed()
+        ->name('account.restore');
 });
 
 require __DIR__.'/auth.php';
