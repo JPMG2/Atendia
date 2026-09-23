@@ -59,7 +59,11 @@ class MenuSeeder extends Seeder
         // Reading screens ride together: statistics right after the inbox.
         Menu::create(['label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 7]);
         Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 8]);
-        Menu::create(['label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 9]);
+        // A parent like "Mi negocio" (her call, 2026-09-23): the plan and what
+        // it costs live together, the Tiendanube "Planes y pagos" pattern.
+        $planPayments = Menu::create(['label_key' => 'menu.plan_payments', 'icon' => 'gem', 'sort_order' => 9]);
+        Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.my_payments', 'icon' => 'receipt', 'route_name' => 'my-payments', 'sort_order' => 2]);
         Menu::create(['label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 10]);
 
         // Bottom navigation group.
@@ -71,8 +75,9 @@ class MenuSeeder extends Seeder
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_users', 'icon' => 'users', 'sort_order' => 2]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'sort_order' => 3]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'sort_order' => 4]);
+        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 5]);
         // Company hangs off Configuration: it is AtendIa's own data, not an area.
-        $settings = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'settings', 'sort_order' => 5]);
+        $settings = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'settings', 'sort_order' => 6]);
         Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);
         Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_integrations', 'icon' => 'workflow', 'route_name' => 'admin.integrations', 'sort_order' => 2]);
         Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'sort_order' => 3]);

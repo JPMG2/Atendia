@@ -26,6 +26,7 @@ class Client
         public readonly ?Directory $directory = null,
         public readonly ?KnowledgeBase $knowledgeBase = null,
         public readonly ?Statistics $statistics = null,
+        public readonly ?Billing $billing = null,
     ) {}
 
     /**
@@ -49,6 +50,7 @@ class Client
             $business === null ? null : new Directory($business),
             $business === null ? null : new KnowledgeBase($business),
             $business === null ? null : new Statistics($business),
+            $business === null ? null : new Billing($business),
         );
     }
 

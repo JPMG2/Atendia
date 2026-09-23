@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Billing\PaymentReceiptController;
 use App\Http\Controllers\DemoChatController;
 use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Http\Controllers\Settings\CancelEmailChangeController;
@@ -115,6 +116,15 @@ Route::get('/estadisticas', fn () => view('statistics'))
 Route::get('/plan', fn () => view('plan'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('my-plan');
+
+// "Mis pagos": the running period, the next payment and every payment made.
+Route::get('/pagos', fn () => view('payments'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-payments');
+
+Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('my-payments.receipt');
 
 // "Gana con AtendIa": the client's referral link and its tally.
 Route::get('/gana', fn () => view('referrals'))

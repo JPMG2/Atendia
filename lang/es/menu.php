@@ -46,6 +46,9 @@ return [
     'products' => 'Productos',
     'whatsapp' => 'WhatsApp',
     'settings' => 'Ajustes',
+    'plan_payments' => 'Plan y pagos',
+    'my_payments' => 'Mis pagos',
+    'admin_payments' => 'Pagos',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

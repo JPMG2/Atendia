@@ -83,7 +83,7 @@ class CompanyForm extends BaseForm
      *
      * @var list<string>
      */
-    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web'];
+    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web', 'payment_instructions'];
 
     /**
      * The loaded record; `null` means nothing has been loaded yet.
@@ -533,6 +533,7 @@ class CompanyForm extends BaseForm
             'email' => config('nicename.email'),
             'phone' => config('nicename.phone'),
             'web' => config('nicename.web'),
+            'payment_instructions' => __('company.fields.payment_instructions'),
             'social.*.social_network_id' => config('nicename.social_network_id'),
             'social.*.url' => config('nicename.url'),
         ];
@@ -668,6 +669,8 @@ class CompanyForm extends BaseForm
                 'phone' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
 
                 'web' => ['nullable', 'url:http,https', 'max:255'],
+
+                'payment_instructions' => ['nullable', 'string', 'max:2000', AttributeValidator::xssFree()],
 
                 'social' => ['array', 'max:20'],
 

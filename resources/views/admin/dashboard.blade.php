@@ -12,7 +12,7 @@
             ['icon' => 'users', 'title' => 'Usuarios', 'desc' => 'Gestioná los usuarios y sus accesos.'],
             ['icon' => 'workflow', 'title' => 'Integraciones', 'desc' => 'Conectá WhatsApp, n8n y más.', 'route' => 'admin.integrations'],
             ['icon' => 'sparkles', 'title' => 'Inteligencia artificial', 'desc' => 'Asistente y proveedor de IA.'],
-            ['icon' => 'star', 'title' => 'Planes y facturación', 'desc' => 'Planes, suscripciones y facturación.'],
+            ['icon' => 'receipt', 'title' => 'Planes y facturación', 'desc' => 'Comprobantes por verificar y últimos pagos.', 'route' => 'admin.payments'],
             ['icon' => 'shield-check', 'title' => 'Seguridad', 'desc' => 'Roles, permisos y auditoría.'],
             ['icon' => 'sliders-horizontal', 'title' => 'General', 'desc' => 'Preferencias generales de la plataforma.'],
         ];

@@ -132,7 +132,7 @@ return [
         ],
 
         'billing' => [
-            'title' => 'Moneda y facturación',
+            'title' => 'Moneda',
             'sub' => 'Cómo se muestran tus precios y a nombre de quién sale tu factura de Atendia.',
             'currency' => 'Moneda de tus precios',
             'reference' => 'Moneda de referencia',
@@ -168,7 +168,7 @@ return [
             'complete_title' => 'Perfil completo',
             'complete_sub' => 'Tu asistente ya tiene todo para presentarse como un grande.',
             'personal_data' => 'Datos de contacto',
-            'tax_details' => 'Moneda y facturación',
+            'tax_details' => 'Moneda',
             'schedule' => 'Horarios',
             'social_media' => 'Redes sociales',
         ],

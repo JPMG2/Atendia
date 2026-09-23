@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\Business;
 
 /**
@@ -73,7 +74,16 @@ final class Plan
     {
         $subscription = $business->subscription;
 
-        if ($subscription === null || ($subscription->trial_ends_at !== null && ! $subscription->onTrial())) {
+        if ($subscription === null) {
+            return self::named(null);
+        }
+
+        // A paying business keeps its plan, grace days included.
+        if (in_array($subscription->status, [SubscriptionStatus::Active, SubscriptionStatus::PastDue], true)) {
+            return self::named($subscription->plan);
+        }
+
+        if ($subscription->trial_ends_at !== null && ! $subscription->onTrial()) {
             return self::named(null);
         }
 

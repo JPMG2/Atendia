@@ -214,7 +214,13 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
             @endisset
 
             {{-- The shell stays still: only this region animates between SPA visits. --}}
-            <main class="app-content" wire:transition.navigate>{{ $slot }}</main>
+            <main class="app-content" wire:transition.navigate>
+                {{-- The payment reminder rides every client screen (her call, 2026-09-23). --}}
+                @unless ($onAdminPanel)
+                    <x-billing.banner />
+                @endunless
+                {{ $slot }}
+            </main>
         </div>
     </div>
 

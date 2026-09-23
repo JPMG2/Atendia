@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Billing\PaymentReceiptController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,6 +30,10 @@ Route::livewire('/integrations', 'configuration.integrations')->name('integratio
 
 // Testimonials: the moderation desk before an owner's word hits the landing.
 Route::livewire('/testimonios', 'admin.testimonials')->name('testimonials');
+
+// Payments: receipts waiting to be credited or rejected, and the latest ones.
+Route::livewire('/pagos', 'admin.payments')->name('payments');
+Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt');
 
 // System logs: the latest entries, built to be copied into a help chat.
 Route::livewire('/logs', 'configuration.logs')->name('logs');

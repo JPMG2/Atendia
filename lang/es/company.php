@@ -143,6 +143,8 @@ return [
         'phone_placeholder' => '+54 9 11 5555-1234',
 
         'web' => 'Sitio web',
+        'payment_instructions' => 'Instrucciones de pago',
+        'payment_instructions_hint' => 'Cómo te pagan los clientes (banco, titular, alias, número de cuenta). Lo ven tal cual en "Mis pagos".',
         'web_placeholder' => 'https://atendia.app',
     ],
 ];

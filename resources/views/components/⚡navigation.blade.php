@@ -38,6 +38,8 @@ new class extends Component
             $this->overlayBadges($tree, $counts);
         }
 
+        $this->overlayPaymentBadge($tree);
+
         return $tree;
     }
 
@@ -53,6 +55,32 @@ new class extends Component
             }
 
             $this->overlayBadges($item->childrenRecursive ?? collect(), $counts);
+        }
+    }
+
+    /**
+     * "5 d" on "Mis pagos" and on its parent, so a collapsed "Plan y pagos"
+     * still shows it: the same reminder the banner and the mails give.
+     *
+     * @param  Collection<int, Menu>  $items
+     */
+    private function overlayPaymentBadge($items): void
+    {
+        $reminder = Auth::user() ? Client::for(Auth::user())->billing?->reminder : null;
+
+        if ($reminder === null || $reminder['stage'] === 'verifying') {
+            return;
+        }
+
+        $badge = $reminder['stage'] === 'upcoming' ? trans_choice('billing.badge', $reminder['days']) : '!';
+
+        foreach ($items as $item) {
+            foreach ($item->childrenRecursive ?? collect() as $child) {
+                if ($child->route_name === 'my-payments') {
+                    $child->badge = $badge;
+                    $item->badge = $badge;
+                }
+            }
         }
     }
 

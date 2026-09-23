@@ -34,6 +34,7 @@ class CompanyDto implements FormData
         public ?string $email = null,
         public ?string $phone = null,
         public ?string $web = null,
+        public ?string $payment_instructions = null,
     ) {}
 
     /**
@@ -69,6 +70,7 @@ class CompanyDto implements FormData
             'email' => $this->email,
             'phone' => $this->phone,
             'web' => $this->web,
+            'payment_instructions' => $this->payment_instructions,
         ];
     }
 
@@ -89,6 +91,7 @@ class CompanyDto implements FormData
             email: DtoCast::toNullableString($data['email'] ?? null),
             phone: DtoCast::toNullableString($data['phone'] ?? null),
             web: DtoCast::toNullableString($data['web'] ?? null),
+            payment_instructions: DtoCast::toNullableString($data['payment_instructions'] ?? null),
         );
     }
 
@@ -113,6 +116,8 @@ class CompanyDto implements FormData
             'email' => DtoCast::squish($this->email),
             'phone' => DtoCast::squish($this->phone),
             'web' => DtoCast::squish($this->web),
+            // Not squished: the line breaks ARE the format (bank, alias, CBU...).
+            'payment_instructions' => DtoCast::toNullableString(trim((string) $this->payment_instructions)),
         ];
     }
 }

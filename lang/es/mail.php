@@ -235,4 +235,52 @@ return [
         ],
     ],
 
+    'billing' => [
+        'eyebrow' => 'Tu plan',
+        'cta' => 'Ir a Mis pagos',
+        'cta_history' => 'Ver mis pagos',
+        'closing' => 'Gracias por seguir atendiendo con nosotros.',
+        'reason' => 'Recibiste este correo porque es el correo de facturación de tu negocio en Atendia.',
+
+        'upcoming' => [
+            'subject' => 'Tu próximo pago es en :days días',
+            'preheader' => 'Págalo antes para que tu asistente siga atendiendo sin cortes.',
+            'title' => 'Tu próximo pago es en :days días',
+            'intro' => 'Hola :name, el :date se renueva tu plan :plan. Este es el monto:',
+            'body' => 'Págalo antes de esa fecha y sube el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
+        ],
+
+        'overdue' => [
+            'subject' => 'Tu pago está vencido: te quedan :days días',
+            'preheader' => 'Tu asistente sigue atendiendo, pero no por mucho más.',
+            'title' => 'Tu pago está vencido',
+            'intro' => 'Hola :name, el pago del plan :plan venció el :date. Este es el monto:',
+            'body' => 'Tu asistente sigue atendiendo :days días más. Si para entonces no se acredita el pago, se pausa hasta que lo recibamos. No se borra nada.',
+        ],
+
+        'paused' => [
+            'subject' => 'Pausamos tu asistente por falta de pago',
+            'preheader' => 'Apenas se acredite el pago, vuelve a atender.',
+            'title' => 'Tu asistente está en pausa',
+            'intro' => 'Hola :name, no recibimos el pago del plan :plan que vencía el :date. Este es el monto:',
+            'body' => 'Tu asistente dejó de responder, pero todo quedó guardado: conversaciones, clientes y catálogo. Apenas se acredite el pago, vuelve a atender.',
+        ],
+
+        'paid' => [
+            'subject' => 'Recibimos tu pago',
+            'preheader' => 'Tu plan quedó al día.',
+            'title' => 'Tu pago quedó acreditado',
+            'intro' => 'Hola :name, acreditamos tu pago. Tu plan está al día hasta el :until.',
+            'body' => 'El comprobante queda guardado en tu historial de pagos.',
+        ],
+
+        'rejected' => [
+            'subject' => 'No pudimos acreditar tu pago',
+            'preheader' => 'Revisa el motivo y vuelve a enviarlo.',
+            'title' => 'No pudimos acreditar tu pago',
+            'intro' => 'Hola :name, revisamos tu comprobante y no lo pudimos acreditar. Motivo: :reason',
+            'body' => 'Sube un comprobante nuevo desde Mis pagos y lo revisamos enseguida.',
+        ],
+    ],
+
 ];

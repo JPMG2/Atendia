@@ -1411,6 +1411,46 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .st-codes-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }
   .st-codes-grid li { padding:8px 10px; text-align:center; border:1px solid var(--border-subtle); border-radius:var(--radius-md);
                       background:var(--surface-sunken); color:var(--text-strong); font-size:var(--text-sm); }
+  /* --- Mis pagos: período, próximo pago e historial --- */
+  .pay-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:12px; align-items:start; }
+  .pay-cycle { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .pay-ring { position:relative; width:96px; height:96px; flex-shrink:0; }
+  .pay-ring svg { width:96px; height:96px; transform:rotate(-90deg); }
+  .pay-ring-label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; }
+  .pay-ring-label b { font-size:var(--text-2xl); color:var(--text-strong); }
+  .pay-ring-label small { font-size:var(--text-2xs); color:var(--text-muted); }
+  .pay-facts { flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; }
+  .pay-facts dt { font-size:var(--text-xs); color:var(--text-muted); }
+  .pay-facts dd { font-size:var(--text-base); font-weight:600; color:var(--text-strong); }
+  .pay-bar { height:8px; margin-top:14px; border-radius:999px; overflow:hidden;
+             background:var(--surface-sunken); border:1px solid var(--border-subtle); }
+  .pay-bar i { display:block; height:100%; background:var(--brand); transition:width var(--dur-base) var(--ease-out); }
+  .pay-bar i.is-late { background:var(--warning); }
+  .pay-next { display:flex; flex-direction:column; gap:12px; }
+  .pay-amount { font-family:var(--font-display); font-size:var(--text-3xl); font-weight:800; color:var(--text-strong); letter-spacing:-0.02em; }
+  .pay-amount-sm { font-size:var(--text-xl); margin:6px 0 12px; }
+  .pay-amount small { font-family:var(--font-sans); font-size:var(--text-xs); font-weight:500; }
+  .pay-line { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:var(--text-sm);
+              border-bottom:1px dashed var(--border-subtle); }
+  .pay-line b { color:var(--text-strong); }
+  .pay-howto { padding:12px 14px; border-radius:var(--radius-md); background:var(--surface-sunken); }
+  .pay-howto-title { font-size:var(--text-xs); font-weight:700; color:var(--text-strong); margin-bottom:4px; }
+  .pay-howto-body { font-size:var(--text-sm); white-space:pre-line; color:var(--text-body); }
+  .pay-table-wrap { overflow-x:auto; }
+  .pay-table { width:100%; min-width:640px; border-collapse:collapse; font-size:var(--text-sm); }
+  .pay-table th { text-align:left; padding:8px 10px; font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em;
+                  text-transform:uppercase; color:var(--text-subtle); border-bottom:1px solid var(--border-subtle); }
+  .pay-table td { padding:10px; border-bottom:1px solid var(--border-subtle); color:var(--text-body); vertical-align:top; }
+  .pay-table tr:hover td { background:var(--surface-sunken); }
+  .pay-kv { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:8px 0 12px; font-size:var(--text-sm); }
+  .pay-kv dt { color:var(--text-muted); }
+  .pay-kv dd { color:var(--text-strong); font-weight:600; }
+  .pay-banner { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 16px; margin-bottom:16px;
+                border-radius:var(--radius-lg); background:var(--warning-soft); color:var(--warning); }
+  .pay-banner.is-danger { background:var(--danger-soft); color:var(--danger); }
+  .pay-banner.is-info { background:var(--brand-soft); color:var(--brand); }
+  .pay-banner-text { flex:1; min-width:220px; font-size:var(--text-sm); color:var(--text-body); }
+  .pay-banner-text b { color:var(--text-strong); }
   .st-nav { display:flex; flex-direction:column; gap:2px; }
   .st-nav a { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--radius-md);
               color:var(--text-body); font-size:var(--text-sm); font-weight:500;
@@ -1544,6 +1584,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   }
   @media (max-width:1100px) {
     .bp-layout { grid-template-columns:1fr; }
+    .pay-grid { grid-template-columns:1fr; }
     .bp-rail { position:static; }
   }
   @media (max-width:600px) {

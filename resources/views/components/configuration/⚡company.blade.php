@@ -512,6 +512,18 @@ field in red from an attempt you had stopped looking at. --}}
                             wire:model="form.data.web"
                         />
                     </x-catalog.form-row>
+                    {{-- How clients pay Atendia: shown as-is in their "Mis pagos". --}}
+                    <x-catalog.form-row>
+                        <x-inputsform.textarea
+                            span="full"
+                            name="payment_instructions"
+                            :rows="4"
+                            maxlength="2000"
+                            :label="__('company.fields.payment_instructions')"
+                            :hint="__('company.fields.payment_instructions_hint')"
+                            wire:model="form.data.payment_instructions"
+                        />
+                    </x-catalog.form-row>
                 </div>
             </div>
 

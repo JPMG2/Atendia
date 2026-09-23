@@ -37,6 +37,7 @@ class Company extends Model
         'logo_path_dark',
         'text_copyright',
         'tagline',
+        'payment_instructions',
     ];
 
     /**
@@ -91,5 +92,11 @@ class Company extends Model
     public function socialLinks(): MorphMany
     {
         return $this->morphMany(SocialLink::class, 'linkable')->orderBy('sort_order');
+    }
+
+    /** How clients pay Atendia, as the admin wrote it; null until it is set. */
+    public static function paymentInstructions(): ?string
+    {
+        return self::current()?->payment_instructions;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeMiss;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImport;
 use App\Models\Service;
@@ -47,6 +48,7 @@ dataset('tenant models', [
     Conversation::class,
     ConversationMessage::class,
     Subscription::class,
+    Payment::class,
 ]);
 
 test('a business never sees another business records', function (): void {

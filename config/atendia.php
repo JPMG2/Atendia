@@ -72,6 +72,23 @@ return [
     */
 
     'account_restore_days' => 30,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Billing ("Mis pagos")
+    |--------------------------------------------------------------------------
+    |
+    | reminder_days: how many days before the payment date the owner is told.
+    | grace_days: days past it, reminded daily, before the assistant pauses.
+    | Payment-rail agnostic until the fiscal meeting settles the gateway.
+    |
+    */
+
+    'billing' => [
+        'currency' => 'USD',
+        'reminder_days' => [10, 5],
+        'grace_days' => 5,
+    ],
     'email_change_minutes' => 60,
 
     /*

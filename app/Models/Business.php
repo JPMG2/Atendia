@@ -96,6 +96,8 @@ class Business extends Model
                 'business_id' => $business->id,
                 'plan' => config('atendia.trial.plan'),
                 'trial_ends_at' => now()->addDays($days),
+                // The trial's end is the first payment date.
+                'current_period_ends_at' => now()->addDays($days),
             ]);
         });
     }
@@ -566,6 +568,12 @@ class Business extends Model
     }
 
     /** The effective entitlements, trial and floor already resolved. */
+    /** @return HasMany<Payment, $this> */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function plan(): Plan
     {
         return Plan::for($this);

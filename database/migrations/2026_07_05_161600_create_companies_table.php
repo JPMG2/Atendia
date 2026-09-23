@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('logo_path_dark')->nullable()->comment('Versión del logo para fondo oscuro');
             $table->string('text_copyright')->nullable()->comment('Texto que va al pie de la factura');
             $table->string('tagline')->nullable()->comment('Texto que va al encabezado de la factura');
+            $table->text('payment_instructions')->nullable()->comment('Cómo pagarle a Atendia (banco, alias, CBU...): lo que ve el cliente en Mis pagos');
             $table->timestamps();
         });
     }

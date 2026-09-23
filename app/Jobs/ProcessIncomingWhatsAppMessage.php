@@ -145,6 +145,15 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             // Read BEFORE the inbound is stored: it must be the first answer after the ask.
             $optInYes = $customer->answersOptInYes($conversation, $text);
 
+            // Unpaid past the grace days: the thread keeps its record, the
+            // assistant stays silent until the payment is credited.
+            if ($business->subscription?->isPaused()) {
+                $this->rememberInboundOnly($conversation, $text);
+                WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
+
+                return;
+            }
+
             // A thread in human hands stays human: keep the record, hand the
             // ball back to the team when the customer answers, say nothing.
             if (in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true)) {

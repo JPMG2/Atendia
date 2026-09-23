@@ -76,4 +76,15 @@ return [
         ],
     ],
 
+    'billing' => [
+        'upcoming' => [
+            'preheader' => 'Pagalo antes para que tu asistente siga atendiendo sin cortes.',
+            'body' => 'Pagalo antes de esa fecha y subí el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
+        ],
+        'rejected' => [
+            'preheader' => 'Revisá el motivo y volvé a enviarlo.',
+            'body' => 'Subí un comprobante nuevo desde Mis pagos y lo revisamos enseguida.',
+        ],
+    ],
+
 ];
