@@ -24,16 +24,15 @@ The host component must expose an AssistantFaqForm as `form` plus the
                 />
             </x-catalog.form-row>
             <x-catalog.form-row>
-                <div class="f-full">
-                    <x-ui.textarea
-                        name="answer"
-                        :rows="4"
-                        :label="__('client.assistant.field_answer')"
-                        :hint="__('client.assistant.answer_hint')"
-                        wire:model="form.answer"
-                    >
-                        {{ $form->answer }}</x-ui.textarea>
-                </div>
+                <x-inputsform.textarea
+                    span="full"
+                    name="answer"
+                    :rows="4"
+                    :label="__('client.assistant.field_answer')"
+                    :hint="__('client.assistant.answer_hint')"
+                    wire:model="form.answer"
+                >
+                    {{ $form->answer }}</x-inputsform.textarea>
             </x-catalog.form-row>
         </div>
 

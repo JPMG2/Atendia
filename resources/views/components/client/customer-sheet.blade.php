@@ -54,16 +54,20 @@ component must use the ManagesCustomerSheet trait: every wire call and the
                     :value="$form->name"
                 />
             </x-catalog.form-row>
+            {{-- One per row: the sheet is a narrow slide-over, and side by side
+            both fields were too small to read (owner's call, 2026-09-23). --}}
             <x-catalog.form-row>
                 <x-inputsform.input
-                    span="text"
+                    span="full"
                     name="email"
                     :label="__('client.customers.field_email')"
                     wire:model="customerForm.email"
                     :value="$form->email"
                 />
+            </x-catalog.form-row>
+            <x-catalog.form-row>
                 <x-inputsform.datepicker
-                    span="short"
+                    span="full"
                     name="birthday"
                     :label="__('client.customers.field_birthday')"
                     wire:model="customerForm.birthday"
@@ -78,15 +82,13 @@ component must use the ManagesCustomerSheet trait: every wire call and the
                 </p>
             @endforeach
             <x-catalog.form-row>
-                <div class="f-full">
-                    <x-ui.textarea
-                        name="notes"
-                        :rows="3"
-                        :label="__('client.customers.field_notes')"
-                        wire:model="customerForm.notes"
-                    >
-                        {{ $form->notes }}</x-ui.textarea>
-                </div>
+                <x-inputsform.textarea
+                    span="full"
+                    name="notes"
+                    :rows="3"
+                    :label="__('client.customers.field_notes')"
+                    wire:model="customerForm.notes"
+                />
             </x-catalog.form-row>
 
             <div class="bd-subtle border-t pt-3">

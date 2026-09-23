@@ -420,6 +420,13 @@ test('requesting the opt-in messages the customer and stamps the ask', function 
 
     expect($customer->refresh()->marketing_opt_in_requested_at)->not->toBeNull();
     Http::assertSentCount(1);
+
+    // The ask lives in the thread: the assistant must know what a "sí" answers (2026-09-23).
+    $asked = $thread->messages()->latest('id')->first();
+
+    expect($asked->direction)->toBe(MessageDirection::Out)
+        ->and($asked->author)->toBe(MessageAuthor::Human)
+        ->and($asked->body)->toContain($user->business->name);
 });
 
 test('a customer message can be taught to the assistant from the thread', function (): void {
@@ -687,4 +694,16 @@ test('the badge unfolds which answers were born in the thread', function (): voi
         ->call('openSource', $faq->id)
         ->assertSet('sheetOpen', true)
         ->assertSet('form.editingId', $faq->id);
+});
+
+test('the customer sheet notes box has a fixed size, no resize grip', function (): void {
+    $user = conversationsClient();
+    [, $thread] = customerThread($user);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('openCustomer')
+        ->assertSee('field-control-multiline', false)
+        ->assertDontSee('field-textarea', false);
 });

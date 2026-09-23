@@ -474,6 +474,7 @@ return [
         'opt_in_sent' => 'Le pedimos permiso por WhatsApp.',
         'opt_in_unavailable' => 'Conecta tu WhatsApp para pedir permiso.',
         'opt_in_message' => 'Hola:name 👋 Somos :business. ¿Te gustaría recibir por aquí nuestras ofertas y novedades? Responde "sí" y listo. Puedes pedir salir cuando quieras.',
+        'opt_in_thanks' => '¡Listo! Te vamos a avisar por aquí de nuestras ofertas y novedades. Puedes pedir salir cuando quieras.',
         'merge_title' => '¿Es la misma persona?',
         'merge_body' => 'La ficha de :name tiene este mismo correo.',
         'merge_button' => 'Fusionar fichas',

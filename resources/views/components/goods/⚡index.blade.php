@@ -558,18 +558,14 @@ new class extends Component
                         :value="$form->data->deposit" class="font-mono" inputmode="numeric" />
                 </x-catalog.form-row>
                 <x-catalog.form-row>
-                    <div class="f-full">
-                        <x-ui.textarea name="description" :rows="2" :label="__('client.services.field_description')"
+                    <x-inputsform.textarea span="full" name="description" :rows="2" :label="__('client.services.field_description')"
                             wire:model="form.data.description"
-                            :hint="__('client.services.description_help')">{{ $form->data->description }}</x-ui.textarea>
-                    </div>
+                            :hint="__('client.services.description_help')">{{ $form->data->description }}</x-inputsform.textarea>
                 </x-catalog.form-row>
                 <x-catalog.form-row>
-                    <div class="f-full">
-                        <x-ui.textarea name="prep_note" :rows="2" :label="__('client.services.field_prep')"
+                    <x-inputsform.textarea span="full" name="prep_note" :rows="2" :label="__('client.services.field_prep')"
                             wire:model="form.data.prep_note"
-                            :hint="__('client.services.prep_help')">{{ $form->data->prep_note }}</x-ui.textarea>
-                    </div>
+                            :hint="__('client.services.prep_help')">{{ $form->data->prep_note }}</x-inputsform.textarea>
                 </x-catalog.form-row>
                 <x-ui.switch name="is_active" :label="__('client.services.offered')"
                     wire:model="form.data.is_active" :checked="$form->data->is_active" />

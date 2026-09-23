@@ -695,3 +695,59 @@ test('the owner hands the thread back with one click', function (): void {
 
     expect($thread->refresh()->status)->toBe(ConversationStatus::Open);
 });
+
+/** A team-held thread whose customer was just asked for marketing consent. */
+function optInAskedInTeamThread(): Customer
+{
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo']);
+    $customer = Customer::factory()->create([
+        'business_id' => $business->id,
+        'phone' => '5491122334455',
+        'marketing_opt_in_requested_at' => now()->subMinute(),
+    ]);
+    Conversation::factory()->create([
+        'business_id' => $business->id,
+        'customer_id' => $customer->id,
+        'contact_phone' => '5491122334455',
+        'status' => ConversationStatus::Team,
+    ]);
+
+    return $customer;
+}
+
+test('a yes to the offers ask is sealed and thanked even while the team holds the thread', function (): void {
+    // The 2026-09-23 incident: the thread sat with the team, the assistant
+    // stayed silent and the customer's "Si" was never recorded.
+    $customer = optInAskedInTeamThread();
+    AsistenteAtendia::fake(['Nunca debería salir.']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'Si', 'MSG-80'))->handle();
+
+    expect($customer->refresh()->marketing_opt_in_at)->not->toBeNull()
+        ->and(handoffSentTexts())->toHaveCount(1)
+        ->and(handoffSentTexts()[0]['text'])->toBe(__('client.customers.opt_in_thanks'));
+});
+
+test('only the first answer after the ask counts, and only a yes', function (string $first, bool $sealed): void {
+    $customer = optInAskedInTeamThread();
+    AsistenteAtendia::fake(['Nunca debería salir.']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', $first, 'MSG-81'))->handle();
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'sí', 'MSG-82'))->handle();
+
+    expect($customer->refresh()->marketing_opt_in_at !== null)->toBe($sealed);
+})->with([
+    'a clear yes' => ['Sí, dale!', true],
+    'a no' => ['No gracias', false],
+    'something else first' => ['¿Hoy abren?', false],
+]);
+
+test('with the assistant active the yes is sealed without relying on its tool', function (): void {
+    $customer = optInAskedInTeamThread();
+    Conversation::query()->update(['status' => ConversationStatus::Open]);
+    AsistenteAtendia::fake(['¡Gracias! Te avisamos de las novedades.']);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'ok', 'MSG-83'))->handle();
+
+    expect($customer->refresh()->marketing_opt_in_at)->not->toBeNull();
+});

@@ -88,16 +88,13 @@ new class extends Component
             </x-catalog.form-row>
             {{-- The owner's own cases, one per line; they ALWAYS escalate. --}}
             <x-catalog.form-row>
-                <div class="f-full">
-                    <x-ui.textarea
+                <x-inputsform.textarea span="full"
                         name="rules"
                         :rows="3"
                         :label="__('client.assistant.handoff_rules_label')"
                         :hint="__('client.assistant.handoff_rules_hint')"
                         :placeholder="__('client.assistant.handoff_rules_placeholder')"
-                        wire:model="handoffForm.rules"
-                    >{{ $handoffForm->rules }}</x-ui.textarea>
-                </div>
+                        wire:model="handoffForm.rules">{{ $handoffForm->rules }}</x-inputsform.textarea>
             </x-catalog.form-row>
             <div class="flex justify-end">
                 <x-ui.button variant="primary" size="sm" wire:click="saveHandoffRules">

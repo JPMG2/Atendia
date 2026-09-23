@@ -223,11 +223,9 @@ new class extends Component
                     <x-client.attribute-fields :set="$this->sheetAttributes" :values="$form->data->attribute_values" />
                 @endif
                 <x-catalog.form-row>
-                    <div class="f-full">
-                        <x-ui.textarea name="description" :rows="3" :label="__('client.products.field_description')"
+                    <x-inputsform.textarea span="full" name="description" :rows="3" :label="__('client.products.field_description')"
                             wire:model="form.data.description"
-                            :hint="__('client.products.description_help')">{{ $form->data->description }}</x-ui.textarea>
-                    </div>
+                            :hint="__('client.products.description_help')">{{ $form->data->description }}</x-inputsform.textarea>
                 </x-catalog.form-row>
                 <x-ui.switch name="in_stock" :label="__('client.products.sheet_available')"
                     wire:model="form.data.in_stock" :checked="$form->data->in_stock" />

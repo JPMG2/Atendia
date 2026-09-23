@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Enums\MessageAuthor;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -118,4 +119,20 @@ test('without a business there is no knowledge tool and no re-ask', function ():
     expect($response->text)->toBe('¡Hola! ¿En qué te ayudo?');
 
     AsistenteAtendia::assertNotPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema'));
+});
+
+test('a reply written by a person of the team reaches the memory tagged as such', function (): void {
+    // The 2026-09-23 incident: untagged, the owner's "we are closed today"
+    // read as the assistant's own sourceless claim and it took it back.
+    $conversation = Conversation::factory()->create();
+    ConversationMessage::factory()->out()->for($conversation)->create([
+        'business_id' => $conversation->business_id,
+        'author' => MessageAuthor::Human,
+        'body' => 'No estamos abiertos hoy',
+    ]);
+
+    $agent = new AsistenteAtendia($conversation->business, $conversation);
+
+    expect($agent->messages()[0]->content)->toBe('[Escrito por una persona del equipo del negocio] No estamos abiertos hoy')
+        ->and((string) $agent->instructions())->toContain('No los contradigas');
 });

@@ -62,15 +62,12 @@ new class extends Component
 
                     <div class="mt-3 flex flex-col gap-3">
                         <x-catalog.form-row>
-                            <div class="f-full">
-                                <x-ui.textarea
+                            <x-inputsform.textarea span="full"
                                     name="quote"
                                     :rows="2"
                                     :label="__('client.testimonial.field_quote')"
                                     :placeholder="__('client.testimonial.quote_placeholder')"
-                                    wire:model="form.quote"
-                                ></x-ui.textarea>
-                            </div>
+                                    wire:model="form.quote"></x-inputsform.textarea>
                         </x-catalog.form-row>
                         <x-catalog.form-row>
                             <x-inputsform.combobox

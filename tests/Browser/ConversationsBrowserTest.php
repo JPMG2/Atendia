@@ -91,7 +91,8 @@ test('the customer sheet slides over the inbox with the fiche fields', function 
         ->click(__('client.customers.open'))
         ->assertSee(__('client.customers.field_birthday'))
         ->assertSee(__('client.customers.opt_in_button'))
-        ->assertNoJavaScriptErrors();
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'conversations-customer-sheet');
 });
 
 test('walking back in time flows through the thread island', function (): void {

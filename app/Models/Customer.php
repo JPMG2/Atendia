@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\MessageDirection;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 /**
  * The business's customer record, auto-born from the first WhatsApp message.
@@ -105,6 +107,29 @@ class Customer extends Model
         }
 
         $this->save();
+    }
+
+    /**
+     * True when this text is the customer's FIRST answer after the business
+     * asked for marketing consent, and it is a yes. Checked in code, not left
+     * to the model: a thread held by the team has the assistant silent, and a
+     * consent must never hinge on that (2026-09-23).
+     */
+    public function answersOptInYes(Conversation $conversation, string $text): bool
+    {
+        if ($this->marketing_opt_in_requested_at === null || $this->marketing_opt_in_at !== null) {
+            return false;
+        }
+
+        $answeredAlready = $conversation->messages()
+            ->where('direction', MessageDirection::In)
+            ->where('created_at', '>=', $this->marketing_opt_in_requested_at)
+            ->exists();
+
+        $normalized = Str::lower(Str::ascii(trim($text)));
+
+        return ! $answeredAlready
+            && preg_match('/^(si+|dale|ok(ey|a)?|acepto|claro|por supuesto|obvio|de una|bueno|yes|sim|oui)\b/u', $normalized) === 1;
     }
 
     /** The explicit yes that unlocks campaigns; asking again would nag. */

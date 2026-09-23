@@ -142,10 +142,19 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $conversation->update(['status' => ConversationStatus::Open]);
             }
 
+            // Read BEFORE the inbound is stored: it must be the first answer after the ask.
+            $optInYes = $customer->answersOptInYes($conversation, $text);
+
             // A thread in human hands stays human: keep the record, hand the
             // ball back to the team when the customer answers, say nothing.
             if (in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true)) {
                 $this->rememberInboundOnly($conversation, $text);
+
+                // The one exception to the silence: a consent yes is sealed
+                // and thanked, the assistant being off in a team thread.
+                if ($optInYes) {
+                    $this->sealOptIn($conversation, $customer, $evolution);
+                }
 
                 if ($conversation->status === ConversationStatus::Customer) {
                     // The clock restarts: the team owes an answer again.
@@ -169,6 +178,12 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             }
 
             $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage, $agent->knowledgeSources());
+
+            // The assistant thanks per its briefing; the seal itself never
+            // depends on the model remembering to call its tool.
+            if ($optInYes) {
+                $customer->sealOptIn();
+            }
             $this->rememberForDigest($business, $text, $reply);
             $this->warnOwnerNearCap($business, $evolution);
 
@@ -357,6 +372,21 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
             'last_message_at' => now(),
         ])->save();
+    }
+
+    /** Seals the consent and says thanks in the business's own voice. */
+    private function sealOptIn(Conversation $conversation, Customer $customer, EvolutionApi $evolution): void
+    {
+        $customer->sealOptIn();
+
+        $thanks = __('client.customers.opt_in_thanks');
+        $evolution->sendText($this->instance, $this->from, $thanks);
+
+        $conversation->messages()->create([
+            'direction' => MessageDirection::Out,
+            'author' => MessageAuthor::Assistant,
+            'body' => $thanks,
+        ]);
     }
 
     /** The paused thread still records what the customer says, reply-less. */
