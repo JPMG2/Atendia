@@ -176,7 +176,11 @@ test('the pricing calculator argues with the visitor\'s own numbers, no invented
         ->assertSee(__('landing.pricing.calculator.title'))
         ->assertSee(__('landing.pricing.calculator.slider_label'))
         ->assertSee('range-input', false)
-        ->assertSee(__('landing.pricing.calculator.plan_hint'))
+        ->assertSee(__('landing.pricing.calculator.today_tag'))
+        ->assertSee(__('landing.pricing.calculator.with_tag'))
+        ->assertSee(__('landing.pricing.calculator.verdict_per_hour'))
+        ->assertSee(__('landing.pricing.calculator.hour_value_label'))
+        ->assertSee(__('landing.pricing.calculator.cta'))
         ->assertSee(__('landing.pricing.calculator.assumption', [
             'minutes' => config('atendia.calculator_minutes'),
         ]));

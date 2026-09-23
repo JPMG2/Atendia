@@ -151,15 +151,54 @@
 
         @php
             // The calculator is plain arithmetic on the visitor's own input:
-            // no invented market stats, and the plan hint reuses the real caps.
+            // no invented market stats, and the plan it names reuses the real
+            // caps and prices, so "each hour costs you" is honest math.
             $calcMinutes = (int) config('atendia.calculator_minutes');
-            $planCaps = [
-                'emprende' => (int) config('atendia.plans.emprende.conversations_per_month'),
-                'negocio' => (int) config('atendia.plans.negocio.conversations_per_month'),
+            $calcPlans = collect(['emprende', 'negocio', 'premium'])->map(fn (string $key): array => [
+                'name' => __("landing.pricing.{$key}.name"),
+                'price' => (int) config("atendia.plans.{$key}.price"),
+                'cap' => (int) config("atendia.plans.{$key}.conversations_per_month"),
+            ])->all();
+            $calcDays = [
+                'one' => __('landing.pricing.calculator.days_one'),
+                'exact' => __('landing.pricing.calculator.days_exact'),
+                'almost' => __('landing.pricing.calculator.days_almost'),
+                'over' => __('landing.pricing.calculator.days_over'),
+            ];
+            $calcCosts = [
+                'today' => __('landing.pricing.calculator.today_cost'),
+                'with' => __('landing.pricing.calculator.with_cost'),
             ];
         @endphp
 
-        <div class="mx-auto mt-10" style="max-width: 640px" x-data="{ perDay: 20, minutes: {{ $calcMinutes }} }">
+        <div
+            class="mx-auto mt-10"
+            style="max-width: 720px"
+            x-data="{
+                perDay: 20,
+                hourValue: 5,
+                minutes: {{ $calcMinutes }},
+                plans: @js($calcPlans),
+                days: @js($calcDays),
+                costs: @js($calcCosts),
+                get todayCost() { return Math.round(this.hours * this.hourValue) },
+                get saving() { return this.todayCost - this.plan.price },
+                get perMonth() { return this.perDay * 30 },
+                get hours() { return (this.perMonth * this.minutes) / 60 },
+                get plan() { return this.plans.find((p) => this.perMonth <= p.cap) ?? this.plans[this.plans.length - 1] },
+                get workDays() {
+                    const ratio = this.hours / 8, whole = Math.floor(ratio);
+                    if (ratio < 1.5) return this.days.one;
+                    if (ratio === whole) return this.days.exact.replace(':n', whole);
+                    return ratio - whole >= 0.5
+                        ? this.days.almost.replace(':n', Math.ceil(ratio))
+                        : this.days.over.replace(':n', whole);
+                },
+                get perHour() {
+                    return '$' + (this.plan.price / this.hours).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+            }"
+        >
             <x-ui.card style="padding: 24px">
                 <h3 class="mb-1 text-center font-display" style="font-size: var(--text-xl)">
                     {{ __('landing.pricing.calculator.title') }}
@@ -181,34 +220,63 @@
                     x-text="perDay"
                 ></p>
 
-                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <div class="mini-stat">
-                        <b class="font-mono" x-text="(perDay * 30).toLocaleString('es')"></b>
-                        <span>{{ __('landing.pricing.calculator.out_conversations') }}</span>
+                <p class="calc-formula">
+                    <b class="font-mono" x-text="perDay"></b>
+                    {{ __('landing.pricing.calculator.formula_per_day') }}
+                    <b class="font-mono" x-text="perMonth.toLocaleString('es')"></b>
+                    {{ __('landing.pricing.calculator.formula_month') }}
+                </p>
+
+                <x-ui.range
+                    :label="__('landing.pricing.calculator.hour_value_label')"
+                    min="2"
+                    max="30"
+                    step="1"
+                    x-model.number="hourValue"
+                />
+                <p
+                    class="text-brand mb-4 mt-1 font-mono font-semibold"
+                    style="font-size: var(--text-sm)"
+                    x-text="'$' + hourValue"
+                ></p>
+
+                <div class="calc-vs">
+                    <div class="calc-side calc-side-today">
+                        <span class="calc-tag">{{ __('landing.pricing.calculator.today_tag') }}</span>
+                        <b class="calc-big font-mono" x-text="Math.round(hours) + ' h'"></b>
+                        <p class="calc-lead">{{ __('landing.pricing.calculator.today_lead') }}</p>
+                        <p x-text="workDays"></p>
+                        <p class="calc-cost" x-text="costs.today.replace(':amount', '$' + todayCost)"></p>
                     </div>
-                    <div class="mini-stat">
-                        <b class="font-mono" x-text="Math.round((perDay * 30 * minutes) / 60) + ' h'"></b>
-                        <span>{{ __('landing.pricing.calculator.out_hours') }}</span>
+                    <div class="calc-side calc-side-with">
+                        <span class="calc-tag">{{ __('landing.pricing.calculator.with_tag') }}</span>
+                        <b class="calc-big font-mono">0 h</b>
+                        <p class="calc-lead">{{ __('landing.pricing.calculator.with_lead') }}</p>
+                        <p>{{ __('landing.pricing.calculator.with_note') }}</p>
+                        <p
+                            class="calc-cost"
+                            x-text="costs.with.replace(':plan', plan.name).replace(':amount', '$' + plan.price)"
+                        ></p>
                     </div>
                 </div>
 
-                <p class="text-body mt-3 text-center font-semibold" style="font-size: var(--text-sm)">
-                    {{ __('landing.pricing.calculator.hours_note') }}
+                <p class="calc-verdict">
+                    {{ __('landing.pricing.calculator.verdict_recover') }}
+                    <b class="font-mono" x-text="Math.round(hours) + ' h'"></b>
+                    {{ __('landing.pricing.calculator.verdict_hours') }}<span x-show="saving > 0">
+                        {{ __('landing.pricing.calculator.verdict_save') }}
+                        <b class="text-brand font-mono" x-text="'$' + saving"></b></span
+                    >.<br />
+                    {{ __('landing.pricing.calculator.verdict_per_hour') }}
+                    <b class="text-brand font-mono" x-text="perHour"></b>.
                 </p>
-                <p class="text-muted mt-1 text-center" style="font-size: var(--text-sm)">
-                    {{ __('landing.pricing.calculator.plan_hint') }}
-                    <b class="text-brand">
-                        <span x-show="perDay * 30 <= {{ $planCaps['emprende'] }}">{{ __('landing.pricing.emprende.name') }}</span>
-                        <span
-                            x-show="perDay * 30 > {{ $planCaps['emprende'] }} && perDay * 30 <= {{ $planCaps['negocio'] }}"
-                            x-cloak
-                        >{{ __('landing.pricing.negocio.name') }}</span>
-                        <span
-                            x-show="perDay * 30 > {{ $planCaps['negocio'] }}"
-                            x-cloak
-                        >{{ __('landing.pricing.premium.name') }}</span>
-                    </b>
-                </p>
+
+                {{-- The calculator convinces; without a next step the visitor stalls here. --}}
+                <div class="mt-4 flex justify-center">
+                    <x-ui.button variant="primary" size="md" :href="$registerHref">
+                        {{ __('landing.pricing.calculator.cta') }}</x-ui.button>
+                </div>
+
                 <p class="text-subtle mt-3 text-center" style="font-size: var(--text-xs)">
                     {{ __('landing.pricing.calculator.assumption', ['minutes' => $calcMinutes]) }}
                 </p>

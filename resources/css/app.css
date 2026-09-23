@@ -1043,6 +1043,29 @@
 .range-input:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var(--focus-ring); }
 .range-input:focus-visible::-moz-range-thumb { box-shadow:0 0 0 4px var(--focus-ring); }
 
+/* Pricing calculator: "today by hand" vs "with Atendia" side by side, so the
+   cost and the gain read as one contrast instead of loose numbers. */
+.calc-formula { margin:10px 0 18px; padding:8px 12px; text-align:center; font-size:var(--text-sm);
+                color:var(--text-muted); background:var(--surface-sunken); border-radius:var(--radius-md); }
+.calc-formula b { color:var(--text-strong); }
+.calc-vs { display:grid; grid-template-columns:1fr; gap:12px; }
+@media (min-width:560px) { .calc-vs { grid-template-columns:1fr 1fr; } }
+.calc-side { display:flex; flex-direction:column; gap:4px; padding:16px; border:1px solid; border-radius:var(--radius-lg); }
+.calc-side-today { background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 30%, transparent); }
+.calc-side-with { background:var(--brand-soft); border-color:var(--brand-border); }
+.calc-tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.calc-side-today .calc-tag { color:var(--accent-soft-text); }
+.calc-side-with .calc-tag { color:var(--brand-soft-text); }
+.calc-big { font-size:var(--text-4xl); font-weight:700; line-height:1.1; color:var(--text-strong); }
+.calc-side p { font-size:var(--text-sm); color:var(--text-body); }
+.calc-side p.calc-lead { font-weight:600; color:var(--text-strong); }
+.calc-side p.calc-cost { margin-top:auto; padding-top:6px; font-weight:700; }
+.calc-side-today p.calc-cost { color:var(--accent-soft-text); }
+.calc-side-with p.calc-cost { color:var(--brand-soft-text); }
+.calc-verdict { margin-top:14px; padding:14px 16px; text-align:center; font-size:var(--text-base); line-height:1.5;
+                color:var(--text-strong); background:var(--surface-sunken);
+                border:1px dashed var(--border-default); border-radius:var(--radius-lg); }
+
 /* Mobile-only sticky CTA: the hero button follows the reader once the hero
    scrolls away — on a phone the primary action is gone after two flicks. */
 .mobile-cta { position:fixed; inset-inline:0; bottom:0; z-index:40; padding:10px 16px calc(10px + env(safe-area-inset-bottom));
