@@ -379,3 +379,26 @@ test('a mailed link survives the http-to-https swap of the proxy', function (): 
 
     $this->get(preg_replace('/^http:/', 'https:', $link))->assertSuccessful()->assertSee(__('settings.links.verified_title'));
 });
+
+test('signing up mails the verification link through the channel', function (): void {
+    $this->post('/register', [
+        'name' => 'Ana Pérez',
+        'email' => 'ana@shop.test',
+        'password' => 'Segura#2026',
+        'password_confirmation' => 'Segura#2026',
+    ]);
+
+    Mail::assertQueued(AccountEmailVerification::class, fn ($mail): bool => $mail->hasTo('ana@shop.test'));
+});
+
+test('signing up from the mobile app mails it too', function (): void {
+    $this->postJson('/api/v1/register', [
+        'name' => 'Ana Pérez',
+        'email' => 'ana@shop.test',
+        'password' => 'Segura#2026',
+        'password_confirmation' => 'Segura#2026',
+        'device_name' => 'iPhone',
+    ])->assertCreated();
+
+    Mail::assertQueued(AccountEmailVerification::class, fn ($mail): bool => $mail->hasTo('ana@shop.test'));
+});
