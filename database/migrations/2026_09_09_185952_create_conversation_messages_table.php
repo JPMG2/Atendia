@@ -25,6 +25,9 @@ return new class extends Migration
             $table->string('kind', 8)->default('message')->comment('message | note — la nota interna jamás viaja al cliente');
             $table->string('wa_message_id', 100)->nullable()->comment('El id del mensaje en WhatsApp, para reacciones y trazas');
             $table->text('body');
+            $table->boolean('is_enquiry')->default(false)->comment('Filas in: true si es una consulta real; un "sí", "ok" o "gracias" no cuenta para aprender ni para las estadísticas');
+            $table->boolean('needs_teaching')->default(false)->comment('Filas in: la IA juzgó que el asistente no pudo responderla con lo que sabe — ahí se ofrece enseñarle');
+            $table->string('topic', 80)->nullable()->comment('Filas in: el tema corto que la IA le asignó ("Horario de hoy"), lo que muestran las estadísticas');
             $table->unsignedInteger('prompt_tokens')->nullable()->comment('Tokens de entrada del intercambio (solo filas out; suma sus pasadas): el costo real que decide los paquetes');
             $table->unsignedInteger('completion_tokens')->nullable()->comment('Tokens de salida del intercambio (solo filas out)');
             $table->unsignedSmallInteger('audio_seconds')->nullable()->comment('Duración de la nota de voz transcripta (solo filas in de audio)');

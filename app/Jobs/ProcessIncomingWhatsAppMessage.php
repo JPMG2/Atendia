@@ -14,11 +14,11 @@ use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\PlatformContact;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
-use App\Services\Knowledge\KnowledgeEmbedder;
 use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -353,10 +353,6 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
 
-        // Best effort: search is a luxury, the stored thread is not.
-        rescue(fn () => $inbound->update([
-            'embedding' => app(KnowledgeEmbedder::class)->embedOne($question),
-        ]), report: false);
         // The exchange's bill lives on the reply row: it is what the plan
         // caps will be priced against.
         $conversation->messages()->create([
@@ -372,6 +368,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
             'last_message_at' => now(),
         ])->save();
+
+        $this->triage($inbound);
     }
 
     /** Seals the consent and says thanks in the business's own voice. */
@@ -389,6 +387,17 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ]);
     }
 
+    /**
+     * The list already dropped the obvious small talk; what is left goes to
+     * the AI triage, which reads the whole exchange once it is stored.
+     */
+    private function triage(ConversationMessage $inbound): void
+    {
+        if ($inbound->is_enquiry) {
+            TriageCustomerMessage::dispatch((int) $inbound->business_id, (int) $inbound->id);
+        }
+    }
+
     /** The paused thread still records what the customer says, reply-less. */
     private function rememberInboundOnly(Conversation $conversation, string $text): void
     {
@@ -399,14 +408,12 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
 
-        rescue(fn () => $inbound->update([
-            'embedding' => app(KnowledgeEmbedder::class)->embedOne($text),
-        ]), report: false);
-
         $conversation->fill([
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
             'last_message_at' => now(),
         ])->save();
+
+        $this->triage($inbound);
     }
 
     /**

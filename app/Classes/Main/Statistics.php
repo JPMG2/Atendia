@@ -46,7 +46,7 @@ class Statistics
         return [
             'conversations' => $threadIds->count(),
             'new_contacts' => $this->business->conversations()->whereBetween('created_at', [$from, $to])->count(),
-            'questions' => (clone $inbound)->count(),
+            'questions' => $this->enquiries()->whereBetween('created_at', [$from, $to])->count(),
             'audio_minutes' => (int) ceil((clone $inbound)->sum('audio_seconds') / 60),
             'resolution' => $this->resolutionRate($threadIds),
         ];
@@ -175,7 +175,7 @@ class Statistics
 
             return [
                 'since' => $first === null ? null : CarbonImmutable::parse($first),
-                'questions' => $this->inbound()->count(),
+                'questions' => $this->enquiries()->count(),
                 'conversations' => $this->business->conversations()->count(),
             ];
         }
@@ -275,15 +275,16 @@ class Statistics
      */
     private function clusters(): array
     {
-        $key = 'wa:stats:clusters:'.$this->business->id.':'.now()->format('Y-m-d');
+        $key = 'wa:stats:clusters:v3:'.$this->business->id.':'.now()->format('Y-m-d');
 
         return Cache::remember($key, now()->addHours(6), function (): array {
-            $messages = $this->inbound()
+            // Real questions only: a lone "sí" or "gracias" is no topic.
+            $messages = $this->enquiries()
                 ->where('created_at', '>=', CarbonImmutable::now()->startOfMonth())
                 ->whereNotNull('embedding')
                 ->latest()
                 ->limit(self::CLUSTER_SAMPLE)
-                ->get(['body', 'embedding']);
+                ->get(['body', 'topic', 'embedding']);
 
             $clusters = [];
 
@@ -301,7 +302,8 @@ class Statistics
                 unset($cluster);
 
                 $clusters[] = [
-                    'sample' => mb_substr(trim((string) $message->body), 0, 80),
+                    // The AI's topic reads clean ("Horario de hoy"); the raw text is the fallback.
+                    'sample' => $message->topic ?? mb_substr(trim((string) $message->body), 0, 80),
                     'count' => 1,
                     'centroid' => $embedding,
                 ];
@@ -311,6 +313,19 @@ class Statistics
 
             return $clusters;
         });
+    }
+
+    /**
+     * The customer's real questions, the base of every "questions" figure;
+     * `inbound()` stays for activity (threads, hours), where a "sí" counts.
+     *
+     * @return Builder<ConversationMessage>
+     */
+    private function enquiries()
+    {
+        return ConversationMessage::query()
+            ->where('business_id', $this->business->id)
+            ->enquiries();
     }
 
     /** @return Builder<ConversationMessage> */

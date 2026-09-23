@@ -145,3 +145,34 @@ test('the month kpis and the since-day-one counter add up from the threads', fun
         ->and($stats->sinceDayOne['questions'])->toBe(2)
         ->and($stats->peakHours['window'])->not->toBeNull();
 });
+
+test('small talk never ranks among the most asked nor counts as a question', function (): void {
+    // 2026-09-23: two "sí" scored as high as "¿abren hoy?" in "what they ask most".
+    $user = statsClient();
+    askedQuestion($user, 'Si', axis: 5);
+    askedQuestion($user, 'sí!!', axis: 5);
+    askedQuestion($user, '¿Abren hoy?', axis: 7);
+    askedQuestion($user, '¿Están abiertos hoy?', axis: 7);
+
+    $statistics = new Statistics($user->business);
+
+    expect(array_column($statistics->topAsked(), 'sample'))->not->toContain('Si')->not->toContain('sí!!')
+        ->and($statistics->topAsked())->toHaveCount(1)
+        ->and($statistics->monthKpis()['questions'])->toBe(2)
+        ->and($statistics->monthKpis()['conversations'])->toBe(4);
+});
+
+test('what counts as a real question', function (string $text, bool $enquiry): void {
+    expect(ConversationMessage::looksLikeEnquiry($text))->toBe($enquiry);
+})->with([
+    'yes' => ['Si', false],
+    'no' => ['No', false],
+    'thanks' => ['Ok, muchas gracias 🙌', false],
+    'greeting' => ['Buenas tardes', false],
+    'laugh' => ['jajaja', false],
+    'emoji only' => ['👍', false],
+    'one-word question' => ['Horarios?', true],
+    'open today' => ['¿Hoy abren?', true],
+    'greeting plus question' => ['Hola, quería saber el precio', true],
+    'yes plus question' => ['Sí, pero ¿hacen domicilio?', true],
+]);

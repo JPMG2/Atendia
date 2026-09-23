@@ -698,8 +698,9 @@ new class extends Component
                                                         {{ $message->created_at?->format('H:i') }}
                                                     </span>
                                                 </div>
-                                                @if ($message->direction === App\Enums\MessageDirection::In)
-                                                    {{-- Hover-revealed on desktop; touch has no hover, so it stays faintly visible. --}}
+                                                @if ($message->is_enquiry && $message->needs_teaching)
+                                                    {{-- Only where the AI triage saw the assistant fall short: that is what teaching fixes.
+                                                    Hover-revealed on desktop; touch has no hover, so it stays faintly visible. --}}
                                                     <x-ui.icon-button
                                                         icon="graduation-cap"
                                                         size="sm"

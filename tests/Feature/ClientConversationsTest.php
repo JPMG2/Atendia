@@ -434,7 +434,10 @@ test('a customer message can be taught to the assistant from the thread', functi
 
     $user = conversationsClient();
     $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
-    $question = $thread->messages()->where('direction', MessageDirection::In)->first();
+    // A real question: a bare "Hola" offers nothing to teach.
+    $question = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen envíos?']);
+    // The AI triage marked it: the assistant could not answer it.
+    $question->forceFill(['needs_teaching' => true])->save();
     $this->actingAs($user);
 
     livewire('conversations.index')
@@ -583,7 +586,10 @@ test('teaching from the thread records where the answer was born', function (): 
 
     $user = conversationsClient();
     $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
-    $question = $thread->messages()->where('direction', MessageDirection::In)->first();
+    // A real question: a bare "Hola" offers nothing to teach.
+    $question = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen envíos?']);
+    // The AI triage marked it: the assistant could not answer it.
+    $question->forceFill(['needs_teaching' => true])->save();
     $this->actingAs($user);
 
     livewire('conversations.index')
@@ -706,4 +712,25 @@ test('the customer sheet notes box has a fixed size, no resize grip', function (
         ->call('openCustomer')
         ->assertSee('field-control-multiline', false)
         ->assertDontSee('field-textarea', false);
+});
+
+test('the teach door opens only where the assistant fell short, never on a lone yes', function (): void {
+    $user = conversationsClient();
+    [, $thread] = customerThread($user);
+    $yes = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => 'Si']);
+    $answered = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Abren los sábados?']);
+    $stumped = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen análisis a domicilio?']);
+    // The AI triage: the assistant answered the first well and fell short on the second.
+    $stumped->forceFill(['needs_teaching' => true])->save();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('teach', $yes->id)
+        ->assertSet('sheetOpen', false)
+        ->call('teach', $answered->id)
+        ->assertSet('sheetOpen', false)
+        ->call('teach', $stumped->id)
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.question', '¿Hacen análisis a domicilio?');
 });

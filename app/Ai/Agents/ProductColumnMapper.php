@@ -8,7 +8,6 @@ use App\Services\ProductImport\ColumnMapper;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Enums\Lab;
@@ -25,7 +24,6 @@ use Stringable;
  */
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-#[Temperature(0.0)]
 class ProductColumnMapper implements Agent, HasStructuredOutput
 {
     public const array TARGETS = ['name', 'code', 'price', 'stock', 'description', 'extra'];
