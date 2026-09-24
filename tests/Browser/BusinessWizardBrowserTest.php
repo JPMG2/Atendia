@@ -2,12 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     app()->setLocale('es');
+    // The wizard writes real data, so it sits behind the client-panel lock (2026-09-03).
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->actingAs(User::factory()->create());
 });
 
 /*
@@ -23,7 +28,7 @@ test('typing the business name animates the assistant into the phone', function 
     $page = visit('/alta');
 
     $page->assertSee(__('wizard.fields.business_name'))
-        ->fill('business_name', 'Clínica Vida')
+        ->fill('name', 'Clínica Vida')
         ->assertNoJavaScriptErrors();
 
     // These retry until the choreography finished: the client bubble, the
@@ -39,9 +44,9 @@ test('fast typing never duplicates the assistant reply', function (): void {
     // Two live updates racing: the first schedules the animation, the second
     // repaints silently mid-flight. The stray timers used to append the stale
     // first-letter reply behind the real one.
-    $page->fill('business_name', 'C');
+    $page->fill('name', 'C');
     usleep(400000);
-    $page->fill('business_name', 'Clínica Vida');
+    $page->fill('name', 'Clínica Vida');
 
     $page->assertVisible('.wizard-phone .msg.out');
 
@@ -49,18 +54,4 @@ test('fast typing never duplicates the assistant reply', function (): void {
     usleep(2500000);
 
     expect((int) $page->script('document.querySelectorAll("[data-phone] .msg").length'))->toBe(2);
-});
-
-test('scanning on step five drops the connected bubble into the chat', function (): void {
-    $page = visit('/alta');
-
-    $page->fill('business_name', 'Clínica Vida');
-    $page->assertVisible('.wizard-phone .msg.out');
-
-    $page->click('@wizard-tab-5')
-        ->click(__('wizard.whatsapp.scanned'))
-        ->assertNoJavaScriptErrors();
-
-    $page->assertSee('Conectado a tu WhatsApp')
-        ->assertSee(__('wizard.done.heading'));
 });

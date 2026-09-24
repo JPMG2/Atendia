@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
+use App\Models\Product;
+use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +21,13 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     app()->setLocale('es');
     $this->seed(RolesAndPermissionsSeeder::class);
-    $this->actingAs(User::factory()->create());
+    // The screens show the business's real catalog (the mock-up data is long gone).
+    $business = Business::factory()->create();
+    Service::factory()->create(['business_id' => $business->id, 'name' => 'Corte de caballero', 'is_active' => true]);
+    Service::factory()->create(['business_id' => $business->id, 'name' => 'Coloración', 'is_active' => true]);
+    Product::factory()->create(['business_id' => $business->id, 'name' => 'Alternador Fiat Palio', 'is_active' => true]);
+    Product::factory()->create(['business_id' => $business->id, 'name' => 'Bujía NGK BPR6ES', 'is_active' => true]);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]));
 });
 
 test('the services search narrows live and the sheet slides over and closes', function (): void {

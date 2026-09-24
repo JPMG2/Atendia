@@ -198,7 +198,9 @@ test('discarding the main step puts the saved values back on screen', function (
     expect($page->script('document.querySelector("#if-legal_name").value'))->toBe('Escrito y arrepentido');
     expect($page->script('document.querySelector("#if-region_id").value'))->toBe('');
 
+    // Discarding asks first; the dialog's own button reads "Descartar" too.
     $page->click('Descartar')->wait(1);
+    $page->click('.dialog-foot [x-ref="accept"]')->wait(1);
 
     $page->assertNoJavaScriptErrors();
 

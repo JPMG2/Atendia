@@ -32,17 +32,18 @@ test('clicking a parent item expands its nested children (Alpine)', function ():
     // The blessed client menu is flat, so recursion gets its own fixture.
     $parent = Menu::factory()->create(['label_key' => 'menu.products']);
     $child = Menu::factory()->create(['parent_id' => $parent->id, 'label_key' => 'menu.services']);
-    Menu::factory()->create(['parent_id' => $child->id, 'label_key' => 'menu.whatsapp']);
+    // Not "WhatsApp": the topbar's connection chip already says it.
+    Menu::factory()->create(['parent_id' => $child->id, 'label_key' => 'menu.statistics']);
     $this->actingAs(User::factory()->create());
 
     $page = visit('/dashboard');
 
     // The nested branch is collapsed until its parent is clicked.
-    $page->assertDontSee('WhatsApp')
+    $page->assertDontSee('Mis estadísticas')
         ->click('Productos')
         ->assertSee('Servicios')
         ->click('Servicios')
-        ->assertSee('WhatsApp');
+        ->assertSee('Mis estadísticas');
 });
 
 test('the theme toggle switches between light and dark', function (): void {

@@ -134,7 +134,7 @@ test('the provenance trail unfolds and the teach sheet opens from inside the isl
         'contact_name' => 'Carla',
         'contact_phone' => '5491111111111',
     ]);
-    ConversationMessage::factory()->for($thread)->create([
+    $asked = ConversationMessage::factory()->for($thread)->create([
         'business_id' => $user->business_id, 'body' => '¿Tienen alternadores?',
     ]);
     ConversationMessage::factory()->out()->for($thread)->create([
@@ -143,6 +143,10 @@ test('the provenance trail unfolds and the teach sheet opens from inside the isl
         'body' => 'Sí, tenemos stock.',
         'knowledge_sources' => [['id' => 7, 'title' => 'Inventario 2026']],
     ]);
+
+    // The teach door opens where the analysis queued the question.
+    $suggestion = KnowledgeSuggestion::factory()->askedIn($thread)->create(['business_id' => $user->business_id, 'question' => '¿Tienen alternadores?']);
+    $suggestion->questions()->update(['conversation_message_id' => $asked->id]);
 
     $this->actingAs($user);
 
