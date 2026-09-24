@@ -14,7 +14,6 @@ use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
 use App\Models\Conversation;
-use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\PlatformContact;
 use App\Services\ConversationGuard;
@@ -24,7 +23,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Transcription;
 
 /**
@@ -186,7 +184,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
-            $this->rememberExchange($conversation, $text, $reply, $agent->exchangeUsage, $agent->knowledgeSources());
+            $this->rememberExchange($conversation, $text, $reply, $agent->knowledgeSources());
 
             // The assistant thanks per its briefing; the seal itself never
             // depends on the model remembering to call its tool.
@@ -353,23 +351,19 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      *
      * @param  list<array{id: int, title: string}>  $sources
      */
-    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?TextUsage $usage, array $sources = []): void
+    private function rememberExchange(Conversation $conversation, string $question, string $reply, array $sources = []): void
     {
-        $inbound = $conversation->messages()->create([
+        $conversation->messages()->create([
             'direction' => MessageDirection::In,
             'wa_message_id' => $this->messageId,
             'body' => $question,
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
 
-        // The exchange's bill lives on the reply row: it is what the plan
-        // caps will be priced against.
         $conversation->messages()->create([
             'direction' => MessageDirection::Out,
             'author' => MessageAuthor::Assistant,
             'body' => $reply,
-            'prompt_tokens' => $usage?->inputTokens,
-            'completion_tokens' => $usage?->outputTokens,
             'knowledge_sources' => $sources === [] ? null : $sources,
         ]);
 
@@ -377,8 +371,6 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
             'last_message_at' => now(),
         ])->save();
-
-        $this->triage($inbound);
     }
 
     /** Seals the consent and says thanks in the business's own voice. */
@@ -396,17 +388,6 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ]);
     }
 
-    /**
-     * The list already dropped the obvious small talk; what is left goes to
-     * the AI triage, which reads the whole exchange once it is stored.
-     */
-    private function triage(ConversationMessage $inbound): void
-    {
-        if ($inbound->is_enquiry) {
-            TriageCustomerMessage::dispatch((int) $inbound->business_id, (int) $inbound->id);
-        }
-    }
-
     /** The paused thread still records what the customer says, reply-less. */
     private function rememberInboundOnly(Conversation $conversation, string $text): void
     {
@@ -421,8 +402,6 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
             'last_message_at' => now(),
         ])->save();
-
-        $this->triage($inbound);
     }
 
     /**

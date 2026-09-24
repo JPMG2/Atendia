@@ -139,7 +139,7 @@ test('the header shows today\'s pulse', function (): void {
     $this->get(route('conversations'))->assertSee(__('client.conversations.today', ['count' => 1]));
 });
 
-test('when nothing matches literally the search falls back to meaning', function (): void {
+test('when nothing matches literally the search falls back to the meaning of the analyzed questions', function (): void {
     $user = conversationsClient();
 
     $eco = threadFor($user, 'Carla', '5491111111111', 'Sí, hacemos eco doppler.');
@@ -148,8 +148,9 @@ test('when nothing matches literally the search falls back to meaning', function
     // Orthogonal vectors: the doppler question IS the needle, the other one
     // could not be further away — the similarity floor drops it.
     $needle = array_merge([1.0], array_fill(0, 1535, 0.0));
-    $eco->messages()->first()->update(['embedding' => $needle]);
-    $other->messages()->first()->update(['embedding' => array_merge([0.0, 1.0], array_fill(0, 1534, 0.0))]);
+    foreach ([[$eco, $needle], [$other, array_merge([0.0, 1.0], array_fill(0, 1534, 0.0))]] as [$thread, $vector]) {
+        queueAsked($thread->messages()->first(), '¿Hacen ecografías?')->questions()->update(['embedding' => $vector]);
+    }
 
     $this->mock(KnowledgeEmbedder::class)
         ->shouldReceive('embedOne')

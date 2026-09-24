@@ -20,7 +20,7 @@ return new class extends Migration
 
             $table->foreignId('business_id')->nullable()->constrained()->cascadeOnDelete()->comment('Null = llamada de la plataforma sin negocio (consola, admin)');
 
-            $table->string('kind', 40)->comment('Qué llamó: el agente (AsistenteAtendia, MessageTriage...), embeddings o transcription');
+            $table->string('kind', 40)->comment('Qué llamó: el agente (AsistenteAtendia, ConversationAnalyst...), embeddings o transcription');
             $table->string('model', 80)->nullable();
             $table->unsignedInteger('input_tokens')->default(0)->comment('Entrada a tarifa completa (incluye la escritura en caché)');
             $table->unsignedInteger('cached_tokens')->default(0)->comment('Entrada leída de la caché del proveedor: se cobra más barata');

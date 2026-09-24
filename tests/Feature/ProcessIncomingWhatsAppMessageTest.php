@@ -29,8 +29,8 @@ beforeEach(function (): void {
 
     Cache::flush();
 
-    // The inbound embedding is best effort, but the suite never rides the
-    // network: the embedder is stubbed for every path that stores a turn.
+    // The suite never rides the network: the embedder is stubbed for every
+    // path that searches the knowledge while answering.
     $this->mock(KnowledgeEmbedder::class)
         ->shouldReceive('embedOne')
         ->andReturn(array_fill(0, 1536, 0.001))
@@ -170,14 +170,10 @@ test('the exchange is persisted as a thread the assistant will remember', functi
         ->and($turns[0]->body)->toBe('¿Tienen turnos?')
         ->and($turns[0]->wa_message_id)->toBe('MSG-1')
         ->and($turns[1]->direction)->toBe(MessageDirection::Out)
-        ->and($turns[1]->body)->toBe('Sí, mañana a las 9.')
-        // The bill of the exchange, measured: the fake reports zero tokens,
-        // but the columns must be written, never left null.
-        ->and($turns[1]->prompt_tokens)->not->toBeNull()
-        ->and($turns[1]->completion_tokens)->not->toBeNull();
+        ->and($turns[1]->body)->toBe('Sí, mañana a las 9.');
 });
 
-test('a new exchange is broadcast to the business channel and the question keeps its embedding', function (): void {
+test('a new exchange is broadcast to the business channel', function (): void {
     fakeWhatsAppHttp();
     Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
     AsistenteAtendia::fake(['…', 'Listo.']);
@@ -191,8 +187,6 @@ test('a new exchange is broadcast to the business channel and the question keeps
         WhatsAppExchangeArrived::class,
         fn (WhatsAppExchangeArrived $event): bool => $event->conversationId === $conversation->id,
     );
-
-    expect($conversation->messages()->whereNotNull('embedding')->count())->toBe(1);
 });
 
 test('a second message from the same contact grows the same thread', function (): void {

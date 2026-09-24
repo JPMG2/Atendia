@@ -11,7 +11,6 @@ use App\Traits\BelongsToBusiness;
 use Carbon\CarbonInterface;
 use Database\Factories\ConversationMessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +18,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /** One turn of a thread: the customer's text or the assistant's reply. */
-#[Fillable(['business_id', 'conversation_id', 'direction', 'author', 'kind', 'wa_message_id', 'body', 'prompt_tokens', 'completion_tokens', 'audio_seconds', 'knowledge_sources', 'embedding'])]
+#[Fillable(['business_id', 'conversation_id', 'direction', 'author', 'kind', 'wa_message_id', 'body', 'audio_seconds', 'knowledge_sources'])]
 class ConversationMessage extends Model
 {
     use BelongsToBusiness;
@@ -40,17 +39,6 @@ class ConversationMessage extends Model
         'nos', 'vemos', 'hasta', 'luego', 'pronto', 'yes', 'thanks', 'thank', 'you', 'hi', 'hello', 'bye',
         'sim', 'nao', 'obrigado', 'obrigada', 'y', 'e', 'a', 'que', 'q', 'mm', 'mmm', 'hmm',
     ];
-
-    protected static function booted(): void
-    {
-        // The list's verdict on birth; the AI triage refines it later and must
-        // not be overwritten, hence `creating` and never `saving`.
-        static::creating(function (ConversationMessage $message): void {
-            $message->is_enquiry = $message->direction === MessageDirection::In
-                && $message->kind !== MessageKind::Note
-                && self::looksLikeEnquiry((string) $message->body);
-        });
-    }
 
     /** True unless the text is empty, only emoji/punctuation, laughter or small talk. */
     public static function looksLikeEnquiry(string $text): bool
@@ -86,16 +74,6 @@ class ConversationMessage extends Model
     }
 
     /**
-     * The customer's real questions: what statistics count and teaching offers.
-     *
-     * @param  Builder<ConversationMessage>  $query
-     */
-    public function scopeEnquiries(Builder $query): void
-    {
-        $query->where('direction', MessageDirection::In)->where('is_enquiry', true);
-    }
-
-    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -105,9 +83,6 @@ class ConversationMessage extends Model
             'author' => MessageAuthor::class,
             'kind' => MessageKind::class,
             'knowledge_sources' => 'array',
-            'embedding' => 'array',
-            'is_enquiry' => 'boolean',
-            'needs_teaching' => 'boolean',
         ];
     }
 

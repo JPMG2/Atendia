@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Ai\Agents\MessageTriage;
+use App\Ai\Agents\ConversationAnalyst;
 use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -29,7 +29,7 @@ uses(RefreshDatabase::class);
 
 function promptedEvent(TextUsage $usage): AgentPrompted
 {
-    $agent = new MessageTriage;
+    $agent = new ConversationAnalyst;
 
     return new AgentPrompted('inv-1', new AgentPrompt($agent, 'hola', [], app(AiManager::class)->textProvider('openai'), 'gpt-6-astra'), new AgentResponse('inv-1', '', $usage, new Meta('openai', 'gpt-6-astra')));
 }
@@ -42,7 +42,7 @@ test('every agent call is metered under its business, cached input apart', funct
     $row = AiUsage::query()->sole();
 
     expect($row->business_id)->toBe($business->id)
-        ->and($row->kind)->toBe('MessageTriage')
+        ->and($row->kind)->toBe('ConversationAnalyst')
         ->and($row->model)->toBe('gpt-6-astra')
         ->and($row->input_tokens)->toBe(10)
         ->and($row->cached_tokens)->toBe(2_000)

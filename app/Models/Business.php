@@ -466,14 +466,6 @@ class Business extends Model
     }
 
     /**
-     * @return HasMany<KnowledgeMiss, $this>
-     */
-    public function knowledgeMisses(): HasMany
-    {
-        return $this->hasMany(KnowledgeMiss::class);
-    }
-
-    /**
      * One line per day with hours, shift by shift: "Lunes: 09:00 a 13:00 y
      * 17:00 a 20:00". Days with no row are simply not offered.
      *

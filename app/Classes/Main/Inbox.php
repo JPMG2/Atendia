@@ -108,10 +108,10 @@ class Inbox
     }
 
     /**
-     * Meaning-based fallback for the inbox search: the customer questions
-     * closest to the query, in the same vector space the RAG uses, folded
-     * back into their threads. The similarity floor mirrors retrieval's —
-     * beyond it, results read as random and erode trust in the search.
+     * Meaning-based fallback for the inbox search: the analyzed questions
+     * closest to the query (rewritten, so "¿y los sábados?" still matches),
+     * folded back into their threads. The similarity floor mirrors
+     * retrieval's — beyond it, results read as random.
      *
      * @return Collection<int, Conversation>
      */
@@ -121,11 +121,11 @@ class Inbox
         $maxDistance = 1.0 - (float) config('rag.retrieval.min_similarity');
 
         $conversationIds = $this->business->conversations()
-            ->join('conversation_messages', 'conversation_messages.conversation_id', '=', 'conversations.id')
-            ->whereNotNull('conversation_messages.embedding')
-            ->selectVectorDistance('conversation_messages.embedding', $vector, as: 'distance')
+            ->join('conversation_questions', 'conversation_questions.conversation_id', '=', 'conversations.id')
+            ->whereNotNull('conversation_questions.embedding')
+            ->selectVectorDistance('conversation_questions.embedding', $vector, as: 'distance')
             ->addSelect('conversations.id')
-            ->orderByVectorDistance('conversation_messages.embedding', $vector)
+            ->orderByVectorDistance('conversation_questions.embedding', $vector)
             ->limit(12)
             ->get()
             ->filter(fn ($row): bool => (float) $row->getAttribute('distance') <= $maxDistance)
