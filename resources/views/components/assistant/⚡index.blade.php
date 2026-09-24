@@ -416,6 +416,9 @@ new class extends Component
                         <button type="button" wire:click="edit({{ $faq->id }})" class="min-w-0 flex-1 text-left">
                             <span class="text-strong block truncate text-sm font-semibold">{{ $faq->title }}</span>
                             <span class="text-muted block truncate text-xs">{{ str($faq->content)->after("Respuesta: ") }}</span>
+                            @if ($faq->recovery !== null)
+                                <x-assistant.faq-recovery :recovery="$faq->recovery" />
+                            @endif
                         </button>
                         <span class="text-subtle flex-none font-mono text-xs">
                             {{ $faq->indexed_at !== null ? __('client.assistant.learned') : __('client.assistant.learning') }}

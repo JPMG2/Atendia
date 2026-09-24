@@ -423,3 +423,26 @@ test('after teaching, the banner offers the try once indexed and to tell who ask
 
     Queue::assertPushed(NotifyUnansweredCustomers::class, fn (NotifyUnansweredCustomers $job): bool => $job->suggestionId === $suggestion->id);
 });
+
+test('a taught answer shows the customers it won back: sent, how late, who wrote again', function (): void {
+    Queue::fake();
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', asked: 2);
+    $faq = KnowledgeDocument::factory()->create(['business_id' => $user->business_id, 'source_type' => 'faq', 'title' => '¿Aceptan Visa?']);
+    $suggestion->markTaught($faq);
+
+    $suggestion->questions()->update(['created_at' => now()->subDays(2), 'customer_notified_at' => now()]);
+    // Only one of the two customers wrote back after the answer arrived.
+    ConversationMessage::factory()->create([
+        'business_id' => $user->business_id,
+        'conversation_id' => $suggestion->questions()->value('conversation_id'),
+        'body' => '¡Genial, gracias! Paso mañana.',
+        'created_at' => now()->addMinute(),
+    ]);
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee('Se la enviaste a 2 clientes que se quedaron sin respuesta')
+        ->assertSee('2 días después')
+        ->assertSee('1 volvió a escribir');
+});

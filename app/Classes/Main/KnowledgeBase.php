@@ -57,12 +57,14 @@ class KnowledgeBase
     public Collection $faqs {
         get {
             $usage = $this->usageByDocument();
+            $recovery = $this->recoveryByDocument();
 
             return $this->business->knowledgeDocuments()
                 ->where('source_type', 'faq')
                 ->latest('id')
                 ->get()
-                ->each(fn (KnowledgeDocument $faq) => $faq->setAttribute('times_used', $usage[$faq->id] ?? 0));
+                ->each(fn (KnowledgeDocument $faq) => $faq->setAttribute('times_used', $usage[$faq->id] ?? 0)
+                    ->setAttribute('recovery', $recovery[$faq->id] ?? null));
         }
     }
 
@@ -82,6 +84,37 @@ class KnowledgeBase
             SQL, [$this->business->id]);
 
         return collect($rows)->mapWithKeys(fn (object $row): array => [(int) $row->document_id => (int) $row->uses])->all();
+    }
+
+    /**
+     * Per taught answer, the customers it was sent to after going without,
+     * how many days they had waited on average, and how many wrote back:
+     * the proof that teaching wins customers back.
+     *
+     * @return array<int, array{sent: int, days: int, returned: int}> document id => recovery
+     */
+    private function recoveryByDocument(): array
+    {
+        $rows = DB::select(<<<'SQL'
+            select s.knowledge_document_id as document_id,
+                   count(distinct q.conversation_id) as sent,
+                   avg(extract(epoch from q.customer_notified_at - q.created_at)) / 86400 as days,
+                   count(distinct q.conversation_id) filter (where exists (
+                       select 1 from conversation_messages m
+                       where m.conversation_id = q.conversation_id and m.direction = 'in'
+                         and m.created_at > q.customer_notified_at
+                   )) as returned
+            from conversation_questions q
+            join knowledge_suggestions s on s.id = q.knowledge_suggestion_id
+            where q.business_id = ? and q.customer_notified_at is not null and s.knowledge_document_id is not null
+            group by 1
+            SQL, [$this->business->id]);
+
+        return collect($rows)->mapWithKeys(fn (object $row): array => [(int) $row->document_id => [
+            'sent' => (int) $row->sent,
+            'days' => (int) round((float) $row->days),
+            'returned' => (int) $row->returned,
+        ]])->all();
     }
 
     /** One taught answer of THIS business, or null when it is not the tenant's. */

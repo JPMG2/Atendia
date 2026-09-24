@@ -110,8 +110,17 @@ new class extends Component
             @endforeach
         </div>
 
+        {{-- The centrepiece: what they ask, how much the assistant solves alone, and the fix. --}}
+        @if ($this->plan->statisticsAtLeast('patterns'))
+            <x-statistics.topics-card :topics="$this->stats->topics" />
+        @else
+            <div class="mt-4">
+                <x-statistics.locked-card :title="__('statistics.topics.title')" plan="negocio" />
+            </div>
+        @endif
+
         <div class="duo-grid mt-4">
-            {{-- Patterns: what do they ask me? --}}
+            {{-- Patterns: when do they write? --}}
             @if ($this->plan->statisticsAtLeast('patterns'))
                 <x-ui.card class="p-6">
                     <h2 class="block-title">{{ __('statistics.daily.title') }}</h2>
@@ -130,31 +139,8 @@ new class extends Component
                     @endif
                 </x-ui.card>
 
-                <x-ui.card class="p-6">
-                    <h2 class="block-title">{{ __('statistics.top.title') }}</h2>
-                    @php($topAsked = $this->stats->topAsked())
-                    @if ($topAsked !== [])
-                        @php($topMax = max(array_column($topAsked, 'count')))
-                        <ul class="stats-top">
-                            @foreach ($topAsked as $topic)
-                                <li>
-                                    <div class="stats-top-row">
-                                        <span class="stats-top-text">{{ $topic['sample'] }}</span>
-                                        <b class="font-mono">{{ $topic['count'] }}</b>
-                                    </div>
-                                    <div class="plan-meter-track">
-                                        <div class="plan-meter-fill" style="width: {{ (int) round($topic['count'] / $topMax * 100) }}%"></div>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p class="stats-empty">{{ __('statistics.gathering') }}</p>
-                    @endif
-                </x-ui.card>
             @else
                 <x-statistics.locked-card :title="__('statistics.daily.title')" plan="negocio" />
-                <x-statistics.locked-card :title="__('statistics.top.title')" plan="negocio" />
             @endif
 
             {{-- Trends: where do I grow? --}}
@@ -191,31 +177,31 @@ new class extends Component
                         :tableLabel="__('statistics.trend.title')"
                     />
                 </x-ui.card>
+
+                {{-- The premium jewel: demand the catalog is letting walk away. --}}
+                <x-ui.card class="stats-gaps p-6">
+                    <h2 class="block-title">{{ __('statistics.gaps.title') }}</h2>
+                    @php($gaps = $this->stats->catalogGaps())
+                    @if ($gaps !== [])
+                        <ul class="stats-top">
+                            @foreach ($gaps as $gap)
+                                <li class="stats-top-row">
+                                    <span class="stats-top-text">
+                                        {{ trans_choice('statistics.gaps.line', $gap['count'], ['count' => $gap['count'], 'sample' => $gap['sample']]) }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="stats-empty">{{ __('statistics.gaps.none') }}</p>
+                    @endif
+                </x-ui.card>
             @else
                 <x-statistics.locked-card :title="__('statistics.hours.title')" plan="premium" />
                 <x-statistics.locked-card :title="__('statistics.trend.title')" plan="premium" />
+                <x-statistics.locked-card :title="__('statistics.gaps.title')" plan="premium" />
             @endif
         </div>
 
-        {{-- The premium jewel: demand the catalog is letting walk away. --}}
-        @if ($this->plan->statisticsAtLeast('trends'))
-            @php($gaps = $this->stats->catalogGaps())
-            @if ($gaps !== [])
-                <x-ui.card class="stats-gaps p-6">
-                    <h2 class="block-title">{{ __('statistics.gaps.title') }}</h2>
-                    <ul class="stats-top">
-                        @foreach ($gaps as $gap)
-                            <li class="stats-top-row">
-                                <span class="stats-top-text">
-                                    {{ __('statistics.gaps.line', ['count' => $gap['count'], 'sample' => $gap['sample']]) }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </x-ui.card>
-            @endif
-        @else
-            <x-statistics.locked-card :title="__('statistics.gaps.title')" plan="premium" />
-        @endif
     @endif
 </div>

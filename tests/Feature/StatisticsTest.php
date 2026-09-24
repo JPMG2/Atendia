@@ -5,13 +5,16 @@ declare(strict_types=1);
 use App\Classes\Main\Statistics;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
-use App\Models\KnowledgeChunk;
-use App\Models\KnowledgeDocument;
+use App\Models\ConversationQuestion;
+use App\Models\KnowledgeSuggestion;
+use App\Models\QuestionIntent;
+use App\Models\Service;
 use App\Models\User;
+use Database\Seeders\QuestionIntentSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 
 use function Pest\Livewire\livewire;
@@ -19,11 +22,10 @@ use function Pest\Livewire\livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    // The clustering cache is keyed by business id, which RefreshDatabase reuses.
-    Cache::flush();
     // Creating a knowledge document queues its indexing (embeddings API).
     Queue::fake();
     $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(QuestionIntentSeeder::class);
 });
 
 function statsClient(): User
@@ -34,22 +36,26 @@ function statsClient(): User
     return $user;
 }
 
-/** @return list<float> A unit vector on one axis: same axis clusters, others never do. */
-function axisEmbedding(int $axis): array
+/**
+ * One customer question as the conversation analysis leaves it, in its own
+ * thread with one inbound message.
+ */
+function analyzedQuestion(User $user, string $question, string $intentKey, string $resolvedBy = 'assistant', ?string $subject = null, ?int $serviceId = null): ConversationQuestion
 {
-    $vector = array_fill(0, 1536, 0.0);
-    $vector[$axis] = 1.0;
+    $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+    $message = ConversationMessage::factory()->create(['business_id' => $user->business_id, 'conversation_id' => $thread->id, 'body' => $question]);
+    $analysis = ConversationAnalysis::query()->create(['business_id' => $user->business_id, 'conversation_id' => $thread->id, 'first_message_id' => $message->id, 'last_message_id' => $message->id, 'sentiment' => 'neutral']);
 
-    return $vector;
-}
-
-function askedQuestion(User $user, string $body, int $axis): void
-{
-    ConversationMessage::factory()->create([
+    return ConversationQuestion::query()->create([
         'business_id' => $user->business_id,
-        'conversation_id' => Conversation::factory()->create(['business_id' => $user->business_id])->id,
-        'body' => $body,
-        'embedding' => axisEmbedding($axis),
+        'conversation_id' => $thread->id,
+        'conversation_analysis_id' => $analysis->id,
+        'conversation_message_id' => $message->id,
+        'question_intent_id' => QuestionIntent::query()->where('key', $intentKey)->value('id'),
+        'question' => $question,
+        'subject' => $subject,
+        'service_id' => $serviceId,
+        'resolved_by' => $resolvedBy,
     ]);
 }
 
@@ -70,96 +76,65 @@ test('the floor plan sees the counts and every deeper block padlocked, never hid
         ->assertSee(__('statistics.see_plans'));
 });
 
-test('the patterns level groups this month questions by meaning and reads the best day', function (): void {
+test('the patterns level shows the topics table with its reading and the fix per topic', function (): void {
     $user = statsClient();
-    askedQuestion($user, '¿Cuánto cuesta el perfil tiroideo?', axis: 3);
-    askedQuestion($user, 'Precio del perfil de tiroides, por favor', axis: 3);
-    askedQuestion($user, '¿Atienden los sábados?', axis: 9);
+    analyzedQuestion($user, '¿Cuánto cuesta el perfil tiroideo?', 'price');
+    analyzedQuestion($user, '¿Cuánto sale el hemograma?', 'price', 'nobody');
+    $pending = analyzedQuestion($user, '¿Abren los sábados?', 'hours', 'nobody');
+    $pending->update(['knowledge_suggestion_id' => KnowledgeSuggestion::factory()->create(['business_id' => $user->business_id])->id]);
 
     $this->actingAs($user);
 
     livewire('statistics.index')
-        ->assertSee('¿Cuánto cuesta el perfil tiroideo?')
+        ->assertSee(__('statistics.topics.title'))
+        ->assertSee(__('statistics.topics.insight', ['topic' => 'Precios y presupuestos', 'share' => 50]))
+        ->assertSeeInOrder(['Precios y presupuestos', '2 consultas', '50%', 'Horarios', '1 consulta', '0%', __('statistics.topics.teach')])
         ->assertSee(__('statistics.daily.title'))
-        ->assertSee(__('statistics.daily.insight', ['day' => now()->translatedFormat('l j'), 'count' => 3]))
-        // A lone question is noise, not a topic: it never makes the top list.
         ->assertDontSee(__('statistics.locked_in', ['plan' => __('plan.names.negocio')]));
 });
 
-test('the trends level reads the peak window and the premium gap against the catalog', function (): void {
+test('a failed question about something not in the catalog asks to add it, and feeds the premium gaps', function (): void {
     $user = statsClient();
     $user->business->subscription->update(['plan' => 'premium', 'trial_ends_at' => null]);
+    $cleaning = Service::factory()->create(['business_id' => $user->business_id, 'name' => 'Limpieza dental']);
 
-    askedQuestion($user, '¿Hacen blanqueamiento dental?', axis: 5);
-    askedQuestion($user, 'Quiero un blanqueamiento, ¿tienen turno?', axis: 5);
-
-    // The indexed offer lives on another meaning axis: the topic is a gap.
-    $document = KnowledgeDocument::factory()->create([
-        'business_id' => $user->business_id,
-        'source_type' => 'services',
-    ]);
-    KnowledgeChunk::factory()->create([
-        'business_id' => $user->business_id,
-        'knowledge_document_id' => $document->id,
-        'embedding' => axisEmbedding(40),
-    ]);
+    analyzedQuestion($user, '¿Hacen blanqueamiento dental?', 'service_info', 'nobody', 'Blanqueamiento dental');
+    analyzedQuestion($user, 'Quiero un blanqueamiento', 'service_info', 'nobody', 'blanqueamiento dental');
+    analyzedQuestion($user, '¿Cuánto sale la limpieza?', 'price', 'assistant', 'Limpieza dental', $cleaning->id);
 
     $this->actingAs($user);
 
     livewire('statistics.index')
-        ->assertSee(__('statistics.hours.title'))
-        ->assertSee(__('statistics.trend.title'))
-        ->assertSee(__('statistics.gaps.line', ['count' => 2, 'sample' => '¿Hacen blanqueamiento dental?']));
+        ->assertSee(__('statistics.topics.add_catalog'))
+        ->assertSee(trans_choice('statistics.gaps.line', 2, ['count' => 2, 'sample' => 'Blanqueamiento dental']))
+        ->assertDontSee('«Limpieza dental»', false);
 });
 
-test('a topic the catalog already covers never shows up as a gap', function (): void {
+test('with an empty catalog nothing reads as missing from it', function (): void {
     $user = statsClient();
     $user->business->subscription->update(['plan' => 'premium', 'trial_ends_at' => null]);
-
-    askedQuestion($user, '¿Hacen limpieza dental?', axis: 5);
-    askedQuestion($user, 'Turno para limpieza dental', axis: 5);
-
-    $document = KnowledgeDocument::factory()->create([
-        'business_id' => $user->business_id,
-        'source_type' => 'services',
-    ]);
-    KnowledgeChunk::factory()->create([
-        'business_id' => $user->business_id,
-        'knowledge_document_id' => $document->id,
-        'embedding' => axisEmbedding(5),
-    ]);
+    analyzedQuestion($user, '¿Hacen blanqueamiento?', 'service_info', 'nobody', 'Blanqueamiento');
 
     $this->actingAs($user);
 
-    livewire('statistics.index')->assertDontSee(__('statistics.gaps.title'));
+    livewire('statistics.index')
+        ->assertSee(__('statistics.gaps.none'))
+        ->assertDontSee(__('statistics.topics.add_catalog'));
 });
 
-test('the month kpis and the since-day-one counter add up from the threads', function (): void {
+test('the month kpis count questions and resolve them one by one, not per thread', function (): void {
     $user = statsClient();
-    askedQuestion($user, 'Hola, ¿precios?', axis: 1);
-    askedQuestion($user, '¿Y los horarios?', axis: 2);
+    // One thread, four questions: three solved by the assistant is 75%, not a failed thread.
+    $first = analyzedQuestion($user, '¿Precios?', 'price');
+    foreach (['assistant', 'assistant', 'nobody'] as $resolvedBy) {
+        ConversationQuestion::query()->create([...$first->only(['business_id', 'conversation_id', 'conversation_analysis_id', 'question_intent_id']), 'question' => '¿Algo más?', 'resolved_by' => $resolvedBy]);
+    }
 
     $stats = new Statistics($user->business);
 
-    expect($stats->monthKpis())->toMatchArray(['conversations' => 2, 'new_contacts' => 2, 'questions' => 2])
-        ->and($stats->sinceDayOne['questions'])->toBe(2)
+    expect($stats->monthKpis())->toMatchArray(['conversations' => 1, 'questions' => 4, 'resolution' => 75])
+        ->and($stats->sinceDayOne['questions'])->toBe(4)
         ->and($stats->peakHours['window'])->not->toBeNull();
-});
-
-test('small talk never ranks among the most asked nor counts as a question', function (): void {
-    // 2026-09-23: two "sí" scored as high as "¿abren hoy?" in "what they ask most".
-    $user = statsClient();
-    askedQuestion($user, 'Si', axis: 5);
-    askedQuestion($user, 'sí!!', axis: 5);
-    askedQuestion($user, '¿Abren hoy?', axis: 7);
-    askedQuestion($user, '¿Están abiertos hoy?', axis: 7);
-
-    $statistics = new Statistics($user->business);
-
-    expect(array_column($statistics->topAsked(), 'sample'))->not->toContain('Si')->not->toContain('sí!!')
-        ->and($statistics->topAsked())->toHaveCount(1)
-        ->and($statistics->monthKpis()['questions'])->toBe(2)
-        ->and($statistics->monthKpis()['conversations'])->toBe(4);
 });
 
 test('what counts as a real question', function (string $text, bool $enquiry): void {

@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
-use App\Enums\ConversationStatus;
-use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Enums\QuestionResolution;
+use App\Enums\SuggestionStatus;
 use App\Models\Business;
 use App\Models\ConversationMessage;
-use App\Models\KnowledgeChunk;
+use App\Models\ConversationQuestion;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
  * The "Mis estadísticas" piece: every number the screen shows, computed
@@ -22,14 +21,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class Statistics
 {
-    /** Meaning distance for "same question": below it, two texts are one topic. */
-    private const float CLUSTER_THRESHOLD = 0.62;
-
-    /** Cosine DISTANCE ceiling for "the catalog covers it"; loose on purpose. */
-    private const float CATALOG_MATCH_DISTANCE = 0.50;
-
-    private const int CLUSTER_SAMPLE = 200;
-
     public function __construct(private Business $business) {}
 
     /**
@@ -46,38 +37,22 @@ class Statistics
         return [
             'conversations' => $threadIds->count(),
             'new_contacts' => $this->business->conversations()->whereBetween('created_at', [$from, $to])->count(),
-            'questions' => $this->enquiries()->whereBetween('created_at', [$from, $to])->count(),
+            'questions' => $this->questions()->whereBetween('created_at', [$from, $to])->count(),
             'audio_minutes' => (int) ceil((clone $inbound)->sum('audio_seconds') / 60),
-            'resolution' => $this->resolutionRate($threadIds),
+            'resolution' => $this->resolutionRate($from, $to),
         ];
     }
 
     /**
-     * The number every competitor sells: % of the month's threads the
-     * assistant carried ALONE — no human turn, not waiting on the team.
-     *
-     * @param  Collection<int, int>  $threadIds
+     * The number every competitor sells, measured per QUESTION: a thread
+     * where the assistant solved three of four is not a failure.
      */
-    private function resolutionRate($threadIds): int
+    private function resolutionRate(CarbonImmutable $from, CarbonImmutable $to): int
     {
-        if ($threadIds->isEmpty()) {
-            return 0;
-        }
+        $month = $this->questions()->whereBetween('created_at', [$from, $to]);
+        $total = (clone $month)->count();
 
-        $humanTouched = ConversationMessage::query()
-            ->whereIn('conversation_id', $threadIds)
-            ->where('author', MessageAuthor::Human)
-            ->distinct('conversation_id')
-            ->pluck('conversation_id');
-
-        $waiting = $this->business->conversations()
-            ->whereIn('id', $threadIds)
-            ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
-            ->pluck('id');
-
-        $touched = $humanTouched->merge($waiting)->unique()->count();
-
-        return (int) round(($threadIds->count() - $touched) / $threadIds->count() * 100);
+        return $total === 0 ? 0 : (int) round($month->where('resolved_by', QuestionResolution::Assistant)->count() / $total * 100);
     }
 
     /**
@@ -175,7 +150,7 @@ class Statistics
 
             return [
                 'since' => $first === null ? null : CarbonImmutable::parse($first),
-                'questions' => $this->enquiries()->count(),
+                'questions' => $this->questions()->count(),
                 'conversations' => $this->business->conversations()->count(),
             ];
         }
@@ -202,130 +177,84 @@ class Statistics
     }
 
     /**
-     * The month's questions grouped by MEANING over the stored embeddings —
-     * no tagging, no model call: greedy clustering, cached for the day.
+     * The centrepiece: this month's questions by topic, most asked first,
+     * with the share the assistant solved alone and what fixes the rest —
+     * teaching an answer, or a catalog item customers ask for and miss.
      *
-     * @return list<array{sample: string, count: int}>
+     * @var list<array{topic: string, asked: int, alone: int, action: ?string}>
      */
-    public function topAsked(int $limit = 5): array
-    {
-        return array_slice(
-            array_values(array_filter($this->clusters(), fn (array $cluster): bool => $cluster['count'] > 1)),
-            0,
-            $limit,
-        );
+    public array $topics {
+        get {
+            $rows = $this->questions()
+                ->where('conversation_questions.created_at', '>=', CarbonImmutable::now()->startOfMonth())
+                ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
+                ->leftJoin('knowledge_suggestions', 'knowledge_suggestions.id', '=', 'conversation_questions.knowledge_suggestion_id')
+                ->groupBy('question_intents.name')
+                ->selectRaw('question_intents.name as topic, count(*) as asked')
+                ->selectRaw('count(*) filter (where resolved_by = ?) as alone', [QuestionResolution::Assistant->value])
+                ->selectRaw('count(*) filter (where resolved_by <> ? and subject is not null and service_id is null and product_id is null) as not_offered', [QuestionResolution::Assistant->value])
+                ->selectRaw('count(*) filter (where knowledge_suggestions.status = ?) as to_teach', [SuggestionStatus::Pending->value])
+                ->orderByDesc('asked')
+                ->toBase()
+                ->get();
+
+            $hasCatalog = $this->hasCatalog();
+
+            return $rows->map(fn (object $row): array => [
+                'topic' => $row->topic ?? __('client.assistant.suggestions_other'),
+                'asked' => (int) $row->asked,
+                'alone' => (int) round($row->alone / $row->asked * 100),
+                'action' => match (true) {
+                    $hasCatalog && $row->not_offered > 0 => 'catalog',
+                    $row->to_teach > 0 => 'teach',
+                    default => null,
+                },
+            ])->all();
+        }
     }
 
     /**
-     * The premium jewel: topics asked for that the catalog never mentions —
-     * demand walking away. Silent without an indexed offer (no false claims).
+     * The premium jewel: what customers asked for by name this month and
+     * the catalog does not have — demand walking away. Silent with an empty
+     * catalog, where everything would read as missing.
      *
      * @return list<array{sample: string, count: int}>
      */
     public function catalogGaps(int $limit = 3): array
     {
-        if (! $this->offerChunks()->exists()) {
+        if (! $this->hasCatalog()) {
             return [];
         }
 
-        $gaps = [];
+        return $this->questions()
+            ->where('created_at', '>=', CarbonImmutable::now()->startOfMonth())
+            ->whereNotNull('subject')
+            ->whereNull('service_id')
+            ->whereNull('product_id')
+            ->selectRaw('(array_agg(subject order by id desc))[1] as sample, count(*) as total')
+            ->groupByRaw('lower(subject)')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->toBase()
+            ->get()
+            ->map(fn (object $gap): array => ['sample' => Str::ucfirst((string) $gap->sample), 'count' => (int) $gap->total])
+            ->all();
+    }
 
-        // Postgres does the math: one HNSW lookup per candidate topic beats
-        // hauling every offer embedding into PHP (the house pgvector pattern).
-        foreach (array_slice($this->clusters(), 0, 10) as $cluster) {
-            if ($cluster['count'] < 2) {
-                continue;
-            }
-
-            $distance = $this->offerChunks()
-                ->selectVectorDistance('embedding', $cluster['centroid'], as: 'distance')
-                ->orderByVectorDistance('embedding', $cluster['centroid'])
-                ->first()
-                ?->getAttribute('distance');
-
-            if ($distance !== null && (float) $distance > self::CATALOG_MATCH_DISTANCE) {
-                $gaps[] = ['sample' => $cluster['sample'], 'count' => $cluster['count']];
-            }
-
-            if (count($gaps) === $limit) {
-                break;
-            }
-        }
-
-        return $gaps;
+    private function hasCatalog(): bool
+    {
+        return $this->business->services()->exists() || $this->business->products()->exists();
     }
 
     /**
-     * The indexed offer: what the catalog already tells the assistant.
+     * Every analyzed customer question, the base of every "questions"
+     * figure; `inbound()` stays for activity (threads, hours).
      *
-     * @return Builder<KnowledgeChunk>
+     * @return Builder<ConversationQuestion>
      */
-    private function offerChunks(): Builder
+    private function questions(): Builder
     {
-        return KnowledgeChunk::query()
-            ->where('business_id', $this->business->id)
-            ->whereHas('document', fn (Builder $query) => $query->whereIn('source_type', ['services', 'products']));
-    }
-
-    /**
-     * Greedy meaning clusters over this month's inbound questions. Daily
-     * cache: the dot products are the expensive part, not the query.
-     *
-     * @return list<array{sample: string, count: int, centroid: list<float>}>
-     */
-    private function clusters(): array
-    {
-        $key = 'wa:stats:clusters:v3:'.$this->business->id.':'.now()->format('Y-m-d');
-
-        return Cache::remember($key, now()->addHours(6), function (): array {
-            // Real questions only: a lone "sí" or "gracias" is no topic.
-            $messages = $this->enquiries()
-                ->where('created_at', '>=', CarbonImmutable::now()->startOfMonth())
-                ->whereNotNull('embedding')
-                ->latest()
-                ->limit(self::CLUSTER_SAMPLE)
-                ->get(['body', 'topic', 'embedding']);
-
-            $clusters = [];
-
-            foreach ($messages as $message) {
-                $embedding = (array) $message->embedding;
-
-                foreach ($clusters as &$cluster) {
-                    if ($this->dot($embedding, $cluster['centroid']) >= self::CLUSTER_THRESHOLD) {
-                        $cluster['count']++;
-
-                        continue 2;
-                    }
-                }
-
-                unset($cluster);
-
-                $clusters[] = [
-                    // The AI's topic reads clean ("Horario de hoy"); the raw text is the fallback.
-                    'sample' => $message->topic ?? mb_substr(trim((string) $message->body), 0, 80),
-                    'count' => 1,
-                    'centroid' => $embedding,
-                ];
-            }
-
-            usort($clusters, fn (array $a, array $b): int => $b['count'] <=> $a['count']);
-
-            return $clusters;
-        });
-    }
-
-    /**
-     * The customer's real questions, the base of every "questions" figure;
-     * `inbound()` stays for activity (threads, hours), where a "sí" counts.
-     *
-     * @return Builder<ConversationMessage>
-     */
-    private function enquiries()
-    {
-        return ConversationMessage::query()
-            ->where('business_id', $this->business->id)
-            ->enquiries();
+        return ConversationQuestion::query()->where('conversation_questions.business_id', $this->business->id);
     }
 
     /** @return Builder<ConversationMessage> */
@@ -334,20 +263,5 @@ class Statistics
         return ConversationMessage::query()
             ->where('business_id', $this->business->id)
             ->where('direction', MessageDirection::In);
-    }
-
-    /**
-     * @param  list<float>  $a
-     * @param  list<float>  $b
-     */
-    private function dot(array $a, array $b): float
-    {
-        $sum = 0.0;
-
-        foreach ($a as $i => $value) {
-            $sum += $value * (float) ($b[$i] ?? 0);
-        }
-
-        return $sum;
     }
 }

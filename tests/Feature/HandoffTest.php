@@ -14,7 +14,9 @@ use App\Enums\MessageKind;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
+use App\Models\ConversationQuestion;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
@@ -548,26 +550,19 @@ test('quick replies drop the loaded business into the box, never firing alone', 
     expect(handoffSentTexts())->toBe([]);
 });
 
-test('the month reads its resolution rate: threads the assistant carried alone', function (): void {
+test('the month reads its resolution rate: questions the assistant solved alone', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create();
     $user->business()->associate(Business::factory()->create())->save();
 
-    // One clean AI thread, one with a human turn: fifty-fifty.
-    foreach ([['5491111111111', null], ['5492222222222', MessageAuthor::Human]] as [$phone, $author]) {
-        $thread = Conversation::factory()->create([
-            'business_id' => $user->business_id,
-            'contact_phone' => $phone,
+    // One question the assistant solved, one the team had to: fifty-fifty.
+    foreach (['assistant', 'team'] as $resolvedBy) {
+        $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+        $analysis = ConversationAnalysis::query()->create(['business_id' => $user->business_id, 'conversation_id' => $thread->id, 'first_message_id' => 1, 'last_message_id' => 1, 'sentiment' => 'neutral']);
+        ConversationQuestion::query()->create([
+            'business_id' => $user->business_id, 'conversation_id' => $thread->id, 'conversation_analysis_id' => $analysis->id,
+            'question' => '¿Abren hoy?', 'resolved_by' => $resolvedBy,
         ]);
-        ConversationMessage::factory()->for($thread)->create([
-            'business_id' => $user->business_id, 'body' => 'Hola',
-        ]);
-
-        if ($author !== null) {
-            ConversationMessage::factory()->out()->for($thread)->create([
-                'business_id' => $user->business_id, 'body' => 'Te respondo yo', 'author' => $author,
-            ]);
-        }
     }
 
     $this->actingAs($user);

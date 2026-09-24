@@ -97,24 +97,3 @@ test('a dead model keeps the list verdict instead of losing the message', functi
     expect($message->is_enquiry)->toBeTrue()
         ->and($message->needs_teaching)->toBeFalse();
 });
-
-test('most asked shows the ai topic, not the raw wording', function (): void {
-    AsistenteAtendia::fake(array_fill(0, 4, 'No lo pude confirmar.'));
-    // One meaning axis for both wordings, so the clustering groups them.
-    $axis = array_fill(0, 1536, 0.0);
-    $axis[4] = 1.0;
-    $this->mock(KnowledgeEmbedder::class)->shouldReceive('embedOne')->andReturn($axis);
-    MessageTriage::fake([
-        ['is_enquiry' => true, 'needs_teaching' => true, 'topic' => 'Horario de hoy'],
-        ['is_enquiry' => true, 'needs_teaching' => true, 'topic' => 'Horario de hoy'],
-    ]);
-
-    customerWrites('Disculpa hoy están abierto?', 'MSG-1');
-    customerWrites('Están abierto hoy?', 'MSG-2');
-
-    $top = (new Statistics($this->business))->topAsked();
-
-    expect($top)->toHaveCount(1)
-        ->and($top[0]['sample'])->toBe('Horario de hoy')
-        ->and($top[0]['count'])->toBe(2);
-});

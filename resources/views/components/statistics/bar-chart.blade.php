@@ -11,10 +11,12 @@ table so the data never lives in color alone. --}}
 @php
     $max = max(1, collect($series)->max('count'));
     $peak = collect($series)->search(fn (array $point): bool => $point['count'] === collect($series)->max('count'));
-    $barWidth = 7;
-    $gap = 3;
+    // Each bar gets a slot of at least 1/300 of the width: with few bars
+    // (six months) a narrow viewBox scaled to full width grew huge.
+    $slot = max(10, 300 / max(1, count($series)));
+    $barWidth = min($slot - 3, 24);
     $chartHeight = 96;
-    $width = count($series) * ($barWidth + $gap);
+    $width = count($series) * $slot;
 @endphp
 
 <div class="stats-chart">
@@ -27,7 +29,7 @@ table so the data never lives in color alone. --}}
         @foreach ($series as $index => $point)
             @php
                 $height = $point['count'] > 0 ? max(3, (int) round($point['count'] / $max * $chartHeight)) : 2;
-                $x = $index * ($barWidth + $gap);
+                $x = $index * $slot + ($slot - $barWidth) / 2;
                 $isPeak = $index === $peak && $point['count'] > 0;
             @endphp
             <rect

@@ -15,7 +15,7 @@ return [
         'conversations' => 'Conversaciones del mes',
         'resolution' => 'Resueltas por tu asistente',
         'new_contacts' => 'Clientes nuevos',
-        'questions' => 'Consultas respondidas',
+        'questions' => 'Consultas del mes',
         'audio_minutes' => 'Minutos de audio',
     ],
 
@@ -24,8 +24,15 @@ return [
         'insight' => 'Tu mejor día fue el :day, con :count conversaciones.',
     ],
 
-    'top' => [
-        'title' => 'Lo que más te piden',
+    'topics' => [
+        'title' => 'Lo que te preguntan, por tema',
+        'insight' => 'Tu tema más consultado del mes es «:topic»: tu asistente respondió solo el :share%.',
+        'col_topic' => 'Tema',
+        'col_asked' => 'Consultas',
+        'col_alone' => 'Respondió solo tu asistente',
+        'asked' => '{1}1 consulta|[2,*]:count consultas',
+        'teach' => 'Enseñar',
+        'add_catalog' => 'Agregar al catálogo',
     ],
 
     'hours' => [
@@ -40,7 +47,8 @@ return [
 
     'gaps' => [
         'title' => 'Oportunidades: te piden cosas fuera de tu catálogo',
-        'line' => ':count consultas del mes fueron por «:sample» — y no está en tu catálogo.',
+        'line' => '{1}1 consulta del mes fue por «:sample», y no está en tu catálogo.|[2,*]:count consultas del mes fueron por «:sample», y no está en tu catálogo.',
+        'none' => 'Todo lo que te pidieron este mes está en tu catálogo.',
     ],
 
     'locked_in' => 'Disponible en el plan :plan',
