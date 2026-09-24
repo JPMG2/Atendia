@@ -58,4 +58,8 @@ MSG
     exit 2
 fi
 
+# Corrida permitida: queda anotada para require-browser-suite-before-commit.sh,
+# que exige una después del último cambio de pantallas.
+touch "${TMPDIR:-/tmp}/atendia-browser-suite-ran"
+
 exit 0

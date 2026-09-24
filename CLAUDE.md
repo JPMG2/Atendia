@@ -929,6 +929,13 @@ Cuando se suma un set de reglas de oro:
   corrida completa si no hubo un commit en el medio. Mientras se trabaja va
   `--filter`; la completa es la puerta del commit. Escrito estaba, y se
   incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
+- **Suite de browser antes de cada commit que toque pantallas** → memoria
+  `atendia-feedback-modo-trabajo` (capa A) · hook
+  `.claude/hooks/require-browser-suite-before-commit.sh` (capa C), que bloquea un
+  `git commit` con cambios en `resources/views|css|js` más nuevos que la última
+  corrida de la suite de browser (la anota `block-browser-suite-reruns.sh`). Nació
+  el 2026-09-24: la suite es a demanda y 8 tests llevaban semanas viejos sin que
+  nadie los corriera. Lo que falla se re-corre con `--filter`; si pasa aislado es flake.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
   hook `.claude/hooks/check-catalog-form-layout.sh`. **Desde el 2026-09-14 alcanza
