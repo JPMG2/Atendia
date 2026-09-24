@@ -91,8 +91,9 @@ test('a quiet thread is analyzed into standalone questions with who solved them'
         ->and($thread->fresh()->analyzed_message_id)->toBe($thread->messages()->max('id'));
 
     // It read the whole stretch, the team's answer included.
-    ConversationAnalyst::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, '[3] Cliente: ¿y los sábados?')
-        && str_contains($prompt->prompt, '[4] Equipo: Los sábados también'));
+    // Each line carries its day, so the patterns allow the dated prefix.
+    ConversationAnalyst::assertPrompted(fn ($prompt): bool => preg_match('/\[3\] \([^)]+\) Cliente: ¿y los sábados\?/u', $prompt->prompt) === 1
+        && preg_match('/\[4\] \([^)]+\) Equipo: Los sábados también/u', $prompt->prompt) === 1);
 });
 
 test('only finished threads are analyzed: resolved, or quiet for the idle window', function (): void {
@@ -125,8 +126,8 @@ test('a reopened thread analyzes only its new stretch, the old one as context', 
         ->and(ConversationQuestion::query()->latest('id')->first()->subject)->toBe('Perfil tiroideo')
         ->and($thread->analyses()->count())->toBe(2);
 
-    ConversationAnalyst::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, "Contexto previo (ya analizado):\nCliente: ¿A qué hora abren?")
-        && str_contains($prompt->prompt, '[1] Cliente: ¿cuánto sale el tiroideo?'));
+    ConversationAnalyst::assertPrompted(fn ($prompt): bool => preg_match('/Contexto previo \(ya analizado\):\n\([^)]+\) Cliente: ¿A qué hora abren\?/u', $prompt->prompt) === 1
+        && preg_match('/\[1\] \([^)]+\) Cliente: ¿cuánto sale el tiroideo\?/u', $prompt->prompt) === 1);
 });
 
 test('small talk alone never costs an ai call but still advances the thread', function (): void {
@@ -198,4 +199,18 @@ test('a marathon thread is analyzed in parts, the watermark moving part by part'
 
     $this->artisan('atendia:analyze-conversations');
     expect($thread->fresh()->analyzed_message_id)->toBe($ids[60]);
+});
+
+test('the analyst reads each line with its day, so "hoy" becomes the concrete day', function (): void {
+    ConversationAnalyst::fake([['questions' => [], 'sentiment' => 'neutral']]);
+    $this->business->update(['timezone' => 'America/Caracas']);
+    $thread = threadSaying($this->business, [['in', '¿Abren hoy?'], ['team', 'Hoy cerramos, es feriado.']]);
+    $thread->messages()->update(['created_at' => '2026-09-20 15:00:00']);
+
+    $this->artisan('atendia:analyze-conversations');
+
+    ConversationAnalyst::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, '(domingo 20/09 11:00) Cliente: ¿Abren hoy?'));
+    expect((string) (new ConversationAnalyst)->instructions())
+        ->toContain('se reescribe con el día concreto')
+        ->toContain('vale solo para esa fecha');
 });

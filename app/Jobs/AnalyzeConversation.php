@@ -186,14 +186,22 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
             ->limit(self::CONTEXT_MESSAGES)
             ->get()
             ->reverse()
-            ->map(fn (ConversationMessage $message): string => $this->speaker($message).': '.$message->body)
+            ->map(fn (ConversationMessage $message): string => $this->dated($conversation, $message).$this->speaker($message).': '.$message->body)
             ->implode("\n");
 
         $lines = $stretch->values()
-            ->map(fn (ConversationMessage $message, int $index): string => '['.($index + 1).'] '.$this->speaker($message).': '.$message->body)
+            ->map(fn (ConversationMessage $message, int $index): string => '['.($index + 1).'] '.$this->dated($conversation, $message).$this->speaker($message).': '.$message->body)
             ->implode("\n");
 
         return ($context !== '' ? "Contexto previo (ya analizado):\n{$context}\n\n" : '')."Tramo a analizar:\n{$lines}";
+    }
+
+    /** Each line carries its day: "¿abren hoy?" on a Sunday is a question about Sundays. */
+    private function dated(Conversation $conversation, ConversationMessage $message): string
+    {
+        $when = $message->created_at?->setTimezone($conversation->business->localTimezone());
+
+        return $when === null ? '' : '('.$when->locale('es')->translatedFormat('l j/m H:i').') ';
     }
 
     private function speaker(ConversationMessage $message): string

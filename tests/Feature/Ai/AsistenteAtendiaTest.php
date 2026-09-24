@@ -7,6 +7,7 @@ use App\Enums\MessageAuthor;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
@@ -76,9 +77,10 @@ test('the assistant remembers the thread, previous turns only and oldest first',
 
     expect($messages)->toHaveCount(2)
         ->and($messages[0]->role->value)->toBe('user')
-        ->and($messages[0]->content)->toBe('¿Tienen turnos?')
+        // Each turn carries its date: a "today" said another day must read as that day.
+        ->and($messages[0]->content)->toStartWith('[')->toEndWith('] ¿Tienen turnos?')
         ->and($messages[1]->role->value)->toBe('assistant')
-        ->and($messages[1]->content)->toBe('Sí, mañana a las 9.');
+        ->and($messages[1]->content)->toEndWith('] Sí, mañana a las 9.');
 });
 
 test('without a conversation there is no memory', function (): void {
@@ -121,20 +123,26 @@ test('without a business there is no knowledge tool and no re-ask', function ():
     AsistenteAtendia::assertNotPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema'));
 });
 
-test('a reply written by a person of the team reaches the memory tagged as such', function (): void {
-    // The 2026-09-23 incident: untagged, the owner's "we are closed today"
-    // read as the assistant's own sourceless claim and it took it back.
-    $conversation = Conversation::factory()->create();
-    ConversationMessage::factory()->out()->for($conversation)->create([
-        'business_id' => $conversation->business_id,
+test('a reply written by a person of the team reaches the memory tagged and dated', function (): void {
+    // 2026-09-23: untagged, the owner's "we are closed today" read as the
+    // assistant's own claim. 2026-09-24: undated, Sunday's "today" read as
+    // Thursday's, over the live hours tool.
+    app()->setLocale('es');
+    $business = Business::factory()->create(['timezone' => 'America/Caracas']);
+    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
+    $sunday = ConversationMessage::factory()->out()->for($conversation)->create([
+        'business_id' => $business->id,
         'author' => MessageAuthor::Human,
         'body' => 'No estamos abiertos hoy',
     ]);
+    $sunday->forceFill(['created_at' => '2026-09-20 22:13:00'])->save();
 
-    $agent = new AsistenteAtendia($conversation->business, $conversation);
+    $agent = new AsistenteAtendia($business, $conversation);
 
-    expect($agent->messages()[0]->content)->toBe('[Escrito por una persona del equipo del negocio] No estamos abiertos hoy')
-        ->and((string) $agent->instructions())->toContain('No los contradigas');
+    expect($agent->messages()[0]->content)->toBe('[domingo 20/09 18:13, escrito por una persona del equipo del negocio] No estamos abiertos hoy')
+        ->and((string) $agent->instructions())->toContain('PARA ESA FECHA')
+        ->toContain('mandan')
+        ->toContain('tus herramientas, que consultan en vivo');
 });
 
 test('small talk is never re-asked: a greeting costs one call, not two', function (): void {
@@ -143,4 +151,13 @@ test('small talk is never re-asked: a greeting costs one call, not two', functio
     (new AsistenteAtendia(Business::factory()->create()))->answer('hola, gracias');
 
     AsistenteAtendia::assertNotPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema'));
+});
+
+test('the assistant always knows today on the business clock', function (): void {
+    // It had no clock: "hoy", "mañana" and "ayer" meant nothing to it (2026-09-24).
+    $this->travelTo(CarbonImmutable::parse('2026-09-24 21:02:00', 'UTC'));
+    $business = Business::factory()->create(['timezone' => 'America/Caracas']);
+
+    expect((string) (new AsistenteAtendia($business))->instructions())
+        ->toContain('Hoy es jueves 24 de septiembre de 2026, 17:02 (hora del negocio)');
 });

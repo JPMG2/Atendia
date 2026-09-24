@@ -114,8 +114,15 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     public function instructions(): Stringable|string
     {
         $name = $this->business?->name ?? 'Atendia';
+        // The model has no clock: without this, "hoy", "mañana" and "ayer"
+        // meant nothing and a stale "today" from the history won (2026-09-24).
+        $now = now($this->business?->localTimezone() ?? (string) config('app.timezone'));
+        $today = $now->locale('es')->translatedFormat('l j \\d\\e F \\d\\e Y, H:i');
 
         return <<<INSTRUCCIONES
+            Hoy es {$today} (hora del negocio). Todo "hoy", "mañana", "ayer" o
+            "esta semana" se cuenta desde esa fecha.
+
             Sos el asistente virtual de {$name}. Tu idioma base es el español, con un
             tono cercano, claro y profesional. Respondé de forma concisa y útil.
 
@@ -126,6 +133,8 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             con respaldo, jamás pidiendo permiso para equivocarte: "y si algo se
             me escapa, el equipo de {$name} te lo confirma". El 🤖 es SOLO de esa
             primera presentación; no la repitas en cada mensaje.
+            Para resaltar usá UN solo asterisco (*así*): el doble (**así**) no es
+            negrita en WhatsApp y el cliente ve los asteriscos.
 
             Respondé SIEMPRE en el idioma en que te escribe el cliente: si te escriben
             en inglés, portugués o cualquier otro idioma, contestá en ese mismo idioma.
@@ -151,10 +160,13 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             tengas (por ejemplo, la disponibilidad de "hoy" cuando te preguntan
             qué ofrecen). Derivar con el equipo se ofrece SOLO cuando no pudiste
             responder lo principal.
-            Los mensajes del historial marcados "[Escrito por una persona del equipo
-            del negocio]" los mandó el negocio en persona: son información confirmada.
-            No los contradigas ni te disculpes por ellos, y apoyate en ellos para
-            responder lo que venga después.
+            Cada mensaje del historial empieza con su fecha y hora entre corchetes.
+            Los marcados "Escrito por una persona del equipo del negocio" los mandó el
+            negocio en persona: son información confirmada PARA ESA FECHA. No los
+            contradigas ni te disculpes por ellos cuando hablan de ese momento, pero
+            un "hoy", "ahora" o "esta semana" dicho otro día NO dice nada del día
+            actual: para el estado de hoy (si está abierto, stock, precios) mandan
+            tus herramientas, que consultan en vivo.
             No tenés acceso a internet ni usás conocimiento externo sobre el negocio:
             toda tu información sale de tus herramientas o de lo que el equipo
             escribió en la conversación. Lo que devuelven tus
@@ -338,9 +350,15 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
      */
     private function asRemembered(ConversationMessage $message): string
     {
-        return $message->direction === MessageDirection::Out && $message->author === MessageAuthor::Human
-            ? '[Escrito por una persona del equipo del negocio] '.$message->body
-            : $message->body;
+        // Dated on the business's clock: a team "no estamos abiertos hoy" from
+        // Sunday was read as today's, over the live hours tool (2026-09-24).
+        $when = $message->created_at?->setTimezone($this->business?->localTimezone() ?? (string) config('app.timezone'));
+        $stamp = $when === null ? '' : $when->locale('es')->translatedFormat('l j/m H:i');
+        $team = $message->direction === MessageDirection::Out && $message->author === MessageAuthor::Human
+            ? ', escrito por una persona del equipo del negocio'
+            : '';
+
+        return ($stamp !== '' || $team !== '' ? '['.$stamp.$team.'] ' : '').$message->body;
     }
 
     /**

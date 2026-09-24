@@ -51,6 +51,9 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
             - question: la consulta reescrita completa, que se entienda sin
               leer la charla, en español neutro, sin datos personales.
               "¿y los sábados?" hablando de horarios es "¿Abren los sábados?".
+              Cada mensaje trae su fecha entre paréntesis: un "hoy", "mañana" o
+              "ayer" se reescribe con el día concreto ("¿abren hoy?" un domingo
+              es "¿Abren los domingos?").
             - intent: la clave de la intención que mejor le queda de la lista
               de abajo, o vacío si ninguna encaja de verdad.
             - new_intent / new_intent_description: SOLO si intent quedó vacío,
@@ -67,7 +70,9 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
             - answer: SOLO si resolved_by es team, lo que respondió el equipo
               reescrito como respuesta general que le sirva a cualquier
               cliente, sin nombres, teléfonos ni datos de este cliente. Si
-              no, vacío.
+              la respuesta vale solo para esa fecha ("hoy cerramos", un
+              feriado, "mañana no hay turnos"), va vacío: no sirve para
+              siempre. Si no, vacío.
 
             sentiment: cómo terminó el cliente al final del tramo: positive,
             neutral o negative.
