@@ -206,6 +206,89 @@ if (await dialog.retry({ title: 'No pudimos guardar', message: '…' })) { … }
 - [ ] ¿Hacía falta detener al usuario? Si no, es un toast.
 - [ ] Test Pest (en inglés) + `view:clear` y `npm run build` corridos.
 
+=== .ai/clases-php-modernas rules ===
+
+# Clases PHP modernas — getters como property hooks (regla de oro)
+
+> El stack corre PHP 8.5: en las clases PHP **puras** del proyecto un getter
+> computado sin argumentos se escribe como **property hook** (PHP 8.4+), nunca
+> como método. Nació el 2026-09-11 con la migración de las piezas de `Client`.
+> Un tema por archivo: acá vive el *cómo* de los getters; el enforcement de
+> 3 capas en `reglas-de-oro-enforcement.md`.
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesPropertyHooksTest.php` y el hook
+`check-php-getter-golden-rules.sh` fallan si aparece un getter-método en el
+alcance. Sin allowlist: nació en cero y en cero se queda.
+
+## La regla
+
+- **Getter computado sin argumentos** → property hook, y el llamador lee una
+  propiedad:
+
+  ```php
+  public Collection $links {
+      get => $this->business->socialLinks;
+  }
+
+  // Caller: $socialMedia->links (sin paréntesis)
+  ```
+
+- **Accesor pasa-manos de un valor del constructor** → propiedad promovida
+  `public readonly`, sin método ni hook (así quedó `Client`):
+
+  ```php
+  public function __construct(public readonly PersonalData $personalData) {}
+  ```
+
+- **Siguen siendo métodos**: conversiones `to…`/`from…` (`toArray`,
+  `toPayload`, `toLivewire`), mágicos `__*`, factories estáticas (`for()`,
+  `fromArray()`) y todo lo que reciba argumentos o haga trabajo (`save()`,
+  `handle()`).
+
+- **Visibilidad asimétrica (`private(set)`)** — criterio, no blindada: si una
+  propiedad debe leerse desde afuera pero SOLO la clase la escribe, se declara
+  `public private(set) Tipo $x;` en vez de esconderla tras un getter o dejarla
+  `public` a secas. `readonly` sigue siendo la primera opción para lo que se
+  fija una vez en el constructor; `private(set)` es para lo que la clase
+  **re-escribe durante su vida** (contadores, estado interno que muta):
+
+  ```php
+  public private(set) int $attempts = 0;   // fuera: se lee; dentro: $this->attempts++
+  ```
+
+## Alcance (dónde aplica y dónde NO)
+
+- **Aplica**: `app/Classes/` y `app/Dto/` — clases PHP puras, sin magia de
+  framework en el medio.
+- **NO aplica — no forzar hooks ahí**:
+  - **Modelos Eloquent**: los atributos pasan por el `__get` mágico y los
+    casts/`Attribute` de Laravel; un hook choca con esa magia. Relaciones,
+    scopes y métodos de dominio (`options()`, `phoneFlags()`) siguen como están.
+  - **Livewire (componentes y Forms)**: sus propiedades públicas son estado
+    que se serializa/hidrata; una propiedad virtual no tiene valor de respaldo.
+    Las computadas ahí van con `#[Computed]`.
+  - **Actions y servicios**: hacen trabajo, son métodos.
+
+## Trampas conocidas
+
+- **`readonly` y hooks no se mezclan**: una propiedad hooked no puede ser
+  readonly. Si la clase era `readonly class`, se baja el `readonly` a cada
+  propiedad promovida y la hooked queda sin él (así quedó `RetrievedChunkDto`).
+- Un hook `get` sin `set` deja la propiedad de **solo lectura** (escribirla
+  tira `Error`) — es exactamente lo que quiere un getter.
+- El hook se evalúa en **cada acceso**: no metas ahí trabajo caro sin memoizar
+  (las relaciones Eloquent ya memoizan solas).
+- El PHPDoc del tipo va como `@var` en la propiedad, no `@return`.
+
+## Checklist de salida
+
+- [ ] ¿Getter nuevo sin argumentos en `app/Classes`/`app/Dto`? → property hook.
+- [ ] ¿Accesor pasa-manos? → `public readonly` promovida, sin método.
+- [ ] ¿Se lee desde afuera pero solo la clase la escribe y muta? → `private(set)`.
+- [ ] Los llamadores leen la propiedad (sin `()`); Blade tocado → `view:clear`.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesPropertyHooks` en verde.
+
 === .ai/comentarios rules ===
 
 # Comentarios y PHPDoc — regla de oro
@@ -285,6 +368,46 @@ sin allowlist. No hay dónde anotar una excepción — si un archivo falla, se a
 - [ ] Sin código comentado ni banners decorativos.
 - [ ] `./vendor/bin/pest --filter=GoldenRulesComments` en verde.
 
+=== .ai/correo-por-canal rules ===
+
+# Correo por canal — un mail jamás sale por `Mail::` directo (regla de oro)
+
+> Todo correo de AtendIa sale por **`App\Messaging\Channels\Email`** — la
+> puerta única que escribe el ritual completo: captura el locale EN el
+> request (un worker no tiene sesión y mandaría el fallback) y reporta sin
+> romper la operación que lo disparó. Un `Mail::` crudo saltea las dos cosas.
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesMailChannelTest.php` y el hook
+`check-mail-channel-golden-rules.sh` fallan si aparece `Mail::` en `app/`
+fuera de `app/Messaging`. Nació de la auditoría de consistencia del
+2026-09-19: `DeviceChallenge` había derivado a `Mail::to()` directo.
+
+## Cómo se envía
+
+```php
+use App\Messaging\Channels\Email;
+
+// El modelo del que habla el mensaje + a quién va + la clase del Mailable.
+(new Email($business, [$business->email], ReferralLink::class))->send();
+
+// Mailable con argumentos extra tras el modelo (ej. un código de un solo uso):
+(new Email($user, [$user->email], DeviceChallengeCode::class, [$code]))->send();
+```
+
+- **El destinatario lo decide el canal**, nunca el Mailable (el mismo mensaje
+  tiene que poder ir a cualquiera).
+- El Mailable es `ShouldQueue`: el canal entrega a la cola y vuelve.
+- Un medio nuevo (WhatsApp saliente de sistema) = **una subclase** de
+  `Channel`, jamás un método más en el contrato
+  (ver memoria `atendia-messaging-canales`).
+
+## Checklist de salida
+
+- [ ] Cero `Mail::` fuera de `app/Messaging`.
+- [ ] Argumentos extra del Mailable van por el 4º parámetro del canal.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesMailChannel` en verde.
+
 === .ai/documentacion-y-memoria rules ===
 
 # Documentación y memoria — mantenerlas legibles
@@ -318,6 +441,63 @@ Si un archivo es grande, NO negarse a leerlo. Usar una de estas vías:
 - **Leerlo por tramos** (lectura parcial con offset/limit), no de una sola vez.
 - **Delegarlo a un subagente** que lo lea entero y devuelva solo el resumen
   relevante, así el archivo grande no ocupa el contexto principal.
+
+=== .ai/fechas rules ===
+
+# Fechas — SIEMPRE Flatpickr (regla de oro)
+
+> Orden de la dueña (2026-09-20): en todo módulo donde haya que **elegir una
+> fecha o un rango de fechas**, se usa **`<x-inputsform.datepicker>`** (Flatpickr
+> vestido con los tokens de la casa). Ni inputs nativos de fecha, ni otra
+> librería, ni CDN. Un tema por archivo: acá vive el *cómo* de las fechas; el
+> enforcement de 3 capas en `reglas-de-oro-enforcement.md`.
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesDatepickerTest.php` y el hook
+`.claude/hooks/check-datepicker-golden-rules.sh` fallan el build si aparece un
+input nativo de fecha u otra librería de calendario.
+
+## Por qué
+
+- `type="date"`/`datetime-local` **no se tematizan**: el calendario lo dibuja el
+  navegador con su idioma y su estilo — en el panel se lee como un error del
+  sistema. Además `type="time"` ya nos mordió (recortaba los minutos).
+- Las alternativas viejas (daterangepicker) arrastran **jQuery + moment.js**,
+  dos dependencias pesadas que este stack no tiene ni quiere.
+- Flatpickr es dependencia cero, entra por npm al build de Vite, habla español
+  y su calendario entero se pinta con los tokens (claro/oscuro solos).
+
+## Cómo se usa
+
+```blade
+{{-- Un día --}}
+<x-inputsform.datepicker name="birthday" :label="__('...')" wire:model="form.birthday" />
+
+{{-- Un rango --}}
+<x-inputsform.datepicker name="dates" mode="range" wire:model.live="dates" />
+```
+
+- El valor real viaja **ISO** en un hidden con el `wire:model`: `"Y-m-d"` para un
+  día, `"Y-m-d..Y-m-d"` para un rango. El visible muestra `d/m/Y` y es de
+  Flatpickr (va tras un wrapper `wire:ignore`: un morph de Livewire lo pisaría).
+- Un rango cerrado con UNA fecha se completa como rango del mismo día — si no,
+  flatpickr lo borra en el click afuera (visto en browser test, 2026-09-20).
+- El tema del calendario vive en `app.css` (sección "Flatpickr, vestido de la
+  casa"): selectores más específicos que los del paquete porque su CSS llega
+  DESPUÉS en el bundle. Grilla 238px = 7 días de 34px exactos.
+
+## Qué NO alcanza esta regla
+
+- Los campos de fecha **como dato tipeado** dentro de `attribute-fields`
+  (texto `d/m/Y` con placeholder) son anteriores y siguen válidos: ahí el dato
+  se tipea, no se elige. Si un maestro pide calendario, se migra al componente.
+
+## Checklist de salida
+
+- [ ] Elegir fecha/rango = `<x-inputsform.datepicker>`; cero `type="date"`,
+      `datetime-local`, `month`, `week`, `time` en Blade.
+- [ ] Cero moment/daterangepicker/pikaday, y cero flatpickr por CDN.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesDatepicker` en verde.
 
 === .ai/formularios rules ===
 
@@ -751,7 +931,13 @@ Cuando se suma un set de reglas de oro:
   incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
 - **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
   checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
-  hook `.claude/hooks/check-catalog-form-layout.sh`.
+  hook `.claude/hooks/check-catalog-form-layout.sh`. **Desde el 2026-09-14 alcanza
+  TODO el repo** (panel cliente incluido, toolbars incluidas): un blade con
+  `<x-inputsform.*>` sin `<x-catalog.form-row>` falla (los `span=` son inertes
+  fuera de `.form-row`), y `<x-ui.select>` está prohibido — el estándar es
+  `<x-inputsform.combobox>`. Nació de las toolbars de Servicios/Productos que
+  salieron sin fila declarada DOS veces prometidas. Ratchet congelado (wizard,
+  section-hours, ws-demo, chrome `q`) espejado test+hook: tocar de a dos.
 - **Comentarios / PHPDoc en inglés y cortos** → `.ai/guidelines/comentarios.md` ·
   test guardián `tests/Feature/GoldenRulesCommentsTest.php` · hook
   `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
@@ -780,10 +966,99 @@ Cuando se suma un set de reglas de oro:
   de dos negocios sobre los 6 modelos tenant) · hook
   `.claude/hooks/check-tenancy-golden-rules.sh`. Sin allowlist de patrones;
   la única excepción razonada es `User` (membresía, no dato tenant).
+- **Getters como property hooks (clases PHP puras)** →
+  `.ai/guidelines/clases-php-modernas.md` · test guardián
+  `tests/Feature/GoldenRulesPropertyHooksTest.php` · hook
+  `.claude/hooks/check-php-getter-golden-rules.sh`. Patrón espejado (tocar de
+  a dos); sin allowlist — nació en cero el 2026-09-11 al migrar las piezas de
+  `Client` y `RetrievedChunkDto`. Alcance: `app/Classes` + `app/Dto`; Eloquent
+  y Livewire quedan fuera a propósito.
+- **Correo por canal (cero `Mail::` fuera de app/Messaging)** →
+  `.ai/guidelines/correo-por-canal.md` · test guardián
+  `tests/Feature/GoldenRulesMailChannelTest.php` · hook
+  `.claude/hooks/check-mail-channel-golden-rules.sh`. Sin allowlist — nació
+  en cero el 2026-09-19 (la auditoría cazó a DeviceChallenge desviado).
+- **Fechas SIEMPRE con Flatpickr** → `.ai/guidelines/fechas.md` · test guardián
+  `tests/Feature/GoldenRulesDatepickerTest.php` · hook
+  `.claude/hooks/check-datepicker-golden-rules.sh`. Patrones espejados (tocar
+  de a dos); sin allowlist — nació en cero el 2026-09-20. Ojo: la documentación
+  del porqué se escribe SIN el atributo literal, o el guardián se caza a sí mismo.
+- **Skills del asistente (todo lo que la IA pueda manejar, es un skill)** →
+  `.ai/guidelines/skills-del-asistente.md` · test guardián
+  `tests/Feature/GoldenRulesAssistantSkillsTest.php` · hook
+  `.claude/hooks/check-assistant-skill-golden-rules.sh`. Lo verificable: toda
+  herramienta es skill, está en el config y en el seeder, y ningún agente la
+  instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
+  criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
 Ver también: [[documentacion-y-memoria]] (un tema por archivo, legibilidad).
+
+=== .ai/skills-del-asistente rules ===
+
+# Skills del asistente — todo lo que la IA pueda manejar, es un skill (regla de oro)
+
+> Todo lo que programemos —un módulo nuevo, un cambio en uno existente, o algo
+> que ya está y descubrimos que el asistente podría resolver— se expone como
+> **skill** del asistente (`laravel/ai`) si la IA lo puede manejar. Un skill es
+> lo que el asistente sabe HACER con datos reales del negocio: una herramienta,
+> no un archivo de instrucciones.
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesAssistantSkillsTest.php` y el hook
+`check-assistant-skill-golden-rules.sh`. Nació el 2026-09-24, con los skills
+de catálogo, horarios y contacto. Un tema por archivo: el costo y el medidor
+viven en la memoria `atendia-medidor-consumo-ia`, la tenancy en `tenancy.md`.
+
+## Por qué
+
+- **Dato exacto en vez de texto:** un skill contesta con una línea de la base
+  ("abierto hasta las 12", el precio exacto). La búsqueda en documentos manda
+  fragmentos de ~800 tokens y la IA tiene que encontrar el dato adentro.
+- **Lo que un documento no sabe:** el día y la hora de ahora, el stock actual,
+  un turno libre. Solo una consulta en vivo lo sabe.
+- **N clientes, N rubros sin pagar por todos:** los skills del rubro viajan
+  diferidos con ToolSearch y se cargan solo cuando la consulta los necesita.
+- **Un módulo que el asistente no puede usar es medio módulo:** el dueño lo
+  carga en el panel y el cliente de WhatsApp no se entera.
+
+## La pregunta obligatoria
+
+Al terminar cualquier módulo o cambio: **¿un cliente del negocio podría
+preguntar o pedir esto por WhatsApp?** (consultar, reservar, confirmar,
+cancelar, saber si hay…). Si la respuesta es sí, lleva skill. Si es no (un
+ajuste interno del panel, la facturación de AtendIa), se dice en una línea por
+qué no.
+
+## Cómo se suma un skill
+
+1. **La herramienta** en `app/Ai/Tools/`, implementando
+   `App\Interfaces\Main\AssistantSkillTool`: `forAssistant()` la arma desde el
+   contexto del asistente (negocio, charla, cliente) y devuelve `null` si le
+   falta algo. El negocio se fija al construirla; **jamás** sale de un argumento
+   que escribe el modelo.
+2. **La clave** en `config/atendia.php` → `assistant.skills` (clave → clase).
+3. **La fila** en `AssistantSkillSeeder`: `is_universal` si sirve a todo
+   negocio; si es del rubro, `false` y se asigna a sus actividades (tabla
+   `activity_assistant_skill`, es dato). Los del rubro viajan con ToolSearch.
+4. **El agente no instancia herramientas**: `AsistenteAtendia::tools()` las
+   pide a `App\Services\AssistantSkills`. Así una clave apagada (`is_active`)
+   desaparece de todos los asistentes sin tocar código.
+5. **La respuesta es corta y exacta**: datos, no párrafos. Si no hay dato, lo
+   dice ("El negocio no cargó sus horarios"), para que la IA no improvise.
+6. **Las instrucciones** del asistente nombran qué skill usar para qué.
+7. **Test Pest** del skill (respuesta, aislamiento por negocio) y medir con
+   `atendia:ai-costs` el antes/después cuando aplique.
+
+## Checklist de salida
+
+- [ ] ¿El cliente podría pedir esto por WhatsApp? Si sí, hay skill; si no, una línea del porqué.
+- [ ] Implementa `AssistantSkillTool`; el negocio viene del contexto, nunca del modelo.
+- [ ] Clave en `atendia.assistant.skills` y fila en `AssistantSkillSeeder` (universal o del rubro).
+- [ ] El agente no hace `new` de ninguna herramienta.
+- [ ] Respuesta corta, exacta y con el "no hay dato" dicho.
+- [ ] Test Pest en inglés + `--filter=GoldenRulesAssistantSkills` en verde.
 
 === .ai/tenancy rules ===
 
@@ -932,8 +1207,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Test Enforcement
 
-- Test every code change by adding or updating a test.
-- Run the affected tests and ensure they pass.
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
 - Test the changed behavior and its important failure modes, but do not add tests beyond them.
 - Read the `testing-best-practices` skill before writing tests.
 

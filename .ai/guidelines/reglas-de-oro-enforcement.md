@@ -106,6 +106,13 @@ Cuando se suma un set de reglas de oro:
   `.claude/hooks/check-datepicker-golden-rules.sh`. Patrones espejados (tocar
   de a dos); sin allowlist — nació en cero el 2026-09-20. Ojo: la documentación
   del porqué se escribe SIN el atributo literal, o el guardián se caza a sí mismo.
+- **Skills del asistente (todo lo que la IA pueda manejar, es un skill)** →
+  `.ai/guidelines/skills-del-asistente.md` · test guardián
+  `tests/Feature/GoldenRulesAssistantSkillsTest.php` · hook
+  `.claude/hooks/check-assistant-skill-golden-rules.sh`. Lo verificable: toda
+  herramienta es skill, está en el config y en el seeder, y ningún agente la
+  instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
+  criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
