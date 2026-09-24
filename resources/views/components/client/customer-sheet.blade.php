@@ -33,9 +33,9 @@ component must use the ManagesCustomerSheet trait: every wire call and the
                             variant="secondary"
                             size="sm"
                             x-on:click="dialog.confirm({
-                                title: @js(__('client.customers.merge_confirm_title')),
-                                message: @js(__('client.customers.merge_confirm_body')),
-                                accept: @js(__('client.customers.merge_button')),
+                                title: {{ \Illuminate\Support\Js::from(__('client.customers.merge_confirm_title')) }},
+                                message: {{ \Illuminate\Support\Js::from(__('client.customers.merge_confirm_body')) }},
+                                accept: {{ \Illuminate\Support\Js::from(__('client.customers.merge_button')) }},
                                 type: 'danger',
                             }).then((ok) => ok && $wire.mergeCustomer())"
                         >

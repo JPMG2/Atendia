@@ -129,6 +129,10 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
                 ->whereNotNull('proposed_by_business_id')
                 ->get()
                 ->each(fn (QuestionIntent $intent) => $intent->promoteIfShared($threshold));
+
+            if (collect($questions)->contains(fn (array $question): bool => $question['resolved_by'] !== QuestionResolution::Assistant)) {
+                CollectSuggestions::dispatch($business->id);
+            }
         });
     }
 
@@ -198,7 +202,7 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
      * @param  array<int, mixed>  $raw
      * @param  Collection<int, ConversationMessage>  $stretch
      * @param  array<string, array{id: int, name: string, description: string}>  $intents
-     * @return list<array{conversation_message_id: int, question_intent_id: ?int, question: string, subject: ?string, resolved_by: QuestionResolution, proposal: array{0: string, 1: string}}>
+     * @return list<array{conversation_message_id: int, question_intent_id: ?int, question: string, subject: ?string, resolved_by: QuestionResolution, answer: ?string, proposal: array{0: string, 1: string}}>
      */
     private function questions(array $raw, Collection $stretch, array $intents): array
     {
@@ -214,13 +218,16 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
             }
 
             $subject = trim((string) ($item['subject'] ?? ''));
+            $resolvedBy = QuestionResolution::tryFrom((string) ($item['resolved_by'] ?? '')) ?? QuestionResolution::Nobody;
+            $answer = trim((string) ($item['answer'] ?? ''));
 
             $questions[] = [
                 'conversation_message_id' => (int) $message->id,
                 'question_intent_id' => $intents[(string) ($item['intent'] ?? '')]['id'] ?? null,
                 'question' => Str::limit($text, 497),
                 'subject' => $subject !== '' ? Str::limit($subject, 117) : null,
-                'resolved_by' => QuestionResolution::tryFrom((string) ($item['resolved_by'] ?? '')) ?? QuestionResolution::Nobody,
+                'resolved_by' => $resolvedBy,
+                'answer' => $resolvedBy === QuestionResolution::Team && $answer !== '' ? Str::limit($answer, 1997) : null,
                 'proposal' => [Str::limit(trim((string) ($item['new_intent'] ?? '')), 77), trim((string) ($item['new_intent_description'] ?? ''))],
             ];
         }

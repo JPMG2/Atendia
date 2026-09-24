@@ -8,7 +8,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\KnowledgeDocument;
-use App\Models\KnowledgeMiss;
+use App\Models\KnowledgeSuggestion;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -198,10 +198,9 @@ test('a taught source opens its edit sheet and the thread wears the birth badge'
         'knowledge_sources' => [['id' => $faq->id, 'title' => $faq->title]],
     ]);
 
-    KnowledgeMiss::factory()->create([
+    KnowledgeSuggestion::factory()->askedIn($thread)->create([
         'business_id' => $user->business_id,
-        'conversation_id' => $thread->id,
-        'query' => '¿Hacen envíos con cadena de frío?',
+        'question' => '¿Hacen envíos con cadena de frío?',
     ]);
 
     $this->actingAs($user);

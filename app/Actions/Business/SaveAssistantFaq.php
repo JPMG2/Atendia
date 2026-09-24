@@ -15,11 +15,12 @@ class SaveAssistantFaq
 {
     /**
      * Provenance only lands at birth: editing a taught answer later must not
-     * rewrite which chat it was learned from.
+     * rewrite which chat it was learned from. A suggestion it answers leaves
+     * the queue.
      *
      * @param  array{question: string, answer: string}  $data
      */
-    public function handle(Business $business, array $data, ?int $id = null, ?int $conversationId = null): KnowledgeDocument
+    public function handle(Business $business, array $data, ?int $id = null, ?int $conversationId = null, ?int $suggestionId = null): KnowledgeDocument
     {
         $document = $id === null
             ? new KnowledgeDocument(['business_id' => $business->id, 'source_type' => 'faq', 'conversation_id' => $conversationId])
@@ -31,6 +32,10 @@ class SaveAssistantFaq
             'title' => $data['question'],
             'content' => 'Pregunta: '.$data['question']."\nRespuesta: ".$data['answer'],
         ])->save();
+
+        if ($suggestionId !== null) {
+            $business->knowledgeSuggestions()->find($suggestionId)?->markTaught($document);
+        }
 
         return $document;
     }

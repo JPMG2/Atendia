@@ -29,6 +29,9 @@ return new class extends Migration
             $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete()->comment('El servicio del catálogo al que apunta el objeto');
             $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete()->comment('El producto del catálogo; con objeto y sin ninguno de los dos = no está en el catálogo');
             $table->string('resolved_by', 10)->comment('assistant | team | nobody');
+            $table->text('answer')->nullable()->comment('Lo que respondió el equipo, reescrito general: el borrador de la sugerencia');
+            $table->timestamp('customer_notified_at')->nullable()->comment('Cuándo se le mandó la respuesta enseñada al cliente que se quedó sin ella');
+            $table->foreignId('knowledge_suggestion_id')->nullable()->constrained()->nullOnDelete()->comment('La sugerencia que junta esta pregunta con sus iguales');
             // Same space as the RAG chunks: the meaning vector of the
             // REWRITTEN question, never of the raw context-bound message.
             $table->vector('embedding', dimensions: config('rag.embedding.dimensions'))->nullable()->index();

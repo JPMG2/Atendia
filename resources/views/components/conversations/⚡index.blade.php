@@ -228,17 +228,28 @@ new class extends Component
 
     public bool $sheetOpen = false;
 
-    /** From the thread: the customer's own words become the taught question. */
+    /**
+     * Messages of the open thread whose question is still in the queue.
+     *
+     * @return array<int, int> message id => suggestion id
+     */
+    #[Computed]
+    public function teachable(): array
+    {
+        return $this->selected === null ? [] : ($this->inbox()?->teachableMessages($this->selected) ?? []);
+    }
+
+    /** From the thread: the rewritten question and the team's draft, settling its suggestion. */
     public function teach(int $messageId): void
     {
-        $message = $this->selected === null ? null : $this->inbox()?->customerMessage($this->selected, $messageId);
+        $suggestionId = $this->teachable[$messageId] ?? null;
+        $suggestion = $suggestionId === null ? null : Client::for(Auth::user())->knowledgeBase?->suggestion($suggestionId);
 
-        if ($message === null) {
+        if ($suggestion === null) {
             return;
         }
 
-        $this->form->setup();
-        $this->form->question = mb_substr(trim($message->body), 0, 200);
+        $this->form->setupFromSuggestion($suggestion);
         $this->form->conversationId = $this->selected;
         $this->sheetOpen = true;
     }
@@ -698,8 +709,8 @@ new class extends Component
                                                         {{ $message->created_at?->format('H:i') }}
                                                     </span>
                                                 </div>
-                                                @if ($message->is_enquiry && $message->needs_teaching)
-                                                    {{-- Only where the AI triage saw the assistant fall short: that is what teaching fixes.
+                                                @if (isset($this->teachable[$message->id]))
+                                                    {{-- Only where the analysis saw the assistant fall short: that is what teaching fixes.
                                                     Hover-revealed on desktop; touch has no hover, so it stays faintly visible. --}}
                                                     <x-ui.icon-button
                                                         icon="graduation-cap"

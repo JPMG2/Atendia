@@ -7,6 +7,7 @@ namespace App\Classes\Main;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\KnowledgeSuggestion;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -69,17 +70,17 @@ class Inbox
     }
 
     /**
-     * One customer question the assistant could NOT answer, or null: the
-     * "teach the assistant this" door only opens where the AI triage saw
-     * it fall short — never on a "sí", nor on what it already answered.
+     * The messages of one thread whose question is still in the teaching
+     * queue: the "teach the assistant this" door opens only there — never
+     * on a "sí", nor on what the assistant already answered.
+     *
+     * @return array<int, int> message id => suggestion id
      */
-    public function customerMessage(int $threadId, int $messageId): ?ConversationMessage
+    public function teachableMessages(int $threadId): array
     {
-        return $this->business->conversations()->find($threadId)
-            ?->messages()
-            ->whereKey($messageId)
-            ->teachable()
-            ->first();
+        return $this->business->conversations()->whereKey($threadId)->exists()
+            ? KnowledgeSuggestion::pendingByMessage($threadId)
+            : [];
     }
 
     /**

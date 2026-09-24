@@ -40,6 +40,12 @@ class KnowledgeDocument extends Model
         ];
     }
 
+    /** A taught answer without the "Pregunta:" prefix retrieval needs inside the content. */
+    public function faqAnswer(): string
+    {
+        return (string) preg_replace('/^Pregunta: .*\nRespuesta: /s', '', (string) $this->content);
+    }
+
     /**
      * @return HasMany<KnowledgeChunk, $this>
      */

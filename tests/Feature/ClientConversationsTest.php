@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Enums\QuestionResolution;
+use App\Enums\SuggestionStatus;
 use App\Jobs\IndexKnowledgeDocument;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
+use App\Models\ConversationQuestion;
 use App\Models\Customer;
 use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeSuggestion;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -50,6 +55,25 @@ function threadFor(User $user, string $name, string $phone, string $lastBody): C
     ]);
 
     return $conversation;
+}
+
+/** What the conversation analysis leaves behind for a question nobody answered. */
+function queueAsked(ConversationMessage $message, string $rewritten): KnowledgeSuggestion
+{
+    $suggestion = KnowledgeSuggestion::query()->create(['business_id' => $message->business_id, 'question' => $rewritten]);
+    $analysis = ConversationAnalysis::query()->create(['business_id' => $message->business_id, 'conversation_id' => $message->conversation_id, 'first_message_id' => $message->id, 'last_message_id' => $message->id, 'sentiment' => 'neutral']);
+
+    ConversationQuestion::query()->create([
+        'business_id' => $message->business_id,
+        'conversation_id' => $message->conversation_id,
+        'conversation_analysis_id' => $analysis->id,
+        'conversation_message_id' => $message->id,
+        'question' => $rewritten,
+        'resolved_by' => QuestionResolution::Nobody,
+        'knowledge_suggestion_id' => $suggestion->id,
+    ]);
+
+    return $suggestion;
 }
 
 test('guests are sent to the login', function (): void {
@@ -436,8 +460,8 @@ test('a customer message can be taught to the assistant from the thread', functi
     $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
     // A real question: a bare "Hola" offers nothing to teach.
     $question = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen envíos?']);
-    // The AI triage marked it: the assistant could not answer it.
-    $question->forceFill(['needs_teaching' => true])->save();
+    // The analysis queued it: the assistant could not answer it.
+    $suggestion = queueAsked($question, '¿Hacen envíos a domicilio?');
     $this->actingAs($user);
 
     livewire('conversations.index')
@@ -445,8 +469,7 @@ test('a customer message can be taught to the assistant from the thread', functi
         ->assertSee(__('client.conversations.teach'))
         ->call('teach', $question->id)
         ->assertSet('sheetOpen', true)
-        ->assertSet('form.question', $question->body)
-        ->set('form.question', '¿Hacen envíos a domicilio?')
+        ->assertSet('form.question', '¿Hacen envíos a domicilio?')
         ->set('form.answer', 'Sí, a todo el país.')
         ->call('saveFaq')
         ->assertSet('sheetOpen', false);
@@ -588,8 +611,8 @@ test('teaching from the thread records where the answer was born', function (): 
     $thread = threadFor($user, 'Carla', '5491111111111', 'No lo pude confirmar.');
     // A real question: a bare "Hola" offers nothing to teach.
     $question = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen envíos?']);
-    // The AI triage marked it: the assistant could not answer it.
-    $question->forceFill(['needs_teaching' => true])->save();
+    // The analysis queued it: the assistant could not answer it.
+    $suggestion = queueAsked($question, '¿Hacen envíos a domicilio?');
     $this->actingAs($user);
 
     livewire('conversations.index')
@@ -600,7 +623,8 @@ test('teaching from the thread records where the answer was born', function (): 
         ->call('saveFaq');
 
     expect(KnowledgeDocument::query()->where('source_type', 'faq')->sole()->conversation_id)
-        ->toBe($thread->id);
+        ->toBe($thread->id)
+        ->and($suggestion->fresh()->status)->toBe(SuggestionStatus::Taught);
 });
 
 test('editing a taught answer keeps its original provenance', function (): void {
@@ -720,8 +744,8 @@ test('the teach door opens only where the assistant fell short, never on a lone 
     $yes = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => 'Si']);
     $answered = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Abren los sábados?']);
     $stumped = $thread->messages()->create(['business_id' => $user->business_id, 'direction' => MessageDirection::In, 'body' => '¿Hacen análisis a domicilio?']);
-    // The AI triage: the assistant answered the first well and fell short on the second.
-    $stumped->forceFill(['needs_teaching' => true])->save();
+    // The analysis: the assistant answered the first well and fell short on the second.
+    queueAsked($stumped, '¿Hacen análisis a domicilio?');
     $this->actingAs($user);
 
     livewire('conversations.index')

@@ -55,7 +55,7 @@ class SendKnowledgeDigests extends Command
     {
         $knowledge = new KnowledgeBase($business);
         $taught = $knowledge->weeklyTaughtCount;
-        $missed = $knowledge->weeklyMissRecap;
+        $missed = $knowledge->weeklySuggestionRecap;
 
         if ($taught === 0 && $missed['count'] === 0) {
             return null;

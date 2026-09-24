@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\FaqDrafter;
-use App\Ai\Tools\SearchBusinessKnowledge;
+use App\Enums\QuestionResolution;
+use App\Enums\SuggestionStatus;
 use App\Jobs\IndexKnowledgeDocument;
+use App\Jobs\NotifyUnansweredCustomers;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
+use App\Models\ConversationQuestion;
 use App\Models\KnowledgeDocument;
-use App\Models\KnowledgeMiss;
+use App\Models\KnowledgeSuggestion;
+use App\Models\QuestionIntent;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeRetriever;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Ai\Tools\Request;
 
 use function Pest\Livewire\livewire;
 
@@ -26,6 +30,34 @@ beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     Queue::fake();
 });
+
+/**
+ * A queued suggestion asked $asked times, each in its own thread; the
+ * team's answer, when given, is the draft.
+ */
+function queuedSuggestion(User $user, string $question, string $intentKey, int $asked = 1, ?string $teamAnswer = null): KnowledgeSuggestion
+{
+    $intent = QuestionIntent::query()->firstOrCreate(['key' => $intentKey], ['name' => ucfirst($intentKey), 'description' => '', 'sort_order' => 0]);
+    $suggestion = KnowledgeSuggestion::query()->create(['business_id' => $user->business_id, 'question_intent_id' => $intent->id, 'question' => $question]);
+
+    foreach (range(1, $asked) as $ignored) {
+        $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
+        $analysis = ConversationAnalysis::query()->create(['business_id' => $user->business_id, 'conversation_id' => $thread->id, 'first_message_id' => 1, 'last_message_id' => 1, 'sentiment' => 'neutral']);
+
+        ConversationQuestion::query()->create([
+            'business_id' => $user->business_id,
+            'conversation_id' => $thread->id,
+            'conversation_analysis_id' => $analysis->id,
+            'question_intent_id' => $intent->id,
+            'question' => $question,
+            'resolved_by' => $teamAnswer !== null ? QuestionResolution::Team : QuestionResolution::Nobody,
+            'answer' => $teamAnswer,
+            'knowledge_suggestion_id' => $suggestion->id,
+        ]);
+    }
+
+    return $suggestion;
+}
 
 function assistantClient(): User
 {
@@ -126,43 +158,72 @@ test('deleting a taught answer makes the assistant forget it', function (): void
     expect(KnowledgeDocument::query()->whereKey($faq->id)->exists())->toBeFalse();
 });
 
-test('an empty knowledge search logs the miss at the source', function (): void {
-    $business = Business::factory()->create();
-
-    $this->mock(KnowledgeRetriever::class)
-        ->shouldReceive('retrieve')
-        ->andReturn(collect());
-
-    $tool = new SearchBusinessKnowledge($business->id);
-    $reply = (string) $tool->handle(new Request(['query' => '¿Hacen resonancias?']));
-
-    expect($reply)->toContain('No se encontró')
-        ->and(KnowledgeMiss::query()->sole()->query)->toBe('¿Hacen resonancias?');
-});
-
-test('the unanswered queue ranks by frequency, accent-blind, and prefills the sheet', function (): void {
+test('the queue groups by topic, ranks by asks and shows the team answer as the draft', function (): void {
     $user = assistantClient();
-
-    foreach (['¿Aceptan Visa?', 'aceptan visa', '¿Hacen envíos?'] as $query) {
-        KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => $query]);
-    }
-
+    queuedSuggestion($user, '¿Hacen envíos?', 'delivery');
+    queuedSuggestion($user, '¿Aceptan Visa?', 'payment', asked: 2, teamAnswer: 'Sí, Visa y Mastercard.');
     $this->actingAs($user);
 
-    // The freshest phrasing represents its group: "aceptan visa" (2 asks)
-    // outranks the single "¿Hacen envíos?".
     livewire('assistant.index')
-        ->assertSee(__('client.assistant.misses_title'))
-        ->assertSeeInOrder(['aceptan visa', '¿Hacen envíos?'])
-        ->call('teach', 'aceptan visa')
+        ->assertSee(__('client.assistant.suggestions_title'))
+        ->assertSeeInOrder(['¿Aceptan Visa?', '¿Hacen envíos?'])
+        ->assertSee(__('client.assistant.draft_from_team'))
+        ->assertSee('Sí, Visa y Mastercard.')
+        ->assertSee(__('client.assistant.no_answer_yet'));
+});
+
+test('approving the team draft teaches it and takes it off the queue', function (): void {
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', teamAnswer: 'Sí, Visa y Mastercard.');
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->call('approve', $suggestion->id)
+        ->assertSet('sheetOpen', false)
+        ->assertDontSee(__('client.assistant.suggestions_title'));
+
+    $faq = KnowledgeDocument::query()->where('source_type', 'faq')->sole();
+
+    expect($faq->title)->toBe('¿Aceptan Visa?')
+        ->and($faq->content)->toContain('Sí, Visa y Mastercard.')
+        ->and($faq->conversation_id)->toBe($suggestion->latestQuestion->conversation_id)
+        ->and($suggestion->fresh()->status)->toBe(SuggestionStatus::Taught)
+        ->and($suggestion->fresh()->knowledge_document_id)->toBe($faq->id);
+});
+
+test('teaching without a draft opens the sheet on the rewritten question', function (): void {
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Hacen envíos a domicilio?', 'delivery');
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->call('teachSuggestion', $suggestion->id)
         ->assertSet('sheetOpen', true)
-        ->assertSet('form.question', 'aceptan visa');
+        ->assertSet('form.question', '¿Hacen envíos a domicilio?')
+        ->assertSet('form.answer', '')
+        ->set('form.answer', 'Sí, en toda la ciudad.')
+        ->call('saveFaq');
+
+    expect($suggestion->fresh()->status)->toBe(SuggestionStatus::Taught);
+});
+
+test('dismissing takes it off the queue for good', function (): void {
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Venden bebidas?', 'products');
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->call('dismissSuggestion', $suggestion->id)
+        ->assertDontSee(__('client.assistant.suggestions_title'));
+
+    expect($suggestion->fresh()->status)->toBe(SuggestionStatus::Dismissed)
+        ->and(KnowledgeDocument::query()->count())->toBe(0);
 });
 
 test('suggesting drafts answers only what near-miss knowledge can ground', function (): void {
     $user = assistantClient();
-    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Aceptan Visa?']);
-    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Hacen resonancias?']);
+    $visa = queuedSuggestion($user, '¿Aceptan Visa?', 'payment');
+    queuedSuggestion($user, '¿Hacen resonancias?', 'services');
     $this->actingAs($user);
 
     // Visa has a near-miss fragment; resonancias has nothing to stand on.
@@ -177,8 +238,8 @@ test('suggesting drafts answers only what near-miss knowledge can ground', funct
     livewire('assistant.index')
         ->call('suggest')
         ->assertSee('Sí, aceptamos Visa y Mastercard.')
-        ->assertSee(__('client.assistant.use_draft'))
-        ->call('useDraft', '¿Aceptan Visa?')
+        ->assertSee(__('client.assistant.draft_from_ai'))
+        ->call('teachSuggestion', $visa->id)
         ->assertSet('sheetOpen', true)
         ->assertSet('form.question', '¿Aceptan Visa?')
         ->assertSet('form.answer', 'Sí, aceptamos Visa y Mastercard.');
@@ -186,7 +247,7 @@ test('suggesting drafts answers only what near-miss knowledge can ground', funct
 
 test('with nothing to ground on the sweep says so instead of inventing', function (): void {
     $user = assistantClient();
-    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Hacen resonancias?']);
+    queuedSuggestion($user, '¿Hacen resonancias?', 'services');
     $this->actingAs($user);
 
     $this->mock(KnowledgeRetriever::class)
@@ -254,30 +315,28 @@ test('another tenant\'s taught answers are out of reach even by id', function ()
     expect(KnowledgeDocument::query()->whereKey($foreign->id)->exists())->toBeTrue();
 });
 
-test('an unanswered question links to the thread it was asked in', function (): void {
+test('a queued question links to the thread it was last asked in', function (): void {
     $user = assistantClient();
-    $thread = Conversation::factory()->create(['business_id' => $user->business_id]);
-
-    KnowledgeMiss::factory()->create([
-        'business_id' => $user->business_id,
-        'conversation_id' => $thread->id,
-        'query' => '¿Hacen envíos?',
-    ]);
-
+    $suggestion = queuedSuggestion($user, '¿Hacen envíos?', 'delivery', asked: 2);
     $this->actingAs($user);
 
     livewire('assistant.index')
         ->assertSee(__('client.assistant.view_thread'))
-        ->assertSeeHtml('?hilo='.$thread->id);
+        ->assertSeeHtml('?hilo='.$suggestion->latestQuestion->conversation_id);
 });
 
-test('a miss with no thread offers no context door', function (): void {
+test('another tenant\'s suggestion is out of reach even by id', function (): void {
     $user = assistantClient();
-    KnowledgeMiss::factory()->create(['business_id' => $user->business_id, 'query' => '¿Aceptan Visa?']);
-
+    $foreign = queuedSuggestion(assistantClient(), '¿Aceptan Visa?', 'payment', teamAnswer: 'Sí.');
     $this->actingAs($user);
 
-    livewire('assistant.index')->assertDontSee(__('client.assistant.view_thread'));
+    livewire('assistant.index')
+        ->call('approve', $foreign->id)
+        ->call('dismissSuggestion', $foreign->id)
+        ->assertSet('sheetOpen', false);
+
+    expect($foreign->fresh()->status)->toBe(SuggestionStatus::Pending)
+        ->and(KnowledgeDocument::query()->count())->toBe(0);
 });
 
 test('a taught answer shows how many replies it grounded', function (): void {
@@ -317,4 +376,50 @@ test('an answer never cited shows no usage tally', function (): void {
     livewire('assistant.index')
         ->assertSee('¿Hacen envíos?')
         ->assertDontSee(trans_choice('client.assistant.times_used', 1, ['count' => 1]));
+});
+
+test('the team drafts are approved in one go, and a failing one stays queued', function (): void {
+    $user = assistantClient();
+    $visa = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', teamAnswer: 'Sí, Visa y Mastercard.');
+    $hours = queuedSuggestion($user, '¿Abren los sábados?', 'hours', teamAnswer: 'Sí, de 8 a 12.');
+    $short = queuedSuggestion($user, '¿Y?', 'hours', teamAnswer: 'Sí.');
+    $untouched = queuedSuggestion($user, '¿Hacen envíos?', 'delivery');
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->assertSee('Aprobar las 3 de tu equipo')
+        ->call('approveTeamDrafts')
+        ->assertSet('lastTaughtId', null);
+
+    expect($visa->fresh()->status)->toBe(SuggestionStatus::Taught)
+        ->and($hours->fresh()->status)->toBe(SuggestionStatus::Taught)
+        ->and($short->fresh()->status)->toBe(SuggestionStatus::Pending)
+        ->and($untouched->fresh()->status)->toBe(SuggestionStatus::Pending)
+        ->and(KnowledgeDocument::query()->where('source_type', 'faq')->count())->toBe(2);
+});
+
+test('after teaching, the banner offers the try once indexed and to tell who asked', function (): void {
+    Queue::fake();
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', asked: 3, teamAnswer: 'Sí, Visa y Mastercard.');
+    // The team answered the first asking; the other two customers got nothing.
+    $suggestion->questions()->whereKeyNot($suggestion->questions()->min('id'))->update(['resolved_by' => QuestionResolution::Nobody, 'answer' => null]);
+    Conversation::query()->update(['last_message_at' => now()->subHours(3)]);
+    $this->actingAs($user);
+
+    $page = livewire('assistant.index')
+        ->call('approve', $suggestion->id)
+        ->assertSet('lastTaughtId', $suggestion->id)
+        ->assertSee(__('client.assistant.learning'))
+        ->assertSee('Avisarles a los 2 clientes que preguntaron');
+
+    KnowledgeDocument::query()->update(['indexed_at' => now()]);
+
+    $page->call('$refresh')
+        ->assertSee(__('client.assistant.try'))
+        ->call('notifyCustomers')
+        ->assertSet('customersNotified', true)
+        ->assertDontSee('Avisarles a los 2 clientes que preguntaron');
+
+    Queue::assertPushed(NotifyUnansweredCustomers::class, fn (NotifyUnansweredCustomers $job): bool => $job->suggestionId === $suggestion->id);
 });

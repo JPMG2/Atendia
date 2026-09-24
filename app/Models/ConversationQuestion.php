@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * A customer's question rewritten to stand on its own: the semantic unit
  * that topics, suggestions and statistics group and count.
  */
-#[Fillable(['business_id', 'conversation_id', 'conversation_analysis_id', 'conversation_message_id', 'question_intent_id', 'question', 'subject', 'service_id', 'product_id', 'resolved_by', 'embedding'])]
+#[Fillable(['business_id', 'conversation_id', 'conversation_analysis_id', 'conversation_message_id', 'question_intent_id', 'question', 'subject', 'service_id', 'product_id', 'resolved_by', 'answer', 'customer_notified_at', 'knowledge_suggestion_id', 'embedding'])]
 class ConversationQuestion extends Model
 {
     use BelongsToBusiness;
@@ -27,6 +27,7 @@ class ConversationQuestion extends Model
         return [
             'resolved_by' => QuestionResolution::class,
             'embedding' => 'array',
+            'customer_notified_at' => 'datetime',
         ];
     }
 
@@ -52,6 +53,22 @@ class ConversationQuestion extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * @return BelongsTo<Conversation, $this>
+     */
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * @return BelongsTo<KnowledgeSuggestion, $this>
+     */
+    public function suggestion(): BelongsTo
+    {
+        return $this->belongsTo(KnowledgeSuggestion::class, 'knowledge_suggestion_id');
     }
 
     /**

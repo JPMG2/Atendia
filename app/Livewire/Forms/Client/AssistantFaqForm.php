@@ -10,6 +10,7 @@ use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeSuggestion;
 use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
@@ -27,6 +28,10 @@ class AssistantFaqForm extends BaseForm
     #[Locked]
     public ?int $conversationId = null;
 
+    /** The queued suggestion this answer settles, if it came from one. */
+    #[Locked]
+    public ?int $suggestionId = null;
+
     public string $question = '';
 
     public string $answer = '';
@@ -35,12 +40,21 @@ class AssistantFaqForm extends BaseForm
     {
         $this->editingId = $faq?->id;
         $this->conversationId = null;
+        $this->suggestionId = null;
         $this->question = (string) $faq?->title;
-        $this->answer = $faq === null
-            ? ''
-            : (string) preg_replace('/^Pregunta: .*\nRespuesta: /s', '', (string) $faq->content);
+        $this->answer = (string) $faq?->faqAnswer();
 
         $this->resetErrorBag();
+    }
+
+    /** The sheet opens on the rewritten question, with the team's answer as the draft. */
+    public function setupFromSuggestion(KnowledgeSuggestion $suggestion): void
+    {
+        $this->setup();
+        $this->suggestionId = $suggestion->id;
+        $this->conversationId = $suggestion->latestQuestion?->conversation_id;
+        $this->question = mb_substr($suggestion->question, 0, 200);
+        $this->answer = (string) $suggestion->teamAnswer?->answer;
     }
 
     public function save(): NotificationDto
@@ -55,7 +69,7 @@ class AssistantFaqForm extends BaseForm
 
         return $this->tryAction(function () use ($business, $validated): NotificationDto {
 
-            $faq = app(SaveAssistantFaq::class)->handle($business, $validated, $this->editingId, $this->conversationId);
+            $faq = app(SaveAssistantFaq::class)->handle($business, $validated, $this->editingId, $this->conversationId, $this->suggestionId);
 
             return $this->notificationService()->notificationFor($faq, $this->editingId === null ? 'created' : 'updated');
 

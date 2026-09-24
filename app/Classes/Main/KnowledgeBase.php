@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Enums\SuggestionStatus;
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
-use App\Models\KnowledgeMiss;
-use Carbon\CarbonInterface;
+use App\Models\KnowledgeSuggestion;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * The "Lo que sabe tu asistente" piece: every source the assistant answers
@@ -99,24 +99,32 @@ class KnowledgeBase
     }
 
     /**
-     * The teaching queue: what customers asked and the knowledge could not
-     * answer, last 30 days, most-asked first. Folded so "¿aceptan visa?"
-     * and "Aceptan VISA" count as one question.
+     * "Tu asistente no supo esto", grouped by topic, the most asked topic
+     * first; inside, most asked question first.
      *
-     * @var list<array{question: string, count: int, conversation_id: ?int}>
+     * @var \Illuminate\Support\Collection<string, Collection<int, KnowledgeSuggestion>>
      */
-    public array $misses {
-        get => $this->foldedMisses(now()->subDays(30))
-            ->map(fn (Collection $group): array => [
-                'question' => (string) $group->first()->query,
-                'count' => $group->count(),
-                // The freshest asking that has a thread: context to read before teaching.
-                'conversation_id' => $group->firstWhere('conversation_id', '!==', null)?->conversation_id,
-            ])
-            ->sortByDesc('count')
-            ->take(5)
-            ->values()
-            ->all();
+    public \Illuminate\Support\Collection $suggestions {
+        get => $this->business->knowledgeSuggestions()
+            ->queue()
+            ->get()
+            ->groupBy(fn (KnowledgeSuggestion $suggestion): string => $suggestion->intent->name ?? __('client.assistant.suggestions_other'))
+            ->sortByDesc(fn (Collection $topic): int => (int) $topic->sum('asked_count'));
+    }
+
+    /** One pending suggestion of THIS business, or null when it is not the tenant's. */
+    public function suggestion(int $id): ?KnowledgeSuggestion
+    {
+        return $this->business->knowledgeSuggestions()->queue()->find($id);
+    }
+
+    /** One suggestion of THIS business already taught, with its answer, or null. */
+    public function taughtSuggestion(int $id): ?KnowledgeSuggestion
+    {
+        return $this->business->knowledgeSuggestions()
+            ->where('status', SuggestionStatus::Taught)
+            ->with('document')
+            ->find($id);
     }
 
     /** Answers taught by hand in the last seven days, for the weekly recap. */
@@ -128,35 +136,19 @@ class KnowledgeBase
     }
 
     /**
-     * The week's unanswered questions, folded: how many distinct ones and
-     * the most asked, for the owner's WhatsApp recap.
+     * The week's queue for the owner's WhatsApp recap: how many pending
+     * questions were asked in the last seven days and the most asked one.
      *
      * @var array{count: int, top: ?string}
      */
-    public array $weeklyMissRecap {
+    public array $weeklySuggestionRecap {
         get {
-            $groups = $this->foldedMisses(now()->subDays(7));
+            $week = $this->business->knowledgeSuggestions()
+                ->queue()
+                ->whereHas('questions', fn (Builder $asked): Builder => $asked->where('created_at', '>=', now()->subDays(7)))
+                ->get();
 
-            return [
-                'count' => $groups->count(),
-                'top' => $groups->sortByDesc(fn (Collection $group): int => $group->count())->first()?->first()->query,
-            ];
+            return ['count' => $week->count(), 'top' => $week->first()?->question];
         }
-    }
-
-    /**
-     * The misses since a date, grouped so "¿aceptan visa?" and "Aceptan
-     * VISA" fold into one question — the ONE folding rule, shared by the
-     * teaching queue and the weekly recap.
-     *
-     * @return \Illuminate\Support\Collection<string, Collection<int, KnowledgeMiss>>
-     */
-    private function foldedMisses(CarbonInterface $since): \Illuminate\Support\Collection
-    {
-        return $this->business->knowledgeMisses()
-            ->where('created_at', '>=', $since)
-            ->latest('id')
-            ->get()
-            ->groupBy(fn (KnowledgeMiss $miss): string => Str::ascii(mb_strtolower(trim($miss->query, ' ¿?.!'))));
     }
 }

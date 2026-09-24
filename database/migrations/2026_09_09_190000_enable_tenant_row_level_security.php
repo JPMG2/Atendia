@@ -29,6 +29,7 @@ return new class extends Migration
         'knowledge_documents',
         'knowledge_chunks',
         'knowledge_misses',
+        'knowledge_suggestions',
         'customers',
         'conversations',
         'conversation_messages',

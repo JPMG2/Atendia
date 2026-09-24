@@ -184,6 +184,10 @@ return [
         'same_intent_similarity' => 0.75,
         'catalog_similarity' => 0.58,
         'promote_after_businesses' => 3,
+        // Same unanswered question: above the first bar without asking, below
+        // the second never; in between the matcher judges.
+        'same_question_similarity' => 0.93,
+        'question_candidate_similarity' => 0.5,
     ],
 
     /*

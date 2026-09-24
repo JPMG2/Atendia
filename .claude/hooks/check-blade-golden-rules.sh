@@ -79,6 +79,10 @@ if grep -qiE 'data-lucide|lucide\.createIcons' "$file"; then
     violations="${violations}- Usa Lucide vía data-lucide/createIcons. Los iconos van por <x-icon name=\"...\" :size=\"...\" />.\n"
 fi
 
+if grep -qPz '<x-[\w.\-:]+(?:=>|[^>])*?@js\(' "$file"; then
+    violations="${violations}- Usa @js(...) dentro de un tag <x-*>: ahí la directiva no se compila y llega cruda al navegador. Usá {{ \\Illuminate\\Support\\Js::from(...) }}.\n"
+fi
+
 if [ -n "$violations" ]; then
     printf 'Reglas de oro de markup incumplidas en %s:\n%b\nCorregí el archivo antes de continuar.\n' "$rel" "$violations" >&2
     exit 2

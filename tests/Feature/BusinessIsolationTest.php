@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeMiss;
+use App\Models\KnowledgeSuggestion;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImport;
@@ -44,6 +45,7 @@ dataset('tenant models', [
     KnowledgeDocument::class,
     KnowledgeChunk::class,
     KnowledgeMiss::class,
+    KnowledgeSuggestion::class,
     Customer::class,
     Conversation::class,
     ConversationMessage::class,

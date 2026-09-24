@@ -106,7 +106,7 @@ new class extends Component
                     variant="secondary"
                     size="sm"
                     icon="copy"
-                    x-on:click="navigator.clipboard.writeText(@js(implode(PHP_EOL, $form->recovery_codes))).then(() => (copied = true))"
+                    x-on:click="navigator.clipboard.writeText({{ \Illuminate\Support\Js::from(implode(PHP_EOL, $form->recovery_codes)) }}).then(() => (copied = true))"
                 >
                     <span x-show="! copied">{{ __('settings.two_factor.codes_copy') }}</span>
                     <span x-show="copied" x-cloak>{{ __('settings.two_factor.codes_copied') }}</span>

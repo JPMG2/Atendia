@@ -96,16 +96,6 @@ class ConversationMessage extends Model
     }
 
     /**
-     * Questions the assistant could not answer: where teaching it pays off.
-     *
-     * @param  Builder<ConversationMessage>  $query
-     */
-    public function scopeTeachable(Builder $query): void
-    {
-        $query->enquiries()->where('needs_teaching', true);
-    }
-
-    /**
      * @return array<string, string>
      */
     protected function casts(): array

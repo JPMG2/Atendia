@@ -7,7 +7,6 @@ namespace App\Ai\Tools;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Dto\RetrievedChunkDto;
 use App\Interfaces\Main\AssistantSkillTool;
-use App\Models\KnowledgeMiss;
 use App\Services\Knowledge\KnowledgeRetriever;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Tools\Request;
@@ -22,14 +21,11 @@ use Stringable;
  */
 class SearchBusinessKnowledge implements AssistantSkillTool
 {
-    public function __construct(
-        private readonly int $businessId,
-        private readonly ?int $conversationId = null,
-    ) {}
+    public function __construct(private readonly int $businessId) {}
 
     public static function forAssistant(AsistenteAtendia $assistant): ?static
     {
-        return $assistant->business !== null ? new static($assistant->business->id, $assistant->conversation?->id) : null;
+        return $assistant->business !== null ? new static($assistant->business->id) : null;
     }
 
     /** @var array<int, string> document id => title, every search of this exchange */
@@ -71,14 +67,6 @@ class SearchBusinessKnowledge implements AssistantSkillTool
             ->retrieve($query, $this->businessId);
 
         if ($chunks->isEmpty()) {
-            // The exact moment a question goes unanswered: logged here, at
-            // the source, so the owner's teaching queue never guesses.
-            KnowledgeMiss::query()->create([
-                'business_id' => $this->businessId,
-                'conversation_id' => $this->conversationId,
-                'query' => mb_substr($query, 0, 500),
-            ]);
-
             // Said out loud, so the model answers "I could not confirm it"
             // instead of improvising from an empty context.
             return 'No se encontró información sobre eso en la base de conocimiento del negocio.';

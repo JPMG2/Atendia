@@ -7,12 +7,16 @@ use App\Classes\Main\Client;
 use App\Classes\Main\KnowledgeBase;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Jobs\NotifyUnansweredCustomers;
 use App\Livewire\Forms\Client\AssistantFaqForm;
+use App\Models\KnowledgeSuggestion;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -47,11 +51,11 @@ new class extends Component
         return $this->knowledge()?->faqs ?? new Collection;
     }
 
-    /** @return list<array{question: string, count: int}> */
+    /** @return \Illuminate\Support\Collection<string, Collection<int, KnowledgeSuggestion>> */
     #[Computed]
-    public function misses(): array
+    public function suggestions(): \Illuminate\Support\Collection
     {
-        return $this->knowledge()?->misses ?? [];
+        return $this->knowledge()?->suggestions ?? collect();
     }
 
     public function add(): void
@@ -60,21 +64,48 @@ new class extends Component
         $this->sheetOpen = true;
     }
 
-    /** From the unanswered queue: the sheet opens with the question filled in. */
-    public function teach(string $question): void
+    /** The sheet opens on the suggestion, the team's answer or the AI draft already in. */
+    public function teachSuggestion(int $id): void
     {
-        $this->form->setup();
-        $this->form->question = $question;
+        $suggestion = $this->knowledge()?->suggestion($id);
+
+        if ($suggestion === null) {
+            return;
+        }
+
+        $this->form->setupFromSuggestion($suggestion);
+        $this->form->answer = $this->form->answer !== '' ? $this->form->answer : ($this->drafts[$suggestion->question] ?? '');
         $this->sheetOpen = true;
+    }
+
+    /**
+     * One click teaches the draft as is. The sheet opens first so a draft
+     * that fails validation shows its error instead of vanishing.
+     */
+    public function approve(int $id): void
+    {
+        $this->teachSuggestion($id);
+
+        if ($this->sheetOpen) {
+            $this->saveFaq();
+        }
+    }
+
+    /** The dialog confirmed; its repeats keep folding in without coming back. */
+    public function dismissSuggestion(int $id): void
+    {
+        $this->knowledge()?->suggestion($id)?->dismiss();
+
+        $this->dispatchNotification(new NotificationDto(__('client.assistant.dismissed'), NotificationType::Success));
     }
 
     /** @var array<string, string> question => AI-drafted answer, this request's crop */
     public array $drafts = [];
 
     /**
-     * Hunts near-miss knowledge for every unanswered question and drafts a
-     * grounded suggestion. Owner-triggered on purpose: at most five model
-     * calls, and only when the queue is worth sweeping.
+     * Hunts near-miss knowledge for the questions nobody on the team
+     * answered and drafts a grounded suggestion. Owner-triggered on purpose:
+     * one model call per question, only when the queue is worth sweeping.
      */
     public function suggest(): void
     {
@@ -84,27 +115,17 @@ new class extends Component
             return;
         }
 
-        $this->drafts = app(DraftFaqSuggestions::class)
-            ->handle($business, array_column($this->misses, 'question'));
+        $questions = $this->suggestions->flatten(1)
+            ->filter(fn (KnowledgeSuggestion $suggestion): bool => $suggestion->teamAnswer === null)
+            ->pluck('question')
+            ->take(5)
+            ->all();
+
+        $this->drafts = app(DraftFaqSuggestions::class)->handle($business, $questions);
 
         if ($this->drafts === []) {
             $this->dispatchNotification(new NotificationDto(__('client.assistant.no_drafts'), NotificationType::Warning));
         }
-    }
-
-    /** The draft becomes the sheet's starting point; the owner edits and approves. */
-    public function useDraft(string $question): void
-    {
-        $draft = $this->drafts[$question] ?? null;
-
-        if ($draft === null) {
-            return;
-        }
-
-        $this->form->setup();
-        $this->form->question = $question;
-        $this->form->answer = $draft;
-        $this->sheetOpen = true;
     }
 
     public function edit(int $id): void
@@ -126,12 +147,76 @@ new class extends Component
 
     public function saveFaq(): void
     {
+        $suggestionId = $this->form->suggestionId;
         $notification = $this->form->save();
         $this->dispatchNotification($notification);
 
         if ($notification->type !== NotificationType::Error) {
             $this->sheetOpen = false;
+            $this->lastTaughtId = $suggestionId;
+            $this->customersNotified = false;
         }
+    }
+
+    /** The suggestion just taught: the banner offers to try it and to tell who asked. */
+    #[Locked]
+    public ?int $lastTaughtId = null;
+
+    #[Locked]
+    public bool $customersNotified = false;
+
+    #[Computed]
+    public function lastTaught(): ?KnowledgeSuggestion
+    {
+        return $this->lastTaughtId === null ? null : $this->knowledge()?->taughtSuggestion($this->lastTaughtId);
+    }
+
+    public function closeTaught(): void
+    {
+        $this->lastTaughtId = null;
+    }
+
+    /** The dialog confirmed: the answer goes to whoever asked and got none. */
+    public function notifyCustomers(): void
+    {
+        $suggestion = $this->lastTaught;
+
+        if ($suggestion === null) {
+            return;
+        }
+
+        NotifyUnansweredCustomers::dispatch($suggestion->business_id, $suggestion->id);
+        $this->customersNotified = true;
+
+        $this->dispatchNotification(new NotificationDto(__('client.assistant.customers_notified'), NotificationType::Success));
+    }
+
+    /**
+     * Every draft the team already wrote, taught in one go. Each passes the
+     * same validation as a single approval; one that fails stays queued.
+     */
+    public function approveTeamDrafts(): void
+    {
+        $taught = 0;
+
+        foreach ($this->suggestions->flatten(1)->filter(fn (KnowledgeSuggestion $suggestion): bool => $suggestion->teamAnswer !== null) as $suggestion) {
+            $this->form->setupFromSuggestion($suggestion);
+
+            try {
+                $taught += $this->form->save()->type !== NotificationType::Error ? 1 : 0;
+            } catch (ValidationException) {
+                continue;
+            }
+        }
+
+        $this->form->setup();
+        $this->lastTaughtId = null;
+        unset($this->suggestions);
+
+        $this->dispatchNotification(new NotificationDto(
+            trans_choice('client.assistant.approved_many', $taught, ['count' => $taught]),
+            $taught > 0 ? NotificationType::Success : NotificationType::Warning,
+        ));
     }
 
     /** @var array{question: string, answer: string}|null */
@@ -207,59 +292,59 @@ new class extends Component
         </div>
     </div>
 
-    {{-- The teaching queue on top: what customers asked and nobody could
-    answer. Teaching it makes the same question stop appearing by itself. --}}
-    @if ($this->misses !== [])
+    @if ($this->lastTaught !== null)
+        <x-assistant.taught-banner :suggestion="$this->lastTaught" :notified="$customersNotified" />
+    @endif
+
+    {{-- The teaching queue on top, one list for everything the assistant
+    did not know, by topic. Teaching an item takes it off by itself. --}}
+    @if ($this->suggestions->isNotEmpty())
         <x-ui.card class="mb-4 p-5">
             <div class="flex flex-wrap items-center gap-3">
                 <div class="min-w-0 flex-1">
-                    <h2 class="font-display text-strong text-base">{{ __('client.assistant.misses_title') }}</h2>
-                    <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.misses_sub') }}</p>
+                    <h2 class="font-display text-strong text-base">{{ __('client.assistant.suggestions_title') }}</h2>
+                    <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.suggestions_sub') }}</p>
                 </div>
-                <x-ui.button variant="secondary" size="sm" icon="bot" class="data-loading:opacity-50" wire:click="suggest">
-                    {{ __('client.assistant.suggest') }}
-                </x-ui.button>
+                @php($teamDrafts = $this->suggestions->flatten(1)->whereNotNull('teamAnswer')->count())
+                @if ($teamDrafts > 1)
+                    <x-ui.button
+                        variant="secondary"
+                        size="sm"
+                        icon="check-check"
+                        x-on:click="dialog.confirm({
+                            title: {{ \Illuminate\Support\Js::from(__('client.assistant.approve_all_confirm_title')) }},
+                            message: {{ \Illuminate\Support\Js::from(trans_choice('client.assistant.approve_all_confirm_body', $teamDrafts, ['count' => $teamDrafts])) }},
+                            accept: {{ \Illuminate\Support\Js::from(__('client.assistant.approve_all')) }},
+                            type: 'info',
+                        }).then((ok) => ok && $wire.approveTeamDrafts())"
+                    >
+                        {{ trans_choice('client.assistant.approve_all_count', $teamDrafts, ['count' => $teamDrafts]) }}
+                    </x-ui.button>
+                @endif
+                @if ($this->suggestions->flatten(1)->contains(fn ($suggestion) => $suggestion->teamAnswer === null))
+                    <x-ui.button variant="secondary" size="sm" icon="bot" class="data-loading:opacity-50" wire:click="suggest">
+                        {{ __('client.assistant.suggest') }}
+                    </x-ui.button>
+                @endif
             </div>
 
-            <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
-                @foreach ($this->misses as $miss)
-                    <li wire:key="miss-{{ $loop->index }}" class="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-2.5">
-                        <span class="min-w-0 flex-1">
-                            <span class="text-strong block truncate text-sm font-semibold">{{ $miss['question'] }}</span>
-                            @if (isset($drafts[$miss['question']]))
-                                <span class="text-muted mt-0.5 flex items-start gap-1.5 text-xs">
-                                    <x-icon name="bot" :size="14" style="color: var(--brand)" class="mt-0.5 flex-none" />
-                                    {{ $drafts[$miss['question']] }}
-                                </span>
-                            @endif
-                        </span>
-                        <span class="text-subtle flex-none font-mono text-xs">
-                            {{ trans_choice('client.assistant.miss_count', $miss['count'], ['count' => $miss['count']]) }}
-                        </span>
-                        @if ($miss['conversation_id'] !== null)
-                            {{-- The context door: read how it was asked before teaching the answer. --}}
-                            <x-ui.button
-                                variant="ghost"
-                                size="sm"
-                                icon="message-circle"
-                                :href="route('conversations', ['hilo' => $miss['conversation_id']])"
-                                wire:navigate
-                            >
-                                {{ __('client.assistant.view_thread') }}
-                            </x-ui.button>
-                        @endif
-                        @if (isset($drafts[$miss['question']]))
-                            <x-ui.button variant="primary" size="sm" icon="sparkles" wire:click="useDraft({{ \Illuminate\Support\Js::from($miss['question']) }})">
-                                {{ __('client.assistant.use_draft') }}
-                            </x-ui.button>
-                        @else
-                            <x-ui.button variant="secondary" size="sm" icon="sparkles" wire:click="teach({{ \Illuminate\Support\Js::from($miss['question']) }})">
-                                {{ __('client.assistant.teach') }}
-                            </x-ui.button>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
+            @foreach ($this->suggestions as $topic => $items)
+                <div wire:key="topic-{{ $loop->index }}" class="mt-4">
+                    <p class="eyebrow px-2">
+                        {{ $topic }} · <span class="font-mono">{{ $items->sum('asked_count') }}</span>
+                    </p>
+
+                    <ul class="mt-1 divide-y divide-[color:var(--border-subtle)]">
+                        @foreach ($items as $suggestion)
+                            <x-assistant.suggestion-row
+                                wire:key="suggestion-{{ $suggestion->id }}"
+                                :suggestion="$suggestion"
+                                :draft="$suggestion->teamAnswer?->answer ?? ($drafts[$suggestion->question] ?? null)"
+                            />
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
         </x-ui.card>
     @endif
 
@@ -349,9 +434,9 @@ new class extends Component
                             variant="ghost"
                             :label="__('client.assistant.delete')"
                             x-on:click="dialog.confirm({
-                                title: @js(__('client.assistant.delete_confirm_title')),
-                                message: @js(__('client.assistant.delete_confirm_body')),
-                                accept: @js(__('client.assistant.delete')),
+                                title: {{ \Illuminate\Support\Js::from(__('client.assistant.delete_confirm_title')) }},
+                                message: {{ \Illuminate\Support\Js::from(__('client.assistant.delete_confirm_body')) }},
+                                accept: {{ \Illuminate\Support\Js::from(__('client.assistant.delete')) }},
                                 type: 'danger',
                             }).then((ok) => ok && $wire.deleteFaq({{ $faq->id }}))"
                         />

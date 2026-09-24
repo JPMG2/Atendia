@@ -5,10 +5,8 @@ declare(strict_types=1);
 use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Models\Business;
-use App\Models\Conversation;
 use App\Models\KnowledgeChunk;
 use App\Models\KnowledgeDocument;
-use App\Models\KnowledgeMiss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Embeddings;
@@ -162,30 +160,14 @@ test('the instructions demand the tools before claiming, and honesty when not fo
         ->toContain('Nunca inventes');
 });
 
-test('a miss remembers the thread it happened in', function (): void {
+test('an empty search says so out loud instead of leaving the model to improvise', function (): void {
     Queue::fake();
 
     $business = Business::factory()->create();
-    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
 
     Embeddings::fake(fn () => [knowledgeVector(0)]);
 
-    (new SearchBusinessKnowledge($business->id, $conversation->id))
-        ->handle(new Request(['query' => 'algo que no existe']));
+    $reply = (string) (new SearchBusinessKnowledge($business->id))->handle(new Request(['query' => 'algo que no existe']));
 
-    expect(KnowledgeMiss::query()->sole()->conversation_id)->toBe($conversation->id);
-});
-
-test('the agent pins the thread on its knowledge tool', function (): void {
-    Queue::fake();
-
-    $business = Business::factory()->create();
-    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
-
-    Embeddings::fake(fn () => [knowledgeVector(0)]);
-
-    $tool = knowledgeToolOf(new AsistenteAtendia($business, $conversation));
-    $tool->handle(new Request(['query' => 'algo que no existe']));
-
-    expect(KnowledgeMiss::query()->sole()->conversation_id)->toBe($conversation->id);
+    expect($reply)->toContain('No se encontró');
 });

@@ -64,6 +64,10 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
               datos concretos; team si la respondió una persona del equipo;
               nobody si nadie la respondió o la respuesta fue vaga, equivocada
               o solo una derivación.
+            - answer: SOLO si resolved_by es team, lo que respondió el equipo
+              reescrito como respuesta general que le sirva a cualquier
+              cliente, sin nombres, teléfonos ni datos de este cliente. Si
+              no, vacío.
 
             sentiment: cómo terminó el cliente al final del tramo: positive,
             neutral o negative.
@@ -89,6 +93,7 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
                         'new_intent_description' => $schema->string()->required(),
                         'subject' => $schema->string()->required(),
                         'resolved_by' => $schema->string()->enum(array_column(QuestionResolution::cases(), 'value'))->required(),
+                        'answer' => $schema->string()->required(),
                     ])
                 )
                 ->required(),

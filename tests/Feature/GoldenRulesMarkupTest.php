@@ -108,6 +108,17 @@ test('no view wires Lucide via data-lucide or createIcons — icons go through <
     expect($offenders->implode("\n"))->toBe('');
 });
 
+test('no view puts @js inside a component tag — it reaches the browser uncompiled', function (): void {
+    // Directives are not compiled inside <x-*> attributes: the raw "@js(" broke
+    // the delete and dismiss dialogs with a SyntaxError (2026-09-24). Inside a
+    // component tag the value goes through {{ Js::from(...) }} instead.
+    $offenders = collect(bladeViews())
+        ->filter(fn (string $html): bool => preg_match('/<x-[\w.\-:]+(?:=>|[^>])*?@js\(/s', $html) === 1)
+        ->keys();
+
+    expect($offenders->implode("\n"))->toBe('');
+});
+
 test('no view uses a .col-N grid class that is not defined in app.css — inputs must not overlap', function (): void {
     // Which grid columns the design system actually defines (e.g. `.col-4`).
     // A form using an undefined `col-N` collapses that field to one column and

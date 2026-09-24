@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Enums\QuestionResolution;
 use App\Jobs\AnalyzeConversation;
+use App\Jobs\CollectSuggestions;
 use App\Models\Conversation;
+use App\Models\ConversationQuestion;
+use App\Services\Tenant;
 use Illuminate\Console\Command;
 
 /**
@@ -28,6 +32,18 @@ class AnalyzeConversations extends Command
 
         foreach ($threads as $thread) {
             AnalyzeConversation::dispatch((int) $thread->business_id, (int) $thread->id);
+        }
+
+        // The sweep behind the per-analysis dispatch: a dead matcher or a backfill leaves questions unlinked.
+        $businessIds = app(Tenant::class)->for(null, fn (): array => ConversationQuestion::query()
+            ->whereIn('resolved_by', [QuestionResolution::Team, QuestionResolution::Nobody])
+            ->whereNull('knowledge_suggestion_id')
+            ->distinct()
+            ->pluck('business_id')
+            ->all());
+
+        foreach ($businessIds as $businessId) {
+            CollectSuggestions::dispatch((int) $businessId);
         }
 
         $this->info("Queued {$threads->count()} conversations");
