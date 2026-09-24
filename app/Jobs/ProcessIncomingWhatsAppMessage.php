@@ -24,7 +24,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Transcription;
 
 /**
@@ -353,7 +353,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      *
      * @param  list<array{id: int, title: string}>  $sources
      */
-    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?Usage $usage, array $sources = []): void
+    private function rememberExchange(Conversation $conversation, string $question, string $reply, ?TextUsage $usage, array $sources = []): void
     {
         $inbound = $conversation->messages()->create([
             'direction' => MessageDirection::In,
@@ -368,8 +368,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'direction' => MessageDirection::Out,
             'author' => MessageAuthor::Assistant,
             'body' => $reply,
-            'prompt_tokens' => $usage?->promptTokens,
-            'completion_tokens' => $usage?->completionTokens,
+            'prompt_tokens' => $usage?->inputTokens,
+            'completion_tokens' => $usage?->outputTokens,
             'knowledge_sources' => $sources === [] ? null : $sources,
         ]);
 

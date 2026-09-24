@@ -11,8 +11,8 @@ use Laravel\Ai\Events\TranscriptionGenerated;
 
 /**
  * Meters every AI call at the SDK's own events, so a new agent is counted
- * the day it ships. The SDK reports cached input apart from promptTokens:
- * reading only that field left the cached part out of every cost (2026-09-24).
+ * the day it ships. Cached input is kept apart because it bills cheaper;
+ * since SDK 1.0 it is a subset of inputTokens, never an addition.
  */
 class RecordAiUsage
 {
@@ -29,23 +29,23 @@ class RecordAiUsage
             $event instanceof AgentPrompted => [
                 'kind' => class_basename($event->prompt->agent),
                 'model' => $event->response->meta->model ?: $event->prompt->model,
-                'input_tokens' => $event->response->usage->promptTokens + $event->response->usage->cacheWriteInputTokens,
-                'cached_tokens' => $event->response->usage->cacheReadInputTokens,
-                'output_tokens' => $event->response->usage->completionTokens,
+                'input_tokens' => $event->response->usage->inputTokens - ($event->response->usage->cacheReadInputTokens ?? 0),
+                'cached_tokens' => $event->response->usage->cacheReadInputTokens ?? 0,
+                'output_tokens' => $event->response->usage->outputTokens,
             ],
             $event instanceof EmbeddingsGenerated => [
                 'kind' => AiUsage::EMBEDDINGS,
                 'model' => $event->model,
-                'input_tokens' => $event->response->tokens,
+                'input_tokens' => $event->response->usage->inputTokens,
                 'cached_tokens' => 0,
                 'output_tokens' => 0,
             ],
             default => [
                 'kind' => AiUsage::TRANSCRIPTION,
                 'model' => $event->model,
-                'input_tokens' => $event->response->usage->promptTokens,
+                'input_tokens' => $event->response->usage->inputTokens,
                 'cached_tokens' => 0,
-                'output_tokens' => $event->response->usage->completionTokens,
+                'output_tokens' => $event->response->usage->outputTokens,
             ],
         };
     }

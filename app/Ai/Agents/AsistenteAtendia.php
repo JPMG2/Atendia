@@ -25,7 +25,7 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Responses\AgentResponse;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Stringable;
 
 // No Temperature attribute on purpose: the reasoning family behind this
@@ -52,7 +52,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     ) {}
 
     /** The whole exchange's bill: the re-ask pass must not lose the first one. */
-    public ?Usage $exchangeUsage = null;
+    public ?TextUsage $exchangeUsage = null;
 
     /** Memoized so the provenance survives the prompt (and the re-ask pass). */
     private ?SearchBusinessKnowledge $knowledgeTool = null;

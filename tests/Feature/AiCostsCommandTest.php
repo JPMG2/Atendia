@@ -15,7 +15,7 @@ use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 
 uses(RefreshDatabase::class);
 
@@ -27,7 +27,7 @@ uses(RefreshDatabase::class);
 | input apart (it is cheaper); the report adds each client's volume.
 */
 
-function promptedEvent(Usage $usage): AgentPrompted
+function promptedEvent(TextUsage $usage): AgentPrompted
 {
     $agent = new MessageTriage;
 
@@ -37,7 +37,7 @@ function promptedEvent(Usage $usage): AgentPrompted
 test('every agent call is metered under its business, cached input apart', function (): void {
     $business = Business::factory()->create();
 
-    app(Tenant::class)->for($business->id, fn () => event(promptedEvent(new Usage(promptTokens: 9, completionTokens: 40, cacheWriteInputTokens: 1, cacheReadInputTokens: 2_000))));
+    app(Tenant::class)->for($business->id, fn () => event(promptedEvent(new TextUsage(inputTokens: 2_010, outputTokens: 40, cacheReadInputTokens: 2_000, cacheWriteInputTokens: 1))));
 
     $row = AiUsage::query()->sole();
 
