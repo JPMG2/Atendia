@@ -27,7 +27,9 @@ class ApprovePayment
             // A period still running continues from its end; a lapsed one
             // (grace or pause) starts today, never charging for days unused.
             $start = $end !== null && $end->isFuture() ? $end->copy() : now();
-            $periodEnd = $payment->billing_cycle === 'yearly' ? $start->copy()->addYear() : $start->copy()->addMonth();
+            // NoOverflow: approved on the 31st, addMonth() landed on the 3rd and
+            // dragged every renewal after it.
+            $periodEnd = $payment->billing_cycle === 'yearly' ? $start->copy()->addYearNoOverflow() : $start->copy()->addMonthNoOverflow();
 
             $payment->forceFill([
                 'status' => PaymentStatus::Paid,

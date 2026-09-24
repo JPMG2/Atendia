@@ -19,6 +19,8 @@ class DraftFaqSuggestions
     /** Looser than answering on purpose: the near-miss is the prey. */
     private const float DRAFT_SIMILARITY = 0.18;
 
+    private const int TIME_BUDGET_SECONDS = 35;
+
     public function __construct(private KnowledgeRetriever $retriever) {}
 
     /**
@@ -28,15 +30,21 @@ class DraftFaqSuggestions
     public function handle(Business $business, array $questions): array
     {
         $drafts = [];
+        $startedAt = microtime(true);
 
         foreach ($questions as $question) {
-            $context = $this->retriever->context($question, $business->id, minSimilarity: self::DRAFT_SIMILARITY);
-
-            if ($context === '') {
-                continue;
+            // The request dies at 60s (php-fpm): stop drafting with room to answer.
+            if (microtime(true) - $startedAt > self::TIME_BUDGET_SECONDS) {
+                break;
             }
 
             try {
+                $context = $this->retriever->context($question, $business->id, minSimilarity: self::DRAFT_SIMILARITY);
+
+                if ($context === '') {
+                    continue;
+                }
+
                 $response = new FaqDrafter()->prompt(
                     "Pregunta del cliente: {$question}\n\nFragmentos del conocimiento del negocio:\n{$context}",
                 );

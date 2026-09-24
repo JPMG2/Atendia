@@ -38,6 +38,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     app()->setLocale('es');
+    // The billing pass runs at each business's local 09:00 (UTC here: no country set).
+    $this->travelTo(now()->setTime(9, 5));
     $this->seed(RolesAndPermissionsSeeder::class);
     Mail::fake();
     Storage::fake('local');
@@ -50,6 +52,8 @@ beforeEach(function (): void {
 function billingClient(array $business = []): User
 {
     $owner = Business::factory()->create(array_merge([
+        // A fixed clock: the factory picks a random country, and the pass runs at LOCAL 09:00.
+        'timezone' => 'UTC',
         'billing_email' => 'pagos@shop.test',
         'fallback_whatsapp_number' => '5491122334455',
     ], $business));

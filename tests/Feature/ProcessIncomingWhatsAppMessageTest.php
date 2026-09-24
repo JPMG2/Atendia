@@ -209,7 +209,7 @@ test('an answered exchange is tallied for the owner digest', function (): void {
 
     runIncoming('¿Tienen turnos?');
 
-    $entries = Cache::get('wa:digest:'.$business->id.':'.now()->format('Y-m-d'));
+    $entries = Cache::get('wa:digest:'.$business->id);
 
     expect($entries)->toHaveCount(1)
         ->and($entries[0]['q'])->toBe('¿Tienen turnos?')

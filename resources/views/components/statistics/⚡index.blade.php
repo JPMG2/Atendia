@@ -36,7 +36,7 @@ new class extends Component
     #[Computed]
     public function previousKpis(): array
     {
-        return $this->stats?->monthKpis(now()->toImmutable()->subMonthNoOverflow()) ?? [];
+        return $this->stats?->monthKpis(now(app(\App\Services\Tenant::class)->timezone())->toImmutable()->startOfMonth()->subMonthNoOverflow()) ?? [];
     }
 
     /** GBP gives everyone the arrow: a number without its delta is dead. */

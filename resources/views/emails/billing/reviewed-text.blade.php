@@ -1,6 +1,6 @@
 {{ __($copy.'.title') }}
 
-{{ __($copy.'.intro', ['name' => $model->business?->name, 'until' => $model->period_ends_at?->format('d/m/Y'), 'reason' => $model->rejection_reason]) }}
+{{ __($copy.'.intro', ['name' => $model->business?->name, 'until' => $model->period_ends_at?->setTimezone($model->business?->localTimezone() ?? config('app.timezone'))->format('d/m/Y'), 'reason' => $model->rejection_reason]) }}
 
 {{ $model->formattedAmount() }}
 

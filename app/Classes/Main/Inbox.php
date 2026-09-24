@@ -65,7 +65,11 @@ class Inbox
     /** Today's pulse for the inbox header. */
     public int $todayCount {
         get => $this->business->conversations()
-            ->whereDate('last_message_at', today())
+            // The owner's today, not UTC's: from 20:00 in Caracas it read tomorrow.
+            ->whereBetween('last_message_at', [
+                now($this->business->localTimezone())->startOfDay()->utc(),
+                now($this->business->localTimezone())->endOfDay()->utc(),
+            ])
             ->count();
     }
 

@@ -4,7 +4,7 @@
     <x-email.notice
         :eyebrow="__('mail.billing.eyebrow')"
         :title="__($copy.'.title')"
-        :intro="__($copy.'.intro', ['name' => $model->business?->name, 'until' => $model->period_ends_at?->format('d/m/Y'), 'reason' => $model->rejection_reason])"
+        :intro="__($copy.'.intro', ['name' => $model->business?->name, 'until' => $model->period_ends_at?->setTimezone($model->business?->localTimezone() ?? config('app.timezone'))->format('d/m/Y'), 'reason' => $model->rejection_reason])"
         :chip="$model->formattedAmount()"
         :body="__($copy.'.body')"
         :primary-url="route('my-payments')"

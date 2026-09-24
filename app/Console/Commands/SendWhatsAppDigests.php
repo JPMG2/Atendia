@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Ai\Agents\DigestWriter;
 use App\Models\Business;
 use App\Services\EvolutionApi;
+use App\Services\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,26 +25,32 @@ class SendWhatsAppDigests extends Command
 
     public function handle(EvolutionApi $evolution): int
     {
+        $time = (string) config('atendia.schedule.whatsapp_digest');
+
         $businesses = Business::query()
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
             ->whereNotNull('fallback_whatsapp_number')
-            ->get();
+            ->get()
+            ->filter(fn (Business $business): bool => $business->isDueAt($time));
 
         foreach ($businesses as $business) {
-            $entries = (array) Cache::pull('wa:digest:'.$business->id.':'.now()->format('Y-m-d'));
+            // A rolling tally, not a UTC-dated one: everything since the last
+            // digest, the local evening included. Cleared only once it LEFT.
+            $key = 'wa:digest:'.$business->id;
+            $entries = (array) Cache::get($key, []);
 
             if ($entries === []) {
                 continue;
             }
 
-            $evolution->sendText(
-                (string) $business->whatsapp_instance,
-                $business->ownerWhatsAppDigits(),
-                $this->compose($business, $entries),
-            );
+            rescue(fn () => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business, $entries, $key): void {
+                $evolution->sendText((string) $business->whatsapp_instance, $business->ownerWhatsAppDigits(), $this->compose($business, $entries));
 
-            $this->info("Digest sent for {$business->name}");
+                Cache::forget($key);
+
+                $this->info("Digest sent for {$business->name}");
+            }));
         }
 
         return self::SUCCESS;

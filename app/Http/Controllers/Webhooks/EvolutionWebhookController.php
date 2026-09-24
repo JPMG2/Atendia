@@ -79,14 +79,21 @@ class EvolutionWebhookController extends Controller
         }
 
         $sender = "{$instance}:{$from}";
-        $buffered = (array) Cache::get("wa:buf:{$sender}", []);
-        $buffered[] = $text;
-        Cache::put("wa:buf:{$sender}", $buffered, now()->addMinutes(3));
-        Cache::put("wa:last:{$sender}", $messageId, now()->addMinutes(3));
+
+        // Locked: two webhooks of one burst run in parallel under php-fpm, and
+        // an unlocked read-append-write dropped one of the texts.
+        Cache::lock("wa:buflock:{$sender}", 5)->block(3, function () use ($sender, $text, $messageId): void {
+            $buffered = (array) Cache::get("wa:buf:{$sender}", []);
+            $buffered[] = $text;
+            Cache::put("wa:buf:{$sender}", $buffered, now()->addMinutes(3));
+            Cache::put("wa:last:{$sender}", $messageId, now()->addMinutes(3));
+        });
 
         ProcessIncomingWhatsAppMessage::dispatch(
             instance: $instance, from: $from, senderName: $senderName,
             text: $text, messageId: $messageId,
+            // The owner answering a ping by quoting it: the quote names the customer.
+            quotedMessageId: $request->input('data.message.extendedTextMessage.contextInfo.stanzaId'),
         )->delay(self::DEBOUNCE_SECONDS);
 
         return true;

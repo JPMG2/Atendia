@@ -22,7 +22,12 @@ class EvolutionApi
      *
      * @throws ConnectionException|RequestException
      */
-    public function sendText(string $instance, string $number, string $text, int $delayMs = 0): void
+    /**
+     * @return string|null the sent message's id, so a later quote of it can be traced back
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function sendText(string $instance, string $number, string $text, int $delayMs = 0): ?string
     {
         $payload = ['number' => $number, 'text' => $text];
 
@@ -30,9 +35,12 @@ class EvolutionApi
             $payload['delay'] = $delayMs;
         }
 
-        $this->request()
+        $id = $this->request()
             ->post("/message/sendText/{$instance}", $payload)
-            ->throw();
+            ->throw()
+            ->json('key.id');
+
+        return is_string($id) ? $id : null;
     }
 
     /**

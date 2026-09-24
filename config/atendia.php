@@ -179,6 +179,16 @@ return [
     | that many businesses see it. All move to the admin settings later.
     */
 
+    // Automated sends go out at these LOCAL times, on each business's clock
+    // (they went out in UTC: birthdays at 05:15 in Caracas). The scheduler
+    // ticks every 15 minutes. Moves to the admin settings later.
+    'schedule' => [
+        'birthday_greetings' => '09:15',
+        'whatsapp_digest' => '20:30',
+        'billing_cycle' => '09:00',
+        'knowledge_digest' => ['weekday' => 1, 'time' => '09:30'],
+    ],
+
     'analysis' => [
         'idle_hours' => env('ANALYSIS_IDLE_HOURS', 2),
         'same_intent_similarity' => 0.75,

@@ -177,16 +177,26 @@ test('pre-existing threads are adopted into customers, idempotently', function (
         ->and(Customer::query()->first()->profile_name)->toBe('Carla');
 });
 
-test('birthday greetings reach only today\'s celebrants on connected instances', function (): void {
+test('birthday greetings reach only today\'s consenting celebrants, at the local morning, once', function (): void {
+    // 09:15 on the business's clock (UTC here: no country set).
+    $this->travelTo(now()->setTime(9, 20));
     $business = Business::factory()->create([
         'whatsapp_instance' => 'demo',
         'whatsapp_connected_at' => now(),
+        'timezone' => 'UTC',
     ]);
 
     Customer::factory()->create([
         'business_id' => $business->id,
         'phone' => '5491111111111',
         'birthday' => now()->subYears(30)->toDateString(),
+        'marketing_opt_in_at' => now()->subMonth(),
+    ]);
+    // Today too, but never said yes to the business's messages.
+    Customer::factory()->create([
+        'business_id' => $business->id,
+        'phone' => '5493333333333',
+        'birthday' => now()->subYears(40)->toDateString(),
     ]);
     Customer::factory()->create([
         'business_id' => $business->id,
@@ -194,6 +204,7 @@ test('birthday greetings reach only today\'s celebrants on connected instances',
         'birthday' => now()->subYears(25)->addDay()->toDateString(),
     ]);
 
+    $this->artisan('atendia:birthday-greetings')->assertSuccessful();
     $this->artisan('atendia:birthday-greetings')->assertSuccessful();
 
     Http::assertSentCount(1);

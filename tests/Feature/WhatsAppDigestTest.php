@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    $this->travelTo(now()->setTime(20, 35));
     config()->set('services.evolution.url', 'http://evolution.test');
     config()->set('services.evolution.key', 'test-key');
 
@@ -26,6 +27,8 @@ function digestBusiness(): Business
         'whatsapp_instance' => 'atendia-demo',
         'whatsapp_connected_at' => now(),
         'fallback_whatsapp_number' => '+54 9 299 552-9100',
+        // A fixed clock: the digest leaves at LOCAL 20:30.
+        'timezone' => 'UTC',
     ]);
 }
 
@@ -33,7 +36,7 @@ test('the owner receives the day digest on the fallback number', function (): vo
     $business = digestBusiness();
     DigestWriter::fake(['• Tres consultas por turnos de laboratorio.']);
 
-    Cache::put('wa:digest:'.$business->id.':'.now()->format('Y-m-d'), [
+    Cache::put('wa:digest:'.$business->id, [
         ['from' => '5491111111111', 'q' => '¿Turnos?', 'a' => 'Sí, mañana.'],
         ['from' => '5492222222222', 'q' => '¿Precio del perfil?', 'a' => 'Desde $20.'],
     ], 3600);
@@ -49,7 +52,7 @@ test('the owner receives the day digest on the fallback number', function (): vo
     });
 
     // Pulled, not read: tomorrow starts from zero.
-    expect(Cache::get('wa:digest:'.$business->id.':'.now()->format('Y-m-d')))->toBeNull();
+    expect(Cache::get('wa:digest:'.$business->id))->toBeNull();
 });
 
 test('the digest brags about this week referrals, and stays silent at zero', function (): void {
@@ -60,7 +63,7 @@ test('the digest brags about this week referrals, and stays silent at zero', fun
     Business::factory()->count(2)->create();
     session()->forget('atendia_ref');
 
-    Cache::put('wa:digest:'.$business->id.':'.now()->format('Y-m-d'), [
+    Cache::put('wa:digest:'.$business->id, [
         ['from' => '5491111111111', 'q' => '¿Turnos?', 'a' => 'Sí, mañana.'],
     ], 3600);
 
@@ -84,7 +87,7 @@ test('a business without a fallback number is skipped', function (): void {
     $business->update(['fallback_whatsapp_number' => null]);
     DigestWriter::fake(['nunca']);
 
-    Cache::put('wa:digest:'.$business->id.':'.now()->format('Y-m-d'), [
+    Cache::put('wa:digest:'.$business->id, [
         ['from' => '549', 'q' => 'Hola', 'a' => 'Hola'],
     ], 3600);
 

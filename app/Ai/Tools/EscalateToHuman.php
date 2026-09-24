@@ -10,6 +10,7 @@ use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Services\EvolutionApi;
+use App\Services\OwnerPings;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -56,7 +57,7 @@ class EscalateToHuman implements AssistantSkillTool
         ]);
 
         // Best effort: a failed ping must never break the escalation itself.
-        rescue(fn () => $this->alertOwner($reason), report: false);
+        rescue(fn () => $this->alertOwner($reason));
 
         return 'Equipo avisado. Ahora despedite con cortesía en el idioma del cliente: '
             .'una persona del equipo le escribe a la brevedad. No sigas resolviendo esta consulta.';
@@ -83,7 +84,7 @@ class EscalateToHuman implements AssistantSkillTool
             return;
         }
 
-        app(EvolutionApi::class)->sendText(
+        $pingId = app(EvolutionApi::class)->sendText(
             $this->business->whatsapp_instance,
             $number,
             __('assistant.handoff.owner_alert', [
@@ -93,5 +94,7 @@ class EscalateToHuman implements AssistantSkillTool
                 'url' => route('conversations'),
             ]),
         );
+
+        app(OwnerPings::class)->remember($this->business->whatsapp_instance, $pingId, (int) $this->conversation->id);
     }
 }

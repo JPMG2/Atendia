@@ -14,6 +14,7 @@ return [
     // with a courteous ask for text, not a sales pitch that shames the shop.
     'plan' => [
         'audio' => '¿Me lo cuentas por mensaje de texto? Por aquí no puedo escuchar audios, y por escrito te ayudo enseguida.',
+        'voice_note_placeholder' => '🎤 Nota de voz (tu plan no incluye audios: escúchala en tu WhatsApp)',
         'cap_warning' => '🤖 Tu asistente ya atendió :used de las :cap conversaciones que incluye tu plan este mes. Todo sigue funcionando con normalidad; si quieres más capacidad, revisa tu plan: :url',
     ],
 
@@ -27,6 +28,7 @@ return [
     ],
 
     'handoff' => [
+        'pick_thread' => "❓ Tienes más de una conversación esperando. ¿Para quién es tu mensaje? Respóndeme solo con el número:\n:list\n\nConsejo: si respondes citando mi aviso (mantén presionado → Responder), te lo reenvío directo.",
         'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespóndeme por aquí y le reenvío tu mensaje, o atiéndelo desde tu panel: :url\nTu asistente quedó en pausa solo en ese chat.",
         'owner_channel' => '🤖 Hola, soy tu asistente. Ahora no hay ninguna conversación esperando al equipo; las ves todas en tu panel: :url',
         'relay_done' => "✅ Le envié tu respuesta a *:name*.\nCuando el tema esté cerrado, escríbeme *#resuelto* y tu asistente retoma ese chat. También lo ves en tu panel: :url",

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Queue;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    $this->travelTo(now()->next('Monday')->setTime(9, 35));
     config()->set('services.evolution.url', 'http://evolution.test');
     config()->set('services.evolution.key', 'test-key');
 
@@ -27,6 +28,8 @@ function knowledgeDigestBusiness(): Business
         'whatsapp_instance' => 'atendia-demo',
         'whatsapp_connected_at' => now(),
         'fallback_whatsapp_number' => '+54 9 299 552-9100',
+        // A fixed clock: the recap leaves Monday at LOCAL 09:30.
+        'timezone' => 'UTC',
     ]);
 }
 

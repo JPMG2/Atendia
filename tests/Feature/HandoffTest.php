@@ -20,6 +20,7 @@ use App\Models\ConversationQuestion;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
+use App\Services\OwnerPings;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
@@ -745,4 +746,64 @@ test('with the assistant active the yes is sealed without relying on its tool', 
     (new ProcessIncomingWhatsAppMessage('demo', '5491122334455', 'Carla', 'ok', 'MSG-83'))->handle();
 
     expect($customer->refresh()->marketing_opt_in_at)->not->toBeNull();
+});
+
+/** Two handoffs open at once: the case where "the latest thread" answered the wrong customer. */
+function twoHandoffs(): array
+{
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo', 'whatsapp_connected_at' => now(), 'fallback_whatsapp_number' => '+54 9 299 552-9100']);
+    $carla = Conversation::factory()->create(['business_id' => $business->id, 'contact_name' => 'Carla', 'contact_phone' => '5491111111111', 'status' => ConversationStatus::Team, 'escalated_at' => now()->subMinutes(5)]);
+    $marcos = Conversation::factory()->create(['business_id' => $business->id, 'contact_name' => 'Marcos', 'contact_phone' => '5492222222222', 'status' => ConversationStatus::Team, 'escalated_at' => now()->subMinutes(2), 'last_message_at' => now()]);
+
+    return [$business, $carla, $marcos];
+}
+
+test('with two handoffs open, the owner quoting a ping answers exactly that customer', function (): void {
+    [, $carla] = twoHandoffs();
+    app(OwnerPings::class)->remember('demo', 'PING-CARLA', $carla->id);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', 'Ya te devolvemos el dinero.', 'MSG-91', quotedMessageId: 'PING-CARLA'))->handle();
+
+    expect(handoffSentTexts()[0]['number'])->toBe('5491111111111')
+        ->and(handoffSentTexts()[0]['text'])->toBe('Ya te devolvemos el dinero.');
+});
+
+test('with two handoffs open and no quote, the owner picks by number and the text waits', function (): void {
+    [, , $marcos] = twoHandoffs();
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', 'Te paso el presupuesto mañana.', 'MSG-92'))->handle();
+
+    // Nothing reaches a customer yet: the owner is asked who it is for.
+    expect(handoffSentTexts())->toHaveCount(1)
+        ->and(handoffSentTexts()[0]['number'])->toBe('5492995529100')
+        ->and(handoffSentTexts()[0]['text'])->toContain('1) Marcos')->toContain('2) Carla');
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5492995529100', 'JPMG', '1', 'MSG-93'))->handle();
+
+    expect(handoffSentTexts()[1]['number'])->toBe('5492222222222')
+        ->and(handoffSentTexts()[1]['text'])->toBe('Te paso el presupuesto mañana.')
+        ->and($marcos->fresh()->status)->toBe(ConversationStatus::Customer);
+});
+
+test('a failing owner ping never repeats the customer hold nor blocks the other threads', function (): void {
+    config()->set('atendia.handoff.reminder_minutes', 20);
+    $business = Business::factory()->create(['whatsapp_instance' => 'demo', 'whatsapp_connected_at' => now(), 'fallback_whatsapp_number' => '5492995550000']);
+    $first = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => '5491111111111', 'status' => ConversationStatus::Team, 'escalated_at' => now()->subMinutes(30)]);
+    $second = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => '5492222222222', 'status' => ConversationStatus::Team, 'escalated_at' => now()->subMinutes(40)]);
+
+    // The owner's number is broken: every ping to it fails.
+    Http::fake([
+        'http://evolution.test/message/sendText/demo' => fn (ClientRequest $request) => $request['number'] === '5492995550000'
+            ? Http::response(['error' => 'bad number'], 400)
+            : Http::response(['key' => ['id' => 'X']]),
+    ]);
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    $holds = collect(handoffSentTexts())->filter(fn (ClientRequest $request): bool => $request['number'] !== '5492995550000');
+
+    expect($holds)->toHaveCount(2)
+        ->and($first->fresh()->handoff_reminded_at)->not->toBeNull()
+        ->and($second->fresh()->handoff_reminded_at)->not->toBeNull();
 });

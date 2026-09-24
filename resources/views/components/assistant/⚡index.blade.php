@@ -248,7 +248,7 @@ new class extends Component
             return;
         }
 
-        $answer = rescue(fn (): string => (new \App\Ai\Agents\AsistenteAtendia($business))->answer($faq->title)->text, report: false);
+        $answer = rescue(fn (): string => (new \App\Ai\Agents\AsistenteAtendia($business))->quickAnswer($faq->title), report: false);
 
         $this->tryResult = [
             'question' => (string) $faq->title,

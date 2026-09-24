@@ -50,7 +50,7 @@ new class extends Component
     {
         $customers = match ($this->filter) {
             'optin' => $this->customers->filter(fn (Customer $customer): bool => $customer->marketing_opt_in_at !== null),
-            'birthday' => $this->customers->filter(fn (Customer $customer): bool => $customer->birthday?->month === now()->month),
+            'birthday' => $this->customers->filter(fn (Customer $customer): bool => $customer->birthday?->month === now(app(\App\Services\Tenant::class)->timezone())->month),
             default => $this->customers,
         };
 
@@ -181,7 +181,7 @@ new class extends Component
                                         @endif
                                     </span>
                                 </span>
-                                @if ($customer->birthday?->month === now()->month)
+                                @if ($customer->birthday?->month === now(app(\App\Services\Tenant::class)->timezone())->month)
                                     <x-ui.badge variant="accent">{{ __('client.customers.badge_birthday') }}</x-ui.badge>
                                 @endif
                                 @if ($customer->marketing_opt_in_at !== null)

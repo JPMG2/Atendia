@@ -11,13 +11,16 @@ Artisan::command('inspire', function (): void {
 })->purpose('Display an inspiring quote');
 
 // Evening, when the day's conversations are in and the owner still reads.
-Schedule::command('atendia:whatsapp-digest')->dailyAt('20:30');
+// Every 15 minutes: each command picks the businesses whose LOCAL time is due
+// (config atendia.schedule), so nobody gets a birthday greeting at 05:15.
+Schedule::command('atendia:whatsapp-digest')->everyFifteenMinutes();
 // Monday morning: the week's learning recap opens the owner's planning.
-Schedule::command('atendia:knowledge-digest')->weeklyOn(1, '09:30');
-Schedule::command('atendia:birthday-greetings')->dailyAt('09:15');
+Schedule::command('atendia:knowledge-digest')->everyFifteenMinutes();
+Schedule::command('atendia:birthday-greetings')->everyFifteenMinutes();
 Schedule::command('atendia:handoff-reminders')->everyTenMinutes();
 // Finished threads get read whole once: questions, who solved them, mood.
 Schedule::command('atendia:analyze-conversations')->everyTenMinutes();
+Schedule::command('atendia:retry-ai-backlog')->everyThirtyMinutes();
 
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
-Schedule::command('atendia:billing-cycle')->dailyAt('09:00');
+Schedule::command('atendia:billing-cycle')->everyFifteenMinutes();

@@ -82,7 +82,7 @@ class Subscription extends Model
             return $this->created_at;
         }
 
-        return $this->billing_cycle === 'yearly' ? $end->copy()->subYear() : $end->copy()->subMonth();
+        return $this->billing_cycle === 'yearly' ? $end->copy()->subYearNoOverflow() : $end->copy()->subMonthNoOverflow();
     }
 
     public function periodLengthDays(): int

@@ -37,7 +37,9 @@ class RunBillingCycle extends Command
         foreach ($subscriptions as $subscription) {
             $business = $subscription->business;
 
-            if ($business === null || $business->payments()->where('status', PaymentStatus::Pending)->exists()) {
+            // The pass runs at each business's local morning, not at UTC's.
+            if ($business === null || ! $business->isDueAt((string) config('atendia.schedule.billing_cycle'))
+                || $business->payments()->where('status', PaymentStatus::Pending)->exists()) {
                 continue;
             }
 

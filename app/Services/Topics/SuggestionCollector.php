@@ -49,9 +49,12 @@ class SuggestionCollector
     /** @return int how many questions it linked; 0 means nothing left or the matcher is down */
     public function collect(): int
     {
+        // Without a vector a question cannot find its twins: it waits for
+        // embedMissing() instead of founding a duplicate suggestion.
         $questions = ConversationQuestion::query()
             ->whereIn('resolved_by', [QuestionResolution::Team, QuestionResolution::Nobody])
             ->whereNull('knowledge_suggestion_id')
+            ->whereNotNull('embedding')
             ->oldest('id')
             ->limit(self::BATCH)
             ->get();

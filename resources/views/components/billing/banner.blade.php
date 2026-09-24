@@ -4,7 +4,7 @@
     // One reminder for the whole client panel, read from the Billing piece:
     // the same numbers the mail, the WhatsApp and "Mis pagos" show.
     $reminder = auth()->user() ? Client::for(auth()->user())->billing?->reminder : null;
-    $date = auth()->user()?->business?->subscription?->periodEndsAt()?->format('d/m');
+    $date = auth()->user()?->business?->subscription?->periodEndsAt()?->inBusinessTime()->format('d/m');
 @endphp
 
 @if ($reminder !== null)

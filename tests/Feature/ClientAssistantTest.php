@@ -269,7 +269,8 @@ test('trying a taught answer runs the REAL assistant and shows the reply', funct
     ]);
     $this->actingAs($user);
 
-    AsistenteAtendia::fake(['Buscando…', 'Sí, aceptamos débito y crédito.']);
+    // One pass: the re-asking answer() could outlive the 60s web request.
+    AsistenteAtendia::fake(['Sí, aceptamos débito y crédito.']);
 
     livewire('assistant.index')
         ->assertSee(__('client.assistant.try'))

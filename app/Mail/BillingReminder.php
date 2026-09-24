@@ -45,7 +45,7 @@ class BillingReminder extends Mailable implements ShouldQueue
             with: [
                 'copy' => "mail.billing.{$this->stage}",
                 'amount' => config('atendia.billing.currency').' '.number_format((float) $subscription?->nextAmount(), 2, ',', '.'),
-                'date' => $subscription?->periodEndsAt()?->format('d/m/Y'),
+                'date' => $subscription?->periodEndsAt()?->setTimezone($this->model->localTimezone())->format('d/m/Y'),
                 'plan' => __('plan.names.'.$subscription?->plan),
             ],
         );

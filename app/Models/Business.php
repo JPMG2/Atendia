@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Classes\Main\Plan;
 use App\Enums\HandoffLevel;
+use App\Enums\MessageDirection;
 use App\Traits\TracksUserActions;
 use Database\Factories\BusinessFactory;
 use DateTimeZone;
@@ -150,7 +151,7 @@ class Business extends Model
     {
         return self::query()
             ->where('referred_by_business_id', $this->id)
-            ->where('created_at', '>=', now()->startOfWeek())
+            ->where('created_at', '>=', now($this->localTimezone())->startOfWeek()->utc())
             ->count();
     }
 
@@ -547,6 +548,19 @@ class Business extends Model
     }
 
     /**
+     * Whether a local "HH:MM" (and weekday, 0 = Sunday) is the current
+     * 15-minute slot on this business's clock: the scheduler ticks every 15
+     * minutes, so each business gets its automated sends at its own time.
+     */
+    public function isDueAt(string $time, ?int $weekday = null): bool
+    {
+        $now = now($this->localTimezone());
+        $slot = $now->setTime((int) $now->format('H'), intdiv((int) $now->format('i'), 15) * 15);
+
+        return $slot->format('H:i') === $time && ($weekday === null || (int) $now->format('w') === $weekday);
+    }
+
+    /**
      * Open right now, in the BUSINESS's own timezone. No hours on file means
      * always open: silence must never mute the reminders.
      */
@@ -642,13 +656,15 @@ class Business extends Model
 
     /**
      * Active conversations this month — the market's metric and the plan's
-     * cap: threads with at least one message, not threads ever created.
+     * cap: threads where the CUSTOMER wrote, on the business's own month.
+     * Automated sends (late answers, consent asks) never spend the quota.
      */
     public function conversationsThisMonth(): int
     {
         return ConversationMessage::query()
             ->where('business_id', $this->id)
-            ->where('created_at', '>=', now()->startOfMonth())
+            ->where('direction', MessageDirection::In)
+            ->where('created_at', '>=', now($this->localTimezone())->startOfMonth()->utc())
             ->distinct('conversation_id')
             ->count('conversation_id');
     }
@@ -658,7 +674,7 @@ class Business extends Model
     {
         return (int) ConversationMessage::query()
             ->where('business_id', $this->id)
-            ->where('created_at', '>=', now()->startOfMonth())
+            ->where('created_at', '>=', now($this->localTimezone())->startOfMonth()->utc())
             ->sum('audio_seconds');
     }
 

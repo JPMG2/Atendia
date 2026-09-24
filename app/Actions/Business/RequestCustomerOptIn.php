@@ -33,7 +33,10 @@ class RequestCustomerOptIn
             'business' => $business->name,
         ]);
 
-        $this->evolution->sendText($business->whatsapp_instance, $customer->phone, $text);
+        // A dead instance is a "could not send", not a 500.
+        if (rescue(fn () => $this->evolution->sendText($business->whatsapp_instance, $customer->phone, $text) ?? true, false) === false) {
+            return false;
+        }
 
         $customer->forceFill(['marketing_opt_in_requested_at' => now()])->save();
 
@@ -49,8 +52,8 @@ class RequestCustomerOptIn
             'body' => $text,
         ]);
 
-        $conversation->forceFill(['last_message_at' => now()])->save();
-
+        // last_message_at stays put: an ask is not activity, and bumping it
+        // made this thread "the latest" for the owner's WhatsApp relay.
         return true;
     }
 }

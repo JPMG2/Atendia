@@ -97,6 +97,15 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     }
 
     /**
+     * One pass under a short cap, for the panel's "Probarla": answer()'s
+     * re-ask could outlive the 60s web request and end in a 502.
+     */
+    public function quickAnswer(string $question, int $timeoutSeconds = 40): string
+    {
+        return $this->prompt($question, timeout: $timeoutSeconds)->text;
+    }
+
+    /**
      * Get the instructions that the agent should follow.
      *
      * Interpolated, not static: with a business in hand the assistant speaks
@@ -280,11 +289,22 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             .' nunca más con el tema.';
     }
 
+    /** The inbound already stored for this turn: it travels as the prompt, not as memory. */
+    private ?int $currentMessageId = null;
+
+    public function withoutMessage(int $messageId): static
+    {
+        $this->currentMessageId = $messageId;
+
+        return $this;
+    }
+
     /**
      * Get the list of messages comprising the conversation so far.
      *
      * The customer's current text travels as the prompt, so this hands over
-     * only the PREVIOUS turns — the worker stores the new pair afterwards.
+     * only the PREVIOUS turns — the worker stores the inbound first (so a
+     * failure never loses it) and names it here to keep it out.
      *
      * @return Message[]
      */
@@ -298,6 +318,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
         // reads them, so it can never repeat one to the customer.
         return $this->conversation->messages()
             ->where('kind', MessageKind::Message)
+            ->when($this->currentMessageId !== null, fn ($turns) => $turns->whereKeyNot($this->currentMessageId))
             ->latest('id')
             ->limit(self::MEMORY_LIMIT)
             ->get()

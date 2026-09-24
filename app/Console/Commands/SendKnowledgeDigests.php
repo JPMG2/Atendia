@@ -7,7 +7,9 @@ namespace App\Console\Commands;
 use App\Classes\Main\KnowledgeBase;
 use App\Models\Business;
 use App\Services\EvolutionApi;
+use App\Services\Tenant;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * The owner's weekly learning recap: what the assistant was taught and what
@@ -22,26 +24,33 @@ class SendKnowledgeDigests extends Command
 
     public function handle(EvolutionApi $evolution): int
     {
+        $weekday = (int) config('atendia.schedule.knowledge_digest.weekday');
+        $time = (string) config('atendia.schedule.knowledge_digest.time');
+
         $businesses = Business::query()
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
             ->whereNotNull('fallback_whatsapp_number')
-            ->get();
+            ->get()
+            ->filter(fn (Business $business): bool => $business->isDueAt($time, $weekday));
 
         foreach ($businesses as $business) {
-            $text = $this->compose($business);
-
-            if ($text === null) {
+            // Once per business per local week, and one failure never skips the rest.
+            if (! Cache::add('knowledge-digest:'.$business->id.':'.now($business->localTimezone())->format('o-W'), true, now()->addDays(8))) {
                 continue;
             }
 
-            $evolution->sendText(
-                (string) $business->whatsapp_instance,
-                $business->ownerWhatsAppDigits(),
-                $text,
-            );
+            rescue(fn () => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business): void {
+                $text = $this->compose($business);
 
-            $this->info("Knowledge digest sent for {$business->name}");
+                if ($text === null) {
+                    return;
+                }
+
+                $evolution->sendText((string) $business->whatsapp_instance, $business->ownerWhatsAppDigits(), $text);
+
+                $this->info("Knowledge digest sent for {$business->name}");
+            }));
         }
 
         return self::SUCCESS;

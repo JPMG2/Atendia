@@ -14,10 +14,12 @@ use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\PlatformContact;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
+use App\Services\OwnerPings;
 use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -40,6 +42,16 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
     private const int MAX_BUBBLES = 3;
 
+    /**
+     * Once: a retry re-asked the AI (paid, maybe a different answer) and
+     * re-sent every bubble. The inbound is stored BEFORE answering, so a
+     * failure leaves it in the panel and the analysis instead of nowhere.
+     */
+    public int $tries = 1;
+
+    /** Two model passes plus the bubbles, under the queue's 90s retry_after. */
+    public int $timeout = 85;
+
     public function __construct(
         public string $instance,
         public string $from,
@@ -48,6 +60,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         public string $messageId,
         public ?string $audioBase64 = null,
         public int $audioSeconds = 0,
+        public ?string $quotedMessageId = null,
     ) {}
 
     public function handle(): void
@@ -83,43 +96,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        // The plan gate on audio closes BEFORE transcription spends a cent.
-        // The customer only hears a courteous ask for text — the owner's
-        // plan is never their problem.
-        if ($this->audioBase64 !== null && ! $this->audioWithinPlan($business, $plan)) {
-            $evolution->sendText($this->instance, $this->from, __('assistant.plan.audio'), 1500);
-
-            return;
-        }
-
-        $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
-
-        if ($text === null || trim($text) === '') {
-            return;
-        }
-
-        $verdict = app(ConversationGuard::class)->verdict($this->instance, $this->from, $text, $plan->messagesPerHour);
-
-        if ($verdict === GuardVerdict::Muted) {
-            return;
-        }
-
-        if ($verdict !== GuardVerdict::Ok) {
-            $evolution->sendText($this->instance, $this->from, __('assistant.guard.'.$verdict->value), 1500);
-
-            return;
-        }
-
-        // Best effort, never at the reply's expense: the read receipt and the
-        // early "typing…" while the model thinks. No auto-reactions: a thumbs
-        // up on a QUESTION reads wrong (owner's call, 2026-09-17).
-        rescue(fn () => $evolution->markRead($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId), report: false);
-        rescue(fn () => $evolution->markComposing($this->instance, $this->from), report: false);
-
-        // The worker has no session: the job adopts the business so the
-        // assistant's knowledge search runs inside the right tenant. A failed
-        // send throws out of here and the queue retries the whole exchange.
-        app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
+        app(Tenant::class)->for((int) $business->id, function () use ($business, $plan, $evolution): void {
             $customer = $this->rememberCustomer();
 
             $conversation = Conversation::query()->firstOrCreate(
@@ -140,51 +117,78 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $conversation->update(['status' => ConversationStatus::Open]);
             }
 
-            // Read BEFORE the inbound is stored: it must be the first answer after the ask.
-            $optInYes = $customer->answersOptInYes($conversation, $text);
+            // Unpaid past the grace days, or in human hands: the assistant is
+            // silent, so the guard and the audio gate must be too — they spoke
+            // into team threads and dropped the message unrecorded (2026-09-24).
+            $silent = $business->subscription?->isPaused()
+                || in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true);
 
-            // Unpaid past the grace days: the thread keeps its record, the
-            // assistant stays silent until the payment is credited.
-            if ($business->subscription?->isPaused()) {
-                $this->rememberInboundOnly($conversation, $text);
+            // The plan gate on audio closes BEFORE transcription spends a cent.
+            if ($this->audioBase64 !== null && ! $this->audioWithinPlan($business, $plan)) {
+                if (! $silent) {
+                    $evolution->sendText($this->instance, $this->from, __('assistant.plan.audio'), 1500);
+                }
+
+                $this->rememberInbound($conversation, __('assistant.plan.voice_note_placeholder'));
+                $this->handBackToTeam($conversation);
                 WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
 
                 return;
             }
 
-            // A thread in human hands stays human: keep the record, hand the
-            // ball back to the team when the customer answers, say nothing.
-            if (in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true)) {
-                $this->rememberInboundOnly($conversation, $text);
+            $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
 
-                // The one exception to the silence: a consent yes is sealed
-                // and thanked, the assistant being off in a team thread.
+            if ($text === null || trim($text) === '') {
+                return;
+            }
+
+            // Read BEFORE the inbound is stored: it must be the first answer after the ask.
+            $optInYes = $customer->answersOptInYes($conversation, $text);
+
+            if ($silent) {
+                $this->rememberInbound($conversation, $text);
+
+                // The one exception to the silence: a consent yes is sealed and
+                // thanked — in a paused business too, where it was lost.
                 if ($optInYes) {
                     $this->sealOptIn($conversation, $customer, $evolution);
                 }
 
-                if ($conversation->status === ConversationStatus::Customer) {
-                    // The clock restarts: the team owes an answer again.
-                    $conversation->update([
-                        'status' => ConversationStatus::Team,
-                        'escalated_at' => now(),
-                        'handoff_reminded_at' => null,
-                    ]);
-                }
-
+                $this->handBackToTeam($conversation);
                 WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
 
                 return;
             }
 
+            $verdict = app(ConversationGuard::class)->verdict($this->instance, $this->from, $text, $plan->messagesPerHour);
+
+            if ($verdict === GuardVerdict::Muted) {
+                return;
+            }
+
+            if ($verdict !== GuardVerdict::Ok) {
+                $evolution->sendText($this->instance, $this->from, __('assistant.guard.'.$verdict->value), 1500);
+
+                return;
+            }
+
+            // Best effort, never at the reply's expense: the read receipt and the
+            // early "typing…" while the model thinks. No auto-reactions: a thumbs
+            // up on a QUESTION reads wrong (owner's call, 2026-09-17).
+            rescue(fn () => $evolution->markRead($this->instance, "{$this->from}@s.whatsapp.net", $this->messageId), report: false);
+            rescue(fn () => $evolution->markComposing($this->instance, $this->from), report: false);
+
+            // The agent's memory hands over previous turns only: stored first, the
+            // current text must not ride twice, so the agent reads it as the prompt.
             $agent = new AsistenteAtendia($business, $conversation, $customer);
-            $reply = $agent->answer($text)->text;
+            $inbound = $this->rememberInbound($conversation, $text);
+            $reply = $agent->withoutMessage($inbound->id)->answer($text)->text;
 
             foreach ($this->bubbles($reply) as $bubble) {
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
-            $this->rememberExchange($conversation, $text, $reply, $agent->knowledgeSources());
+            $this->rememberReply($conversation, $reply, $agent->knowledgeSources());
 
             // The assistant thanks per its briefing; the seal itself never
             // depends on the model remembering to call its tool.
@@ -196,6 +200,18 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
         });
+    }
+
+    /** A customer writing into a thread waiting on them hands the ball back: the team owes an answer again. */
+    private function handBackToTeam(Conversation $conversation): void
+    {
+        if ($conversation->status === ConversationStatus::Customer) {
+            $conversation->update([
+                'status' => ConversationStatus::Team,
+                'escalated_at' => now(),
+                'handoff_reminded_at' => null,
+            ]);
+        }
     }
 
     /**
@@ -214,18 +230,13 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         }
 
         app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
-            // Follow-ups included: a thread already waiting on the customer
-            // is still the owner's live handoff, so it stays addressable.
-            $thread = Conversation::query()
-                ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
-                ->orderByDesc('last_message_at')
-                ->first();
+            $target = $this->ownerTarget($evolution, $text);
 
-            if ($thread === null) {
-                $this->hintOwnerChannel($evolution);
-
+            if ($target === null) {
                 return;
             }
+
+            [$thread, $text] = $target;
 
             if (in_array(mb_strtolower(trim($text)), ['#resuelto', '#resuelta'], true)) {
                 $thread->update(['status' => ConversationStatus::Resolved, 'escalated_at' => null, 'handoff_reminded_at' => null]);
@@ -252,6 +263,63 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $thread->id);
         });
+    }
+
+    /**
+     * Which handoff the owner is answering, and the text to send: the ping
+     * they QUOTED; else the only one open; else they pick from a numbered
+     * list (their text waits until they answer with the number). With two
+     * open, "the latest thread" sent answers to the wrong customer.
+     *
+     * @return array{0: Conversation, 1: string}|null
+     */
+    private function ownerTarget(EvolutionApi $evolution, string $text): ?array
+    {
+        // Follow-ups included: a thread already waiting on the customer is
+        // still the owner's live handoff, so it stays addressable.
+        $open = Conversation::query()
+            ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
+            ->orderByDesc('escalated_at')
+            ->orderByDesc('last_message_at')
+            ->get();
+
+        $quoted = app(OwnerPings::class)->threadFor($this->instance, $this->quotedMessageId);
+
+        if ($quoted !== null && ($thread = $open->firstWhere('id', $quoted)) !== null) {
+            return [$thread, $text];
+        }
+
+        $pickKey = "wa:pick:{$this->instance}";
+        $pending = Cache::get($pickKey);
+
+        if (is_array($pending) && preg_match('/^\s*(\d{1,2})\s*$/', $text, $number) === 1) {
+            $thread = $open->firstWhere('id', $pending['ids'][(int) $number[1] - 1] ?? null);
+
+            if ($thread !== null) {
+                Cache::forget($pickKey);
+
+                return [$thread, (string) $pending['text']];
+            }
+        }
+
+        if ($open->isEmpty()) {
+            $this->hintOwnerChannel($evolution);
+
+            return null;
+        }
+
+        if ($open->count() === 1) {
+            return [$open->first(), $text];
+        }
+
+        $choices = $open->take(9)->values();
+        Cache::put($pickKey, ['text' => $text, 'ids' => $choices->pluck('id')->all()], now()->addMinutes(30));
+
+        $evolution->sendText($this->instance, $this->from, __('assistant.handoff.pick_thread', [
+            'list' => $choices->map(fn (Conversation $thread, int $index): string => ($index + 1).') '.($thread->contact_name ?? $thread->contact_phone))->implode("\n"),
+        ]));
+
+        return null;
     }
 
     /**
@@ -328,7 +396,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        $sentKey = 'wa:cap80:'.$business->id.':'.now()->format('Y-m');
+        $sentKey = 'wa:cap80:'.$business->id.':'.now($business->localTimezone())->format('Y-m');
 
         if (! Cache::add($sentKey, true, now()->addDays(45))) {
             return;
@@ -345,21 +413,27 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ), report: true);
     }
 
-    /**
-     * Persists the turn AFTER answering: the agent's memory hands over
-     * previous turns only, so the current text never rides twice.
-     *
-     * @param  list<array{id: int, title: string}>  $sources
-     */
-    private function rememberExchange(Conversation $conversation, string $question, string $reply, array $sources = []): void
+    /** The customer's turn, stored before anything can fail after it. */
+    private function rememberInbound(Conversation $conversation, string $text): ConversationMessage
     {
-        $conversation->messages()->create([
+        $inbound = $conversation->messages()->create([
             'direction' => MessageDirection::In,
             'wa_message_id' => $this->messageId,
-            'body' => $question,
+            'body' => $text,
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
 
+        $conversation->fill([
+            'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
+            'last_message_at' => now(),
+        ])->save();
+
+        return $inbound;
+    }
+
+    /** @param  list<array{id: int, title: string}>  $sources */
+    private function rememberReply(Conversation $conversation, string $reply, array $sources = []): void
+    {
         $conversation->messages()->create([
             'direction' => MessageDirection::Out,
             'author' => MessageAuthor::Assistant,
@@ -367,10 +441,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'knowledge_sources' => $sources === [] ? null : $sources,
         ]);
 
-        $conversation->fill([
-            'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
-            'last_message_at' => now(),
-        ])->save();
+        $conversation->forceFill(['last_message_at' => now()])->save();
     }
 
     /** Seals the consent and says thanks in the business's own voice. */
@@ -388,29 +459,14 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ]);
     }
 
-    /** The paused thread still records what the customer says, reply-less. */
-    private function rememberInboundOnly(Conversation $conversation, string $text): void
-    {
-        $inbound = $conversation->messages()->create([
-            'direction' => MessageDirection::In,
-            'wa_message_id' => $this->messageId,
-            'body' => $text,
-            'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
-        ]);
-
-        $conversation->fill([
-            'contact_name' => $this->senderName !== '' ? $this->senderName : $conversation->contact_name,
-            'last_message_at' => now(),
-        ])->save();
-    }
-
     /**
      * The owner's nightly digest reads from this short-lived tally: cheaper
      * than re-querying the day's threads, and gone by itself after sending.
      */
     private function rememberForDigest(Business $business, string $question, string $reply): void
     {
-        $key = 'wa:digest:'.$business->id.':'.now()->format('Y-m-d');
+        // Rolling, not dated: the digest takes everything since the last one.
+        $key = 'wa:digest:'.$business->id;
         $entries = (array) Cache::get($key, []);
 
         if (count($entries) >= 200) {
@@ -423,7 +479,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'a' => mb_substr($reply, 0, 200),
         ];
 
-        Cache::put($key, $entries, now()->addHours(36));
+        Cache::put($key, $entries, now()->addDays(3));
     }
 
     /**
@@ -456,8 +512,10 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         return $business->audioSecondsThisMonth() < $plan->audioMinutesPerMonth * 60;
     }
 
-    /** Voice notes become text and join the same pipeline; replies stay text. */
-    /** Inside the tenant: the usage meter stamps the transcription on this business, not on nobody. */
+    /**
+     * Voice notes become text and join the same pipeline; replies stay text.
+     * Inside the tenant: the usage meter stamps it on this business, not on nobody.
+     */
     private function transcribe(Business $business): ?string
     {
         $path = tempnam(sys_get_temp_dir(), 'wa-audio-');

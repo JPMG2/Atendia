@@ -350,7 +350,8 @@ new class extends Component
             return;
         }
 
-        $sent = app(SendHumanReply::class)->handle($business, $thread, $text);
+        // Evolution down is a toast, not the 5xx retry dialog that could send it twice.
+        $sent = rescue(fn () => app(SendHumanReply::class)->handle($business, $thread, $text));
 
         if ($sent === null) {
             $this->dispatchNotification(new NotificationDto(__('client.conversations.reply_unavailable'), NotificationType::Error));

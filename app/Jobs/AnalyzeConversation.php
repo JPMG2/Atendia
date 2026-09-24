@@ -44,8 +44,12 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
     /** A marathon thread goes in parts: each run analyzes this many and moves the watermark. */
     private const int STRETCH_LIMIT = 60;
 
-    /** One model call plus the trade's intents on a cold start; past this the worker kills it. */
-    public int $timeout = 120;
+    /**
+     * One model call plus the trade's intents on a cold start. Under the
+     * queue's 90s retry_after: above it a slow run was handed to a second
+     * worker and analyzed (and paid) twice.
+     */
+    public int $timeout = 80;
 
     public function __construct(public int $businessId, public int $conversationId) {}
 

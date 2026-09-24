@@ -24,7 +24,7 @@ class BillingReminder extends WhatsAppMessage
         return __("billing.whatsapp.{$this->stage}", [
             'plan' => __('plan.names.'.$subscription?->plan),
             'amount' => config('atendia.billing.currency').' '.number_format((float) $subscription?->nextAmount(), 2, ',', '.'),
-            'date' => $subscription?->periodEndsAt()?->format('d/m'),
+            'date' => $subscription?->periodEndsAt()?->setTimezone($this->model->localTimezone())->format('d/m'),
             'days' => $this->days,
             'url' => route('my-payments'),
         ]);

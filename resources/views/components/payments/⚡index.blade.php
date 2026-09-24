@@ -128,11 +128,11 @@ new class extends Component
                     <dl class="pay-facts">
                         <div>
                             <dt>{{ __('billing.period.started') }}</dt>
-                            <dd class="font-mono">{{ $period['starts_at']?->format('d/m/Y') }}</dd>
+                            <dd class="font-mono">{{ $period['starts_at']?->inBusinessTime()->format('d/m/Y') }}</dd>
                         </div>
                         <div>
                             <dt>{{ $onTrial ? __('billing.period.trial_ends') : __('billing.period.renews') }}</dt>
-                            <dd class="font-mono">{{ $period['ends_at']?->format('d/m/Y') }}</dd>
+                            <dd class="font-mono">{{ $period['ends_at']?->inBusinessTime()->format('d/m/Y') }}</dd>
                         </div>
                         <div>
                             <dt>{{ __('billing.period.used') }}</dt>
@@ -159,7 +159,7 @@ new class extends Component
             <x-ui.card class="bp-card pay-next">
                 <div>
                     <div class="bp-card-head"><h2>{{ __('billing.next.title') }}</h2></div>
-                    <p class="bp-card-sub">{{ __('billing.next.due', ['date' => $period['ends_at']?->format('d/m/Y')]) }}</p>
+                    <p class="bp-card-sub">{{ __('billing.next.due', ['date' => $period['ends_at']?->inBusinessTime()->format('d/m/Y')]) }}</p>
                 </div>
                 <b class="pay-amount font-mono">{{ $period['amount'] }}</b>
                 <div class="pay-line">
@@ -207,11 +207,11 @@ new class extends Component
                     <tbody>
                         @foreach ($this->billing->history as $payment)
                             <tr wire:key="payment-{{ $payment->id }}">
-                                <td class="font-mono">{{ $payment->created_at->format('d/m/Y') }}</td>
+                                <td class="font-mono">{{ $payment->created_at->inBusinessTime()->format('d/m/Y') }}</td>
                                 <td>{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
                                 <td class="font-mono">
                                     @if ($payment->period_starts_at)
-                                        {{ $payment->period_starts_at->format('d/m') }} – {{ $payment->period_ends_at?->format('d/m/Y') }}
+                                        {{ $payment->period_starts_at->inBusinessTime()->format('d/m') }} – {{ $payment->period_ends_at?->inBusinessTime()->format('d/m/Y') }}
                                     @else
                                         —
                                     @endif
