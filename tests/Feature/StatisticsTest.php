@@ -12,9 +12,11 @@ use App\Models\KnowledgeSuggestion;
 use App\Models\QuestionIntent;
 use App\Models\Service;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\QuestionIntentSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
 use function Pest\Livewire\livewire;
@@ -133,7 +135,8 @@ test('the month kpis count questions and resolve them one by one, not per thread
     $stats = new Statistics($user->business);
 
     expect($stats->monthKpis())->toMatchArray(['conversations' => 1, 'questions' => 4, 'resolution' => 75])
-        ->and($stats->sinceDayOne['questions'])->toBe(4)
+        // "Tu asistente respondió N consultas": only the three it solved.
+        ->and($stats->sinceDayOne['questions'])->toBe(3)
         ->and($stats->peakHours['window'])->not->toBeNull();
 });
 
@@ -194,4 +197,21 @@ test('a customer who wrote back after the late answer counts as recovered this m
     $this->actingAs($user);
 
     livewire('statistics.index')->assertSee(__('statistics.kpis.recovered'));
+});
+
+test('peak hours and days read on the business clock, not UTC', function (): void {
+    $user = statsClient();
+    $user->business->update(['timezone' => 'America/Caracas']);
+    $this->travelTo(CarbonImmutable::parse('2026-09-15 15:00:00', 'UTC'));
+    // 13:30 UTC is 09:30 in Caracas.
+    analyzedQuestion($user, '¿Abren hoy?', 'hours')->message->forceFill(['created_at' => CarbonImmutable::parse('2026-09-15 13:30:00', 'UTC')])->save();
+
+    $peak = (new Statistics($user->business->fresh()))->peakHours;
+
+    expect($peak['counts'][9])->toBe(1)
+        ->and($peak['counts'][13])->toBe(0);
+});
+
+test('the vector search never loses a small tenant in the shared index', function (): void {
+    expect(array_values((array) DB::selectOne('show hnsw.iterative_scan'))[0])->toBe('strict_order');
 });

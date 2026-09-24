@@ -31,6 +31,9 @@ class CollectSuggestions implements ShouldBeUnique, ShouldQueue
     public function handle(SuggestionCollector $collector): void
     {
         app(Tenant::class)->for($this->businessId, function () use ($collector): void {
+            // Best effort: with the embedder still down they wait for the next sweep.
+            rescue(fn () => $collector->embedMissing());
+
             foreach (range(1, self::MAX_BATCHES) as $ignored) {
                 if ($collector->collect() === 0) {
                     return;

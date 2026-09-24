@@ -6,6 +6,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
+use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -389,4 +390,15 @@ test('a message for an unclaimed instance warns and answers nobody', function ()
     Log::shouldHaveReceived('warning')->withArgs(
         fn (string $message): bool => $message === 'whatsapp.incoming.unclaimed',
     )->once();
+});
+
+test('a voice note\'s transcription is metered on its business, not on nobody', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Sí, atendemos mañana.']);
+    Transcription::fake(['¿Atienden mañana?']);
+
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
+
+    expect(AiUsage::query()->where('kind', AiUsage::TRANSCRIPTION)->pluck('business_id')->all())->toBe([$business->id]);
 });

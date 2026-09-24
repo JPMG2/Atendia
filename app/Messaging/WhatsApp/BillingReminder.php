@@ -17,7 +17,9 @@ class BillingReminder extends WhatsAppMessage
 
     public function text(): string
     {
-        $subscription = $this->model->subscription;
+        // loadMissing: the billing pass hands over businesses loaded in a batch,
+        // where a lazy load is refused.
+        $subscription = $this->model->loadMissing('subscription')->subscription;
 
         return __("billing.whatsapp.{$this->stage}", [
             'plan' => __('plan.names.'.$subscription?->plan),

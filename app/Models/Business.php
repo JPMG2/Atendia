@@ -8,6 +8,7 @@ use App\Classes\Main\Plan;
 use App\Enums\HandoffLevel;
 use App\Traits\TracksUserActions;
 use Database\Factories\BusinessFactory;
+use DateTimeZone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -530,6 +531,22 @@ class Business extends Model
     }
 
     /**
+     * Where the business keeps its clock: its own timezone when set, else its
+     * country's (none is set today, so every clock read UTC), else the app's.
+     */
+    public function localTimezone(): string
+    {
+        if ($this->timezone !== null && in_array($this->timezone, DateTimeZone::listIdentifiers(), true)) {
+            return $this->timezone;
+        }
+
+        $iso2 = $this->loadMissing('country')->country?->iso2;
+        $zones = $iso2 !== null ? DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, strtoupper($iso2)) : [];
+
+        return $zones[0] ?? (string) config('app.timezone');
+    }
+
+    /**
      * Open right now, in the BUSINESS's own timezone. No hours on file means
      * always open: silence must never mute the reminders.
      */
@@ -539,7 +556,7 @@ class Business extends Model
             return true;
         }
 
-        $now = now($this->timezone ?? config('app.timezone'));
+        $now = now($this->localTimezone());
         $time = $now->format('H:i:s');
 
         return $this->hours()

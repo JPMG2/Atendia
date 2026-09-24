@@ -41,6 +41,12 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
     /** Earlier turns shown as context: enough for "¿y los sábados?" to make sense. */
     private const int CONTEXT_MESSAGES = 6;
 
+    /** A marathon thread goes in parts: each run analyzes this many and moves the watermark. */
+    private const int STRETCH_LIMIT = 60;
+
+    /** One model call plus the trade's intents on a cold start; past this the worker kills it. */
+    public int $timeout = 120;
+
     public function __construct(public int $businessId, public int $conversationId) {}
 
     public function uniqueId(): string
@@ -60,7 +66,7 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
             $business = $conversation->business;
 
             $watermark = (int) $conversation->analyzed_message_id;
-            $stretch = $this->messages($conversation)->where('id', '>', $watermark)->oldest('id')->get();
+            $stretch = $this->messages($conversation)->where('id', '>', $watermark)->oldest('id')->limit(self::STRETCH_LIMIT)->get();
 
             if ($stretch->isEmpty()) {
                 return;
@@ -202,7 +208,7 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
      * @param  array<int, mixed>  $raw
      * @param  Collection<int, ConversationMessage>  $stretch
      * @param  array<string, array{id: int, name: string, description: string}>  $intents
-     * @return list<array{conversation_message_id: int, question_intent_id: ?int, question: string, subject: ?string, resolved_by: QuestionResolution, answer: ?string, proposal: array{0: string, 1: string}}>
+     * @return list<array{conversation_message_id: int, question_intent_id: ?int, question: string, subject: ?string, resolved_by: QuestionResolution, asked_at: mixed, answer: ?string, proposal: array{0: string, 1: string}}>
      */
     private function questions(array $raw, Collection $stretch, array $intents): array
     {
@@ -227,6 +233,7 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
                 'question' => Str::limit($text, 497),
                 'subject' => $subject !== '' ? Str::limit($subject, 117) : null,
                 'resolved_by' => $resolvedBy,
+                'asked_at' => $message->created_at,
                 'answer' => $resolvedBy === QuestionResolution::Team && $answer !== '' ? Str::limit($answer, 1997) : null,
                 'proposal' => [Str::limit(trim((string) ($item['new_intent'] ?? '')), 77), trim((string) ($item['new_intent_description'] ?? ''))],
             ];

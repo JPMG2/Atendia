@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('status', 10)->default('pending')->comment('pending | taught | dismissed');
             $table->vector('embedding', dimensions: config('rag.embedding.dimensions'))->nullable()->index();
             $table->timestamp('status_changed_at')->nullable()->comment('Cuándo se enseñó, descartó o reabrió');
+            $table->timestamp('notify_requested_at')->nullable()->comment('El dueño pidió avisar a quien preguntó: la barrida sigue avisando a los que se sumen');
 
             $table->timestamps();
 

@@ -98,7 +98,7 @@ class KnowledgeBase
         $rows = DB::select(<<<'SQL'
             select s.knowledge_document_id as document_id,
                    count(distinct q.conversation_id) as sent,
-                   avg(extract(epoch from q.customer_notified_at - q.created_at)) / 86400 as days,
+                   avg(extract(epoch from q.customer_notified_at - q.asked_at)) / 86400 as days,
                    count(distinct q.conversation_id) filter (where exists (
                        select 1 from conversation_messages m
                        where m.conversation_id = q.conversation_id and m.direction = 'in'
@@ -178,7 +178,7 @@ class KnowledgeBase
         get {
             $week = $this->business->knowledgeSuggestions()
                 ->queue()
-                ->whereHas('questions', fn (Builder $asked): Builder => $asked->where('created_at', '>=', now()->subDays(7)))
+                ->whereHas('questions', fn (Builder $asked): Builder => $asked->where('asked_at', '>=', now()->subDays(7)))
                 ->get();
 
             return ['count' => $week->count(), 'top' => $week->first()?->question];

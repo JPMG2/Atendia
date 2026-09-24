@@ -389,7 +389,8 @@ test('the team drafts are approved in one go, and a failing one stays queued', f
     livewire('assistant.index')
         ->assertSee('Aprobar las 3 de tu equipo')
         ->call('approveTeamDrafts')
-        ->assertSet('lastTaughtId', null);
+        ->assertSet('lastTaughtIds', fn (array $ids): bool => collect($ids)->sort()->values()->all() === collect([$visa->id, $hours->id])->sort()->values()->all())
+        ->assertSee(trans_choice('client.assistant.taught_many_title', 2, ['count' => 2]));
 
     expect($visa->fresh()->status)->toBe(SuggestionStatus::Taught)
         ->and($hours->fresh()->status)->toBe(SuggestionStatus::Taught)
@@ -409,7 +410,7 @@ test('after teaching, the banner offers the try once indexed and to tell who ask
 
     $page = livewire('assistant.index')
         ->call('approve', $suggestion->id)
-        ->assertSet('lastTaughtId', $suggestion->id)
+        ->assertSet('lastTaughtIds', [$suggestion->id])
         ->assertSee(__('client.assistant.learning'))
         ->assertSee('Avisarles a los 2 clientes que preguntaron');
 
@@ -431,7 +432,7 @@ test('a taught answer shows the customers it won back: sent, how late, who wrote
     $faq = KnowledgeDocument::factory()->create(['business_id' => $user->business_id, 'source_type' => 'faq', 'title' => '¿Aceptan Visa?']);
     $suggestion->markTaught($faq);
 
-    $suggestion->questions()->update(['created_at' => now()->subDays(2), 'customer_notified_at' => now()]);
+    $suggestion->questions()->update(['asked_at' => now()->subDays(2), 'customer_notified_at' => now()]);
     // Only one of the two customers wrote back after the answer arrived.
     ConversationMessage::factory()->create([
         'business_id' => $user->business_id,
@@ -445,4 +446,36 @@ test('a taught answer shows the customers it won back: sent, how late, who wrote
         ->assertSee('Se la enviaste a 2 clientes que se quedaron sin respuesta')
         ->assertSee('2 días después')
         ->assertSee('1 volvió a escribir');
+});
+
+test('teaching again a question that failed after teaching corrects that answer, never a second one', function (): void {
+    Queue::fake();
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', teamAnswer: 'Sí, Visa y Mastercard en una cuota.');
+    $stale = KnowledgeDocument::factory()->create(['business_id' => $user->business_id, 'source_type' => 'faq', 'title' => '¿Aceptan Visa?', 'content' => "Pregunta: ¿Aceptan Visa?\nRespuesta: Solo efectivo."]);
+    $suggestion->forceFill(['knowledge_document_id' => $stale->id])->save();
+    $this->actingAs($user);
+
+    livewire('assistant.index')
+        ->call('teachSuggestion', $suggestion->id)
+        ->assertSet('form.editingId', $stale->id)
+        ->assertSet('form.answer', 'Sí, Visa y Mastercard en una cuota.')
+        ->call('saveFaq');
+
+    expect(KnowledgeDocument::query()->where('source_type', 'faq')->count())->toBe(1)
+        ->and($stale->fresh()->faqAnswer())->toBe('Sí, Visa y Mastercard en una cuota.')
+        ->and($suggestion->fresh()->status)->toBe(SuggestionStatus::Taught);
+});
+
+test('a deleted answer never leaves the banner polling', function (): void {
+    Queue::fake();
+    $user = assistantClient();
+    $suggestion = queuedSuggestion($user, '¿Aceptan Visa?', 'payment', teamAnswer: 'Sí, Visa y Mastercard.');
+    $this->actingAs($user);
+
+    $page = livewire('assistant.index')->call('approve', $suggestion->id)->assertSeeHtml('wire:poll');
+
+    KnowledgeDocument::query()->where('source_type', 'faq')->sole()->delete();
+
+    $page->call('$refresh')->assertDontSeeHtml('wire:poll');
 });

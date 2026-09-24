@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ConversationStatus;
 use App\Enums\QuestionResolution;
 use App\Enums\SuggestionStatus;
 use App\Traits\BelongsToBusiness;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * was asked linked to it. Replaces the two old queues (knowledge misses and
  * the per-message "needs teaching" flag) with a single one.
  */
-#[Fillable(['business_id', 'question_intent_id', 'knowledge_document_id', 'question', 'status', 'embedding', 'status_changed_at'])]
+#[Fillable(['business_id', 'question_intent_id', 'knowledge_document_id', 'question', 'status', 'embedding', 'status_changed_at', 'notify_requested_at'])]
 class KnowledgeSuggestion extends Model
 {
     use BelongsToBusiness;
@@ -38,6 +39,7 @@ class KnowledgeSuggestion extends Model
             'status' => SuggestionStatus::class,
             'embedding' => 'array',
             'status_changed_at' => 'datetime',
+            'notify_requested_at' => 'datetime',
         ];
     }
 
@@ -74,9 +76,9 @@ class KnowledgeSuggestion extends Model
     public function scopeQueue(Builder $query): void
     {
         $query->where('status', SuggestionStatus::Pending)
-            ->with(['intent:id,name', 'teamAnswer', 'latestQuestion'])
+            ->with(['intent:id,name', 'teamAnswer', 'latestQuestion', 'document'])
             ->withCount('questions as asked_count')
-            ->withMax('questions as last_asked_at', 'created_at')
+            ->withMax('questions as last_asked_at', 'asked_at')
             ->orderByDesc('asked_count')
             ->orderByDesc('last_asked_at');
     }
@@ -98,10 +100,13 @@ class KnowledgeSuggestion extends Model
             ->all();
     }
 
-    /** A new failure after teaching means the lesson did not stick: back to the queue. */
-    public function absorbFailure(): void
+    /**
+     * A failure asked AFTER teaching means the lesson did not stick: back to
+     * the queue. One asked before it (analysis runs hours late) is just late news.
+     */
+    public function absorbFailure(ConversationQuestion $question): void
     {
-        if ($this->status === SuggestionStatus::Taught) {
+        if ($this->status === SuggestionStatus::Taught && $question->asked_at > $this->status_changed_at) {
             $this->forceFill(['status' => SuggestionStatus::Pending, 'status_changed_at' => now()])->save();
         }
     }
@@ -157,8 +162,11 @@ class KnowledgeSuggestion extends Model
         return $this->questions()
             ->where('resolved_by', QuestionResolution::Nobody)
             ->whereNull('customer_notified_at')
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereHas('conversation', fn (Builder $thread): Builder => $thread->where('last_message_at', '<', $quietSince));
+            ->where('asked_at', '>=', now()->subDays(7))
+            // A thread in human hands is the team's to answer: never cut into a handoff.
+            ->whereHas('conversation', fn (Builder $thread): Builder => $thread
+                ->where('last_message_at', '<', $quietSince)
+                ->whereNotIn('status', [ConversationStatus::Team, ConversationStatus::Customer]));
     }
 
     /** How many distinct customers would get the taught answer. */

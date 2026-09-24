@@ -92,7 +92,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        $text = $this->audioBase64 !== null ? $this->transcribe() : $this->drainBuffer();
+        $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
 
         if ($text === null || trim($text) === '') {
             return;
@@ -207,7 +207,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      */
     private function relayOwnerReply(Business $business, EvolutionApi $evolution): void
     {
-        $text = $this->audioBase64 !== null ? $this->transcribe() : $this->drainBuffer();
+        $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
 
         if ($text === null || trim($text) === '') {
             return;
@@ -457,14 +457,15 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     }
 
     /** Voice notes become text and join the same pipeline; replies stay text. */
-    private function transcribe(): ?string
+    /** Inside the tenant: the usage meter stamps the transcription on this business, not on nobody. */
+    private function transcribe(Business $business): ?string
     {
         $path = tempnam(sys_get_temp_dir(), 'wa-audio-');
 
         try {
             file_put_contents($path, base64_decode((string) $this->audioBase64, true) ?: '');
 
-            return (string) Transcription::fromPath($path)->generate();
+            return (string) app(Tenant::class)->for((int) $business->id, fn () => Transcription::fromPath($path)->generate());
         } catch (\Throwable $e) {
             report($e);
 

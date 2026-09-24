@@ -8,6 +8,7 @@ use App\Ai\Agents\QuestionMatcher;
 use App\Enums\QuestionResolution;
 use App\Models\ConversationQuestion;
 use App\Models\KnowledgeSuggestion;
+use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Database\Eloquent\Collection;
 use Throwable;
 
@@ -21,6 +22,29 @@ class SuggestionCollector
     private const int BATCH = 30;
 
     private const int CANDIDATES = 4;
+
+    public function __construct(private KnowledgeEmbedder $embedder) {}
+
+    /**
+     * Questions stored while the embedder was down get their vector late:
+     * without it they never fold, and the inbox search cannot find them.
+     */
+    public function embedMissing(): void
+    {
+        $questions = ConversationQuestion::query()->whereNull('embedding')->oldest('id')->limit(self::BATCH)->get();
+
+        if ($questions->isEmpty()) {
+            return;
+        }
+
+        $vectors = $this->embedder->embed($questions->pluck('question')->all());
+
+        foreach ($questions->values() as $index => $question) {
+            if (isset($vectors[$index])) {
+                $question->forceFill(['embedding' => $vectors[$index]])->save();
+            }
+        }
+    }
 
     /** @return int how many questions it linked; 0 means nothing left or the matcher is down */
     public function collect(): int
@@ -93,7 +117,7 @@ class SuggestionCollector
     private function link(ConversationQuestion $question, KnowledgeSuggestion $suggestion): void
     {
         $question->forceFill(['knowledge_suggestion_id' => $suggestion->id])->save();
-        $suggestion->absorbFailure();
+        $suggestion->absorbFailure($question);
     }
 
     /**

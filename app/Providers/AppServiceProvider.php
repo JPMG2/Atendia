@@ -10,9 +10,11 @@ use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
@@ -51,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureAuthorization();
         $this->configureLivewire();
         $this->configurePasswords();
+        $this->configureVectorSearch();
         Model::preventLazyLoading(! app()->isProduction());
         Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
         Model::preventAccessingMissingAttributes(! app()->isProduction());
@@ -124,6 +127,9 @@ class AppServiceProvider extends ServiceProvider
     private function configureDates(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Stored in UTC, shown on the business's clock: "14:05" must be the owner's 14:05.
+        CarbonImmutable::macro('inBusinessTime', fn (): CarbonImmutable => $this->setTimezone(app(Tenant::class)->timezone()));
     }
 
     private function configureRequests(): void
@@ -132,6 +138,20 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('testing')) {
             Http::preventStrayRequests();
         }
+    }
+
+    /**
+     * The HNSW indexes span every tenant: without iterative scans the index
+     * returns its 40 nearest overall and the business filter can leave a
+     * small tenant with none. strict_order keeps the nearest first.
+     */
+    private function configureVectorSearch(): void
+    {
+        Event::listen(ConnectionEstablished::class, function (ConnectionEstablished $event): void {
+            if ($event->connection->getDriverName() === 'pgsql') {
+                $event->connection->statement('set hnsw.iterative_scan = strict_order');
+            }
+        });
     }
 
     /**
@@ -144,7 +164,8 @@ class AppServiceProvider extends ServiceProvider
             ->by($request->user()?->id ?: $request->ip()));
 
         // Login and register: strict, to slow brute force down (email + IP).
+        // A crafted request can send email as an array: never let it 500 the limiter.
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
-            ->by(($request->input('email')).'|'.$request->ip()));
+            ->by((is_string($request->input('email')) ? $request->input('email') : '').'|'.$request->ip()));
     }
 }

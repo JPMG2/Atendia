@@ -174,3 +174,28 @@ test('the backfill can be bounded to the last days', function (): void {
     expect($recent->fresh()->analyzed_message_id)->not->toBeNull()
         ->and($old->fresh()->analyzed_message_id)->toBeNull();
 });
+
+test('each question keeps when it was asked, not when it was analyzed', function (): void {
+    ConversationAnalyst::fake([[
+        'questions' => [['message' => 1, 'question' => '¿Abren los sábados?', 'intent' => 'hours', 'subject' => '', 'resolved_by' => 'nobody']],
+        'sentiment' => 'neutral',
+    ]]);
+    $thread = threadSaying($this->business, [['in', '¿abren los sábados?']], ['last_message_at' => now()->subDays(30)]);
+    $thread->messages()->update(['created_at' => now()->subDays(30)]);
+
+    $this->artisan('atendia:analyze-conversations');
+
+    expect(ConversationQuestion::query()->sole()->asked_at->toDateString())->toBe(now()->subDays(30)->toDateString());
+});
+
+test('a marathon thread is analyzed in parts, the watermark moving part by part', function (): void {
+    ConversationAnalyst::fake([['questions' => [], 'sentiment' => 'neutral'], ['questions' => [], 'sentiment' => 'neutral']]);
+    $thread = threadSaying($this->business, array_fill(0, 61, ['in', '¿Tienen turnos?']));
+    $ids = $thread->messages()->orderBy('id')->pluck('id');
+
+    $this->artisan('atendia:analyze-conversations');
+    expect($thread->fresh()->analyzed_message_id)->toBe($ids[59]);
+
+    $this->artisan('atendia:analyze-conversations');
+    expect($thread->fresh()->analyzed_message_id)->toBe($ids[60]);
+});

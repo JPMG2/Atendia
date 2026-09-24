@@ -85,6 +85,8 @@ return [
     ],
 
     'conversations' => [
+
+        'reply_unavailable' => 'No pudimos enviar tu respuesta: tu WhatsApp no está conectado. Revisá la conexión e intentá de nuevo.',
         'empty_body' => 'Cuando tu asistente atienda el WhatsApp, acá vas a ver cada conversación.',
         'taught_list_title' => 'Lo que aprendió acá',
         'select' => 'Elegí una conversación para leerla.',
@@ -94,7 +96,6 @@ return [
 
     'assistant' => [
         'sub' => 'Todo lo que usa para responder, a la vista. Enseñale lo que tu catálogo no dice.',
-        'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enseñásela y no vuelve a pasar.',
         'suggestions_sub' => 'Tus clientes lo preguntaron y tu asistente no tuvo la respuesta. Enseñásela una vez y deja de pasar.',
         'approved_many' => '{0}No se pudo aprobar ninguna. Revisalas una por una.|{1}Tu asistente aprendió 1 respuesta.|[2,*]Tu asistente aprendió :count respuestas.',
         'no_drafts' => 'Tu conocimiento no tiene base para sugerir estas. Respondelas vos.',

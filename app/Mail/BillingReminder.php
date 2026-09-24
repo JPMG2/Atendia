@@ -35,7 +35,9 @@ class BillingReminder extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $subscription = $this->model->subscription;
+        // loadMissing: the billing pass hands over businesses loaded in a batch,
+        // where a lazy load is refused.
+        $subscription = $this->model->loadMissing('subscription')->subscription;
 
         return new Content(
             view: 'emails.billing.reminder',

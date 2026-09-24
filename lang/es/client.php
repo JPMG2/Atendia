@@ -317,6 +317,8 @@ return [
     ],
 
     'conversations' => [
+
+        'reply_unavailable' => 'No pudimos enviar tu respuesta: tu WhatsApp no está conectado. Revisa la conexión e intenta de nuevo.',
         'title' => 'Conversaciones',
         'sub' => 'Todo lo que tu asistente conversa con tus clientes.',
         'search' => 'Buscar por nombre o teléfono',
@@ -403,6 +405,7 @@ return [
         'approved_many' => '{0}No se pudo aprobar ninguna. Revísalas una por una.|{1}Tu asistente aprendió 1 respuesta.|[2,*]Tu asistente aprendió :count respuestas.',
         'taught_title' => 'Tu asistente ya sabe responder «:question».',
         'taught_close' => 'Cerrar',
+        'taught_many_title' => '{1}Tu asistente aprendió 1 respuesta nueva.|[2,*]Tu asistente aprendió :count respuestas nuevas.',
         'notify_customers' => '{1}Avisarle al cliente que preguntó|[2,*]Avisarles a los :count clientes que preguntaron',
         'notify_confirm_title' => '{1}¿Avisarle al cliente?|[2,*]¿Avisarles a los :count clientes?',
         'notify_confirm_body' => 'Les llega por tu WhatsApp la respuesta que enseñaste, en la misma charla.',
@@ -412,13 +415,10 @@ return [
         'recovery_days' => '{0}el mismo día|{1}1 día después|[2,*]:count días después',
         'recovery_returned' => '{1}1 volvió a escribir|[2,*]:count volvieron a escribir',
         'notify_customer_message' => "¡Hola! Hace unos días nos preguntaste: «:question». Ya tenemos la respuesta:\n\n:answer",
-        'misses_title' => 'Preguntas sin responder',
-        'misses_sub' => 'Tus clientes preguntaron esto y tu asistente no tuvo la respuesta. Enséñasela y no vuelve a pasar.',
         'miss_count' => '{1}1 vez|[2,*]:count veces',
         'view_thread' => 'Ver el hilo',
         'teach' => 'Enseñar la respuesta',
         'suggest' => 'Sugerir respuestas',
-        'use_draft' => 'Usar borrador',
         'no_drafts' => 'Tu conocimiento no tiene base para sugerir estas. Respóndelas tú.',
         'sources_title' => 'Lo que aprende solo',
         'sources_sub' => 'Estas fuentes se indexan automáticamente cada vez que las cambias.',

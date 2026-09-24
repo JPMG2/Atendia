@@ -13,6 +13,7 @@ use App\Models\Service;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use App\Services\Tenant;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Collection;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -76,17 +77,31 @@ class SearchCatalog implements AssistantSkillTool
 
     private function offer(): string
     {
-        $services = Service::query()->where('is_active', true)->orderBy('name')->limit(self::LISTED)->pluck('name');
-        $products = Product::query()->where('is_active', true)->orderBy('name')->limit(self::LISTED)->pluck('name');
+        $services = Service::query()->where('is_active', true)->orderBy('name')->pluck('name');
+        $products = Product::query()->where('is_active', true)->orderBy('name')->pluck('name');
 
         if ($services->isEmpty() && $products->isEmpty()) {
             return 'El negocio no cargó servicios ni productos.';
         }
 
         return collect([
-            $services->isNotEmpty() ? 'Servicios: '.$services->implode(', ') : null,
-            $products->isNotEmpty() ? 'Productos: '.$products->implode(', ') : null,
+            $services->isNotEmpty() ? 'Servicios: '.$this->listed($services) : null,
+            $products->isNotEmpty() ? 'Productos: '.$this->listed($products) : null,
         ])->filter()->implode("\n");
+    }
+
+    /**
+     * The first names and, said out loud, how many more: a silent cut reads
+     * to the model as the whole catalog.
+     *
+     * @param  Collection<int, string>  $names
+     */
+    private function listed(Collection $names): string
+    {
+        $more = $names->count() - self::LISTED;
+
+        return $names->take(self::LISTED)->implode(', ')
+            .($more > 0 ? " y {$more} más (buscá por nombre para ver uno puntual)" : '');
     }
 
     public function schema(JsonSchema $schema): array

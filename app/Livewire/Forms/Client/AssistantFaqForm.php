@@ -47,14 +47,20 @@ class AssistantFaqForm extends BaseForm
         $this->resetErrorBag();
     }
 
-    /** The sheet opens on the rewritten question, with the team's answer as the draft. */
+    /**
+     * The sheet opens on the rewritten question with the team's answer as the
+     * draft. Taught before and failing again, it CORRECTS that answer: a
+     * second one would sit beside the stale one and retrieval could keep it.
+     */
     public function setupFromSuggestion(KnowledgeSuggestion $suggestion): void
     {
-        $this->setup();
+        $taught = $suggestion->document?->source_type === 'faq' ? $suggestion->document : null;
+
+        $this->setup($taught);
         $this->suggestionId = $suggestion->id;
-        $this->conversationId = $suggestion->latestQuestion?->conversation_id;
-        $this->question = mb_substr($suggestion->question, 0, 200);
-        $this->answer = (string) $suggestion->teamAnswer?->answer;
+        $this->conversationId = $taught === null ? $suggestion->latestQuestion?->conversation_id : null;
+        $this->question = $taught === null ? mb_substr($suggestion->question, 0, 200) : $this->question;
+        $this->answer = (string) ($suggestion->teamAnswer?->answer ?? $this->answer);
     }
 
     public function save(): NotificationDto

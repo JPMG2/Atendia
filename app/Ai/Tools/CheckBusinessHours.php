@@ -41,7 +41,7 @@ class CheckBusinessHours implements AssistantSkillTool
             return 'El negocio no cargó sus horarios de atención.';
         }
 
-        $now = now($this->business->timezone ?? config('app.timezone'));
+        $now = now($this->business->localTimezone());
         $today = BusinessHour::dayNames()[(int) $now->format('w')];
         $state = $this->business->isOpenNow() ? 'abierto' : 'cerrado';
 

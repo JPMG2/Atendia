@@ -255,7 +255,7 @@ new class extends Component
                         <span>{{ $thread->latestMessage?->body }}</span>
                     </div>
                     <span class="recent-time font-mono">
-                        {{ $thread->last_message_at?->isToday() ? $thread->last_message_at->format('H:i') : $thread->last_message_at?->format('d/m') }}
+                        {{ $thread->last_message_at?->inBusinessTime()->isToday() ? $thread->last_message_at->inBusinessTime()->format('H:i') : $thread->last_message_at?->inBusinessTime()->format('d/m') }}
                     </span>
                 </a>
             @endforeach

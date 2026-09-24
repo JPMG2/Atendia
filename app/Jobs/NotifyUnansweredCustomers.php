@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Actions\Business\SendHumanReply;
+use App\Actions\Business\SendAssistantNotice;
 use App\Enums\SuggestionStatus;
 use App\Models\Business;
 use App\Models\ConversationQuestion;
@@ -15,8 +15,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 /**
- * Sends a just-taught answer to the customers who asked it and were left
- * without one, through the business's own WhatsApp and into each thread.
+ * Sends a taught answer to the customers who asked it and were left without
+ * one, as the assistant, through the business's own WhatsApp.
  * Unique per suggestion: a double click must not message anyone twice.
  */
 class NotifyUnansweredCustomers implements ShouldBeUnique, ShouldQueue
@@ -30,7 +30,7 @@ class NotifyUnansweredCustomers implements ShouldBeUnique, ShouldQueue
         return (string) $this->suggestionId;
     }
 
-    public function handle(SendHumanReply $reply): void
+    public function handle(SendAssistantNotice $reply): void
     {
         app(Tenant::class)->for($this->businessId, function () use ($reply): void {
             $business = Business::query()->find($this->businessId);
@@ -48,8 +48,11 @@ class NotifyUnansweredCustomers implements ShouldBeUnique, ShouldQueue
             $suggestion->notifiableQuestions()->with('conversation')->get()
                 ->groupBy('conversation_id')
                 ->each(function ($askings) use ($business, $reply, $text): void {
-                    // Stamped only once it really left: a disconnected number retries later.
-                    if ($reply->handle($business, $askings->first()->conversation, $text) !== null) {
+                    // Stamped only once it really left: the 10-minute sweep retries the rest,
+                    // and one failing thread never blocks the others.
+                    $sent = rescue(fn () => $reply->handle($business, $askings->first()->conversation, $text));
+
+                    if ($sent !== null) {
                         ConversationQuestion::query()->whereKey($askings->pluck('id')->all())->update(['customer_notified_at' => now()]);
                     }
                 });

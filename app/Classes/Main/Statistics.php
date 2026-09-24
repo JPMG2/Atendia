@@ -13,6 +13,7 @@ use App\Models\ConversationQuestion;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -24,13 +25,30 @@ class Statistics
 {
     public function __construct(private Business $business) {}
 
+    /** The business's clock: its months, days and peak hours, not UTC's. */
+    private string $timezone {
+        get => $this->business->localTimezone();
+    }
+
+    /** "Now" on the business's clock; boundaries built from it convert back to UTC for the queries. */
+    private function now(): CarbonImmutable
+    {
+        return CarbonImmutable::now($this->timezone);
+    }
+
+    /** A UTC-stored timestamp column read on the business's clock, for grouping in SQL. */
+    private function local(string $column): string
+    {
+        return "({$column} at time zone 'UTC' at time zone ".DB::getPdo()->quote($this->timezone).')';
+    }
+
     /**
      * @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int, recovered: int}
      */
     public function monthKpis(?CarbonImmutable $month = null): array
     {
-        $month ??= CarbonImmutable::now();
-        [$from, $to] = [$month->startOfMonth(), $month->endOfMonth()];
+        $month = ($month ?? $this->now())->setTimezone($this->timezone);
+        [$from, $to] = [$month->startOfMonth()->utc(), $month->endOfMonth()->utc()];
 
         $inbound = $this->inbound()->whereBetween('created_at', [$from, $to]);
         $threadIds = (clone $inbound)->distinct('conversation_id')->pluck('conversation_id');
@@ -38,7 +56,7 @@ class Statistics
         return [
             'conversations' => $threadIds->count(),
             'new_contacts' => $this->business->conversations()->whereBetween('created_at', [$from, $to])->count(),
-            'questions' => $this->questions()->whereBetween('created_at', [$from, $to])->count(),
+            'questions' => $this->questions()->whereBetween('asked_at', [$from, $to])->count(),
             'audio_minutes' => (int) ceil((clone $inbound)->sum('audio_seconds') / 60),
             'resolution' => $this->resolutionRate($from, $to),
             'recovered' => $this->recoveredCustomers($from, $to),
@@ -68,7 +86,7 @@ class Statistics
      */
     private function resolutionRate(CarbonImmutable $from, CarbonImmutable $to): int
     {
-        $month = $this->questions()->whereBetween('created_at', [$from, $to]);
+        $month = $this->questions()->whereBetween('asked_at', [$from, $to]);
         $total = (clone $month)->count();
 
         return $total === 0 ? 0 : (int) round($month->where('resolved_by', QuestionResolution::Assistant)->count() / $total * 100);
@@ -82,11 +100,11 @@ class Statistics
      */
     public function dailySeries(int $days = 30): array
     {
-        $from = CarbonImmutable::today()->subDays($days - 1);
+        $from = $this->now()->startOfDay()->subDays($days - 1);
 
         $rows = $this->inbound()
-            ->where('created_at', '>=', $from)
-            ->selectRaw('date(created_at) as day, count(distinct conversation_id) as total')
+            ->where('created_at', '>=', $from->utc())
+            ->selectRaw('date('.$this->local('created_at').') as day, count(distinct conversation_id) as total')
             ->groupBy('day')
             ->pluck('total', 'day');
 
@@ -127,8 +145,8 @@ class Statistics
     public array $peakHours {
         get {
             $rows = $this->inbound()
-                ->where('created_at', '>=', CarbonImmutable::now()->startOfMonth())
-                ->selectRaw('extract(hour from created_at)::int as hour, count(*) as total')
+                ->where('created_at', '>=', $this->now()->startOfMonth()->utc())
+                ->selectRaw('extract(hour from '.$this->local('created_at').')::int as hour, count(*) as total')
                 ->groupBy('hour')
                 ->pluck('total', 'hour');
 
@@ -168,8 +186,9 @@ class Statistics
             $first = $this->inbound()->min('created_at');
 
             return [
-                'since' => $first === null ? null : CarbonImmutable::parse($first),
-                'questions' => $this->questions()->count(),
+                'since' => $first === null ? null : CarbonImmutable::parse($first, 'UTC')->setTimezone($this->timezone),
+                // The sentence says the ASSISTANT answered them: the team's and the unanswered do not count.
+                'questions' => $this->questions()->where('resolved_by', QuestionResolution::Assistant)->count(),
                 'conversations' => $this->business->conversations()->count(),
             ];
         }
@@ -185,10 +204,14 @@ class Statistics
         $trend = [];
 
         for ($i = $months - 1; $i >= 0; $i--) {
-            $month = CarbonImmutable::now()->subMonths($i);
+            $month = $this->now()->startOfMonth()->subMonthsNoOverflow($i);
             $trend[] = [
                 'label' => $month->translatedFormat('M'),
-                'count' => $this->monthKpis($month)['conversations'],
+                // Only the thread count: the full KPI set cost six extra queries per month.
+                'count' => $this->inbound()
+                    ->whereBetween('created_at', [$month->utc(), $month->endOfMonth()->utc()])
+                    ->distinct('conversation_id')
+                    ->count('conversation_id'),
             ];
         }
 
@@ -204,10 +227,10 @@ class Statistics
      */
     public array $topics {
         get {
-            $month = CarbonImmutable::now()->startOfMonth();
-            $rows = $this->topicCounts($month, $month->endOfMonth());
-            $previous = $this->topicCounts($month->subMonthNoOverflow(), $month->subSecond())->pluck('asked', 'topic');
-            $samples = $this->topicSamples($month);
+            $month = $this->now()->startOfMonth();
+            $rows = $this->topicCounts($month->utc(), $month->endOfMonth()->utc());
+            $previous = $this->topicCounts($month->subMonthNoOverflow()->utc(), $month->subSecond()->utc())->pluck('asked', 'topic');
+            $samples = $this->topicSamples($month->utc());
             $hasCatalog = $this->hasCatalog();
 
             return $rows->map(fn (object $row): array => [
@@ -235,7 +258,7 @@ class Statistics
     private function topicCounts(CarbonImmutable $from, CarbonImmutable $to): Collection
     {
         return $this->questions()
-            ->whereBetween('conversation_questions.created_at', [$from, $to])
+            ->whereBetween('conversation_questions.asked_at', [$from, $to])
             ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
             ->leftJoin('knowledge_suggestions', 'knowledge_suggestions.id', '=', 'conversation_questions.knowledge_suggestion_id')
             ->groupBy('question_intents.name')
@@ -257,7 +280,7 @@ class Statistics
     private function topicSamples(CarbonImmutable $from): array
     {
         return $this->questions()
-            ->where('conversation_questions.created_at', '>=', $from)
+            ->where('conversation_questions.asked_at', '>=', $from)
             ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
             ->latest('conversation_questions.id')
             ->limit(500)
@@ -282,7 +305,7 @@ class Statistics
         }
 
         return $this->questions()
-            ->where('created_at', '>=', CarbonImmutable::now()->startOfMonth())
+            ->where('asked_at', '>=', $this->now()->startOfMonth()->utc())
             ->whereNotNull('subject')
             ->whereNull('service_id')
             ->whereNull('product_id')

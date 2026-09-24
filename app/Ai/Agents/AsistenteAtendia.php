@@ -80,7 +80,8 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
     {
         $response = $this->prompt($question);
 
-        if ($this->business === null || $response->toolCalls->isNotEmpty()) {
+        // Small talk ("hola", "gracias") never needs grounding: re-asking it doubled the bill.
+        if ($this->business === null || $response->toolCalls->isNotEmpty() || ! ConversationMessage::looksLikeEnquiry($question)) {
             return $response;
         }
 

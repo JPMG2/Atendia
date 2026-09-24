@@ -13,6 +13,7 @@ use App\Models\AssistantSkill;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessHour;
+use App\Models\Country;
 use App\Models\Product;
 use App\Models\Service;
 use App\Services\Knowledge\KnowledgeEmbedder;
@@ -149,4 +150,24 @@ test('a switched-off skill leaves every assistant', function (): void {
 
     expect($tools->contains(fn ($tool): bool => $tool instanceof GetBusinessContact))->toBeFalse()
         ->and($tools->contains(fn ($tool): bool => $tool instanceof CheckBusinessHours))->toBeTrue();
+});
+
+test('with no timezone of its own a business keeps its country\'s clock', function (): void {
+    $venezuela = Country::factory()->create(['iso2' => 'VE']);
+    $business = Business::factory()->create(['timezone' => null, 'country_id' => $venezuela->id]);
+    BusinessHour::factory()->create(['business_id' => $business->id, 'day_of_week' => 1, 'opens_at' => '08:00', 'closes_at' => '12:00']);
+
+    // Monday 13:30 UTC is 09:30 in Caracas: open. Read in UTC it said closed.
+    $this->travelTo(CarbonImmutable::parse('2026-09-21 13:30:00', 'UTC'));
+
+    expect($business->localTimezone())->toBe('America/Caracas')
+        ->and($business->isOpenNow())->toBeTrue()
+        ->and((string) (new CheckBusinessHours($business))->handle(new Request([])))->toContain('09:30');
+});
+
+test('the catalog list says how many more it left out instead of passing as complete', function (): void {
+    $business = Business::factory()->create();
+    Service::factory()->count(32)->create(['business_id' => $business->id, 'is_active' => true]);
+
+    expect((string) (new SearchCatalog($business))->handle(new Request(['item' => ''])))->toContain('y 2 más');
 });

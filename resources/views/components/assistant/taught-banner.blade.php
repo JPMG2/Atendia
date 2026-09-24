@@ -1,33 +1,35 @@
 @props([
-    'suggestion',        // KnowledgeSuggestion just taught, with its document
+    'suggestions',       // Collection<KnowledgeSuggestion> just taught, each with its document
     'notified' => false, // the customers were already told this session
 ])
 
 @php
-    $indexed = $suggestion->document?->indexed_at !== null;
-    $customers = $notified ? 0 : $suggestion->notifiableCustomers();
+    $single = $suggestions->count() === 1 ? $suggestions->first() : null;
+    // Only a document that still exists can be waiting on its index; a deleted
+    // one must not keep the banner polling forever.
+    $learning = $suggestions->contains(fn ($suggestion) => $suggestion->document !== null && $suggestion->document->indexed_at === null);
+    $customers = $notified ? 0 : $suggestions->sum(fn ($suggestion) => $suggestion->notifiableCustomers());
+    $title = $single !== null
+        ? __('client.assistant.taught_title', ['question' => $single->question])
+        : trans_choice('client.assistant.taught_many_title', $suggestions->count(), ['count' => $suggestions->count()]);
 @endphp
 
 {{-- Right after teaching: the proof it works and the customers it can win
-back. Polls only while the answer is still being indexed. --}}
-<div class="mb-4" @unless ($indexed) wire:poll.3s @endunless>
-    <x-ui.alert
-        variant="success"
-        icon="check"
-        :title="__('client.assistant.taught_title', ['question' => $suggestion->question])"
-    >
+back. Polls only while an answer is still being indexed. --}}
+<div class="mb-4" @if ($learning) wire:poll.3s @endif>
+    <x-ui.alert variant="success" icon="check" :title="$title">
         <div class="mt-2 flex flex-wrap items-center gap-2">
-            @if ($indexed)
+            @if ($single !== null && $single->document?->indexed_at !== null)
                 <x-ui.button
                     variant="secondary"
                     size="sm"
                     icon="bot"
                     class="data-loading:opacity-50"
-                    wire:click="tryNow({{ $suggestion->document->id }})"
+                    wire:click="tryNow({{ $single->document->id }})"
                 >
                     {{ __('client.assistant.try') }}
                 </x-ui.button>
-            @else
+            @elseif ($learning)
                 <span class="text-muted font-mono text-xs">{{ __('client.assistant.learning') }}</span>
             @endif
 

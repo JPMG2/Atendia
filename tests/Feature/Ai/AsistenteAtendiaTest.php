@@ -136,3 +136,11 @@ test('a reply written by a person of the team reaches the memory tagged as such'
     expect($agent->messages()[0]->content)->toBe('[Escrito por una persona del equipo del negocio] No estamos abiertos hoy')
         ->and((string) $agent->instructions())->toContain('No los contradigas');
 });
+
+test('small talk is never re-asked: a greeting costs one call, not two', function (): void {
+    AsistenteAtendia::fake(['¡Hola! ¿En qué te ayudo?']);
+
+    (new AsistenteAtendia(Business::factory()->create()))->answer('hola, gracias');
+
+    AsistenteAtendia::assertNotPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'Recordatorio del sistema'));
+});

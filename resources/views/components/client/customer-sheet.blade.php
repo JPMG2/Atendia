@@ -12,7 +12,7 @@ component must use the ManagesCustomerSheet trait: every wire call and the
     <x-ui.slide-over
         x-on:slide-over-close="$wire.closeCustomer()"
         :title="$customer->displayName() ?? __('client.conversations.anonymous')"
-        :subtitle="__('client.customers.since', ['date' => $customer->first_seen_at?->format('d/m/Y')])"
+        :subtitle="__('client.customers.since', ['date' => $customer->first_seen_at?->inBusinessTime()->format('d/m/Y')])"
     >
         <div class="flex flex-col gap-4">
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -95,12 +95,12 @@ component must use the ManagesCustomerSheet trait: every wire call and the
                 @if ($customer->marketing_opt_in_at !== null)
                     <p class="text-body flex items-center gap-1.5 text-sm">
                         <x-icon name="check" :size="16" style="color: var(--success)" />
-                        {{ __('client.customers.opt_in_yes', ['date' => $customer->marketing_opt_in_at->format('d/m/Y')]) }}
+                        {{ __('client.customers.opt_in_yes', ['date' => $customer->marketing_opt_in_at->inBusinessTime()->format('d/m/Y')]) }}
                     </p>
                 @else
                     @if ($customer->marketing_opt_in_requested_at !== null)
                         <p class="text-muted mb-2 text-xs">
-                            {{ __('client.customers.opt_in_requested', ['date' => $customer->marketing_opt_in_requested_at->format('d/m/Y')]) }}
+                            {{ __('client.customers.opt_in_requested', ['date' => $customer->marketing_opt_in_requested_at->inBusinessTime()->format('d/m/Y')]) }}
                         </p>
                     @endif
                     <x-ui.button variant="secondary" size="sm" icon="gift" wire:click="requestOptIn">

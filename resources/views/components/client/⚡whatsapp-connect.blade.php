@@ -134,7 +134,7 @@ new class extends Component
                     <p class="text-body text-sm">{{ __('whatsapp.connected.body') }}</p>
                     <p class="text-muted text-sm">
                         {{ __('whatsapp.connected.since') }}
-                        <span class="font-mono">{{ $this->business->whatsapp_connected_at?->format('d/m/Y H:i') }}</span>
+                        <span class="font-mono">{{ $this->business->whatsapp_connected_at?->inBusinessTime()->format('d/m/Y H:i') }}</span>
                     </p>
                 </div>
             </div>

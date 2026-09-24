@@ -14,10 +14,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * A customer's question rewritten to stand on its own: the semantic unit
  * that topics, suggestions and statistics group and count.
  */
-#[Fillable(['business_id', 'conversation_id', 'conversation_analysis_id', 'conversation_message_id', 'question_intent_id', 'question', 'subject', 'service_id', 'product_id', 'resolved_by', 'answer', 'customer_notified_at', 'knowledge_suggestion_id', 'embedding'])]
+#[Fillable(['business_id', 'conversation_id', 'conversation_analysis_id', 'conversation_message_id', 'question_intent_id', 'question', 'subject', 'service_id', 'product_id', 'resolved_by', 'asked_at', 'answer', 'customer_notified_at', 'knowledge_suggestion_id', 'embedding'])]
 class ConversationQuestion extends Model
 {
     use BelongsToBusiness;
+
+    protected static function booted(): void
+    {
+        // The analysis always stamps the asking message's time; a row written
+        // by hand without one is treated as asked now.
+        static::creating(function (ConversationQuestion $question): void {
+            $question->asked_at ??= now();
+        });
+    }
 
     /**
      * @return array<string, string>
@@ -28,6 +37,7 @@ class ConversationQuestion extends Model
             'resolved_by' => QuestionResolution::class,
             'embedding' => 'array',
             'customer_notified_at' => 'datetime',
+            'asked_at' => 'datetime',
         ];
     }
 

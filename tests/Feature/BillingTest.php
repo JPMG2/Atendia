@@ -213,6 +213,21 @@ test('the owner is reminded at 10 and 5 days, once each, by mail and whatsapp', 
     'seven days' => [7, false],
 ]);
 
+test('every business due gets its reminder when several are billed in one pass', function (): void {
+    // Lazy-loading protection only fires when the models came in a batch:
+    // one business passed, two in production broke the whatsapp line (2026-09-24).
+    foreach (['5491122334455', '5491166778899'] as $phone) {
+        dueIn(billingClient(['fallback_whatsapp_number' => $phone]), 10);
+    }
+
+    $this->artisan('atendia:billing-cycle')->assertSuccessful();
+
+    foreach (['5491122334455', '5491166778899'] as $phone) {
+        Http::assertSent(fn (Request $request): bool => $request['number'] === $phone && str_contains((string) $request['text'], 'en 10 días'));
+    }
+    Mail::assertQueued(BillingReminder::class, 2);
+});
+
 test('a lapsed period gets grace days, reminded daily, and then pauses the assistant', function (): void {
     $user = billingClient();
     dueIn($user, -1);

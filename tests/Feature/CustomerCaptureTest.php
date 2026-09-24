@@ -198,3 +198,11 @@ test('birthday greetings reach only today\'s celebrants on connected instances',
 
     Http::assertSentCount(1);
 });
+
+test('an impossible birthday is refused instead of rolled over to another date', function (): void {
+    $customer = Customer::factory()->create();
+    $tool = new RememberCustomerFact($customer);
+
+    expect((string) $tool->handle(new Request(['field' => 'birthday', 'value' => '1990-13-45'])))->toContain('no guardado')
+        ->and($customer->refresh()->birthday)->toBeNull();
+});

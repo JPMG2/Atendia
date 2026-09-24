@@ -80,3 +80,8 @@ it('logout revoca únicamente el token usado en la petición', function (): void
 
     expect($user->tokens()->count())->toBe(0);
 });
+
+test('an email sent as a list is a validation error, never a crash', function (): void {
+    $this->postJson('/api/v1/login', ['email' => ['a@b.test'], 'password' => 'secret'])
+        ->assertUnprocessable();
+});

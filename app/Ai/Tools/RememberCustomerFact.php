@@ -58,7 +58,8 @@ class RememberCustomerFact implements AssistantSkillTool
             return 'Dato no guardado: el correo no parece válido.';
         }
 
-        if ($field === 'birthday' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        // checkdate too: "2024-13-45" fits the pattern and the date cast would roll it over.
+        if ($field === 'birthday' && (! preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $date) || ! checkdate((int) $date[2], (int) $date[3], (int) $date[1]))) {
             return 'Dato no guardado: el cumpleaños va en formato AAAA-MM-DD.';
         }
 

@@ -188,7 +188,7 @@ new class extends Component
                                     <x-ui.badge variant="brand">{{ __('client.customers.badge_optin') }}</x-ui.badge>
                                 @endif
                                 <span class="text-subtle flex-none font-mono text-xs">
-                                    {{ $customer->last_activity_at?->isToday() ? $customer->last_activity_at->format('H:i') : $customer->last_activity_at?->format('d/m') }}
+                                    {{ $customer->last_activity_at?->inBusinessTime()->isToday() ? $customer->last_activity_at->inBusinessTime()->format('H:i') : $customer->last_activity_at?->inBusinessTime()->format('d/m') }}
                                 </span>
                             </button>
                         </li>

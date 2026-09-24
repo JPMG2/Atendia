@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Business;
 use Closure;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +26,21 @@ class Tenant
      * as never having set anything.
      */
     private bool $overridden = false;
+
+    /** @var array<int, string> business id => its clock, resolved once per request */
+    private array $timezones = [];
+
+    /** The current business's clock, for showing times the way its owner lives them. */
+    public function timezone(): string
+    {
+        $id = $this->id();
+
+        if ($id === null) {
+            return (string) config('app.timezone');
+        }
+
+        return $this->timezones[$id] ??= Business::query()->find($id)?->localTimezone() ?? (string) config('app.timezone');
+    }
 
     public function id(): ?int
     {

@@ -142,8 +142,10 @@ new class extends Component
             return $threads;
         }
 
-        $start = Carbon::createFromFormat('Y-m-d', (string) $from)->startOfDay();
-        $end = Carbon::createFromFormat('Y-m-d', (string) $to)->endOfDay();
+        // The picked days are the owner's days, not UTC's.
+        $timezone = app(\App\Services\Tenant::class)->timezone();
+        $start = Carbon::createFromFormat('Y-m-d', (string) $from, $timezone)->startOfDay();
+        $end = Carbon::createFromFormat('Y-m-d', (string) $to, $timezone)->endOfDay();
 
         return $threads->filter(fn (Conversation $thread): bool => $thread->last_message_at !== null
             && $thread->last_message_at->between($start, $end));
@@ -206,7 +208,7 @@ new class extends Component
             : $this->inbox()?->threadMatches((int) $this->selected, $needle);
 
         return $messages
-            ?->groupBy(fn (ConversationMessage $message): string => (string) $message->created_at?->toDateString())
+            ?->groupBy(fn (ConversationMessage $message): string => (string) $message->created_at?->inBusinessTime()->toDateString())
             ?? new Collection;
     }
 
@@ -351,7 +353,7 @@ new class extends Component
         $sent = app(SendHumanReply::class)->handle($business, $thread, $text);
 
         if ($sent === null) {
-            $this->dispatchNotification(new NotificationDto(__('client.customers.opt_in_unavailable'), NotificationType::Error));
+            $this->dispatchNotification(new NotificationDto(__('client.conversations.reply_unavailable'), NotificationType::Error));
 
             return;
         }
@@ -519,7 +521,7 @@ new class extends Component
                                             <x-ui.badge variant="accent">{{ __('client.conversations.status_team_chip') }}</x-ui.badge>
                                         @endif
                                         <span class="text-subtle flex-none font-mono text-xs">
-                                            {{ $row->last_message_at?->isToday() ? $row->last_message_at->format('H:i') : $row->last_message_at?->format('d/m') }}
+                                            {{ $row->last_message_at?->inBusinessTime()->isToday() ? $row->last_message_at->inBusinessTime()->format('H:i') : $row->last_message_at?->inBusinessTime()->format('d/m') }}
                                         </span>
                                     </span>
                                     <span class="text-muted block truncate text-xs">
@@ -661,7 +663,7 @@ new class extends Component
                                 group, so it unsticks when the day scrolls past instead
                                 of piling on the next chip. --}}
                                 @foreach ($this->threadDays as $messages)
-                                    @php($day = $messages->first()->created_at)
+                                    @php($day = $messages->first()->created_at->inBusinessTime())
                                     <div class="space-y-2" wire:key="day-{{ $day->toDateString() }}">
                                         <div class="pm-day">
                                             <span>
@@ -673,7 +675,7 @@ new class extends Component
                                                 <div class="pm-note" wire:key="msg-{{ $message->id }}">
                                                     <x-icon name="lock" :size="12" class="mt-1 flex-none" />
                                                     <span class="min-w-0">{{ $message->body }}</span>
-                                                    <span class="pm-time font-mono">{{ $message->created_at?->format('H:i') }}</span>
+                                                    <span class="pm-time font-mono">{{ $message->created_at?->inBusinessTime()->format('H:i') }}</span>
                                                 </div>
                                                 @continue
                                             @endif
@@ -706,7 +708,7 @@ new class extends Component
                                                         @if ($message->author === App\Enums\MessageAuthor::Human)
                                                             {{ __('client.conversations.human_tag') }} ·
                                                         @endif
-                                                        {{ $message->created_at?->format('H:i') }}
+                                                        {{ $message->created_at?->inBusinessTime()->format('H:i') }}
                                                     </span>
                                                 </div>
                                                 @if (isset($this->teachable[$message->id]))

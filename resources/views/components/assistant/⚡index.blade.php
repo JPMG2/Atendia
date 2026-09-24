@@ -100,6 +100,7 @@ new class extends Component
     }
 
     /** @var array<string, string> question => AI-drafted answer, this request's crop */
+    #[Locked]
     public array $drafts = [];
 
     /**
@@ -153,39 +154,44 @@ new class extends Component
 
         if ($notification->type !== NotificationType::Error) {
             $this->sheetOpen = false;
-            $this->lastTaughtId = $suggestionId;
+            $this->lastTaughtIds = $suggestionId === null ? [] : [$suggestionId];
             $this->customersNotified = false;
         }
     }
 
-    /** The suggestion just taught: the banner offers to try it and to tell who asked. */
+    /** @var list<int> the suggestions just taught: the banner offers to try them and to tell who asked */
     #[Locked]
-    public ?int $lastTaughtId = null;
+    public array $lastTaughtIds = [];
 
     #[Locked]
     public bool $customersNotified = false;
 
+    /** @return Collection<int, KnowledgeSuggestion> */
     #[Computed]
-    public function lastTaught(): ?KnowledgeSuggestion
+    public function lastTaught(): Collection
     {
-        return $this->lastTaughtId === null ? null : $this->knowledge()?->taughtSuggestion($this->lastTaughtId);
+        return new Collection(array_values(array_filter(array_map(
+            fn (int $id): ?KnowledgeSuggestion => $this->knowledge()?->taughtSuggestion($id),
+            $this->lastTaughtIds,
+        ))));
     }
 
     public function closeTaught(): void
     {
-        $this->lastTaughtId = null;
+        $this->lastTaughtIds = [];
     }
 
-    /** The dialog confirmed: the answer goes to whoever asked and got none. */
+    /**
+     * The dialog confirmed: the answers go to whoever asked and got none,
+     * and the 10-minute sweep keeps telling anyone linked later.
+     */
     public function notifyCustomers(): void
     {
-        $suggestion = $this->lastTaught;
-
-        if ($suggestion === null) {
-            return;
+        foreach ($this->lastTaught as $suggestion) {
+            $suggestion->forceFill(['notify_requested_at' => now()])->save();
+            NotifyUnansweredCustomers::dispatch($suggestion->business_id, $suggestion->id);
         }
 
-        NotifyUnansweredCustomers::dispatch($suggestion->business_id, $suggestion->id);
         $this->customersNotified = true;
 
         $this->dispatchNotification(new NotificationDto(__('client.assistant.customers_notified'), NotificationType::Success));
@@ -197,21 +203,26 @@ new class extends Component
      */
     public function approveTeamDrafts(): void
     {
-        $taught = 0;
+        $taughtIds = [];
 
         foreach ($this->suggestions->flatten(1)->filter(fn (KnowledgeSuggestion $suggestion): bool => $suggestion->teamAnswer !== null) as $suggestion) {
             $this->form->setupFromSuggestion($suggestion);
+            $this->form->answer = (string) $suggestion->teamAnswer?->answer;
 
             try {
-                $taught += $this->form->save()->type !== NotificationType::Error ? 1 : 0;
+                if ($this->form->save()->type !== NotificationType::Error) {
+                    $taughtIds[] = $suggestion->id;
+                }
             } catch (ValidationException) {
                 continue;
             }
         }
 
         $this->form->setup();
-        $this->lastTaughtId = null;
+        $this->lastTaughtIds = $taughtIds;
+        $this->customersNotified = false;
         unset($this->suggestions);
+        $taught = count($taughtIds);
 
         $this->dispatchNotification(new NotificationDto(
             trans_choice('client.assistant.approved_many', $taught, ['count' => $taught]),
@@ -220,6 +231,7 @@ new class extends Component
     }
 
     /** @var array{question: string, answer: string}|null */
+    #[Locked]
     public ?array $tryResult = null;
 
     /**
@@ -292,8 +304,8 @@ new class extends Component
         </div>
     </div>
 
-    @if ($this->lastTaught !== null)
-        <x-assistant.taught-banner :suggestion="$this->lastTaught" :notified="$customersNotified" />
+    @if ($this->lastTaught->isNotEmpty())
+        <x-assistant.taught-banner :suggestions="$this->lastTaught" :notified="$customersNotified" />
     @endif
 
     {{-- The teaching queue on top, one list for everything the assistant
@@ -415,7 +427,7 @@ new class extends Component
                     <li wire:key="faq-{{ $faq->id }}" class="hover:bg-sunken flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-2 py-2.5 transition-colors">
                         <button type="button" wire:click="edit({{ $faq->id }})" class="min-w-0 flex-1 text-left">
                             <span class="text-strong block truncate text-sm font-semibold">{{ $faq->title }}</span>
-                            <span class="text-muted block truncate text-xs">{{ str($faq->content)->after("Respuesta: ") }}</span>
+                            <span class="text-muted block truncate text-xs">{{ $faq->faqAnswer() }}</span>
                             @if ($faq->recovery !== null)
                                 <x-assistant.faq-recovery :recovery="$faq->recovery" />
                             @endif

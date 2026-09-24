@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Actions\Business\SendHumanReply;
+use App\Actions\Business\SendAssistantNotice;
 use App\Ai\Agents\ConversationAnalyst;
 use App\Ai\Agents\QuestionMatcher;
+use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\SuggestionStatus;
 use App\Jobs\NotifyUnansweredCustomers;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
 use App\Models\ConversationQuestion;
 use App\Models\KnowledgeDocument;
@@ -162,6 +165,8 @@ test('a failure after teaching reopens the suggestion, a dismissed one absorbs i
         return [$taught, $dismissed];
     });
 
+    // Asked after the teaching: only then is it a relapse.
+    $this->travel(1)->minutes();
     ConversationAnalyst::fake([
         askedAndAnswered($this->business, '¿Abren los sábados?', 'nobody'),
         askedAndAnswered($this->business, '¿Tienen estacionamiento?', 'nobody'),
@@ -227,8 +232,8 @@ test('the taught answer reaches only the quiet threads left without one, once', 
 
     expect($suggestion->notifiableCustomers())->toBe(1);
 
-    (new NotifyUnansweredCustomers($business->id, $suggestion->id))->handle(app(SendHumanReply::class));
-    (new NotifyUnansweredCustomers($business->id, $suggestion->id))->handle(app(SendHumanReply::class));
+    (new NotifyUnansweredCustomers($business->id, $suggestion->id))->handle(app(SendAssistantNotice::class));
+    (new NotifyUnansweredCustomers($business->id, $suggestion->id))->handle(app(SendAssistantNotice::class));
 
     Http::assertSentCount(1);
     Http::assertSent(fn ($request): bool => $request['number'] === '5491100000001'
@@ -236,6 +241,75 @@ test('the taught answer reaches only the quiet threads left without one, once', 
         && str_contains((string) $request['text'], 'Sí, de 8 a 12.')
         && ! str_contains((string) $request['text'], 'Pregunta:'));
 
-    expect($stranded->messages()->latest('id')->first()->body)->toContain('Sí, de 8 a 12.')
+    // Sent as the assistant, the thread untouched: when the customer writes back the assistant answers.
+    expect($stranded->messages()->latest('id')->first())
+        ->body->toContain('Sí, de 8 a 12.')
+        ->author->toBe(MessageAuthor::Assistant)
+        ->and($stranded->fresh()->status)->toBe(ConversationStatus::Open)
         ->and($suggestion->notifiableCustomers())->toBe(0);
+});
+
+test('a question asked before the teaching arrives late but does not reopen it', function (): void {
+    embedderWith(['¿Abren los sábados?' => 1.0]);
+    QuestionMatcher::fake()->preventStrayPrompts();
+    ConversationAnalyst::fake([askedAndAnswered($this->business, '¿Abren los sábados?')]);
+    $this->artisan('atendia:analyze-conversations');
+
+    // Asked at 10:00, taught at 11:00, analyzed at 12:10: late news, not a relapse.
+    ConversationAnalyst::fake([askedAndAnswered($this->business, '¿Abren los sábados?', 'nobody')]);
+    $this->travel(1)->hours();
+    $suggestion = app(Tenant::class)->for($this->business->id, fn () => KnowledgeSuggestion::query()->sole());
+    $suggestion->markTaught(KnowledgeDocument::factory()->create(['business_id' => $this->business->id, 'source_type' => 'faq']));
+    Conversation::query()->update(['last_message_at' => now()->subHours(3)]);
+
+    $this->artisan('atendia:analyze-conversations');
+
+    expect($suggestion->fresh()->status)->toBe(SuggestionStatus::Taught);
+});
+
+test('the owner\'s notify request keeps reaching askers linked later, never a thread in human hands', function (): void {
+    config()->set('services.evolution.url', 'http://evolution.test');
+    config()->set('services.evolution.key', 'test-key');
+    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
+    embedderWith([]);
+
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo', 'whatsapp_connected_at' => now()]);
+    $quiet = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => '5491100000001', 'last_message_at' => now()->subHours(3)]);
+    $held = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => '5491100000002', 'last_message_at' => now()->subHours(3), 'status' => ConversationStatus::Team]);
+
+    $suggestion = KnowledgeSuggestion::factory()->askedIn($held)->create(['business_id' => $business->id, 'question' => '¿Abren los sábados?']);
+    $suggestion->markTaught(KnowledgeDocument::factory()->create(['business_id' => $business->id, 'source_type' => 'faq', 'content' => "Pregunta: ¿Abren los sábados?\nRespuesta: Sí."]));
+    $suggestion->forceFill(['notify_requested_at' => now()])->save();
+
+    // A late asker joins after the owner asked to tell everyone.
+    app(Tenant::class)->for($business->id, fn () => ConversationQuestion::query()->create([
+        'business_id' => $business->id, 'conversation_id' => $quiet->id,
+        'conversation_analysis_id' => ConversationAnalysis::query()->create(['business_id' => $business->id, 'conversation_id' => $quiet->id, 'first_message_id' => 1, 'last_message_id' => 1, 'sentiment' => 'neutral'])->id,
+        'question' => '¿Abren los sábados?', 'resolved_by' => 'nobody', 'knowledge_suggestion_id' => $suggestion->id,
+    ]));
+
+    $this->artisan('atendia:analyze-conversations');
+
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request): bool => $request['number'] === '5491100000001');
+    expect($held->fresh()->status)->toBe(ConversationStatus::Team);
+});
+
+test('a question stored while the embedder was down gets its vector from the sweep', function (): void {
+    $calls = 0;
+    $this->mock(KnowledgeEmbedder::class)->shouldReceive('embed')->andReturnUsing(function (array $texts) use (&$calls): array {
+        // Down only for the analysis itself: the question is stored without a vector.
+        if (++$calls === 1) {
+            throw new RuntimeException('embedder down');
+        }
+
+        return array_map(fn (): array => array_fill(0, 1536, 0.01), $texts);
+    });
+    QuestionMatcher::fake()->preventStrayPrompts();
+    ConversationAnalyst::fake([askedAndAnswered($this->business, '¿Abren los sábados?')]);
+
+    $this->artisan('atendia:analyze-conversations');
+
+    expect($calls)->toBeGreaterThan(1)
+        ->and(app(Tenant::class)->for($this->business->id, fn () => ConversationQuestion::query()->sole()->embedding))->not->toBeNull();
 });

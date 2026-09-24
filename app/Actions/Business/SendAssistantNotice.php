@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Business;
 
-use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Models\Business;
@@ -13,11 +12,11 @@ use App\Models\ConversationMessage;
 use App\Services\EvolutionApi;
 
 /**
- * A human answers from the panel: the text rides the business's own
- * WhatsApp, lands in the thread as a HUMAN turn (the assistant reads it
- * back as memory), and the ball passes to the customer.
+ * A message the ASSISTANT sends on its own, like a late answer: it lands as
+ * an assistant turn and leaves the thread's status alone, so the assistant
+ * keeps answering when the customer writes back.
  */
-class SendHumanReply
+class SendAssistantNotice
 {
     public function __construct(private EvolutionApi $evolution, private TranslateForCustomer $translate) {}
 
@@ -33,17 +32,11 @@ class SendHumanReply
 
         $message = $conversation->messages()->create([
             'direction' => MessageDirection::Out,
-            'author' => MessageAuthor::Human,
+            'author' => MessageAuthor::Assistant,
             'body' => $text,
         ]);
 
-        // The ball passes to the customer, and the forgotten-thread clock stops.
-        $conversation->fill([
-            'status' => ConversationStatus::Customer,
-            'escalated_at' => null,
-            'handoff_reminded_at' => null,
-            'last_message_at' => now(),
-        ])->save();
+        $conversation->forceFill(['last_message_at' => now()])->save();
 
         return $message;
     }
