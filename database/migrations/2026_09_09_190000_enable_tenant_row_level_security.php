@@ -32,6 +32,8 @@ return new class extends Migration
         'customers',
         'conversations',
         'conversation_messages',
+        'conversation_analyses',
+        'conversation_questions',
         'subscriptions',
         'payments',
         'testimonials',

@@ -16,6 +16,8 @@ Schedule::command('atendia:whatsapp-digest')->dailyAt('20:30');
 Schedule::command('atendia:knowledge-digest')->weeklyOn(1, '09:30');
 Schedule::command('atendia:birthday-greetings')->dailyAt('09:15');
 Schedule::command('atendia:handoff-reminders')->everyTenMinutes();
+// Finished threads get read whole once: questions, who solved them, mood.
+Schedule::command('atendia:analyze-conversations')->everyTenMinutes();
 
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->dailyAt('09:00');

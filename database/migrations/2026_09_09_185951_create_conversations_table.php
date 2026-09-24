@@ -29,6 +29,7 @@ return new class extends Migration
             $table->timestamp('escalated_at')->nullable()->comment('Esperando al equipo DESDE; el reloj del recordatorio de hilo olvidado');
             $table->timestamp('handoff_reminded_at')->nullable()->comment('Recordatorio enviado (una vez por entrada a team)');
             $table->timestamp('last_message_at')->nullable()->comment('Para ordenar la bandeja; lo sella cada intercambio');
+            $table->unsignedBigInteger('analyzed_message_id')->nullable()->comment('Hasta qué mensaje se analizó la charla; lo nuevo se analiza al terminar');
             $table->timestamps();
 
             $table->unique(['business_id', 'contact_phone']);

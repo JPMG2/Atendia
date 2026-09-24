@@ -11,6 +11,7 @@ use App\Services\Tenant;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,7 @@ class Conversation extends Model
             'escalated_at' => 'datetime',
             'handoff_reminded_at' => 'datetime',
             'last_message_at' => 'datetime',
+            'analyzed_message_id' => 'integer',
         ];
     }
 
@@ -61,6 +63,27 @@ class Conversation extends Model
     }
 
     /**
+     * Threads with an unanalyzed stretch that has finished: resolved, or
+     * quiet for the idle window. A thread waiting for the team is still
+     * going — its questions are not settled yet.
+     *
+     * @param  Builder<Conversation>  $query
+     */
+    public function scopeReadyForAnalysis(Builder $query, int $idleHours, ?int $withinDays = null): void
+    {
+        $query->where('status', '!=', ConversationStatus::Team)
+            ->where(fn (Builder $finished): Builder => $finished
+                ->where('status', ConversationStatus::Resolved)
+                ->orWhere('last_message_at', '<=', now()->subHours($idleHours)))
+            ->whereExists(fn ($pending) => $pending->selectRaw('1')
+                ->from('conversation_messages')
+                ->whereColumn('conversation_messages.conversation_id', 'conversations.id')
+                ->where('conversation_messages.kind', MessageKind::Message->value)
+                ->whereRaw('conversation_messages.id > coalesce(conversations.analyzed_message_id, 0)'))
+            ->when($withinDays !== null, fn (Builder $recent): Builder => $recent->where('last_message_at', '>=', now()->subDays($withinDays)));
+    }
+
+    /**
      * @return BelongsTo<Customer, $this>
      */
     public function customer(): BelongsTo
@@ -74,6 +97,14 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ConversationMessage::class);
+    }
+
+    /**
+     * @return HasMany<ConversationAnalysis, $this>
+     */
+    public function analyses(): HasMany
+    {
+        return $this->hasMany(ConversationAnalysis::class);
     }
 
     /**

@@ -163,6 +163,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Conversation analysis
+    |--------------------------------------------------------------------------
+    | A thread nobody marked resolved counts as finished after this many quiet
+    | hours, and only then is it analyzed. Moves to the admin dashboard's
+    | settings once that exists.
+    */
+
+    'analysis' => [
+        'idle_hours' => env('ANALYSIS_IDLE_HOURS', 2),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Referral program ("Gana con AtendIa")
     |--------------------------------------------------------------------------
     |
