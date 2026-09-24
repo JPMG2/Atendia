@@ -54,39 +54,7 @@ class SyncOfferKnowledge
             ->with(['category', 'serviceType'])
             ->orderBy('id')
             ->get()
-            ->map(function (Service $service): string {
-                $parts = ['Servicio: '.$service->name];
-
-                if ($service->category !== null) {
-                    $parts[] = 'Categoría: '.$service->category->name;
-                }
-
-                $parts[] = match (true) {
-                    $service->price_type === 'free' => 'Precio: gratis',
-                    $service->price_type === 'talk' => 'Precio: a convenir',
-                    $service->price !== null && $service->price_type === 'from' => 'Precio: desde $ '.$this->amount($service->price),
-                    $service->price !== null => 'Precio: $ '.$this->amount($service->price),
-                    default => 'Precio: consultar',
-                };
-
-                if ($service->deposit !== null) {
-                    $parts[] = 'Adelanto para reservar: $ '.$this->amount($service->deposit);
-                }
-
-                if ($service->duration_minutes !== null) {
-                    $parts[] = 'Duración: '.$service->duration_minutes.' minutos';
-                }
-
-                if ($service->description !== null) {
-                    $parts[] = 'Descripción: '.$service->description;
-                }
-
-                if ($service->prep_note !== null) {
-                    $parts[] = 'Preparación previa: '.$service->prep_note;
-                }
-
-                return implode(' · ', [...$parts, ...$this->attributeParts($service->service_type_id, $service->attribute_values ?? [])]);
-            })
+            ->map(fn (Service $service): string => $this->describeService($service))
             ->implode("\n");
     }
 
@@ -97,32 +65,72 @@ class SyncOfferKnowledge
             ->where('is_active', true)
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product): string {
-                $parts = ['Producto: '.$product->name];
-
-                if ($product->code !== null) {
-                    $parts[] = 'Código: '.$product->code;
-                }
-
-                if ($product->price !== null) {
-                    $parts[] = 'Precio: $ '.$this->amount($product->price);
-                }
-
-                if ($product->stock !== null) {
-                    $parts[] = 'Cantidad disponible: '.$this->amount($product->stock);
-                }
-
-                if (! $product->in_stock) {
-                    $parts[] = 'Disponibilidad: sin stock por ahora';
-                }
-
-                if ($product->description !== null) {
-                    $parts[] = 'Descripción: '.$product->description;
-                }
-
-                return implode(' · ', [...$parts, ...$this->attributeParts($product->service_type_id, $product->attribute_values ?? [])]);
-            })
+            ->map(fn (Product $product): string => $this->describeProduct($product))
             ->implode("\n");
+    }
+
+    /** One service as the assistant reads it, price rules and curated fields included. */
+    public function describeService(Service $service): string
+    {
+        $parts = ['Servicio: '.$service->name];
+
+        if ($service->category !== null) {
+            $parts[] = 'Categoría: '.$service->category->name;
+        }
+
+        $parts[] = match (true) {
+            $service->price_type === 'free' => 'Precio: gratis',
+            $service->price_type === 'talk' => 'Precio: a convenir',
+            $service->price !== null && $service->price_type === 'from' => 'Precio: desde $ '.$this->amount($service->price),
+            $service->price !== null => 'Precio: $ '.$this->amount($service->price),
+            default => 'Precio: consultar',
+        };
+
+        if ($service->deposit !== null) {
+            $parts[] = 'Adelanto para reservar: $ '.$this->amount($service->deposit);
+        }
+
+        if ($service->duration_minutes !== null) {
+            $parts[] = 'Duración: '.$service->duration_minutes.' minutos';
+        }
+
+        if ($service->description !== null) {
+            $parts[] = 'Descripción: '.$service->description;
+        }
+
+        if ($service->prep_note !== null) {
+            $parts[] = 'Preparación previa: '.$service->prep_note;
+        }
+
+        return implode(' · ', [...$parts, ...$this->attributeParts($service->service_type_id, $service->attribute_values ?? [])]);
+    }
+
+    /** One product as the assistant reads it; out of stock says so instead of vanishing. */
+    public function describeProduct(Product $product): string
+    {
+        $parts = ['Producto: '.$product->name];
+
+        if ($product->code !== null) {
+            $parts[] = 'Código: '.$product->code;
+        }
+
+        if ($product->price !== null) {
+            $parts[] = 'Precio: $ '.$this->amount($product->price);
+        }
+
+        if ($product->stock !== null) {
+            $parts[] = 'Cantidad disponible: '.$this->amount($product->stock);
+        }
+
+        if (! $product->in_stock) {
+            $parts[] = 'Disponibilidad: sin stock por ahora';
+        }
+
+        if ($product->description !== null) {
+            $parts[] = 'Descripción: '.$product->description;
+        }
+
+        return implode(' · ', [...$parts, ...$this->attributeParts($product->service_type_id, $product->attribute_values ?? [])]);
     }
 
     /**

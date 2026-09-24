@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\ConversationStatus;
+use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Services\EvolutionApi;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -19,12 +20,17 @@ use Stringable;
  * assistant falls silent in this thread only. Pinned at construction —
  * the model never chooses which thread it escalates.
  */
-class EscalateToHuman implements Tool
+class EscalateToHuman implements AssistantSkillTool
 {
     public function __construct(
         private readonly Business $business,
         private readonly Conversation $conversation,
     ) {}
+
+    public static function forAssistant(AsistenteAtendia $assistant): ?static
+    {
+        return $assistant->business !== null && $assistant->conversation !== null ? new static($assistant->business, $assistant->conversation) : null;
+    }
 
     /**
      * Get the description of the tool's purpose.

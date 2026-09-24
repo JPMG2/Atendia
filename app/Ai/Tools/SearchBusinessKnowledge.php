@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Ai\Agents\AsistenteAtendia;
 use App\Dto\RetrievedChunkDto;
+use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\KnowledgeMiss;
 use App\Services\Knowledge\KnowledgeRetriever;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -19,12 +20,17 @@ use Stringable;
  * argument the model writes could point the search at another tenant. The
  * retriever adopts the business, so the isolation scope does the rest.
  */
-class SearchBusinessKnowledge implements Tool
+class SearchBusinessKnowledge implements AssistantSkillTool
 {
     public function __construct(
         private readonly int $businessId,
         private readonly ?int $conversationId = null,
     ) {}
+
+    public static function forAssistant(AsistenteAtendia $assistant): ?static
+    {
+        return $assistant->business !== null ? new static($assistant->business->id, $assistant->conversation?->id) : null;
+    }
 
     /** @var array<int, string> document id => title, every search of this exchange */
     private array $sourcesById = [];
@@ -48,10 +54,10 @@ class SearchBusinessKnowledge implements Tool
      */
     public function description(): Stringable|string
     {
-        return 'Busca en la base de conocimiento del negocio (servicios, inventario, '
-            .'listas de precios y documentos importados) la información relevante a la '
-            .'consulta del cliente. Usala SIEMPRE antes de afirmar o negar que el '
-            .'negocio ofrece algo.';
+        return 'Busca en la base de conocimiento del negocio (respuestas que enseñó el '
+            .'dueño, políticas, documentos y listas importadas) la información relevante a '
+            .'la consulta. Usala para todo lo que no cubren el catálogo, los horarios o el '
+            .'contacto, y antes de negar que el negocio ofrece algo.';
     }
 
     /**

@@ -34,12 +34,18 @@ function knowledgeVector(int $index): array
     return $vector;
 }
 
+/** The knowledge skill among the assistant's tools, wherever it sits. */
+function knowledgeToolOf(AsistenteAtendia $agent): ?SearchBusinessKnowledge
+{
+    return collect(iterator_to_array($agent->tools()))->first(fn ($tool): bool => $tool instanceof SearchBusinessKnowledge);
+}
+
 test('the assistant carries the search tool only while serving a business', function (): void {
     $business = Business::factory()->create();
 
     // With no business (AtendIa's own site) there is no knowledge to search.
     expect(iterator_to_array((new AsistenteAtendia)->tools()))->toBe([])
-        ->and(iterator_to_array((new AsistenteAtendia($business))->tools())[0])
+        ->and(knowledgeToolOf(new AsistenteAtendia($business)))
         ->toBeInstanceOf(SearchBusinessKnowledge::class);
 });
 
@@ -141,18 +147,18 @@ test('the agent memoizes the search tool so the provenance survives the prompt',
     Embeddings::fake(fn () => [knowledgeVector(0)]);
 
     $agent = new AsistenteAtendia($business);
-    $tool = iterator_to_array($agent->tools())[0];
+    $tool = knowledgeToolOf($agent);
     $tool->handle(new Request(['query' => 'alternador']));
 
     // A second tools() pass (the re-ask) must hand back the SAME instance.
-    expect(iterator_to_array($agent->tools())[0])->toBe($tool)
+    expect(knowledgeToolOf($agent))->toBe($tool)
         ->and($agent->knowledgeSources())->toBe([['id' => $document->id, 'title' => 'Inventario 2026']]);
 });
 
-test('the instructions demand searching before claiming, and honesty when not found', function (): void {
+test('the instructions demand the tools before claiming, and honesty when not found', function (): void {
     $instructions = (string) (new AsistenteAtendia)->instructions();
 
-    expect($instructions)->toContain('buscá SIEMPRE primero')
+    expect($instructions)->toContain('Tus datos salen SIEMPRE de tus herramientas')
         ->toContain('Nunca inventes');
 });
 
@@ -178,7 +184,7 @@ test('the agent pins the thread on its knowledge tool', function (): void {
 
     Embeddings::fake(fn () => [knowledgeVector(0)]);
 
-    $tool = iterator_to_array((new AsistenteAtendia($business, $conversation))->tools())[0];
+    $tool = knowledgeToolOf(new AsistenteAtendia($business, $conversation));
     $tool->handle(new Request(['query' => 'algo que no existe']));
 
     expect(KnowledgeMiss::query()->sole()->conversation_id)->toBe($conversation->id);

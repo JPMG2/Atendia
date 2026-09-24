@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Ai\Agents\AsistenteAtendia;
+use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Customer;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -15,13 +16,18 @@ use Stringable;
  * the model files it on THIS customer's record. The customer is pinned at
  * construction — the model never picks whose record it writes.
  */
-class RememberCustomerFact implements Tool
+class RememberCustomerFact implements AssistantSkillTool
 {
     private const array FIELDS = ['name', 'email', 'birthday', 'marketing_opt_in'];
 
     public function __construct(
         private readonly Customer $customer,
     ) {}
+
+    public static function forAssistant(AsistenteAtendia $assistant): ?static
+    {
+        return $assistant->customer !== null ? new static($assistant->customer) : null;
+    }
 
     /**
      * Get the description of the tool's purpose.

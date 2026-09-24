@@ -1,6 +1,12 @@
 <?php
 
 declare(strict_types=1);
+use App\Ai\Tools\CheckBusinessHours;
+use App\Ai\Tools\EscalateToHuman;
+use App\Ai\Tools\GetBusinessContact;
+use App\Ai\Tools\RememberCustomerFact;
+use App\Ai\Tools\SearchBusinessKnowledge;
+use App\Ai\Tools\SearchCatalog;
 
 return [
 
@@ -178,6 +184,28 @@ return [
         'same_intent_similarity' => 0.75,
         'catalog_similarity' => 0.58,
         'promote_after_businesses' => 3,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Assistant skills
+    |--------------------------------------------------------------------------
+    | Skill key (the assistant_skills row) => the tool that performs it. A
+    | trade's own skill joins here and in its seeder; which trades get it is
+    | data. The catalog search bar is lower than the analysis link on purpose:
+    | here the model sees the candidates and judges them itself.
+    */
+
+    'assistant' => [
+        'catalog_search_similarity' => 0.45,
+        'skills' => [
+            'catalog' => SearchCatalog::class,
+            'hours' => CheckBusinessHours::class,
+            'contact' => GetBusinessContact::class,
+            'knowledge' => SearchBusinessKnowledge::class,
+            'escalate' => EscalateToHuman::class,
+            'remember_customer' => RememberCustomerFact::class,
+        ],
     ],
 
     /*

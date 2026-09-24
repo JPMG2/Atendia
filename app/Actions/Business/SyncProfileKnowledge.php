@@ -6,7 +6,6 @@ namespace App\Actions\Business;
 
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
-use App\Models\SocialLink;
 
 /**
  * Publishes the business's own card — hours, address, contact, networks —
@@ -38,27 +37,9 @@ class SyncProfileKnowledge
             $lines[] = 'Rubro: '.$activity->name;
         }
 
-        $lines = [...$lines, ...$this->premisesLines($business), ...$this->hourLines($business), ...$this->contactLines($business)];
+        $lines = [...$lines, ...$business->premisesLines(), ...$this->hourLines($business), ...$business->contactLines()];
 
         return implode("\n", $lines);
-    }
-
-    /** @return list<string> */
-    private function premisesLines(Business $business): array
-    {
-        $lines = [];
-
-        if ($business->has_premises === false) {
-            $lines[] = 'Atención: sin local, se atiende a distancia o a domicilio.';
-        }
-
-        $address = implode(', ', array_filter([$business->address, $business->city]));
-
-        if ($address !== '') {
-            $lines[] = 'Dirección: '.$address;
-        }
-
-        return $lines;
     }
 
     /**
@@ -72,23 +53,5 @@ class SyncProfileKnowledge
         $lines = $business->scheduleLines();
 
         return $lines === [] ? [] : ['Horarios de atención:', ...$lines];
-    }
-
-    /** @return list<string> */
-    private function contactLines(Business $business): array
-    {
-        $lines = array_values(array_filter([
-            $business->whatsapp_number !== null ? 'WhatsApp: '.$business->whatsapp_number : null,
-            $business->email !== null ? 'Correo: '.$business->email : null,
-            $business->web !== null ? 'Sitio web: '.$business->web : null,
-        ]));
-
-        $networks = $business->socialLinks()
-            ->with('socialNetwork')
-            ->get()
-            ->map(fn (SocialLink $link): string => ($link->socialNetwork?->name ?? 'Red').': '.$link->url)
-            ->all();
-
-        return [...$lines, ...$networks];
     }
 }

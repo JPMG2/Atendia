@@ -486,6 +486,50 @@ class Business extends Model
     }
 
     /**
+     * Where the customer finds the business, as the assistant says it.
+     *
+     * @return list<string>
+     */
+    public function premisesLines(): array
+    {
+        $lines = [];
+
+        if ($this->has_premises === false) {
+            $lines[] = 'Atención: sin local, se atiende a distancia o a domicilio.';
+        }
+
+        $address = implode(', ', array_filter([$this->address, $this->city]));
+
+        if ($address !== '') {
+            $lines[] = 'Dirección: '.$address;
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Every way to reach the business, social networks included.
+     *
+     * @return list<string>
+     */
+    public function contactLines(): array
+    {
+        $lines = array_values(array_filter([
+            $this->whatsapp_number !== null ? 'WhatsApp: '.$this->whatsapp_number : null,
+            $this->email !== null ? 'Correo: '.$this->email : null,
+            $this->web !== null ? 'Sitio web: '.$this->web : null,
+        ]));
+
+        $networks = $this->socialLinks()
+            ->with('socialNetwork')
+            ->get()
+            ->map(fn (SocialLink $link): string => ($link->socialNetwork?->name ?? 'Red').': '.$link->url)
+            ->all();
+
+        return [...$lines, ...$networks];
+    }
+
+    /**
      * Open right now, in the BUSINESS's own timezone. No hours on file means
      * always open: silence must never mute the reminders.
      */

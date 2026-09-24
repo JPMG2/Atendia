@@ -35,18 +35,30 @@ trait EmbedsName
      */
     public static function closestTo(array $vector): ?array
     {
-        $item = static::query()
+        return static::closestMany($vector, 1)[0] ?? null;
+    }
+
+    /**
+     * The current tenant's active items nearest in meaning, best first.
+     *
+     * @param  list<float>  $vector
+     * @return list<array{id: int, name: string, similarity: float}>
+     */
+    public static function closestMany(array $vector, int $limit): array
+    {
+        return static::query()
             ->where('is_active', true)
             ->whereNotNull('embedding')
             ->select(['id', 'name'])
             ->selectVectorDistance('embedding', $vector, as: 'distance')
             ->orderByVectorDistance('embedding', $vector)
-            ->first();
-
-        return $item === null ? null : [
-            'id' => (int) $item->id,
-            'name' => (string) $item->name,
-            'similarity' => 1 - (float) $item->getAttribute('distance'),
-        ];
+            ->limit($limit)
+            ->get()
+            ->map(fn (Model $item): array => [
+                'id' => (int) $item->getKey(),
+                'name' => (string) $item->getAttribute('name'),
+                'similarity' => 1 - (float) $item->getAttribute('distance'),
+            ])
+            ->all();
     }
 }
