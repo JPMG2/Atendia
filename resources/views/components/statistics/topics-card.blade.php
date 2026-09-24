@@ -1,5 +1,5 @@
 @props([
-    'topics', // list<array{topic: string, asked: int, alone: int, action: ?string}>
+    'topics', // list<array{topic: string, asked: int, alone: int, delta: ?int, samples: list<array{question: string, resolved_by: string}>, action: ?string}>
 ])
 
 {{-- One row per topic: volume, how much the assistant solved alone and
@@ -21,10 +21,31 @@ the one move that fixes the rest. The reading goes on top. --}}
             </div>
 
             @foreach ($topics as $topic)
-                <div class="stats-topic" role="row">
-                    <span class="stats-topic-name" role="cell">{{ $topic['topic'] }}</span>
+                <div class="stats-topic" role="row" x-data="{ open: false }">
+                    <span class="stats-topic-name" role="cell">
+                        {{-- The row unfolds into what customers actually wrote, the Intercom Topics habit. --}}
+                        <button
+                            type="button"
+                            class="stats-topic-toggle"
+                            x-on:click="open = ! open"
+                            x-bind:aria-expanded="open"
+                        >
+                            <x-icon
+                                name="chevron-right"
+                                :size="14"
+                                x-bind:class="open && 'rotate-90'"
+                                class="transition-transform"
+                            />
+                            {{ $topic['topic'] }}
+                        </button>
+                    </span>
                     <span class="stats-topic-count" role="cell">
                         {{ trans_choice('statistics.topics.asked', $topic['asked'], ['count' => $topic['asked']]) }}
+                        @if ($topic['delta'] !== null && $topic['delta'] !== 0)
+                            <span class="stats-topic-delta" data-trend="{{ $topic['delta'] > 0 ? 'up' : 'down' }}">
+                                {{ $topic['delta'] > 0 ? '↑' : '↓' }} {{ abs($topic['delta']) }}%
+                            </span>
+                        @endif
                     </span>
                     <span class="stats-topic-alone" role="cell">
                         <span class="plan-meter-track"
@@ -55,6 +76,17 @@ the one move that fixes the rest. The reading goes on top. --}}
                             </x-ui.button>
                         @endif
                     </span>
+                    <ul class="stats-topic-samples" x-show="open" x-cloak>
+                        @foreach ($topic['samples'] as $sample)
+                            <li>
+                                <span>{{ $sample['question'] }}</span>
+                                <span
+                                    class="stats-topic-by"
+                                    data-by="{{ $sample['resolved_by'] }}"
+                                >{{ __('statistics.topics.by.'.$sample['resolved_by']) }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             @endforeach
         </div>

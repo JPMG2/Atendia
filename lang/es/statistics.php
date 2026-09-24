@@ -17,6 +17,7 @@ return [
         'new_contacts' => 'Clientes nuevos',
         'questions' => 'Consultas del mes',
         'audio_minutes' => 'Minutos de audio',
+        'recovered' => 'Clientes recuperados',
     ],
 
     'daily' => [
@@ -33,6 +34,11 @@ return [
         'asked' => '{1}1 consulta|[2,*]:count consultas',
         'teach' => 'Enseñar',
         'add_catalog' => 'Agregar al catálogo',
+        'by' => [
+            'assistant' => 'Respondió tu asistente',
+            'team' => 'Respondió tu equipo',
+            'nobody' => 'Sin respuesta',
+        ],
     ],
 
     'hours' => [

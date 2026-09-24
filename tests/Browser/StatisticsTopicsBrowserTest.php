@@ -58,5 +58,9 @@ test('the topics table reads the month and offers the fix per topic', function (
         ->assertSee('Lo que te preguntan, por tema')
         ->assertSee('Agregar al catálogo')
         ->assertSee('«Análisis a domicilio»')
+        ->assertSee('Clientes recuperados')
+        ->click('Precios y presupuestos')
+        ->assertSee('¿Y la glucemia?')
+        ->assertNoJavaScriptErrors()
         ->screenshot(fullPage: true, filename: 'statistics-topics');
 });

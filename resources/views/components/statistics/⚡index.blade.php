@@ -90,13 +90,14 @@ new class extends Component
             </div>
         @endif
 
-        <div class="stat-grid">
+        <div class="stat-grid stat-grid-fill">
             @foreach ([
                 'conversations' => 'message-circle',
                 'resolution' => 'check',
                 'new_contacts' => 'users',
                 'questions' => 'bot',
                 'audio_minutes' => 'zap',
+                'recovered' => 'send',
             ] as $key => $icon)
                 @php($delta = $this->deltaFor($key))
                 <x-ui.stat-card

@@ -12,6 +12,7 @@ use App\Models\ConversationMessage;
 use App\Models\ConversationQuestion;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -24,7 +25,7 @@ class Statistics
     public function __construct(private Business $business) {}
 
     /**
-     * @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int}
+     * @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int, recovered: int}
      */
     public function monthKpis(?CarbonImmutable $month = null): array
     {
@@ -40,7 +41,25 @@ class Statistics
             'questions' => $this->questions()->whereBetween('created_at', [$from, $to])->count(),
             'audio_minutes' => (int) ceil((clone $inbound)->sum('audio_seconds') / 60),
             'resolution' => $this->resolutionRate($from, $to),
+            'recovered' => $this->recoveredCustomers($from, $to),
         ];
+    }
+
+    /**
+     * Customers who got a taught answer late this month and wrote back
+     * after it: the ones teaching won back.
+     */
+    private function recoveredCustomers(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return $this->questions()
+            ->whereBetween('customer_notified_at', [$from, $to])
+            ->whereExists(fn ($reply) => $reply->selectRaw('1')
+                ->from('conversation_messages')
+                ->whereColumn('conversation_messages.conversation_id', 'conversation_questions.conversation_id')
+                ->where('conversation_messages.direction', MessageDirection::In->value)
+                ->whereColumn('conversation_messages.created_at', '>', 'conversation_questions.customer_notified_at'))
+            ->distinct()
+            ->count('conversation_questions.conversation_id');
     }
 
     /**
@@ -185,25 +204,19 @@ class Statistics
      */
     public array $topics {
         get {
-            $rows = $this->questions()
-                ->where('conversation_questions.created_at', '>=', CarbonImmutable::now()->startOfMonth())
-                ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
-                ->leftJoin('knowledge_suggestions', 'knowledge_suggestions.id', '=', 'conversation_questions.knowledge_suggestion_id')
-                ->groupBy('question_intents.name')
-                ->selectRaw('question_intents.name as topic, count(*) as asked')
-                ->selectRaw('count(*) filter (where resolved_by = ?) as alone', [QuestionResolution::Assistant->value])
-                ->selectRaw('count(*) filter (where resolved_by <> ? and subject is not null and service_id is null and product_id is null) as not_offered', [QuestionResolution::Assistant->value])
-                ->selectRaw('count(*) filter (where knowledge_suggestions.status = ?) as to_teach', [SuggestionStatus::Pending->value])
-                ->orderByDesc('asked')
-                ->toBase()
-                ->get();
-
+            $month = CarbonImmutable::now()->startOfMonth();
+            $rows = $this->topicCounts($month, $month->endOfMonth());
+            $previous = $this->topicCounts($month->subMonthNoOverflow(), $month->subSecond())->pluck('asked', 'topic');
+            $samples = $this->topicSamples($month);
             $hasCatalog = $this->hasCatalog();
 
             return $rows->map(fn (object $row): array => [
                 'topic' => $row->topic ?? __('client.assistant.suggestions_other'),
                 'asked' => (int) $row->asked,
                 'alone' => (int) round($row->alone / $row->asked * 100),
+                // No previous month, no arrow: a new topic has nothing to compare against.
+                'delta' => isset($previous[$row->topic]) ? (int) round(($row->asked - $previous[$row->topic]) / $previous[$row->topic] * 100) : null,
+                'samples' => $samples[$row->topic ?? ''] ?? [],
                 'action' => match (true) {
                     $hasCatalog && $row->not_offered > 0 => 'catalog',
                     $row->to_teach > 0 => 'teach',
@@ -211,6 +224,48 @@ class Statistics
                 },
             ])->all();
         }
+    }
+
+    /**
+     * Per topic in a window: asked, solved alone, failed on something not
+     * in the catalog, and still waiting in the teaching queue.
+     *
+     * @return Collection<int, object{topic: ?string, asked: int, alone: int, not_offered: int, to_teach: int}>
+     */
+    private function topicCounts(CarbonImmutable $from, CarbonImmutable $to): Collection
+    {
+        return $this->questions()
+            ->whereBetween('conversation_questions.created_at', [$from, $to])
+            ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
+            ->leftJoin('knowledge_suggestions', 'knowledge_suggestions.id', '=', 'conversation_questions.knowledge_suggestion_id')
+            ->groupBy('question_intents.name')
+            ->selectRaw('question_intents.name as topic, count(*) as asked')
+            ->selectRaw('count(*) filter (where resolved_by = ?) as alone', [QuestionResolution::Assistant->value])
+            ->selectRaw('count(*) filter (where resolved_by <> ? and subject is not null and service_id is null and product_id is null) as not_offered', [QuestionResolution::Assistant->value])
+            ->selectRaw('count(*) filter (where knowledge_suggestions.status = ?) as to_teach', [SuggestionStatus::Pending->value])
+            ->orderByDesc('asked')
+            ->toBase()
+            ->get();
+    }
+
+    /**
+     * The freshest real questions of each topic this month, so a row can
+     * unfold into what customers actually wrote.
+     *
+     * @return array<string, list<array{question: string, resolved_by: string}>> topic name ('' = none) => samples
+     */
+    private function topicSamples(CarbonImmutable $from): array
+    {
+        return $this->questions()
+            ->where('conversation_questions.created_at', '>=', $from)
+            ->leftJoin('question_intents', 'question_intents.id', '=', 'conversation_questions.question_intent_id')
+            ->latest('conversation_questions.id')
+            ->limit(500)
+            ->toBase()
+            ->get(['question_intents.name as topic', 'conversation_questions.question', 'conversation_questions.resolved_by'])
+            ->groupBy(fn (object $row): string => (string) $row->topic)
+            ->map(fn ($rows): array => $rows->take(5)->map(fn (object $row): array => ['question' => $row->question, 'resolved_by' => $row->resolved_by])->values()->all())
+            ->all();
     }
 
     /**

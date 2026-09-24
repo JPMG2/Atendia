@@ -151,3 +151,47 @@ test('what counts as a real question', function (string $text, bool $enquiry): v
     'greeting plus question' => ['Hola, quería saber el precio', true],
     'yes plus question' => ['Sí, pero ¿hacen domicilio?', true],
 ]);
+
+test('each topic compares with last month and unfolds into the real questions', function (): void {
+    $user = statsClient();
+    $this->travel(-1)->months();
+    analyzedQuestion($user, '¿Cuánto sale el hemograma?', 'price');
+    analyzedQuestion($user, '¿Precio del perfil?', 'price');
+    $this->travelBack();
+
+    analyzedQuestion($user, '¿Cuánto cuesta la glucemia?', 'price');
+    analyzedQuestion($user, '¿Y el colesterol?', 'price', 'nobody');
+    analyzedQuestion($user, '¿Precio de la orina?', 'price', 'team');
+    analyzedQuestion($user, '¿Abren los sábados?', 'hours');
+
+    $topics = collect((new Statistics($user->business))->topics)->keyBy('topic');
+
+    expect($topics['Precios y presupuestos']['delta'])->toBe(50)
+        ->and($topics['Horarios']['delta'])->toBeNull()
+        ->and(array_column($topics['Precios y presupuestos']['samples'], 'question'))
+        ->toBe(['¿Precio de la orina?', '¿Y el colesterol?', '¿Cuánto cuesta la glucemia?']);
+
+    $this->actingAs($user);
+
+    livewire('statistics.index')
+        ->assertSee('↑ 50%')
+        ->assertSee('¿Y el colesterol?')
+        ->assertSee(__('statistics.topics.by.nobody'));
+});
+
+test('a customer who wrote back after the late answer counts as recovered this month', function (): void {
+    $user = statsClient();
+    $wroteBack = analyzedQuestion($user, '¿Aceptan Visa?', 'payment', 'nobody');
+    $silent = analyzedQuestion($user, '¿Aceptan Visa?', 'payment', 'nobody');
+    $wroteBack->update(['customer_notified_at' => now()->subHour()]);
+    $silent->update(['customer_notified_at' => now()->subHour()]);
+    // The original questions came before the late answer; only a reply after it counts.
+    ConversationMessage::query()->update(['created_at' => now()->subHours(2)]);
+    ConversationMessage::factory()->create(['business_id' => $user->business_id, 'conversation_id' => $wroteBack->conversation_id, 'body' => '¡Gracias!']);
+
+    expect((new Statistics($user->business))->monthKpis()['recovered'])->toBe(1);
+
+    $this->actingAs($user);
+
+    livewire('statistics.index')->assertSee(__('statistics.kpis.recovered'));
+});
