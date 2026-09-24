@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\EmbedsName;
 use App\Traits\TracksUserActions;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -26,6 +27,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class Product extends Model
 {
     use BelongsToBusiness;
+    use EmbedsName;
 
     /** @use HasFactory<ProductFactory> */
     use HasFactory;

@@ -56,6 +56,9 @@ return new class extends Migration
             $table->jsonb('attribute_values')->nullable();
 
             $table->boolean('is_active')->default(true)->comment('Dejar de ofrecerlo sin borrarlo');
+            // The name's meaning vector: links what customers ask for ("el
+            // tiroideo") to the real catalog item. Null until the embed job runs.
+            $table->vector('embedding', dimensions: config('rag.embedding.dimensions'))->nullable()->index();
 
             // Pinned first on the list and when the assistant offers.
             $table->boolean('is_featured')->default(false);

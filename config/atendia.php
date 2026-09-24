@@ -168,12 +168,16 @@ return [
     | Conversation analysis
     |--------------------------------------------------------------------------
     | A thread nobody marked resolved counts as finished after this many quiet
-    | hours, and only then is it analyzed. Moves to the admin dashboard's
-    | settings once that exists.
+    | hours, and only then is it analyzed. The similarity bars were measured
+    | on real vectors (2026-09-24); a proposal becomes its trade's own once
+    | that many businesses see it. All move to the admin settings later.
     */
 
     'analysis' => [
         'idle_hours' => env('ANALYSIS_IDLE_HOURS', 2),
+        'same_intent_similarity' => 0.75,
+        'catalog_similarity' => 0.58,
+        'promote_after_businesses' => 3,
     ],
 
     /*

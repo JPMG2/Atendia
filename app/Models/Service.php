@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\EmbedsName;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -34,6 +35,7 @@ class Service extends Model
     public const array PRICE_TYPES = ['fixed', 'from', 'free', 'talk'];
 
     use BelongsToBusiness;
+    use EmbedsName;
 
     /** @use HasFactory<ServiceFactory> */
     use HasFactory;

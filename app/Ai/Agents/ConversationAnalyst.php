@@ -52,7 +52,11 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
               leer la charla, en español neutro, sin datos personales.
               "¿y los sábados?" hablando de horarios es "¿Abren los sábados?".
             - intent: la clave de la intención que mejor le queda de la lista
-              de abajo, o vacío si ninguna encaja.
+              de abajo, o vacío si ninguna encaja de verdad.
+            - new_intent / new_intent_description: SOLO si intent quedó vacío,
+              el motivo de consulta en 2 a 5 palabras, general y reutilizable
+              para otros clientes ("Estacionamiento para clientes"), y una
+              línea que diga qué entra. Si elegiste una intención, van vacíos.
             - subject: el servicio, producto o cosa concreta por la que
               pregunta, en 1 a 5 palabras ("Perfil tiroideo"), o vacío si no
               pregunta por algo puntual.
@@ -81,6 +85,8 @@ class ConversationAnalyst implements Agent, HasStructuredOutput
                         'message' => $schema->integer()->required(),
                         'question' => $schema->string()->required(),
                         'intent' => $schema->string()->required(),
+                        'new_intent' => $schema->string()->required(),
+                        'new_intent_description' => $schema->string()->required(),
                         'subject' => $schema->string()->required(),
                         'resolved_by' => $schema->string()->enum(array_column(QuestionResolution::cases(), 'value'))->required(),
                     ])

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
+            $table->timestamp('intents_generated_at')->nullable()->comment('Cuándo la IA armó las intenciones propias del oficio; null = todavía no');
             $table->timestamps();
 
             // The name is unique WITHIN the sector, not globally: two sectors may

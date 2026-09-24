@@ -55,6 +55,9 @@ return new class extends Migration
             $table->boolean('in_stock')->default(true);
 
             $table->boolean('is_active')->default(true)->comment('Dejar de venderlo sin borrarlo');
+            // The name's meaning vector: links what customers ask for ("el
+            // tiroideo") to the real catalog item. Null until the embed job runs.
+            $table->vector('embedding', dimensions: config('rag.embedding.dimensions'))->nullable()->index();
 
             // Deleting the user leaves the product: only the author is lost.
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

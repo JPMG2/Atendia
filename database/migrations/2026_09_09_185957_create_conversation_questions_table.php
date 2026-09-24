@@ -26,6 +26,8 @@ return new class extends Migration
 
             $table->string('question', 500)->comment('La pregunta completa, sin depender de la charla, en español neutro');
             $table->string('subject', 120)->nullable()->comment('El objeto por el que pregunta ("Perfil tiroideo"); null si no hay uno');
+            $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete()->comment('El servicio del catálogo al que apunta el objeto');
+            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete()->comment('El producto del catálogo; con objeto y sin ninguno de los dos = no está en el catálogo');
             $table->string('resolved_by', 10)->comment('assistant | team | nobody');
             // Same space as the RAG chunks: the meaning vector of the
             // REWRITTEN question, never of the raw context-bound message.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Business;
 
+use App\Jobs\EmbedCatalog;
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
 use App\Models\Product;
@@ -25,6 +26,9 @@ class SyncOfferKnowledge
 
     public function handle(Business $business, string $side): void
     {
+        // Every catalog change passes here, so the name vectors follow it too.
+        EmbedCatalog::dispatch((int) $business->id);
+
         [$sourceType, $title, $content] = $side === 'products'
             ? ['products', self::PRODUCTS_TITLE, $this->productsContent($business)]
             : ['services', self::SERVICES_TITLE, $this->servicesContent($business)];
