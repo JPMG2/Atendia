@@ -8,12 +8,14 @@ use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Traits\BelongsToBusiness;
+use Carbon\CarbonInterface;
 use Database\Factories\ConversationMessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /** One turn of a thread: the customer's text or the assistant's reply. */
@@ -59,6 +61,28 @@ class ConversationMessage extends Model
         $words = array_filter($words, fn (string $word): bool => preg_match('/^(j[aeij]+|h[ae]h[aeh]*|lo+l)$/', $word) !== 1);
 
         return array_diff($words, self::SMALL_TALK) !== [];
+    }
+
+    /**
+     * The month's traffic per business: the volume half of the usage meter.
+     *
+     * @return Collection<int, object{business_id: int, threads: int, messages: int, audio_seconds: int}>
+     */
+    public static function monthlyVolume(CarbonInterface $month): Collection
+    {
+        return self::query()
+            ->selectRaw('business_id, count(distinct conversation_id) as threads, count(*) as messages, coalesce(sum(audio_seconds), 0) as audio_seconds')
+            ->where('kind', MessageKind::Message)
+            ->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+            ->groupBy('business_id')
+            ->get()
+            ->map(fn (self $row): object => (object) [
+                'business_id' => (int) $row->business_id,
+                'threads' => (int) $row->getAttribute('threads'),
+                'messages' => (int) $row->getAttribute('messages'),
+                'audio_seconds' => (int) $row->audio_seconds,
+            ])
+            ->toBase();
     }
 
     /**

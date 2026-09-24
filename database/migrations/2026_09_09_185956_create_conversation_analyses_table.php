@@ -23,8 +23,6 @@ return new class extends Migration
             $table->unsignedBigInteger('first_message_id')->comment('Primer mensaje del tramo analizado');
             $table->unsignedBigInteger('last_message_id')->comment('Último mensaje del tramo: desde acá sigue el próximo análisis');
             $table->string('sentiment', 8)->comment('positive | neutral | negative — cómo terminó el cliente');
-            $table->unsignedInteger('prompt_tokens')->nullable()->comment('Costo real del análisis, igual que en los mensajes');
-            $table->unsignedInteger('completion_tokens')->nullable();
 
             $table->timestamps();
 

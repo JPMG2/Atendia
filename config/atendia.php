@@ -113,16 +113,18 @@ return [
     | AI rates (USD)
     |--------------------------------------------------------------------------
     |
-    | Prices for turning measured usage into money: input/output per MILLION
-    | tokens and audio transcription per minute. Null token rates mean the
-    | cost report shows tokens only — set them when the provider's price for
-    | the active model is confirmed.
+    | Prices for turning measured usage into money: input/cached/output per
+    | MILLION tokens, embeddings per million and audio per minute. Null token
+    | rates mean the cost report shows tokens only — set them when the
+    | provider's price for the active model is confirmed.
     |
     */
 
     'ai_rates' => [
         'prompt_per_million' => env('AI_RATE_PROMPT'),
+        'cached_per_million' => env('AI_RATE_CACHED'),
         'completion_per_million' => env('AI_RATE_COMPLETION'),
+        'embedding_per_million' => env('AI_RATE_EMBEDDING', 0.02),
         'audio_per_minute' => env('AI_RATE_AUDIO', 0.003),
     ],
 

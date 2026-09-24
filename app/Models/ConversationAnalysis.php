@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** One AI reading of a finished stretch of a thread. */
-#[Fillable(['business_id', 'conversation_id', 'first_message_id', 'last_message_id', 'sentiment', 'prompt_tokens', 'completion_tokens'])]
+#[Fillable(['business_id', 'conversation_id', 'first_message_id', 'last_message_id', 'sentiment'])]
 class ConversationAnalysis extends Model
 {
     use BelongsToBusiness;

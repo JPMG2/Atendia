@@ -89,8 +89,6 @@ class AnalyzeConversation implements ShouldBeUnique, ShouldQueue
                     'first_message_id' => $stretch->first()->id,
                     'last_message_id' => $stretch->last()->id,
                     'sentiment' => CustomerSentiment::tryFrom((string) ($response['sentiment'] ?? '')) ?? CustomerSentiment::Neutral,
-                    'prompt_tokens' => $response->usage->promptTokens,
-                    'completion_tokens' => $response->usage->completionTokens,
                 ]);
 
                 foreach ($questions as $index => $question) {
