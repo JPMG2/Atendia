@@ -6,8 +6,10 @@
  * config, since JS can resolve neither routes nor translations.
  */
 document.addEventListener('livewire:init', () => {
-    window.Livewire.hook('request', ({ fail }) => {
-        fail(({ status, preventDefault }) => {
+    window.Livewire.interceptRequest(({ onError }) => {
+        onError(({ response, preventDefault }) => {
+            const { status } = response;
+
             if (status === 419) {
                 preventDefault();
                 window.location.assign(document.body.dataset.loginUrl ?? '/login');

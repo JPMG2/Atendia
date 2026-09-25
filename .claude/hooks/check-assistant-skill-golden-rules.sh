@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Hook PostToolUse (Write|Edit): todo lo que la IA pueda manejar es un skill.
-# Una herramienta en app/Ai/Tools que no implementa AssistantSkillTool o que
+# Una herramienta en app/Ai/Tools que no implementa AssistantSkillTool (cliente)
+# ni OwnerSkillTool (dueña, Pregúntale a AtendIa) o que
 # no está en config/atendia.php (assistant.skills), o un agente que hace
 # `new` de una herramienta, se rechaza en el momento (exit 2).
 #
@@ -22,7 +23,7 @@ case "$file" in
     */app/Ai/Tools/*.php)
         class=$(basename "$file" .php)
         problems=""
-        grep -q 'implements[^{]*AssistantSkillTool' "$file" || problems="${problems}- no implementa App\\Interfaces\\Main\\AssistantSkillTool\n"
+        grep -qE 'implements[^{]*(AssistantSkillTool|OwnerSkillTool)' "$file" || problems="${problems}- no implementa App\\Interfaces\\Main\\AssistantSkillTool (cliente) ni OwnerSkillTool (dueña)\n"
         grep -qE "=>[[:space:]]*(\\\\?App\\\\Ai\\\\Tools\\\\)?${class}::class" "$root/config/atendia.php" || problems="${problems}- falta su clave en config/atendia.php (assistant.skills) y su fila en AssistantSkillSeeder\n"
         if [ -n "$problems" ]; then
             {
@@ -39,7 +40,7 @@ case "$file" in
             if grep -qE "new[[:space:]]+${name}[[:space:]]*\(" "$file"; then
                 {
                     printf 'Regla de oro incumplida en %s: el agente no instancia %s.\n' "$file" "$name"
-                    printf 'Las herramientas las entrega App\\Services\\AssistantSkills (clave en el config + fila en el seeder).\n'
+                    printf 'Las herramientas las entregan App\\Services\\AssistantSkills u OwnerSkills (clave en el config + fila en el seeder).\n'
                     printf 'Guía: .ai/guidelines/skills-del-asistente.md\n'
                 } >&2
                 exit 2

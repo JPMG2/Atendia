@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Enums\SkillAudience;
 use App\Interfaces\Main\AssistantSkillTool;
+use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\AssistantSkill;
 use Database\Seeders\AssistantSkillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,9 +29,9 @@ function assistantToolClasses(): array
         ->all();
 }
 
-test('every tool in app/Ai/Tools is an assistant skill', function (): void {
+test('every tool in app/Ai/Tools is a skill of the customer assistant or of the owner one', function (): void {
     $plainTools = collect(assistantToolClasses())
-        ->reject(fn (string $class): bool => is_subclass_of($class, AssistantSkillTool::class))
+        ->reject(fn (string $class): bool => is_subclass_of($class, AssistantSkillTool::class) || is_subclass_of($class, OwnerSkillTool::class))
         ->values();
 
     expect($plainTools->implode("\n"))->toBe('');
@@ -63,4 +65,17 @@ test('no agent builds a tool by hand', function (): void {
         ->values();
 
     expect($offenders->implode("\n"))->toBe('');
+});
+
+test('a seeded skill serves exactly the audience its tool is built for', function (): void {
+    $this->seed(AssistantSkillSeeder::class);
+
+    $crossed = AssistantSkill::query()->get()
+        ->reject(fn (AssistantSkill $skill): bool => is_subclass_of(
+            (string) config("atendia.assistant.skills.{$skill->key}"),
+            $skill->audience === SkillAudience::Owner ? OwnerSkillTool::class : AssistantSkillTool::class,
+        ))
+        ->pluck('key');
+
+    expect($crossed->implode("\n"))->toBe('');
 });

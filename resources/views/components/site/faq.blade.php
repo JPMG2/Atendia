@@ -1,5 +1,9 @@
 @php
-    $faqs = __('landing.faq.items');
+    // A whole array comes back raw from lang: the trial length is filled in here, from the plans table.
+    $trialDays = (string) \App\Classes\Main\Plan::trial()->trialDays;
+    $faqs = collect(__('landing.faq.items'))
+        ->map(fn (array $faq): array => ['q' => $faq['q'], 'a' => str_replace(':days', $trialDays, $faq['a'])])
+        ->all();
 
     // Same door as Pro's pricing CTA; unset number = the line simply hides.
     $salesWhatsapp = config('atendia.sales_whatsapp');

@@ -7,12 +7,7 @@ must never leave a horizontal scrollbar behind. --}}
         <div class="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-12">
             {{-- Texto --}}
             <div class="flex flex-col gap-5">
-                <x-ui.badge
-                    variant="brand"
-                    dot
-                    pulse
-                    class="hero-enter hero-enter-1 self-start"
-                >
+                <x-ui.badge variant="brand" dot pulse class="hero-enter hero-enter-1 self-start">
                     {{ __('landing.hero.badge') }}</x-ui.badge>
 
                 <h1
@@ -49,7 +44,7 @@ must never leave a horizontal scrollbar behind. --}}
                 >
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
-                        {{ __('landing.hero.perk_trial') }}</span>
+                        {{ __('landing.hero.perk_trial', ['days' => \App\Classes\Main\Plan::trial()->trialDays]) }}</span>
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
                         {{ __('landing.hero.perk_card') }}</span>

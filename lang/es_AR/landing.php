@@ -59,10 +59,12 @@ return [
     ],
 
     'pricing' => [
-        'subtitle' => 'Probá gratis 14 días el plan Negocio, sin tarjeta. Cambiá o cancelá cuando quieras.',
+        'subtitle' => 'Probá gratis :days días el plan :plan, sin tarjeta. Cambiá o cancelá cuando quieras.',
         'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
         'save_yearly' => 'Ahorrás :amount al año',
         'multilang' => 'En cualquier idioma — vos lo leés todo en español',
+        'ask_title' => 'Preguntale a AtendIa',
+        'ask' => 'Preguntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',
         'calculator' => [
             'subtitle' => 'Mové el control con las consultas de un día normal.',
             'slider_label' => 'Consultas que recibís por día',
@@ -93,7 +95,7 @@ return [
             ],
             [
                 'q' => '¿Cuándo se cobra y cómo cancelo?',
-                'a' => 'Probás 14 días gratis sin poner tarjeta. Después elegís un plan y podés cambiarlo o cancelarlo cuando quieras: cancelás y no se te cobra el período siguiente.',
+                'a' => 'Probás :days días gratis sin poner tarjeta. Después elegís un plan y podés cambiarlo o cancelarlo cuando quieras: cancelás y no se te cobra el período siguiente.',
             ],
             [
                 'q' => '¿Necesito saber de tecnología?',

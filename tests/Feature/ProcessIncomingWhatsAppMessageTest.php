@@ -11,6 +11,7 @@ use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
+use App\Models\SubscriptionPlan;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -358,7 +359,7 @@ test('crossing 80% of the month cap warns the owner once, and the assistant keep
     AsistenteAtendia::fake(['…', 'Claro, te cuento.', '…', 'Sí, seguimos acá.']);
 
     // A tiny cap keeps the test honest without seeding hundreds of threads.
-    config()->set('atendia.plans.negocio.conversations_per_month', 5);
+    SubscriptionPlan::query()->where('code', 'negocio')->sole()->update(['conversations_per_month' => 5]);
     ConversationMessage::factory()->count(4)->create(['business_id' => $business->id]);
 
     runIncoming('¿Tienen stock?');

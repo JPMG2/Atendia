@@ -81,11 +81,13 @@ new class extends Component
             <div class="stats-hero">
                 <x-icon name="bot" :size="20" />
                 <p>
-                    {!! __('statistics.since', [
-                        'date' => $sinceDayOne['since']->translatedFormat('j \d\e F'),
-                        'questions' => '<b>'.number_format($sinceDayOne['questions'], 0, ',', '.').'</b>',
-                        'conversations' => '<b>'.number_format($sinceDayOne['conversations'], 0, ',', '.').'</b>',
-                    ]) !!}
+                    {!!
+                        __('statistics.since', [
+                            'date' => $sinceDayOne['since']->translatedFormat('j \d\e F'),
+                            'questions' => '<b>'.number_format($sinceDayOne['questions'], 0, ',', '.').'</b>',
+                            'conversations' => '<b>'.number_format($sinceDayOne['conversations'], 0, ',', '.').'</b>',
+                        ])
+                    !!}
                 </p>
             </div>
         @endif
@@ -124,7 +126,10 @@ new class extends Component
             {{-- Patterns: when do they write? --}}
             @if ($this->plan->statisticsAtLeast('patterns'))
                 <x-ui.card class="p-6">
-                    <h2 class="block-title">{{ __('statistics.daily.title') }}</h2>
+                    <div class="stats-card-head">
+                        <h2 class="block-title">{{ __('statistics.daily.title') }}</h2>
+                        <x-statistics.ask-button :question="__('ask.chart.daily')" />
+                    </div>
                     @php($bestDay = $this->stats->bestDay())
                     @if ($bestDay !== null)
                         <p class="stats-insight">
@@ -147,7 +152,10 @@ new class extends Component
             {{-- Trends: where do I grow? --}}
             @if ($this->plan->statisticsAtLeast('trends'))
                 <x-ui.card class="p-6">
-                    <h2 class="block-title">{{ __('statistics.hours.title') }}</h2>
+                    <div class="stats-card-head">
+                        <h2 class="block-title">{{ __('statistics.hours.title') }}</h2>
+                        <x-statistics.ask-button :question="__('ask.chart.hours')" />
+                    </div>
                     @php($peakHours = $this->stats->peakHours)
                     @if ($peakHours['window'] !== null)
                         <p class="stats-insight">
@@ -164,7 +172,10 @@ new class extends Component
                 </x-ui.card>
 
                 <x-ui.card class="p-6">
-                    <h2 class="block-title">{{ __('statistics.trend.title') }}</h2>
+                    <div class="stats-card-head">
+                        <h2 class="block-title">{{ __('statistics.trend.title') }}</h2>
+                        <x-statistics.ask-button :question="__('ask.chart.trend')" />
+                    </div>
                     @php($trend = $this->stats->monthlyTrend())
                     @php($lastMonth = $trend[count($trend) - 2]['count'] ?? 0)
                     @if ($lastMonth > 0)
@@ -181,7 +192,10 @@ new class extends Component
 
                 {{-- The premium jewel: demand the catalog is letting walk away. --}}
                 <x-ui.card class="stats-gaps p-6">
-                    <h2 class="block-title">{{ __('statistics.gaps.title') }}</h2>
+                    <div class="stats-card-head">
+                        <h2 class="block-title">{{ __('statistics.gaps.title') }}</h2>
+                        <x-statistics.ask-button :question="__('ask.chart.gaps')" />
+                    </div>
                     @php($gaps = $this->stats->catalogGaps())
                     @if ($gaps !== [])
                         <ul class="stats-top">

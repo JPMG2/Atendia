@@ -23,6 +23,9 @@ class AiUsage extends Model
 
     public const string TRANSCRIPTION = 'transcription';
 
+    /** The owner's panel assistant: agent rows are keyed by class basename. */
+    public const string ASK_ATENDIA = 'AskAtendia';
+
     /**
      * The month's token totals per business and kind: the meter's raw rows.
      *

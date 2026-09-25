@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Classes\Main\Plan;
 use App\Models\Business;
 use App\Models\Payment;
 use Illuminate\Http\UploadedFile;
@@ -21,7 +22,7 @@ class SubmitPaymentReceipt
 
         return $business->payments()->create([
             'subscription_id' => $subscription?->id,
-            'plan' => $subscription?->plan ?? (string) config('atendia.trial.plan'),
+            'plan' => $subscription?->plan ?? Plan::trial()->code,
             'billing_cycle' => $subscription?->billing_cycle ?? 'monthly',
             'amount' => $subscription?->nextAmount() ?? 0,
             'currency' => (string) config('atendia.billing.currency'),

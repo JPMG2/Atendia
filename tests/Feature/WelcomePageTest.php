@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\Plan;
 use App\Models\Business;
 use App\Models\ConversationMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,7 +83,7 @@ test('the hero opens with the loss, not the category', function (): void {
         ->assertSee(__('landing.hero.title_1'))
         ->assertSee(__('landing.hero.title_2'))
         ->assertSee('a las 3 de la mañana')
-        ->assertSee(__('landing.hero.perk_trial'))
+        ->assertSee(__('landing.hero.perk_trial', ['days' => Plan::trial()->trialDays]))
         ->assertDontSee('Para cualquier rubro');
 });
 
@@ -180,7 +181,7 @@ test('the pricing calculator argues with the visitor\'s own numbers, no invented
         ->assertSee(__('landing.pricing.calculator.with_tag'))
         ->assertSee(__('landing.pricing.calculator.verdict_per_hour'))
         ->assertSee(__('landing.pricing.calculator.hour_value_label'))
-        ->assertSee(__('landing.pricing.calculator.cta'))
+        ->assertSee(__('landing.pricing.calculator.cta', ['days' => Plan::trial()->trialDays]))
         ->assertSee(__('landing.pricing.calculator.assumption', [
             'minutes' => config('atendia.calculator_minutes'),
         ]));

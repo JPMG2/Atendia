@@ -4,17 +4,35 @@
     // The best demo of the product is the product: Pro's CTA opens a real
     // WhatsApp chat with sales. Unset number = quiet fallback to register.
     $salesWhatsapp = config('atendia.sales_whatsapp');
-    $salesHref = $salesWhatsapp
-        ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__('landing.pricing.premium.whatsapp_text'))
-        : $registerHref;
 
-    // The three REAL packages (caps provisional until the measured AI cost
-    // settles them). Yearly = 2 months free: paying 10 of 12.
-    $plans = [
-        ['name' => __('landing.pricing.emprende.name'), 'price' => '$29', 'price_year' => '$24', 'save_year' => '$58', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.emprende.desc'), 'includes' => null, 'feats' => __('landing.pricing.emprende.feats'), 'cta' => __('landing.pricing.emprende.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.negocio.name'), 'price' => '$79', 'price_year' => '$66', 'save_year' => '$158', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.negocio.desc'), 'includes' => __('landing.pricing.negocio.includes'), 'feats' => __('landing.pricing.negocio.feats'), 'cta' => __('landing.pricing.negocio.cta'), 'variant' => 'primary', 'featured' => true, 'href' => $registerHref, 'external' => false],
-        ['name' => __('landing.pricing.premium.name'), 'price' => '$149', 'price_year' => '$124', 'save_year' => '$298', 'per' => __('landing.pricing.per_month'), 'per_year' => __('landing.pricing.per_month_yearly'), 'desc' => __('landing.pricing.premium.desc'), 'includes' => __('landing.pricing.premium.includes'), 'feats' => __('landing.pricing.premium.feats'), 'cta' => __('landing.pricing.premium.cta'), 'variant' => 'secondary', 'featured' => false, 'href' => $salesHref, 'external' => (bool) $salesWhatsapp],
-    ];
+    // Every figure comes from the plans table through Plan — prices, the
+    // yearly deal, the featured card and the lines — so this card can never
+    // disagree with "Mi plan" or billing. Only the words live in lang.
+    $trial = \App\Classes\Main\Plan::trial();
+    $featured = collect(\App\Classes\Main\Plan::ladder())->first(fn (\App\Classes\Main\Plan $tier): bool => $tier->isFeatured) ?? $trial;
+    $plans = collect(\App\Classes\Main\Plan::ladder())->map(fn (\App\Classes\Main\Plan $tier): array => [
+        'name' => __('plan.names.'.$tier->code),
+        'price' => '$'.$tier->price,
+        'price_year' => '$'.$tier->annualMonthlyPrice,
+        'save_year' => '$'.$tier->annualSavings,
+        'per' => __('landing.pricing.per_month'),
+        'per_year' => __('landing.pricing.per_month_yearly'),
+        'desc' => __("landing.pricing.{$tier->code}.desc"),
+        'includes' => Lang::has("landing.pricing.{$tier->code}.includes") ? __("landing.pricing.{$tier->code}.includes") : null,
+        'feats' => [
+            ...collect($tier->features)->reject(fn (array $line): bool => $line['key'] === 'ask')->pluck('label')->all(),
+            ...(array) __("landing.pricing.{$tier->code}.extras"),
+        ],
+        'ask' => $tier->askPerMonth,
+        'cta' => __("landing.pricing.{$tier->code}.cta"),
+        'variant' => $tier->isFeatured ? 'primary' : 'secondary',
+        'featured' => $tier->isFeatured,
+        // A plan with a sales pitch talks to a person; the rest sign up.
+        'href' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && $salesWhatsapp
+            ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__("landing.pricing.{$tier->code}.whatsapp_text"))
+            : $registerHref,
+        'external' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && (bool) $salesWhatsapp,
+    ])->all();
 @endphp
 
 <section id="precios" class="flex w-full justify-center pb-20 pt-16" x-data="{ yearly: false }">
@@ -24,7 +42,9 @@
             <h2 class="font-display" style="font-size: var(--text-4xl); max-width: 560px">
                 {{ __('landing.pricing.title') }}
             </h2>
-            <p class="text-muted" style="font-size: var(--text-lg)">{{ __('landing.pricing.subtitle') }}</p>
+            <p class="text-muted" style="font-size: var(--text-lg)">
+                {{ __('landing.pricing.subtitle', ['days' => $trial->trialDays, 'plan' => __('plan.names.'.$trial->code)]) }}
+            </p>
 
             <div class="pricing-period mt-3" role="group" aria-label="{{ __('landing.pricing.eyebrow') }}">
                 <button
@@ -110,6 +130,23 @@
                         </div>
                     @endif
 
+                    {{-- The owner's AI is THE product (her call): its own block in the house jade and
+                    display type — never a line lost among the bullets. --}}
+                    @if ($p['ask'] > 0)
+                        <div class="pricing-ai">
+                            <div class="pricing-ai-head">
+                                <span class="pricing-ai-icon"><x-icon name="sparkles" :size="18" /></span>
+                                <span class="pricing-ai-eyebrow">{{ __('landing.pricing.ask_eyebrow') }}</span>
+                            </div>
+                            <p class="pricing-ai-title">{{ __('landing.pricing.ask_title') }}</p>
+                            <p class="pricing-ai-text">{{ __('landing.pricing.ask') }}</p>
+                            <p class="pricing-ai-cap">
+                                <span class="pricing-ai-number">{{ $p['ask'] }}</span>
+                                <span class="pricing-ai-unit">{{ __('landing.pricing.ask_unit') }}</span>
+                            </p>
+                        </div>
+                    @endif
+
                     <div class="flex flex-col gap-2.5">
                         @if ($p['includes'])
                             <p class="text-muted font-semibold" style="font-size: var(--text-sm)">
@@ -117,8 +154,13 @@
                             </p>
                         @endif
                         @foreach ($p['feats'] as $f)
-                            <div class="text-body flex items-center gap-2.5" style="font-size: var(--text-sm)">
-                                <x-icon name="check" :size="16" style="color: var(--brand)" />{{ $f }}
+                            <div class="text-body flex items-start gap-2.5" style="font-size: var(--text-sm)">
+                                <x-icon
+                                    name="check"
+                                    :size="16"
+                                    class="mt-0.5 shrink-0"
+                                    style="color: var(--brand)"
+                                />{{ $f }}
                             </div>
                         @endforeach
                         {{-- In every tier by the owner's call: the languages
@@ -154,10 +196,10 @@
             // no invented market stats, and the plan it names reuses the real
             // caps and prices, so "each hour costs you" is honest math.
             $calcMinutes = (int) config('atendia.calculator_minutes');
-            $calcPlans = collect(['emprende', 'negocio', 'premium'])->map(fn (string $key): array => [
-                'name' => __("landing.pricing.{$key}.name"),
-                'price' => (int) config("atendia.plans.{$key}.price"),
-                'cap' => (int) config("atendia.plans.{$key}.conversations_per_month"),
+            $calcPlans = collect(\App\Classes\Main\Plan::ladder())->map(fn (\App\Classes\Main\Plan $tier): array => [
+                'name' => __('plan.names.'.$tier->code),
+                'price' => $tier->price,
+                'cap' => $tier->conversationsPerMonth,
             ])->all();
             $calcDays = [
                 'one' => __('landing.pricing.calculator.days_one'),
@@ -274,7 +316,7 @@
                 {{-- The calculator convinces; without a next step the visitor stalls here. --}}
                 <div class="mt-4 flex justify-center">
                     <x-ui.button variant="primary" size="md" :href="$registerHref">
-                        {{ __('landing.pricing.calculator.cta') }}</x-ui.button>
+                        {{ __('landing.pricing.calculator.cta', ['days' => $trial->trialDays]) }}</x-ui.button>
                 </div>
 
                 <p class="text-subtle mt-3 text-center" style="font-size: var(--text-xs)">
@@ -298,8 +340,8 @@
             <p class="text-subtle mt-2 text-center" style="font-size: var(--text-xs)">
                 {{
                     __('landing.pricing.local_reference', [
-                        'plan' => __('landing.pricing.negocio.name'),
-                        'amount' => $reference['symbol'].' '.number_format(config('atendia.plans.negocio.price') * $reference['rate'], 0, ',', '.'),
+                        'plan' => __('plan.names.'.$featured->code),
+                        'amount' => $reference['symbol'].' '.number_format($featured->price * $reference['rate'], 0, ',', '.'),
                     ])
                 }}
             </p>

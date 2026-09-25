@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Classes\Main\Plan;
+use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
+use App\Enums\SuggestionStatus;
 use App\Traits\TracksUserActions;
+use Carbon\CarbonImmutable;
 use Database\Factories\BusinessFactory;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -90,13 +93,14 @@ class Business extends Model
         static::created(function (self $business): void {
             $business->adoptReferrer();
 
+            $trial = Plan::trial();
             $days = $business->referred_by_business_id !== null
                 ? (int) config('atendia.referral.invited_trial_days')
-                : (int) config('atendia.trial.days');
+                : (int) $trial->trialDays;
 
             $business->subscription()->create([
                 'business_id' => $business->id,
-                'plan' => config('atendia.trial.plan'),
+                'plan' => $trial->code,
                 'trial_ends_at' => now()->addDays($days),
                 // The trial's end is the first payment date.
                 'current_period_ends_at' => now()->addDays($days),
@@ -676,6 +680,48 @@ class Business extends Model
             ->where('business_id', $this->id)
             ->where('created_at', '>=', now($this->localTimezone())->startOfMonth()->utc())
             ->sum('audio_seconds');
+    }
+
+    /**
+     * What needs the owner today, straight from the tables: the card that
+     * opens "Ask AtendIa" costs no AI question. Days on the business's clock.
+     *
+     * @return array{waiting: int, to_teach: int, birthdays: int, conversations: int}
+     */
+    public function attentionToday(): array
+    {
+        $today = now($this->localTimezone());
+
+        return [
+            'waiting' => $this->conversations()->where('status', ConversationStatus::Team)->count(),
+            'to_teach' => KnowledgeSuggestion::query()->where('business_id', $this->id)->where('status', SuggestionStatus::Pending)->count(),
+            'birthdays' => Customer::query()->where('business_id', $this->id)
+                ->whereMonth('birthday', $today->month)
+                ->whereDay('birthday', $today->day)
+                ->count(),
+            'conversations' => ConversationMessage::query()
+                ->where('business_id', $this->id)
+                ->where('direction', MessageDirection::In)
+                ->where('created_at', '>=', $today->copy()->startOfDay()->utc())
+                ->distinct('conversation_id')
+                ->count('conversation_id'),
+        ];
+    }
+
+    /** When the monthly quotas start over: the 1st of next month, on the business's clock. */
+    public function quotaRenewsOn(): CarbonImmutable
+    {
+        return CarbonImmutable::now($this->localTimezone())->startOfMonth()->addMonthNoOverflow();
+    }
+
+    /** "Ask AtendIa" questions spent this month, against the plan's quota. */
+    public function askQuestionsThisMonth(): int
+    {
+        return AiUsage::query()
+            ->where('business_id', $this->id)
+            ->where('kind', AiUsage::ASK_ATENDIA)
+            ->where('created_at', '>=', now($this->localTimezone())->startOfMonth()->utc())
+            ->count();
     }
 
     /**

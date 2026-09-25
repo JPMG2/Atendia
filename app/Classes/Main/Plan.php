@@ -6,15 +6,20 @@ namespace App\Classes\Main;
 
 use App\Enums\SubscriptionStatus;
 use App\Models\Business;
+use App\Models\SubscriptionPlan;
+use RuntimeException;
 
 /**
- * One plan's entitlements, read from config: the single source of truth
- * every gate asks, in BOTH directions — the client reaching above the
- * plan, and the product silently serving what was never paid for.
+ * One plan's entitlements, read from the `plans` table: the single source
+ * every screen and gate asks — landing cards, "Mi plan", billing — so no two
+ * places can ever disagree on a price or a cap.
  */
 final class Plan
 {
-    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string} $limits */
+    /** Yearly billing pays ten months: two free, the same promise everywhere. */
+    private const int PAID_MONTHS_PER_YEAR = 10;
+
+    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, trial_days: ?int, is_featured: bool} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -44,6 +49,25 @@ final class Plan
         get => $this->audioMinutesPerMonth > 0;
     }
 
+    /** Questions the owner can put to "Ask AtendIa" each month; we pay the model. */
+    public int $askPerMonth {
+        get => (int) ($this->limits['ask_per_month'] ?? 0);
+    }
+
+    public bool $allowsAsk {
+        get => $this->askPerMonth > 0;
+    }
+
+    /** The trial plan's length; null on every other plan. */
+    public ?int $trialDays {
+        get => $this->limits['trial_days'] ?? null;
+    }
+
+    /** The "Más elegido" card. */
+    public bool $isFeatured {
+        get => (bool) ($this->limits['is_featured'] ?? false);
+    }
+
     /** counts → patterns → trends: each level answers a bigger question. */
     public string $statisticsLevel {
         get => (string) ($this->limits['statistics'] ?? 'counts');
@@ -60,10 +84,28 @@ final class Plan
     /** An unknown or missing code falls to the FLOOR plan: a typo must never gift Premium. */
     public static function named(?string $code): self
     {
-        $plans = (array) config('atendia.plans');
+        $plans = self::catalog();
         $code = array_key_exists((string) $code, $plans) ? (string) $code : (string) array_key_first($plans);
 
         return new self($code, $plans[$code]);
+    }
+
+    /** The plan a new business trials; the floor if no row offers a trial. */
+    public static function trial(): self
+    {
+        $code = collect(self::catalog())->search(fn (array $limits): bool => ($limits['trial_days'] ?? 0) > 0);
+
+        return self::named($code === false ? null : $code);
+    }
+
+    /**
+     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, trial_days: ?int, is_featured: bool}>
+     *
+     * @throws RuntimeException
+     */
+    private static function catalog(): array
+    {
+        return SubscriptionPlan::catalog() ?: throw new RuntimeException('The plans table is empty: run PlanSeeder.');
     }
 
     /**
@@ -93,12 +135,48 @@ final class Plan
     /** @return list<self> Every plan in config order, for the plan screen. */
     public static function ladder(): array
     {
-        return array_map(self::named(...), array_keys((array) config('atendia.plans')));
+        return array_map(self::named(...), array_keys(self::catalog()));
     }
 
-    /** Annual billing pays ten months (two free), shown as the monthly equivalent. */
+    /** What a whole year costs: ten months (two free). */
+    public int $yearlyPrice {
+        get => $this->price * self::PAID_MONTHS_PER_YEAR;
+    }
+
+    /** The yearly price shown as its monthly equivalent. */
     public int $annualMonthlyPrice {
-        get => (int) round($this->price * 10 / 12);
+        get => (int) round($this->yearlyPrice / 12);
+    }
+
+    /** What the yearly plan saves against twelve monthly payments. */
+    public int $annualSavings {
+        get => $this->price * 12 - $this->yearlyPrice;
+    }
+
+    /**
+     * The plan's dials as card lines, one builder for every card (landing,
+     * "Mi plan"): the figures come from the row, the words from lang. The
+     * value lets a card compare two plans line by line (padlocks).
+     *
+     * @var list<array{key: string, label: string, value: int}>
+     */
+    public array $features {
+        get {
+            $levels = ['counts', 'patterns', 'trends'];
+
+            return array_values(array_filter([
+                ['key' => 'conversations', 'label' => __('plan.features.conversations', ['cap' => number_format($this->conversationsPerMonth, 0, ',', '.')]), 'value' => $this->conversationsPerMonth],
+                ['key' => 'numbers', 'label' => trans_choice('plan.features.numbers', $this->whatsappNumbers, ['cap' => $this->whatsappNumbers]), 'value' => $this->whatsappNumbers],
+                ['key' => 'pace', 'label' => __('plan.features.pace', ['cap' => $this->messagesPerHour]), 'value' => $this->messagesPerHour],
+                $this->allowsAudio
+                    ? ['key' => 'audio', 'label' => __('plan.features.audio', ['cap' => $this->audioMinutesPerMonth]), 'value' => $this->audioMinutesPerMonth]
+                    : ['key' => 'audio', 'label' => __('plan.features.audio_none'), 'value' => 0],
+                ['key' => 'statistics', 'label' => __('plan.features.statistics.'.$this->statisticsLevel), 'value' => (int) array_search($this->statisticsLevel, $levels, true)],
+                $this->allowsAsk
+                    ? ['key' => 'ask', 'label' => __('plan.features.ask', ['cap' => $this->askPerMonth]), 'value' => $this->askPerMonth]
+                    : null,
+            ]));
+        }
     }
 
     /** Meter color for any usage bar: calm, warning from 80%, alarm past the cap. */
@@ -114,7 +192,7 @@ final class Plan
     /** Drives the padlock: whether $other sits higher on the ladder than this plan. */
     public function isBelow(self $other): bool
     {
-        $ladder = array_keys((array) config('atendia.plans'));
+        $ladder = array_keys(self::catalog());
 
         return array_search($this->code, $ladder, true) < array_search($other->code, $ladder, true);
     }

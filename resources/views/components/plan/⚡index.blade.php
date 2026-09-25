@@ -1,7 +1,11 @@
 <?php
 
 use App\Classes\Main\Plan;
+use App\Dto\NotificationDto;
+use App\Enums\NotificationType;
 use App\Models\Business;
+use App\Models\Subscription;
+use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -14,6 +18,13 @@ use Livewire\Component;
  */
 new class extends Component
 {
+    use HasNotifications;
+
+    /** Mockup stage: the change lives in the screen until billing is wired. */
+    public ?string $scheduledPlan = null;
+
+    public ?string $upgradedPlan = null;
+
     #[Computed]
     public function business(): ?Business
     {
@@ -23,6 +34,11 @@ new class extends Component
     #[Computed]
     public function plan(): Plan
     {
+        // An upgrade applies the moment it is asked for; the receipt confirms it later.
+        if ($this->upgradedPlan !== null) {
+            return Plan::named($this->upgradedPlan);
+        }
+
         return $this->business?->plan() ?? Plan::named(null);
     }
 
@@ -46,6 +62,12 @@ new class extends Component
     }
 
     #[Computed]
+    public function askQuestionsUsed(): int
+    {
+        return $this->business?->askQuestionsThisMonth() ?? 0;
+    }
+
+    #[Computed]
     public function trialDaysLeft(): ?int
     {
         return $this->business?->subscription?->trialDaysLeft();
@@ -65,40 +87,106 @@ new class extends Component
      */
     public function featuresOf(Plan $tier): array
     {
-        $mine = $this->plan;
+        $mine = collect($this->plan->features)->pluck('value', 'key');
 
-        return [
-            [
-                'label' => __('plan.features.conversations', ['cap' => number_format($tier->conversationsPerMonth, 0, ',', '.')]),
-                'locked' => $tier->conversationsPerMonth > $mine->conversationsPerMonth,
-            ],
-            [
-                'label' => trans_choice('plan.features.numbers', $tier->whatsappNumbers, ['cap' => $tier->whatsappNumbers]),
-                'locked' => $tier->whatsappNumbers > $mine->whatsappNumbers,
-            ],
-            [
-                'label' => __('plan.features.pace', ['cap' => $tier->messagesPerHour]),
-                'locked' => $tier->messagesPerHour > $mine->messagesPerHour,
-            ],
-            $tier->allowsAudio
-                ? [
-                    'label' => __('plan.features.audio', ['cap' => $tier->audioMinutesPerMonth]),
-                    'locked' => $tier->audioMinutesPerMonth > $mine->audioMinutesPerMonth,
-                ]
-                : ['label' => __('plan.features.audio_none'), 'locked' => false],
-        ];
+        return array_map(fn (array $line): array => [
+            'label' => $line['label'],
+            'locked' => $line['value'] > ($mine[$line['key']] ?? 0),
+        ], $tier->features);
     }
 
-    /** No payments yet: upgrading talks to sales, mirroring the landing's CTA. */
-    public function upgradeLink(Plan $tier): ?string
+    #[Computed]
+    public function subscription(): ?Subscription
     {
-        $number = config('atendia.sales_whatsapp');
+        return $this->business?->subscription;
+    }
 
-        if (! $number) {
+    #[Computed]
+    public function periodEnd(): string
+    {
+        return $this->subscription?->periodEndsAt()?->setTimezone($this->business->localTimezone())->format('d/m/Y') ?? '';
+    }
+
+    /**
+     * The button a card offers and the dialog it opens: what changes, from
+     * when and what is paid today. Null on the current plan.
+     *
+     * @return array{label: string, variant: string, title: string, message: string, accept: string, type: string}|null
+     */
+    public function changeFor(Plan $tier): ?array
+    {
+        $current = $this->plan;
+
+        if ($tier->code === $current->code || $this->subscription === null) {
             return null;
         }
 
-        return 'https://wa.me/'.$number.'?text='.urlencode(__('plan.cta_text', ['plan' => __('plan.names.'.$tier->code)]));
+        $name = __('plan.names.'.$tier->code);
+        $date = $this->periodEnd;
+
+        if ($this->subscription->onTrial()) {
+            return [
+                'label' => __('plan.change.choose', ['plan' => $name]),
+                'variant' => $current->isBelow($tier) ? 'primary' : 'secondary',
+                'title' => __('plan.change.trial_title', ['plan' => $name]),
+                'message' => __('plan.change.trial_body', ['plan' => $name, 'date' => $date, 'price' => $tier->price]),
+                'accept' => __('plan.change.choose', ['plan' => $name]),
+                'type' => 'info',
+            ];
+        }
+
+        if ($current->isBelow($tier)) {
+            return [
+                'label' => __('plan.change.up', ['plan' => $name]),
+                'variant' => 'primary',
+                'title' => __('plan.change.up_title', ['plan' => $name]),
+                'message' => __('plan.change.up_body', [
+                    'plan' => $name,
+                    'amount' => number_format($this->subscription->upgradeCharge($tier), 2, ',', '.'),
+                    'days' => max(0, (int) $this->subscription->daysUntilPayment()),
+                    'date' => $date,
+                    'price' => $this->subscription->billing_cycle === 'yearly' ? $tier->yearlyPrice : $tier->price,
+                ]),
+                'accept' => __('plan.change.up', ['plan' => $name]),
+                'type' => 'info',
+            ];
+        }
+
+        return [
+            'label' => __('plan.change.down', ['plan' => $name]),
+            'variant' => 'secondary',
+            'title' => __('plan.change.down_title', ['plan' => $name]),
+            'message' => __('plan.change.down_body', ['plan' => $name, 'current' => __('plan.names.'.$current->code), 'date' => $date, 'price' => $tier->price]),
+            'accept' => __('plan.change.down_accept'),
+            'type' => 'warning',
+        ];
+    }
+
+    /** Up applies today (receipt pending); down and any trial choice wait for the period end. */
+    public function changePlan(string $code): void
+    {
+        $tier = collect($this->ladder)->firstWhere('code', $code);
+
+        if ($tier === null || $this->changeFor($tier) === null) {
+            return;
+        }
+
+        if (! $this->subscription->onTrial() && $this->plan->isBelow($tier)) {
+            $this->upgradedPlan = $code;
+            $this->scheduledPlan = null;
+            // The screen reads the plan it just moved to, not the one cached earlier in this request.
+            unset($this->plan);
+
+            return;
+        }
+
+        $this->scheduledPlan = $code;
+    }
+
+    public function cancelScheduledChange(): void
+    {
+        $this->scheduledPlan = null;
+        $this->dispatchNotification(new NotificationDto(__('plan.change.cancelled', ['plan' => __('plan.names.'.$this->plan->code)]), NotificationType::Success));
     }
 
     /** The tab title comes from translations; a PHP attribute cannot call __(). */
@@ -128,9 +216,7 @@ new class extends Component
                 <p class="eyebrow">{{ __('plan.current') }}</p>
                 <h2 class="plan-tier-name">{{ __('plan.names.'.$this->plan->code) }}</h2>
             </div>
-            <p class="plan-tier-price">
-                ${{ $this->plan->price }}<small>{{ __('plan.per_month') }}</small>
-            </p>
+            <p class="plan-tier-price">${{ $this->plan->price }}<small>{{ __('plan.per_month') }}</small></p>
         </div>
 
         <x-ui.usage-meter
@@ -165,6 +251,40 @@ new class extends Component
         </div>
     </x-ui.card>
 
+    {{-- The owner's AI is the star of the plan: its quota gets its own card, not one more bar. --}}
+    @if ($this->plan->allowsAsk)
+        <div class="mt-4">
+            <x-plan.ask-quota
+                :used="$this->askQuestionsUsed"
+                :cap="$this->plan->askPerMonth"
+                :renewsOn="$this->business->quotaRenewsOn()->format('d/m/Y')"
+            />
+        </div>
+    @endif
+
+    @if ($scheduledPlan !== null)
+        <div class="plan-change-banner mt-4">
+            <x-icon name="calendar" :size="18" />
+            <p>
+                {{ __('plan.change.scheduled', ['plan' => __('plan.names.'.$scheduledPlan), 'date' => $this->periodEnd]) }}
+            </p>
+            <x-ui.button variant="ghost" size="sm" wire:click="cancelScheduledChange">
+                {{ __('plan.change.cancel') }}</x-ui.button>
+        </div>
+    @endif
+
+    @if ($upgradedPlan !== null)
+        @php($upgradeTo = Plan::named($upgradedPlan))
+        <div class="plan-change-banner is-up mt-4">
+            <x-icon name="sparkles" :size="18" />
+            <p>
+                {{ __('plan.change.upgraded', ['plan' => __('plan.names.'.$upgradedPlan), 'amount' => number_format($this->subscription->upgradeCharge($upgradeTo), 2, ',', '.')]) }}
+            </p>
+            <x-ui.button variant="primary" size="sm" :href="route('my-payments')" wire:navigate>
+                {{ __('plan.change.upload') }}</x-ui.button>
+        </div>
+    @endif
+
     <div x-data="{ yearly: false }">
         <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
             <h2 class="page-head-title text-xl">{{ __('plan.ladder_title') }}</h2>
@@ -178,12 +298,7 @@ new class extends Component
                 >
                     {{ __('landing.pricing.billing_monthly') }}
                 </button>
-                <button
-                    type="button"
-                    class="pricing-period-btn"
-                    :class="yearly && 'is-active'"
-                    @click="yearly = true"
-                >
+                <button type="button" class="pricing-period-btn" :class="yearly && 'is-active'" @click="yearly = true">
                     {{ __('landing.pricing.billing_yearly') }}
                     <x-ui.badge variant="brand" ::class="yearly && 'badge-bounce'">
                         {{ __('landing.pricing.billing_yearly_badge') }}
@@ -192,56 +307,61 @@ new class extends Component
             </div>
         </div>
         <div class="plan-tiers">
-        @foreach ($this->ladder as $tier)
-            <x-ui.card class="p-6">
-                <div class="plan-tier-head">
-                    <h3 class="plan-tier-name">{{ __('plan.names.'.$tier->code) }}</h3>
-                    @if ($tier->code === $this->plan->code)
-                        <x-ui.badge variant="brand">{{ __('plan.yours') }}</x-ui.badge>
-                    @elseif ($tier->code === 'negocio')
-                        <x-ui.badge variant="accent">{{ __('plan.popular') }}</x-ui.badge>
-                    @endif
-                </div>
-                <p class="plan-tier-price">
-                    <span x-show="! yearly">${{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
-                    <span x-show="yearly" x-cloak>
-                        ${{ $tier->annualMonthlyPrice }}<small>{{ __('landing.pricing.per_month_yearly') }}</small>
-                    </span>
-                </p>
+            @foreach ($this->ladder as $tier)
+                <x-ui.card class="plan-tier p-6">
+                    <div class="plan-tier-head">
+                        <h3 class="plan-tier-name">{{ __('plan.names.'.$tier->code) }}</h3>
+                        @if ($tier->code === $scheduledPlan)
+                            <x-ui.badge variant="brand" :dot="true">
+                                {{ __('plan.change.scheduled_badge', ['date' => $this->periodEnd]) }}</x-ui.badge>
+                        @elseif ($tier->code === $this->plan->code)
+                            <x-ui.badge variant="brand">{{ __('plan.yours') }}</x-ui.badge>
+                        @elseif ($tier->isFeatured)
+                            <x-ui.badge variant="accent">{{ __('plan.popular') }}</x-ui.badge>
+                        @endif
+                    </div>
+                    <p class="plan-tier-price">
+                        <span x-show="! yearly">${{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
+                        <span x-show="yearly" x-cloak>
+                            ${{ $tier->annualMonthlyPrice }}<small>{{ __('landing.pricing.per_month_yearly') }}</small>
+                        </span>
+                    </p>
 
-                <ul class="mt-3">
-                    @foreach ($this->featuresOf($tier) as $feature)
-                        <li @class(['plan-feature', 'is-locked' => $feature['locked']])>
-                            <x-icon :name="$feature['locked'] ? 'lock' : 'check'" :size="16" />
-                            <span>{{ $feature['label'] }}</span>
-                            @if ($feature['locked'])
-                                <span class="plan-locked-hint">
-                                    {{ __('plan.locked_in', ['plan' => __('plan.names.'.$tier->code)]) }}
-                                </span>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
+                    <ul class="mt-3">
+                        @foreach ($this->featuresOf($tier) as $feature)
+                            <li @class(['plan-feature', 'is-locked' => $feature['locked']])>
+                                <x-icon :name="$feature['locked'] ? 'lock' : 'check'" :size="16" />
+                                <span>{{ $feature['label'] }}</span>
+                                @if ($feature['locked'])
+                                    <span class="plan-locked-hint">
+                                        {{ __('plan.locked_in', ['plan' => __('plan.names.'.$tier->code)]) }}
+                                    </span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
 
-                @if ($this->plan->isBelow($tier))
-                    @if ($this->upgradeLink($tier) !== null)
-                        <div class="mt-4">
+                    @php($change = $this->changeFor($tier))
+                    @if ($change !== null && $tier->code !== $scheduledPlan)
+                        <div class="plan-tier-action">
                             <x-ui.button
-                                variant="primary"
+                                :variant="$change['variant']"
                                 size="sm"
-                                :href="$this->upgradeLink($tier)"
-                                target="_blank"
                                 :fullWidth="true"
+                                data-testid="change-{{ $tier->code }}"
+                                x-on:click="dialog.confirm({
+                                    title: {{ \Illuminate\Support\Js::from($change['title']) }},
+                                    message: {{ \Illuminate\Support\Js::from($change['message']) }},
+                                    accept: {{ \Illuminate\Support\Js::from($change['accept']) }},
+                                    type: '{{ $change['type'] }}',
+                                }).then((ok) => ok && $wire.changePlan('{{ $tier->code }}'))"
                             >
-                                {{ __('plan.cta') }}
+                                {{ $change['label'] }}
                             </x-ui.button>
                         </div>
-                    @else
-                        <p class="text-subtle mt-4 text-xs">{{ __('plan.cta_soon') }}</p>
                     @endif
-                @endif
-            </x-ui.card>
-        @endforeach
+                </x-ui.card>
+            @endforeach
         </div>
     </div>
 </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\Plan;
 use App\Enums\SubscriptionStatus;
 use App\Traits\BelongsToBusiness;
 use Carbon\CarbonInterface;
@@ -105,16 +106,38 @@ class Subscription extends Model
         return min($this->periodLengthDays(), max(0, $this->periodLengthDays() - max(0, (int) $this->daysUntilPayment())));
     }
 
+    /**
+     * What moving up to $to costs TODAY: the price difference for the days
+     * left of the running period — the renewal date never moves. Zero on
+     * trial (nothing was paid) and for a move down (that one waits for the
+     * period end, so no refund or credit ever exists).
+     */
+    public function upgradeCharge(Plan $to): float
+    {
+        $from = Plan::named($this->plan);
+        $yearly = $this->billing_cycle === 'yearly';
+        $difference = $yearly ? $to->yearlyPrice - $from->yearlyPrice : $to->price - $from->price;
+
+        if ($this->status === SubscriptionStatus::Trialing || $difference <= 0) {
+            return 0.0;
+        }
+
+        $length = $this->periodLengthDays();
+        $left = min($length, max(0, (int) $this->daysUntilPayment()));
+
+        return round($difference * $left / max(1, $length), 2);
+    }
+
     public function isPaused(): bool
     {
         return $this->status === SubscriptionStatus::Paused;
     }
 
-    /** What the next period costs: the plan price, or ten months for a year. */
+    /** What the next period costs: the plan's month, or its year (two months free). */
     public function nextAmount(): float
     {
-        $price = (float) config("atendia.plans.{$this->plan}.price");
+        $plan = Plan::named($this->plan);
 
-        return $this->billing_cycle === 'yearly' ? $price * 10 : $price;
+        return (float) ($this->billing_cycle === 'yearly' ? $plan->yearlyPrice : $plan->price);
     }
 }

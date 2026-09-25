@@ -32,6 +32,19 @@ cancelar, saber si hay…). Si la respuesta es sí, lleva skill. Si es no (un
 ajuste interno del panel, la facturación de AtendIa), se dice en una línea por
 qué no.
 
+## Dos públicos, un solo catálogo (2026-09-25)
+
+- **Cliente** (WhatsApp, `AsistenteAtendia`): implementa `AssistantSkillTool`,
+  lo entrega `App\Services\AssistantSkills`, fila con `audience = customer`.
+- **Dueña** ("Pregúntale a AtendIa", `AskAtendia`): implementa
+  `OwnerSkillTool` (solo lectura), lo entrega `App\Services\OwnerSkills`,
+  fila con `audience = owner`. Fechas explícitas AAAA-MM-DD (trait
+  `ReadsDateRange`): el agente traduce "hoy"/"ayer" con el reloj de sus
+  instrucciones. Cómo funciona el panel = skill `panel_guide`, que lee los
+  MISMOS textos de las pantallas (`atendia.owner_assistant.guide`).
+- Jamás se cruzan: un dato del negocio no se le lee a un cliente. Lo blinda
+  el guardián (audiencia de la fila = interfaz de la herramienta).
+
 ## Cómo se suma un skill
 
 1. **La herramienta** en `app/Ai/Tools/`, implementando

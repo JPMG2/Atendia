@@ -159,7 +159,9 @@ new class extends Component
             <x-ui.card class="bp-card pay-next">
                 <div>
                     <div class="bp-card-head"><h2>{{ __('billing.next.title') }}</h2></div>
-                    <p class="bp-card-sub">{{ __('billing.next.due', ['date' => $period['ends_at']?->inBusinessTime()->format('d/m/Y')]) }}</p>
+                    <p class="bp-card-sub">
+                        {{ __('billing.next.due', ['date' => $period['ends_at']?->inBusinessTime()->format('d/m/Y')]) }}
+                    </p>
                 </div>
                 <b class="pay-amount font-mono">{{ $period['amount'] }}</b>
                 <div class="pay-line">
@@ -208,7 +210,9 @@ new class extends Component
                         @foreach ($this->billing->history as $payment)
                             <tr wire:key="payment-{{ $payment->id }}">
                                 <td class="font-mono">{{ $payment->created_at->inBusinessTime()->format('d/m/Y') }}</td>
-                                <td>{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
+                                <td>
+                                    {{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}
+                                </td>
                                 <td class="font-mono">
                                     @if ($payment->period_starts_at)
                                         {{ $payment->period_starts_at->inBusinessTime()->format('d/m') }} – {{ $payment->period_ends_at?->inBusinessTime()->format('d/m/Y') }}
@@ -219,19 +223,26 @@ new class extends Component
                                 <td class="font-mono">{{ $payment->formattedAmount() }}</td>
                                 <td>{{ __('billing.history.methods.'.$payment->method) }}</td>
                                 <td>
-                                    <span @class([
-                                        'status-tag',
-                                        'is-brand' => $payment->status === App\Enums\PaymentStatus::Paid,
-                                        'is-warning' => $payment->status === App\Enums\PaymentStatus::Pending,
-                                        'is-danger' => $payment->status === App\Enums\PaymentStatus::Rejected,
-                                    ])>{{ __('billing.history.statuses.'.$payment->status->value) }}</span>
+                                    <span
+                                        @class([
+                                            'status-tag',
+                                            'is-brand' => $payment->status === App\Enums\PaymentStatus::Paid,
+                                            'is-warning' => $payment->status === App\Enums\PaymentStatus::Pending,
+                                            'is-danger' => $payment->status === App\Enums\PaymentStatus::Rejected,
+                                        ])
+                                    >{{ __('billing.history.statuses.'.$payment->status->value) }}</span>
                                     @if ($payment->rejection_reason)
                                         <span class="text-muted block text-xs">{{ $payment->rejection_reason }}</span>
                                     @endif
                                 </td>
                                 <td>
                                     @if ($payment->receipt_path)
-                                        <a class="st-link" href="{{ route('my-payments.receipt', $payment) }}" target="_blank" rel="noopener">
+                                        <a
+                                            class="st-link"
+                                            href="{{ route('my-payments.receipt', $payment) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
                                             {{ __('billing.history.receipt') }}</a>
                                     @endif
                                 </td>
@@ -256,11 +267,15 @@ new class extends Component
                 <dt>{{ __('billing.billing_data.email') }}</dt>
                 <dd class="font-mono">{{ $this->business?->billing_email }}</dd>
             </dl>
-            <a href="{{ route('my-business.facturacion') }}" wire:navigate class="st-link">{{ __('billing.billing_data.edit') }}</a>
+            <a
+                href="{{ route('my-business.facturacion') }}"
+                wire:navigate
+                class="st-link"
+            >{{ __('billing.billing_data.edit') }}</a>
         </x-ui.card>
 
         @if ($period !== null && $period['cycle'] === 'monthly')
-            @php($monthly = (float) config('atendia.plans.'.$period['plan'].'.price'))
+            @php($monthly = (float) \App\Classes\Main\Plan::named($period['plan'])->price)
             <x-ui.card class="bp-card">
                 <div class="bp-card-head"><h2>{{ __('billing.yearly.title') }}</h2></div>
                 <p class="bp-card-sub">
@@ -270,13 +285,22 @@ new class extends Component
                     {{ config('atendia.billing.currency') }} {{ (int) round($monthly * 10 / 12) }}
                     <small class="text-muted">{{ __('billing.yearly.per_month') }}</small>
                 </p>
-                <x-ui.button variant="secondary" size="sm" :href="route('my-plan')">{{ __('billing.yearly.cta') }}</x-ui.button>
+                <x-ui.button
+                    variant="secondary"
+                    size="sm"
+                    :href="route('my-plan')"
+                >
+                    {{ __('billing.yearly.cta') }}</x-ui.button>
             </x-ui.card>
         @endif
     </div>
 
     @if ($uploading)
-        <x-ui.slide-over x-on:slide-over-close="$wire.closeUpload()" :title="__('billing.receipt.title')" :subtitle="__('billing.receipt.sub')">
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeUpload()"
+            :title="__('billing.receipt.title')"
+            :subtitle="__('billing.receipt.sub')"
+        >
             <div class="flex flex-col gap-4">
                 @if ($period !== null)
                     <div class="pay-line">
@@ -307,7 +331,12 @@ new class extends Component
             </div>
 
             <x-slot:footer>
-                <x-ui.button variant="danger" size="sm" wire:click="closeUpload">{{ __('billing.receipt.cancel') }}</x-ui.button>
+                <x-ui.button
+                    variant="danger"
+                    size="sm"
+                    wire:click="closeUpload"
+                >
+                    {{ __('billing.receipt.cancel') }}</x-ui.button>
                 <x-ui.button variant="primary" size="sm" wire:click="submit" wire:loading.attr="disabled">
                     {{ __('billing.receipt.submit') }}</x-ui.button>
             </x-slot:footer>

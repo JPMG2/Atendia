@@ -120,6 +120,10 @@ Cuando se suma un set de reglas de oro:
   herramienta es skill, está en el config y en el seeder, y ningún agente la
   instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
   criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
+- **Planes con UNA sola fuente (tabla `plans`)** → `.ai/guidelines/planes-fuente-unica.md` ·
+  test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` · hook
+  `.claude/hooks/check-plan-source-golden-rules.sh`. Patrones espejados (tocar de a
+  dos); sin allowlist — nació en cero el 2026-09-25, tras "Hasta 5 números" vs 4.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

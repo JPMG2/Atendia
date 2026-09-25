@@ -4,6 +4,11 @@ declare(strict_types=1);
 use App\Ai\Tools\CheckBusinessHours;
 use App\Ai\Tools\EscalateToHuman;
 use App\Ai\Tools\GetBusinessContact;
+use App\Ai\Tools\OwnerBirthdays;
+use App\Ai\Tools\OwnerConversations;
+use App\Ai\Tools\OwnerPlanUsage;
+use App\Ai\Tools\OwnerStatistics;
+use App\Ai\Tools\PanelGuide;
 use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Ai\Tools\SearchCatalog;
@@ -219,6 +224,38 @@ return [
             'knowledge' => SearchBusinessKnowledge::class,
             'escalate' => EscalateToHuman::class,
             'remember_customer' => RememberCustomerFact::class,
+            'owner_conversations' => OwnerConversations::class,
+            'owner_birthdays' => OwnerBirthdays::class,
+            'owner_statistics' => OwnerStatistics::class,
+            'owner_plan' => OwnerPlanUsage::class,
+            'panel_guide' => PanelGuide::class,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | "Ask AtendIa" — the owner's panel assistant
+    |--------------------------------------------------------------------------
+    | The panel guide: route name => [menu label key, translation group of the
+    | screen]. The assistant explains a module from the very texts it prints.
+    */
+
+    'owner_assistant' => [
+        'guide' => [
+            'dashboard' => ['menu.home', 'client.home'],
+            'my-business' => ['menu.my_business', 'client.business'],
+            'my-services' => ['menu.services', 'client.services'],
+            'my-products' => ['menu.products', 'client.products'],
+            'assistant' => ['menu.assistant_knowledge', 'client.assistant'],
+            'assistant.settings' => ['menu.assistant_settings', 'assistant.handoff'],
+            'conversations' => ['menu.conversations', 'client.conversations'],
+            'customers' => ['menu.customers', 'client.customers'],
+            'statistics' => ['menu.statistics', 'statistics'],
+            'whatsapp' => ['menu.whatsapp', 'whatsapp'],
+            'my-plan' => ['menu.plan', 'plan'],
+            'my-payments' => ['menu.my_payments', 'billing'],
+            'referrals' => ['menu.referrals', 'referrals'],
+            'settings' => ['menu.settings', 'settings'],
         ],
     ],
 
@@ -237,33 +274,6 @@ return [
         'reward_percent' => 25,
         'invited_trial_days' => 21,
         'founders' => 10,
-    ],
-
-    'plans' => [
-        'emprende' => [
-            'price' => 29,
-            'conversations_per_month' => 300,
-            'whatsapp_numbers' => 1,
-            'messages_per_hour' => 30,
-            'audio_minutes_per_month' => 0,
-            'statistics' => 'counts',
-        ],
-        'negocio' => [
-            'price' => 79,
-            'conversations_per_month' => 1000,
-            'whatsapp_numbers' => 2,
-            'messages_per_hour' => 60,
-            'audio_minutes_per_month' => 200,
-            'statistics' => 'patterns',
-        ],
-        'premium' => [
-            'price' => 149,
-            'conversations_per_month' => 3000,
-            'whatsapp_numbers' => 4,
-            'messages_per_hour' => 120,
-            'audio_minutes_per_month' => 600,
-            'statistics' => 'trends',
-        ],
     ],
 
 ];

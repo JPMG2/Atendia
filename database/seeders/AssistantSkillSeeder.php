@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\SkillAudience;
 use App\Models\AssistantSkill;
 use Illuminate\Database\Seeder;
 
@@ -27,7 +28,23 @@ class AssistantSkillSeeder extends Seeder
         foreach ($skills as $order => $skill) {
             AssistantSkill::query()->updateOrCreate(
                 ['key' => $skill['key']],
-                [...$skill, 'is_universal' => true, 'sort_order' => $order + 1],
+                [...$skill, 'audience' => SkillAudience::Customer, 'is_universal' => true, 'sort_order' => $order + 1],
+            );
+        }
+
+        // "Ask AtendIa": the owner's own questions, read-only, never handed to the WhatsApp assistant.
+        $ownerSkills = [
+            ['key' => 'owner_conversations', 'name' => 'Conversaciones del período', 'description' => 'Cuántas conversaciones hubo, cuáles esperan al equipo y el enlace a cada una'],
+            ['key' => 'owner_birthdays', 'name' => 'Cumpleaños de clientes', 'description' => 'Quién cumple años en un período y si aceptó recibir mensajes'],
+            ['key' => 'owner_statistics', 'name' => 'Mis estadísticas', 'description' => 'Los números de la pantalla de estadísticas, a la profundidad del plan'],
+            ['key' => 'owner_plan', 'name' => 'Mi plan y consumo', 'description' => 'El plan, lo que incluye y cuánto se usó este mes'],
+            ['key' => 'panel_guide', 'name' => 'Guía del panel', 'description' => 'Qué hace cada módulo y cada formulario del panel, con sus propios textos'],
+        ];
+
+        foreach ($ownerSkills as $order => $skill) {
+            AssistantSkill::query()->updateOrCreate(
+                ['key' => $skill['key']],
+                [...$skill, 'audience' => SkillAudience::Owner, 'is_universal' => true, 'sort_order' => $order + 1],
             );
         }
     }

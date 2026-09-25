@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Classes\Main\Plan;
 use App\Models\Business;
 use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,15 +28,15 @@ class SubscriptionFactory extends Factory
     public function trial(): static
     {
         return $this->state(fn (): array => [
-            'plan' => config('atendia.trial.plan'),
-            'trial_ends_at' => now()->addDays((int) config('atendia.trial.days')),
+            'plan' => Plan::trial()->code,
+            'trial_ends_at' => now()->addDays((int) Plan::trial()->trialDays),
         ]);
     }
 
     public function expiredTrial(): static
     {
         return $this->state(fn (): array => [
-            'plan' => config('atendia.trial.plan'),
+            'plan' => Plan::trial()->code,
             'trial_ends_at' => now()->subDay(),
         ]);
     }

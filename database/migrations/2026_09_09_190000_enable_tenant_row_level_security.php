@@ -35,6 +35,7 @@ return new class extends Migration
         'conversation_analyses',
         'conversation_questions',
         'ai_usages',
+        'ask_feedback',
         'subscriptions',
         'payments',
         'testimonials',

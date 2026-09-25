@@ -19,9 +19,9 @@ test('a new business is born on the reverse trial of the trial plan', function (
     $business = Business::factory()->create();
 
     expect($business->subscription)->not->toBeNull()
-        ->and($business->subscription->plan)->toBe(config('atendia.trial.plan'))
+        ->and($business->subscription->plan)->toBe(Plan::trial()->code)
         ->and($business->subscription->onTrial())->toBeTrue()
-        ->and($business->plan()->code)->toBe(config('atendia.trial.plan'));
+        ->and($business->plan()->code)->toBe(Plan::trial()->code);
 });
 
 test('an expired trial falls to the floor plan without any downgrade job', function (): void {

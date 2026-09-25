@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $this->call(RolesAndPermissionsSeeder::class);
+        $this->call(PlanSeeder::class);
 
         // UserFactory assigns the "client" role by default, roles being seeded.
         User::factory()->create([

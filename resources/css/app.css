@@ -1002,6 +1002,23 @@
 .pricing-tier { display:flex; flex-direction:column; gap:18px; background:var(--surface-card);
                 border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:32px 28px; }
 .pricing-tier-featured { position:relative; z-index:1; box-shadow:var(--shadow-xl); }
+/* El producto estrella de los planes: su propio bloque, jade de la casa
+   (wash + glow radial permitidos por el sistema), tipografía display grande. */
+.pricing-ai { position:relative; padding:18px 18px 16px; border-radius:var(--radius-lg);
+              background:radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 65%), var(--brand-soft);
+              border:1.5px solid var(--brand); box-shadow:var(--shadow-md, var(--shadow-sm)); }
+.pricing-ai-head { display:flex; align-items:center; gap:10px; }
+.pricing-ai-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
+                   border-radius:50%; background:var(--brand); color:var(--text-on-brand); }
+.pricing-ai-eyebrow { font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); }
+.pricing-ai-title { margin-top:10px; font-family:var(--font-display); font-weight:800; font-size:var(--text-2xl);
+                    line-height:1.1; letter-spacing:-0.02em; color:var(--brand-soft-text); }
+.pricing-ai-text { margin-top:6px; font-size:var(--text-sm); line-height:1.45; color:var(--text-body); }
+.pricing-ai-cap { display:flex; align-items:baseline; gap:8px; margin-top:12px; padding-top:12px;
+                  border-top:1px solid color-mix(in srgb, var(--brand) 25%, transparent); }
+.pricing-ai-number { font-family:var(--font-display); font-weight:800; font-size:var(--text-4xl); line-height:1;
+                     letter-spacing:-0.03em; color:var(--brand); }
+.pricing-ai-unit { font-size:var(--text-sm); font-weight:700; color:var(--text-strong); }
 @media (min-width:1024px) {
   .pricing-grid { grid-template-columns:repeat(3, 1fr); gap:0; }
   .pricing-tier-left { border-radius:var(--radius-xl) 0 0 var(--radius-xl); border-right:0; }
@@ -1655,6 +1672,16 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .plan-feature svg { flex-shrink:0; margin-top:2px; color:var(--brand); }
   .plan-feature.is-locked { color:var(--text-subtle); }
   .plan-feature.is-locked svg { color:var(--text-subtle); }
+  .plan-tier { display:flex; flex-direction:column; }
+  /* Every card's button sits on the same line, whatever its list length. */
+  .plan-tier-action { margin-top:auto; padding-top:16px; }
+  /* Cambio de plan programado o subida pendiente de comprobante: una línea con su acción. */
+  .plan-change-banner { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:var(--radius-md);
+                        background:var(--surface-card); border:1px solid var(--border-default); color:var(--text-body); font-size:var(--text-sm); }
+  .plan-change-banner > svg { color:var(--brand); flex-shrink:0; }
+  .plan-change-banner p { flex:1; }
+  .plan-change-banner.is-up { background:var(--brand-soft); border-color:color-mix(in srgb, var(--brand) 35%, transparent); color:var(--brand-soft-text); }
+  @media (max-width:560px) { .plan-change-banner { flex-wrap:wrap; } }
   .plan-locked-hint { font-size:var(--text-xs); color:var(--text-subtle); margin-left:auto; white-space:nowrap; }
 
   /* "Gana con AtendIa": enlace de recomendación y su conteo */
@@ -1662,6 +1689,13 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .duo-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
   @media (max-width:900px) { .duo-grid { grid-template-columns:minmax(0,1fr) } }
   .block-title { font-family:var(--font-display); font-size:var(--text-base); color:var(--text-strong); margin-bottom:12px; }
+  /* Encabezado de un bloque de estadísticas con su "Preguntar" a la IA. */
+  .stats-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .stats-ask { display:inline-flex; align-items:center; gap:6px; flex-shrink:0; padding:5px 10px; border-radius:var(--radius-pill);
+               border:1px solid var(--border-subtle); background:var(--surface-card); color:var(--brand);
+               font-family:var(--font-sans); font-size:var(--text-xs); font-weight:700; cursor:pointer;
+               transition:background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+  .stats-ask:hover { background:var(--brand-soft); border-color:var(--brand); }
   .referral-link { background:var(--surface-sunken); border-radius:var(--radius-md); padding:10px 14px;
                    font-size:var(--text-sm); color:var(--text-strong); word-break:break-all; }
   .referral-count { display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px;
@@ -1778,6 +1812,90 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                    transition:background var(--dur-fast) var(--ease-out); }
   .dropdown-item:hover { background:var(--surface-sunken); }
   .dropdown-item-danger { color:var(--danger); }
+
+  /* "Pregúntale a AtendIa": botón del topbar, gemelo del tema y la campanita. */
+  .topbar-ask { position:relative; }
+  .topbar-ask-lock { position:absolute; top:-5px; right:-6px; display:inline-flex; align-items:center; justify-content:center;
+                     width:15px; height:15px; border-radius:50%; background:var(--surface-card); color:var(--text-muted);
+                     border:1px solid var(--border-subtle); }
+  /* La bienvenida del asistente: su presentación, no una burbuja más. */
+  .ask-hello { display:flex; align-items:flex-start; gap:14px; padding:16px; border-radius:var(--radius-lg);
+               background:radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 65%), var(--brand-soft);
+               border:1px solid color-mix(in srgb, var(--brand) 35%, transparent); }
+  .ask-hello-avatar { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:44px; height:44px;
+                      border-radius:50%; background:var(--brand); color:var(--text-on-brand); box-shadow:var(--shadow-sm); }
+  .ask-hello-title { font-family:var(--font-display); font-weight:800; font-size:var(--text-xl); line-height:1.15;
+                     letter-spacing:-0.02em; color:var(--brand-soft-text); }
+  .ask-hello-text { margin-top:4px; font-size:var(--text-sm); line-height:1.5; color:var(--text-body); }
+  /* Cupo de "Pregúntale a AtendIa": tarjeta de Mi plan (familia de la bienvenida) y contador del panel. */
+  .ask-quota { display:flex; align-items:flex-start; gap:16px; margin-top:0; padding:20px 24px; border-radius:var(--radius-lg);
+               background:radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 65%), var(--brand-soft);
+               border:1px solid color-mix(in srgb, var(--brand) 35%, transparent); }
+  .ask-quota-title { font-family:var(--font-display); font-weight:800; font-size:var(--text-lg); color:var(--brand-soft-text); }
+  .ask-quota-left { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; margin-top:4px; font-size:var(--text-sm); color:var(--text-body); }
+  .ask-quota-number { font-family:var(--font-display); font-weight:800; font-size:var(--text-4xl); line-height:1;
+                      letter-spacing:-0.03em; color:var(--brand); }
+  .ask-quota[data-state="warn"] .ask-quota-number { color:var(--warning); }
+  .ask-quota[data-state="over"] .ask-quota-number { color:var(--danger); }
+  .ask-quota-bar { display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .ask-quota-bar .plan-meter-track { flex:1; height:8px; background:var(--surface-card); }
+  .ask-quota-used { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap; }
+  .ask-quota-renews { margin-top:8px; font-size:var(--text-xs); color:var(--text-muted); }
+  .ask-quota-mini { display:flex; align-items:center; gap:10px; margin-top:0; color:var(--brand); }
+  .ask-quota-mini .plan-meter-track { flex:1; height:5px; }
+  .ask-quota-mini-figures { font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap; }
+  .ask-quota-mini-figures b { font-family:var(--font-mono); font-weight:700; font-size:var(--text-sm); color:var(--brand); }
+  .ask-hello-brand { font-weight:800; color:var(--brand); white-space:nowrap; }
+  .ask-hello-ia { display:inline-block; margin:0 1px; padding:1px 7px; border-radius:var(--radius-pill);
+                  background:var(--brand); color:var(--text-on-brand); font-family:var(--font-display);
+                  font-size:var(--text-xs); font-weight:800; letter-spacing:.04em; vertical-align:1px; }
+  .ask-thread { display:flex; flex-direction:column; gap:12px; }
+  .ask-thread-pending { display:flex; flex-direction:column; gap:12px; }
+  .ask-today { border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:12px; background:var(--surface-card); }
+  .ask-today-title { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:var(--text-sm); font-weight:700; color:var(--text-strong); }
+  .ask-today-title svg { color:var(--brand); }
+  .ask-today-row { display:flex; align-items:center; gap:10px; padding:8px; border-radius:var(--radius-sm); text-decoration:none;
+                   color:var(--text-body); font-size:var(--text-sm); transition:background var(--dur-fast) var(--ease-out); }
+  .ask-today-row > svg:first-child { color:var(--brand); flex-shrink:0; }
+  .ask-today-row span { flex:1; }
+  .ask-today-row:hover { background:var(--surface-sunken); }
+  .ask-today-go { color:var(--text-subtle); }
+  .ask-today-clear { padding:4px 8px; font-size:var(--text-sm); color:var(--text-muted); }
+  .ask-rate { display:flex; align-items:center; gap:4px; margin-top:-6px; }
+  .ask-rate-done { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-xs); color:var(--text-muted); }
+  .ask-rate-done svg { color:var(--brand); }
+  .ask-msg { font-size:var(--text-sm); line-height:1.5; padding:10px 14px; border-radius:var(--radius-md); max-width:88%; }
+  .ask-msg-owner { align-self:flex-end; background:var(--brand-soft); color:var(--brand-soft-text); }
+  .ask-msg-ai { align-self:flex-start; background:var(--surface-sunken); color:var(--text-body); }
+  .ask-link { color:var(--brand); font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+  .ask-link:hover { color:var(--text-strong); }
+  .ask-thinking { display:flex; align-items:center; gap:10px; color:var(--text-muted); }
+  .ask-dots { display:inline-flex; gap:4px; }
+  .ask-dots i { width:6px; height:6px; border-radius:50%; background:var(--brand); animation:ask-dot 1s var(--ease-out) infinite; }
+  .ask-dots i:nth-child(2) { animation-delay:.15s; }
+  .ask-dots i:nth-child(3) { animation-delay:.3s; }
+  @keyframes ask-dot { 50% { opacity:.25; transform:translateY(-2px); } }
+  .ask-suggestions { display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin-top:4px; }
+  .ask-suggestions-title { font-size:var(--text-xs); font-weight:700; color:var(--text-muted); }
+  .ask-chip { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; text-align:left;
+              border:1px solid var(--border-subtle); border-radius:var(--radius-pill); background:var(--surface-card);
+              color:var(--text-body); font-family:var(--font-sans); font-size:var(--text-sm); cursor:pointer;
+              transition:border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+  .ask-chip svg { color:var(--brand); flex-shrink:0; }
+  .ask-chip:hover:not(:disabled) { border-color:var(--brand); background:var(--brand-soft); }
+  .ask-chip:disabled { opacity:.55; cursor:not-allowed; }
+  .ask-form { width:100%; display:flex; flex-direction:column; gap:8px; }
+  .ask-form-row { display:flex; align-items:center; gap:8px; }
+  .ask-form-row .field { flex:1; margin:0; }
+  .ask-left { font-size:var(--text-xs); color:var(--text-subtle); }
+  .ask-locked { display:flex; flex-direction:column; align-items:flex-start; gap:12px; }
+  .ask-locked-icon { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px;
+                     border-radius:var(--radius-md); background:var(--brand-soft); color:var(--brand); }
+  .ask-locked-title { font-family:var(--font-display); font-size:var(--text-lg); font-weight:700; color:var(--text-strong); }
+  .ask-locked-plan { display:flex; align-items:center; gap:8px; font-size:var(--text-sm); font-weight:700; color:var(--brand-soft-text); }
+  .ask-examples { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; padding-left:18px; list-style:disc;
+                  font-size:var(--text-sm); color:var(--text-muted); }
+  @media (prefers-reduced-motion:reduce) { .ask-dots i { animation:none; } }
 
   @media (max-width:900px) { .conn-pill { display:none; } }
   @media (max-width:600px) { .topbar-search { display:none; } }

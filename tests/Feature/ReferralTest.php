@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\Plan;
 use App\Events\BusinessCreated;
 use App\Mail\ReferralLink;
 use App\Models\Business;
@@ -59,7 +60,7 @@ test('an unknown code attributes nobody and keeps the standard trial', function 
 
     expect($business->referred_by_business_id)->toBeNull()
         ->and((int) ceil(now()->diffInDays($business->subscription->trial_ends_at)))
-        ->toBe((int) config('atendia.trial.days'));
+        ->toBe((int) Plan::trial()->trialDays);
 });
 
 test('the screen shows the link, the tally and the double-sided deal', function (): void {

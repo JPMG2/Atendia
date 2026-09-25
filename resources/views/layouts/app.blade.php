@@ -146,6 +146,11 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                 <div class="topbar-actions">
                     <span class="conn-pill"> <span class="conn-dot"></span>WhatsApp conectado </span>
 
+                    {{-- The owner's assistant is a client-panel tool: admin has no business to ask about. --}}
+                    @unless ($onAdminPanel)
+                        <livewire:client.ask-atendia />
+                    @endunless
+
                     <x-ui.theme-toggle />
 
                     <button type="button" class="icon-btn icon-btn-secondary topbar-notif" aria-label="Notificaciones">

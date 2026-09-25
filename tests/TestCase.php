@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use Database\Seeders\PlanSeeder;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,14 @@ abstract class TestCase extends BaseTestCase
      * is touched.
      */
     private const string TESTING_DATABASE = 'atendia_testing';
+
+    /**
+     * Plans are catalog data every screen and gate reads: RefreshDatabase
+     * seeds them once, when it rebuilds the test database.
+     */
+    protected bool $seed = true;
+
+    protected string $seeder = PlanSeeder::class;
 
     protected function setUp(): void
     {

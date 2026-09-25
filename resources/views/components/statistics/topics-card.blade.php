@@ -5,7 +5,10 @@
 {{-- One row per topic: volume, how much the assistant solved alone and
 the one move that fixes the rest. The reading goes on top. --}}
 <x-ui.card class="mt-4 p-6">
-    <h2 class="block-title">{{ __('statistics.topics.title') }}</h2>
+    <div class="stats-card-head">
+        <h2 class="block-title">{{ __('statistics.topics.title') }}</h2>
+        <x-statistics.ask-button :question="__('ask.chart.topics')" />
+    </div>
 
     @if ($topics !== [])
         <p class="stats-insight">

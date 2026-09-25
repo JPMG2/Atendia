@@ -36,7 +36,7 @@ return [
         'cta_primary' => 'Crear mi asistente',
         'cta_secondary' => 'Ver cómo funciona',
         'social_proof' => ':count negocios ya atienden con su asistente',
-        'perk_trial' => '14 días gratis',
+        'perk_trial' => ':days días gratis',
         'perk_card' => 'Sin tarjeta',
     ],
 
@@ -281,9 +281,9 @@ return [
     'pricing' => [
         'eyebrow' => 'Precios',
         'title' => 'Simple y por adelantado',
-        'subtitle' => 'Prueba gratis 14 días el plan Negocio, sin tarjeta. Cambia o cancela cuando quieras.',
+        'subtitle' => 'Prueba gratis :days días el plan :plan, sin tarjeta. Cambia o cancela cuando quieras.',
         'featured_badge' => 'Más elegido',
-        'per_trial' => '/ 14 días',
+        'per_trial' => '/ :days días',
         'per_month' => '/ mes',
         'per_month_yearly' => '/ mes, facturado anual',
         'billing_monthly' => 'Mensual',
@@ -315,22 +315,27 @@ return [
             'verdict_hours' => 'al mes',
             'verdict_save' => 'y ahorras',
             'verdict_per_hour' => 'Cada hora recuperada te sale',
-            'cta' => 'Recuperar mis horas — 14 días gratis',
+            'cta' => 'Recuperar mis horas — :days días gratis',
             'assumption' => 'Estimación con :minutes min por consulta. Son tus números, sin estadísticas inventadas.',
         ],
         'multilang' => 'En cualquier idioma — tú lo lees todo en español',
+        'ask_eyebrow' => 'Asistente IA incluido',
+        'ask_title' => 'Pregúntale a AtendIa',
+        'ask' => 'Pregúntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',
+        'ask_unit' => 'consultas al mes',
         'emprende' => [
             'name' => 'Emprende',
             'desc' => 'Tu asistente atendiendo desde el primer día.',
             'cta' => 'Crear mi asistente',
-            'feats' => ['1 número de WhatsApp', '300 conversaciones con IA al mes', 'Agenda o catálogo', 'Estadísticas del negocio', 'Usuarios del panel sin límite'],
+            // Solo lo que no es un número del plan: los números salen de la tabla plans.
+            'extras' => ['Agenda o catálogo', 'Usuarios del panel sin límite'],
         ],
         'negocio' => [
             'name' => 'Negocio',
             'desc' => 'Para el negocio que conversa todos los días.',
             'cta' => 'Crear mi asistente',
             'includes' => 'Todo lo de Emprende, más:',
-            'feats' => ['1.000 conversaciones con IA al mes', '2 números de WhatsApp', 'Notas de voz de tus clientes', 'Resumen diario y reportes a pedido', 'Tu equipo entra cuando hace falta'],
+            'extras' => ['Resumen diario y reportes a pedido', 'Tu equipo entra cuando hace falta'],
         ],
         'premium' => [
             'name' => 'Premium',
@@ -338,7 +343,7 @@ return [
             'cta' => 'Hablar con ventas',
             'whatsapp_text' => 'Hola, quiero saber más del plan Premium de Atendia.',
             'includes' => 'Todo lo de Negocio, más:',
-            'feats' => ['3.000 conversaciones con IA al mes', 'Hasta 5 números de WhatsApp', 'Tu asistente a tu medida', 'Analítica avanzada', 'Configuración asistida incluida'],
+            'extras' => ['Tu asistente a tu medida', 'Configuración asistida incluida'],
         ],
     ],
 
@@ -370,7 +375,7 @@ return [
             ],
             [
                 'q' => '¿Cuándo se cobra y cómo cancelo?',
-                'a' => 'Pruebas 14 días gratis sin poner tarjeta. Después eliges un plan y puedes cambiarlo o cancelarlo cuando quieras: cancelas y no se te cobra el período siguiente.',
+                'a' => 'Pruebas :days días gratis sin poner tarjeta. Después eliges un plan y puedes cambiarlo o cancelarlo cuando quieras: cancelas y no se te cobra el período siguiente.',
             ],
             [
                 'q' => '¿Necesito saber de tecnología?',
