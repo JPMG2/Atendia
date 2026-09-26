@@ -472,22 +472,27 @@ class Business extends Model
     }
 
     /**
-     * One line per day with hours, shift by shift: "Lunes: 09:00 a 13:00 y
-     * 17:00 a 20:00". Days with no row are simply not offered.
+     * The whole week, Monday first, shift by shift: "Lunes: 09:00 a 13:00 y
+     * 17:00 a 20:00". A day with no shift says "cerrado": left out, the
+     * assistant answered "no pude confirmar" for a plain Sunday (ai-eval).
      *
      * @return list<string>
      */
     public function scheduleLines(): array
     {
         $days = BusinessHour::dayNames();
+        $byDay = $this->hours()->get()->groupBy('day_of_week');
 
-        return $this->hours()
-            ->get()
-            ->groupBy('day_of_week')
-            ->map(fn ($shifts, int $day): string => $days[$day].': '.$shifts
-                ->map(fn (BusinessHour $shift): string => mb_substr((string) $shift->opens_at, 0, 5).' a '.mb_substr((string) $shift->closes_at, 0, 5))
-                ->implode(' y '))
-            ->values()
+        if ($byDay->isEmpty()) {
+            return [];
+        }
+
+        return collect([1, 2, 3, 4, 5, 6, 0])
+            ->map(fn (int $day): string => $days[$day].': '.($byDay->has($day)
+                ? $byDay->get($day)
+                    ->map(fn (BusinessHour $shift): string => mb_substr((string) $shift->opens_at, 0, 5).' a '.mb_substr((string) $shift->closes_at, 0, 5))
+                    ->implode(' y ')
+                : 'cerrado'))
             ->all();
     }
 

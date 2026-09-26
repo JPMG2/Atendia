@@ -36,8 +36,8 @@ return [
         'cta_primary' => 'Crear mi asistente',
         'cta_secondary' => 'Ver cómo funciona',
         'social_proof' => ':count negocios ya atienden con su asistente',
-        'perk_trial' => ':days días gratis',
-        'perk_card' => 'Sin tarjeta',
+        'perk_try' => 'Pruébalo aquí mismo, sin registrarte',
+        'perk_trial' => ':days días gratis después',
     ],
 
     'demo' => [
@@ -46,30 +46,20 @@ return [
         'placeholder' => 'Escribe tu consulta…',
         'send' => 'Enviar',
         'rubros' => [
-            'clinica' => [
-                'label' => 'Consultorio',
-                'name' => 'Clínica Vida',
-                'noun' => 'consultorio',
+            'ferreteria' => [
+                'label' => 'Ferretería',
+                'name' => 'Ferretería El Tornillo',
+                'noun' => 'ferretería',
                 'chips' => [
-                    '¿Tienen turno esta semana?',
-                    '¿Cuánto sale una ecografía?',
-                    'How much is an ultrasound?',
-                ],
-            ],
-            'peluqueria' => [
-                'label' => 'Peluquería',
-                'name' => 'Peluquería Lumen',
-                'noun' => 'peluquería',
-                'chips' => [
-                    '¿Cuánto sale el corte?',
-                    '¿Hacen color y mechas?',
-                    'Do you take walk-ins?',
+                    '¿Hacen copias de llaves?',
+                    '¿Llevan pedidos a obra?',
+                    'What time do you open?',
                 ],
                 'pool' => [
-                    ['side' => 'in', 'text' => '¿Tienen turno el sábado a la tarde?'],
-                    ['side' => 'out', 'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te lo reservo? 😊'],
-                    ['side' => 'in', 'text' => 'Do you do balayage?'],
-                    ['side' => 'out', 'text' => 'Yes! Balayage from $55.000, hydration treatment included ✨'],
+                    ['side' => 'in', 'text' => '¿Tienen cinta de teflón y llave del 14?'],
+                    ['side' => 'out', 'text' => 'Sí, las dos en stock. ¿Te las aparto en el mostrador?'],
+                    ['side' => 'in', 'text' => '¿Llevan pedidos a obra?'],
+                    ['side' => 'out', 'text' => 'Sí: gratis desde $50.000 en el barrio. Antes de las 14 sale el mismo día 🚚'],
                 ],
             ],
             'kiosco' => [
@@ -86,22 +76,6 @@ return [
                     ['side' => 'out', 'text' => '¡Sí! Hasta las 23 ⏰ ¿Te llevamos algo?'],
                     ['side' => 'in', 'text' => '¿Qué promos hay hoy?'],
                     ['side' => 'out', 'text' => 'Hoy 2x1 en alfajores y la gaseosa de 1,5 L a mitad de precio llevando dos 🎉'],
-                ],
-            ],
-            'dr-juan' => [
-                'label' => 'Dr. Juan',
-                'name' => 'Dr. Juan Herrera',
-                'noun' => 'consultorio',
-                'chips' => [
-                    '¿Qué días atiende el doctor?',
-                    '¿Cuánto sale la consulta?',
-                    'How much is a consultation?',
-                ],
-                'pool' => [
-                    ['side' => 'in', 'text' => '¿El doctor atiende mañana?'],
-                    ['side' => 'out', 'text' => 'Sí, de 14 a 19. Tengo libre 15:30, ¿te lo reservo?'],
-                    ['side' => 'in', 'text' => '¿Cuánto sale la consulta?'],
-                    ['side' => 'out', 'text' => 'La consulta particular sale <b>$25.000</b>. Con obra social suele tener cobertura 😊'],
                 ],
             ],
             'panaderia' => [
@@ -136,20 +110,20 @@ return [
                     ['side' => 'out', 'text' => 'Sí: entrada, principal y postre por <b>$22.000</b>, de martes a viernes al mediodía.'],
                 ],
             ],
-            'ferreteria' => [
-                'label' => 'Ferretería',
-                'name' => 'Ferretería El Tornillo',
-                'noun' => 'ferretería',
+            'peluqueria' => [
+                'label' => 'Peluquería',
+                'name' => 'Peluquería Lumen',
+                'noun' => 'peluquería',
                 'chips' => [
-                    '¿Hacen copias de llaves?',
-                    '¿Llevan pedidos a obra?',
-                    'What time do you open?',
+                    '¿Cuánto sale el corte?',
+                    '¿Hacen color y mechas?',
+                    'Do you take walk-ins?',
                 ],
                 'pool' => [
-                    ['side' => 'in', 'text' => '¿Tienen cinta de teflón y llave del 14?'],
-                    ['side' => 'out', 'text' => 'Sí, las dos en stock. ¿Te las aparto en el mostrador?'],
-                    ['side' => 'in', 'text' => '¿Llevan pedidos a obra?'],
-                    ['side' => 'out', 'text' => 'Sí: gratis desde $50.000 en el barrio. Antes de las 14 sale el mismo día 🚚'],
+                    ['side' => 'in', 'text' => '¿Tienen turno el sábado a la tarde?'],
+                    ['side' => 'out', 'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te lo reservo? 😊'],
+                    ['side' => 'in', 'text' => 'Do you do balayage?'],
+                    ['side' => 'out', 'text' => 'Yes! Balayage from $55.000, hydration treatment included ✨'],
                 ],
             ],
             'veterinaria' => [
@@ -166,6 +140,32 @@ return [
                     ['side' => 'out', 'text' => 'Pobre 💚 Hoy a las 18:00 hay lugar con la doctora, ¿te lo agendo?'],
                     ['side' => 'in', 'text' => 'Do you do grooming?'],
                     ['side' => 'out', 'text' => 'Yes! Bath & cut from $18.000, with appointment 🐾'],
+                ],
+            ],
+            'clinica' => [
+                'label' => 'Consultorio',
+                'name' => 'Clínica Vida',
+                'noun' => 'consultorio',
+                'chips' => [
+                    '¿Tienen turno esta semana?',
+                    '¿Cuánto sale una ecografía?',
+                    'How much is an ultrasound?',
+                ],
+            ],
+            'dr-juan' => [
+                'label' => 'Dr. Juan',
+                'name' => 'Dr. Juan Herrera',
+                'noun' => 'consultorio',
+                'chips' => [
+                    '¿Qué días atiende el doctor?',
+                    '¿Cuánto sale la consulta?',
+                    'How much is a consultation?',
+                ],
+                'pool' => [
+                    ['side' => 'in', 'text' => '¿El doctor atiende mañana?'],
+                    ['side' => 'out', 'text' => 'Sí, de 14 a 19. Tengo libre 15:30, ¿te lo reservo?'],
+                    ['side' => 'in', 'text' => '¿Cuánto sale la consulta?'],
+                    ['side' => 'out', 'text' => 'La consulta particular sale <b>$25.000</b>. Con obra social suele tener cobertura 😊'],
                 ],
             ],
         ],
@@ -198,7 +198,7 @@ return [
         ],
         'catalog' => [
             'title' => 'Muestra tu catálogo',
-            'body' => 'Carga productos con precio y foto. Si preguntan, responde con la info y el link de compra al instante.',
+            'body' => 'Carga productos con precio y stock. Si preguntan, responde qué hay, cuánto sale y cuántas quedan — y cuando alguien lo quiere, le avisa a tu equipo.',
         ],
         'always' => [
             'title' => 'Responde 24/7 en cualquier idioma',
@@ -230,10 +230,14 @@ return [
             'alert_text' => 'Resumen del día: 8 turnos confirmados, 2 charlas esperando tu respuesta',
             'schedule_text' => 'Sábado 16:30 · Corte con Sofi',
             'schedule_badge' => 'Confirmado',
-            'catalog_1_name' => 'Corte + lavado',
-            'catalog_1_price' => '$18.000',
-            'catalog_2_name' => 'Mechas',
-            'catalog_2_price' => 'desde $55.000',
+            'catalog_ask' => '¿Tienen taladro percutor?',
+            'catalog_product' => 'Taladro percutor Bosch GSB 13 RE',
+            'catalog_price' => '$89.000',
+            'catalog_stock' => 'quedan 3',
+            'catalog_offer' => 'Sí, lo tenemos. ¿Te lo aparto?',
+            'catalog_want' => 'Sí, lo quiero',
+            'catalog_handoff' => '¡Genial! Le aviso al equipo para que te lo aparte y te escriba para coordinar.',
+            'catalog_badge' => 'Equipo avisado',
             'brand_name' => 'Peluquería Lumen',
             'brand_badge' => 'Tu número',
             'brand_greeting' => 'Hola, soy el asistente de Peluquería Lumen',
@@ -358,6 +362,14 @@ return [
         'title' => 'Lo que todos preguntan antes de conectar',
         'items' => [
             [
+                'q' => '¿Sirve si vendo productos y no doy turnos?',
+                'a' => 'Sí. Cargas tu catálogo con precio y stock, y el asistente responde qué hay, cuánto sale y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres tú.',
+            ],
+            [
+                'q' => '¿Qué pasa si me escriben en otro idioma?',
+                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio. Los avisos para tu equipo llegan siempre en español.',
+            ],
+            [
                 'q' => '¿Puede decirle algo equivocado a mis clientes?',
                 'a' => 'Responde solo con lo que tu negocio cargó: tus servicios, tus precios, tus respuestas. Si algo no está en su conocimiento, lo dice con honestidad y ofrece pasar con tu equipo — nunca inventa.',
             ],
@@ -409,10 +421,10 @@ return [
     'phone' => [
         'header' => 'Clínica Vida · Asistente',
         'online' => 'en línea',
-        'b1' => 'Hola, ¿tienes turno para un electro esta semana?',
-        'b2' => '¡Hola! Sí 😊 Tengo el jueves 10:30 o el viernes 16:00. ¿Cuál te queda mejor?',
-        'b3' => 'El jueves 10:30',
-        'b4' => 'Listo, te reservé el <b>jueves 10:30</b> con el Dr. Paz. Te llega el recordatorio el día anterior 👍',
+        'b1' => 'Hola, ¿hacen copias de llaves?',
+        'b2' => '¡Hola! Sí, en el momento 😊 La llave común sale $4.000 y la de auto $9.000.',
+        'b3' => 'Hi! Do you deliver to construction sites?',
+        'b4' => 'Yes! Free delivery in the neighborhood from <b>$50.000</b>. Orders before 2 pm go out the same day 🚚',
         'b5' => '¿Puedo pagar con tarjeta?',
         'b6' => '¡Claro! Aceptamos tarjeta, transferencia o efectivo 😊',
         'b7' => '¿Me pasas la dirección?',

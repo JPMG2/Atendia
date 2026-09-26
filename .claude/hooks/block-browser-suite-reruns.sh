@@ -30,6 +30,12 @@ case "$command" in
     *--filter*) exit 0 ;;
 esac
 
+# Un archivo puntual tampoco es la suite: sin esto dos corridas de un solo
+# test file consumían la corrida del commit (pasó el 2026-09-26).
+case "$command" in
+    *tests/Browser/*.php*) exit 0 ;;
+esac
+
 counter="${TMPDIR:-/tmp}/atendia-browser-suite-runs"
 
 # La ventana se reinicia sola a los 20 minutos: un turno nuevo arranca de cero.

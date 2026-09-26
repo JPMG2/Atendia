@@ -118,7 +118,7 @@
                 </span>
                 <div style="line-height: 1.2">
                     <div data-demo-header style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">
-                        {{ __('landing.phone.header') }}
+                        {{ __('landing.demo.header', ['name' => collect(__('landing.demo.rubros'))->first()['name']]) }}
                     </div>
                     <div
                         class="flex items-center gap-1.5"

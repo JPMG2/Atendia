@@ -104,20 +104,38 @@
                 </div>
             </x-site.feature-tile>
 
+            {{-- Second star tile: selling is what a bookings-only assistant
+            cannot show — a whole exchange, ending where the team takes over. --}}
             <x-site.feature-tile
                 icon="package"
                 :title="__('landing.features.catalog.title')"
                 :body="__('landing.features.catalog.body')"
-                class="flex flex-col lg:col-span-2"
+                class="flex flex-col sm:col-span-2 lg:col-span-4 lg:row-span-2"
             >
-                <div class="mt-auto flex flex-col gap-1.5" aria-hidden="true">
-                    <div class="vignette-row">
-                        <span class="truncate">{{ $vignette('catalog_1_name') }}</span>
-                        <span class="row-meta font-mono">{{ $vignette('catalog_1_price') }}</span>
+                <div class="bg-sunken mt-2 flex flex-1 flex-col justify-center rounded-xl" style="gap: 8px; padding: 14px" aria-hidden="true">
+                    <div class="pm-row in">
+                        <div class="pm-bubble in">{{ $vignette('catalog_ask') }}</div>
                     </div>
-                    <div class="vignette-row">
-                        <span class="truncate">{{ $vignette('catalog_2_name') }}</span>
-                        <span class="row-meta font-mono">{{ $vignette('catalog_2_price') }}</span>
+                    <div class="pm-row out">
+                        <div class="pm-bubble out flex flex-col" style="gap: 8px">
+                            <span class="vignette-row" style="background: var(--surface-card); color: var(--text-body)">
+                                <x-icon name="package" :size="16" style="color: var(--brand); flex-shrink: 0" />
+                                <span class="flex min-w-0 flex-col">
+                                    <b class="text-strong">{{ $vignette('catalog_product') }}</b>
+                                    <span class="font-mono">{{ $vignette('catalog_price') }} · {{ $vignette('catalog_stock') }}</span>
+                                </span>
+                            </span>
+                            <span>{{ $vignette('catalog_offer') }}</span>
+                        </div>
+                    </div>
+                    <div class="pm-row in">
+                        <div class="pm-bubble in">{{ $vignette('catalog_want') }}</div>
+                    </div>
+                    <div class="pm-row out">
+                        <div class="pm-bubble out">{{ $vignette('catalog_handoff') }}</div>
+                    </div>
+                    <div class="flex justify-center">
+                        <x-ui.badge variant="brand">{{ $vignette('catalog_badge') }}</x-ui.badge>
                     </div>
                 </div>
             </x-site.feature-tile>

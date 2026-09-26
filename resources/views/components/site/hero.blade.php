@@ -44,10 +44,10 @@ must never leave a horizontal scrollbar behind. --}}
                 >
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
-                        {{ __('landing.hero.perk_trial', ['days' => \App\Classes\Main\Plan::trial()->trialDays]) }}</span>
+                        {{ __('landing.hero.perk_try') }}</span>
                     <span class="inline-flex items-center gap-1.5"
                         ><x-icon name="check" :size="16" style="color: var(--brand)" />
-                        {{ __('landing.hero.perk_card') }}</span>
+                        {{ __('landing.hero.perk_trial', ['days' => \App\Classes\Main\Plan::trial()->trialDays]) }}</span>
                 </div>
 
                 {{-- Social proof from the real table, hidden below 10: a

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Classes\Main\AssistantContract;
 use App\Models\Business;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Tools\Request;
-use Throwable;
 
 /**
  * The owner's skills take explicit dates: the agent turns "hoy", "ayer" or
@@ -38,15 +38,11 @@ trait ReadsDateRange
     {
         $timezone = $business->localTimezone();
 
-        try {
-            $from = CarbonImmutable::createFromFormat('!Y-m-d', (string) $request['from'], $timezone);
-            $to = CarbonImmutable::createFromFormat('!Y-m-d', (string) $request['to'], $timezone);
-        } catch (Throwable) {
-            return 'Fechas inválidas: usá el formato AAAA-MM-DD en from y to.';
-        }
+        $from = AssistantContract::strictDate((string) $request['from'], 'Y-m-d', $timezone);
+        $to = AssistantContract::strictDate((string) $request['to'], 'Y-m-d', $timezone);
 
         if ($from === null || $to === null) {
-            return 'Fechas inválidas: usá el formato AAAA-MM-DD en from y to.';
+            return 'Fechas inválidas: usá el formato AAAA-MM-DD en from y to, con un día que exista.';
         }
 
         [$from, $to] = $from->lessThanOrEqualTo($to) ? [$from, $to] : [$to, $from];

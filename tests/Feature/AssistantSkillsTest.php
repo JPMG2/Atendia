@@ -91,6 +91,28 @@ test('hours answer with today, the time and whether it is open now, in the busin
         ->toContain('08:00 a 12:00');
 });
 
+test('hours name every closed day instead of leaving it out', function (): void {
+    // Left out, a plain Sunday was answered with "no pude confirmar" (ai-eval).
+    $business = Business::factory()->create();
+    BusinessHour::factory()->create(['business_id' => $business->id, 'day_of_week' => 1, 'opens_at' => '08:00', 'closes_at' => '12:00']);
+
+    expect($business->scheduleLines())->toHaveCount(7)
+        ->and($business->scheduleLines()[0])->toBe('Lunes: 08:00 a 12:00')
+        ->and($business->scheduleLines()[6])->toBe('Domingo: cerrado');
+});
+
+test('hours resolve the weekday of an asked date in code', function (string $date, string $expected): void {
+    $business = Business::factory()->create(['timezone' => 'America/Caracas']);
+    BusinessHour::factory()->create(['business_id' => $business->id, 'day_of_week' => 1, 'opens_at' => '07:00', 'closes_at' => '12:00']);
+    $this->travelTo(CarbonImmutable::parse('2026-10-02 16:30:00', 'UTC'));
+
+    expect((string) (new CheckBusinessHours($business))->handle(new Request(['date' => $date])))->toContain($expected);
+})->with([
+    'a far Monday' => ['2026-10-12', 'El 12/10/2026 es Lunes. Horario de ese día: Lunes: 07:00 a 12:00'],
+    'a closed Sunday' => ['2026-10-11', 'Horario de ese día: Domingo: cerrado'],
+    'an impossible date' => ['2026-02-31', 'Fecha inválida'],
+]);
+
 test('contact answers from the profile, and says so when nothing is loaded', function (): void {
     $business = Business::factory()->create(['address' => 'Av. Siempre Viva 742', 'city' => 'Springfield', 'email' => null, 'web' => null, 'whatsapp_number' => null]);
     $empty = Business::factory()->create(['address' => null, 'city' => null, 'email' => null, 'web' => null, 'whatsapp_number' => null, 'has_premises' => null]);

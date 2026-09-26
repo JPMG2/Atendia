@@ -68,7 +68,9 @@ function liveChat() {
         return;
     }
 
-    let pool = pools.clinica ?? [];
+    // The first rubro tag opens the show: commerce leads, where a
+    // bookings-only rival cannot follow.
+    let pool = pools[document.querySelector('[data-demo-rubro]')?.dataset.demoRubro] ?? [];
     let i = 0;
     let timer = null;
 
@@ -159,7 +161,7 @@ function interactiveDemo() {
     const header = document.querySelector('[data-demo-header]');
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
-    let rubro = 'clinica';
+    let rubro = document.querySelector('[data-demo-rubro]')?.dataset.demoRubro ?? 'clinica';
     let currentName = document.querySelector('[data-demo-rubro]')?.dataset.demoName ?? '';
     let currentCtaLabel = document.querySelector('[data-demo-rubro]')?.dataset.demoCtaLabel ?? '';
     const exchanges = [];

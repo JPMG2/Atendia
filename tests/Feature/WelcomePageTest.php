@@ -83,6 +83,7 @@ test('the hero opens with the loss, not the category', function (): void {
         ->assertSee(__('landing.hero.title_1'))
         ->assertSee(__('landing.hero.title_2'))
         ->assertSee('a las 3 de la mañana')
+        ->assertSee(__('landing.hero.perk_try'))
         ->assertSee(__('landing.hero.perk_trial', ['days' => Plan::trial()->trialDays]))
         ->assertDontSee('Para cualquier rubro');
 });
@@ -107,6 +108,7 @@ test('the faq is one hop away from the navbar and the footer', function (): void
 
 test('the faq answers the four fears and carries the FAQPage schema', function (): void {
     $this->get('/')
+        ->assertSeeInOrder(['¿Sirve si vendo productos y no doy turnos?', '¿Qué pasa si me escriben en otro idioma?', '¿Puede decirle algo equivocado a mis clientes?'])
         ->assertSee('¿Se nota que es un bot?')
         ->assertSee('¿Pierdo el control de mi WhatsApp?')
         ->assertSee('¿Qué pasa con los datos de mis clientes?')
@@ -142,7 +144,17 @@ test('the landing sells the any-language plus in the features and the live demo'
         ->assertSee(__('landing.features.always.body'))
         // The hero phone demos the switch: an English exchange in the live pool.
         ->assertSee(__('landing.phone.b9'))
-        ->assertSee(__('landing.phone.b10'));
+        ->assertSee(__('landing.phone.b10'))
+        // ...and the switch shows in the SECOND question, not the ninth.
+        ->assertSee(__('landing.phone.b3'));
+});
+
+test('the demo opens on a shop, where a bookings-only assistant cannot follow', function (): void {
+    // Differentiation audit (2026-09-26): the rival's hero books a salon;
+    // ours leads with commerce and keeps every service rubro behind it.
+    $this->get('/')
+        ->assertSee('Ferretería El Tornillo · Asistente')
+        ->assertSeeInOrder(['data-demo-rubro="ferreteria"', 'data-demo-rubro="kiosco"', 'data-demo-rubro="clinica"'], false);
 });
 
 test('the features bento leads with the owner panel and vignettes of the real screens', function (): void {
@@ -154,7 +166,8 @@ test('the features bento leads with the owner panel and vignettes of the real sc
         ->assertSee(__('landing.features.vignettes.stat_resolution'))
         ->assertSee(__('landing.features.vignettes.thread_2_text'))
         ->assertSee(__('landing.features.vignettes.schedule_badge'))
-        ->assertSee(__('landing.features.vignettes.catalog_2_price'));
+        ->assertSee(__('landing.features.vignettes.catalog_handoff'))
+        ->assertSee(__('landing.features.vignettes.catalog_badge'));
 });
 
 test('pricing clarifies USD and only grounds a local amount when a rate is configured', function (): void {

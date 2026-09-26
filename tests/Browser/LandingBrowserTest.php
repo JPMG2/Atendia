@@ -18,6 +18,10 @@ test('the loss headline and the faq accordion, in the flesh', function (): void 
     $page->assertSee('Nunca más pierdas un cliente')
         ->screenshotElement('#top', 'landing-hero-loss');
 
+    // The catalog is the second star tile, mirrored under the panel.
+    $page->assertSee(__('landing.features.vignettes.catalog_handoff'))
+        ->screenshotElement('#funciones', 'landing-features-bento');
+
     // Closed by default; the click unfolds ONE answer.
     $page->assertDontSee('nunca inventa')
         ->click('¿Puede decirle algo equivocado a mis clientes?')

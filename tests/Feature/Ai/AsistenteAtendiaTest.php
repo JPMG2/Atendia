@@ -159,5 +159,6 @@ test('the assistant always knows today on the business clock', function (): void
     $business = Business::factory()->create(['timezone' => 'America/Caracas']);
 
     expect((string) (new AsistenteAtendia($business))->instructions())
-        ->toContain('Hoy es jueves 24 de septiembre de 2026, 17:02 (hora del negocio)');
+        ->toContain('Ahora es jueves 24 de septiembre de 2026, 17:02 (hora del negocio)')
+        ->toContain('mañana = 2026-09-25');
 });

@@ -41,4 +41,11 @@
 7. **No inventar excusas.** Si algo salió lento o mal, es mío; asumir y corregir, no
    teorizar.
 
+## Cómo se hace cumplir
+
+Estas reglas se reinyectan con cada mensaje (hook `inject-work-rules.sh`) y el
+turno no cierra sin la puerta de salida (hook `enforce-turn-exit.sh`): guardianes
+en verde y, si hubo vistas, checklist + verificación visual + mejoras en la
+respuesta. Ver `reglas-de-oro-enforcement.md` §"Capa D".
+
 Relacionado: `atendiadesign` (sistema de diseño), memoria `atendia-feedback-modo-trabajo`.

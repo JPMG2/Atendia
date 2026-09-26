@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ai\Tools;
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Classes\Main\AssistantContract;
 use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Business;
 use App\Models\BusinessHour;
@@ -30,7 +31,8 @@ class CheckBusinessHours implements AssistantSkillTool
     {
         return 'Devuelve los horarios de atención del negocio, qué día y hora es ahora '
             .'y si está abierto en este momento. Usala para cualquier consulta de horarios, '
-            .'días de atención o si están abiertos.';
+            .'días de atención o si están abiertos. Si preguntan por una fecha puntual '
+            .'("el 12/10", "el 20 de diciembre"), pasala en "date" y te dice qué día cae.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -41,15 +43,36 @@ class CheckBusinessHours implements AssistantSkillTool
             return 'El negocio no cargó sus horarios de atención.';
         }
 
-        $now = now($this->business->localTimezone());
-        $today = BusinessHour::dayNames()[(int) $now->format('w')];
+        $timezone = $this->business->localTimezone();
+        $now = now($timezone);
+        $days = BusinessHour::dayNames();
         $state = $this->business->isOpenNow() ? 'abierto' : 'cerrado';
+        $answer = "Ahora es {$days[(int) $now->format('w')]}, {$now->format('H:i')}: el negocio está {$state}.";
 
-        return "Ahora es {$today}, {$now->format('H:i')}: el negocio está {$state}.\nHorarios de atención:\n".implode("\n", $lines);
+        $asked = trim((string) ($request['date'] ?? ''));
+
+        if ($asked !== '') {
+            // The weekday of a far date is computed here: the model miscounted
+            // past its ±7-day clock and answered "no pude confirmar" (ai-eval).
+            $date = AssistantContract::strictDate($asked, 'Y-m-d', $timezone);
+
+            if ($date === null) {
+                return 'Fecha inválida: usá el formato AAAA-MM-DD, con un día que exista.';
+            }
+
+            $weekday = $days[(int) $date->format('w')];
+            $answer .= "\nEl {$date->format('d/m/Y')} es {$weekday}. Horario de ese día: "
+                .(collect($lines)->first(fn (string $line): bool => str_starts_with($line, $weekday.':')) ?? $weekday.': cerrado')
+                .'. No hay feriados ni cierres especiales cargados: es el horario habitual de ese día.';
+        }
+
+        return $answer."\nHorarios de atención:\n".implode("\n", $lines);
     }
 
     public function schema(JsonSchema $schema): array
     {
-        return [];
+        return [
+            'date' => $schema->string()->description('Opcional: fecha puntual por la que preguntan, formato AAAA-MM-DD.'),
+        ];
     }
 }

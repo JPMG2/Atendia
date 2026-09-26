@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ai\Tools;
 
 use App\Ai\Agents\AskAtendia;
+use App\Classes\Main\AssistantContract;
 use App\Classes\Main\Statistics;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\Business;
@@ -12,7 +13,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Tools\Request;
 use Stringable;
-use Throwable;
 
 /**
  * The "Mis estadísticas" screen read aloud: the SAME Statistics piece, so
@@ -41,10 +41,10 @@ class OwnerStatistics implements OwnerSkillTool
         $timezone = $this->business->localTimezone();
         $current = CarbonImmutable::now($timezone)->startOfMonth();
 
-        try {
-            $month = CarbonImmutable::createFromFormat('!Y-m', (string) $request['month'], $timezone) ?: $current;
-        } catch (Throwable) {
-            return 'Mes inválido: usá el formato AAAA-MM.';
+        $month = AssistantContract::strictDate((string) $request['month'], 'Y-m', $timezone);
+
+        if ($month === null) {
+            return 'Mes inválido: usá el formato AAAA-MM, con un mes que exista.';
         }
 
         $stats = new Statistics($this->business);

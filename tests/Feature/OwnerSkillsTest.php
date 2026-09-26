@@ -81,13 +81,14 @@ test('conversations lists only the waiting ones when asked', function (): void {
     expect($answer)->toContain('María López')->not->toContain('Juan Pérez');
 });
 
-test('an unreadable date is said back to the model, never guessed', function (): void {
+test('an unreadable or impossible date is said back to the model, never guessed', function (string $date): void {
+    // Carbon rolled 2026-02-31 into March 3rd: the owner got another day's data.
     $answer = (string) (new OwnerConversations(Business::factory()->create()))->handle(new Request([
-        'from' => 'hoy', 'to' => 'hoy', 'only_waiting' => false,
+        'from' => $date, 'to' => $date, 'only_waiting' => false,
     ]));
 
     expect($answer)->toContain('Fechas inválidas');
-});
+})->with(['hoy', '2026-02-31', '26/09/2026']);
 
 test('birthdays in a window that crosses the new year, with the consent said', function (): void {
     $business = Business::factory()->create();
@@ -136,4 +137,10 @@ test('the panel guide keeps the base texts under a partial regional file', funct
 
     expect((string) (new PanelGuide)->handle(new Request(['module' => 'my-products'])))
         ->toContain('field_price: '.__('client.products.field_price'));
+});
+
+test('an impossible month is said back to the model instead of rolling into next year', function (): void {
+    $answer = (string) (new OwnerStatistics(Business::factory()->create()))->handle(new Request(['month' => '2026-13']));
+
+    expect($answer)->toContain('Mes inválido');
 });

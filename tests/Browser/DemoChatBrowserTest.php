@@ -13,14 +13,14 @@ beforeEach(function (): void {
     app()->setLocale('es');
 });
 
-test('the visitor chats with the demo clinic inside the hero phone', function (): void {
+test('the visitor chats with the demo hardware store inside the hero phone', function (): void {
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
 
     // Two entries per exchange: the grounding re-ask may consume a second.
     AsistenteAtendia::fake([
-        'Buscando…', 'La ecografía abdominal cuesta $45.000 y con obra social suele tener cobertura.',
-        'Buscando…', 'El corte de dama cuesta $18.000 con lavado incluido.',
+        'Buscando…', 'Sí, en el momento: la llave común cuesta $4.000 y la de auto $9.000.',
+        'Buscando…', 'Sí, hacemos envíos en el barrio hasta las 23.',
     ]);
 
     $page = visit('/');
@@ -28,19 +28,19 @@ test('the visitor chats with the demo clinic inside the hero phone', function ()
     // A chip is the visitor's first word; the reply lands as a jade bubble
     // and the remaining-questions nudge appears under the box.
     $page->assertSee(__('landing.demo.try_label'))
-        ->click('¿Cuánto sale una ecografía?')
-        ->assertSee('La ecografía abdominal cuesta $45.000')
+        ->click('¿Hacen copias de llaves?')
+        ->assertSee('la llave común cuesta $4.000')
         ->assertSee(trans_choice('landing.demo.left', 3, ['count' => 3]))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-chat')
         ->assertNoJavaScriptErrors();
 
-    // Switching rubro hands the phone to the salon: new header, new chips,
+    // Switching rubro hands the phone to the kiosk: new header, new chips,
     // fresh chat — and the budget keeps counting down across rubros.
-    $page->click('Peluquería')
-        ->assertSee('Peluquería Lumen · Asistente')
-        ->assertDontSee('La ecografía abdominal cuesta $45.000')
-        ->click('¿Cuánto sale el corte?')
-        ->assertSee('El corte de dama cuesta $18.000')
+    $page->click('Kiosco')
+        ->assertSee('Kiosco El Faro · Asistente')
+        ->assertDontSee('la llave común cuesta $4.000')
+        ->click('¿Hacen envíos?')
+        ->assertSee('hacemos envíos en el barrio')
         ->assertSee(trans_choice('landing.demo.left', 2, ['count' => 2]))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-rubro-switch')
         ->assertNoJavaScriptErrors();
@@ -51,15 +51,15 @@ test('the spent budget turns into the register invite and the share door', funct
     $this->seed(DemoBusinessSeeder::class);
     config()->set('atendia.demo.session_cap', 1);
 
-    AsistenteAtendia::fake(['Buscando…', 'La ecografía abdominal cuesta $45.000.']);
+    AsistenteAtendia::fake(['Buscando…', 'Sí, en el momento: la llave común cuesta $4.000.']);
 
     $page = visit('/');
 
     // One budgeted reply: the goodbye, the rubro-named register CTA and the
     // WhatsApp share link take over the composer.
-    $page->click('¿Cuánto sale una ecografía?')
-        ->assertSee('La ecografía abdominal cuesta $45.000')
-        ->assertSee(__('landing.demo.cta_rubro', ['rubro' => 'consultorio']))
+    $page->click('¿Hacen copias de llaves?')
+        ->assertSee('la llave común cuesta $4.000')
+        ->assertSee(__('landing.demo.cta_rubro', ['rubro' => 'ferretería']))
         ->assertSee(__('landing.demo.share'))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-finished')
         ->assertVisible('[data-demo-share]');

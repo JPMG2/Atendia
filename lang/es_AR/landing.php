@@ -26,6 +26,7 @@ return [
 
     'hero' => [
         'badge' => 'Atiende por vos en WhatsApp',
+        'perk_try' => 'Probalo acá mismo, sin registrarte',
         'subtitle' => 'Atendia responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras hacés lo tuyo. Lo conectás en minutos, sin saber de tecnología.',
     ],
 
@@ -35,7 +36,7 @@ return [
             'body' => 'Definí días, horarios y capacidad. El asistente ofrece huecos libres y confirma sin que muevas un dedo.',
         ],
         'catalog' => [
-            'body' => 'Cargá productos con precio y foto. Si preguntan, responde con la info y el link de compra al instante.',
+            'body' => 'Cargá productos con precio y stock. Si preguntan, responde qué hay, cuánto sale y cuántas quedan — y cuando alguien lo quiere, le avisa a tu equipo.',
         ],
         'always' => [
             'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea. Vos lo leés todo en español.',
@@ -78,6 +79,14 @@ return [
     'faq' => [
         'items' => [
             [
+                'q' => '¿Sirve si vendo productos y no doy turnos?',
+                'a' => 'Sí. Cargás tu catálogo con precio y stock, y el asistente responde qué hay, cuánto sale y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres vos.',
+            ],
+            [
+                'q' => '¿Qué pasa si me escriben en otro idioma?',
+                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio. Los avisos para tu equipo llegan siempre en español.',
+            ],
+            [
                 'q' => '¿Puede decirle algo equivocado a mis clientes?',
                 'a' => 'Responde solo con lo que tu negocio cargó: tus servicios, tus precios, tus respuestas. Si algo no está en su conocimiento, lo dice con honestidad y ofrece pasar con tu equipo — nunca inventa.',
             ],
@@ -110,7 +119,6 @@ return [
     ],
 
     'phone' => [
-        'b1' => 'Hola, ¿tenés turno para un electro esta semana?',
         'b7' => '¿Me pasás la dirección?',
     ],
 

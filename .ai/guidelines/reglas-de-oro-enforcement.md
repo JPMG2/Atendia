@@ -38,6 +38,27 @@ Cuando se suma un set de reglas de oro:
    congelan en el allowlist con su razón — **nunca se agrega nada nuevo a esa
    lista**, se arregla.
 
+## Capa D — Puerta de salida del turno (hooks `Stop` + `UserPromptSubmit`)
+
+- **`inject-work-rules.sh` (UserPromptSubmit)**: con cada mensaje reinyecta las 7
+  reglas de `no-mediocre.md` en ~10 líneas (no quedan enterradas en CLAUDE.md) y
+  marca el inicio del turno.
+- **`enforce-turn-exit.sh` (Stop)**: si el turno tocó código corre
+  `GoldenRules|BusinessIsolation` (~5s) y en rojo **no deja cerrar**. Si tocó
+  vistas exige en la respuesta final "Checklist de salida", "Verificación visual"
+  y "Mejoras para decidir", más evidencia visual real en el turno (browser test o
+  captura). Escapes honestos, nunca silenciosos: "guardián en rojo" (rojo ajeno,
+  nombrado) y "Sin verificación visual" (con el porqué). Tope anti-bucle: 3.
+- Así las reglas de CRITERIO (que ningún patrón detecta) también son obligatorias:
+  se verifica que el paso se hizo y se dijo, no solo que existe la guía.
+
+## Ratchet de incumplimientos (obligatorio)
+
+Cada vez que la dueña caza una regla rota, **en la misma sesión y antes de seguir**
+esa regla gana su control automático (guardián y/o hook). Una regla que se rompió
+dos veces estando solo escrita es una regla sin cerradura. `inject-work-rules.sh`
+lo recuerda cuando el mensaje reclama una regla.
+
 ## Implementaciones vivas (ejemplos de esta receta)
 - **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
   `tests/Feature/GoldenRulesMarkupTest.php` · hook
@@ -124,6 +145,15 @@ Cuando se suma un set de reglas de oro:
   test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` · hook
   `.claude/hooks/check-plan-source-golden-rules.sh`. Patrones espejados (tocar de a
   dos); sin allowlist — nació en cero el 2026-09-25, tras "Hasta 5 números" vs 4.
+- **Contrato de los asistentes IA (reloj + verdad, uno solo)** →
+  `.ai/guidelines/ia-contrato-asistentes.md` · test guardián
+  `tests/Feature/GoldenRulesAgentContractTest.php` · hook
+  `.claude/hooks/check-ai-agent-golden-rules.sh`. Sin allowlist — nació en
+  cero el 2026-09-26.
+- **Economía de tokens (modelo declarado, memoria acotada, reloj último)** →
+  `.ai/guidelines/ia-economia-tokens.md` · test guardián
+  `tests/Feature/GoldenRulesAgentEconomyTest.php` · el MISMO hook de agentes
+  (patrones espejados: tocar de a dos).
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

@@ -98,7 +98,32 @@
           },
           {
             "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/check-ai-agent-golden-rules.sh"
+          },
+          {
+            "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/remind-form-checklist.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/inject-work-rules.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/enforce-turn-exit.sh",
+            "timeout": 120
           }
         ]
       }
