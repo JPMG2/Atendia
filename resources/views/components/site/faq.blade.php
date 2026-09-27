@@ -5,7 +5,7 @@
         ->map(fn (array $faq): array => ['q' => $faq['q'], 'a' => str_replace(':days', $trialDays, $faq['a'])])
         ->all();
 
-    // Same door as Pro's pricing CTA; unset number = the line simply hides.
+    // Same door as Premium's pricing CTA; unset number = the line simply hides.
     $salesWhatsapp = config('atendia.sales_whatsapp');
 
     // The same items feed the visible accordion and the FAQPage structured

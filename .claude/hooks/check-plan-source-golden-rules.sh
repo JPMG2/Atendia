@@ -27,15 +27,29 @@ case "$file" in
 esac
 
 case "$file" in
+    */config/atendia.php)
+        grep -qE "^    '(plans|trial)' => \\[" "$file" && problems="${problems}- config redefine planes/prueba: esas cifras viven solo en la tabla plans\n"
+        ;;
+esac
+
+case "$file" in
     */lang/*|*/resources/views/*)
-        grep -qiP "\d[\d.]*\s+(conversaciones con IA|n[uú]meros? de WhatsApp|minutos de audio|consultas al mes|mensajes por hora|d[ií]as gratis|d[ií]as el plan)" "$file" \
+        grep -qiP "\d[\d.]*\s+(conversaciones con IA|n[uú]meros? de WhatsApp|minutos de audio|consultas al mes|mensajes por hora|d[ií]as gratis|d[ií]as el plan|fotos de cat[aá]logo)" "$file" \
             && problems="${problems}- cifra de plan tipeada a mano: usá un :placeholder y pasá el valor desde Plan\n"
         ;;
 esac
 
 case "$file" in
+    */lang/*/plan.php) ;;
+    */lang/*|*/resources/views/*)
+        grep -qP "'[^'\\n]*\\b(Emprende|Premium)\\b[^'\\n]*'|\\splan=\"(emprende|negocio|premium)\"" "$file" \
+            && problems="${problems}- nombre de plan tipeado a mano: usá __('plan.names.'.\$code) o un :plan\n"
+        ;;
+esac
+
+case "$file" in
     */resources/views/*)
-        grep -qP "'\\\$\d+'" "$file" && problems="${problems}- precio tipeado a mano: sale de Plan (price / annualMonthlyPrice)\n"
+        grep -qP "'\\\$\d+'|\\\$\{\{" "$file" && problems="${problems}- precio tipeado a mano: sale de Plan (price / annualMonthlyPrice)\n"
         ;;
 esac
 

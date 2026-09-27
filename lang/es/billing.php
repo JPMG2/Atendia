@@ -79,7 +79,7 @@ return [
         'title' => 'Subir comprobante',
         'sub' => 'Lo verificamos y te avisamos por correo apenas se acredite.',
         'file' => 'Comprobante',
-        'file_note' => 'Foto o PDF, hasta 5 MB.',
+        'file_note' => 'Una foto o captura del comprobante, hasta 5 MB.',
         'reference' => 'Número de operación (opcional)',
         'amount' => 'Monto a pagar',
         'submit' => 'Enviar comprobante',

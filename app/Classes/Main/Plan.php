@@ -19,7 +19,7 @@ final class Plan
     /** Yearly billing pays ten months: two free, the same promise everywhere. */
     private const int PAID_MONTHS_PER_YEAR = 10;
 
-    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, trial_days: ?int, is_featured: bool} $limits */
+    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, trial_days: ?int, is_featured: bool} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -58,6 +58,15 @@ final class Plan
         get => $this->askPerMonth > 0;
     }
 
+    /** Catalog photos the whole business may keep; past it, what is there stays and nothing new goes in. */
+    public int $catalogPhotos {
+        get => (int) ($this->limits['catalog_photos'] ?? 0);
+    }
+
+    public int $photosPerItem {
+        get => (int) ($this->limits['photos_per_item'] ?? 0);
+    }
+
     /** The trial plan's length; null on every other plan. */
     public ?int $trialDays {
         get => $this->limits['trial_days'] ?? null;
@@ -81,6 +90,13 @@ final class Plan
         return array_search($this->statisticsLevel, $ladder, true) >= array_search($level, $ladder, true);
     }
 
+    /** The cheapest plan that opens a statistics level: the name a padlock or a guide shows. */
+    public static function lowestWithStatistics(string $level): self
+    {
+        return collect(self::ladder())->first(fn (self $plan): bool => $plan->statisticsAtLeast($level))
+            ?? self::named(array_key_last(self::catalog()));
+    }
+
     /** An unknown or missing code falls to the FLOOR plan: a typo must never gift Premium. */
     public static function named(?string $code): self
     {
@@ -99,7 +115,7 @@ final class Plan
     }
 
     /**
-     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, trial_days: ?int, is_featured: bool}>
      *
      * @throws RuntimeException
      */
@@ -172,6 +188,7 @@ final class Plan
                     ? ['key' => 'audio', 'label' => __('plan.features.audio', ['cap' => $this->audioMinutesPerMonth]), 'value' => $this->audioMinutesPerMonth]
                     : ['key' => 'audio', 'label' => __('plan.features.audio_none'), 'value' => 0],
                 ['key' => 'statistics', 'label' => __('plan.features.statistics.'.$this->statisticsLevel), 'value' => (int) array_search($this->statisticsLevel, $levels, true)],
+                ['key' => 'photos', 'label' => __('plan.features.photos', ['cap' => number_format($this->catalogPhotos, 0, ',', '.'), 'per' => $this->photosPerItem]), 'value' => $this->catalogPhotos],
                 $this->allowsAsk
                     ? ['key' => 'ask', 'label' => __('plan.features.ask', ['cap' => $this->askPerMonth]), 'value' => $this->askPerMonth]
                     : null,

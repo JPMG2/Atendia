@@ -173,14 +173,14 @@ test('the features bento leads with the owner panel and vignettes of the real sc
 test('pricing clarifies USD and only grounds a local amount when a rate is configured', function (): void {
     // No rate for the visitor's region: the USD note stands alone.
     $this->get('/')
-        ->assertSee(__('landing.pricing.currency_note'))
+        ->assertSee(__('landing.pricing.currency_note', ['currency' => 'USD']))
         ->assertDontSee('valor de referencia');
 
     // A configured rate adds one reference line for the featured plan.
     config()->set('atendia.pricing_reference.es', ['symbol' => 'AR$', 'rate' => 1500]);
 
     $this->get('/')->assertSee(__('landing.pricing.local_reference', [
-        'plan' => __('landing.pricing.negocio.name'),
+        'plan' => __('plan.names.negocio'),
         'amount' => 'AR$ 118.500',
     ]));
 });
@@ -193,7 +193,7 @@ test('the pricing calculator argues with the visitor\'s own numbers, no invented
         ->assertSee(__('landing.pricing.calculator.today_tag'))
         ->assertSee(__('landing.pricing.calculator.with_tag'))
         ->assertSee(__('landing.pricing.calculator.verdict_per_hour'))
-        ->assertSee(__('landing.pricing.calculator.hour_value_label'))
+        ->assertSee(__('landing.pricing.calculator.hour_value_label', ['currency' => 'USD']))
         ->assertSee(__('landing.pricing.calculator.cta', ['days' => Plan::trial()->trialDays]))
         ->assertSee(__('landing.pricing.calculator.assumption', [
             'minutes' => config('atendia.calculator_minutes'),
@@ -250,9 +250,9 @@ test('the pricing section emphasizes the business plan, Tailwind Plus style', fu
         ->assertSee('pricing-tier-left', false)
         ->assertSee('pricing-tier-right', false)
         ->assertSee(__('landing.pricing.featured_badge'))
-        ->assertSee(__('landing.pricing.negocio.name'))
-        ->assertSee(__('landing.pricing.emprende.name'))
-        ->assertSee(__('landing.pricing.premium.name'));
+        ->assertSee(__('plan.names.negocio'))
+        ->assertSee(__('plan.names.emprende'))
+        ->assertSee(__('plan.names.premium'));
 });
 
 test('pricing charms: yearly toggle, incremental features and a trust line', function (): void {
@@ -263,8 +263,8 @@ test('pricing charms: yearly toggle, incremental features and a trust line', fun
         ->assertSee('$29', false)
         ->assertSee('$24', false)
         ->assertSee('$66', false)
-        ->assertSee(__('landing.pricing.negocio.includes'))
-        ->assertSee(__('landing.pricing.premium.includes'))
+        ->assertSee(__('landing.pricing.negocio.includes', ['plan' => __('plan.names.emprende')]))
+        ->assertSee(__('landing.pricing.premium.includes', ['plan' => __('plan.names.negocio')]))
         ->assertSee(__('landing.pricing.trust'));
 });
 

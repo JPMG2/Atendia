@@ -52,3 +52,9 @@ test('strict dates reject impossible or foreign formats instead of rolling over'
     'valid month' => ['2026-09', 'Y-m', '2026-09'],
     'month 13' => ['2026-13', 'Y-m', null],
 ]);
+
+test('the voice follows the locale: voseo only for es_AR', function (): void {
+    expect(new AssistantContract(CarbonImmutable::now(), 'es_AR')->voice)->toContain('de vos')
+        ->and(new AssistantContract(CarbonImmutable::now(), 'es')->voice)->toContain('de tú')
+        ->and(new AssistantContract(CarbonImmutable::now(), 'es_VE')->voice)->toContain('de tú');
+});

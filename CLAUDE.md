@@ -699,6 +699,10 @@ Blindada: `tests/Feature/GoldenRulesAgentContractTest.php` + hook
 - **`->clock`** (cambia cada minuto, va ÚLTIMO): hoy / mañana / pasado mañana /
   ayer / anteayer / anoche / semanas / meses / los 7 días de cada lado, la regla
   de fechas con barras (día primero), la de fechas imposibles y el formato de salida.
+- **`->voice`** (va con el rol): tú o vos según la variante. El de WhatsApp la toma
+  del país del negocio (`Business::locale()`); el del panel, del selector de la dueña.
+  Lo que un job o comando le manda a una persona sale con `Tenant::speakingAs($business, …)`
+  — sin sesión, un worker hablaba el neutro al lado de una IA en voseo.
 - **`::strictDate($valor, 'Y-m-d', $tz)`**: la herramienta que recibe una fecha la
   lee estricto. Carbon corría `2026-02-31` al 03/03 en silencio; ahora es `null` y
   la herramienta le contesta al modelo "Fechas inválidas".
@@ -723,7 +727,7 @@ return <<<INSTRUCCIONES
 
 ## Checklist de salida
 
-- [ ] Agente Conversational → `grounding` arriba, `clock` último, cero reloj propio.
+- [ ] Agente Conversational → `grounding` PRIMERO y `clock` ÚLTIMO (ambos blindados), `voice` con el rol, cero reloj propio.
 - [ ] Regla común nueva → en `AssistantContract`, no en un agente.
 - [ ] Fecha que entra a una herramienta → `strictDate`, con el error dicho al modelo.
 - [ ] `./vendor/bin/pest --filter=GoldenRulesAgent` en verde.
@@ -858,6 +862,46 @@ Blindado con test de regresión: `tests/Feature/DestructiveCommandGuardTest.php`
   destructivos a mano para testear.
 
 Relacionado: la receta de enforcement de 3 capas — ver `.ai/guidelines/reglas-de-oro-enforcement.md`.
+
+=== .ai/moderacion-contenido rules ===
+
+# Moderación de contenido — nada de lo que sube un negocio se saltea (regla de oro)
+
+> Orden de la dueña (2026-09-20, construido 2026-09-27): un registro puede ser
+> una FACHADA. Todo lo que un negocio sube o escribe pasa por moderación; lo
+> grave suspende el negocio al instante. Enforcement de 3 capas en
+> `reglas-de-oro-enforcement.md`; lo legal pendiente, en `aproduccion.md`.
+
+Blindada: `tests/Feature/GoldenRulesUploadModerationTest.php` + hook
+`check-upload-moderation-golden-rules.sh` (mismos patrones, tocar de a dos).
+
+## Cómo funciona
+
+- **Imágenes** (logo, foto de perfil, comprobante, y lo que venga): se validan
+  SOLO con `AttributeValidator::imageUpload('origen', $requerido, $maxKb)` →
+  PNG/JPG/WebP (SVG y PDF NO: la moderación no ve adentro) + regla
+  `SafeUpload`, que revisa ANTES de guardar.
+- **Textos** (perfil, servicios, productos, respuestas enseñadas, importaciones):
+  todos terminan en `knowledge_documents`; el observer despacha
+  `ModerateKnowledgeDocument` junto al indexado.
+- **Niveles** (`ContentModeration`, OpenAI omni-moderation, gratis):
+  menores o adulto ≥ `atendia.moderation.severe_score` → **suspende**;
+  adulto por debajo → **se rechaza** y revisa el admin (la lencería puede
+  dispararlo); sin respuesta → **no entra** (falla CERRADA, al revés que el
+  guardián de WhatsApp del cliente final).
+- **Suspensión** (`SuspendBusiness`): `businesses.suspended_at`; la IA calla,
+  `canMessageCustomers()` corta todo envío, banner en el panel, correo +
+  WhatsApp al equipo. Solo el admin la levanta en `/admin/moderacion`.
+- **Evidencia**: solo la huella SHA-256 en `moderation_flags`, nunca el archivo.
+- **Punto ciego**: OpenAI juzga menores SOLO en texto. Para imágenes falta
+  Cloudflare CSAM Scanning Tool o PhotoDNA (pendiente, ver `aproduccion.md`).
+
+## Checklist de salida
+
+- [ ] ¿Subida nueva de imagen de un negocio? → `AttributeValidator::imageUpload`.
+- [ ] ¿Texto nuevo que escribe un negocio? → que termine en un knowledge document.
+- [ ] ¿Envío nuevo a clientes? → chequea `canMessageCustomers()`.
+- [ ] `./vendor/bin/pest --filter="GoldenRulesUploadModeration|ContentModeration"` en verde.
 
 === .ai/no-mediocre rules ===
 
@@ -1168,10 +1212,63 @@ lo recuerda cuando el mensaje reclama una regla.
   `.ai/guidelines/ia-economia-tokens.md` · test guardián
   `tests/Feature/GoldenRulesAgentEconomyTest.php` · el MISMO hook de agentes
   (patrones espejados: tocar de a dos).
+- **Moderación de lo que sube un negocio** → `.ai/guidelines/moderacion-contenido.md` ·
+  test guardián `tests/Feature/GoldenRulesUploadModerationTest.php` · hook
+  `.claude/hooks/check-upload-moderation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-27. Fuera de
+  alcance a propósito: los forms del admin (Configuration, Admin).
+- **Reportes (PDF/Excel/CSV por una sola capa, un solo botón)** → `.ai/guidelines/reportes.md` ·
+  test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
+  `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
+  dos); sin allowlist — nació en cero el 2026-09-27.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
 Ver también: [[documentacion-y-memoria]] (un tema por archivo, legibilidad).
+
+=== .ai/reportes rules ===
+
+# Reportes — todo archivo generado sale por la capa de reportes (regla de oro)
+
+> Orden de la dueña (2026-09-27): PDF, Excel, CSV o lo que venga se genera
+> SOLO con estas clases, y el botón es uno solo. Enforcement de 3 capas en
+> `reglas-de-oro-enforcement.md`.
+
+Blindada: `tests/Feature/GoldenRulesReportsTest.php` + hook
+`check-report-golden-rules.sh` (mismos patrones, tocar de a dos).
+
+## Las piezas (el QUÉ separado del CÓMO)
+
+- **`App\Interfaces\Main\Report`** — el QUÉ: `authorize(User)` (la cerradura
+  va acá, no en ocultar el botón) + `$document` (property hook que arma el `ReportDto`). Uno por reporte,
+  en `app/Classes/Report/`, registrado por clave en `config('atendia.reports')`.
+- **`App\Dto\ReportDto`** — título, nombre de archivo, columnas, filas.
+- **`App\Interfaces\Main\ReportExporter`** — el CÓMO: `$extension`,
+  `$mimeType`, `$opensInBrowser` (property hooks) + `render(ReportDto)`.
+  Hoy: `PdfExporter` (dompdf), `XlsxExporter` (PhpSpreadsheet), `CsvExporter`
+  (`;` + BOM para Excel en español). Cada uno es un caso de `ReportFormat`.
+- **`App\Services\Report\ReportMaker::respond()`** — la única puerta: nombre
+  con fecha, `inline` para imprimir (PDF) o `attachment` para descargar.
+- **Ruta única** `reports.show` (`/reportes/{clave}/{formato}`).
+- **Botón único** `<x-ui.export-button report="clave" format="pdf|xlsx|csv" />`:
+  color info suave, ícono por formato; el PDF abre en otra pestaña para imprimir.
+
+## Cómo se suma un reporte
+
+1. Clase en `app/Classes/Report/` que implementa `Report` (arma el `ReportDto`).
+2. Clave en `config/atendia.php` → `reports`.
+3. Los botones que hagan falta con `<x-ui.export-button>`.
+4. Test Pest (contenido + cerradura). Nada más: los 3 formatos ya existen.
+
+Un formato nuevo (p. ej. Word) = una clase `ReportExporter` + un caso en
+`ReportFormat`, y sirve a TODOS los reportes.
+
+## Checklist de salida
+
+- [ ] Cero `Pdf::`, writers de PhpSpreadsheet, `fputcsv` o `->download(` fuera de la capa.
+- [ ] El reporte autoriza en `authorize()`; registrado en `atendia.reports`.
+- [ ] El botón es `<x-ui.export-button>`; ningún otro enlace a `reports.show`.
+- [ ] `./vendor/bin/pest --filter="GoldenRulesReports|ReportsTest"` en verde.
 
 === .ai/skills-del-asistente rules ===
 

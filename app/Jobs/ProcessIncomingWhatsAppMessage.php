@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\Business\SendHumanReply;
+use App\Actions\Business\TranslateForCustomer;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\Plan;
 use App\Enums\ConversationStatus;
@@ -96,7 +97,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        app(Tenant::class)->for((int) $business->id, function () use ($business, $plan, $evolution): void {
+        app(Tenant::class)->speakingAs($business, function () use ($business, $plan, $evolution): void {
             $customer = $this->rememberCustomer();
 
             $conversation = Conversation::query()->firstOrCreate(
@@ -117,16 +118,16 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $conversation->update(['status' => ConversationStatus::Open]);
             }
 
-            // Unpaid past the grace days, or in human hands: the assistant is
+            // Unpaid past the grace days, suspended, or in human hands: the assistant is
             // silent, so the guard and the audio gate must be too — they spoke
             // into team threads and dropped the message unrecorded (2026-09-24).
-            $silent = $business->subscription?->isPaused()
+            $silent = $business->isSilenced()
                 || in_array($conversation->status, [ConversationStatus::Team, ConversationStatus::Customer], true);
 
             // The plan gate on audio closes BEFORE transcription spends a cent.
             if ($this->audioBase64 !== null && ! $this->audioWithinPlan($business, $plan)) {
                 if (! $silent) {
-                    $evolution->sendText($this->instance, $this->from, __('assistant.plan.audio'), 1500);
+                    $evolution->sendText($this->instance, $this->from, app(TranslateForCustomer::class)->handle($conversation, __('assistant.plan.audio')), 1500);
                 }
 
                 $this->rememberInbound($conversation, __('assistant.plan.voice_note_placeholder'));
@@ -150,7 +151,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
                 // The one exception to the silence: a consent yes is sealed and
                 // thanked — in a paused business too, where it was lost.
-                if ($optInYes) {
+                // A suspended business sends nothing at all, not even the thanks.
+                if ($optInYes && ! $business->isSuspended()) {
                     $this->sealOptIn($conversation, $customer, $evolution);
                 }
 
@@ -167,7 +169,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             }
 
             if ($verdict !== GuardVerdict::Ok) {
-                $evolution->sendText($this->instance, $this->from, __('assistant.guard.'.$verdict->value), 1500);
+                $evolution->sendText($this->instance, $this->from, app(TranslateForCustomer::class)->handle($conversation, __('assistant.guard.'.$verdict->value)), 1500);
 
                 return;
             }
@@ -229,7 +231,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        app(Tenant::class)->for((int) $business->id, function () use ($business, $evolution, $text): void {
+        app(Tenant::class)->speakingAs($business, function () use ($business, $evolution, $text): void {
             $target = $this->ownerTarget($evolution, $text);
 
             if ($target === null) {
@@ -449,7 +451,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     {
         $customer->sealOptIn();
 
-        $thanks = __('client.customers.opt_in_thanks');
+        $thanks = app(TranslateForCustomer::class)->handle($conversation, __('client.customers.opt_in_thanks'));
         $evolution->sendText($this->instance, $this->from, $thanks);
 
         $conversation->messages()->create([

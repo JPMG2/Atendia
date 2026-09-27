@@ -49,6 +49,10 @@ return new class extends Migration
                 ->comment('Condición fiscal del negocio; null = persona natural sin datos fiscales, válido');
             $table->string('tax_id', 20)->nullable()->comment('Número de identificación fiscal (RIF / CUIT), si lo tiene');
             $table->boolean('is_active')->default(true)->comment('Cortar el servicio sin borrar datos');
+            $table->timestamp('suspended_at')->nullable()->comment('Suspendido por moderación de contenido: la IA calla y solo el admin lo levanta');
+            $table->string('suspension_reason', 60)->nullable()->comment('Categoría de moderación que disparó la suspensión');
+            $table->text('appeal_message')->nullable()->comment('Apelación del negocio suspendido: la lee el admin antes de decidir');
+            $table->timestamp('appealed_at')->nullable()->comment('Cuándo apeló: una apelación por suspensión');
             $table->timestamps();
 
             $table->index('is_active');

@@ -76,7 +76,7 @@ return [
             'topics' => 'Temas: las preguntas del mes agrupadas por tema, con cuántas veces se preguntó, el porcentaje que resolvió solo el asistente y qué hacer con el resto (enseñar una respuesta o sumar algo al catálogo).',
             'trend' => 'Tendencia: conversaciones por mes de los últimos 6 meses.',
             'gaps' => 'Lo que piden y no está en el catálogo: lo que los clientes pidieron por nombre este mes y no está en el catálogo.',
-            'plans' => 'Profundidad por plan: Emprende ve los números del mes; Negocio suma temas y gráfico diario; Premium suma horas pico, tendencia y lo que piden y no está en el catálogo.',
+            'plans' => 'Profundidad por plan: :counts ve los números del mes; :patterns suma temas y gráfico diario; :trends suma horas pico, tendencia y lo que piden y no está en el catálogo.',
             'delta' => 'La flecha de cada número compara con el mes anterior completo.',
         ],
     ],

@@ -39,6 +39,8 @@ return new class extends Migration
         'subscriptions',
         'payments',
         'testimonials',
+        'moderation_flags',
+        'catalog_photos',
     ];
 
     /**

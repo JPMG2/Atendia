@@ -118,7 +118,7 @@ new class extends Component
             <x-statistics.topics-card :topics="$this->stats->topics" />
         @else
             <div class="mt-4">
-                <x-statistics.locked-card :title="__('statistics.topics.title')" plan="negocio" />
+                <x-statistics.locked-card :title="__('statistics.topics.title')" :plan="\App\Classes\Main\Plan::lowestWithStatistics('patterns')->code" />
             </div>
         @endif
 
@@ -146,7 +146,7 @@ new class extends Component
                 </x-ui.card>
 
             @else
-                <x-statistics.locked-card :title="__('statistics.daily.title')" plan="negocio" />
+                <x-statistics.locked-card :title="__('statistics.daily.title')" :plan="\App\Classes\Main\Plan::lowestWithStatistics('patterns')->code" />
             @endif
 
             {{-- Trends: where do I grow? --}}
@@ -212,9 +212,9 @@ new class extends Component
                     @endif
                 </x-ui.card>
             @else
-                <x-statistics.locked-card :title="__('statistics.hours.title')" plan="premium" />
-                <x-statistics.locked-card :title="__('statistics.trend.title')" plan="premium" />
-                <x-statistics.locked-card :title="__('statistics.gaps.title')" plan="premium" />
+                <x-statistics.locked-card :title="__('statistics.hours.title')" :plan="\App\Classes\Main\Plan::lowestWithStatistics('trends')->code" />
+                <x-statistics.locked-card :title="__('statistics.trend.title')" :plan="\App\Classes\Main\Plan::lowestWithStatistics('trends')->code" />
+                <x-statistics.locked-card :title="__('statistics.gaps.title')" :plan="\App\Classes\Main\Plan::lowestWithStatistics('trends')->code" />
             @endif
         </div>
 

@@ -49,6 +49,21 @@ return [
             'report' => false,
         ],
 
+        // The DigitalOcean Space for catalog photos (S3-compatible): unused until its keys exist.
+        'spaces' => [
+            'driver' => 's3',
+            'key' => env('SPACES_KEY'),
+            'secret' => env('SPACES_SECRET'),
+            'region' => env('SPACES_REGION', 'nyc3'),
+            'bucket' => env('SPACES_BUCKET'),
+            'endpoint' => env('SPACES_ENDPOINT'),
+            'url' => env('SPACES_URL'),
+            'visibility' => 'public',
+            'use_path_style_endpoint' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

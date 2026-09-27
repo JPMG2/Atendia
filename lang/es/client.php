@@ -177,7 +177,7 @@ return [
             'title' => 'Así se presenta',
             'sub' => 'Con lo que cargaste, tu asistente arranca así:',
             'message' => '¡Hola! 👋 Soy el asistente de :name. :description ¿En qué te ayudo?',
-            'caption' => 'La descripción y el logo salen aquí. Probá: editá y miralo cambiar.',
+            'caption' => 'La descripción y el logo salen aquí. Prueba: edita y míralo cambiar.',
             'thanks' => [
                 'identidad' => 'Ahora sé presentarte mejor.',
                 'ubicacion' => 'Ahora sé decirles dónde encontrarte.',

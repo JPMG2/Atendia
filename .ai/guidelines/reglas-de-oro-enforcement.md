@@ -154,6 +154,15 @@ lo recuerda cuando el mensaje reclama una regla.
   `.ai/guidelines/ia-economia-tokens.md` · test guardián
   `tests/Feature/GoldenRulesAgentEconomyTest.php` · el MISMO hook de agentes
   (patrones espejados: tocar de a dos).
+- **Moderación de lo que sube un negocio** → `.ai/guidelines/moderacion-contenido.md` ·
+  test guardián `tests/Feature/GoldenRulesUploadModerationTest.php` · hook
+  `.claude/hooks/check-upload-moderation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-27. Fuera de
+  alcance a propósito: los forms del admin (Configuration, Admin).
+- **Reportes (PDF/Excel/CSV por una sola capa, un solo botón)** → `.ai/guidelines/reportes.md` ·
+  test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
+  `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
+  dos); sin allowlist — nació en cero el 2026-09-27.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

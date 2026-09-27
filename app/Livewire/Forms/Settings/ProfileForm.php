@@ -71,7 +71,7 @@ class ProfileForm extends BaseForm
         return [
             'name' => AttributeValidator::stringValid(true, '2'),
             // No SVG: the photo is re-encoded by GD, which cannot read vectors.
-            'avatar_file' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
+            'avatar_file' => AttributeValidator::imageUpload('avatar', false, 5120),
         ];
     }
 

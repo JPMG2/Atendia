@@ -222,6 +222,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
             <main class="app-content" wire:transition.navigate>
                 {{-- The payment reminder rides every client screen (her call, 2026-09-23). --}}
                 @unless ($onAdminPanel)
+                    <x-moderation.banner />
                     <x-billing.banner />
                 @endunless
                 {{ $slot }}

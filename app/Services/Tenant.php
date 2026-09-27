@@ -79,6 +79,15 @@ class Tenant
     }
 
     /**
+     * The business's rows AND its voice: a worker writing to its customers
+     * has no visitor session, and would otherwise speak the neutral default.
+     */
+    public function speakingAs(Business $business, Closure $callback): mixed
+    {
+        return $this->for((int) $business->id, fn (): mixed => $business->speaking($callback));
+    }
+
+    /**
      * Runs the callback in a business context and restores the previous one even
      * if it blows up. For jobs: `Tenant::for($id, fn () => ...)`.
      */

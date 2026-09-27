@@ -33,10 +33,10 @@ class SendBirthdayGreetings extends Command
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
             ->get()
-            ->filter(fn (Business $business): bool => $business->isDueAt($time) && ! $business->subscription?->isPaused());
+            ->filter(fn (Business $business): bool => $business->isDueAt($time) && ! $business->isSilenced());
 
         foreach ($businesses as $business) {
-            app(Tenant::class)->for((int) $business->id, fn () => $this->greet($evolution, $business));
+            app(Tenant::class)->speakingAs($business, fn () => $this->greet($evolution, $business));
         }
 
         return self::SUCCESS;

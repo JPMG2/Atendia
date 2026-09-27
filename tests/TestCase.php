@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Dto\ModerationVerdictDto;
+use App\Services\ContentModeration;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -33,6 +35,28 @@ abstract class TestCase extends BaseTestCase
 
         $this->guardAgainstProductionDatabase();
         $this->fakeLeakedPasswordCheck();
+        $this->fakeContentModeration();
+    }
+
+    /**
+     * Moderation asks OpenAI over the network, and the .env key reaches the
+     * suite: every upload and text passes clean here — the tests that prove
+     * the gate rebind a scripted verdict or the real service over Http::fake.
+     */
+    private function fakeContentModeration(): void
+    {
+        $this->app->instance(ContentModeration::class, new class extends ContentModeration
+        {
+            public function image(string $path): ModerationVerdictDto
+            {
+                return ModerationVerdictDto::clean();
+            }
+
+            public function text(string $text): ModerationVerdictDto
+            {
+                return ModerationVerdictDto::clean();
+            }
+        });
     }
 
     /**

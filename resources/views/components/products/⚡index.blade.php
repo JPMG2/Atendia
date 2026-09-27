@@ -227,6 +227,11 @@ new class extends Component
                             wire:model="form.data.description"
                             :hint="__('client.products.description_help')">{{ $form->data->description }}</x-inputsform.textarea>
                 </x-catalog.form-row>
+                @if ($form->editingId !== null)
+                    <livewire:client.catalog-photos type="product" :id="$form->editingId" :key="'photos-product-'.$form->editingId" />
+                @else
+                    <p class="text-sm text-muted">{{ __('catalog_photos.save_first') }}</p>
+                @endif
                 <x-ui.switch name="in_stock" :label="__('client.products.sheet_available')"
                     wire:model="form.data.in_stock" :checked="$form->data->in_stock" />
             </div>

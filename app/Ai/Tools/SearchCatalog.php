@@ -10,7 +10,7 @@ use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Business;
 use App\Models\Product;
 use App\Models\Service;
-use App\Services\Knowledge\KnowledgeEmbedder;
+use App\Services\Catalog\CatalogMatcher;
 use App\Services\Tenant;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Collection;
@@ -52,17 +52,8 @@ class SearchCatalog implements AssistantSkillTool
 
     private function search(string $item): string
     {
-        $vector = app(KnowledgeEmbedder::class)->embedOne($item);
-        $floor = (float) config('atendia.assistant.catalog_search_similarity');
         $describer = app(SyncOfferKnowledge::class);
-
-        $matches = collect([
-            ...array_map(fn (array $hit): array => [...$hit, 'model' => Service::class], Service::closestMany($vector, self::MATCHES)),
-            ...array_map(fn (array $hit): array => [...$hit, 'model' => Product::class], Product::closestMany($vector, self::MATCHES)),
-        ])
-            ->filter(fn (array $hit): bool => $hit['similarity'] >= $floor)
-            ->sortByDesc('similarity')
-            ->take(self::MATCHES);
+        $matches = app(CatalogMatcher::class)->matches($item, self::MATCHES);
 
         if ($matches->isEmpty()) {
             return "No hay nada parecido a \"{$item}\" en el catálogo del negocio.";

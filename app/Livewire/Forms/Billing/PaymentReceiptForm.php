@@ -60,7 +60,7 @@ class PaymentReceiptForm extends BaseForm
     protected function getValidationRules(?int $excludeId = null): array
     {
         return [
-            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'receipt' => AttributeValidator::imageUpload('receipt', true, 5120),
             'reference' => ['nullable', 'string', 'max:60', AttributeValidator::xssFree()],
         ];
     }

@@ -19,19 +19,25 @@ use App\Services\EvolutionApi;
  */
 class RequestCustomerOptIn
 {
-    public function __construct(private EvolutionApi $evolution) {}
+    public function __construct(private EvolutionApi $evolution, private TranslateForCustomer $translate) {}
 
     public function handle(Business $business, Customer $customer): bool
     {
-        if (! $business->isConnected() || $business->whatsapp_instance === null) {
+        if (! $business->canMessageCustomers()) {
             return false;
         }
 
-        $text = __('client.customers.opt_in_message', [
+        // Same key the inbound worker threads on, so the reply lands right here.
+        $conversation = Conversation::query()->firstOrCreate(
+            ['contact_phone' => $customer->phone],
+            ['contact_name' => $customer->displayName(), 'customer_id' => $customer->id],
+        );
+
+        $text = $this->translate->handle($conversation, $business->speaking(fn (): string => __('client.customers.opt_in_message', [
             // Prefixed space so a nameless customer reads "Hola 👋", not "Hola  👋".
             'name' => ($who = $customer->displayName()) !== null ? ' '.$who : '',
             'business' => $business->name,
-        ]);
+        ])));
 
         // A dead instance is a "could not send", not a 500.
         if (rescue(fn () => $this->evolution->sendText($business->whatsapp_instance, $customer->phone, $text) ?? true, false) === false) {
@@ -39,12 +45,6 @@ class RequestCustomerOptIn
         }
 
         $customer->forceFill(['marketing_opt_in_requested_at' => now()])->save();
-
-        // Same key the inbound worker threads on, so the reply lands right here.
-        $conversation = Conversation::query()->firstOrCreate(
-            ['contact_phone' => $customer->phone],
-            ['contact_name' => $customer->displayName(), 'customer_id' => $customer->id],
-        );
 
         $conversation->messages()->create([
             'direction' => MessageDirection::Out,

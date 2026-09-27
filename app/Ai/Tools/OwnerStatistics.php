@@ -6,6 +6,7 @@ namespace App\Ai\Tools;
 
 use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\AssistantContract;
+use App\Classes\Main\Plan;
 use App\Classes\Main\Statistics;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\Business;
@@ -33,7 +34,8 @@ class OwnerStatistics implements OwnerSkillTool
         return 'Los números de la pantalla "Mis estadísticas" para un mes: conversaciones, contactos '
             .'nuevos, preguntas, porcentaje que resolvió el asistente, minutos de audio y clientes '
             .'recuperados, comparados con el mes anterior. Del mes en curso suma, según el plan, los '
-            .'temas más preguntados, el mejor día y, en Premium, las horas pico, la tendencia y lo que piden y no está en el catálogo.';
+            .'temas más preguntados, el mejor día del gráfico diario y, en '.__('plan.names.'.Plan::lowestWithStatistics('trends')->code)
+            .', las horas pico, la tendencia y lo que piden y no está en el catálogo.';
     }
 
     public function handle(Request $request): Stringable|string

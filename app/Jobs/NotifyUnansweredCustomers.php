@@ -40,10 +40,10 @@ class NotifyUnansweredCustomers implements ShouldBeUnique, ShouldQueue
                 return;
             }
 
-            $text = __('client.assistant.notify_customer_message', [
+            $text = $business->speaking(fn (): string => __('client.assistant.notify_customer_message', [
                 'question' => $suggestion->question,
                 'answer' => $suggestion->document->faqAnswer(),
-            ]);
+            ]));
 
             $suggestion->notifiableQuestions()->with('conversation')->get()
                 ->groupBy('conversation_id')

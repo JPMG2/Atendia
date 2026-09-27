@@ -16,9 +16,9 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         $plans = [
-            ['code' => 'emprende', 'price' => 29, 'conversations_per_month' => 300, 'whatsapp_numbers' => 1, 'messages_per_hour' => 30, 'audio_minutes_per_month' => 0, 'statistics' => 'counts', 'ask_per_month' => 0, 'trial_days' => null, 'is_featured' => false],
-            ['code' => 'negocio', 'price' => 79, 'conversations_per_month' => 1000, 'whatsapp_numbers' => 2, 'messages_per_hour' => 60, 'audio_minutes_per_month' => 200, 'statistics' => 'patterns', 'ask_per_month' => 100, 'trial_days' => 14, 'is_featured' => true],
-            ['code' => 'premium', 'price' => 149, 'conversations_per_month' => 3000, 'whatsapp_numbers' => 4, 'messages_per_hour' => 120, 'audio_minutes_per_month' => 600, 'statistics' => 'trends', 'ask_per_month' => 500, 'trial_days' => null, 'is_featured' => false],
+            ['code' => 'emprende', 'price' => 29, 'conversations_per_month' => 300, 'whatsapp_numbers' => 1, 'messages_per_hour' => 30, 'audio_minutes_per_month' => 0, 'statistics' => 'counts', 'ask_per_month' => 0, 'catalog_photos' => 100, 'photos_per_item' => 3, 'trial_days' => null, 'is_featured' => false],
+            ['code' => 'negocio', 'price' => 79, 'conversations_per_month' => 1000, 'whatsapp_numbers' => 2, 'messages_per_hour' => 60, 'audio_minutes_per_month' => 200, 'statistics' => 'patterns', 'ask_per_month' => 100, 'catalog_photos' => 1000, 'photos_per_item' => 5, 'trial_days' => 14, 'is_featured' => true],
+            ['code' => 'premium', 'price' => 149, 'conversations_per_month' => 3000, 'whatsapp_numbers' => 4, 'messages_per_hour' => 120, 'audio_minutes_per_month' => 600, 'statistics' => 'trends', 'ask_per_month' => 500, 'catalog_photos' => 5000, 'photos_per_item' => 10, 'trial_days' => null, 'is_featured' => false],
         ];
 
         foreach ($plans as $order => $plan) {

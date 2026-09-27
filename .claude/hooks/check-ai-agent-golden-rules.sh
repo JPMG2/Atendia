@@ -34,7 +34,8 @@ fi
 
 if grep -qE 'implements[^{]*\bConversational\b' "$file"; then
     grep -q 'AssistantContract::for(' "$file" || errors="$errors\n- Conversational sin AssistantContract::for(...)."
-    grep -qF '{$contract->grounding}' "$file" || errors="$errors\n- Falta {\$contract->grounding} en las instrucciones."
+    tr '\n' ' ' < "$file" | grep -qE '<<<INSTRUCCIONES\s*\{\$contract->grounding\}' \
+        || errors="$errors\n- {\$contract->grounding} tiene que ser lo PRIMERO de las instrucciones (caché de prompt)."
     tr '\n' ' ' < "$file" | grep -qE '\{\$contract->clock\}\s*INSTRUCCIONES;' \
         || errors="$errors\n- {\$contract->clock} tiene que ser lo ÚLTIMO de las instrucciones (caché de prompt)."
     grep -q 'MEMORY_LIMIT' "$file" || errors="$errors\n- Conversational sin MEMORY_LIMIT: la memoria se acota."

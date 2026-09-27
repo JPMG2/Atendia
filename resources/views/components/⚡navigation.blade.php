@@ -3,6 +3,7 @@
 use App\Classes\Main\Client;
 use App\Classes\Main\Plan;
 use App\Models\Menu;
+use App\Models\ModerationFlag;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -40,7 +41,27 @@ new class extends Component
 
         $this->overlayPaymentBadge($tree);
 
+        if ($this->panel === 'admin') {
+            $this->overlayModerationBadge($tree);
+        }
+
         return $tree;
+    }
+
+    /**
+     * Unreviewed catches on "Moderación": a suspension waits on her call.
+     *
+     * @param  Collection<int, Menu>  $items
+     */
+    private function overlayModerationBadge($items): void
+    {
+        $pending = ModerationFlag::pendingCount();
+
+        foreach ($items as $item) {
+            if ($item->route_name === 'admin.moderation') {
+                $item->badge = $pending > 0 ? (string) $pending : null;
+            }
+        }
     }
 
     /**

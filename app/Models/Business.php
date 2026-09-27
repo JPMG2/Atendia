@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Localizable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -41,6 +42,7 @@ class Business extends Model
     /** @use HasFactory<BusinessFactory> */
     use HasFactory;
 
+    use Localizable;
     use LogsActivity;
 
     // A business is never deleted, only deactivated: the records hanging off it
@@ -74,6 +76,8 @@ class Business extends Model
             'whatsapp_connected_at' => 'datetime',
             'handoff_level' => HandoffLevel::class,
             'is_active' => 'boolean',
+            'suspended_at' => 'datetime',
+            'appealed_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
     }
@@ -557,6 +561,28 @@ class Business extends Model
     }
 
     /**
+     * The Spanish variant its customers are spoken to in (voseo for AR/UY):
+     * a queue worker has no visitor session to read it from.
+     */
+    public function locale(): string
+    {
+        $iso2 = strtoupper((string) $this->loadMissing('country')->country?->iso2);
+
+        return (string) config("locales.country_map.{$iso2}", config('locales.default'));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public function speaking(callable $callback): mixed
+    {
+        return $this->withLocale($this->locale(), $callback);
+    }
+
+    /**
      * Whether a local "HH:MM" (and weekday, 0 = Sunday) is the current
      * 15-minute slot on this business's clock: the scheduler ticks every 15
      * minutes, so each business gets its automated sends at its own time.
@@ -751,6 +777,29 @@ class Business extends Model
     public function isConnected(): bool
     {
         return $this->whatsapp_connected_at !== null;
+    }
+
+    public function catalogPhotosCount(): int
+    {
+        return CatalogPhoto::query()->where('business_id', $this->id)->count();
+    }
+
+    /** Content moderation pulled the switch: only the admin lifts it. */
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
+    }
+
+    /** Unpaid past grace or suspended: the assistant keeps the thread but says nothing. */
+    public function isSilenced(): bool
+    {
+        return $this->isSuspended() || (bool) $this->subscription?->isPaused();
+    }
+
+    /** Whether anything may go out to its customers: a linked number, and not suspended. */
+    public function canMessageCustomers(): bool
+    {
+        return $this->isConnected() && $this->whatsapp_instance !== null && ! $this->isSuspended();
     }
 
     /** The owner's alert number as bare digits; empty when unset. */

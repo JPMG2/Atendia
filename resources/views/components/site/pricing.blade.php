@@ -1,7 +1,7 @@
 @php
     $registerHref = Route::has('register') ? route('register') : '#';
 
-    // The best demo of the product is the product: Pro's CTA opens a real
+    // The best demo of the product is the product: Premium's CTA opens a real
     // WhatsApp chat with sales. Unset number = quiet fallback to register.
     $salesWhatsapp = config('atendia.sales_whatsapp');
 
@@ -10,15 +10,17 @@
     // disagree with "Mi plan" or billing. Only the words live in lang.
     $trial = \App\Classes\Main\Plan::trial();
     $featured = collect(\App\Classes\Main\Plan::ladder())->first(fn (\App\Classes\Main\Plan $tier): bool => $tier->isFeatured) ?? $trial;
-    $plans = collect(\App\Classes\Main\Plan::ladder())->map(fn (\App\Classes\Main\Plan $tier): array => [
+    $symbol = config('atendia.billing.currency_symbol');
+    $ladder = \App\Classes\Main\Plan::ladder();
+    $plans = collect($ladder)->map(fn (\App\Classes\Main\Plan $tier, int $index): array => [
         'name' => __('plan.names.'.$tier->code),
-        'price' => '$'.$tier->price,
-        'price_year' => '$'.$tier->annualMonthlyPrice,
-        'save_year' => '$'.$tier->annualSavings,
+        'price' => $symbol.$tier->price,
+        'price_year' => $symbol.$tier->annualMonthlyPrice,
+        'save_year' => $symbol.$tier->annualSavings,
         'per' => __('landing.pricing.per_month'),
         'per_year' => __('landing.pricing.per_month_yearly'),
         'desc' => __("landing.pricing.{$tier->code}.desc"),
-        'includes' => Lang::has("landing.pricing.{$tier->code}.includes") ? __("landing.pricing.{$tier->code}.includes") : null,
+        'includes' => Lang::has("landing.pricing.{$tier->code}.includes") ? __("landing.pricing.{$tier->code}.includes", ['plan' => __('plan.names.'.$ladder[max(0, $index - 1)]->code)]) : null,
         'feats' => [
             ...collect($tier->features)->reject(fn (array $line): bool => $line['key'] === 'ask')->pluck('label')->all(),
             ...(array) __("landing.pricing.{$tier->code}.extras"),
@@ -29,7 +31,7 @@
         'featured' => $tier->isFeatured,
         // A plan with a sales pitch talks to a person; the rest sign up.
         'href' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && $salesWhatsapp
-            ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__("landing.pricing.{$tier->code}.whatsapp_text"))
+            ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__("landing.pricing.{$tier->code}.whatsapp_text", ['plan' => __('plan.names.'.$tier->code)]))
             : $registerHref,
         'external' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && (bool) $salesWhatsapp,
     ])->all();
@@ -270,7 +272,7 @@
                 </p>
 
                 <x-ui.range
-                    :label="__('landing.pricing.calculator.hour_value_label')"
+                    :label="__('landing.pricing.calculator.hour_value_label', ['currency' => config('atendia.billing.currency')])"
                     min="2"
                     max="30"
                     step="1"
@@ -326,7 +328,7 @@
         </div>
 
         <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">
-            {{ __('landing.pricing.trust') }} · {{ __('landing.pricing.currency_note') }}
+            {{ __('landing.pricing.trust') }} · {{ __('landing.pricing.currency_note', ['currency' => config('atendia.billing.currency')]) }}
         </p>
 
         @php

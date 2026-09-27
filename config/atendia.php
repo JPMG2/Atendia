@@ -12,6 +12,8 @@ use App\Ai\Tools\PanelGuide;
 use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Ai\Tools\SearchCatalog;
+use App\Ai\Tools\SendCatalogPhotos;
+use App\Classes\Report\CompanyReport;
 
 return [
 
@@ -33,7 +35,7 @@ return [
     | Sales WhatsApp
     |--------------------------------------------------------------------------
     |
-    | Digits only, with country code (e.g. 5491100000000). Powers the Pro
+    | Digits only, with country code (e.g. 5491100000000). Powers the Premium
     | plan's "talk to sales" CTA on the landing; while unset, that CTA
     | falls back to the register route.
     |
@@ -86,6 +88,59 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Content moderation of what a business uploads or writes
+    |--------------------------------------------------------------------------
+    |
+    | severe_score: an adult-content score this sure suspends the business on
+    | the spot; below it a flagged image is only refused and the admin reviews
+    | (a lingerie catalog can trip the filter). Minors always suspend.
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reports (PDF, Excel, CSV)
+    |--------------------------------------------------------------------------
+    |
+    | key → the App\Interfaces\Main\Report that builds its content. Every
+    | Imprimir / Excel / CSV button asks for one of these keys; the format is
+    | the exporter's job (App\Enums\ReportFormat).
+    |
+    */
+
+    'reports' => [
+        'company' => CompanyReport::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Catalog photos
+    |--------------------------------------------------------------------------
+    |
+    | disk: `public` (this server) until the DigitalOcean Space exists; then
+    | CATALOG_DISK=spaces moves new photos there with no code change. Sizes:
+    | 1080 px JPEG q80 is what WhatsApp shows sharp (~150 KB), plus a 320 px
+    | WebP thumbnail for the panel; the original is never kept.
+    |
+    */
+
+    'catalog' => [
+        'disk' => env('CATALOG_DISK', 'public'),
+        'max_side' => 1080,
+        'jpeg_quality' => 80,
+        'thumb_side' => 320,
+        'photos_per_reply' => 5,
+    ],
+
+    'moderation' => [
+        'severe_score' => 0.9,
+        // Refused images that, together, suspend even when none alone was severe.
+        'repeat_limit' => 3,
+        'repeat_days' => 7,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Billing ("Mis pagos")
     |--------------------------------------------------------------------------
     |
@@ -97,6 +152,7 @@ return [
 
     'billing' => [
         'currency' => 'USD',
+        'currency_symbol' => '$',
         'reminder_days' => [10, 5],
         'grace_days' => 5,
     ],
@@ -137,23 +193,6 @@ return [
         'completion_per_million' => env('AI_RATE_COMPLETION'),
         'embedding_per_million' => env('AI_RATE_EMBEDDING', 0.02),
         'audio_per_minute' => env('AI_RATE_AUDIO', 0.003),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Plans (entitlements)
-    |--------------------------------------------------------------------------
-    |
-    | The single source of truth every gate asks. Prices are the working
-    | hypothesis until the fiscal meeting; caps are the provisional ones
-    | already published on the landing. A business without a subscription
-    | falls to the FIRST plan: the floor, never a giveaway.
-    |
-    */
-
-    'trial' => [
-        'plan' => 'negocio',
-        'days' => 14,
     ],
 
     /*
@@ -224,6 +263,7 @@ return [
             'knowledge' => SearchBusinessKnowledge::class,
             'escalate' => EscalateToHuman::class,
             'remember_customer' => RememberCustomerFact::class,
+            'catalog_photos' => SendCatalogPhotos::class,
             'owner_conversations' => OwnerConversations::class,
             'owner_birthdays' => OwnerBirthdays::class,
             'owner_statistics' => OwnerStatistics::class,

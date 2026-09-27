@@ -49,7 +49,7 @@ return [
             'natural_hint' => '¿No tenés datos fiscales? Sin problema: tu factura sale a tu nombre, como persona natural.',
         ],
         'preview' => [
-            'caption' => 'La descripción y el logo salen acá.',
+            'caption' => 'La descripción y el logo salen acá. Probá: editá y miralo cambiar.',
         ],
     ],
 

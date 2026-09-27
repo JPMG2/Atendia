@@ -154,6 +154,18 @@ class AttributeValidator
     }
 
     /**
+     * Every image a business uploads, ONE definition: only formats moderation
+     * can see (no SVG/PDF), and the moderation gate itself. Guarded by
+     * GoldenRulesUploadModerationTest.
+     *
+     * @return list<mixed>
+     */
+    public static function imageUpload(string $source, bool $required, int $maxKilobytes): array
+    {
+        return [$required ? 'required' : 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:'.$maxKilobytes, new SafeUpload($source)];
+    }
+
+    /**
      * Build a length-bounded string rule, required or optional.
      *
      * @return array<int, string>

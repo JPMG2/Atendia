@@ -58,3 +58,9 @@ test('trial days left never reads zero while the trial still runs', function ():
 
     expect($business->fresh()->subscription->trialDaysLeft())->toBe(1);
 });
+
+test('each statistics level names the cheapest plan that opens it', function (): void {
+    expect(Plan::lowestWithStatistics('counts')->code)->toBe('emprende')
+        ->and(Plan::lowestWithStatistics('patterns')->code)->toBe('negocio')
+        ->and(Plan::lowestWithStatistics('trends')->code)->toBe('premium');
+});

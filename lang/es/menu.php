@@ -49,6 +49,7 @@ return [
     'plan_payments' => 'Plan y pagos',
     'my_payments' => 'Mis pagos',
     'admin_payments' => 'Pagos',
+    'admin_moderation' => 'Moderación',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

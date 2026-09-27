@@ -98,7 +98,7 @@ test('a receipt is stored privately under the tenant and waits for review, one a
 
     livewire('payments.index')
         ->call('openUpload')
-        ->set('form.receipt', UploadedFile::fake()->create('comprobante.pdf', 200, 'application/pdf'))
+        ->set('form.receipt', UploadedFile::fake()->image('comprobante.jpg'))
         ->set('form.reference', '00012345')
         ->call('submit')
         ->assertHasNoErrors()
@@ -114,22 +114,25 @@ test('a receipt is stored privately under the tenant and waits for review, one a
 
     livewire('payments.index')
         ->call('openUpload')
-        ->set('form.receipt', UploadedFile::fake()->create('otro.pdf', 100, 'application/pdf'))
+        ->set('form.receipt', UploadedFile::fake()->image('otro.jpg'))
         ->call('submit')
         ->assertDispatched('notify', type: 'warning');
 
     expect(Payment::query()->count())->toBe(1);
 });
 
-test('a receipt must be an image or a pdf', function (): void {
+test('a receipt must be an image: a pdf is out, moderation cannot see inside it', function (string $file, string $mime): void {
     $this->actingAs(billingClient());
 
     livewire('payments.index')
         ->call('openUpload')
-        ->set('form.receipt', UploadedFile::fake()->create('virus.exe', 10))
+        ->set('form.receipt', UploadedFile::fake()->create($file, 10, $mime))
         ->call('submit')
         ->assertHasErrors('receipt');
-});
+})->with([
+    'executable' => ['virus.exe', 'application/octet-stream'],
+    'pdf' => ['comprobante.pdf', 'application/pdf'],
+]);
 
 test('a receipt is served to its own business only', function (): void {
     $user = billingClient();

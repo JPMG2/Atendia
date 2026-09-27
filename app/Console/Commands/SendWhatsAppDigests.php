@@ -44,7 +44,7 @@ class SendWhatsAppDigests extends Command
                 continue;
             }
 
-            rescue(fn () => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business, $entries, $key): void {
+            rescue(fn () => app(Tenant::class)->speakingAs($business, function () use ($evolution, $business, $entries, $key): void {
                 $evolution->sendText((string) $business->whatsapp_instance, $business->ownerWhatsAppDigits(), $this->compose($business, $entries));
 
                 Cache::forget($key);

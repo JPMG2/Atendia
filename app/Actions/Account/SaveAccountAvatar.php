@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Account;
 
 use App\Models\User;
+use App\Traits\LoadsUprightImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,6 +17,8 @@ use Illuminate\Support\Str;
  */
 class SaveAccountAvatar
 {
+    use LoadsUprightImage;
+
     private const int SIZE = 256;
 
     public function handle(User $user, ?UploadedFile $file): User
@@ -34,8 +37,7 @@ class SaveAccountAvatar
 
     private function store(User $user, UploadedFile $file): string
     {
-        $source = imagecreatefromstring((string) file_get_contents($file->getRealPath()));
-        $source = $this->uprightFromExif($source, $file);
+        $source = $this->uprightImage($file);
 
         $width = imagesx($source);
         $height = imagesy($source);
@@ -58,18 +60,5 @@ class SaveAccountAvatar
         Storage::disk('public')->put($path, $bytes);
 
         return $path;
-    }
-
-    /** Phones store portraits sideways plus an EXIF hint; without this the face lies down. */
-    private function uprightFromExif(\GdImage $image, UploadedFile $file): \GdImage
-    {
-        if (! in_array($file->getMimeType(), ['image/jpeg', 'image/jpg'], true)) {
-            return $image;
-        }
-
-        $orientation = @exif_read_data($file->getRealPath())['Orientation'] ?? 1;
-        $angle = [3 => 180, 6 => -90, 8 => 90][$orientation] ?? 0;
-
-        return $angle === 0 ? $image : imagerotate($image, $angle, 0);
     }
 }

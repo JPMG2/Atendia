@@ -44,6 +44,29 @@ class EvolutionApi
     }
 
     /**
+     * A photo as base64, so it goes out the same whether it lives on this
+     * server or in the Space (a URL would need the file to be public first).
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function sendImage(string $instance, string $number, string $jpegBytes, string $caption = ''): ?string
+    {
+        $id = $this->request()
+            ->post("/message/sendMedia/{$instance}", [
+                'number' => $number,
+                'mediatype' => 'image',
+                'mimetype' => 'image/jpeg',
+                'fileName' => 'foto.jpg',
+                'caption' => $caption,
+                'media' => base64_encode($jpegBytes),
+            ])
+            ->throw()
+            ->json('key.id');
+
+        return is_string($id) ? $id : null;
+    }
+
+    /**
      * @throws ConnectionException|RequestException
      */
     public function react(string $instance, string $remoteJid, string $messageId, string $emoji): void

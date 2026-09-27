@@ -35,6 +35,9 @@ Route::livewire('/testimonios', 'admin.testimonials')->name('testimonials');
 Route::livewire('/pagos', 'admin.payments')->name('payments');
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt');
 
+// Moderation: what the content filter caught, and the switch to lift a suspension.
+Route::livewire('/moderacion', 'admin.moderation')->name('moderation');
+
 // System logs: the latest entries, built to be copied into a help chat.
 Route::livewire('/logs', 'configuration.logs')->name('logs');
 

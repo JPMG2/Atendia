@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ai\Tools;
 
 use App\Ai\Agents\AskAtendia;
+use App\Classes\Main\Plan;
 use App\Interfaces\Main\OwnerSkillTool;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Arr;
@@ -58,7 +59,9 @@ class PanelGuide implements OwnerSkillTool
             ->implode("\n");
 
         // How the numbers are measured goes first: it never fits on the screen, so the cut must not reach it.
-        $measures = (array) __("ask.guide.{$module}");
+        $measures = (array) __("ask.guide.{$module}", collect(['counts', 'patterns', 'trends'])
+            ->mapWithKeys(fn (string $level): array => [$level => __('plan.names.'.Plan::lowestWithStatistics($level)->code)])
+            ->all());
         $measured = array_is_list($measures) || $measures === [] || ! is_string(reset($measures))
             ? ''
             : "Cómo se mide cada dato:\n- ".implode("\n- ", $measures)."\n";

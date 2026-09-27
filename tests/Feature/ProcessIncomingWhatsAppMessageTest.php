@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
+use App\Ai\Agents\ReplyTranslator;
+use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
@@ -10,6 +12,7 @@ use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Country;
 use App\Models\Customer;
 use App\Models\SubscriptionPlan;
 use App\Services\Knowledge\KnowledgeEmbedder;
@@ -313,6 +316,28 @@ test('a voice note on a plan without audio gets a courteous ask for text, no tra
     AsistenteAtendia::assertNeverPrompted();
     expect(sentTexts())->toHaveCount(1)
         ->and(sentTexts()[0]['text'])->toBe(__('assistant.plan.audio'));
+});
+
+test('system notices speak the business region and the thread language', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create([
+        'whatsapp_instance' => 'atendia-demo',
+        'country_id' => Country::factory()->create(['iso2' => 'AR'])->id,
+    ]);
+    $business->subscription->update(['trial_ends_at' => now()->subDay()]);
+    Transcription::fake(['nunca']);
+
+    runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
+
+    // A worker has no visitor session: without the business voice this was the neutral tuteo.
+    expect(sentTexts()[0]['text'])->toBe(__('assistant.plan.audio', [], 'es_AR'));
+
+    ReplyTranslator::fake([['text' => 'Could you text me instead?']]);
+    Conversation::query()->sole()->update(['language' => 'en', 'status' => ConversationStatus::Open]);
+
+    runIncoming('', 'MSG-10', base64_encode('opus-bytes'), seconds: 7);
+
+    expect(sentTexts()[1]['text'])->toBe('Could you text me instead?');
 });
 
 test('a voice note past the month audio budget is asked as text too', function (): void {

@@ -15,11 +15,26 @@ use Throwable;
  */
 class AssistantContract
 {
-    public function __construct(public readonly CarbonImmutable $now) {}
+    public function __construct(public readonly CarbonImmutable $now, public readonly string $locale = 'es') {}
 
-    public static function for(?Business $business): self
+    /** Without a locale the business's region decides: a worker has no visitor session. */
+    public static function for(?Business $business, ?string $locale = null): self
     {
-        return new self(CarbonImmutable::now($business?->localTimezone() ?? (string) config('app.timezone')));
+        return new self(
+            CarbonImmutable::now($business?->localTimezone() ?? (string) config('app.timezone')),
+            $locale ?? $business?->locale() ?? (string) config('locales.default'),
+        );
+    }
+
+    /**
+     * The same variant the panel and the system messages use: a voseo
+     * assistant next to a tuteo notice read like two businesses in one chat.
+     */
+    public string $voice {
+        get => $this->locale === 'es_AR'
+            ? 'TRATO. Tratá a la persona de vos (voseo rioplatense: "mirá", "tenés", "querés").'
+            : 'TRATO. Tratá a la persona de tú (tuteo: "mira", "tienes", "quieres"). Las frases de ejemplo de '
+                .'estas instrucciones están en voseo: decilas con este trato.';
     }
 
     /**
@@ -61,7 +76,8 @@ class AssistantContract
             general del mundo sobre el negocio: tu información sale de tus herramientas.
 
             CERO INVENTOS. Cada dato de tu respuesta (nombre, precio, cantidad, fecha, horario, enlace) sale de
-            lo que devolvió una herramienta en ESTA charla. Si ninguna lo devuelve, decí que no tenés ese dato.
+            lo que devolvió una herramienta en ESTA charla o de las fuentes que estas instrucciones te nombran.
+            Si no sale de ahí, decí que no tenés ese dato.
             Nunca completes con suposiciones, ejemplos ni nombres que la herramienta no dio.
 
             CERO INFLADO. Copiá los números exactos: sin redondear hacia arriba, sin porcentajes, comparaciones

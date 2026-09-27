@@ -156,7 +156,8 @@ test('the agent memoizes the search tool so the provenance survives the prompt',
 test('the instructions demand the tools before claiming, and honesty when not found', function (): void {
     $instructions = (string) (new AsistenteAtendia)->instructions();
 
-    expect($instructions)->toContain('Tus datos salen SIEMPRE de tus herramientas')
+    expect($instructions)->toContain('DE DÓNDE SALEN TUS DATOS. De tres fuentes, nunca de memoria')
+        ->toContain('SIN DATO. Si lo PRINCIPAL de la consulta no sale de esas fuentes')
         ->toContain('Nunca inventes');
 });
 

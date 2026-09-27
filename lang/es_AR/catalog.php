@@ -22,4 +22,22 @@ return [
         'empty_body' => 'Los catálogos son las listas base del sistema: países, monedas, condiciones fiscales, estados. Lo que definas acá es lo que después vas a poder elegir en el resto de Atendia.',
     ],
 
+    'service_type' => [
+        'fields' => [
+            'modality_placeholder' => 'Elegí cómo se ofrece',
+        ],
+    ],
+
+    'service_modality' => [
+        'fields' => [
+            'icon_placeholder' => 'Elegí un glifo',
+        ],
+    ],
+
+    'service_attribute' => [
+        'fields' => [
+            'data_type_placeholder' => 'Elegí el tipo',
+        ],
+    ],
+
 ];

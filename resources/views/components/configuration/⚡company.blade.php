@@ -611,6 +611,7 @@ field in red from an attempt you had stopped looking at. --}}
         screen and not to a tab, and in there it can read which step the
         person is on, which is what decides who the button hits. --}}
         <div class="catalog-form-foot config-foot">
+            <x-ui.export-buttons report="company" />
             <span class="catalog-foot-grow"></span>
             {{-- Discard wears the universal watch-out colour (owner's
             convention, 2026-09-15). --}}

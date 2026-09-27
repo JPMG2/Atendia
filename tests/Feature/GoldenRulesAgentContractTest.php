@@ -43,6 +43,15 @@ test('the clock is the last thing in the instructions', function (): void {
     expect($offenders)->toBe([]);
 });
 
+test('the grounding is the first thing in the instructions', function (): void {
+    $offenders = collect(conversationalAgentSources())
+        ->reject(fn (string $source): bool => preg_match('/<<<INSTRUCCIONES\s*\{\$contract->grounding\}/', $source) === 1)
+        ->keys()
+        ->all();
+
+    expect($offenders)->toBe([]);
+});
+
 test('no agent builds its own clock', function (): void {
     $offenders = collect(File::files(app_path('Ai/Agents')))
         ->filter(fn ($file): bool => preg_match('/Hoy es |FECHA Y HORA|\bnow\(|CarbonImmutable::now/', $file->getContents()) === 1)

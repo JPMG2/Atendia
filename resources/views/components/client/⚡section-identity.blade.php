@@ -91,6 +91,7 @@ new class extends Component
                 :label="__('client.business.identity.logo').' · '.__('client.business.optional')"
                 :note="__('client.business.identity.logo_hint')"
                 :preview="$this->logoUrl"
+                accept="image/png,image/webp,image/jpeg"
                 wire:model="form.logo_file"
             />
         </x-catalog.form-row>

@@ -567,6 +567,11 @@ new class extends Component
                             wire:model="form.data.prep_note"
                             :hint="__('client.services.prep_help')">{{ $form->data->prep_note }}</x-inputsform.textarea>
                 </x-catalog.form-row>
+                @if ($form->editingId !== null)
+                    <livewire:client.catalog-photos type="service" :id="$form->editingId" :key="'photos-service-'.$form->editingId" />
+                @else
+                    <p class="text-sm text-muted">{{ __('catalog_photos.save_first') }}</p>
+                @endif
                 <x-ui.switch name="is_active" :label="__('client.services.offered')"
                     wire:model="form.data.is_active" :checked="$form->data->is_active" />
                 <div>

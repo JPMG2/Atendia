@@ -81,7 +81,7 @@ class SendHandoffReminders extends Command
         foreach ($forgotten as $thread) {
             $business = $thread->business;
 
-            if ($business === null || ! $business->isConnected() || $business->whatsapp_instance === null) {
+            if ($business === null || ! $business->canMessageCustomers()) {
                 continue;
             }
 
@@ -95,7 +95,7 @@ class SendHandoffReminders extends Command
 
             // One thread failing (a bad owner number, Evolution down) never
             // blocks the rest, and never re-sends "on the way" every 10 minutes.
-            $sent = rescue(fn (): bool => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business, $thread, $minutes): bool {
+            $sent = rescue(fn (): bool => app(Tenant::class)->speakingAs($business, function () use ($evolution, $business, $thread, $minutes): bool {
                 // The customer first, in THEIR language: that wait costs trust.
                 $this->tellCustomer($evolution, $business, $thread, __('assistant.handoff.hold_customer', ['business' => $business->name]));
 
@@ -152,11 +152,11 @@ class SendHandoffReminders extends Command
         foreach ($abandoned as $thread) {
             $business = $thread->business;
 
-            if ($business === null || ! $business->isConnected() || $business->whatsapp_instance === null) {
+            if ($business === null || ! $business->canMessageCustomers()) {
                 continue;
             }
 
-            $resumed = rescue(fn (): bool => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business, $thread): bool {
+            $resumed = rescue(fn (): bool => app(Tenant::class)->speakingAs($business, function () use ($evolution, $business, $thread): bool {
                 $this->tellCustomer($evolution, $business, $thread, __('assistant.handoff.auto_resume'));
 
                 $thread->forceFill([

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Jobs\IndexKnowledgeDocument;
+use App\Jobs\ModerateKnowledgeDocument;
 use App\Models\KnowledgeDocument;
 
 class KnowledgeDocumentObserver
@@ -28,6 +29,7 @@ class KnowledgeDocumentObserver
     {
         if ($document->content_hash !== null) {
             IndexKnowledgeDocument::dispatch($document->id);
+            ModerateKnowledgeDocument::dispatch($document->id);
         }
     }
 
@@ -39,6 +41,7 @@ class KnowledgeDocumentObserver
     {
         if ($document->wasChanged('content_hash')) {
             IndexKnowledgeDocument::dispatch($document->id);
+            ModerateKnowledgeDocument::dispatch($document->id);
         }
     }
 }

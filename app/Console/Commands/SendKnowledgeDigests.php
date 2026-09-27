@@ -40,7 +40,7 @@ class SendKnowledgeDigests extends Command
                 continue;
             }
 
-            rescue(fn () => app(Tenant::class)->for((int) $business->id, function () use ($evolution, $business): void {
+            rescue(fn () => app(Tenant::class)->speakingAs($business, function () use ($evolution, $business): void {
                 $text = $this->compose($business);
 
                 if ($text === null) {

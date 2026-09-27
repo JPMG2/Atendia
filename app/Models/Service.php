@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -72,6 +73,12 @@ class Service extends Model
             'is_featured' => 'boolean',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /** @return MorphMany<CatalogPhoto, $this> */
+    public function photos(): MorphMany
+    {
+        return $this->morphMany(CatalogPhoto::class, 'photoable')->orderBy('sort_order')->orderBy('id');
     }
 
     /**

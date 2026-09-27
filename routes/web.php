@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Billing\PaymentReceiptController;
 use App\Http\Controllers\DemoChatController;
+use App\Http\Controllers\Reports\ShowReportController;
 use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Http\Controllers\Settings\CancelEmailChangeController;
 use App\Http\Controllers\Settings\ConfirmEmailChangeController;
@@ -113,6 +114,11 @@ Route::get('/estadisticas', fn () => view('statistics'))
     ->name('statistics');
 
 // The subscription: entitlements, usage meters and the ladder with padlocks.
+// Every Imprimir / Excel / CSV button: the report class holds the lock (admin or client).
+Route::get('/reportes/{report}/{format}', ShowReportController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('reports.show');
+
 Route::get('/plan', fn () => view('plan'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('my-plan');

@@ -22,7 +22,7 @@ class SendAssistantNotice
 
     public function handle(Business $business, Conversation $conversation, string $text): ?ConversationMessage
     {
-        if (! $business->isConnected() || $business->whatsapp_instance === null) {
+        if (! $business->canMessageCustomers()) {
             return null;
         }
 

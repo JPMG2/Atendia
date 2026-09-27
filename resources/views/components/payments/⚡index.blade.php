@@ -275,14 +275,14 @@ new class extends Component
         </x-ui.card>
 
         @if ($period !== null && $period['cycle'] === 'monthly')
-            @php($monthly = (float) \App\Classes\Main\Plan::named($period['plan'])->price)
+            @php($periodPlan = \App\Classes\Main\Plan::named($period['plan']))
             <x-ui.card class="bp-card">
                 <div class="bp-card-head"><h2>{{ __('billing.yearly.title') }}</h2></div>
                 <p class="bp-card-sub">
-                    {{ __('billing.yearly.body', ['amount' => config('atendia.billing.currency').' '.number_format($monthly * 2, 0, ',', '.')]) }}
+                    {{ __('billing.yearly.body', ['amount' => config('atendia.billing.currency').' '.number_format($periodPlan->annualSavings, 0, ',', '.')]) }}
                 </p>
                 <p class="pay-amount pay-amount-sm font-mono">
-                    {{ config('atendia.billing.currency') }} {{ (int) round($monthly * 10 / 12) }}
+                    {{ config('atendia.billing.currency') }} {{ $periodPlan->annualMonthlyPrice }}
                     <small class="text-muted">{{ __('billing.yearly.per_month') }}</small>
                 </p>
                 <x-ui.button
@@ -312,7 +312,7 @@ new class extends Component
                     <x-inputsform.file
                         span="full"
                         name="receipt"
-                        accept="image/png,image/webp,image/jpeg,application/pdf"
+                        accept="image/png,image/webp,image/jpeg"
                         :label="__('billing.receipt.file')"
                         :note="__('billing.receipt.file_note')"
                         wire:model="form.receipt"

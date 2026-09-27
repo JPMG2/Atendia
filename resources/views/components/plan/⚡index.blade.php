@@ -62,6 +62,12 @@ new class extends Component
     }
 
     #[Computed]
+    public function catalogPhotosUsed(): int
+    {
+        return $this->business?->catalogPhotosCount() ?? 0;
+    }
+
+    #[Computed]
     public function askQuestionsUsed(): int
     {
         return $this->business?->askQuestionsThisMonth() ?? 0;
@@ -129,7 +135,7 @@ new class extends Component
                 'label' => __('plan.change.choose', ['plan' => $name]),
                 'variant' => $current->isBelow($tier) ? 'primary' : 'secondary',
                 'title' => __('plan.change.trial_title', ['plan' => $name]),
-                'message' => __('plan.change.trial_body', ['plan' => $name, 'date' => $date, 'price' => $tier->price]),
+                'message' => __('plan.change.trial_body', ['currency' => config('atendia.billing.currency'), 'plan' => $name, 'date' => $date, 'price' => $tier->price]),
                 'accept' => __('plan.change.choose', ['plan' => $name]),
                 'type' => 'info',
             ];
@@ -141,6 +147,7 @@ new class extends Component
                 'variant' => 'primary',
                 'title' => __('plan.change.up_title', ['plan' => $name]),
                 'message' => __('plan.change.up_body', [
+                    'currency' => config('atendia.billing.currency'),
                     'plan' => $name,
                     'amount' => number_format($this->subscription->upgradeCharge($tier), 2, ',', '.'),
                     'days' => max(0, (int) $this->subscription->daysUntilPayment()),
@@ -156,7 +163,7 @@ new class extends Component
             'label' => __('plan.change.down', ['plan' => $name]),
             'variant' => 'secondary',
             'title' => __('plan.change.down_title', ['plan' => $name]),
-            'message' => __('plan.change.down_body', ['plan' => $name, 'current' => __('plan.names.'.$current->code), 'date' => $date, 'price' => $tier->price]),
+            'message' => __('plan.change.down_body', ['currency' => config('atendia.billing.currency'), 'plan' => $name, 'current' => __('plan.names.'.$current->code), 'date' => $date, 'price' => $tier->price]),
             'accept' => __('plan.change.down_accept'),
             'type' => 'warning',
         ];
@@ -216,7 +223,7 @@ new class extends Component
                 <p class="eyebrow">{{ __('plan.current') }}</p>
                 <h2 class="plan-tier-name">{{ __('plan.names.'.$this->plan->code) }}</h2>
             </div>
-            <p class="plan-tier-price">${{ $this->plan->price }}<small>{{ __('plan.per_month') }}</small></p>
+            <p class="plan-tier-price">{{ config('atendia.billing.currency_symbol') }}{{ $this->plan->price }}<small>{{ __('plan.per_month') }}</small></p>
         </div>
 
         <x-ui.usage-meter
@@ -226,6 +233,12 @@ new class extends Component
             :state="$this->meterState($this->conversationsUsed, $this->plan->conversationsPerMonth)"
         />
 
+        <x-ui.usage-meter
+            :label="__('plan.meters.photos')"
+            :text="__('plan.meters.photos_of', ['used' => number_format($this->catalogPhotosUsed, 0, ',', '.'), 'cap' => number_format($this->plan->catalogPhotos, 0, ',', '.')])"
+            :percent="(int) round($this->catalogPhotosUsed / max(1, $this->plan->catalogPhotos) * 100)"
+            :state="$this->meterState($this->catalogPhotosUsed, $this->plan->catalogPhotos)"
+        />
         @if ($this->plan->allowsAudio)
             <x-ui.usage-meter
                 :label="__('plan.meters.audio')"
@@ -278,7 +291,7 @@ new class extends Component
         <div class="plan-change-banner is-up mt-4">
             <x-icon name="sparkles" :size="18" />
             <p>
-                {{ __('plan.change.upgraded', ['plan' => __('plan.names.'.$upgradedPlan), 'amount' => number_format($this->subscription->upgradeCharge($upgradeTo), 2, ',', '.')]) }}
+                {{ __('plan.change.upgraded', ['currency' => config('atendia.billing.currency'), 'plan' => __('plan.names.'.$upgradedPlan), 'amount' => number_format($this->subscription->upgradeCharge($upgradeTo), 2, ',', '.')]) }}
             </p>
             <x-ui.button variant="primary" size="sm" :href="route('my-payments')" wire:navigate>
                 {{ __('plan.change.upload') }}</x-ui.button>
@@ -321,9 +334,9 @@ new class extends Component
                         @endif
                     </div>
                     <p class="plan-tier-price">
-                        <span x-show="! yearly">${{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
+                        <span x-show="! yearly">{{ config('atendia.billing.currency_symbol') }}{{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
                         <span x-show="yearly" x-cloak>
-                            ${{ $tier->annualMonthlyPrice }}<small>{{ __('landing.pricing.per_month_yearly') }}</small>
+                            {{ config('atendia.billing.currency_symbol') }}{{ $tier->annualMonthlyPrice }}<small>{{ __('landing.pricing.per_month_yearly') }}</small>
                         </span>
                     </p>
 

@@ -23,6 +23,7 @@ class AssistantSkillSeeder extends Seeder
             ['key' => 'knowledge', 'name' => 'Base de conocimiento', 'description' => 'Respuestas enseñadas y documentos: la red para lo demás'],
             ['key' => 'escalate', 'name' => 'Derivar a una persona', 'description' => 'Pasa la charla al equipo'],
             ['key' => 'remember_customer', 'name' => 'Recordar datos del cliente', 'description' => 'Guarda el nombre, el cumpleaños y otros datos que da el cliente'],
+            ['key' => 'catalog_photos', 'name' => 'Fotos del catálogo', 'description' => 'Envía por WhatsApp las fotos de un producto o servicio'],
         ];
 
         foreach ($skills as $order => $skill) {

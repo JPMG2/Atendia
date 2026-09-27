@@ -16,6 +16,10 @@ Blindada: `tests/Feature/GoldenRulesAgentContractTest.php` + hook
 - **`->clock`** (cambia cada minuto, va ÚLTIMO): hoy / mañana / pasado mañana /
   ayer / anteayer / anoche / semanas / meses / los 7 días de cada lado, la regla
   de fechas con barras (día primero), la de fechas imposibles y el formato de salida.
+- **`->voice`** (va con el rol): tú o vos según la variante. El de WhatsApp la toma
+  del país del negocio (`Business::locale()`); el del panel, del selector de la dueña.
+  Lo que un job o comando le manda a una persona sale con `Tenant::speakingAs($business, …)`
+  — sin sesión, un worker hablaba el neutro al lado de una IA en voseo.
 - **`::strictDate($valor, 'Y-m-d', $tz)`**: la herramienta que recibe una fecha la
   lee estricto. Carbon corría `2026-02-31` al 03/03 en silencio; ahora es `null` y
   la herramienta le contesta al modelo "Fechas inválidas".
@@ -40,7 +44,7 @@ return <<<INSTRUCCIONES
 
 ## Checklist de salida
 
-- [ ] Agente Conversational → `grounding` arriba, `clock` último, cero reloj propio.
+- [ ] Agente Conversational → `grounding` PRIMERO y `clock` ÚLTIMO (ambos blindados), `voice` con el rol, cero reloj propio.
 - [ ] Regla común nueva → en `AssistantContract`, no en un agente.
 - [ ] Fecha que entra a una herramienta → `strictDate`, con el error dicho al modelo.
 - [ ] `./vendor/bin/pest --filter=GoldenRulesAgent` en verde.

@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\File;
 */
 
 /** Digits glued to a plan dial: the shape of a cap or a trial typed by hand. */
-const PLAN_FIGURE_PATTERN = '/\d[\d.]*\s+(conversaciones con IA|n[uú]meros? de WhatsApp|minutos de audio|consultas al mes|mensajes por hora|d[ií]as gratis|d[ií]as el plan)/iu';
+const PLAN_FIGURE_PATTERN = '/\d[\d.]*\s+(conversaciones con IA|n[uú]meros? de WhatsApp|minutos de audio|consultas al mes|mensajes por hora|d[ií]as gratis|d[ií]as el plan|fotos de cat[aá]logo)/iu';
+
+/** A plan name inside a copy string, or a plan code hardwired into a Blade attribute. */
+const PLAN_NAME_PATTERN = '/\'[^\'\n]*\b(Emprende|Premium)\b[^\'\n]*\'|\splan="(emprende|negocio|premium)"/u';
 
 /** @return list<string> */
 function planSourceFiles(string ...$directories): array
@@ -36,6 +39,11 @@ test('nothing reads plans or the trial from config anymore', function (): void {
     expect($offenders->implode("\n"))->toBe('');
 });
 
+// A dead copy nobody reads still contradicts the table the day one of them changes.
+test('config does not define plans or the trial again', function (): void {
+    expect(preg_match("/^    '(plans|trial)' => \\[/m", File::get(config_path('atendia.php'))))->toBe(0);
+});
+
 test('no view or translation types a plan figure by hand', function (): void {
     $offenders = collect(planSourceFiles('lang', 'resources/views'))
         ->filter(fn (string $path): bool => preg_match(PLAN_FIGURE_PATTERN, File::get($path)) === 1)
@@ -45,9 +53,20 @@ test('no view or translation types a plan figure by hand', function (): void {
     expect($offenders->implode("\n"))->toBe('');
 });
 
+// "Todo lo de Emprende" typed by hand survives a rename of the plan; plan.names does not.
+test('no translation or view names a plan by hand', function (): void {
+    $offenders = collect(planSourceFiles('lang', 'resources/views'))
+        ->reject(fn (string $path): bool => str_ends_with($path, '/plan.php'))
+        ->filter(fn (string $path): bool => preg_match(PLAN_NAME_PATTERN, File::get($path)) === 1)
+        ->map(fn (string $path): string => str_replace(base_path().'/', '', $path))
+        ->values();
+
+    expect($offenders->implode("\n"))->toBe('');
+});
+
 test('no view types a plan price by hand', function (): void {
     $offenders = collect(planSourceFiles('resources/views'))
-        ->filter(fn (string $path): bool => preg_match("/'\\$\d+'/", File::get($path)) === 1)
+        ->filter(fn (string $path): bool => preg_match("/'\\$\d+'|\\$\{\{/", File::get($path)) === 1)
         ->map(fn (string $path): string => str_replace(base_path().'/', '', $path))
         ->values();
 
