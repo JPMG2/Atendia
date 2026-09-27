@@ -41,6 +41,8 @@ return new class extends Migration
         'testimonials',
         'moderation_flags',
         'catalog_photos',
+        'departments',
+        'team_invitations',
     ];
 
     /**

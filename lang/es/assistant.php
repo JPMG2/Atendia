@@ -58,6 +58,7 @@ return [
         'relay_done' => "✅ Le envié tu respuesta a *:name*.\nCuando el tema esté cerrado, escríbeme *#resuelto* y tu asistente retoma ese chat. También lo ves en tu panel: :url",
         'resolved_done' => '✔️ Listo: el hilo con *:name* quedó resuelto. Tu asistente lo atiende de nuevo si vuelve a escribir.',
         'no_reason' => 'el cliente pidió hablar con una persona',
+        'department_alert' => "🔔 *:name* (:phone) necesita a *:department*.\nMotivo: :reason\nRespóndeme por aquí y le reenvío tu mensaje, o atiéndelo desde tu panel: :url",
         'reminder_owner' => '⏰ *:name* sigue esperando a tu equipo hace :minutes minutos. Le avisé que estás en camino.',
         'hold_customer' => '🤖 Seguimos con tu consulta: una persona del equipo de :business está algo demorada, apenas se libere te escribe. ¡Gracias por la paciencia!',
         'auto_resume' => '🤖 Retomo yo tu consulta mientras el equipo se desocupa. ¿En qué te puedo ayudar?',

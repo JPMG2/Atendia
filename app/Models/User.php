@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,12 +21,23 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'whatsapp', 'is_available'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    /**
+     * Mirrors of the column defaults: a user created in this very request
+     * never read them back, and strict attributes would throw on the read.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'whatsapp' => null,
+        'is_available' => true,
+    ];
 
     /**
      * The business they belong to. NULL for the admin: AtendIa's owner is nobody's
@@ -245,6 +257,37 @@ class User extends Authenticatable
             'password_changed_at' => 'datetime',
             'two_factor_whatsapp_at' => 'datetime',
             'two_factor_recovery_codes' => 'array',
+            'is_available' => 'boolean',
         ];
+    }
+
+    /** @return BelongsToMany<Department, $this> */
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class);
+    }
+
+    /** @return HasMany<Conversation, $this> */
+    public function assignedConversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'assigned_user_id');
+    }
+
+    /** One login, one business: an address with any account (closed ones too) can't take a new seat. */
+    public static function emailHasAccount(string $email): bool
+    {
+        return self::withTrashed()->where('email', mb_strtolower(trim($email)))->exists();
+    }
+
+    /** A team member invited by the owner: sees the inbox, never the business setup. */
+    public function isAgent(): bool
+    {
+        return $this->hasRole('agent');
+    }
+
+    /** The handoff pings' number as bare digits; empty when unset. */
+    public function whatsappDigits(): string
+    {
+        return (string) preg_replace('/\D/', '', (string) $this->whatsapp);
     }
 }

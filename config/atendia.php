@@ -8,6 +8,7 @@ use App\Ai\Tools\OwnerBirthdays;
 use App\Ai\Tools\OwnerConversations;
 use App\Ai\Tools\OwnerPlanUsage;
 use App\Ai\Tools\OwnerStatistics;
+use App\Ai\Tools\OwnerTeamStatus;
 use App\Ai\Tools\PanelGuide;
 use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
@@ -203,6 +204,11 @@ return [
     | telling the customer, once, that a person is on the way.
     */
 
+    'team' => [
+        // Days an "Equipo" invitation link stays valid; resending restarts it.
+        'invitation_days' => env('TEAM_INVITATION_DAYS', 7),
+    ],
+
     'handoff' => [
         'reminder_minutes' => env('HANDOFF_REMINDER_MINUTES', 20),
         // Hours with no human word before the assistant takes the thread
@@ -268,6 +274,7 @@ return [
             'owner_birthdays' => OwnerBirthdays::class,
             'owner_statistics' => OwnerStatistics::class,
             'owner_plan' => OwnerPlanUsage::class,
+            'owner_team' => OwnerTeamStatus::class,
             'panel_guide' => PanelGuide::class,
         ],
     ],
@@ -295,6 +302,7 @@ return [
             'my-plan' => ['menu.plan', 'plan'],
             'my-payments' => ['menu.my_payments', 'billing'],
             'referrals' => ['menu.referrals', 'referrals'],
+            'team' => ['menu.team', 'team'],
             'settings' => ['menu.settings', 'settings'],
         ],
     ],

@@ -459,6 +459,41 @@ class Business extends Model
         return $this->hasMany(User::class);
     }
 
+    /** @return HasMany<Department, $this> */
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** @return HasMany<TeamInvitation, $this> */
+    public function teamInvitations(): HasMany
+    {
+        return $this->hasMany(TeamInvitation::class);
+    }
+
+    /**
+     * The team member whose own phone just wrote, if any. Same suffix match
+     * as the owner's: a member treated as a customer would get the assistant
+     * answering their relay instead of the customer receiving it.
+     */
+    public function teamMemberForWhatsApp(string $digits): ?User
+    {
+        $digits = (string) preg_replace('/\D/', '', $digits);
+
+        if (strlen($digits) < 8) {
+            return null;
+        }
+
+        return $this->users()
+            ->whereNotNull('whatsapp')
+            ->get()
+            ->first(function (User $member) use ($digits): bool {
+                $own = $member->whatsappDigits();
+
+                return strlen($own) >= 8 && (str_ends_with($digits, $own) || str_ends_with($own, $digits));
+            });
+    }
+
     /**
      * @return HasMany<KnowledgeDocument, $this>
      */

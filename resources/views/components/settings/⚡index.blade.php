@@ -20,7 +20,7 @@ new class extends Component
      */
     public function sections(): array
     {
-        return [
+        $sections = [
             'perfil' => 'settings.section-profile',
             'correo' => 'settings.section-email',
             'contrasena' => 'settings.section-password',
@@ -29,6 +29,13 @@ new class extends Component
             'actividad' => 'settings.section-activity',
             'cuenta' => 'settings.section-close',
         ];
+
+        // Closing the account deletes the business: an agent never sees that door.
+        if (auth()->user()?->isAgent()) {
+            unset($sections['cuenta']);
+        }
+
+        return $sections;
     }
 
     /** The tab title comes from translations; a PHP attribute cannot call __(). */

@@ -17,6 +17,10 @@ class CloseAccount
 {
     public function handle(User $user): void
     {
+        // Closing takes the whole business with it: only its owner holds that key.
+        // An agent leaves when the owner removes them from "Equipo".
+        abort_if($user->isAgent(), 403);
+
         $user->business?->delete();
         $user->pending_email = null;
         $user->save();

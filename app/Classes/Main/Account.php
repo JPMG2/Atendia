@@ -11,6 +11,7 @@ use App\Actions\Account\RequestEmailChange;
 use App\Actions\Account\SaveAccountAvatar;
 use App\Actions\Account\UpdateAccountProfile;
 use App\Actions\Account\VerifyAccountEmail;
+use App\Actions\Team\SetTeamAvailability;
 use App\Dto\UserDto;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -59,6 +60,12 @@ class Account
     public function cancelEmailChange(?string $hash = null): bool
     {
         return app(CancelEmailChange::class)->handle($this->user, $hash);
+    }
+
+    /** Away hands this person's handoff pings to whoever else is available. */
+    public function setAvailability(bool $available): User
+    {
+        return app(SetTeamAvailability::class)->handle($this->user, $available);
     }
 
     public function changePassword(string $password, bool $logoutOthers, string $currentFingerprint): User

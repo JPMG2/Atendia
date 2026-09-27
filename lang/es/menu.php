@@ -41,6 +41,7 @@ return [
     'referrals' => 'Gana con Atendia',
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
+    'team' => 'Equipo',
     'catalog' => 'Catálogo',
     'services' => 'Servicios',
     'products' => 'Productos',

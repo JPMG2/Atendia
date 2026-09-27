@@ -122,6 +122,21 @@ return [
         'reason' => 'Recibiste este correo porque tu cuenta de Atendia inició sesión en un dispositivo nuevo.',
     ],
 
+    'team' => [
+        'invitation' => [
+            'subject' => ':business te invita a su equipo en Atendia',
+            'preheader' => 'Crea tu contraseña y empieza a atender.',
+            'eyebrow' => 'Invitación al equipo',
+            'title' => 'Te sumaron al equipo de :business',
+            'intro' => 'Hola :name, te invitaron a atender las conversaciones con esta dirección:',
+            'intro_anonymous' => 'Hola, te invitaron a atender las conversaciones con esta dirección:',
+            'body' => 'Crea tu contraseña y entra al panel. El enlace vence en :days días.',
+            'cta' => 'Crear mi contraseña',
+            'closing' => 'Si no esperabas esta invitación, ignora este correo.',
+            'reason' => 'Te llega porque :business te invitó a su equipo en Atendia.',
+        ],
+    ],
+
     'account' => [
         'team' => 'El equipo de Atendia',
 

@@ -29,6 +29,8 @@ return new class extends Migration
             // Hashes only: the one-time backup codes are shown once and never stored in clear.
             $table->json('two_factor_recovery_codes')->nullable();
             $table->string('avatar_path')->nullable();
+            $table->string('whatsapp', 30)->nullable()->comment('Solo dígitos: dónde le llegan los avisos de derivación a esta persona del equipo');
+            $table->boolean('is_available')->default(true)->comment('Disponible/ausente: los avisos solo van a quien está disponible');
             $table->rememberToken();
             $table->timestamps();
             // Closing an account never erases it: the data stays for the

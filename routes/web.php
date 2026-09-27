@@ -57,13 +57,14 @@ Route::get('/seguridad/dispositivos/{device}/cerrar', RevokeDeviceController::cl
     ->middleware('signed:relative')
     ->name('security.devices.revoke');
 
-Route::get('/dashboard', fn () => view('dashboard'))
+// Agents only work the inbox: their home IS the conversations.
+Route::get('/dashboard', fn () => auth()->user()?->isAgent() ? redirect()->route('conversations') : view('dashboard'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('dashboard');
 
 // "Mi negocio": living mock-up of the business profile, same lock as the panel.
 Route::get('/negocio', fn () => view('my-business'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-business');
 
 // One deep link per profile section (LinkedIn-style "update just this piece"):
@@ -71,32 +72,32 @@ Route::get('/negocio', fn () => view('my-business'))
 // route names, and the literal slug is what keeps the component lookup safe.
 foreach (['identidad', 'ubicacion', 'horarios', 'contacto', 'redes', 'facturacion'] as $slug) {
     Route::get("/negocio/{$slug}", fn () => view('my-business', ['section' => $slug]))
-        ->middleware(['auth', 'verified', 'permission:access-client-app'])
+        ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
         ->name("my-business.{$slug}");
 }
 
 // Services and products of the business: living mock-ups behind the same lock.
 Route::get('/servicios', fn () => view('my-services'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-services');
 
 Route::get('/productos', fn () => view('my-products'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-products');
 
 // Linking the WhatsApp number the assistant answers through.
 Route::get('/whatsapp', fn () => view('whatsapp'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('whatsapp');
 
 // "Lo que sabe tu asistente": the knowledge base, visible and teachable.
 Route::get('/asistente', fn () => view('assistant'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('assistant');
 
 // The assistant's behaviour: the handoff dial and the owner's own cases.
 Route::get('/asistente/configuracion', fn () => view('assistant-settings'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('assistant.settings');
 
 // Every thread the assistant holds with the business's customers.
@@ -116,7 +117,7 @@ Route::get('/clientes', fn () => view('customers'))
 
 // "Mis estadísticas": what the assistant handled, read at the plan's depth.
 Route::get('/estadisticas', fn () => view('statistics'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('statistics');
 
 // The subscription: entitlements, usage meters and the ladder with padlocks.
@@ -126,28 +127,39 @@ Route::get('/reportes/{report}/{format}', ShowReportController::class)
     ->name('reports.show');
 
 Route::get('/plan', fn () => view('plan'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-plan');
 
 // "Mis pagos": the running period, the next payment and every payment made.
 Route::get('/pagos', fn () => view('payments'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-payments');
 
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-payments.receipt');
+
+// The invitation's landing: public, since the invitee has no account yet. The
+// token is the key (only its hash is stored) and it expires on its own.
+Route::get('/equipo/unirme/{token}', fn (string $token) => view('team-join', ['token' => $token]))
+    ->middleware(['guest', 'throttle:20,1'])
+    ->name('team.join');
+
+// "Equipo": the people behind the assistant and the departments a handoff lands in.
+Route::get('/equipo', fn () => view('team'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
+    ->name('team');
 
 // "Gana con AtendIa": the client's referral link and its tally.
 Route::get('/gana', fn () => view('referrals'))
-    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('referrals');
 
 // Client onboarding wizard. It writes real data now, so it sits behind the
 // client-panel lock. No 'verified': the welcome tour must not wait for the
 // verification mail.
 Route::livewire('/alta', 'business.wizard')
-    ->middleware(['auth', 'permission:access-client-app'])
+    ->middleware(['auth', 'permission:access-client-app', 'permission:manage-business'])
     ->name('onboarding');
 
 // TEMPORARY, local only: walk the wizard without registering — signs in a

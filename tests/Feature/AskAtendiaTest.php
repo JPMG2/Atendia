@@ -164,7 +164,7 @@ test('the agent knows today as a date, declines the world and has no web tool', 
         ->toContain('Solo puedo ayudarte con tu negocio y con el panel de Atendia.')
         ->toContain('No tenés acceso a internet')
         ->and(collect($agent->tools())->every(fn ($tool): bool => $tool instanceof OwnerSkillTool))->toBeTrue()
-        ->and(collect($agent->tools())->map(fn ($tool): string => $tool::class)->all())->toHaveCount(5);
+        ->and(collect($agent->tools())->map(fn ($tool): string => $tool::class)->all())->toHaveCount(6);
 });
 
 test('the owner skills never reach the WhatsApp assistant', function (): void {

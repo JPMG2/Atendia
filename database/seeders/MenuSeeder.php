@@ -27,7 +27,7 @@ class MenuSeeder extends Seeder
         // "Mi negocio" opens the whole profile; its children deep-link one
         // section each (LinkedIn-style: update just the piece you came for).
         // Labels reuse the section titles so menu and screen never diverge.
-        $myBusiness = Menu::create(['label_key' => 'menu.my_business', 'icon' => 'store', 'route_name' => 'my-business', 'sort_order' => 2]);
+        $myBusiness = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.my_business', 'icon' => 'store', 'route_name' => 'my-business', 'sort_order' => 2]);
         $profileSections = [
             ['client.business.identity.title', 'sparkles', 'my-business.identidad'],
             ['client.business.location.title', 'map-pin', 'my-business.ubicacion'],
@@ -39,10 +39,13 @@ class MenuSeeder extends Seeder
         foreach ($profileSections as $order => [$labelKey, $icon, $routeName]) {
             Menu::create(['parent_id' => $myBusiness->id, 'label_key' => $labelKey, 'icon' => $icon, 'route_name' => $routeName, 'sort_order' => $order + 1]);
         }
+        // Last child of the business, not a top item (her call, 2026-09-27): the
+        // people and departments are the owner's setup, like Shopify's "Users".
+        Menu::create(['parent_id' => $myBusiness->id, 'label_key' => 'menu.team', 'icon' => 'users-round', 'route_name' => 'team', 'sort_order' => count($profileSections) + 1]);
         // Grouped under the Catalog parent by the owner's call (2026-09-14),
         // the Fresha pattern: a submenu whose children are both REAL screens.
         // Badges mirror the mock counts until the real tables land.
-        $catalog = Menu::create(['label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 3]);
+        $catalog = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.catalog', 'icon' => 'layers', 'sort_order' => 3]);
         // No seeded badges: the catalog counts are overlaid LIVE per tenant
         // by the navigation (a static number that lies costs trust).
         Menu::create(['parent_id' => $catalog->id, 'label_key' => 'menu.services', 'icon' => 'briefcase', 'route_name' => 'my-services', 'sort_order' => 1]);
@@ -50,21 +53,21 @@ class MenuSeeder extends Seeder
         // Setup-first order (owner's call, 2026-09-17): configure, then talk;
         // revisit post go-live. A parent (her call, 2026-09-20): knowledge and
         // behaviour are different rooms, and more children will grow here.
-        $assistant = Menu::create(['label_key' => 'menu.assistant', 'icon' => 'bot', 'sort_order' => 4]);
+        $assistant = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.assistant', 'icon' => 'bot', 'sort_order' => 4]);
         Menu::create(['parent_id' => $assistant->id, 'label_key' => 'menu.assistant_knowledge', 'icon' => 'sparkles', 'route_name' => 'assistant', 'sort_order' => 1]);
         Menu::create(['parent_id' => $assistant->id, 'label_key' => 'menu.assistant_settings', 'icon' => 'settings', 'route_name' => 'assistant.settings', 'sort_order' => 2]);
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 5]);
         // Beside the inbox on purpose: the flow and the asset it leaves behind.
         Menu::create(['label_key' => 'menu.customers', 'icon' => 'users', 'route_name' => 'customers', 'sort_order' => 6]);
         // Reading screens ride together: statistics right after the inbox.
-        Menu::create(['label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 7]);
-        Menu::create(['label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 8]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 7]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 8]);
         // A parent like "Mi negocio" (her call, 2026-09-23): the plan and what
         // it costs live together, the Tiendanube "Planes y pagos" pattern.
-        $planPayments = Menu::create(['label_key' => 'menu.plan_payments', 'icon' => 'gem', 'sort_order' => 9]);
+        $planPayments = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.plan_payments', 'icon' => 'gem', 'sort_order' => 9]);
         Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 1]);
         Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.my_payments', 'icon' => 'receipt', 'route_name' => 'my-payments', 'sort_order' => 2]);
-        Menu::create(['label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 10]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 10]);
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'settings', 'placement' => 'bottom', 'sort_order' => 1]);

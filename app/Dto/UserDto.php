@@ -22,6 +22,8 @@ final class UserDto
         public readonly ?CarbonInterface $password_changed_at = null,
         public readonly ?CarbonInterface $two_factor_whatsapp_at = null,
         public readonly ?string $avatar_url = null,
+        public readonly ?string $whatsapp = null,
+        public readonly bool $is_available = true,
     ) {}
 
     public static function fromUser(User $user): self
@@ -39,6 +41,8 @@ final class UserDto
             password_changed_at: isset($raw['password_changed_at']) ? $user->password_changed_at : null,
             two_factor_whatsapp_at: isset($raw['two_factor_whatsapp_at']) ? $user->two_factor_whatsapp_at : null,
             avatar_url: $user->avatarUrl(),
+            whatsapp: $raw['whatsapp'] ?? null,
+            is_available: (bool) ($raw['is_available'] ?? true),
         );
     }
 

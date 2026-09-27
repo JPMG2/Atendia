@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
 use App\Models\Menu;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -65,7 +66,9 @@ test('the tree reflects newly added menu items', function (): void {
 });
 
 test('the seeder builds the blessed client menu in its logical order', function (): void {
-    $this->seed(MenuSeeder::class);
+    $this->seed([RolesAndPermissionsSeeder::class, MenuSeeder::class]);
+    // The business setup items are the owner's: read the tree as the owner does.
+    $this->actingAs(User::factory()->create(['business_id' => Business::factory()->create()->id]));
 
     $tree = Menu::tree();
 

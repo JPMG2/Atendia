@@ -18,6 +18,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\PlatformContact;
+use App\Models\User;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
 use App\Services\OwnerPings;
@@ -98,11 +99,13 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         $plan = $business->plan();
         $evolution = app(EvolutionApi::class);
 
-        // The owner's own phone is NEVER a customer: opening a thread for it
+        // The owner's or a team member's own phone is NEVER a customer: that
         // made the assistant escalate the owner to the owner (2026-09-20).
         // Their texts are relayed to the thread waiting for the team.
-        if ($business->isOwnerWhatsApp($this->from)) {
-            $this->relayOwnerReply($business, $evolution);
+        $member = $business->teamMemberForWhatsApp($this->from);
+
+        if ($business->isOwnerWhatsApp($this->from) || $member !== null) {
+            $this->relayOwnerReply($business, $evolution, $member?->isAgent() ? $member : null);
 
             return;
         }
@@ -248,7 +251,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      * naming who received it. "#resuelto" closes that thread instead, and
      * with no handoff in flight they just get the pointer.
      */
-    private function relayOwnerReply(Business $business, EvolutionApi $evolution): void
+    private function relayOwnerReply(Business $business, EvolutionApi $evolution, ?User $agent = null): void
     {
         if ($this->audioBase64 !== null) {
             $text = $this->transcribe($business);
@@ -262,8 +265,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return;
         }
 
-        app(Tenant::class)->speakingAs($business, function () use ($business, $evolution, $text): void {
-            $target = $this->ownerTarget($evolution, $text);
+        app(Tenant::class)->speakingAs($business, function () use ($business, $evolution, $text, $agent): void {
+            $target = $this->ownerTarget($evolution, $text, $agent);
 
             if ($target === null) {
                 return;
@@ -289,6 +292,11 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 return;
             }
 
+            // Answered from their phone = taken: the thread stays in their reach.
+            if ($agent !== null) {
+                $thread->update(['assigned_user_id' => $agent->id]);
+            }
+
             $evolution->sendText($this->instance, $this->from, __('assistant.handoff.relay_done', [
                 'name' => $thread->contact_name ?? $thread->contact_phone,
                 'url' => route('conversations'),
@@ -306,12 +314,13 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      *
      * @return array{0: Conversation, 1: string}|null
      */
-    private function ownerTarget(EvolutionApi $evolution, string $text): ?array
+    private function ownerTarget(EvolutionApi $evolution, string $text, ?User $agent = null): ?array
     {
         // Follow-ups included: a thread already waiting on the customer is
         // still the owner's live handoff, so it stays addressable.
         $open = Conversation::query()
             ->whereIn('status', [ConversationStatus::Team, ConversationStatus::Customer])
+            ->when($agent !== null, fn ($threads) => $threads->visibleTo($agent))
             ->orderByDesc('escalated_at')
             ->orderByDesc('last_message_at')
             ->get();
@@ -322,7 +331,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return [$thread, $text];
         }
 
-        $pickKey = "wa:pick:{$this->instance}";
+        $pickKey = "wa:pick:{$this->instance}:{$this->from}";
         $pending = Cache::get($pickKey);
 
         if (is_array($pending) && preg_match('/^\s*(\d{1,2})\s*$/', $text, $number) === 1) {

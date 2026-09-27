@@ -133,7 +133,8 @@ new class extends Component
     {
         $business = Auth::user()?->business;
 
-        if ($business === null) {
+        // The plan is the owner's to change: an agent would only meet a 403.
+        if ($business === null || ! Auth::user()->can('manage-business')) {
             return null;
         }
 
@@ -161,8 +162,9 @@ new class extends Component
         <x-ui.menu :items="$this->tree->where('placement', 'bottom')->values()" />
 
         {{-- LinkedIn-style profile strength: constant presence, zero pressure.
-        Derived from the real data; at 100% it vanishes — job done. --}}
-        @if ($panel === 'client' && auth()->check() && $this->profilePercent < 100)
+        Derived from the real data; at 100% it vanishes — job done. The
+        profile and the plan are the owner's: an agent never sees either card. --}}
+        @if ($panel === 'client' && auth()->user()?->can('manage-business') && $this->profilePercent < 100)
             <a href="{{ route('my-business') }}" wire:navigate class="sidebar-progress">
                 <span class="sidebar-progress-head">
                     <span>{{ __('menu.profile_progress', ['percent' => $this->profilePercent]) }}</span>
@@ -173,7 +175,7 @@ new class extends Component
                 next piece turns the meter into a to-do, not a grade. --}}
                 <span class="sidebar-progress-hint">{{ __('menu.profile_missing.'.$this->strength['missing'][0]) }}</span>
             </a>
-        @elseif ($panel === 'client' && auth()->check())
+        @elseif ($panel === 'client' && auth()->user()?->can('manage-business'))
             {{-- At 100% the meter bows out with one goodbye instead of
             vanishing in silence; the dismissal sticks per browser. --}}
             <div

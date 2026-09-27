@@ -30,6 +30,14 @@ return [
         'body_alert' => 'Si no reconocés este acceso, cambiá tu contraseña ahora mismo.',
     ],
 
+    'team' => [
+        'invitation' => [
+            'preheader' => 'Creá tu contraseña y empezá a atender.',
+            'body' => 'Creá tu contraseña y entrá al panel. El enlace vence en :days días.',
+            'closing' => 'Si no esperabas esta invitación, ignorá este correo.',
+        ],
+    ],
+
     'account' => [
         'password_reset' => [
             'subject' => 'Restablecé tu contraseña de Atendia',

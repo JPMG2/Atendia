@@ -21,6 +21,8 @@ return new class extends Migration
             // The tenant. A customer chatting with two businesses is two threads.
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete()->comment('La ficha del cliente final; nullable porque los hilos son anteriores a la ficha');
+            $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete()->comment('A dónde la derivó la IA; null = a todo el equipo');
+            $table->foreignId('assigned_user_id')->nullable()->constrained('users')->nullOnDelete()->comment('Quién del equipo la tomó');
 
             $table->string('contact_phone', 30)->comment('El WhatsApp del cliente final, solo dígitos');
             $table->string('contact_name')->nullable()->comment('El pushName que muestra WhatsApp; lo pisa cada mensaje');

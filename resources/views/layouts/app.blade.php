@@ -173,7 +173,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                                 :name="auth()->user()?->name ?? 'Atendia'"
                                 :src="auth()->user()?->avatarUrl()"
                                 size="sm"
-                                status="online"
+                                :status="auth()->user()?->is_available === false ? 'away' : 'online'"
                                 tint="brand"
                             />
                         </button>
@@ -185,6 +185,10 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                             x-transition
                             @click.outside="open = false"
                         >
+                            @if (! $onAdminPanel && auth()->user()?->business_id !== null)
+                                <livewire:team.presence />
+                            @endif
+
                             {{-- Panel switch, admin only. Impersonating one particular
                             customer is a separate feature for later; this
                             only changes panel. --}}

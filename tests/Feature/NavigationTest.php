@@ -32,7 +32,7 @@ test('the navigation renders the active menu tree to arbitrary depth', function 
 });
 
 test('the catalog badges are live per tenant and hide at zero', function (): void {
-    $this->seed(MenuSeeder::class);
+    $this->seed([RolesAndPermissionsSeeder::class, MenuSeeder::class]);
     $user = User::factory()->create();
     $user->business()->associate(Business::factory()->create())->save();
     Service::factory()->count(3)->create(['business_id' => $user->business_id]);

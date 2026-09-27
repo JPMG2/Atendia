@@ -14,6 +14,7 @@ use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
+use App\Models\Department;
 use App\Services\AssistantSkills;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
@@ -239,7 +240,26 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             diciendo que una persona del equipo le escribe a la brevedad. Nunca
             derives sin llamar la herramienta, y nunca sigas intentando resolver
             la consulta después de derivar.
+            {$this->departmentsBriefing()}
             DERIVACION;
+    }
+
+    /**
+     * Where each handoff should land: the owner's own words per room. Only
+     * with the plan's departments; without them the whole team gets it.
+     */
+    private function departmentsBriefing(): string
+    {
+        if ($this->business === null || ! $this->business->plan()->hasDepartments) {
+            return '';
+        }
+
+        $rooms = $this->business->departments
+            ->map(fn (Department $department): string => "- {$department->name}: {$department->routing_hint}")
+            ->implode("\n");
+
+        return $rooms === '' ? '' : "DEPARTAMENTOS. Al derivar, pasá en \"department\" el que corresponde según cuándo derivar a cada uno:\n"
+            .$rooms."\nSi ninguno encaja, derivá sin departamento.";
     }
 
     /**

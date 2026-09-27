@@ -1464,7 +1464,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bp-rail { position:sticky; top:20px; display:flex; flex-direction:column; gap:12px; }
   .bp-main > .bp-card { margin-bottom:12px; }
   .bp-card { padding:var(--space-5); }
-  .bp-card-head { display:flex; align-items:center; gap:10px; }
+  /* Wraps: on a phone the head's action drops under the title instead of pushing past the edge. */
+  .bp-card-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
   /* Shopify-style: a save with nothing to save sits dimmed; the dirty flag
      wakes it. Still clickable on purpose — dimming is a hint, not a lock. */
   .bp-card-actions .btn.is-idle { opacity:.55; }
@@ -1474,6 +1475,52 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
              padding:2px 9px; border-radius:999px; border:1px solid var(--brand-border);
              background:var(--brand-soft); color:var(--brand-soft-text); }
   .bp-hint { color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
+  /* "Equipo": people as rows, departments as a card grid. */
+  .tm-list { display:flex; flex-direction:column; }
+  .tm-row { display:flex; align-items:flex-start; gap:12px; padding:10px 8px; border-radius:12px; overflow-wrap:anywhere;
+    transition:background var(--dur-fast) var(--ease-out); }
+  .tm-row + .tm-row { border-top:1px solid var(--border-subtle); }
+  .tm-row:hover { background:var(--surface-sunken); }
+  /* On a phone the actions step under the text: beside it they squeezed an email into two lines. */
+  @media (max-width:560px) {
+    .tm-row { flex-wrap:wrap; }
+    .tm-row > .min-w-0 { flex-basis:calc(100% - 52px); }
+    .tm-row > .flex-none:last-child { margin-left:52px; }
+  }
+  .tm-pending-avatar { flex:none; width:40px; height:40px; border-radius:var(--radius-pill); display:grid; place-items:center;
+    border:1px dashed var(--border-strong); color:var(--text-muted); }
+  .tm-role { font-size:var(--text-xs); font-weight:600; padding:1px 8px; border-radius:var(--radius-pill);
+    background:var(--surface-sunken); color:var(--text-body); border:1px solid var(--border-subtle); }
+  .tm-role.is-owner { background:var(--brand-soft); color:var(--brand-soft-text); border-color:var(--brand-border); }
+  .tm-dept { font-size:var(--text-xs); font-weight:600; padding:2px 9px; border-radius:var(--radius-pill);
+    background:var(--info-soft); color:var(--info); }
+  .tm-depts { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; }
+  .tm-dept-card { display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:14px;
+    border:1px solid var(--border-subtle); background:var(--surface-card);
+    transition:border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+  .tm-dept-card:hover { border-color:var(--brand); box-shadow:var(--shadow-sm); }
+  .tm-dept-icon { flex:none; width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+    background:var(--brand-soft); color:var(--brand-soft-text); }
+  .tm-dept-foot { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:auto; }
+  .tm-stack { display:flex; }
+  .tm-stack > * + * { margin-left:-4px; }
+  .tm-stack > * { box-shadow:0 0 0 2px var(--surface-card); border-radius:var(--radius-pill); }
+  .tm-waiting { font-size:var(--text-xs); color:var(--text-muted); }
+  .tm-dept-hours { display:flex; align-items:flex-start; gap:5px; margin-top:4px; font-size:var(--text-xs); color:var(--text-body); }
+  .tm-dept-hours svg { flex:none; margin-top:2px; }
+  .tm-presence { display:inline-flex; align-items:center; gap:5px; font-size:var(--text-xs); font-weight:500; color:var(--success); }
+  .tm-presence::before { content:""; width:7px; height:7px; border-radius:var(--radius-pill); background:currentColor; }
+  .tm-presence.is-away { color:var(--text-muted); }
+  .tm-hours { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  /* One line per day, always: the closing time dropping under the day read as another day. */
+  .form-row.tm-hour-row { align-items:center; flex-wrap:nowrap; gap:8px; }
+  .form-row.tm-hour-row > .f-code { flex:0 0 118px; min-width:118px; }
+  .tm-hour-day { width:40px; flex:none; font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
+  .tm-waiting.is-on { font-weight:600; color:var(--warning); }
+  .tm-steps { display:flex; flex-direction:column; gap:12px; font-size:var(--text-sm); color:var(--text-body); }
+  .tm-steps li { display:flex; gap:10px; align-items:flex-start; }
+  .tm-step-icon { flex:none; width:30px; height:30px; border-radius:10px; display:grid; place-items:center;
+    background:var(--brand-soft); color:var(--brand-soft-text); }
   /* 14px: rows sit close (density rule) yet clearly farther apart than a
      control and its own error message, so a shown error reads as its field's. */
   .bp-form { display:flex; flex-direction:column; gap:14px; }
@@ -1737,7 +1784,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     .sidebar-collapse { display:none; }
   }
   @media (max-width:1100px) {
-    .bp-layout { grid-template-columns:1fr; }
+    /* minmax(0,…): a bare 1fr grows to its longest unbreakable line and scrolls the phone sideways. */
+    .bp-layout { grid-template-columns:minmax(0, 1fr); }
     .pay-grid { grid-template-columns:1fr; }
     .bp-rail { position:static; }
   }
@@ -1942,6 +1990,22 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                           background:var(--surface-card); border:1px solid var(--border-subtle);
                           border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:6px; }
   .topbar-user-dropdown form { margin:0; }
+  /* Presence, first thing in the menu: the only setting someone flips several times a day. */
+  .dropdown-presence { width:260px; padding:8px 10px 10px; margin-bottom:6px; border-bottom:1px solid var(--border-subtle); }
+  .presence-toggle { display:flex; align-items:center; gap:8px; width:100%; margin-top:6px; padding:8px 10px;
+    border-radius:var(--radius-sm); border:1px solid var(--border-subtle); background:var(--surface-sunken);
+    color:var(--text-strong); font-size:var(--text-sm); font-weight:600; cursor:pointer;
+    transition:border-color var(--dur-fast) var(--ease-out); }
+  .presence-toggle:hover { border-color:var(--brand); }
+  .presence-dot { width:9px; height:9px; border-radius:var(--radius-pill); background:var(--success); }
+  .presence-toggle.is-away .presence-dot { background:var(--text-muted); }
+  .presence-switch { position:relative; margin-left:auto; width:32px; height:18px; border-radius:var(--radius-pill);
+    background:var(--brand); transition:background var(--dur-fast) var(--ease-out); }
+  .presence-switch::after { content:""; position:absolute; top:2px; left:16px; width:14px; height:14px;
+    border-radius:var(--radius-pill); background:var(--surface-card); transition:left var(--dur-fast) var(--ease-spring); }
+  .presence-toggle.is-away .presence-switch { background:var(--border-strong); }
+  .presence-toggle.is-away .presence-switch::after { left:2px; }
+  .presence-hint { margin-top:6px; font-size:var(--text-xs); line-height:1.4; color:var(--text-muted); }
   .dropdown-item { display:flex; align-items:center; gap:10px; width:100%; padding:9px 10px; border:none;
                    background:transparent; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none;
                    color:var(--text-body); font-family:var(--font-sans); font-size:var(--text-sm); text-align:left;

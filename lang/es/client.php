@@ -356,6 +356,7 @@ return [
         'human_tag' => 'Equipo',
         'teach' => 'Enseñarle esto a tu asistente',
         'sources_toggle' => '¿De dónde salió?',
+        'department_hint' => 'El departamento al que tu asistente derivó esta charla',
         'files' => [
             'open' => 'Archivos',
             'title' => 'Archivos de la conversación',

@@ -356,7 +356,8 @@ new class extends Component
             return;
         }
 
-        $thread->update(['status' => ConversationStatus::Team, 'escalated_at' => now(), 'handoff_reminded_at' => null]);
+        // Taken = theirs: the thread stays in reach of whoever took it, whatever its department.
+        $thread->update(['status' => ConversationStatus::Team, 'escalated_at' => now(), 'handoff_reminded_at' => null, 'assigned_user_id' => Auth::id()]);
         unset($this->thread, $this->humanHeld);
     }
 
@@ -586,6 +587,9 @@ new class extends Component
                             </p>
                             <p class="text-muted font-mono text-xs">{{ $this->thread->contact_phone }}</p>
                         </div>
+                        @if ($this->thread->department !== null)
+                            <span class="tm-dept" title="{{ __('client.conversations.department_hint') }}">{{ $this->thread->department->name }}</span>
+                        @endif
                         @if (($this->thread->taught_faqs_count ?? 0) > 0)
                             {{-- Reverse provenance: this chat made the assistant smarter.
                             Clicking unfolds WHICH answers, each a jump to its sheet. --}}

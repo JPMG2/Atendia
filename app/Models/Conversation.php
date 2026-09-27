@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * One WhatsApp thread between a business and one customer. The reply
  * worker writes it; the assistant reads it back as memory.
  */
-#[Fillable(['business_id', 'customer_id', 'contact_phone', 'contact_name', 'language', 'status', 'escalated_at', 'handoff_reminded_at', 'last_message_at'])]
+#[Fillable(['business_id', 'customer_id', 'department_id', 'assigned_user_id', 'contact_phone', 'contact_name', 'language', 'status', 'escalated_at', 'handoff_reminded_at', 'last_message_at'])]
 class Conversation extends Model
 {
     use BelongsToBusiness;
@@ -82,6 +82,45 @@ class Conversation extends Model
                 ->where('conversation_messages.kind', MessageKind::Message->value)
                 ->whereRaw('conversation_messages.id > coalesce(conversations.analyzed_message_id, 0)'))
             ->when($withinDays !== null, fn (Builder $recent): Builder => $recent->where('last_message_at', '>=', now()->subDays($withinDays)));
+    }
+
+    /** @return BelongsTo<Department, $this> */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
+    }
+
+    /**
+     * What an agent may open: threads routed to one of their departments or
+     * taken by them. An agent in no department sees the whole inbox (the
+     * plans without departments); the owner is never narrowed.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if (! $user->isAgent()) {
+            return;
+        }
+
+        $departmentIds = $user->departments()->pluck('departments.id');
+
+        if ($departmentIds->isEmpty()) {
+            return;
+        }
+
+        $query->where(fn (Builder $visible) => $visible
+            ->whereIn('department_id', $departmentIds)
+            ->orWhere('assigned_user_id', $user->id));
+    }
+
+    public function isVisibleTo(User $user): bool
+    {
+        return self::query()->whereKey($this->getKey())->visibleTo($user)->exists();
     }
 
     /**

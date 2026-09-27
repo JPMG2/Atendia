@@ -19,6 +19,9 @@ class MessageMediaController extends Controller
 {
     public function __invoke(Request $request, ConversationMessage $message, int $index): StreamedResponse
     {
+        // The tenant scope keeps other businesses out; this keeps an agent inside their departments.
+        abort_unless($message->conversation?->isVisibleTo($request->user()) ?? false, 404);
+
         $item = $message->media[$index] ?? null;
         $path = is_array($item) ? ($item['path'] ?? null) : null;
 

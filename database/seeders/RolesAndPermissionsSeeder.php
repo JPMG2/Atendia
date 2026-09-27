@@ -36,14 +36,20 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::findOrCreate($permission);
         }
 
+        // The business setup (profile, catalog, assistant, plan, team) is the
+        // owner's; an invited agent only works the inbox.
+        Permission::findOrCreate('manage-business');
+
         $admin = Role::findOrCreate('admin');
         $client = Role::findOrCreate('client');
+        $agent = Role::findOrCreate('agent');
 
         // The client reaches its own panel. The admin also passes through
         // Gate::before, but gets the permissions explicitly so the middleware
         // lets it through without leaning on super-admin alone.
-        $client->givePermissionTo('access-client-app');
-        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', ...$catalogPermissions]);
+        $client->givePermissionTo(['access-client-app', 'manage-business']);
+        $agent->givePermissionTo('access-client-app');
+        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', 'manage-business', ...$catalogPermissions]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
