@@ -18,6 +18,7 @@
         "livewire/livewire": "^4.0",
         "moneyphp/money": "^4.9",
         "phpoffice/phpspreadsheet": "^5.8",
+        "smalot/pdfparser": "^2.12",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-permission": "^8.0",
         "stevebauman/location": "^7.6"

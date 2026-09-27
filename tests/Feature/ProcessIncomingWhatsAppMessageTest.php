@@ -16,12 +16,14 @@ use App\Models\Country;
 use App\Models\Customer;
 use App\Models\SubscriptionPlan;
 use App\Services\Knowledge\KnowledgeEmbedder;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Ai\Transcription;
 
 uses(RefreshDatabase::class);
@@ -427,4 +429,136 @@ test('a voice note\'s transcription is metered on its business, not on nobody', 
     runIncoming('', 'MSG-9', base64_encode('opus-bytes'), seconds: 7);
 
     expect(AiUsage::query()->where('kind', AiUsage::TRANSCRIPTION)->pluck('business_id')->all())->toBe([$business->id]);
+});
+
+/** @param  array<string, mixed>  $media  a parked burst piece, as the webhook leaves it */
+function runIncomingMedia(array $media, string $messageId = 'MSG-M'): void
+{
+    $media += ['tmp' => null, 'mime' => '', 'name' => '', 'caption' => '', 'lat' => null, 'lng' => null, 'label' => ''];
+    Cache::put('wa:buf:atendia-demo:5491122334455', [$media], now()->addMinutes(3));
+    Cache::put('wa:last:atendia-demo:5491122334455', $messageId, now()->addMinutes(3));
+
+    (new ProcessIncomingWhatsAppMessage('atendia-demo', '5491122334455', 'Carla', $media['caption'], $messageId, media: $media))->handle();
+}
+
+function parkedFile(string $name, string $bytes = 'bytes'): string
+{
+    Storage::disk('local')->put("wa-inbound/{$name}", $bytes);
+
+    return "wa-inbound/{$name}";
+}
+
+test('a photo reaches the model attached and lands in the thread with its file', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Sí, lo tenemos.']);
+
+    runIncomingMedia(['kind' => 'image', 'tmp' => parkedFile('a.jpg'), 'mime' => 'image/jpeg', 'caption' => '¿Tienen este?']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => $prompt->attachments->count() === 1
+        && str_contains($prompt->prompt, '📷 Foto (adjunto)')
+        && str_contains($prompt->prompt, '¿Tienen este?'));
+
+    $inbound = ConversationMessage::query()->where('direction', MessageDirection::In)->sole();
+
+    expect($inbound->body)->toBe("📷 Foto\n¿Tienen este?")
+        ->and($inbound->media[0]['path'])->toStartWith("businesses/{$business->id}/conversations/")
+        ->and($inbound->textBesideMedia())->toBe('¿Tienen este?');
+    Storage::disk('local')->assertExists($inbound->media[0]['path']);
+    Storage::disk('local')->assertMissing('wa-inbound/a.jpg');
+});
+
+test('on a plan without media the photo waits for the team and the model is told it cannot see it', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    $business->subscription->update(['trial_ends_at' => now()->subDay()]);
+    AsistenteAtendia::fake(['¿Me escribes qué producto buscas?']);
+
+    runIncomingMedia(['kind' => 'image', 'tmp' => parkedFile('a.jpg'), 'mime' => 'image/jpeg']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => $prompt->attachments->isEmpty()
+        && str_contains($prompt->prompt, 'no lo podés ver'));
+    expect(ConversationMessage::query()->where('direction', MessageDirection::In)->sole()->media[0])->toHaveKey('path');
+});
+
+test('a PDF is read, while a Word file and a PDF with no bytes wait for the team', function (string $mime, bool $parked, bool $read): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Listo.']);
+
+    runIncomingMedia(['kind' => 'document', 'tmp' => $parked ? parkedFile('d.bin') : null, 'mime' => $mime, 'name' => 'lista']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => $prompt->attachments->count() === ($read ? 1 : 0)
+        && str_contains($prompt->prompt, '📄 Documento: lista'));
+})->with([
+    'pdf' => ['application/pdf', true, true],
+    'word' => ['application/msword', true, false],
+    'pdf without bytes' => ['application/pdf', false, false],
+]);
+
+test('a shared location reaches the model as coordinates and the panel as a map pin', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Hacemos envíos a esa zona.']);
+
+    runIncomingMedia(['kind' => 'location', 'lat' => -34.6, 'lng' => -58.4, 'label' => 'Av. Siempreviva 742']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, '📍 Ubicación: Av. Siempreviva 742 (coordenadas -34.6, -58.4)'));
+    expect(ConversationMessage::query()->where('direction', MessageDirection::In)->sole()->media[0])
+        ->toMatchArray(['kind' => 'location', 'lat' => -34.6, 'lng' => -58.4]);
+});
+
+test('a photo from the owner own number is discarded, never relayed', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo', 'fallback_whatsapp_number' => '+5491122334455']);
+    AsistenteAtendia::fake(['nunca']);
+
+    runIncomingMedia(['kind' => 'image', 'tmp' => parkedFile('o.jpg'), 'mime' => 'image/jpeg']);
+
+    AsistenteAtendia::assertNeverPrompted();
+    Storage::disk('local')->assertMissing('wa-inbound/o.jpg');
+    expect(ConversationMessage::query()->count())->toBe(0);
+});
+
+test('a PDF text is pulled on arrival so the thread search can find it', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Listo.']);
+    $pdf = Pdf::loadHTML('<p>Presupuesto: 3 bolsas de cemento Loma Negra</p>')->output();
+
+    runIncomingMedia(['kind' => 'document', 'tmp' => parkedFile('p.pdf', $pdf), 'mime' => 'application/pdf', 'name' => 'presupuesto.pdf']);
+
+    $inbound = ConversationMessage::query()->where('direction', MessageDirection::In)->sole();
+
+    expect($inbound->media_text)->toContain('3 bolsas de cemento')
+        ->and($inbound->matches('CEMENTO'))->toBeTrue()
+        ->and($inbound->mediaSnippet('cemento'))->toContain('bolsas de cemento Loma');
+});
+
+test('a bare photo tells the model it came with no words', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Tenemos este.']);
+
+    runIncomingMedia(['kind' => 'image', 'tmp' => parkedFile('b.jpg'), 'mime' => 'image/jpeg']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => str_contains($prompt->prompt, 'solo la foto, sin texto'));
+});
+
+test('a photo with a caption is a question already, no bare-photo hint', function (): void {
+    Storage::fake('local');
+    fakeWhatsAppHttp();
+    Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['Sí.']);
+
+    runIncomingMedia(['kind' => 'image', 'tmp' => parkedFile('c.jpg'), 'mime' => 'image/jpeg', 'caption' => '¿En rojo?']);
+
+    AsistenteAtendia::assertPrompted(fn ($prompt): bool => ! str_contains($prompt->prompt, 'sin texto'));
 });

@@ -10,7 +10,6 @@ use App\Models\ConversationMessage;
 use App\Models\KnowledgeSuggestion;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Str;
 
 /**
  * The inbox piece: every thread the assistant holds with this tenant's
@@ -29,6 +28,15 @@ class Inbox
      */
     public Collection $threads {
         get => $this->business->conversations()
+            ->select('conversations.*')
+            // Photos, documents and places per thread, in the same query: the list's paperclip count.
+            ->selectSub(
+                ConversationMessage::query()
+                    ->selectRaw('coalesce(sum(jsonb_array_length(media)), 0)')
+                    ->whereColumn('conversation_id', 'conversations.id')
+                    ->whereNotNull('media'),
+                'attachments_count',
+            )
             ->with('latestMessage')
             ->orderByDesc('last_message_at')
             ->get();
@@ -102,12 +110,12 @@ class Inbox
             return new Collection;
         }
 
-        $folded = Str::ascii(mb_strtolower($needle));
-
+        // The PDFs a customer sent count as part of the thread: "the quote in the
+        // budget they sent" is exactly the old quote a search should find.
         return $thread->messages()
             ->oldest('id')
             ->get()
-            ->filter(fn (ConversationMessage $message): bool => str_contains(Str::ascii(mb_strtolower($message->body)), $folded))
+            ->filter(fn (ConversationMessage $message): bool => $message->matches($needle))
             ->values();
     }
 

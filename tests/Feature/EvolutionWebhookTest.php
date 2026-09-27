@@ -7,6 +7,7 @@ use App\Models\Business;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -212,4 +213,64 @@ test('a message with no text is acknowledged but not processed', function (): vo
         ->assertJson(['handled' => false]);
 
     Queue::assertNothingPushed();
+});
+
+test('a photo is parked on the private disk and joins the burst with its caption', function (): void {
+    Storage::fake('local');
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = [
+        'imageMessage' => ['mimetype' => 'image/jpeg', 'caption' => '¿Tienen este?'],
+        'base64' => base64_encode('jpeg-bytes'),
+    ];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    $parked = Cache::get('wa:buf:atendia-demo:5491122334455')[0];
+
+    expect($parked['kind'])->toBe('image')
+        ->and($parked['caption'])->toBe('¿Tienen este?')
+        ->and($parked['tmp'])->toEndWith('.jpg');
+    Storage::disk('local')->assertExists($parked['tmp']);
+    Queue::assertPushed(ProcessIncomingWhatsAppMessage::class, fn (ProcessIncomingWhatsAppMessage $job): bool => $job->media === $parked
+        && $job->text === '¿Tienen este?');
+});
+
+test('a location joins the burst as coordinates, with no file', function (): void {
+    Storage::fake('local');
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = ['locationMessage' => [
+        'degreesLatitude' => -34.6, 'degreesLongitude' => -58.4, 'name' => 'Casa', 'address' => 'Av. Siempreviva 742',
+    ]];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    expect(Cache::get('wa:buf:atendia-demo:5491122334455')[0])
+        ->toMatchArray(['kind' => 'location', 'lat' => -34.6, 'lng' => -58.4, 'label' => 'Casa, Av. Siempreviva 742', 'tmp' => null]);
+});
+
+test('a document Evolution sent without its bytes still lands, as a placeholder', function (): void {
+    Storage::fake('local');
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = ['documentMessage' => ['mimetype' => 'application/pdf', 'fileName' => 'orden.pdf']];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret'])
+        ->assertJson(['handled' => true]);
+
+    expect(Cache::get('wa:buf:atendia-demo:5491122334455')[0])
+        ->toMatchArray(['kind' => 'document', 'name' => 'orden.pdf', 'tmp' => null]);
+});
+
+test('an unknown file type is stored as a bin, never as markup', function (): void {
+    Storage::fake('local');
+    $payload = evolutionMessagePayload();
+    $payload['data']['message'] = [
+        'documentMessage' => ['mimetype' => 'text/html', 'fileName' => 'x.html'],
+        'base64' => base64_encode('<h1>markup</h1>'),
+    ];
+
+    $this->postJson('/api/webhooks/evolution', $payload, ['X-Webhook-Secret' => 'test-secret']);
+
+    expect(Cache::get('wa:buf:atendia-demo:5491122334455')[0]['tmp'])->toEndWith('.bin');
 });

@@ -9,6 +9,10 @@ return [
         'audio' => '¿Me lo contás por mensaje de texto? Por acá no puedo escuchar audios, y por escrito te ayudo enseguida.',
     ],
 
+    'media' => [
+        'on_phone' => 'El archivo no llegó al panel: abrilo en tu WhatsApp',
+    ],
+
     'digest' => [
         'knowledge_footer' => 'Enseñale las respuestas desde tu panel y no vuelve a pasar: :url',
     ],

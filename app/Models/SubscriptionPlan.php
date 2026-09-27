@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
  * A row of the plan catalog. Read through App\Classes\Main\Plan, never
  * directly: the catalog is cached whole and every screen asks the same copy.
  */
-#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'whatsapp_numbers', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'trial_days', 'is_featured'])]
+#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'whatsapp_numbers', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'trial_days', 'is_featured'])]
 class SubscriptionPlan extends Model
 {
     private const string CACHE_KEY = 'plans.catalog';
@@ -28,7 +28,7 @@ class SubscriptionPlan extends Model
     /**
      * Every plan by code, floor first. Cached until a row changes.
      *
-     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, trial_days: ?int, is_featured: bool}>
      */
     public static function catalog(): array
     {
@@ -45,6 +45,7 @@ class SubscriptionPlan extends Model
                 'ask_per_month' => (int) $plan->ask_per_month,
                 'catalog_photos' => (int) $plan->catalog_photos,
                 'photos_per_item' => (int) $plan->photos_per_item,
+                'reads_media' => (bool) $plan->reads_media,
                 'trial_days' => $plan->trial_days === null ? null : (int) $plan->trial_days,
                 'is_featured' => (bool) $plan->is_featured,
             ]])
@@ -54,6 +55,6 @@ class SubscriptionPlan extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['is_featured' => 'boolean'];
+        return ['is_featured' => 'boolean', 'reads_media' => 'boolean'];
     }
 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Billing\PaymentReceiptController;
+use App\Http\Controllers\Conversations\MessageMediaController;
 use App\Http\Controllers\DemoChatController;
 use App\Http\Controllers\Reports\ShowReportController;
 use App\Http\Controllers\Security\RevokeDeviceController;
@@ -102,6 +103,11 @@ Route::get('/asistente/configuracion', fn () => view('assistant-settings'))
 Route::get('/conversaciones', fn () => view('conversations'))
     ->middleware(['auth', 'verified', 'permission:access-client-app'])
     ->name('conversations');
+
+Route::get('/conversaciones/mensajes/{message}/adjunto/{index}', MessageMediaController::class)
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->whereNumber('index')
+    ->name('conversations.media');
 
 // "Mis clientes": the directory every conversation feeds.
 Route::get('/clientes', fn () => view('customers'))

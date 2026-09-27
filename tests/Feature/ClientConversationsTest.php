@@ -759,3 +759,69 @@ test('the teach door opens only where the assistant fell short, never on a lone 
         ->assertSet('sheetOpen', true)
         ->assertSet('form.question', '¿Hacen análisis a domicilio?');
 });
+
+test('the files sheet gathers every photo, document and place of the thread, newest first', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Listo.');
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => "📄 Documento: lista.pdf\n📍 Ubicación: Av. Siempreviva 742",
+        'media' => [
+            ['kind' => 'document', 'mime' => 'application/pdf', 'name' => 'lista.pdf', 'path' => 'x.pdf'],
+            ['kind' => 'location', 'lat' => -34.6, 'lng' => -58.4, 'label' => 'Av. Siempreviva 742'],
+        ],
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => '📄 Documento: presupuesto.pdf',
+        'media' => [['kind' => 'document', 'mime' => 'application/pdf', 'name' => 'presupuesto.pdf', 'path' => 'y.pdf']],
+    ]);
+    $this->actingAs($user);
+
+    expect(array_column(array_column($thread->attachments()['document'], 'item'), 'name'))->toBe(['presupuesto.pdf', 'lista.pdf'])
+        ->and($thread->attachments()['location'])->toHaveCount(1)
+        ->and($thread->attachments()['image'])->toBe([]);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertSee(__('client.conversations.files.open'))
+        ->call('openFiles')
+        ->assertSet('showFiles', true)
+        ->assertSee(__('client.conversations.files.title'))
+        ->assertSee('presupuesto.pdf')
+        ->assertSee('Av. Siempreviva 742')
+        ->call('closeFiles')
+        ->assertSet('showFiles', false);
+});
+
+test('a thread with nothing attached shows no files button', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Listo.');
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->assertDontSee(__('client.conversations.files.open'));
+});
+
+test('the inbox counts each thread attachments and the thread search reaches inside PDFs', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Listo.');
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => "📷 Foto\n📄 Documento: presupuesto.pdf",
+        'media' => [
+            ['kind' => 'image', 'mime' => 'image/jpeg', 'path' => 'a.jpg'],
+            ['kind' => 'document', 'mime' => 'application/pdf', 'name' => 'presupuesto.pdf', 'path' => 'p.pdf'],
+        ],
+        'media_text' => 'Presupuesto: 3 bolsas de cemento Loma Negra',
+    ]);
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->assertSeeHtml(trans_choice('client.conversations.files.count', 2, ['count' => 2]))
+        ->call('open', $thread->id)
+        ->set('threadSearch', 'cemento')
+        ->assertSee(__('client.conversations.files.found_in_pdf'))
+        ->assertSee('Loma Negra');
+});

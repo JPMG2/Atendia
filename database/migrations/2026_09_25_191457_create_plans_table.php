@@ -29,6 +29,7 @@ return new class extends Migration
             $table->unsignedInteger('ask_per_month')->default(0)->comment('Consultas a Pregúntale a AtendIa; 0 = sin asistente');
             $table->unsignedInteger('catalog_photos')->default(0)->comment('Fotos de catálogo del negocio en total');
             $table->unsignedSmallInteger('photos_per_item')->default(0)->comment('Fotos por producto o servicio');
+            $table->boolean('reads_media')->default(false)->comment('La IA mira las fotos y lee los PDF que mandan los clientes');
             $table->unsignedSmallInteger('trial_days')->nullable()->comment('Solo el plan de la prueba gratis');
             $table->boolean('is_featured')->default(false)->comment('El "Más elegido" de las fichas');
 

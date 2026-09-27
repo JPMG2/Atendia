@@ -25,6 +25,8 @@ return new class extends Migration
             $table->string('kind', 8)->default('message')->comment('message | note — la nota interna jamás viaja al cliente');
             $table->string('wa_message_id', 100)->nullable()->comment('El id del mensaje en WhatsApp, para reacciones y trazas');
             $table->text('body');
+            $table->jsonb('media')->nullable()->comment('Filas in con adjuntos: [{kind: image|document|location, path, mime, name, caption, lat, lng, label}]');
+            $table->text('media_text')->nullable()->comment('Texto de los PDF del mensaje, extraído al recibirlos, para buscarlo en la conversación');
             $table->unsignedSmallInteger('audio_seconds')->nullable()->comment('Duración de la nota de voz transcripta (solo filas in de audio)');
             $table->jsonb('knowledge_sources')->nullable()->comment('Filas out del asistente: [{id, title}] de los documentos de conocimiento que respaldaron la respuesta');
             $table->timestamps();

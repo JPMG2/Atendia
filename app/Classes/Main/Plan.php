@@ -19,7 +19,7 @@ final class Plan
     /** Yearly billing pays ten months: two free, the same promise everywhere. */
     private const int PAID_MONTHS_PER_YEAR = 10;
 
-    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, trial_days: ?int, is_featured: bool} $limits */
+    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, trial_days: ?int, is_featured: bool} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -65,6 +65,11 @@ final class Plan
 
     public int $photosPerItem {
         get => (int) ($this->limits['photos_per_item'] ?? 0);
+    }
+
+    /** Whether the assistant looks at the photos and reads the PDFs customers send; otherwise they wait for the team. */
+    public bool $readsMedia {
+        get => (bool) ($this->limits['reads_media'] ?? false);
     }
 
     /** The trial plan's length; null on every other plan. */
@@ -115,7 +120,7 @@ final class Plan
     }
 
     /**
-     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, trial_days: ?int, is_featured: bool}>
      *
      * @throws RuntimeException
      */
@@ -189,6 +194,9 @@ final class Plan
                     : ['key' => 'audio', 'label' => __('plan.features.audio_none'), 'value' => 0],
                 ['key' => 'statistics', 'label' => __('plan.features.statistics.'.$this->statisticsLevel), 'value' => (int) array_search($this->statisticsLevel, $levels, true)],
                 ['key' => 'photos', 'label' => __('plan.features.photos', ['cap' => number_format($this->catalogPhotos, 0, ',', '.'), 'per' => $this->photosPerItem]), 'value' => $this->catalogPhotos],
+                $this->readsMedia
+                    ? ['key' => 'media', 'label' => __('plan.features.media'), 'value' => 1]
+                    : null,
                 $this->allowsAsk
                     ? ['key' => 'ask', 'label' => __('plan.features.ask', ['cap' => $this->askPerMonth]), 'value' => $this->askPerMonth]
                     : null,

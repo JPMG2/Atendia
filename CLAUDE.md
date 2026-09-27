@@ -1221,6 +1221,12 @@ lo recuerda cuando el mensaje reclama una regla.
   test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
   `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
   dos); sin allowlist — nació en cero el 2026-09-27.
+- **Ninguna pantalla sin la skill de diseño** → skill `atendiadesign` (capa A) · hook
+  `.claude/hooks/require-design-skill.sh` (PreToolUse `Write|Edit|Bash`): bloquea
+  editar `resources/views|css` si `atendiadesign` no se cargó en la sesión, y bloquea
+  ESCRIBIR vistas/CSS por Bash (sed/python/redirección) — por esa vía ningún hook
+  PostToolUse de las reglas de oro corría. Nació el 2026-09-27 (visor de fotos de B3
+  hecho sin la skill y editado por scripts). Instalado por la dueña, probado 8/8.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

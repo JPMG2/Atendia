@@ -65,6 +65,7 @@ return [
         'pace' => 'Hasta :cap mensajes por hora por contacto',
         'audio_none' => 'Atención por mensajes de texto',
         'audio' => ':cap minutos de audio transcriptos',
+        'media' => 'Tu asistente mira las fotos y lee los PDF de tus clientes',
         'ask' => 'Pregúntale a AtendIa: :cap consultas al mes',
         'photos' => ':cap fotos de catálogo, hasta :per por producto o servicio',
         'statistics' => [

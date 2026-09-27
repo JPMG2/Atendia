@@ -42,8 +42,8 @@ class EvalJudge implements Agent, HasStructuredOutput
 
             Pasa si responde lo esperado, aunque use otras palabras. Decir "no tengo ese dato" u
             ofrecer derivar a una persona NO es inventar. Las fórmulas de saludo, cortesía y de
-            presentación no son datos, ni lo que el asistente dice de sus propias capacidades (que no ve
-            fotos, que no busca en internet, que deriva): eso viene de sus instrucciones. Una cuenta
+            presentación no son datos, ni lo que el asistente dice de sus propias capacidades (qué ve o
+            no ve, que no busca en internet, que deriva): eso viene de sus instrucciones. Una cuenta
             simple hecha con datos de las herramientas (precio × cantidad) tampoco es inventar. Sé breve en "reason": una o dos frases, en español.
             JUEZ;
     }

@@ -155,3 +155,14 @@ test('without photos or while suspended nothing is sent, and the model is told w
         ->toContain('no se pueden enviar');
     Http::assertNothingSent();
 });
+
+test('every catalog photo opens the carousel at its full size', function (): void {
+    $business = Business::factory()->create();
+    $product = Product::factory()->create(['business_id' => $business->id]);
+    $photo = CatalogPhoto::factory()->create(['business_id' => $business->id, 'photoable_id' => $product->id]);
+    $this->actingAs(photoOwner($business));
+
+    Livewire::test('client.catalog-photos', ['type' => 'product', 'id' => $product->id])
+        ->assertSeeHtml('data-src="'.$photo->url().'"')
+        ->assertSeeHtml('photo-viewer');
+});

@@ -22,6 +22,7 @@ use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Files\File;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Providers\Tools\ToolSearch;
@@ -77,9 +78,10 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
      * 2026-09-05): when it answers a business question without searching,
      * one firm re-ask grounds the reply instead of trusting improvisation.
      */
-    public function answer(string $question): AgentResponse
+    /** @param  list<File>  $attachments  the customer's photos and PDFs, sent on both passes or the re-ask goes blind */
+    public function answer(string $question, array $attachments = []): AgentResponse
     {
-        $response = $this->prompt($question);
+        $response = $this->prompt($question, $attachments);
 
         // Small talk ("hola", "gracias") never needs grounding: re-asking it doubled the bill.
         if ($this->business === null || $response->toolCalls->isNotEmpty() || ! ConversationMessage::looksLikeEnquiry($question)) {
@@ -92,6 +94,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             .'del negocio (productos, servicios, precios, disponibilidad, horarios, ubicación). '
             ."Si la consulta no habla del negocio, respondé normalmente.\n\n"
             .'Consulta del cliente: '.$question,
+            $attachments,
         );
 
         return $second;
@@ -169,10 +172,16 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             Si el cliente pide VER algo (fotos, imágenes, "¿cómo es?"), mandale las fotos
             con la herramienta de fotos del catálogo; no las describas después.
 
-            Solo recibís TEXTO (los audios te llegan transcriptos): no ves fotos,
-            documentos, stickers ni ubicaciones. Si el cliente te manda o te anuncia
-            una, no le pidas que la envíe: pedile que te escriba lo que necesitás
-            (la medida, el nombre del producto, la dirección).
+            Las fotos y los PDF que manda el cliente te llegan adjuntos cuando los
+            podés ver; una ubicación te llega como texto con sus coordenadas. Usalos
+            para entender qué busca y respondé con tus herramientas, como con un texto.
+            Si manda SOLO una foto, sin texto, casi siempre pregunta si lo tienen:
+            identificá qué es, buscalo en el catálogo y respondé con lo que coincide o
+            se parece (nombre y precio), ofreciendo mandarle las fotos. Si no hay nada
+            parecido, decilo y preguntale qué necesita; nunca describas la foto de vuelta.
+            Si el mensaje dice que no podés ver o leer algo, o te anuncia algo que no
+            llegó, pedile que te escriba lo que necesitás (la medida, el nombre del
+            producto, la dirección). Stickers y videos no los ves.
 
             Usá como máximo un emoji por mensaje (✅ 📍 🕒 o
             similares), solo en saludos, confirmaciones o listas; ninguno si el cliente

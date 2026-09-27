@@ -63,10 +63,12 @@ new class extends Component
     <p class="cat-photos-hint">{{ __('catalog_photos.hint') }}</p>
 
     @if ($this->photos->isNotEmpty())
-        <ul class="cat-photos-grid">
+        <ul class="cat-photos-grid" data-photo-album>
             @foreach ($this->photos as $photo)
                 <li class="cat-photo" wire:key="photo-{{ $photo->id }}">
-                    <img src="{{ $photo->thumbUrl() }}" alt="" loading="lazy" />
+                    <x-ui.photo-thumb class="cat-photo-open" :src="$photo->url()" :event="'catalog-photos-'.strtolower($this->getId())">
+                        <img src="{{ $photo->thumbUrl() }}" alt="" loading="lazy" />
+                    </x-ui.photo-thumb>
                     @if ($loop->first)
                         <span class="cat-photo-cover">{{ __('catalog_photos.cover') }}</span>
                     @endif
@@ -81,6 +83,9 @@ new class extends Component
                 </li>
             @endforeach
         </ul>
+
+        {{-- Its own event, lowercased because the browser lowercases attribute names: two sheets never open each other's carousel. --}}
+        <x-ui.photo-viewer :event="'catalog-photos-'.strtolower($this->getId())" />
     @endif
 
     @if ($this->quota['itemUsed'] < $this->quota['perItem'] && $this->quota['used'] < $this->quota['cap'])

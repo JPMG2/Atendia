@@ -9,6 +9,7 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Services\Tenant;
 use App\Traits\BelongsToBusiness;
+use Carbon\CarbonInterface;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,6 +98,34 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ConversationMessage::class);
+    }
+
+    /**
+     * Everything the customer sent besides words, newest first and split by
+     * kind: the whole thread, not just the loaded window of messages.
+     *
+     * @return array{image: list<array{message_id: int, index: int, item: array<string, mixed>, sent_at: ?CarbonInterface}>, document: list<array{message_id: int, index: int, item: array<string, mixed>, sent_at: ?CarbonInterface}>, location: list<array{message_id: int, index: int, item: array<string, mixed>, sent_at: ?CarbonInterface}>}
+     */
+    public function attachments(): array
+    {
+        $files = ['image' => [], 'document' => [], 'location' => []];
+
+        $this->messages()
+            ->whereNotNull('media')
+            ->latest('id')
+            ->get(['id', 'media', 'created_at'])
+            ->each(function (ConversationMessage $message) use (&$files): void {
+                foreach ($message->media ?? [] as $index => $item) {
+                    $files[$item['kind'] ?? 'document'][] = [
+                        'message_id' => (int) $message->id,
+                        'index' => (int) $index,
+                        'item' => $item,
+                        'sent_at' => $message->created_at,
+                    ];
+                }
+            });
+
+        return $files;
     }
 
     /**

@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /** One turn of a thread: the customer's text or the assistant's reply. */
-#[Fillable(['business_id', 'conversation_id', 'direction', 'author', 'kind', 'wa_message_id', 'body', 'audio_seconds', 'knowledge_sources'])]
+#[Fillable(['business_id', 'conversation_id', 'direction', 'author', 'kind', 'wa_message_id', 'body', 'media', 'media_text', 'audio_seconds', 'knowledge_sources'])]
 class ConversationMessage extends Model
 {
     use BelongsToBusiness;
@@ -74,6 +74,98 @@ class ConversationMessage extends Model
     }
 
     /**
+     * The label an attachment reads as in the body (panel, memory, analysis).
+     *
+     * @param  array<string, mixed>  $item
+     */
+    public static function mediaLine(array $item): string
+    {
+        return match ($item['kind'] ?? null) {
+            'image' => __('assistant.media.image'),
+            'location' => ($item['label'] ?? '') !== '' ? __('assistant.media.location', ['label' => $item['label']]) : __('assistant.media.location_unnamed'),
+            default => __('assistant.media.document', ['name' => $item['name'] ?? __('assistant.media.document_unnamed')]),
+        };
+    }
+
+    /**
+     * A 3×3 block of OpenStreetMap tiles around a point, with the offset that
+     * centers the point in a box: a static map that loads like nine small
+     * images, where the embeddable map needs WebGL and a whole page per bubble.
+     *
+     * @return array{tiles: list<array{url: string, left: int, top: int}>, left: int, top: int}
+     */
+    public static function mapTiles(float $lat, float $lng, int $boxWidth, int $boxHeight, int $zoom = 16): array
+    {
+        $scale = 2 ** $zoom;
+        $x = ($lng + 180) / 360 * $scale;
+        $y = (1 - log(tan(deg2rad($lat)) + 1 / cos(deg2rad($lat))) / M_PI) / 2 * $scale;
+        [$tileX, $tileY] = [(int) floor($x), (int) floor($y)];
+
+        $tiles = [];
+
+        foreach ([-1, 0, 1] as $row) {
+            foreach ([-1, 0, 1] as $column) {
+                $tiles[] = [
+                    'url' => "https://tile.openstreetmap.org/{$zoom}/".(($tileX + $column + $scale) % $scale).'/'.($tileY + $row).'.png',
+                    'left' => ($column + 1) * 256,
+                    'top' => ($row + 1) * 256,
+                ];
+            }
+        }
+
+        return [
+            'tiles' => $tiles,
+            'left' => (int) round($boxWidth / 2 - (256 + ($x - $tileX) * 256)),
+            'top' => (int) round($boxHeight / 2 - (256 + ($y - $tileY) * 256)),
+        ];
+    }
+
+    /** The words or the PDFs of this message mention the needle, accent-free. */
+    public function matches(string $needle): bool
+    {
+        $folded = Str::ascii(mb_strtolower($needle));
+
+        return str_contains(Str::ascii(mb_strtolower($this->body)), $folded)
+            || str_contains(Str::ascii(mb_strtolower((string) $this->media_text)), $folded);
+    }
+
+    /**
+     * The stretch of a PDF around the first hit, so the owner sees WHY the
+     * document matched without opening it. Null when the hit is not in a PDF.
+     */
+    public function mediaSnippet(string $needle, int $radius = 60): ?string
+    {
+        $text = preg_replace('/\s+/u', ' ', (string) $this->media_text) ?? '';
+        $at = mb_stripos(Str::ascii($text), Str::ascii(trim($needle)));
+
+        if (trim($needle) === '' || $at === false) {
+            return null;
+        }
+
+        $start = max(0, $at - $radius);
+
+        return ($start > 0 ? '…' : '')
+            .trim(mb_substr($text, $start, mb_strlen($needle) + $radius * 2))
+            .($start + mb_strlen($needle) + $radius * 2 < mb_strlen($text) ? '…' : '');
+    }
+
+    /** The body without its attachment labels: the bubble draws those as previews. */
+    public function textBesideMedia(): string
+    {
+        $lines = explode("\n", $this->body);
+
+        foreach ($this->media ?? [] as $item) {
+            $at = array_search(self::mediaLine($item), $lines, true);
+
+            if ($at !== false) {
+                unset($lines[$at]);
+            }
+        }
+
+        return trim(implode("\n", $lines));
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -83,6 +175,7 @@ class ConversationMessage extends Model
             'author' => MessageAuthor::class,
             'kind' => MessageKind::class,
             'knowledge_sources' => 'array',
+            'media' => 'array',
         ];
     }
 

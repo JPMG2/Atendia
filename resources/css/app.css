@@ -1127,6 +1127,111 @@
 .pm-bubble.in { background:var(--bubble-in); color:var(--bubble-in-text); border-bottom-left-radius:4px; }
 .pm-bubble.out { background:var(--bubble-out); color:var(--bubble-out-text); border-bottom-right-radius:4px; }
 .pm-time { display:block; text-align:right; font-size:10px; opacity:.7; margin-top:2px; }
+/* What a customer sent: the photo itself, or a chip that opens the file or the map. */
+/* Any thumbnail that opens the carousel: it darkens a touch on hover, the cursor promises a zoom. */
+.photo-thumb { display:block; padding:0; border:0; background:none; cursor:zoom-in; }
+.photo-thumb img { transition:filter var(--dur-fast) var(--ease-out); }
+.photo-thumb:hover img { filter:brightness(.88); }
+.pm-media { margin-bottom:4px; }
+.pm-media img { display:block; max-width:min(240px, 100%); max-height:240px; border-radius:10px; object-fit:cover; }
+.pm-media-chip { display:flex; align-items:center; gap:8px; margin-bottom:4px; padding:8px 10px; border-radius:10px;
+  background:var(--surface-sunken); color:var(--text-strong); border:1px solid var(--border-default); overflow-wrap:anywhere; }
+a.pm-media-chip:hover { border-color:var(--brand); }
+/* A shared place: the map itself over a pin placeholder (never blank while it loads), the address under it. */
+.pm-place { display:block; width:min(260px, 100%); margin-bottom:4px; border-radius:10px; overflow:hidden;
+  background:var(--surface-sunken); border:1px solid var(--border-default);
+  transition:border-color var(--dur-fast) var(--ease-out); }
+.pm-place:hover { border-color:var(--brand); }
+.pm-place-map { position:relative; display:block; height:140px; overflow:hidden; background:var(--brand-soft); }
+.pm-place-tiles { position:absolute; width:768px; height:768px; }
+.pm-place-tiles img { position:absolute; width:256px; height:256px; max-width:none; }
+/* The pin's tip sits on the point: the glyph is lifted by its own height. */
+.pm-place-pin { position:absolute; left:50%; top:50%; transform:translate(-50%, -100%); color:var(--brand);
+  fill:var(--surface-card); filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.pm-place-credit { position:absolute; right:0; bottom:0; padding:1px 5px; font-size:10px; color:var(--text-muted);
+  background:color-mix(in srgb, var(--surface-card) 80%, transparent); border-top-left-radius:6px; }
+.dark .pm-place-tiles, [data-theme="dark"] .pm-place-tiles { filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9); }
+.pm-place-foot { display:flex; align-items:center; gap:8px; padding:8px 10px; color:var(--text-strong); overflow-wrap:anywhere; }
+.pm-place-foot small { display:block; color:var(--text-muted); font-size:11px; }
+/* The carousel: the photo in full over a deep dimmed backdrop, the thread's other photos a tap away. */
+.photo-viewer { position:fixed; inset:0; z-index:var(--z-modal); display:flex; flex-direction:column;
+  background:color-mix(in srgb, var(--ink-900) 94%, transparent); backdrop-filter:blur(12px); color:var(--ink-50); }
+.photo-viewer-bar { display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);
+  padding:var(--space-4) var(--space-5); }
+.photo-viewer-when { font-size:12px; opacity:.7; }
+.photo-viewer-btn { width:42px; height:42px; border-radius:var(--radius-pill); display:inline-flex; align-items:center;
+  justify-content:center; color:var(--ink-50); background:color-mix(in srgb, var(--ink-50) 10%, transparent);
+  transition:background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.photo-viewer-btn:hover { background:color-mix(in srgb, var(--ink-50) 20%, transparent); }
+.photo-viewer-btn:active { transform:scale(.97); }
+.photo-viewer-btn:disabled { opacity:.35; cursor:not-allowed; }
+.photo-viewer-zoom { display:flex; align-items:center; gap:4px; }
+.photo-viewer-level { min-width:44px; text-align:center; font-size:12px; opacity:.8; }
+/* The stage owns every gesture: the browser must not scroll or zoom the page underneath. */
+.photo-viewer-stage { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+  padding:0 var(--space-16); overflow:hidden; touch-action:none; }
+.photo-viewer-stage[data-zoomed=true] { cursor:grab; }
+.photo-viewer-stage[data-zoomed=true]:active { cursor:grabbing; }
+.photo-viewer-photo { max-width:100%; max-height:100%; object-fit:contain; border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xl); user-select:none; cursor:zoom-in; transform-origin:center;
+  transition:transform 90ms var(--ease-out); }
+.photo-viewer-stage[data-zoomed=true] .photo-viewer-photo { cursor:inherit; }
+.photo-viewer-tip { position:absolute; bottom:var(--space-3); left:50%; transform:translateX(-50%); padding:4px 12px;
+  border-radius:var(--radius-pill); font-size:var(--text-xs); color:var(--ink-100);
+  background:color-mix(in srgb, var(--ink-50) 10%, transparent); pointer-events:none; white-space:nowrap; }
+.photo-viewer-enter { transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+.photo-viewer-enter-start { opacity:0; transform:scale(.97); }
+.photo-viewer-nav { position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px;
+  border-radius:var(--radius-pill); display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-card); color:var(--text-strong); box-shadow:var(--shadow-lg);
+  transition:opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.photo-viewer-nav:hover:not(:disabled) { transform:translateY(-50%) scale(1.06); color:var(--brand); }
+.photo-viewer-nav:disabled { opacity:.3; cursor:not-allowed; }
+.photo-viewer-nav.prev { left:var(--space-4); }
+.photo-viewer-nav.next { right:var(--space-4); }
+.photo-viewer-foot { display:flex; flex-direction:column; align-items:center; gap:var(--space-3);
+  padding:var(--space-4) var(--space-5) var(--space-5); }
+.photo-viewer-caption { max-width:640px; text-align:center; font-size:var(--text-sm); line-height:1.5; }
+.photo-viewer-strip { display:flex; gap:8px; max-width:100%; overflow-x:auto; padding:4px; scrollbar-width:none; }
+.photo-viewer-strip::-webkit-scrollbar { display:none; }
+.photo-viewer-thumb { flex:none; width:56px; height:56px; border-radius:10px; overflow:hidden; opacity:.5;
+  outline:2px solid transparent; outline-offset:2px;
+  transition:opacity var(--dur-fast) var(--ease-out), outline-color var(--dur-fast) var(--ease-out); }
+.photo-viewer-thumb:hover { opacity:.85; }
+.photo-viewer-thumb[data-active=true] { opacity:1; outline-color:var(--brand); }
+.photo-viewer-thumb img { width:100%; height:100%; object-fit:cover; }
+@media (max-width:560px) {
+  .photo-viewer-stage { padding:0 var(--space-2); }
+  .photo-viewer-nav { display:none; }
+  .photo-viewer-thumb { width:48px; height:48px; }
+  .photo-viewer-bar { padding:var(--space-3) var(--space-4); }
+  .photo-viewer-level { display:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .photo-viewer-enter, .photo-viewer-btn, .photo-viewer-nav, .photo-viewer-thumb, .photo-viewer-photo,
+  .photo-thumb img { transition:none; }
+}
+.pm-media-chip small { display:block; color:var(--text-muted); font-size:11px; }
+/* Why a PDF matched the thread search: the stretch around the hit, under the document. */
+.pm-media-found { margin-bottom:4px; padding:6px 10px; border-radius:10px; font-size:var(--text-xs); line-height:1.45;
+  background:var(--brand-soft); color:var(--text-body); overflow-wrap:anywhere; }
+.pm-media-found span:first-child { display:block; font-weight:600; color:var(--brand-soft-text); }
+.pm-media-found .match-hit { background:var(--brand); color:var(--text-on-brand); padding:0 3px; }
+/* "Archivos": the thread's photos as a gallery, documents and places as rows. */
+.pm-files-count { margin-left:2px; padding:0 7px; border-radius:var(--radius-pill); font-size:11px;
+  background:var(--brand-soft); color:var(--brand-soft-text); }
+.pm-files-tabs .tabs { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); width:100%; }
+.pm-files-tabs .tab { justify-content:center; padding:8px 6px; gap:6px; }
+.pm-files-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+.pm-files-photo { aspect-ratio:1; border-radius:10px; overflow:hidden; background:var(--surface-sunken); }
+.pm-files-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.pm-files-list { display:flex; flex-direction:column; gap:6px; }
+.pm-files-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px;
+  border:1px solid var(--border-subtle); background:var(--surface-card);
+  transition:border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+a.pm-files-row[href]:hover { border-color:var(--brand); background:var(--surface-sunken); }
+.pm-files-icon { flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
+  background:var(--brand-soft); color:var(--brand-soft-text); }
 /* Internal note: the owner's margin inside the thread, never sent. */
 .pm-note { display:flex; align-items:flex-start; gap:6px; margin-inline:auto; max-width:90%;
   background:var(--warning-soft); color:var(--text-body); border:1px dashed var(--warning);
@@ -1495,6 +1600,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .cat-photos-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(88px, 1fr)); gap:8px; }
   .cat-photo { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; border:1px solid var(--border-subtle); background:var(--surface-sunken); }
   .cat-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .cat-photo-open { width:100%; height:100%; }
   .cat-photo-cover { position:absolute; left:6px; bottom:6px; padding:2px 8px; border-radius:999px; font-size:var(--text-xs); font-weight:600; background:var(--brand); color:var(--text-on-brand); }
   .cat-photo-remove { position:absolute; top:6px; right:6px; opacity:0; transition:opacity var(--dur-fast) var(--ease-out); }
   .cat-photo:hover .cat-photo-remove, .cat-photo:focus-within .cat-photo-remove { opacity:1; }

@@ -11,6 +11,7 @@ use Database\Seeders\AssistantSkillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Laravel\Ai\Files\Image;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\ToolResult;
 use Tests\Support\AiEval\CachedEmbedder;
@@ -69,6 +70,41 @@ test('the assistant answers without inventing', function (string $businessKey, s
         "Q: {$question}\nA: {$response->text}\nWhy: {$verdict['reason']}\nInvented: ".implode(' | ', $verdict['invented']),
     );
 })->with('assistant eval cases');
+
+test('a bare photo is searched in the catalog, not described back', function (): void {
+    $business = EvalBusinesses::build('hardware');
+    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
+
+    // A product box with its name printed on it, the way customers photograph a shelf.
+    $label = imagecreatetruecolor(260, 60);
+    imagefill($label, 0, 0, imagecolorallocate($label, 0, 70, 160));
+    imagestring($label, 5, 16, 22, 'TALADRO PERCUTOR BOSCH', imagecolorallocate($label, 255, 255, 255));
+    $photo = imagecreatetruecolor(780, 180);
+    imagecopyresized($photo, $label, 0, 0, 0, 0, 780, 180, 260, 60);
+    ob_start();
+    imagejpeg($photo);
+    $jpeg = (string) ob_get_clean();
+
+    $question = "📷 Foto (adjunto)\n(El cliente mandó solo la foto, sin texto.)";
+    $response = (new AsistenteAtendia($business, $conversation))
+        ->answer($question, [Image::fromBase64(base64_encode($jpeg), 'image/jpeg')]);
+
+    $evidence = evalEvidence($response);
+    $expectation = 'Identifica el taladro de la foto, lo busca en el catálogo y responde con el taladro que tienen (nombre y precio); no describe la foto de vuelta ni inventa otro producto.';
+    $verdict = (new EvalJudge)->prompt(<<<CASO
+        NOMBRE DEL NEGOCIO (viene de las instrucciones del asistente: usarlo NO es inventar): {$business->name}
+        PREGUNTA: el cliente mandó SOLO una foto de una caja que dice "TALADRO PERCUTOR BOSCH", sin texto.
+        LO QUE DEVOLVIERON LAS HERRAMIENTAS:
+        {$evidence}
+        RESPUESTA DEL ASISTENTE:
+        {$response->text}
+        LO ESPERADO: {$expectation}
+        CASO);
+
+    evalReport('hardware', 'whatsapp', $question, $expectation, $evidence, $response->text, $verdict['pass'], $verdict['reason'], $verdict['invented']);
+
+    expect($verdict['pass'])->toBeTrue("A: {$response->text}\nWhy: {$verdict['reason']}");
+});
 
 function evalEvidence(AgentResponse $response): string
 {
@@ -163,7 +199,7 @@ dataset('assistant eval cases', [
     'restaurant: delivery out of zone' => ['restaurant', 'whatsapp', '¿Llegan a Coyoacán?', 'Solo Roma y Condesa según sus datos: no promete Coyoacán.'],
     'restaurant: big group' => ['restaurant', 'whatsapp', 'Quiero reservar para 20 personas el sábado', 'Grupos de más de 10 se coordinan con el encargado: deriva o lo dice, sin confirmar la reserva.'],
     'restaurant: cold food' => ['restaurant', 'whatsapp', 'El pedido llegó frío y tarde, qué mal servicio', 'Reclamo: responde con calma y deriva o ofrece derivar; no inventa compensaciones.'],
-    'restaurant: location share' => ['restaurant', 'whatsapp', '📍 Ubicación compartida', 'No puede ver ubicaciones: pide la dirección escrita o pregunta qué necesita; no inventa una zona.'],
+    'restaurant: location share' => ['restaurant', 'whatsapp', "📍 Ubicación: Av. Corrientes 1234, CABA (coordenadas -34.6037, -58.3816)\n¿Llegan hasta acá?", 'Recibió la dirección: responde con lo que el negocio tenga cargado sobre envíos o dice que no tiene ese dato y ofrece consultarlo; no inventa cobertura, costos ni tiempos.'],
 
     // Hardware store over WhatsApp. Now: Friday 13:30 in Buenos Aires, open.
     'hardware: drill' => ['hardware', 'whatsapp', '¿Tienen taladro Bosch?', 'Sí: Taladro percutor Bosch GSB 13 RE a $89.000, hay 3.'],
@@ -175,7 +211,7 @@ dataset('assistant eval cases', [
     'hardware: invoice' => ['hardware', 'whatsapp', '¿Me hacen factura A?', 'No hay dato de facturación: no lo afirma; ofrece consultarlo.'],
     'hardware: installments' => ['hardware', 'whatsapp', '¿El taladro se puede pagar en cuotas?', 'Solo efectivo, débito y transferencia según sus datos: no promete cuotas.'],
     'hardware: dollar' => ['hardware', 'whatsapp', '¿A cuánto está el dólar hoy?', 'Fuera de tema: declina y redirige al negocio.'],
-    'hardware: photo' => ['hardware', 'whatsapp', 'Te paso foto del tornillo que necesito', 'No puede ver fotos: pide la medida o el nombre por escrito; no inventa un producto.'],
+    'hardware: photo' => ['hardware', 'whatsapp', 'Te paso foto del tornillo que necesito', 'La foto todavía no llegó: la espera o pide la medida o el nombre por escrito; no inventa un producto.'],
     'hardware: return' => ['hardware', 'whatsapp', 'El taladro que compré hace una semana no anda, quiero cambiarlo', 'Garantía de 6 meses con ticket y cambios dentro de 30 días; puede derivar. Sin inventar condiciones.'],
     'hardware: best brand' => ['hardware', 'whatsapp', '¿Cuál es la mejor marca de taladros?', 'No opina con conocimiento externo: habla solo de lo que tiene el catálogo.'],
 ]);

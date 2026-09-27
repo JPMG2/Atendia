@@ -27,6 +27,12 @@ class CatalogPhoto extends Model
         return $this->morphTo();
     }
 
+    /** The full 1080px version, what the carousel shows. */
+    public function url(): string
+    {
+        return Storage::disk($this->disk)->url($this->path);
+    }
+
     public function thumbUrl(): string
     {
         return Storage::disk($this->disk)->url($this->thumb_path);

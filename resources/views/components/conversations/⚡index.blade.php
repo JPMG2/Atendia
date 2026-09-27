@@ -218,12 +218,35 @@ new class extends Component
         $this->window = 30;
         $this->threadSearch = '';
         $this->showCustomer = false;
+        $this->showFiles = false;
     }
 
     public function close(): void
     {
         $this->selected = null;
         $this->showCustomer = false;
+        $this->showFiles = false;
+    }
+
+    /** The thread's "Archivos" sheet: photos, documents and places the customer sent. */
+    public bool $showFiles = false;
+
+    /** @return array{image: list<array<string, mixed>>, document: list<array<string, mixed>>, location: list<array<string, mixed>>} */
+    #[Computed]
+    public function threadFiles(): array
+    {
+        return $this->thread?->attachments() ?? ['image' => [], 'document' => [], 'location' => []];
+    }
+
+    public function openFiles(): void
+    {
+        $this->showCustomer = false;
+        $this->showFiles = true;
+    }
+
+    public function closeFiles(): void
+    {
+        $this->showFiles = false;
     }
 
     public AssistantFaqForm $form;
@@ -525,11 +548,19 @@ new class extends Component
                                             {{ $row->last_message_at?->inBusinessTime()->isToday() ? $row->last_message_at->inBusinessTime()->format('H:i') : $row->last_message_at?->inBusinessTime()->format('d/m') }}
                                         </span>
                                     </span>
-                                    <span class="text-muted block truncate text-xs">
-                                        @if ($row->latestMessage?->direction === App\Enums\MessageDirection::Out)
-                                            {{ __('client.conversations.assistant_prefix') }}
+                                    <span class="flex items-center justify-between gap-2">
+                                        <span class="text-muted block min-w-0 truncate text-xs">
+                                            @if ($row->latestMessage?->direction === App\Enums\MessageDirection::Out)
+                                                {{ __('client.conversations.assistant_prefix') }}
+                                            @endif
+                                            <x-ui.match :text="$row->latestMessage?->body ?? ''" :needle="$search" />
+                                        </span>
+                                        @if ((int) ($row->attachments_count ?? 0) > 0)
+                                            <span class="pm-files-count inline-flex flex-none items-center gap-1 font-mono" title="{{ trans_choice('client.conversations.files.count', (int) $row->attachments_count, ['count' => $row->attachments_count]) }}">
+                                                <x-icon name="paperclip" :size="12" />
+                                                {{ $row->attachments_count }}
+                                            </span>
                                         @endif
-                                        <x-ui.match :text="$row->latestMessage?->body ?? ''" :needle="$search" />
                                     </span>
                                 </span>
                             </button>
@@ -543,12 +574,13 @@ new class extends Component
 
             <x-ui.card class="{{ $selected === null ? 'hidden lg:flex' : 'flex' }} flex-col overflow-hidden p-0">
                 @if ($this->thread !== null)
-                    <div class="bd-subtle flex items-center gap-3 border-b p-3">
+                    {{-- Wraps on a phone: the actions drop to a second row instead of crushing the contact's name. --}}
+                    <div class="bd-subtle flex flex-wrap items-center gap-3 border-b p-3">
                         <span class="lg:hidden">
                             <x-ui.icon-button icon="chevron-left" size="sm" variant="ghost" :label="__('client.conversations.back')" wire:click="close" />
                         </span>
                         <x-ui.avatar :name="$this->thread->contact_name ?? $this->thread->contact_phone" size="sm" />
-                        <div class="min-w-0 flex-1">
+                        <div class="min-w-[9rem] flex-1">
                             <p class="text-strong truncate text-sm font-semibold">
                                 {{ $this->customer?->displayName() ?? $this->thread->contact_name ?? __('client.conversations.anonymous') }}
                             </p>
@@ -615,6 +647,13 @@ new class extends Component
                                 {{ __('client.customers.open') }}
                             </x-ui.button>
                         @endif
+                        @php($fileCount = count($this->threadFiles['image']) + count($this->threadFiles['document']) + count($this->threadFiles['location']))
+                        @if ($fileCount > 0)
+                            <x-ui.button variant="secondary" size="sm" icon="paperclip" wire:click="openFiles" :aria-label="__('client.conversations.files.open')">
+                                <span class="hidden sm:inline">{{ __('client.conversations.files.open') }}</span>
+                                <span class="pm-files-count font-mono">{{ $fileCount }}</span>
+                            </x-ui.button>
+                        @endif
                     </div>
 
                     <div class="bd-subtle border-b px-3 py-2">
@@ -643,6 +682,7 @@ new class extends Component
                                 wire:key="canvas-{{ $selected }}"
                                 class="max-h-[58vh] flex-1 space-y-2 overflow-y-auto p-4"
                                 style="background: var(--chat-canvas)"
+                                data-photo-album
                                 x-data
                                 x-init="$el.scrollTop = $el.scrollHeight"
                             >
@@ -682,7 +722,60 @@ new class extends Component
                                             @endif
                                             <div class="pm-row {{ $message->direction->value }} group" wire:key="msg-{{ $message->id }}">
                                                 <div class="pm-bubble {{ $message->direction->value }}">
-                                                    <x-ui.match :text="$message->body" :needle="$threadSearch" />
+                                                    @foreach ($message->media ?? [] as $index => $item)
+                                                        @php($url = isset($item['path']) ? route('conversations.media', ['message' => $message->id, 'index' => $index]) : null)
+                                                        @if ($item['kind'] === 'location')
+                                                            {{-- One place card, map on top: a click opens the full, interactive map. --}}
+                                                            <a class="pm-place" href="https://www.google.com/maps?q={{ $item['lat'] ?? '' }},{{ $item['lng'] ?? '' }}" target="_blank" rel="noopener" wire:key="media-{{ $message->id }}-{{ $index }}">
+                                                                @if (isset($item['lat'], $item['lng']))
+                                                                    @php($map = App\Models\ConversationMessage::mapTiles((float) $item['lat'], (float) $item['lng'], 260, 140))
+                                                                    <span class="pm-place-map">
+                                                                        <span class="pm-place-tiles" style="left: {{ $map['left'] }}px; top: {{ $map['top'] }}px">
+                                                                            @foreach ($map['tiles'] as $tile)
+                                                                                <img src="{{ $tile['url'] }}" alt="" loading="lazy" style="left: {{ $tile['left'] }}px; top: {{ $tile['top'] }}px" />
+                                                                            @endforeach
+                                                                        </span>
+                                                                        <x-icon name="map-pin" :size="32" class="pm-place-pin" />
+                                                                        <span class="pm-place-credit">© OpenStreetMap</span>
+                                                                    </span>
+                                                                @endif
+                                                                <span class="pm-place-foot">
+                                                                    <x-icon name="map-pin" :size="18" class="flex-none text-brand" />
+                                                                    <span class="min-w-0">{{ ($item['label'] ?? '') !== '' ? $item['label'] : __('assistant.media.location_title') }}<small>{{ __('assistant.media.open_map') }}</small></span>
+                                                                </span>
+                                                            </a>
+                                                        @elseif ($item['kind'] === 'image' && $url !== null)
+                                                            {{-- The thread is the album: any photo opens the carousel with all of them, in order. --}}
+                                                            <x-ui.photo-thumb
+                                                                class="pm-media"
+                                                                wire:key="media-{{ $message->id }}-{{ $index }}"
+                                                                :src="$url"
+                                                                :download="$url.'?download=1'"
+                                                                :caption="$item['caption'] ?? ''"
+                                                                :when="$message->created_at?->inBusinessTime()->format('d/m/Y H:i') ?? ''"
+                                                            >
+                                                                <img src="{{ $url }}" alt="{{ __('assistant.media.image') }}" loading="lazy" />
+                                                            </x-ui.photo-thumb>
+                                                        @else
+                                                            <a class="pm-media-chip" @if ($url !== null) href="{{ $url }}" @endif wire:key="media-{{ $message->id }}-{{ $index }}">
+                                                                <x-icon :name="$item['kind'] === 'image' ? 'image' : 'file-text'" :size="18" class="flex-none" />
+                                                                <span class="min-w-0">{{ $item['kind'] === 'image' ? __('assistant.media.photo_title') : ($item['name'] ?? __('assistant.media.document_title')) }}<small>{{ $url !== null ? __('assistant.media.open_file') : __('assistant.media.on_phone') }}</small></span>
+                                                            </a>
+                                                            {{-- Right under the first document: that is where the owner looks for why it matched. --}}
+                                                            @if ($item['kind'] === 'document' && ! isset($foundShown[$message->id]) && trim($threadSearch) !== '' && ($snippet = $message->mediaSnippet($threadSearch)) !== null)
+                                                                @php($foundShown[$message->id] = true)
+                                                                <p class="pm-media-found">
+                                                                    <span>{{ __('client.conversations.files.found_in_pdf') }}</span>
+                                                                    <x-ui.match :text="$snippet" :needle="$threadSearch" />
+                                                                </p>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                    @if (($message->media ?? []) === [])
+                                                        <x-ui.match :text="$message->body" :needle="$threadSearch" />
+                                                    @elseif ($message->textBesideMedia() !== '')
+                                                        <x-ui.match :text="$message->textBesideMedia()" :needle="$threadSearch" />
+                                                    @endif
                                                     @if ($message->author === App\Enums\MessageAuthor::Assistant && ($message->knowledge_sources ?? []) !== [])
                                                         <div x-data="{ open: false }" class="mt-1">
                                                             <button type="button" class="text-[11px] underline decoration-dotted opacity-70 transition-opacity hover:opacity-100" x-on:click="open = !open">
@@ -790,5 +883,93 @@ new class extends Component
             :form="$customerForm"
             :show="$showCustomer"
         />
+
+        @if ($showFiles && ! $showCustomer && $this->thread !== null)
+            @php($files = $this->threadFiles)
+            <x-ui.slide-over
+                x-on:slide-over-close="$wire.closeFiles()"
+                :title="__('client.conversations.files.title')"
+                :subtitle="$this->thread->contact_name ?? $this->thread->contact_phone"
+            >
+                <x-ui.tabs
+                    class="pm-files-tabs"
+                    :tabs="[
+                        ['value' => 'image', 'label' => __('client.conversations.files.photos'), 'badge' => count($files['image'])],
+                        ['value' => 'document', 'label' => __('client.conversations.files.documents'), 'badge' => count($files['document'])],
+                        ['value' => 'location', 'label' => __('client.conversations.files.places'), 'badge' => count($files['location'])],
+                    ]"
+                    :default="collect(['image', 'document', 'location'])->first(fn (string $kind): bool => $files[$kind] !== []) ?? 'image'"
+                >
+                    <div x-show="tab === 'image'" class="pt-4">
+                        @if ($files['image'] === [])
+                            <p class="text-muted py-6 text-center text-sm">{{ __('client.conversations.files.no_photos') }}</p>
+                        @else
+                            <div class="pm-files-grid" data-photo-album>
+                                @foreach ($files['image'] as $file)
+                                    @php($url = isset($file['item']['path']) ? route('conversations.media', ['message' => $file['message_id'], 'index' => $file['index']]) : null)
+                                    @if ($url !== null)
+                                        <x-ui.photo-thumb
+                                            class="pm-files-photo"
+                                            wire:key="file-photo-{{ $file['message_id'] }}-{{ $file['index'] }}"
+                                            :src="$url"
+                                            :download="$url.'?download=1'"
+                                            :caption="$file['item']['caption'] ?? ''"
+                                            :when="$file['sent_at']?->inBusinessTime()->format('d/m/Y H:i') ?? ''"
+                                        >
+                                            <img src="{{ $url }}" alt="{{ __('assistant.media.image') }}" loading="lazy" />
+                                        </x-ui.photo-thumb>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div x-show="tab === 'document'" x-cloak class="pt-4">
+                        @if ($files['document'] === [])
+                            <p class="text-muted py-6 text-center text-sm">{{ __('client.conversations.files.no_documents') }}</p>
+                        @else
+                            <ul class="pm-files-list">
+                                @foreach ($files['document'] as $file)
+                                    @php($url = isset($file['item']['path']) ? route('conversations.media', ['message' => $file['message_id'], 'index' => $file['index']]) : null)
+                                    <li wire:key="file-doc-{{ $file['message_id'] }}-{{ $file['index'] }}">
+                                        <a class="pm-files-row" @if ($url !== null) href="{{ $url }}" @endif>
+                                            <span class="pm-files-icon"><x-icon name="file-text" :size="18" /></span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="text-strong block text-sm font-medium [overflow-wrap:anywhere]">{{ $file['item']['name'] ?? __('assistant.media.document_title') }}</span>
+                                                <span class="text-muted block text-xs">{{ $url !== null ? __('assistant.media.open_file') : __('assistant.media.on_phone') }}</span>
+                                            </span>
+                                            <span class="text-muted flex-none font-mono text-xs">{{ $file['sent_at']?->inBusinessTime()->format('d/m/Y H:i') }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+
+                    <div x-show="tab === 'location'" x-cloak class="pt-4">
+                        @if ($files['location'] === [])
+                            <p class="text-muted py-6 text-center text-sm">{{ __('client.conversations.files.no_places') }}</p>
+                        @else
+                            <ul class="pm-files-list">
+                                @foreach ($files['location'] as $file)
+                                    <li wire:key="file-place-{{ $file['message_id'] }}-{{ $file['index'] }}">
+                                        <a class="pm-files-row" href="https://www.google.com/maps?q={{ $file['item']['lat'] ?? '' }},{{ $file['item']['lng'] ?? '' }}" target="_blank" rel="noopener">
+                                            <span class="pm-files-icon"><x-icon name="map-pin" :size="18" /></span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="text-strong block text-sm font-medium">{{ ($file['item']['label'] ?? '') !== '' ? $file['item']['label'] : __('assistant.media.location_title') }}</span>
+                                                <span class="text-muted block text-xs">{{ __('assistant.media.open_map') }}</span>
+                                            </span>
+                                            <span class="text-muted flex-none font-mono text-xs">{{ $file['sent_at']?->inBusinessTime()->format('d/m/Y H:i') }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                </x-ui.tabs>
+            </x-ui.slide-over>
+        @endif
     @endif
+
+    <x-ui.photo-viewer />
 </div>

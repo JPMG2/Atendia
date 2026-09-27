@@ -26,7 +26,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Ai\Files\Document;
+use Laravel\Ai\Files\File;
+use Laravel\Ai\Files\Image;
 use Laravel\Ai\Transcription;
+use Smalot\PdfParser\Parser as PdfParser;
 
 /**
  * One inbound WhatsApp message, already acknowledged. Queued behind a
@@ -50,6 +55,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      */
     public int $tries = 1;
 
+    /** A PDF past this goes to the team unread: the model bills every page. */
+    private const int PDF_MAX_BYTES = 5 * 1024 * 1024;
+
     /** Two model passes plus the bubbles, under the queue's 90s retry_after. */
     public int $timeout = 85;
 
@@ -62,6 +70,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         public ?string $audioBase64 = null,
         public int $audioSeconds = 0,
         public ?string $quotedMessageId = null,
+        /** @var array{kind: string, tmp: ?string, mime: string, name: string, caption: string, lat: ?float, lng: ?float, label: string}|null */
+        public ?array $media = null,
     ) {}
 
     public function handle(): void
@@ -137,17 +147,32 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 return;
             }
 
-            $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
+            if ($this->audioBase64 !== null) {
+                [$text, $media] = [$this->transcribe($business), []];
+            } else {
+                $burst = $this->drainBuffer();
 
-            if ($text === null || trim($text) === '') {
+                if ($burst === null) {
+                    return;
+                }
+
+                [$text, $media] = $burst;
+            }
+
+            if (($text === null || trim($text) === '') && $media === []) {
                 return;
             }
 
+            $media = $this->fileMedia($conversation, $media);
+            $mediaText = $this->pdfText($media);
+            $body = $this->bodyFor((string) $text, $media);
+            $text = $this->promptFor((string) $text, $media, $plan->readsMedia);
+
             // Read BEFORE the inbound is stored: it must be the first answer after the ask.
-            $optInYes = $customer->answersOptInYes($conversation, $text);
+            $optInYes = $customer->answersOptInYes($conversation, $body);
 
             if ($silent) {
-                $this->rememberInbound($conversation, $text);
+                $this->rememberInbound($conversation, $body, $media, $mediaText);
 
                 // The one exception to the silence: a consent yes is sealed and
                 // thanked — in a paused business too, where it was lost.
@@ -183,8 +208,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             // The agent's memory hands over previous turns only: stored first, the
             // current text must not ride twice, so the agent reads it as the prompt.
             $agent = new AsistenteAtendia($business, $conversation, $customer);
-            $inbound = $this->rememberInbound($conversation, $text);
-            $reply = $agent->withoutMessage($inbound->id)->answer($text)->text;
+            $inbound = $this->rememberInbound($conversation, $body, $media, $mediaText);
+            $reply = $agent->withoutMessage($inbound->id)->answer($text, $plan->readsMedia ? $this->attachments($media) : [])->text;
 
             foreach ($this->bubbles($reply) as $bubble) {
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
@@ -197,7 +222,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             if ($optInYes) {
                 $customer->sealOptIn();
             }
-            $this->rememberForDigest($business, $text, $reply);
+            $this->rememberForDigest($business, $body, $reply);
             $this->warnOwnerNearCap($business, $evolution);
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
@@ -225,7 +250,13 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      */
     private function relayOwnerReply(Business $business, EvolutionApi $evolution): void
     {
-        $text = $this->audioBase64 !== null ? $this->transcribe($business) : $this->drainBuffer();
+        if ($this->audioBase64 !== null) {
+            $text = $this->transcribe($business);
+        } else {
+            // The relay carries words only: a photo from the owner stays on their phone.
+            [$text, $media] = $this->drainBuffer() ?? [null, []];
+            $this->discardMedia($media);
+        }
 
         if ($text === null || trim($text) === '') {
             return;
@@ -415,13 +446,19 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ), report: true);
     }
 
-    /** The customer's turn, stored before anything can fail after it. */
-    private function rememberInbound(Conversation $conversation, string $text): ConversationMessage
+    /**
+     * The customer's turn, stored before anything can fail after it.
+     *
+     * @param  list<array<string, mixed>>  $media
+     */
+    private function rememberInbound(Conversation $conversation, string $text, array $media = [], ?string $mediaText = null): ConversationMessage
     {
         $inbound = $conversation->messages()->create([
             'direction' => MessageDirection::In,
             'wa_message_id' => $this->messageId,
             'body' => $text,
+            'media' => $media === [] ? null : $media,
+            'media_text' => $mediaText,
             'audio_seconds' => $this->audioSeconds > 0 ? $this->audioSeconds : null,
         ]);
 
@@ -488,8 +525,10 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
      * Empties this chat's burst buffer, or refuses the turn: when a newer
      * message re-armed the debounce, ITS job owns the answer and this one
      * dies silently instead of double-replying.
+     *
+     * @return array{0: string, 1: list<array<string, mixed>>}|null the burst's words and its attachments
      */
-    private function drainBuffer(): ?string
+    private function drainBuffer(): ?array
     {
         $sender = "{$this->instance}:{$this->from}";
         $last = Cache::get("wa:last:{$sender}");
@@ -498,10 +537,152 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             return null;
         }
 
-        $texts = (array) (Cache::pull("wa:buf:{$sender}") ?? [$this->text]);
+        $pieces = (array) (Cache::pull("wa:buf:{$sender}") ?? [$this->media ?? $this->text]);
         Cache::forget("wa:last:{$sender}");
 
-        return trim(implode("\n", array_filter($texts, fn ($piece): bool => is_string($piece) && trim($piece) !== '')));
+        $media = array_values(array_filter($pieces, is_array(...)));
+        $texts = array_filter($pieces, fn ($piece): bool => is_string($piece) && trim($piece) !== '');
+
+        return [trim(implode("\n", $texts)), $media];
+    }
+
+    /**
+     * Moves each parked file into the business's own folder, where the
+     * panel serves it re-checking the owner.
+     *
+     * @param  list<array<string, mixed>>  $media
+     * @return list<array<string, mixed>>
+     */
+    private function fileMedia(Conversation $conversation, array $media): array
+    {
+        $disk = Storage::disk('local');
+
+        return array_map(function (array $item) use ($conversation, $disk): array {
+            $tmp = $item['tmp'] ?? null;
+            unset($item['tmp']);
+            $item['path'] = null;
+
+            if (is_string($tmp) && $disk->exists($tmp)) {
+                $item['path'] = "businesses/{$conversation->business_id}/conversations/{$conversation->id}/".basename($tmp);
+                $disk->move($tmp, $item['path']);
+            }
+
+            return array_filter($item, fn ($value): bool => $value !== null && $value !== '');
+        }, $media);
+    }
+
+    /** @param  list<array<string, mixed>>  $media */
+    private function discardMedia(array $media): void
+    {
+        foreach ($media as $item) {
+            if (is_string($item['tmp'] ?? null)) {
+                Storage::disk('local')->delete($item['tmp']);
+            }
+        }
+    }
+
+    /**
+     * What the panel shows and the analysis reads: one line per attachment,
+     * its caption under it, then the burst's texts.
+     *
+     * @param  list<array<string, mixed>>  $media
+     */
+    private function bodyFor(string $text, array $media): string
+    {
+        $lines = array_map(fn (array $item): string => trim(ConversationMessage::mediaLine($item)."\n".($item['caption'] ?? '')), $media);
+
+        return trim(implode("\n", [...$lines, $text]));
+    }
+
+    /**
+     * The same turn for the model, each attachment marked as seen or not:
+     * an unseen photo must be asked for in words, never guessed.
+     *
+     * @param  list<array<string, mixed>>  $media
+     */
+    private function promptFor(string $text, array $media, bool $readsMedia): string
+    {
+        $lines = array_map(function (array $item) use ($readsMedia): string {
+            $note = match (true) {
+                $item['kind'] === 'location' => sprintf(' (coordenadas %s, %s)', $item['lat'] ?? '?', $item['lng'] ?? '?'),
+                $readsMedia && $this->readable($item) => ' (adjunto)',
+                default => ' (no lo podés ver ni leer)',
+            };
+
+            return trim(ConversationMessage::mediaLine($item).$note."\n".($item['caption'] ?? ''));
+        }, $media);
+
+        // A bare photo is almost always "do you have this?": said out loud, the
+        // model searches the catalog instead of describing the picture back.
+        $bare = trim($text) === '' && $media !== []
+            && array_filter($media, fn (array $item): bool => ($item['caption'] ?? '') !== '') === []
+            && array_filter($media, fn (array $item): bool => $item['kind'] === 'image') !== [];
+
+        if ($bare) {
+            $lines[] = '(El cliente mandó solo la foto, sin texto.)';
+        }
+
+        return trim(implode("\n", [...$lines, $text]));
+    }
+
+    /**
+     * The words inside the PDFs, pulled once on arrival so the thread search
+     * finds them. Capped: a 300-page catalog must not bloat the row. A scan
+     * has no text layer and simply yields nothing.
+     *
+     * @param  list<array<string, mixed>>  $media
+     */
+    private function pdfText(array $media): ?string
+    {
+        $texts = [];
+
+        foreach ($media as $item) {
+            if (($item['mime'] ?? '') !== 'application/pdf' || ! isset($item['path'])
+                || Storage::disk('local')->size($item['path']) > self::PDF_MAX_BYTES) {
+                continue;
+            }
+
+            $texts[] = (string) rescue(
+                fn (): string => (new PdfParser)->parseContent((string) Storage::disk('local')->get($item['path']))->getText(),
+                '',
+                report: false,
+            );
+        }
+
+        $text = trim((string) preg_replace('/\s+/u', ' ', implode(' ', $texts)));
+
+        return $text === '' ? null : mb_substr($text, 0, 20000);
+    }
+
+    /**
+     * Photos and PDFs the model can take; a Word file or an oversized PDF
+     * waits for the team.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function readable(array $item): bool
+    {
+        if (! isset($item['path'])) {
+            return false;
+        }
+
+        return match ($item['kind']) {
+            'image' => in_array($item['mime'] ?? '', ['image/jpeg', 'image/png', 'image/webp'], true),
+            'document' => ($item['mime'] ?? '') === 'application/pdf' && Storage::disk('local')->size($item['path']) <= self::PDF_MAX_BYTES,
+            default => false,
+        };
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $media
+     * @return list<File>
+     */
+    private function attachments(array $media): array
+    {
+        return array_values(array_map(
+            fn (array $item): File => $item['kind'] === 'image' ? Image::fromStorage($item['path'], 'local') : Document::fromStorage($item['path'], 'local'),
+            array_filter($media, $this->readable(...)),
+        ));
     }
 
     /** Audio rides only while the plan includes it AND the month's minutes last. */
