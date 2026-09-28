@@ -100,12 +100,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('whatsapp.title') }}</h1>
-            <p class="page-head-sub">{{ __('whatsapp.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('whatsapp.title')" :sub="__('whatsapp.sub')" />
 
     @if ($this->business === null)
         <x-ui.card class="p-5">

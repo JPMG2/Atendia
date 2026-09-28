@@ -1,3 +1,3 @@
 <x-app-layout>
-    <livewire:client.whatsapp-connect />
+    <livewire:whatsapp.index />
 </x-app-layout>

@@ -47,23 +47,16 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div class="bp-head">
-            <a
-                href="{{ $section ? route('settings') : route('dashboard') }}"
-                wire:navigate
-                class="bp-back"
-                aria-label="{{ __('settings.back') }}"
-            >
-                <x-icon name="chevron-left" :size="18" />
-            </a>
+    <x-ui.page-head
+        :title="__('settings.title')"
+        :sub="__('settings.sub')"
+        :back="$section ? route('settings') : route('dashboard')"
+        :backLabel="__('settings.back')"
+    >
+        <x-slot:lead>
             <x-ui.avatar :name="auth()->user()->name" :src="auth()->user()->avatarUrl()" size="lg" />
-            <div>
-                <h1 class="page-head-title">{{ __('settings.title') }}</h1>
-                <p class="page-head-sub">{{ __('settings.sub') }}</p>
-            </div>
-        </div>
-    </div>
+        </x-slot:lead>
+    </x-ui.page-head>
 
     <div class="bp-layout">
         <div class="bp-main">

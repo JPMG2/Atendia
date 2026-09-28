@@ -462,30 +462,18 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.conversations.title') }}</h1>
-            <p class="page-head-sub">{{ __('client.conversations.sub') }}</p>
-        </div>
+    <x-ui.page-head :title="__('client.conversations.title')" :sub="__('client.conversations.sub')">
         @if ($this->todayCount > 0)
             <span class="status-tag is-brand">
                 <span class="dot"></span>
                 {{ __('client.conversations.today', ['count' => $this->todayCount]) }}
             </span>
         @endif
-    </div>
+    </x-ui.page-head>
 
     @if ($this->threads->isEmpty())
         <x-ui.card class="p-6">
-            <div class="flex items-start gap-4">
-                <div class="bg-brand-soft flex size-11 flex-none items-center justify-center rounded-xl" style="color: var(--brand)">
-                    <x-icon name="message-circle" :size="22" />
-                </div>
-                <div class="min-w-0">
-                    <h2 class="font-display text-strong text-base">{{ __('client.conversations.empty_title') }}</h2>
-                    <p class="text-body mt-1 text-sm">{{ __('client.conversations.empty_body') }}</p>
-                </div>
-            </div>
+            <x-ui.empty-state icon="message-circle" :title="__('client.conversations.empty_title')" :body="__('client.conversations.empty_body')" />
         </x-ui.card>
     @else
         <div class="grid items-start gap-4 lg:grid-cols-[340px_1fr]">

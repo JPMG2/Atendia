@@ -71,7 +71,7 @@ test('connecting provisions the instance, points the webhook home and shows the 
     $user = whatsappScreenClient();
     $this->actingAs($user);
 
-    livewire('client.whatsapp-connect')
+    livewire('whatsapp.index')
         ->call('connect')
         ->assertSet('linking', true)
         ->assertSet('qr', 'data:image/png;base64,QR');
@@ -91,7 +91,7 @@ test('a half-done linking resumes without provisioning again', function (): void
 
     $this->actingAs(whatsappScreenClient(['whatsapp_instance' => 'business-99']));
 
-    livewire('client.whatsapp-connect')
+    livewire('whatsapp.index')
         ->call('connect')
         ->assertSet('linking', true);
 
@@ -103,7 +103,7 @@ test('a dead bridge turns into a toast, not a crash', function (): void {
 
     $this->actingAs(whatsappScreenClient());
 
-    livewire('client.whatsapp-connect')
+    livewire('whatsapp.index')
         ->call('connect')
         ->assertSet('linking', false)
         ->assertDispatched('notify');
@@ -115,7 +115,7 @@ test('the poll flips to connected when the webhook has stamped the column', func
     $user = whatsappScreenClient(['whatsapp_instance' => 'business-99']);
     $this->actingAs($user);
 
-    $component = livewire('client.whatsapp-connect')->set('linking', true);
+    $component = livewire('whatsapp.index')->set('linking', true);
 
     // The connection webhook stamps the column out of band.
     $user->business->update(['whatsapp_connected_at' => now()]);

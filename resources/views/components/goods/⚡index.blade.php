@@ -377,12 +377,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.services.title') }}</h1>
-            <p class="page-head-sub">{{ __('client.services.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('client.services.title')" :sub="__('client.services.sub')" />
 
     @if ($this->services->isEmpty())
         <x-client.offer-empty
@@ -395,7 +390,7 @@ new class extends Component
                 <p class="wizard-suggest">{{ __('client.services.suggestions') }}</p>
                 <div class="wizard-chips">
                     @foreach ($this->suggestions as $suggestion)
-                        <button type="button" class="wizard-chip" wire:click="addFromSuggestion(@js($suggestion))">{{ $suggestion }}</button>
+                        <button type="button" class="wizard-chip" wire:key="suggestion-{{ $suggestion }}" wire:click="addFromSuggestion(@js($suggestion))">{{ $suggestion }}</button>
                     @endforeach
                 </div>
             @endif

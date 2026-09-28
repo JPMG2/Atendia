@@ -110,24 +110,11 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.customers.title') }}</h1>
-            <p class="page-head-sub">{{ __('client.customers.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('client.customers.title')" :sub="__('client.customers.sub')" />
 
     @if ($this->customers->isEmpty())
         <x-ui.card class="p-6">
-            <div class="flex items-start gap-4">
-                <div class="bg-brand-soft flex size-11 flex-none items-center justify-center rounded-xl" style="color: var(--brand)">
-                    <x-icon name="users" :size="22" />
-                </div>
-                <div class="min-w-0">
-                    <h2 class="font-display text-strong text-base">{{ __('client.customers.empty_title') }}</h2>
-                    <p class="text-body mt-1 text-sm">{{ __('client.customers.empty_body') }}</p>
-                </div>
-            </div>
+            <x-ui.empty-state icon="users" :title="__('client.customers.empty_title')" :body="__('client.customers.empty_body')" />
         </x-ui.card>
     @else
         <x-ui.card class="p-5">

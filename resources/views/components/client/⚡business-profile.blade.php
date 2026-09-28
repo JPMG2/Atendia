@@ -63,23 +63,13 @@ new class extends Component
 ?>
 
 <div x-data="{ tryOpen: false }">
-    <div class="page-head">
-        <div class="bp-head">
-            {{-- From a single section the arrow returns to the full profile; from there, home. --}}
-            <a
-                href="{{ $section ? route('my-business') : route('dashboard') }}"
-                wire:navigate
-                class="bp-back"
-                aria-label="{{ __('client.business.back') }}"
-            >
-                <x-icon name="chevron-left" :size="18" />
-            </a>
-            <div>
-                <h1 class="page-head-title">{{ __('client.business.title') }}</h1>
-                <p class="page-head-sub">{{ __('client.business.sub') }}</p>
-            </div>
-        </div>
-    </div>
+    {{-- From a single section the arrow returns to the full profile; from there, home. --}}
+    <x-ui.page-head
+        :title="__('client.business.title')"
+        :sub="__('client.business.sub')"
+        :back="$section ? route('my-business') : route('dashboard')"
+        :backLabel="__('client.business.back')"
+    />
 
     <div class="bp-layout">
         <div class="bp-main">

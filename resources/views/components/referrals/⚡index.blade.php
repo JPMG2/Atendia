@@ -112,11 +112,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('referrals.title') }}</h1>
-            <p class="page-head-sub">{{ __('referrals.sub') }}</p>
-        </div>
+    <x-ui.page-head :title="__('referrals.title')" :sub="__('referrals.sub')">
         @if ($this->business?->isFoundingPartner())
             <x-ui.badge variant="accent" :dot="true">{{ __('referrals.founder') }}</x-ui.badge>
         @elseif ($this->founderSeatsLeft > 0)
@@ -124,7 +120,7 @@ new class extends Component
                 {{ trans_choice('referrals.founder_seats', $this->founderSeatsLeft, ['count' => $this->founderSeatsLeft]) }}
             </x-ui.badge>
         @endif
-    </div>
+    </x-ui.page-head>
 
     @if ($this->business !== null)
         <div class="duo-grid">

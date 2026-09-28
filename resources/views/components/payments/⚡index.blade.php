@@ -77,12 +77,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('billing.title') }}</h1>
-            <p class="page-head-sub">{{ __('billing.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('billing.title')" :sub="__('billing.sub')" />
 
     @php
         $period = $this->billing?->period;

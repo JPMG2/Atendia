@@ -149,6 +149,8 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 - **`<x-ui.avatar :src name size="xs|sm|md|lg|xl" status="online|away|offline">`** — imagen o iniciales con tinte determinístico por nombre.
 - **`<x-ui.alert variant="info|success|warning|danger|brand" title icon :dismissible>`** — banner; `dismissible` lo cierra con Alpine.
 - **`<x-ui.stat-card label value delta trend="up|down|flat" icon tint="brand|accent|info|warning">`** — KPI del dashboard.
+- **`<x-ui.page-head :title :sub back backLabel>`** — encabezado de TODA pantalla. Slot por defecto = lo del costado (badge, botón); `<x-slot:lead>` antes del título (avatar); `<x-slot:inline>` pegado al título (píldora). Nunca más `div.page-head` a mano.
+- **`<x-ui.empty-state icon title body :compact="false">`** — el "todavía no hay nada" de toda pantalla (cuadro jade + ícono + título + texto). Envolverlo en `<x-ui.card>` si va solo; `compact` = h3 chico dentro de una sección.
 - **`<x-ui.tabs :tabs="[['value'=>..,'label'=>..,'icon'=>?,'badge'=>?]]" default>`** — barra de tabs Alpine; los paneles del slot usan `x-show="tab === '...'"`.
 
 **Reglas al crear un componente nuevo:**

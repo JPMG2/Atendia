@@ -7,6 +7,7 @@ return [
     'sub' => 'Conecta el número que atiende tu asistente.',
     'no_business' => 'Primero crea tu negocio y después conectamos tu WhatsApp.',
     'no_business_cta' => 'Crear mi negocio',
+    'topbar_connected' => 'WhatsApp conectado',
 
     'connected' => [
         'tag' => 'Conectado',

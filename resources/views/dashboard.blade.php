@@ -1,3 +1,3 @@
 <x-app-layout>
-    <livewire:client.home />
+    <livewire:home.index />
 </x-app-layout>

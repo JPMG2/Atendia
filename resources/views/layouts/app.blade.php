@@ -128,7 +128,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     class="icon-btn icon-btn-secondary topbar-burger"
                     data-testid="sidebar-toggle"
                     @click="sidebarOpen = true"
-                    aria-label="Abrir menú"
+                    aria-label="{{ __('menu.open_menu') }}"
                 >
                     <x-icon name="menu" :size="20" />
                 </button>
@@ -138,13 +138,18 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                         name="search"
                         type="search"
                         icon="search"
-                        placeholder="Buscar conversación, turno, producto…"
+                        :placeholder="__('menu.search_placeholder')"
                         autocomplete="off"
                     />
                 </div>
 
                 <div class="topbar-actions">
-                    <span class="conn-pill"> <span class="conn-dot"></span>WhatsApp conectado </span>
+                    {{-- Only the truth: a fixed "connected" chip contradicted the home's "sin conectar" pill. --}}
+                    @if (! $onAdminPanel && auth()->user()?->business?->isConnected())
+                        <span class="conn-pill">
+                            <span class="conn-dot"></span>{{ __('whatsapp.topbar_connected') }}
+                        </span>
+                    @endif
 
                     {{-- The owner's assistant is a client-panel tool: admin has no business to ask about. --}}
                     @unless ($onAdminPanel)
@@ -153,7 +158,11 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
 
                     <x-ui.theme-toggle />
 
-                    <button type="button" class="icon-btn icon-btn-secondary topbar-notif" aria-label="Notificaciones">
+                    <button
+                        type="button"
+                        class="icon-btn icon-btn-secondary topbar-notif"
+                        aria-label="{{ __('menu.notifications') }}"
+                    >
                         <x-icon name="bell" :size="20" />
                         <span class="topbar-notif-dot"></span>
                     </button>

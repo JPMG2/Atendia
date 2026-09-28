@@ -99,28 +99,26 @@ new class extends Component
         $percent = (int) round($done / max(1, $total) * 100);
     @endphp
 
-    <div class="page-head">
-        <div>
-            <div class="flex flex-wrap items-center gap-3">
-                <h1 class="page-head-title">{{ __('client.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
-                {{-- The "conectar después" promise, kept in sight: the pill
-                dies by itself the moment the number connects. --}}
-                @if (($business = auth()->user()?->business) && ! $business->isConnected())
-                    <a
-                        href="{{ route('my-business.contacto') }}"
-                        wire:navigate
-                        class="status-tag is-warning"
-                    >
-                        <span class="dot"></span>
-                        {{ $business->name }} · {{ __('client.home.disconnected') }}
-                    </a>
-                @endif
-            </div>
-            <p class="page-head-sub">
-                {{ $this->isActive ? __('client.home.sub_active') : __('client.home.sub_new') }}
-            </p>
-        </div>
-    </div>
+    <x-ui.page-head
+        :title="__('client.home.greeting', ['name' => auth()->user()?->name])"
+        :sub="$this->isActive ? __('client.home.sub_active') : __('client.home.sub_new')"
+    >
+        {{-- The "conectar después" promise, kept in sight: the pill
+        dies by itself the moment the number connects. It leads where
+        the setup step does, the screen that actually links it. --}}
+        @if (($business = auth()->user()?->business) && ! $business->isConnected())
+            <x-slot:inline>
+                <a
+                    href="{{ route('whatsapp') }}"
+                    wire:navigate
+                    class="status-tag is-warning"
+                >
+                    <span class="dot"></span>
+                    {{ $business->name }} · {{ __('client.home.disconnected') }}
+                </a>
+            </x-slot:inline>
+        @endif
+    </x-ui.page-head>
 
     <livewire:client.testimonial-card />
 

@@ -55,16 +55,19 @@ test('the usage strip stays away from a user without a business yet', function (
     $this->get(route('dashboard'))->assertDontSee(__('plan.meters.conversations'));
 });
 
-test('the business wears its "sin conectar" pill pointing at the contact card', function (): void {
-    // The "conectar después" promise kept in sight while nothing answers.
+test('the business wears its "sin conectar" pill pointing at the whatsapp screen', function (): void {
+    // Same destination as the setup step: the screen that actually links the number.
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create();
     $user->business()->associate(Business::factory()->create(['name' => 'Clínica Vida']))->save();
     $this->actingAs($user);
 
-    $this->get(route('dashboard'))
-        ->assertSee('Clínica Vida · '.__('client.home.disconnected'))
-        ->assertSee(route('my-business.contacto'), false);
+    $this->get(route('dashboard'))->assertSee('Clínica Vida · '.__('client.home.disconnected'));
+
+    // The component alone: the sidebar links both screens and would mask the pill.
+    Livewire::test('home.index')
+        ->assertSeeHtml('href="'.route('whatsapp').'"')
+        ->assertDontSeeHtml('href="'.route('my-business.contacto').'"');
 });
 
 test('a connected business wears no pill', function (): void {
@@ -78,6 +81,22 @@ test('a connected business wears no pill', function (): void {
     $this->get(route('dashboard'))->assertDontSee(__('client.home.disconnected'));
 });
 
+test('the topbar claims a connected whatsapp only when the number is linked', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $business = Business::factory()->create();
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+    $this->actingAs($user);
+
+    $this->get(route('dashboard'))->assertDontSee('conn-pill', false);
+
+    $business->forceFill(['whatsapp_connected_at' => now()])->save();
+
+    $this->get(route('dashboard'))
+        ->assertSee('conn-pill', false)
+        ->assertSee(__('whatsapp.topbar_connected'));
+});
+
 test('with no business there is no connection pill', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->actingAs(User::factory()->create());
@@ -88,7 +107,7 @@ test('with no business there is no connection pill', function (): void {
 test('the account step arrives already ticked, endowed-progress style', function (): void {
     $this->actingAs(User::factory()->create());
 
-    Livewire::test('client.home')
+    Livewire::test('home.index')
         ->assertSee(__('client.setup.steps.account.label'))
         ->assertSee(__('client.setup.progress', ['done' => 1, 'total' => 5]));
 });
@@ -96,7 +115,7 @@ test('the account step arrives already ticked, endowed-progress style', function
 test('the WhatsApp step is the hero with its own primary call to action', function (): void {
     $this->actingAs(User::factory()->create());
 
-    Livewire::test('client.home')
+    Livewire::test('home.index')
         ->assertSeeHtml('is-hero')
         ->assertSee(__('client.setup.steps.whatsapp.cta'))
         ->assertSeeHtml(route('whatsapp'));
@@ -109,7 +128,7 @@ test('the setup steps tick themselves from real data', function (): void {
     $this->actingAs($user);
 
     // Account + catalog done, the rest honestly pending.
-    Livewire::test('client.home')
+    Livewire::test('home.index')
         ->assertSee(__('client.setup.progress', ['done' => 2, 'total' => 5]));
 });
 
@@ -126,7 +145,7 @@ test('the first real thread earns the day-to-day view with real numbers', functi
     ]);
     $this->actingAs($user);
 
-    Livewire::test('client.home')
+    Livewire::test('home.index')
         ->assertSee(__('statistics.kpis.conversations'))
         ->assertSee(__('client.recent.title'))
         ->assertSee('Carla')
@@ -137,7 +156,7 @@ test('the first real thread earns the day-to-day view with real numbers', functi
 test('empty widgets preview what will fill them instead of a naked zero', function (): void {
     $this->actingAs(User::factory()->create());
 
-    Livewire::test('client.home')
+    Livewire::test('home.index')
         ->assertSee(__('client.previews.conversations_text'))
         ->assertSee(__('client.previews.metrics_text'));
 });

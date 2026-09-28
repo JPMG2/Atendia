@@ -135,6 +135,8 @@ test('moving down is scheduled for the period end and can be cancelled', functio
         ->call('changePlan', 'emprende')
         ->assertSet('scheduledPlan', 'emprende')
         ->assertSee(__('plan.change.cancel'))
+        // Every Cancelar wears the danger colour, this one included.
+        ->assertSeeHtml('btn-danger')
         ->call('cancelScheduledChange')
         ->assertSet('scheduledPlan', null);
 });

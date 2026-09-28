@@ -60,12 +60,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.assistant.settings_title') }}</h1>
-            <p class="page-head-sub">{{ __('client.assistant.settings_sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('client.assistant.settings_title')" :sub="__('client.assistant.settings_sub')" />
 
     {{-- The owner's dial: a doctor is not a realtor (her insight, 2026-09-20). --}}
     <x-ui.card class="p-5">

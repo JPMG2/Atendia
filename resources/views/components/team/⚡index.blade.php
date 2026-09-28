@@ -129,12 +129,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('team.title') }}</h1>
-            <p class="page-head-sub">{{ __('team.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('team.title')" :sub="__('team.sub')" />
 
     @php($team = $this->team)
 

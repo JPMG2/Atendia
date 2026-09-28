@@ -205,17 +205,13 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('plan.title') }}</h1>
-            <p class="page-head-sub">{{ __('plan.sub') }}</p>
-        </div>
+    <x-ui.page-head :title="__('plan.title')" :sub="__('plan.sub')">
         @if ($this->trialDaysLeft !== null)
             <x-ui.badge variant="brand" :dot="true">
                 {{ __('plan.trial_badge', ['days' => $this->trialDaysLeft]) }}
             </x-ui.badge>
         @endif
-    </div>
+    </x-ui.page-head>
 
     <x-ui.card class="p-6">
         <div class="plan-tier-head">
@@ -281,7 +277,7 @@ new class extends Component
             <p>
                 {{ __('plan.change.scheduled', ['plan' => __('plan.names.'.$scheduledPlan), 'date' => $this->periodEnd]) }}
             </p>
-            <x-ui.button variant="ghost" size="sm" wire:click="cancelScheduledChange">
+            <x-ui.button variant="danger" size="sm" wire:click="cancelScheduledChange">
                 {{ __('plan.change.cancel') }}</x-ui.button>
         </div>
     @endif

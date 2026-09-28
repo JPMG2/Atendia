@@ -66,12 +66,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('statistics.title') }}</h1>
-            <p class="page-head-sub">{{ __('statistics.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('statistics.title')" :sub="__('statistics.sub')" />
 
     @if ($this->stats !== null)
         @php($sinceDayOne = $this->stats->sinceDayOne)

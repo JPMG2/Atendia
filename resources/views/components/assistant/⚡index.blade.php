@@ -297,12 +297,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.assistant.title') }}</h1>
-            <p class="page-head-sub">{{ __('client.assistant.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('client.assistant.title')" :sub="__('client.assistant.sub')" />
 
     @if ($this->lastTaught->isNotEmpty())
         <x-assistant.taught-banner :suggestions="$this->lastTaught" :notified="$customersNotified" />
@@ -412,15 +407,7 @@ new class extends Component
         </div>
 
         @if ($this->faqs->isEmpty())
-            <div class="mt-4 flex items-start gap-4">
-                <div class="bg-brand-soft flex size-11 flex-none items-center justify-center rounded-xl" style="color: var(--brand)">
-                    <x-icon name="sparkles" :size="22" />
-                </div>
-                <div class="min-w-0">
-                    <h3 class="text-strong text-sm font-semibold">{{ __('client.assistant.faq_empty_title') }}</h3>
-                    <p class="text-body mt-1 text-sm">{{ __('client.assistant.faq_empty_body') }}</p>
-                </div>
-            </div>
+            <x-ui.empty-state class="mt-4" compact icon="sparkles" :title="__('client.assistant.faq_empty_title')" :body="__('client.assistant.faq_empty_body')" />
         @else
             <ul class="mt-3 divide-y divide-[color:var(--border-subtle)]">
                 @foreach ($this->faqs as $faq)

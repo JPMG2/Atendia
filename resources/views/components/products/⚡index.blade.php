@@ -181,12 +181,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="page-head">
-        <div>
-            <h1 class="page-head-title">{{ __('client.products.title') }}</h1>
-            <p class="page-head-sub">{{ __('client.products.sub') }}</p>
-        </div>
-    </div>
+    <x-ui.page-head :title="__('client.products.title')" :sub="__('client.products.sub')" />
 
     {{-- The sheet slides over the list: editing never loses the place. --}}
     @if ($sheetOpen)
