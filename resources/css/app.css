@@ -338,6 +338,9 @@
   .icon-btn-secondary:hover { background:var(--surface-sunken); }
   .icon-btn-ghost { background:transparent; color:var(--text-body); }
   .icon-btn-ghost:hover { background:var(--surface-sunken); }
+  /* A cancel that fits in a row: red glyph, soft red wash on hover — every Cancelar is danger. */
+  .icon-btn-danger { background:transparent; color:var(--danger); }
+  .icon-btn-danger:hover { background:var(--danger-soft); }
 
   /* ---- Cards ---- */
   .card {
@@ -1975,6 +1978,11 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .conn-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:var(--radius-pill);
                background:var(--success-soft); color:var(--success); font-size:var(--text-xs); font-weight:700; white-space:nowrap; }
   .conn-dot { width:7px; height:7px; border-radius:50%; background:var(--success); flex-shrink:0; }
+  /* Not connected: a warning, and a way out — it links to the WhatsApp screen. */
+  .conn-pill-warning { background:var(--warning-soft); color:var(--warning); text-decoration:none;
+                       transition:filter var(--dur-fast) var(--ease-out); }
+  .conn-pill-warning:hover { filter:brightness(.95); }
+  .conn-pill-warning .conn-dot { background:var(--warning); }
 
   .topbar-notif { position:relative; }
   .topbar-notif-dot { position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%;

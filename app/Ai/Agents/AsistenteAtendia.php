@@ -118,7 +118,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        $name = $this->business?->name ?? 'Atendia';
+        $name = $this->business?->name ?? 'AtendIa';
         $contract = AssistantContract::for($this->business);
 
         return <<<INSTRUCCIONES

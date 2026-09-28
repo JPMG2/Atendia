@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    <title>{{ $title ?? 'Atendia — Tu negocio, atendido por IA' }}</title>
+    <title>{{ $title ?? 'AtendIa — Tu negocio, atendido por IA' }}</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
 
@@ -98,7 +98,7 @@
         </div>
 
         <p class="text-subtle" style="font-size: var(--text-sm)">
-            © {{ date('Y') }} Atendia · Hecho para que atiendas mejor.
+            © {{ date('Y') }} AtendIa · Hecho para que atiendas mejor.
         </p>
     </aside>
 

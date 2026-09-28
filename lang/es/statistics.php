@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-// Pantalla "Mis estadísticas": molde de GBP "Rendimiento". Cada bloque trae
+// Pantalla "Estadísticas": molde de GBP "Rendimiento". Cada bloque trae
 // su LECTURA en una frase; la profundidad depende del plan.
 return [
-    'title' => 'Mis estadísticas',
+    'title' => 'Estadísticas',
     'sub' => 'Lo que tu asistente atendió y lo que tus clientes más piden.',
 
     'since' => 'Desde el :date, tu asistente respondió :questions consultas en :conversations conversaciones.',

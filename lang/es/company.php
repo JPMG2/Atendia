@@ -7,14 +7,14 @@ declare(strict_types=1);
 | Pantalla de la Compañía (panel admin)
 |--------------------------------------------------------------------------
 |
-| Los datos de Atendia — UN solo registro, no los negocios que contratan el
+| Los datos de AtendIa — UN solo registro, no los negocios que contratan el
 | servicio. Base neutra (tuteo); lang/es_AR/company.php solo sobreescribe el
 | voseo.
 */
 
 return [
     'title' => 'Compañía',
-    'subtitle' => 'Los datos de Atendia: encabezan la factura y se muestran en la web.',
+    'subtitle' => 'Los datos de AtendIa: encabezan la factura y se muestran en la web.',
 
     'discard' => 'Descartar',
 
@@ -109,7 +109,7 @@ return [
 
     'fields' => [
         'legal_name' => 'Razón social',
-        'legal_name_placeholder' => 'Atendia S.A.',
+        'legal_name_placeholder' => 'AtendIa S.A.',
 
         'tagline' => 'Tagline',
         'tagline_hint' => 'Frase corta bajo el logo.',
@@ -134,7 +134,7 @@ return [
         'address_placeholder' => 'Av. Siempre Viva 742, piso 3',
 
         'copyright' => 'Texto del pie',
-        'copyright_placeholder' => '© Atendia. Todos los derechos reservados.',
+        'copyright_placeholder' => '© AtendIa. Todos los derechos reservados.',
 
         'email' => 'Email de soporte',
         'email_placeholder' => 'hola@atendia.app',

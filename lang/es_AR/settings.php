@@ -6,7 +6,7 @@ declare(strict_types=1);
 return [
 
     'email' => [
-        'sub' => 'Con este correo entrás a Atendia y te llegan los avisos de seguridad. Para cambiarlo, confirmamos que el nuevo sea tuyo.',
+        'sub' => 'Con este correo entrás a AtendIa y te llegan los avisos de seguridad. Para cambiarlo, confirmamos que el nuevo sea tuyo.',
         'pending' => 'Te mandamos un enlace a :email. Hasta que lo confirmes, seguís entrando con tu correo actual.',
         'cancelled' => 'Cancelaste el cambio: seguís entrando con tu correo actual.',
         'resend_throttled' => 'Ya te mandamos varios enlaces. Esperá :minutes min antes de pedir otro.',
@@ -35,8 +35,8 @@ return [
     ],
 
     'links' => [
-        'verified_body' => ':email ya está confirmado. Podés volver a Atendia desde cualquier dispositivo.',
-        'confirmed_body' => 'Desde ahora entrás a Atendia con :email.',
+        'verified_body' => ':email ya está confirmado. Podés volver a AtendIa desde cualquier dispositivo.',
+        'confirmed_body' => 'Desde ahora entrás a AtendIa con :email.',
         'invalid_body' => 'Venció, ya se usó o hubo un cambio más nuevo. Pedí otro desde tus ajustes.',
         'cancelled_body' => 'Tu correo de acceso sigue igual. Si no fuiste vos quien lo pidió, cambiá tu contraseña ahora.',
         'restored_body' => 'Restauramos tu cuenta y tu negocio tal como estaban. Iniciá sesión para seguir.',

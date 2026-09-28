@@ -9,7 +9,7 @@ return [
     'title' => 'Pregúntale a AtendIa',
     'subtitle' => 'Te respondo con los datos de tu negocio.',
     'hello' => 'Hola, :name',
-    'assistant' => 'asistente :ia de Atendia',
+    'assistant' => 'asistente :ia de AtendIa',
     'ia' => 'IA',
     'intro' => 'Soy el :assistant: te respondo con los datos de tu negocio y te explico cómo usar cada módulo del panel. ¿Qué quieres saber?',
     'suggestions_title' => 'Puedes preguntar, por ejemplo:',
@@ -43,13 +43,13 @@ return [
         'thanks' => 'Gracias, lo tenemos en cuenta.',
     ],
 
-    // El botón de cada gráfico de "Mis estadísticas": abre el panel con la pregunta armada.
+    // El botón de cada gráfico de "Estadísticas": abre el panel con la pregunta armada.
     'chart' => [
         'button' => 'Preguntar',
-        'topics' => 'Explícame el bloque de temas de Mis estadísticas con mis números: ¿qué preguntan más mis clientes y qué me conviene hacer?',
-        'daily' => 'Explícame el gráfico de conversaciones por día de Mis estadísticas con mis números.',
-        'hours' => 'Explícame el gráfico de horas pico de Mis estadísticas con mis números.',
-        'trend' => 'Explícame la tendencia por mes de Mis estadísticas con mis números.',
+        'topics' => 'Explícame el bloque de temas de Estadísticas con mis números: ¿qué preguntan más mis clientes y qué me conviene hacer?',
+        'daily' => 'Explícame el gráfico de conversaciones por día de Estadísticas con mis números.',
+        'hours' => 'Explícame el gráfico de horas pico de Estadísticas con mis números.',
+        'trend' => 'Explícame la tendencia por mes de Estadísticas con mis números.',
         'gaps' => 'Explícame qué piden mis clientes que no está en mi catálogo.',
     ],
 
@@ -67,7 +67,7 @@ return [
         'statistics' => [
             'conversations' => 'Conversaciones: las conversaciones donde un cliente escribió al menos un mensaje en el mes.',
             'new_contacts' => 'Contactos nuevos: conversaciones que empezaron por primera vez en el mes.',
-            'questions' => 'Preguntas: las preguntas de clientes que Atendia detectó al leer las conversaciones del mes.',
+            'questions' => 'Preguntas: las preguntas de clientes que AtendIa detectó al leer las conversaciones del mes.',
             'resolution' => 'Resueltas por el asistente: de esas preguntas, el porcentaje que respondió el asistente solo, sin el equipo. Se mide por pregunta, no por conversación: si respondió 3 de 4 preguntas de una charla, cuentan las 3.',
             'audio_minutes' => 'Minutos de audio: los minutos de notas de voz de clientes que el asistente transcribió en el mes.',
             'recovered' => 'Clientes recuperados: clientes a los que se les avisó una respuesta que el negocio enseñó después y que volvieron a escribir.',

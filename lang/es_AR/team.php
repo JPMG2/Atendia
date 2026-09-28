@@ -21,7 +21,7 @@ return [
         'password_confirmation' => 'Repetí la contraseña',
         'welcome' => 'Ya sos parte del equipo de :business.',
         'expired_body' => 'Venció o ya se usó. Pedile a quien te invitó que te la reenvíe desde Equipo.',
-        'taken' => 'Ese correo ya tiene una cuenta en Atendia. Entrá con él o pedí que te inviten con otro.',
+        'taken' => 'Ese correo ya tiene una cuenta en AtendIa. Entrá con él o pedí que te inviten con otro.',
     ],
 
     'department' => [

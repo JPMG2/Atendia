@@ -37,7 +37,7 @@ class AssistantSkillSeeder extends Seeder
         $ownerSkills = [
             ['key' => 'owner_conversations', 'name' => 'Conversaciones del período', 'description' => 'Cuántas conversaciones hubo, cuáles esperan al equipo y el enlace a cada una'],
             ['key' => 'owner_birthdays', 'name' => 'Cumpleaños de clientes', 'description' => 'Quién cumple años en un período y si aceptó recibir mensajes'],
-            ['key' => 'owner_statistics', 'name' => 'Mis estadísticas', 'description' => 'Los números de la pantalla de estadísticas, a la profundidad del plan'],
+            ['key' => 'owner_statistics', 'name' => 'Estadísticas', 'description' => 'Los números de la pantalla de estadísticas, a la profundidad del plan'],
             ['key' => 'owner_plan', 'name' => 'Mi plan y consumo', 'description' => 'El plan, lo que incluye y cuánto se usó este mes'],
             ['key' => 'owner_team', 'name' => 'Mi equipo', 'description' => 'Quién está disponible, qué espera en cada departamento y quién tiene más charlas'],
             ['key' => 'panel_guide', 'name' => 'Guía del panel', 'description' => 'Qué hace cada módulo y cada formulario del panel, con sus propios textos'],

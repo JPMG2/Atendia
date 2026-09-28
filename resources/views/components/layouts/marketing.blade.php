@@ -6,18 +6,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta
         name="description"
-        content="Atendia conecta tu WhatsApp con un asistente de IA que responde, agenda turnos y muestra tus productos. Tu negocio, atendido por IA."
+        content="AtendIa conecta tu WhatsApp con un asistente de IA que responde, agenda turnos y muestra tus productos. Tu negocio, atendido por IA."
     />
 
-    <title>{{ $title ?? 'Atendia — Tu negocio, atendido por IA' }}</title>
+    <title>{{ $title ?? 'AtendIa — Tu negocio, atendido por IA' }}</title>
 
     {{-- Shared over WhatsApp — our own channel — the link must unfurl with a card. --}}
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Atendia" />
-    <meta property="og:title" content="{{ $title ?? 'Atendia — Tu negocio, atendido por IA' }}" />
+    <meta property="og:site_name" content="AtendIa" />
+    <meta property="og:title" content="{{ $title ?? 'AtendIa — Tu negocio, atendido por IA' }}" />
     <meta
         property="og:description"
-        content="Atendia conecta tu WhatsApp con un asistente de IA que responde, agenda turnos y muestra tus productos."
+        content="AtendIa conecta tu WhatsApp con un asistente de IA que responde, agenda turnos y muestra tus productos."
     />
     <meta property="og:image" content="{{ asset('assets/og.png') }}" />
     <meta property="og:image:width" content="1200" />

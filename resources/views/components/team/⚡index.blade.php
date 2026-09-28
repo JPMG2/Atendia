@@ -221,7 +221,7 @@ new class extends Component
                             </div>
                             <div class="flex flex-none items-center gap-1">
                                 <x-ui.icon-button icon="refresh-cw" size="sm" variant="ghost" :label="__('team.people.resend')" wire:click="resend({{ $invitation->id }})" />
-                                <x-ui.icon-button icon="x" size="sm" variant="ghost" :label="__('team.people.cancel')" wire:click="cancelInvitation({{ $invitation->id }})" />
+                                <x-ui.icon-button icon="x" size="sm" variant="danger" :label="__('team.people.cancel')" wire:click="cancelInvitation({{ $invitation->id }})" />
                             </div>
                         </li>
                     @endforeach

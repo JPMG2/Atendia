@@ -114,7 +114,13 @@ new class extends Component
 
     @if ($this->customers->isEmpty())
         <x-ui.card class="p-6">
-            <x-ui.empty-state icon="users" :title="__('client.customers.empty_title')" :body="__('client.customers.empty_body')" />
+            <x-ui.empty-state icon="users" :title="__('client.customers.empty_title')" :body="__('client.customers.empty_body')">
+                @can('manage-business')
+                    @unless (auth()->user()->business?->isConnected())
+                        <x-ui.button variant="primary" icon="message-circle" :href="route('whatsapp')" wire:navigate>{{ __('whatsapp.connect.cta') }}</x-ui.button>
+                    @endunless
+                @endcan
+            </x-ui.empty-state>
         </x-ui.card>
     @else
         <x-ui.card class="p-5">

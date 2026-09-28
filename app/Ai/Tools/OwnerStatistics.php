@@ -16,7 +16,7 @@ use Laravel\Ai\Tools\Request;
 use Stringable;
 
 /**
- * The "Mis estadísticas" screen read aloud: the SAME Statistics piece, so
+ * The "Estadísticas" screen read aloud: the SAME Statistics piece, so
  * the assistant can never disagree with the chart the owner is looking at,
  * and at the plan's depth — nothing above what the plan pays for.
  */
@@ -31,7 +31,7 @@ class OwnerStatistics implements OwnerSkillTool
 
     public function description(): Stringable|string
     {
-        return 'Los números de la pantalla "Mis estadísticas" para un mes: conversaciones, contactos '
+        return 'Los números de la pantalla "Estadísticas" para un mes: conversaciones, contactos '
             .'nuevos, preguntas, porcentaje que resolvió el asistente, minutos de audio y clientes '
             .'recuperados, comparados con el mes anterior. Del mes en curso suma, según el plan, los '
             .'temas más preguntados, el mejor día del gráfico diario y, en '.__('plan.names.'.Plan::lowestWithStatistics('trends')->code)

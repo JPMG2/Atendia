@@ -473,7 +473,13 @@ new class extends Component
 
     @if ($this->threads->isEmpty())
         <x-ui.card class="p-6">
-            <x-ui.empty-state icon="message-circle" :title="__('client.conversations.empty_title')" :body="__('client.conversations.empty_body')" />
+            <x-ui.empty-state icon="message-circle" :title="__('client.conversations.empty_title')" :body="__('client.conversations.empty_body')">
+                @can('manage-business')
+                    @unless (auth()->user()->business?->isConnected())
+                        <x-ui.button variant="primary" icon="message-circle" :href="route('whatsapp')" wire:navigate>{{ __('whatsapp.connect.cta') }}</x-ui.button>
+                    @endunless
+                @endcan
+            </x-ui.empty-state>
         </x-ui.card>
     @else
         <div class="grid items-start gap-4 lg:grid-cols-[340px_1fr]">

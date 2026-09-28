@@ -39,11 +39,11 @@ test('clicking a parent item expands its nested children (Alpine)', function ():
     $page = visit('/dashboard');
 
     // The nested branch is collapsed until its parent is clicked.
-    $page->assertDontSee('Mis estadísticas')
+    $page->assertDontSee('Estadísticas')
         ->click('Productos')
         ->assertSee('Servicios')
         ->click('Servicios')
-        ->assertSee('Mis estadísticas');
+        ->assertSee('Estadísticas');
 });
 
 test('the theme toggle switches between light and dark', function (): void {

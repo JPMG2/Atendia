@@ -86,7 +86,7 @@ return [
         'go_login' => 'Ir a iniciar sesión',
         'expired_title' => 'Esta invitación ya no es válida',
         'expired_body' => 'Venció o ya se usó. Pídele a quien te invitó que te la reenvíe desde Equipo.',
-        'taken' => 'Ese correo ya tiene una cuenta en Atendia. Entra con él o pide que te inviten con otro.',
+        'taken' => 'Ese correo ya tiene una cuenta en AtendIa. Entra con él o pide que te inviten con otro.',
     ],
 
     'department' => [

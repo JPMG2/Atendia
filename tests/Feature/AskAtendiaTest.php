@@ -61,7 +61,7 @@ test('the panel opens with the assistant introducing itself and the quota left',
     livewire('client.ask-atendia')
         ->call('open')
         ->assertSee(__('ask.hello', ['name' => 'Carla']))
-        ->assertSeeHtml('<strong class="ask-hello-brand">asistente <span class="ask-hello-ia">IA</span> de Atendia</strong>')
+        ->assertSeeHtml('<strong class="ask-hello-brand">asistente <span class="ask-hello-ia">IA</span> de AtendIa</strong>')
         ->assertSee(__('ask.suggestions.unresolved'))
         ->assertSeeHtml('<b>99</b>')
         ->assertSee(__('ask.quota.of_short', ['cap' => 100]))
@@ -161,7 +161,7 @@ test('the agent knows today as a date, declines the world and has no web tool', 
     $today = now($user->business->localTimezone())->toDateString();
 
     expect((string) $agent->instructions())->toContain("hoy = {$today}")
-        ->toContain('Solo puedo ayudarte con tu negocio y con el panel de Atendia.')
+        ->toContain('Solo puedo ayudarte con tu negocio y con el panel de AtendIa.')
         ->toContain('No tenés acceso a internet')
         ->and(collect($agent->tools())->every(fn ($tool): bool => $tool instanceof OwnerSkillTool))->toBeTrue()
         ->and(collect($agent->tools())->map(fn ($tool): string => $tool::class)->all())->toHaveCount(6);

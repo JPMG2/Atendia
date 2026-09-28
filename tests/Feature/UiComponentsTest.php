@@ -119,6 +119,11 @@ test('the icon button renders an accessible button with an inline icon', functio
         ->toContain('<svg');
 });
 
+test('the icon button has a danger variant and unknown variants fall back to secondary', function (): void {
+    expect(Blade::render('<x-ui.icon-button icon="x" variant="danger" label="Cancel" />'))->toContain('icon-btn-danger')
+        ->and(Blade::render('<x-ui.icon-button icon="x" variant="bogus" label="Cancel" />'))->toContain('icon-btn-secondary');
+});
+
 test('the icon button lets a slot override the default icon', function (): void {
     $html = Blade::render('<x-ui.icon-button label="Theme"><span>custom</span></x-ui.icon-button>');
 

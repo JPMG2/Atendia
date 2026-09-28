@@ -2,7 +2,7 @@
     <div class="page-head">
         <div>
             <h1 class="page-head-title">Configuración</h1>
-            <p class="page-head-sub">Administrá la plataforma de Atendia.</p>
+            <p class="page-head-sub">Administrá la plataforma de AtendIa.</p>
         </div>
     </div>
 

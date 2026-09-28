@@ -36,6 +36,21 @@ test('with no customers the screen explains itself', function (): void {
         ->assertSee(__('client.customers.empty_title'));
 });
 
+test('the empty directory offers to connect whatsapp only while it is not connected', function (): void {
+    $user = customersClient();
+    $this->actingAs($user);
+
+    $this->get(route('customers'))
+        ->assertSee(__('whatsapp.connect.cta'))
+        ->assertSee('href="'.route('whatsapp').'"', false);
+
+    $user->business->forceFill(['whatsapp_connected_at' => now()])->save();
+
+    $this->get(route('customers'))
+        ->assertSee(__('client.customers.empty_title'))
+        ->assertDontSee(__('whatsapp.connect.cta'));
+});
+
 test('the directory lists my customers and never another tenant\'s', function (): void {
     $user = customersClient();
     Customer::factory()->create(['business_id' => $user->business_id, 'name' => 'María Pérez']);

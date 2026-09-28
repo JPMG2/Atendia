@@ -17,7 +17,7 @@ return [
     'aria_nav' => 'Navegación principal',
     'sidebar_toggle' => 'Compactar o expandir el menú',
     'open_menu' => 'Abrir menú',
-    'search_placeholder' => 'Buscar conversación, turno, producto…',
+    'search_placeholder' => 'Buscar en tu panel…',
     'notifications' => 'Notificaciones',
 
     // Upsell card del footer del sidebar (skeleton temporal)
@@ -40,8 +40,8 @@ return [
     'assistant_knowledge' => 'Conocimiento',
     'assistant_settings' => 'Configuración',
     'customers' => 'Clientes',
-    'statistics' => 'Mis estadísticas',
-    'referrals' => 'Gana con Atendia',
+    'statistics' => 'Estadísticas',
+    'referrals' => 'Gana con AtendIa',
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
     'team' => 'Equipo',

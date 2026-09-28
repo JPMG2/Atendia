@@ -21,5 +21,9 @@ where it stands alone. --}}
             <h2 class="text-strong font-display text-base">{{ $title }}</h2>
         @endif
         <p class="text-body mt-1 text-sm">{{ $body }}</p>
+        {{-- Optional: the step that fills this screen, one click away. --}}
+        @if (! $slot->isEmpty())
+            <div class="mt-4 flex flex-wrap gap-2">{{ $slot }}</div>
+        @endif
     </div>
 </div>

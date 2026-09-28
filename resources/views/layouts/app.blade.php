@@ -7,7 +7,7 @@
     {{-- security-alerts.js keys its private Echo channel on this id. --}}
     <meta name="auth-user-id" content="{{ auth()->id() }}" />
 
-    <title>{{ $title ?? config('app.name', 'Atendia') }}</title>
+    <title>{{ $title ?? config('app.name', 'AtendIa') }}</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
 
@@ -96,7 +96,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                 wire:navigate
                 class="sidebar-header"
             >
-                <img src="{{ asset('assets/logo-mark.svg') }}" alt="Atendia" class="sidebar-logo" />
+                <img src="{{ asset('assets/logo-mark.svg') }}" alt="AtendIa" class="sidebar-logo" />
                 <span class="sidebar-wordmark">Atend<span>ia</span></span>
                 @if ($onAdminPanel)
                     <x-ui.badge variant="accent">Admin</x-ui.badge>
@@ -145,10 +145,21 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
 
                 <div class="topbar-actions">
                     {{-- Only the truth: a fixed "connected" chip contradicted the home's "sin conectar" pill. --}}
-                    @if (! $onAdminPanel && auth()->user()?->business?->isConnected())
-                        <span class="conn-pill">
-                            <span class="conn-dot"></span>{{ __('whatsapp.topbar_connected') }}
-                        </span>
+                    @if (! $onAdminPanel && auth()->user()?->business)
+                        @if (auth()->user()->business->isConnected())
+                            <span class="conn-pill">
+                                <span class="conn-dot"></span>{{ __('whatsapp.topbar_connected') }}
+                            </span>
+                        @else
+                            <a
+                                href="{{ route('whatsapp') }}"
+                                wire:navigate
+                                class="conn-pill conn-pill-warning"
+                                data-testid="conn-pill-disconnected"
+                            >
+                                <span class="conn-dot"></span>{{ __('whatsapp.topbar_disconnected') }}
+                            </a>
+                        @endif
                     @endif
 
                     {{-- The owner's assistant is a client-panel tool: admin has no business to ask about. --}}
@@ -179,7 +190,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                             :aria-expanded="open"
                         >
                             <x-ui.avatar
-                                :name="auth()->user()?->name ?? 'Atendia'"
+                                :name="auth()->user()?->name ?? 'AtendIa'"
                                 :src="auth()->user()?->avatarUrl()"
                                 size="sm"
                                 :status="auth()->user()?->is_available === false ? 'away' : 'online'"

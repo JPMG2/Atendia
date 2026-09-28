@@ -16,8 +16,8 @@ return [
 
     'mail' => [
         'body' => 'Tu asistente dejó de responder mientras lo revisamos. No se borró nada. Si creés que es un error, apelá desde tu panel y lo revisamos.',
-        'reason' => 'Recibiste este correo porque sos parte del equipo de este negocio en Atendia.',
+        'reason' => 'Recibiste este correo porque sos parte del equipo de este negocio en AtendIa.',
     ],
 
-    'whatsapp' => '⚠️ *Atendia*: suspendimos el asistente de *:name* por contenido que incumple nuestras políticas de uso. No se borró nada. Si creés que es un error, apelá desde tu panel.',
+    'whatsapp' => '⚠️ *AtendIa*: suspendimos el asistente de *:name* por contenido que incumple nuestras políticas de uso. No se borró nada. Si creés que es un error, apelá desde tu panel.',
 ];

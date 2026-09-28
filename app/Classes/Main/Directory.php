@@ -9,7 +9,7 @@ use App\Models\Customer;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * The "Mis clientes" piece: the tenant's customer directory. The inbox is
+ * The "Clientes" piece: the tenant's customer directory. The inbox is
  * the day's flow; this is the asset it leaves behind.
  */
 class Directory

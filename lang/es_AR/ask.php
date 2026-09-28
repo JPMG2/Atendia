@@ -12,10 +12,10 @@ return [
     'failed' => 'No pude responder ahora. Intentá de nuevo en un momento.',
 
     'chart' => [
-        'topics' => 'Explicame el bloque de temas de Mis estadísticas con mis números: ¿qué preguntan más mis clientes y qué me conviene hacer?',
-        'daily' => 'Explicame el gráfico de conversaciones por día de Mis estadísticas con mis números.',
-        'hours' => 'Explicame el gráfico de horas pico de Mis estadísticas con mis números.',
-        'trend' => 'Explicame la tendencia por mes de Mis estadísticas con mis números.',
+        'topics' => 'Explicame el bloque de temas de Estadísticas con mis números: ¿qué preguntan más mis clientes y qué me conviene hacer?',
+        'daily' => 'Explicame el gráfico de conversaciones por día de Estadísticas con mis números.',
+        'hours' => 'Explicame el gráfico de horas pico de Estadísticas con mis números.',
+        'trend' => 'Explicame la tendencia por mes de Estadísticas con mis números.',
         'gaps' => 'Explicame qué piden mis clientes que no está en mi catálogo.',
     ],
 

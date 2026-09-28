@@ -133,7 +133,7 @@ return [
 
         'billing' => [
             'title' => 'Moneda',
-            'sub' => 'Cómo se muestran tus precios y a nombre de quién sale tu factura de Atendia.',
+            'sub' => 'Cómo se muestran tus precios y a nombre de quién sale tu factura de AtendIa.',
             'currency' => 'Moneda de tus precios',
             'reference' => 'Moneda de referencia',
             'reference_hint' => 'La referencia se muestra al lado del precio: Bs 4.200 · Ref $2',
@@ -376,7 +376,7 @@ return [
 
     'testimonial' => [
         'title' => '¿Contento con tu asistente?',
-        'body' => 'Cuéntanos en una frase qué cambió en tu negocio. Tu opinión puede aparecer en la página de Atendia — solo si tú lo autorizas.',
+        'body' => 'Cuéntanos en una frase qué cambió en tu negocio. Tu opinión puede aparecer en la página de AtendIa — solo si tú lo autorizas.',
         'field_quote' => 'Tu opinión',
         'quote_placeholder' => 'Dejé de perder clientes por no contestar a tiempo…',
         'field_rating' => 'Tu puntaje',
@@ -388,8 +388,8 @@ return [
             2 => '2 — Regular',
             1 => '1 — Malo',
         ],
-        'field_consent' => 'Autorizo a Atendia a publicar mi opinión',
-        'consent_hint' => 'Con el nombre y rubro de tu negocio, en el sitio de Atendia. Sin tu permiso queda solo como comentario interno.',
+        'field_consent' => 'Autorizo a AtendIa a publicar mi opinión',
+        'consent_hint' => 'Con el nombre y rubro de tu negocio, en el sitio de AtendIa. Sin tu permiso queda solo como comentario interno.',
         'send' => 'Enviar mi opinión',
         'not_now' => 'Ahora no',
         'thanks' => '¡Gracias! Tu opinión nos ayuda a mejorar.',
@@ -488,7 +488,7 @@ return [
     ],
 
     'customers' => [
-        'title' => 'Mis clientes',
+        'title' => 'Clientes',
         'sub' => 'Cada persona que habló con tu asistente, con sus datos reales.',
         'search' => 'Buscar por nombre, teléfono o correo',
         'filter_all' => 'Todos',

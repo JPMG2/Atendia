@@ -9,7 +9,7 @@ compiled CSS tokens and static assets. --}}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>{{ $title }} — Atendia</title>
+    <title>{{ $title }} — AtendIa</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
 
@@ -87,11 +87,11 @@ compiled CSS tokens and static assets. --}}
 
             {{-- The sender: a small decorative phone, tilted like it just spoke. --}}
             <div class="mt-6 flex items-end gap-3" style="padding-left: 8px">
-                <svg aria-hidden="true" viewBox="0 0 64 118" style="
-                        width: 56px;
-                        height: 103px;
-                        transform: rotate(-8deg);
-                    ">
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 64 118"
+                    style="width: 56px; height: 103px; transform: rotate(-8deg)"
+                >
                     <rect x="2" y="2" width="60" height="114" rx="14" style="fill:var(--surface-card); stroke:var(--border-default); stroke-width:3;" />
                     <rect x="10" y="16" width="44" height="86" rx="8" style="fill:var(--chat-canvas);" />
                     <rect x="24" y="7" width="16" height="3.5" rx="1.75" style="fill:var(--border-default);" />
@@ -110,7 +110,7 @@ compiled CSS tokens and static assets. --}}
 
     <footer class="px-5 pb-8 text-center">
         <p class="text-subtle" style="font-size: var(--text-sm)">
-            © {{ date('Y') }} Atendia · Tu negocio, atendido por IA.
+            © {{ date('Y') }} AtendIa · Tu negocio, atendido por IA.
         </p>
     </footer>
 </body>

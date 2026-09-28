@@ -32,7 +32,7 @@ return [
         'badge' => 'Atiende por ti en WhatsApp',
         'title_1' => 'Nunca más pierdas un cliente',
         'title_2' => 'por no contestar',
-        'subtitle' => 'Atendia responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras haces lo tuyo. Lo conectas en minutos, sin saber de tecnología.',
+        'subtitle' => 'AtendIa responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras haces lo tuyo. Lo conectas en minutos, sin saber de tecnología.',
         'cta_primary' => 'Crear mi asistente',
         'cta_secondary' => 'Ver cómo funciona',
         'social_proof' => ':count negocios ya atienden con su asistente',
@@ -181,7 +181,7 @@ return [
     ],
 
     'logos' => [
-        'title' => 'Negocios de todos los rubros ya atienden con Atendia',
+        'title' => 'Negocios de todos los rubros ya atienden con AtendIa',
     ],
 
     'tally' => [
@@ -191,7 +191,7 @@ return [
     'features' => [
         'eyebrow' => 'Funciones',
         'title' => 'Todo lo que tu negocio necesita para atender mejor',
-        'subtitle' => 'Sea una clínica o un kiosco, Atendia se adapta a cómo trabajas.',
+        'subtitle' => 'Sea una clínica o un kiosco, AtendIa se adapta a cómo trabajas.',
         'schedule' => [
             'title' => 'Agenda turnos sola',
             'body' => 'Define días, horarios y capacidad. El asistente ofrece huecos libres y confirma sin que muevas un dedo.',
@@ -252,7 +252,7 @@ return [
             'body' => 'Manda un mensaje a tu WhatsApp como siempre.',
         ],
         'step2' => [
-            'title' => 'Atendia lo procesa',
+            'title' => 'AtendIa lo procesa',
             'body' => 'El flujo automático entiende la consulta y busca la respuesta en tu configuración.',
         ],
         'step3' => [
@@ -271,13 +271,13 @@ return [
         'health' => [
             'who' => 'Profesionales y clínicas',
             'title' => 'Consultorio de cardiología',
-            'body' => 'Define estudios, duración y capacidad por día. Atendia agenda turnos, recuerda y reprograma.',
+            'body' => 'Define estudios, duración y capacidad por día. AtendIa agenda turnos, recuerda y reprograma.',
             'tags' => ['Turnos', 'Recordatorios', 'Estudios'],
         ],
         'shop' => [
             'who' => 'Comercios y emprendedoras',
             'title' => 'Pastelería artesanal',
-            'body' => 'Sube su catálogo con precios. Atendia responde por sabores, toma pedidos y comparte el menú.',
+            'body' => 'Sube su catálogo con precios. AtendIa responde por sabores, toma pedidos y comparte el menú.',
             'tags' => ['Catálogo', 'Pedidos', 'Horarios'],
         ],
     ],
@@ -312,8 +312,8 @@ return [
             'days_exact' => 'Son :n días de trabajo.',
             'days_almost' => 'Son casi :n días de trabajo.',
             'days_over' => 'Son más de :n días de trabajo.',
-            'with_tag' => 'Con Atendia',
-            'with_lead' => 'Atendia responde por ti.',
+            'with_tag' => 'Con AtendIa',
+            'with_lead' => 'AtendIa responde por ti.',
             'with_note' => 'De día y de noche. Tú solo miras.',
             'verdict_recover' => 'Recuperas',
             'verdict_hours' => 'al mes',
@@ -342,7 +342,7 @@ return [
         'premium' => [
             'desc' => 'Máximo volumen y tu IA a medida.',
             'cta' => 'Hablar con ventas',
-            'whatsapp_text' => 'Hola, quiero saber más del plan :plan de Atendia.',
+            'whatsapp_text' => 'Hola, quiero saber más del plan :plan de AtendIa.',
             'includes' => 'Todo lo de :plan, más:',
             'extras' => ['Tu asistente a tu medida', 'Configuración asistida incluida'],
         ],
@@ -351,7 +351,7 @@ return [
     'carousel' => [
         'eyebrow' => 'Clientes',
         'title' => 'Negocios que ya no atienden solos',
-        'subtitle' => 'Opiniones reales de negocios que atienden con Atendia.',
+        'subtitle' => 'Opiniones reales de negocios que atienden con AtendIa.',
     ],
 
     'faq' => [
@@ -393,12 +393,12 @@ return [
         ],
         'more' => '¿Otra duda?',
         'more_cta' => 'Escríbenos por WhatsApp',
-        'whatsapp_text' => 'Hola, tengo una pregunta sobre Atendia.',
+        'whatsapp_text' => 'Hola, tengo una pregunta sobre AtendIa.',
     ],
 
     'closing' => [
         'title' => 'Tu próximo cliente está escribiendo ahora',
-        'subtitle' => 'Conecta tu WhatsApp y que Atendia responda por ti en minutos.',
+        'subtitle' => 'Conecta tu WhatsApp y que AtendIa responda por ti en minutos.',
         'cta_primary' => 'Crear mi asistente',
         'cta_secondary' => 'Ver cómo funciona',
     ],

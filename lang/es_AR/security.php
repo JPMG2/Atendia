@@ -19,7 +19,7 @@ return [
         'wrong_code' => 'Ese código no es. Revisá tu WhatsApp e intentá de nuevo.',
     ],
 
-    'whatsapp_code' => 'Tu código de Atendia es *:code*. Vence en 10 minutos. Si no fuiste vos, no lo compartas con nadie.',
+    'whatsapp_code' => 'Tu código de AtendIa es *:code*. Vence en 10 minutos. Si no fuiste vos, no lo compartas con nadie.',
 
     'revoked' => [
         'body' => 'Cerramos esa sesión: para volver a entrar va a necesitar la contraseña. Si no reconocías ese acceso, cambiá tu contraseña ahora.',

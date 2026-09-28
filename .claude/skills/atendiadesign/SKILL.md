@@ -138,7 +138,7 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 
 - **`<x-icon name="zap" :size="20" />`** — icono Lucide inline (registro `config/icons.php`).
 - **`<x-ui.button variant="primary|secondary|ghost|accent" size="sm|md|lg" :href="..." icon="zap" :fullWidth="false">`** — si tiene `href` es `<a>`, si no `<button>`.
-- **`<x-ui.icon-button icon="menu" size="sm|md|lg" variant="secondary|ghost" label="...">`** — botón cuadrado; `label` = aria-label obligatorio. Acepta slot para casos especiales (ej. toggle de tema con dos iconos).
+- **`<x-ui.icon-button icon="menu" size="sm|md|lg" variant="secondary|ghost|danger" label="...">`** — botón cuadrado (`danger` = glifo rojo, para un Cancelar de fila); `label` = aria-label obligatorio. Acepta slot para casos especiales (ej. toggle de tema con dos iconos).
 - **`<x-ui.badge variant="brand|accent" :dot="false">`** — pill.
 - **`<x-ui.card :interactive="false" as="div">`** — superficie (borde sutil + sombra); `interactive` agrega hover lift + borde jade.
 - **`<x-ui.label for="...">`** — etiqueta de campo.
@@ -150,7 +150,7 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 - **`<x-ui.alert variant="info|success|warning|danger|brand" title icon :dismissible>`** — banner; `dismissible` lo cierra con Alpine.
 - **`<x-ui.stat-card label value delta trend="up|down|flat" icon tint="brand|accent|info|warning">`** — KPI del dashboard.
 - **`<x-ui.page-head :title :sub back backLabel>`** — encabezado de TODA pantalla. Slot por defecto = lo del costado (badge, botón); `<x-slot:lead>` antes del título (avatar); `<x-slot:inline>` pegado al título (píldora). Nunca más `div.page-head` a mano.
-- **`<x-ui.empty-state icon title body :compact="false">`** — el "todavía no hay nada" de toda pantalla (cuadro jade + ícono + título + texto). Envolverlo en `<x-ui.card>` si va solo; `compact` = h3 chico dentro de una sección.
+- **`<x-ui.empty-state icon title body :compact="false">`** — el "todavía no hay nada" de toda pantalla (cuadro jade + ícono + título + texto). Envolverlo en `<x-ui.card>` si va solo; `compact` = h3 chico dentro de una sección. El slot lleva la acción que llena la pantalla (ej. "Conectar mi WhatsApp").
 - **`<x-ui.tabs :tabs="[['value'=>..,'label'=>..,'icon'=>?,'badge'=>?]]" default>`** — barra de tabs Alpine; los paneles del slot usan `x-show="tab === '...'"`.
 
 **Reglas al crear un componente nuevo:**

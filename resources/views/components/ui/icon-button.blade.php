@@ -1,13 +1,13 @@
 @props([
     'icon' => null,           // icon name (or use the slot for the special cases)
     'size' => 'md',           // sm | md | lg
-    'variant' => 'secondary', // secondary | ghost
+    'variant' => 'secondary', // secondary | ghost | danger
     'label' => null,          // aria-label; required for accessibility when there is no text
 ])
 
 @php
     $sizes = ['sm' => 'icon-btn-sm', 'md' => 'icon-btn-md', 'lg' => 'icon-btn-lg'];
-    $variants = ['secondary' => 'icon-btn-secondary', 'ghost' => 'icon-btn-ghost'];
+    $variants = ['secondary' => 'icon-btn-secondary', 'ghost' => 'icon-btn-ghost', 'danger' => 'icon-btn-danger'];
 
     $classes = 'icon-btn '
         .($variants[$variant] ?? $variants['secondary']).' '

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * The "Mis estadísticas" piece: every number the screen shows, computed
+ * The "Estadísticas" piece: every number the screen shows, computed
  * from the tenant's own threads. Each block also hands back its READING —
  * the GBP habit: a chart without its sentence is homework, not insight.
  */

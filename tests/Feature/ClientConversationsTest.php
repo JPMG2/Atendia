@@ -89,6 +89,21 @@ test('with no threads the screen explains itself', function (): void {
         ->assertSee(__('client.conversations.empty_body'));
 });
 
+test('the empty inbox offers to connect whatsapp only while it is not connected', function (): void {
+    $user = conversationsClient();
+    $this->actingAs($user);
+
+    $this->get(route('conversations'))
+        ->assertSee(__('whatsapp.connect.cta'))
+        ->assertSee('href="'.route('whatsapp').'"', false);
+
+    $user->business->forceFill(['whatsapp_connected_at' => now()])->save();
+
+    $this->get(route('conversations'))
+        ->assertSee(__('client.conversations.empty_title'))
+        ->assertDontSee(__('whatsapp.connect.cta'));
+});
+
 test('the inbox lists my threads and never another tenant\'s', function (): void {
     $user = conversationsClient();
     threadFor($user, 'Carla', '5491111111111', 'Sí, mañana a las 9.');

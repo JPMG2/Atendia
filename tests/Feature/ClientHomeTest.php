@@ -88,13 +88,27 @@ test('the topbar claims a connected whatsapp only when the number is linked', fu
     $user->business()->associate($business)->save();
     $this->actingAs($user);
 
-    $this->get(route('dashboard'))->assertDontSee('conn-pill', false);
+    $this->get(route('dashboard'))->assertDontSee(__('whatsapp.topbar_connected'));
 
     $business->forceFill(['whatsapp_connected_at' => now()])->save();
 
     $this->get(route('dashboard'))
         ->assertSee('conn-pill', false)
-        ->assertSee(__('whatsapp.topbar_connected'));
+        ->assertSee(__('whatsapp.topbar_connected'))
+        ->assertDontSee('conn-pill-warning', false);
+});
+
+test('the topbar warns in yellow and links to the whatsapp screen while not connected', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $business = Business::factory()->create();
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+    $this->actingAs($user);
+
+    $this->get(route('dashboard'))
+        ->assertSee('conn-pill conn-pill-warning', false)
+        ->assertSee('href="'.route('whatsapp').'"', false)
+        ->assertSee(__('whatsapp.topbar_disconnected'));
 });
 
 test('with no business there is no connection pill', function (): void {

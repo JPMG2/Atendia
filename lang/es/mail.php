@@ -16,7 +16,7 @@ return [
 
     // El chrome que visten todos los correos (components/email/layout).
     'layout' => [
-        'rights' => '© :year Atendia. Todos los derechos reservados.',
+        'rights' => '© :year AtendIa. Todos los derechos reservados.',
     ],
 
     'new_company' => [
@@ -38,14 +38,14 @@ return [
         'next_integrations_body' => 'La salud de todo lo que la plataforma consume, reunida en un solo tablero.',
         'next_integrations_cta' => 'Ver las integraciones',
         'closing' => 'Gracias por confiar en nosotros.',
-        'team' => 'El equipo de Atendia',
+        'team' => 'El equipo de AtendIa',
         'reason' => 'Recibiste este correo porque esta dirección es el contacto registrado de la compañía.',
     ],
 
     'business_welcome' => [
         'subject' => ':name ya tiene su asistente',
         'preheader' => 'Tu asistente ya sabe presentarse. Conecta tu WhatsApp y empieza a atender por ti.',
-        'eyebrow' => 'Bienvenido a Atendia',
+        'eyebrow' => 'Bienvenido a AtendIa',
         'title' => 'Tu asistente ya está en marcha',
         'intro' => ':name ya tiene quién lo atienda: tu asistente sabe presentarse y está listo para aprender tu oficio.',
         'next' => 'Un solo paso lo separa de atender de verdad: conecta el WhatsApp de tu negocio.',
@@ -60,26 +60,26 @@ return [
         'gain_inbox_body' => 'Cada conversación vive en tu panel: se lee y se responde con un click, desde el negocio, tu casa o la playa.',
         'gain_inbox_cta' => 'Abrir mi panel',
         'closing' => 'Gracias por elegirnos para atender tu negocio.',
-        'team' => 'El equipo de Atendia',
-        'reason' => 'Recibiste este correo porque creaste tu negocio en Atendia con esta dirección.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque creaste tu negocio en AtendIa con esta dirección.',
     ],
 
     'referral_link' => [
-        'subject' => 'Tu enlace para ganar con Atendia',
+        'subject' => 'Tu enlace para ganar con AtendIa',
         'preheader' => 'Compártelo con otros negocios y gana descuentos en tu factura.',
-        'eyebrow' => 'Gana con Atendia',
+        'eyebrow' => 'Gana con AtendIa',
         'title' => 'Este enlace es tuyo: compártelo y gana',
-        'intro' => 'Cada negocio que llegue a Atendia gracias a :name te deja un premio.',
-        'body' => 'Reenvía este correo o comparte el enlace donde quieras: quien se registre con él estrena Atendia con :days días de prueba gratis, y cuando pague su primer mes tú ganas un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
+        'intro' => 'Cada negocio que llegue a AtendIa gracias a :name te deja un premio.',
+        'body' => 'Reenvía este correo o comparte el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes tú ganas un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
         'cta' => 'Ver mis referidos',
         'qr_alt' => 'Código QR de tu enlace de recomendación',
         'qr_hint' => 'Imprime este código y pégalo en tu mostrador: quien lo escanea llega con tu enlace.',
-        'reason' => 'Recibiste este correo porque tu negocio tiene su enlace de recomendación en Atendia.',
+        'reason' => 'Recibiste este correo porque tu negocio tiene su enlace de recomendación en AtendIa.',
     ],
 
     'contact_updated' => [
         'subject' => ':name tiene un nuevo correo de contacto',
-        'preheader' => 'Este es el nuevo punto de encuentro entre tu negocio y Atendia.',
+        'preheader' => 'Este es el nuevo punto de encuentro entre tu negocio y AtendIa.',
         'eyebrow' => 'Seguimos de la mano',
         'title' => 'Tu contacto quedó al día',
         'intro' => 'El correo de contacto de :name se actualizó, y esta es su nueva dirección.',
@@ -87,8 +87,8 @@ return [
         'alert' => 'Si no hiciste este cambio, entra a tu panel y revisa tus datos de contacto.',
         'cta' => 'Abrir mi panel',
         'closing' => 'Gracias por mantener tu negocio al día.',
-        'team' => 'El equipo de Atendia',
-        'reason' => 'Recibiste este correo porque esta dirección quedó como el contacto de :name en Atendia.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque esta dirección quedó como el contacto de :name en AtendIa.',
     ],
 
     'challenge' => [
@@ -100,7 +100,7 @@ return [
         'body' => 'El código vence en 10 minutos y sirve una sola vez.',
         'alert' => 'Si no intentaste entrar, no compartas este código con nadie y cambia tu contraseña.',
         'closing' => 'Cuidar tu cuenta también es atenderte bien.',
-        'reason' => 'Recibiste este correo porque tu cuenta de Atendia intentó iniciar sesión en un dispositivo nuevo.',
+        'reason' => 'Recibiste este correo porque tu cuenta de AtendIa intentó iniciar sesión en un dispositivo nuevo.',
     ],
 
     'new_device' => [
@@ -118,13 +118,13 @@ return [
         'not_me' => 'No fui yo — cerrar ese dispositivo',
         'cta' => 'Cambiar mi contraseña',
         'closing' => 'Cuidar tu cuenta también es atenderte bien.',
-        'team' => 'El equipo de Atendia',
-        'reason' => 'Recibiste este correo porque tu cuenta de Atendia inició sesión en un dispositivo nuevo.',
+        'team' => 'El equipo de AtendIa',
+        'reason' => 'Recibiste este correo porque tu cuenta de AtendIa inició sesión en un dispositivo nuevo.',
     ],
 
     'team' => [
         'invitation' => [
-            'subject' => ':business te invita a su equipo en Atendia',
+            'subject' => ':business te invita a su equipo en AtendIa',
             'preheader' => 'Crea tu contraseña y empieza a atender.',
             'eyebrow' => 'Invitación al equipo',
             'title' => 'Te sumaron al equipo de :business',
@@ -133,15 +133,15 @@ return [
             'body' => 'Crea tu contraseña y entra al panel. El enlace vence en :days días.',
             'cta' => 'Crear mi contraseña',
             'closing' => 'Si no esperabas esta invitación, ignora este correo.',
-            'reason' => 'Te llega porque :business te invitó a su equipo en Atendia.',
+            'reason' => 'Te llega porque :business te invitó a su equipo en AtendIa.',
         ],
     ],
 
     'account' => [
-        'team' => 'El equipo de Atendia',
+        'team' => 'El equipo de AtendIa',
 
         'password_reset' => [
-            'subject' => 'Restablece tu contraseña de Atendia',
+            'subject' => 'Restablece tu contraseña de AtendIa',
             'preheader' => 'Un clic y eliges una contraseña nueva.',
             'eyebrow' => 'Tu contraseña',
             'title' => 'Elige una contraseña nueva',
@@ -149,13 +149,13 @@ return [
             'body' => 'Toca el botón para elegir una nueva. El enlace vence en :minutes minutos.',
             'alert' => 'Si no lo pediste, ignora este correo: tu contraseña sigue igual.',
             'cta' => 'Restablecer mi contraseña',
-            'reason' => 'Recibiste este correo porque alguien pidió restablecer la contraseña de tu cuenta de Atendia.',
+            'reason' => 'Recibiste este correo porque alguien pidió restablecer la contraseña de tu cuenta de AtendIa.',
         ],
 
         'two_factor_eyebrow' => 'Aviso de seguridad',
         'two_factor_alert' => 'Si no fuiste tú, cambia tu contraseña ahora mismo.',
         'two_factor_cta' => 'Cambiar mi contraseña',
-        'two_factor_reason' => 'Recibiste este correo porque cambió la verificación en dos pasos de tu cuenta de Atendia.',
+        'two_factor_reason' => 'Recibiste este correo porque cambió la verificación en dos pasos de tu cuenta de AtendIa.',
         'two_factor_on' => [
             'subject' => 'Activaste la verificación en dos pasos',
             'preheader' => 'Desde ahora, los códigos de acceso llegan a tu WhatsApp.',
@@ -172,7 +172,7 @@ return [
         ],
 
         'verify' => [
-            'subject' => 'Verifica tu correo de Atendia',
+            'subject' => 'Verifica tu correo de AtendIa',
             'preheader' => 'Un clic y tu cuenta queda protegida.',
             'eyebrow' => 'Verificación',
             'title' => 'Verifica tu correo',
@@ -180,7 +180,7 @@ return [
             'body' => 'Es la que usamos para tus avisos de seguridad. El enlace vence en :minutes minutos.',
             'cta' => 'Verificar mi correo',
             'closing' => 'Así nos aseguramos de que tu cuenta llegue solo a ti.',
-            'reason' => 'Recibiste este correo porque pediste verificar tu dirección en Atendia.',
+            'reason' => 'Recibiste este correo porque pediste verificar tu dirección en AtendIa.',
         ],
 
         'email_change' => [
@@ -188,12 +188,12 @@ return [
             'preheader' => 'Un clic y este correo pasa a ser el de tu cuenta.',
             'eyebrow' => 'Confirmación',
             'title' => 'Confirma tu nuevo correo',
-            'intro' => 'Hola :name, pediste usar esta dirección para entrar a Atendia.',
+            'intro' => 'Hola :name, pediste usar esta dirección para entrar a AtendIa.',
             'body' => 'Toca el botón para confirmarla. El enlace vence en :minutes minutos y, hasta que lo uses, sigues entrando con tu correo actual.',
             'alert' => 'Si no pediste este cambio, ignora este correo: nada va a cambiar.',
             'cta' => 'Confirmar mi nuevo correo',
             'closing' => 'Así nos aseguramos de que tu cuenta llegue solo a ti.',
-            'reason' => 'Recibiste este correo porque alguien pidió usar esta dirección en una cuenta de Atendia.',
+            'reason' => 'Recibiste este correo porque alguien pidió usar esta dirección en una cuenta de AtendIa.',
         ],
 
         'email_notice' => [
@@ -207,24 +207,24 @@ return [
             'not_me' => 'No fui yo — cancelar el cambio',
             'cta' => 'Cambiar mi contraseña',
             'closing' => 'Cuidar tu cuenta también es atenderte bien.',
-            'reason' => 'Recibiste este correo porque es el correo de acceso actual de tu cuenta de Atendia.',
+            'reason' => 'Recibiste este correo porque es el correo de acceso actual de tu cuenta de AtendIa.',
         ],
 
         'email_updated' => [
             'subject' => 'Tu correo de acceso quedó al día',
-            'preheader' => 'Desde ahora entras a Atendia con esta dirección.',
+            'preheader' => 'Desde ahora entras a AtendIa con esta dirección.',
             'eyebrow' => 'Seguimos de la mano',
             'title' => 'Tu correo quedó al día',
-            'intro' => 'Hola :name, este es tu nuevo correo para entrar a Atendia:',
+            'intro' => 'Hola :name, este es tu nuevo correo para entrar a AtendIa:',
             'body' => 'Aquí van a llegar los avisos de seguridad y las novedades importantes de tu cuenta.',
             'alert' => 'Si no hiciste este cambio, entra a tu panel y revisa tus ajustes.',
             'cta' => 'Abrir mi panel',
             'closing' => 'Gracias por mantener tu cuenta al día.',
-            'reason' => 'Recibiste este correo porque esta dirección quedó como el acceso de tu cuenta de Atendia.',
+            'reason' => 'Recibiste este correo porque esta dirección quedó como el acceso de tu cuenta de AtendIa.',
         ],
 
         'password_changed' => [
-            'subject' => 'Tu contraseña de Atendia cambió',
+            'subject' => 'Tu contraseña de AtendIa cambió',
             'preheader' => 'Si fuiste tú, no hay nada que hacer.',
             'eyebrow' => 'Aviso de seguridad',
             'title' => 'Tu contraseña cambió',
@@ -233,11 +233,11 @@ return [
             'alert' => 'Si no fuiste tú, restablece tu contraseña ahora mismo: vas a cerrar cualquier acceso que no reconozcas.',
             'cta' => 'Restablecer mi contraseña',
             'closing' => 'Cuidar tu cuenta también es atenderte bien.',
-            'reason' => 'Recibiste este correo porque la contraseña de tu cuenta de Atendia cambió.',
+            'reason' => 'Recibiste este correo porque la contraseña de tu cuenta de AtendIa cambió.',
         ],
 
         'closed' => [
-            'subject' => 'Cerramos tu cuenta de Atendia',
+            'subject' => 'Cerramos tu cuenta de AtendIa',
             'preheader' => 'Tienes :days días para volver con todo tal como estaba.',
             'eyebrow' => 'Cuenta cerrada',
             'title' => 'Tu cuenta quedó cerrada',
@@ -246,7 +246,7 @@ return [
             'alert' => 'Si no fuiste tú, restaura tu cuenta ahora y cambia tu contraseña.',
             'cta' => 'Restaurar mi cuenta',
             'closing' => 'Gracias por el tiempo que atendimos juntos.',
-            'reason' => 'Recibiste este correo porque se cerró tu cuenta de Atendia.',
+            'reason' => 'Recibiste este correo porque se cerró tu cuenta de AtendIa.',
         ],
     ],
 
@@ -255,7 +255,7 @@ return [
         'cta' => 'Ir a Mis pagos',
         'cta_history' => 'Ver mis pagos',
         'closing' => 'Gracias por seguir atendiendo con nosotros.',
-        'reason' => 'Recibiste este correo porque es el correo de facturación de tu negocio en Atendia.',
+        'reason' => 'Recibiste este correo porque es el correo de facturación de tu negocio en AtendIa.',
 
         'upcoming' => [
             'subject' => 'Tu próximo pago es en :days días',

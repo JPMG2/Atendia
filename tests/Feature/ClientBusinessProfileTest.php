@@ -159,7 +159,7 @@ test('the menu offers every profile section as a child of my business', function
 test('the meter derives from the real profile and names what is missing', function (): void {
     $this->actingAs(User::factory()->create()->refresh());
 
-    Livewire::test('client.business-profile')
+    Livewire::test('my-business.index')
         ->assertSee(__('client.business.meter.title', ['percent' => 0]))
         ->assertSee(__('client.business.meter.social_media'));
 });
@@ -176,7 +176,7 @@ test('a complete profile swaps the meter for the celebration seal', function ():
 
     $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
 
-    Livewire::test('client.business-profile')
+    Livewire::test('my-business.index')
         ->assertSee(__('client.business.meter.complete_title'))
         ->assertDontSee(__('client.business.meter.count', ['done' => 4, 'total' => 4]));
 });

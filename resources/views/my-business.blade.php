@@ -1,3 +1,3 @@
 <x-app-layout>
-    <livewire:client.business-profile :section="$section ?? null" />
+    <livewire:my-business.index :section="$section ?? null" />
 </x-app-layout>
