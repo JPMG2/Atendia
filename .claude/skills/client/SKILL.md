@@ -13,8 +13,11 @@ user-invocable: true
 
 ## 0. Antes de tocar nada — cargar las skills
 
-Invocar con la herramienta Skill, en este orden, y leer TODOS los archivos de
-referencia que cada una trae (`reference/`, `rules/`):
+**Antes que todo**, leer entera `.ai/guidelines/no-mediocre.md` (reglas de
+trabajo: cero mediocridad) y aplicarla en toda la corrida.
+
+Después, invocar con la herramienta Skill, en este orden, y leer TODOS los
+archivos de referencia que cada una trae (`reference/`, `rules/`):
 
 1. `tailwindcss-development`
 2. `atendiadesign` — todo lo de `.claude/skills/atendiadesign/` (SKILL.md +
