@@ -24,6 +24,9 @@ class AssistantSkillSeeder extends Seeder
             ['key' => 'escalate', 'name' => 'Derivar a una persona', 'description' => 'Pasa la charla al equipo'],
             ['key' => 'remember_customer', 'name' => 'Recordar datos del cliente', 'description' => 'Guarda el nombre, el cumpleaños y otros datos que da el cliente'],
             ['key' => 'catalog_photos', 'name' => 'Fotos del catálogo', 'description' => 'Envía por WhatsApp las fotos de un producto o servicio'],
+            ['key' => 'agenda_slots', 'name' => 'Turnos libres', 'description' => 'Los huecos reales de la agenda, por día o los próximos'],
+            ['key' => 'agenda_book', 'name' => 'Reservar un turno', 'description' => 'Toma el horario elegido y lo confirma'],
+            ['key' => 'agenda_my_appointments', 'name' => 'Turnos del cliente', 'description' => 'Ver, cancelar o mover los turnos de quien escribe'],
         ];
 
         foreach ($skills as $order => $skill) {

@@ -54,6 +54,7 @@ new class extends Component
             'identidad' => 'client.section-identity',
             'ubicacion' => 'client.section-location',
             'horarios' => 'client.section-hours',
+            'turnos' => 'client.section-appointments',
             'contacto' => 'client.section-contact',
             'redes' => 'client.section-social',
             'facturacion' => 'client.section-billing',

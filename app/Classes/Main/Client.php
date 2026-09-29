@@ -28,6 +28,7 @@ class Client
         public readonly ?Statistics $statistics = null,
         public readonly ?Billing $billing = null,
         public readonly ?Team $team = null,
+        public readonly ?Agenda $agenda = null,
     ) {}
 
     /**
@@ -53,6 +54,7 @@ class Client
             $business === null ? null : new Statistics($business),
             $business === null ? null : new Billing($business),
             $business === null ? null : new Team($business),
+            $business === null ? null : new Agenda($business),
         );
     }
 

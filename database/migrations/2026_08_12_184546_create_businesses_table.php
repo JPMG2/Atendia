@@ -48,6 +48,11 @@ return new class extends Migration
             $table->foreignId('tax_condition_id')->nullable()->constrained()->restrictOnDelete()
                 ->comment('Condición fiscal del negocio; null = persona natural sin datos fiscales, válido');
             $table->string('tax_id', 20)->nullable()->comment('Número de identificación fiscal (RIF / CUIT), si lo tiene');
+            $table->string('booking_code', 12)->nullable()->unique()->comment('Código del enlace público de reservas; se genera al crear el negocio');
+            $table->boolean('appointments_enabled')->default(false)->comment('La agenda de turnos está encendida: la IA ofrece huecos y reserva');
+            $table->unsignedSmallInteger('appointment_capacity')->default(1)->comment('Cuántos turnos atiende a la vez (sillas, camillas, personas)');
+            $table->unsignedSmallInteger('appointments_per_day')->nullable()->comment('Tope de turnos por día; null = solo manda la capacidad');
+            $table->unsignedSmallInteger('appointment_slot_minutes')->default(30)->comment('Cuánto dura un turno cuando el servicio no declara su duración');
             $table->boolean('is_active')->default(true)->comment('Cortar el servicio sin borrar datos');
             $table->timestamp('suspended_at')->nullable()->comment('Suspendido por moderación de contenido: la IA calla y solo el admin lo levanta');
             $table->string('suspension_reason', 60)->nullable()->comment('Categoría de moderación que disparó la suspensión');

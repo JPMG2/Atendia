@@ -63,6 +63,14 @@ class Customer extends Model
         return $this->hasMany(Conversation::class);
     }
 
+    /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
     /** What the screen calls this person: the curated name wins over the pushName. */
     public function displayName(): ?string
     {

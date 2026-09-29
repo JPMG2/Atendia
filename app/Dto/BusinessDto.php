@@ -43,6 +43,10 @@ class BusinessDto implements FormData
         public ?int $tax_condition_id = null,
         public ?string $tax_id = null,
         public bool $is_active = true,
+        public bool $appointments_enabled = false,
+        public int $appointment_capacity = 1,
+        public ?int $appointments_per_day = null,
+        public int $appointment_slot_minutes = 30,
         public ?string $sector = null,
         public ?string $activity = null,
     ) {}
@@ -87,6 +91,10 @@ class BusinessDto implements FormData
             'tax_condition_id' => $this->tax_condition_id,
             'tax_id' => $this->tax_id,
             'is_active' => $this->is_active,
+            'appointments_enabled' => $this->appointments_enabled,
+            'appointment_capacity' => $this->appointment_capacity,
+            'appointments_per_day' => $this->appointments_per_day,
+            'appointment_slot_minutes' => $this->appointment_slot_minutes,
             'sector' => $this->sector,
             'activity' => $this->activity,
         ];
@@ -116,6 +124,10 @@ class BusinessDto implements FormData
             tax_condition_id: DtoCast::toNullableId($data['tax_condition_id'] ?? null),
             tax_id: DtoCast::toNullableString($data['tax_id'] ?? null),
             is_active: $data['is_active'] ?? true,
+            appointments_enabled: (bool) ($data['appointments_enabled'] ?? false),
+            appointment_capacity: (int) ($data['appointment_capacity'] ?? 1),
+            appointments_per_day: DtoCast::toNullableId($data['appointments_per_day'] ?? null),
+            appointment_slot_minutes: (int) ($data['appointment_slot_minutes'] ?? 30),
             sector: DtoCast::toNullableString($data['sector'] ?? null),
             activity: DtoCast::toNullableString($data['activity'] ?? null),
         );
@@ -154,6 +166,10 @@ class BusinessDto implements FormData
             'tax_condition_id' => $this->tax_condition_id,
             'tax_id' => DtoCast::squish($this->tax_id),
             'is_active' => $this->is_active,
+            'appointments_enabled' => $this->appointments_enabled,
+            'appointment_capacity' => $this->appointment_capacity,
+            'appointments_per_day' => $this->appointments_per_day,
+            'appointment_slot_minutes' => $this->appointment_slot_minutes,
         ];
     }
 }

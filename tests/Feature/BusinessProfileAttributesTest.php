@@ -18,9 +18,9 @@ test('the dto mirrors every column of the businesses table, so a profile slice c
     // cannot reach the table without reaching the DTO too.
     $columns = collect(Schema::getColumnListing('businesses'))
         ->diff(['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])
-        // The referral pair is machine-written by model hooks, like the audit
-        // trio: no profile form may ever carry it, so it stays out on purpose.
-        ->diff(['referral_code', 'referred_by_business_id'])
+        // The referral and booking codes are machine-written by model hooks,
+        // like the audit trio: no profile form may carry them.
+        ->diff(['referral_code', 'referred_by_business_id', 'booking_code'])
         // Only content moderation writes the suspension, and only the admin lifts it.
         ->diff(['suspended_at', 'suspension_reason', 'appeal_message', 'appealed_at']);
 

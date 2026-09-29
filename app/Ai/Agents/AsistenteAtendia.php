@@ -192,10 +192,36 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             derivación dirigido al equipo del negocio va SIEMPRE en español, sin
             importar el idioma del cliente: el equipo atiende en español.
             {$this->customerBriefing()}
+            {$this->agendaBriefing()}
             {$this->handoffBriefing()}
 
             {$contract->clock}
             INSTRUCCIONES;
+    }
+
+    /**
+     * Only for a business that gives slots: a bakery never reads a word
+     * about the agenda, and never pays for these lines.
+     */
+    private function agendaBriefing(): string
+    {
+        if ($this->business === null || ! $this->business->appointments_enabled) {
+            return '';
+        }
+
+        return <<<'TURNOS'
+
+            AGENDA DE TURNOS. Este negocio reserva turnos y vos los tomás.
+            Nunca ofrezcas ni prometas un horario de memoria: consultá los turnos
+            libres con tu herramienta de agenda, que mira la agenda en vivo.
+            Ofrecé 2 o 3 horarios concretos, no una lista larga. Reservá SOLO
+            cuando el cliente eligió uno, y después confirmale el día y la hora.
+            Si pide cambiar o cancelar, usá la herramienta de sus turnos.
+            Si pide un horario que no está libre, decile los que sí hay.
+            El día antes le llega un recordatorio: si contesta "confirmo" (o
+            similar), agradecé y no toques nada; si contesta "reprogramar",
+            ofrecele horarios libres y movelo con la herramienta de sus turnos.
+            TURNOS;
     }
 
     /**

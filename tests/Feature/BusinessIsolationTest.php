@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\BusinessHour;
 use App\Models\Conversation;
@@ -45,6 +46,7 @@ dataset('tenant models', [
     KnowledgeChunk::class,
     KnowledgeSuggestion::class,
     Customer::class,
+    Appointment::class,
     Conversation::class,
     ConversationMessage::class,
     Subscription::class,

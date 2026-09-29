@@ -40,6 +40,7 @@ return [
     'assistant_knowledge' => 'Conocimiento',
     'assistant_settings' => 'Configuración',
     'customers' => 'Clientes',
+    'agenda' => 'Agenda',
     'statistics' => 'Estadísticas',
     'referrals' => 'Gana con AtendIa',
     'conversations' => 'Conversaciones',

@@ -76,7 +76,7 @@ test('the seeder builds the blessed client menu in its logical order', function 
     // the catalog groups its two real screens since 2026-09-14.
     expect($tree->where('placement', 'main')->pluck('label_key')->values()->all())->toBe([
         'menu.home', 'menu.my_business',
-        'menu.catalog', 'menu.assistant', 'menu.conversations', 'menu.customers', 'menu.statistics', 'menu.whatsapp', 'menu.plan_payments', 'menu.referrals',
+        'menu.catalog', 'menu.assistant', 'menu.conversations', 'menu.customers', 'menu.agenda', 'menu.statistics', 'menu.whatsapp', 'menu.plan_payments', 'menu.referrals',
     ])->and($tree->firstWhere('label_key', 'menu.catalog')->childrenRecursive->pluck('label_key')->all())
         ->toBe(['menu.services', 'menu.products'])
         // "Plan y pagos" groups the plan and what it costs (2026-09-23).

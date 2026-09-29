@@ -104,7 +104,7 @@ return [
     'badge' => '{0} hoy|{1} 1 d|[2,*] :count d',
 
     'whatsapp' => [
-        'upcoming' => '🔔 *AtendIa*: tu próximo pago del plan :plan (:amount) vence el :date, en :days días. Págalo y sube el comprobante para que tu asistente siga atendiendo sin cortes: :url',
+        'upcoming' => '🔔 *AtendIa*: te avisamos con tiempo — tu plan :plan (:amount) se renueva el :date, en :days días. Cuando lo tengas listo, sube el comprobante en Mis pagos y tu asistente sigue atendiendo sin cortes: :url',
         'overdue' => '⚠️ *AtendIa*: el pago del plan :plan (:amount) está vencido. Tu asistente sigue atendiendo :days días más; después se pausa hasta que lo recibamos: :url',
         'paused' => '⏸️ *AtendIa*: pausamos tu asistente porque no recibimos el pago del plan :plan (:amount). No se borró nada: apenas se acredite, vuelve a atender: :url',
     ],

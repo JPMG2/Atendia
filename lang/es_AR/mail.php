@@ -86,8 +86,8 @@ return [
 
     'billing' => [
         'upcoming' => [
-            'preheader' => 'Pagalo antes para que tu asistente siga atendiendo sin cortes.',
-            'body' => 'Pagalo antes de esa fecha y subí el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
+            'preheader' => 'Con tiempo, para que tu asistente siga atendiendo sin cortes.',
+            'body' => 'Cuando lo tengas listo, subí el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
         ],
         'rejected' => [
             'preheader' => 'Revisá el motivo y volvé a enviarlo.',

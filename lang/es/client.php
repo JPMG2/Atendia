@@ -112,6 +112,25 @@ return [
             'remove_shift' => 'Quitar este turno',
         ],
 
+        'appointments' => [
+            'title' => 'Turnos',
+            'sub' => 'Si tu negocio atiende con turno, tu asistente ofrece los horarios libres y los reserva solo.',
+            'enabled' => 'Agenda de turnos',
+            'on' => 'Activa',
+            'off' => 'Apagada',
+            'capacity' => 'Turnos a la vez',
+            'capacity_hint' => 'Cuántas personas puedes atender en el mismo horario.',
+            'slot_minutes' => 'Duración',
+            'slot_minutes_hint' => 'Minutos de un turno, cuando el servicio no trae la suya.',
+            'per_day' => 'Tope por día',
+            'per_day_hint' => 'Máximo de turnos en un día. Vacío = solo manda la capacidad.',
+            'open' => 'Ver mi agenda',
+            'needs_hours' => 'Carga tus horarios de atención: sin ellos no hay horarios libres que ofrecer.',
+            'needs_services' => 'Marca en Servicios cuáles se reservan con turno.',
+            'ready' => '{1} 1 servicio se reserva con turno.|[2,*] :count servicios se reservan con turno.',
+            'saved' => 'Turnos actualizados.',
+        ],
+
         'contact' => [
             'title' => 'Contacto',
             'sub' => 'Otras vías además del WhatsApp, para tu perfil público.',

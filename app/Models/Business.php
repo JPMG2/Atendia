@@ -36,7 +36,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Company}, which is AtendIa itself — the one
  * issuing the invoice, a single row. Every operational record hangs off here.
  */
-#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])]
+#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])]
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */
@@ -60,7 +60,7 @@ class Business extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active'])
+            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
@@ -76,6 +76,10 @@ class Business extends Model
             'whatsapp_connected_at' => 'datetime',
             'handoff_level' => HandoffLevel::class,
             'is_active' => 'boolean',
+            'appointments_enabled' => 'boolean',
+            'appointment_capacity' => 'integer',
+            'appointments_per_day' => 'integer',
+            'appointment_slot_minutes' => 'integer',
             'suspended_at' => 'datetime',
             'appealed_at' => 'datetime',
             'deleted_at' => 'datetime',
@@ -92,6 +96,7 @@ class Business extends Model
     {
         static::creating(function (self $business): void {
             $business->referral_code ??= self::freshReferralCode();
+            $business->booking_code ??= self::freshCode('booking_code');
         });
 
         static::created(function (self $business): void {
@@ -115,19 +120,21 @@ class Business extends Model
     /** Unmistakable in a WhatsApp message: no lookalike 0/O/1/I characters. */
     private static function freshReferralCode(): string
     {
+        return self::freshCode('referral_code');
+    }
+
+    /** A code nobody can guess and nobody already has, for a public link. */
+    private static function freshCode(string $column): string
+    {
         do {
             $code = strtoupper(Str::random(8));
+            // Lookalikes out: these links get read aloud and typed by hand.
             $code = strtr($code, ['0' => '2', 'O' => '3', '1' => '4', 'I' => '5', 'L' => '6']);
-        } while (self::query()->where('referral_code', $code)->exists());
+        } while (self::query()->where($column, $code)->exists());
 
         return $code;
     }
 
-    /**
-     * Ties the newborn business to whoever shared the link. The code rides
-     * the session (same-visit signup) or the 30-day cookie; outside a web
-     * request — seeders, jobs, factories — both read empty and nothing sticks.
-     */
     private function adoptReferrer(): void
     {
         $code = session('atendia_ref') ?? request()->cookie('atendia_ref');
@@ -202,6 +209,21 @@ class Business extends Model
     public function referralLink(): string
     {
         return route('referral.landing', ['code' => $this->referral_code]);
+    }
+
+    /** The business behind a public booking code, only while it takes slots. */
+    public static function forBookingCode(string $code): ?self
+    {
+        return self::query()
+            ->where('booking_code', $code)
+            ->where('appointments_enabled', true)
+            ->first();
+    }
+
+    /** Where a customer books a slot without writing to anybody. */
+    public function bookingLink(): string
+    {
+        return route('booking.public', ['code' => $this->booking_code]);
     }
 
     /**
@@ -663,6 +685,14 @@ class Business extends Model
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);
+    }
+
+    /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
     }
 
     /**

@@ -48,6 +48,12 @@ return [
         'billing' => [
             'natural_hint' => '¿No tenés datos fiscales? Sin problema: tu factura sale a tu nombre, como persona natural.',
         ],
+        'appointments' => [
+            'sub' => 'Si tu negocio atiende con turno, tu asistente ofrece los horarios libres y los reserva solo.',
+            'capacity_hint' => 'Cuántas personas podés atender en el mismo horario.',
+            'needs_hours' => 'Cargá tus horarios de atención: sin ellos no hay horarios libres que ofrecer.',
+            'needs_services' => 'Marcá en Servicios cuáles se reservan con turno.',
+        ],
         'preview' => [
             'caption' => 'La descripción y el logo salen acá. Probá: editá y miralo cambiar.',
         ],

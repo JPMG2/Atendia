@@ -32,6 +32,7 @@ class MenuSeeder extends Seeder
             ['client.business.identity.title', 'sparkles', 'my-business.identidad'],
             ['client.business.location.title', 'map-pin', 'my-business.ubicacion'],
             ['client.business.hours.title', 'clock', 'my-business.horarios'],
+            ['client.business.appointments.title', 'calendar-check', 'my-business.turnos'],
             ['client.business.contact.title', 'at-sign', 'my-business.contacto'],
             ['client.business.social.title', 'share-2', 'my-business.redes'],
             ['client.business.billing.title', 'receipt', 'my-business.facturacion'],
@@ -59,15 +60,18 @@ class MenuSeeder extends Seeder
         Menu::create(['label_key' => 'menu.conversations', 'icon' => 'message-circle', 'route_name' => 'conversations', 'sort_order' => 5]);
         // Beside the inbox on purpose: the flow and the asset it leaves behind.
         Menu::create(['label_key' => 'menu.customers', 'icon' => 'users', 'route_name' => 'customers', 'sort_order' => 6]);
+        // Only a business that gives slots sees it: the navigation drops the
+        // item when the agenda is off, so a bakery never reads "Agenda".
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.agenda', 'icon' => 'calendar-check', 'route_name' => 'agenda', 'sort_order' => 7]);
         // Reading screens ride together: statistics right after the inbox.
-        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 7]);
-        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 8]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.statistics', 'icon' => 'bar-chart-3', 'route_name' => 'statistics', 'sort_order' => 8]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.whatsapp', 'icon' => 'whatsapp', 'route_name' => 'whatsapp', 'sort_order' => 9]);
         // A parent like "Mi negocio" (her call, 2026-09-23): the plan and what
         // it costs live together, the Tiendanube "Planes y pagos" pattern.
-        $planPayments = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.plan_payments', 'icon' => 'gem', 'sort_order' => 9]);
+        $planPayments = Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.plan_payments', 'icon' => 'gem', 'sort_order' => 10]);
         Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.plan', 'icon' => 'gem', 'route_name' => 'my-plan', 'sort_order' => 1]);
         Menu::create(['parent_id' => $planPayments->id, 'label_key' => 'menu.my_payments', 'icon' => 'receipt', 'route_name' => 'my-payments', 'sort_order' => 2]);
-        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 10]);
+        Menu::create(['permission' => 'manage-business', 'label_key' => 'menu.referrals', 'icon' => 'gift', 'route_name' => 'referrals', 'sort_order' => 11]);
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'settings', 'placement' => 'bottom', 'sort_order' => 1]);

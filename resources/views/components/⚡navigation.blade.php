@@ -45,7 +45,23 @@ new class extends Component
             $this->overlayModerationBadge($tree);
         }
 
-        return $tree;
+        return $this->withoutAgendaWhenOff($tree);
+    }
+
+    /**
+     * The agenda is not for every business: with it off the item goes, and
+     * the switch that brings it back lives in "Mi negocio · Turnos".
+     *
+     * @param  Collection<int, Menu>  $items
+     * @return Collection<int, Menu>
+     */
+    private function withoutAgendaWhenOff($items)
+    {
+        if (Auth::user()?->business?->appointments_enabled) {
+            return $items;
+        }
+
+        return $items->reject(fn (Menu $item): bool => $item->route_name === 'agenda')->values();
     }
 
     /**

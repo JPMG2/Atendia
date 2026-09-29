@@ -1,9 +1,12 @@
 <?php
 
 declare(strict_types=1);
+use App\Ai\Tools\BookCustomerAppointment;
 use App\Ai\Tools\CheckBusinessHours;
+use App\Ai\Tools\CheckFreeSlots;
 use App\Ai\Tools\EscalateToHuman;
 use App\Ai\Tools\GetBusinessContact;
+use App\Ai\Tools\ManageCustomerAppointments;
 use App\Ai\Tools\OwnerBirthdays;
 use App\Ai\Tools\OwnerConversations;
 use App\Ai\Tools\OwnerPlanUsage;
@@ -236,6 +239,8 @@ return [
         'birthday_greetings' => '09:15',
         'whatsapp_digest' => '20:30',
         'billing_cycle' => '09:00',
+        // The day-before nudge travels this many hours before the slot.
+        'appointment_reminder_hours' => 24,
         'knowledge_digest' => ['weekday' => 1, 'time' => '09:30'],
     ],
 
@@ -270,6 +275,9 @@ return [
             'escalate' => EscalateToHuman::class,
             'remember_customer' => RememberCustomerFact::class,
             'catalog_photos' => SendCatalogPhotos::class,
+            'agenda_slots' => CheckFreeSlots::class,
+            'agenda_book' => BookCustomerAppointment::class,
+            'agenda_my_appointments' => ManageCustomerAppointments::class,
             'owner_conversations' => OwnerConversations::class,
             'owner_birthdays' => OwnerBirthdays::class,
             'owner_statistics' => OwnerStatistics::class,

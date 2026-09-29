@@ -30,6 +30,7 @@ return new class extends Migration
         'knowledge_chunks',
         'knowledge_suggestions',
         'customers',
+        'appointments',
         'conversations',
         'conversation_messages',
         'conversation_analyses',

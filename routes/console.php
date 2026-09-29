@@ -18,6 +18,8 @@ Schedule::command('atendia:whatsapp-digest')->everyFifteenMinutes();
 Schedule::command('atendia:knowledge-digest')->everyFifteenMinutes();
 Schedule::command('atendia:birthday-greetings')->everyFifteenMinutes();
 Schedule::command('atendia:handoff-reminders')->everyTenMinutes();
+// The day-before nudge for tomorrow's bookings; each one leaves once.
+Schedule::command('atendia:appointment-reminders')->everyFifteenMinutes();
 // Finished threads get read whole once: questions, who solved them, mood.
 Schedule::command('atendia:analyze-conversations')->everyTenMinutes();
 Schedule::command('atendia:retry-ai-backlog')->everyThirtyMinutes();

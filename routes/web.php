@@ -70,11 +70,22 @@ Route::get('/negocio', fn () => view('my-business'))
 // One deep link per profile section (LinkedIn-style "update just this piece"):
 // same screen, one card. Named one by one because the menu resolves bare
 // route names, and the literal slug is what keeps the component lookup safe.
-foreach (['identidad', 'ubicacion', 'horarios', 'contacto', 'redes', 'facturacion'] as $slug) {
+foreach (['identidad', 'ubicacion', 'horarios', 'turnos', 'contacto', 'redes', 'facturacion'] as $slug) {
     Route::get("/negocio/{$slug}", fn () => view('my-business', ['section' => $slug]))
         ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
         ->name("my-business.{$slug}");
 }
+
+// The public booking link: no session, so it carries its own throttle. The
+// code is the only key; a wrong one is a dead link, never a listing.
+Route::get('/reservar/{code}', fn (string $code) => view('booking', ['code' => $code]))
+    ->middleware('throttle:20,1')
+    ->name('booking.public');
+
+// "Agenda": the day's bookings and the free hours the assistant offers.
+Route::get('/agenda', fn () => view('agenda'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
+    ->name('agenda');
 
 // Services and products of the business: living mock-ups behind the same lock.
 Route::get('/servicios', fn () => view('my-services'))

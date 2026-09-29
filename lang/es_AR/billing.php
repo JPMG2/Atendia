@@ -26,7 +26,7 @@ return [
     ],
 
     'whatsapp' => [
-        'upcoming' => '🔔 *AtendIa*: tu próximo pago del plan :plan (:amount) vence el :date, en :days días. Pagalo y subí el comprobante para que tu asistente siga atendiendo sin cortes: :url',
+        'upcoming' => '🔔 *AtendIa*: te avisamos con tiempo — tu plan :plan (:amount) se renueva el :date, en :days días. Cuando lo tengas listo, subí el comprobante en Mis pagos y tu asistente sigue atendiendo sin cortes: :url',
     ],
 
 ];

@@ -259,10 +259,10 @@ return [
 
         'upcoming' => [
             'subject' => 'Tu próximo pago es en :days días',
-            'preheader' => 'Págalo antes para que tu asistente siga atendiendo sin cortes.',
+            'preheader' => 'Con tiempo, para que tu asistente siga atendiendo sin cortes.',
             'title' => 'Tu próximo pago es en :days días',
             'intro' => 'Hola :name, el :date se renueva tu plan :plan. Este es el monto:',
-            'body' => 'Págalo antes de esa fecha y sube el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
+            'body' => 'Cuando lo tengas listo, sube el comprobante en Mis pagos: así tu asistente sigue atendiendo sin cortes.',
         ],
 
         'overdue' => [

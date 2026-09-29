@@ -40,8 +40,8 @@ test('every card wears the unsaved-changes pill wiring', function (): void {
 
     $response = $this->get(route('my-business'))->assertSuccessful();
 
-    expect(substr_count($response->getContent(), 'x-data="sectionDirty"'))->toBe(6)
-        ->and(substr_count($response->getContent(), "'is-idle': ! dirty"))->toBe(6)
+    expect(substr_count($response->getContent(), 'x-data="sectionDirty"'))->toBe(7)
+        ->and(substr_count($response->getContent(), "'is-idle': ! dirty"))->toBe(7)
         ->and($response->getContent())->toContain(__('client.business.unsaved_pill'));
 });
 

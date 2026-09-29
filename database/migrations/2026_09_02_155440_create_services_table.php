@@ -51,6 +51,10 @@ return new class extends Migration
 
             $table->unsignedSmallInteger('duration_minutes')->nullable();
 
+            // Only a bookable service shows up as free hours: a product-like
+            // service (a cake, a repair quote) has a duration and no agenda.
+            $table->boolean('is_bookable')->default(false)->comment('Se reserva con turno en la agenda');
+
             // Values of the type's attribute set, keyed by service_attribute_id
             // (never by code: renaming a code must not orphan values).
             $table->jsonb('attribute_values')->nullable();
