@@ -1262,6 +1262,17 @@ lo recuerda cuando el mensaje reclama una regla.
   ESCRIBIR vistas/CSS por Bash (sed/python/redirección) — por esa vía ningún hook
   PostToolUse de las reglas de oro corría. Nació el 2026-09-27 (visor de fotos de B3
   hecho sin la skill y editado por scripts). Instalado por la dueña, probado 8/8.
+- **La skill de la corrida nocturna conoce todos sus candados** → §3.1 de
+  `.claude/skills/client/SKILL.md` · test guardián
+  `tests/Feature/GoldenRulesClientSkillSyncTest.php`: falla si un hook de
+  `.claude/settings.json` no está nombrado en esa sección, si la sección nombra
+  un script que ya no corre, o si una cifra escrita ahí (los guardianes
+  `Write|Edit`, los puntos auditados) dejó de coincidir con lo que cuenta.
+  Nació el 2026-09-29, al sumar los hooks a la skill: los 17 `check-*` estaban
+  descritos por tema pero sin nombre, e `inject-work-rules.sh` no figuraba en
+  ninguna parte — un candado que la corrida no conoce no lo cumple nadie. Es la
+  capa B de una regla que vive en un `.md`: acá no hay hook, porque el que
+  edita la skill es el mismo agente que corre la suite.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 
