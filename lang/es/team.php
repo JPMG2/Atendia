@@ -73,6 +73,7 @@ return [
         'department_saved' => 'Departamento :name guardado.',
         'department_deleted' => 'Departamento eliminado.',
         'plan_needed' => 'Los departamentos vienen con el plan Negocio.',
+        'seats_full' => 'Tu plan :plan permite :cap personas en el panel, tu cuenta incluida, y ya están todas. Quita a alguien, cancela una invitación pendiente o cambia de plan.',
     ],
 
     'join' => [
@@ -87,6 +88,7 @@ return [
         'expired_title' => 'Esta invitación ya no es válida',
         'expired_body' => 'Venció o ya se usó. Pídele a quien te invitó que te la reenvíe desde Equipo.',
         'taken' => 'Ese correo ya tiene una cuenta en AtendIa. Entra con él o pide que te inviten con otro.',
+        'seats_full' => 'El equipo de :business ya tiene todos los lugares de su plan ocupados. Pídele que libere uno y vuelve a abrir este enlace.',
     ],
 
     'department' => [

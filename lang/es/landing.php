@@ -331,7 +331,7 @@ return [
             'desc' => 'Tu asistente atendiendo desde el primer día.',
             'cta' => 'Crear mi asistente',
             // Solo lo que no es un número del plan: los números salen de la tabla plans.
-            'extras' => ['Agenda o catálogo', 'Usuarios del panel sin límite'],
+            'extras' => ['Agenda o catálogo'],
         ],
         'negocio' => [
             'desc' => 'Para el negocio que conversa todos los días.',

@@ -40,7 +40,7 @@ class OwnerPlanUsage implements OwnerSkillTool
                 ? 'Minutos de audio este mes: '.(int) ceil($this->business->audioSecondsThisMonth() / 60)." de {$plan->audioMinutesPerMonth}."
                 : 'El plan no incluye notas de voz.',
             'Consultas a este asistente este mes: '.$this->business->askQuestionsThisMonth()." de {$plan->askPerMonth}.",
-            "Números de WhatsApp incluidos: {$plan->whatsappNumbers}.",
+            'Personas en el panel: '.$this->business->teamSeatsUsed()." de {$plan->teamSeats} (tu cuenta incluida).",
             'Pantalla: '.route('my-plan'),
         ]));
     }

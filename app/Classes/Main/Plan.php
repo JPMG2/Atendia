@@ -19,7 +19,7 @@ final class Plan
     /** Yearly billing pays ten months: two free, the same promise everywhere. */
     private const int PAID_MONTHS_PER_YEAR = 10;
 
-    /** @param array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool} $limits */
+    /** @param array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -33,8 +33,9 @@ final class Plan
         get => (int) $this->limits['conversations_per_month'];
     }
 
-    public int $whatsappNumbers {
-        get => (int) $this->limits['whatsapp_numbers'];
+    /** People who may sign into the panel, the owner included: the floor plan is the owner alone. */
+    public int $teamSeats {
+        get => (int) $this->limits['team_seats'];
     }
 
     public int $messagesPerHour {
@@ -132,7 +133,7 @@ final class Plan
     }
 
     /**
-     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool}>
      *
      * @throws RuntimeException
      */
@@ -199,7 +200,7 @@ final class Plan
 
             return array_values(array_filter([
                 ['key' => 'conversations', 'label' => __('plan.features.conversations', ['cap' => number_format($this->conversationsPerMonth, 0, ',', '.')]), 'value' => $this->conversationsPerMonth],
-                ['key' => 'numbers', 'label' => trans_choice('plan.features.numbers', $this->whatsappNumbers, ['cap' => $this->whatsappNumbers]), 'value' => $this->whatsappNumbers],
+                ['key' => 'seats', 'label' => trans_choice('plan.features.seats', $this->teamSeats, ['cap' => $this->teamSeats]), 'value' => $this->teamSeats],
                 ['key' => 'pace', 'label' => __('plan.features.pace', ['cap' => $this->messagesPerHour]), 'value' => $this->messagesPerHour],
                 $this->allowsAudio
                     ? ['key' => 'audio', 'label' => __('plan.features.audio', ['cap' => $this->audioMinutesPerMonth]), 'value' => $this->audioMinutesPerMonth]

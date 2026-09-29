@@ -59,6 +59,25 @@ class Team
         get => $this->business->plan()->hasDepartments;
     }
 
+    /**
+     * The plan's seats: everybody in the panel, the owner included, plus the
+     * offers still open, against the cap.
+     *
+     * @var array{used: int, cap: int, plan: string}
+     */
+    public array $seats {
+        get => [
+            'used' => $this->business->teamSeatsUsed(),
+            'cap' => $this->business->plan()->teamSeats,
+            'plan' => $this->business->plan()->code,
+        ];
+    }
+
+    public function canOfferSeatTo(string $email): bool
+    {
+        return $this->business->canOfferSeatTo($email);
+    }
+
     /** @param  array{name: string, email: string, whatsapp: ?string, department_ids: list<int>}  $validated */
     public function invite(array $validated, User $inviter): TeamInvitation
     {

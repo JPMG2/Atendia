@@ -985,11 +985,39 @@ Blindada: test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` + hook
 - Lo que no es una cifra del plan (ej. "Agenda o catálogo") vive en
   `landing.pricing.{code}.extras`.
 
+## Una fuente no alcanza: la cifra tiene que ser VERDAD (2026-09-29)
+
+> Una sola fuente evita que dos pantallas se contradigan **entre sí**. No evita
+> que el sistema entero contradiga **lo que vende**: "2 números de WhatsApp"
+> viajó meses de la landing a "Mi plan", coherente en las tres pantallas y falso
+> en el producto. Lo cazó la dueña, no la suite.
+
+Blindada: test guardián `tests/Feature/GoldenRulesPlanPromiseTest.php`. Toda
+cifra que una ficha vende cae en **exactamente un cajón**, y el guardián se pone
+rojo si aparece una cuarta sin clasificar:
+
+- **`LOCKS`** — dónde se hace cumplir (archivo real, que además tiene que seguir
+  leyendo el dial de `Plan`: si se renombra o se vacía, el test cae).
+- **`SOFT`** — blanda **a propósito**, con la decisión escrita (las
+  conversaciones del mes no cortan: ese WhatsApp es la caja del cliente).
+- **`PENDING`** — se vende sin nada detrás. Es deuda: una entrada **sale** de la
+  lista cuando se construye su candado, y sumar una es una edición deliberada
+  que alguien tiene que escribir.
+
+Dos cosas que NUNCA cuentan como candado (`PRINTS_ONLY`): el skill que le
+**recita** el plan a la dueña (`OwnerPlanUsage`) y las fichas/medidores de
+`components/plan/`. Mostrar la cifra no es hacerla cumplir.
+
+El punto 11 de la skill `client` lo audita cada noche: una promesa sin candado se
+**reporta** en el log, no se arregla sola — el cupo lo decide la dueña.
+
 ## Checklist
 
 - [ ] ¿Precio, cupo o días de prueba en un Blade/lang? → sale de `Plan`.
 - [ ] ¿Ficha nueva de planes? → usa `$plan->features`, no arma viñetas propias.
-- [ ] `./vendor/bin/pest --filter=GoldenRulesPlanSource` en verde.
+- [ ] ¿Cifra nueva vendida? → su cajón en `GoldenRulesPlanPromiseTest` (`LOCKS`,
+      `SOFT` con razón, o `PENDING` como deuda declarada).
+- [ ] `./vendor/bin/pest --filter="GoldenRulesPlanSource|GoldenRulesPlanPromise"` en verde.
 
 === .ai/queries-en-el-modelo rules ===
 
@@ -1199,6 +1227,13 @@ lo recuerda cuando el mensaje reclama una regla.
   herramienta es skill, está en el config y en el seeder, y ningún agente la
   instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
   criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
+- **Lo que el plan promete, el sistema lo cumple** → `.ai/guidelines/planes-fuente-unica.md`
+  §"Una fuente no alcanza" · test guardián `tests/Feature/GoldenRulesPlanPromiseTest.php`
+  (cada cifra vendida en `LOCKS`, `SOFT` con su razón o `PENDING` como deuda) ·
+  punto 11 de la skill `client`, que la audita cada noche. Nació el 2026-09-29:
+  "2 números de WhatsApp" viajó meses coherente en tres pantallas y falso en el
+  producto, y lo cazó la dueña. Lección: las 15 reglas miraban CÓMO se escribe el
+  código y ninguna miraba la PROMESA.
 - **Planes con UNA sola fuente (tabla `plans`)** → `.ai/guidelines/planes-fuente-unica.md` ·
   test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` · hook
   `.claude/hooks/check-plan-source-golden-rules.sh`. Patrones espejados (tocar de a

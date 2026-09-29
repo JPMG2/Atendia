@@ -189,7 +189,7 @@ test('the plan cards light up the assistant on the tiers that include it', funct
         ->assertSee('pricing-ai', false)
         ->assertSee(__('landing.pricing.ask_title'))
         ->assertSeeInOrder(['pricing-ai-number">100', 'pricing-ai-number">500'], false)
-        ->assertSee(trans_choice('plan.features.numbers', 4, ['cap' => 4]));
+        ->assertSee(trans_choice('plan.features.seats', 4, ['cap' => 4]));
 
     $user = askClient();
     $user->business->subscription->update(['trial_ends_at' => now()->subDay()]);

@@ -36,7 +36,7 @@ archivos de referencia que cada una trae (`reference/`, `rules/`):
   CAUSA y se anota por qué volvió.
 - Si el log dice que algo quedó pendiente, se empieza por eso.
 
-## 2. Qué se revisa (los 10 puntos)
+## 2. Qué se revisa (los 11 puntos)
 
 1. Skill `tailwindcss-development` cargada y aplicada.
 2. Skill `atendiadesign` completa cargada y aplicada (tokens, dark/light,
@@ -63,6 +63,15 @@ archivos de referencia que cada una trae (`reference/`, `rules/`):
     `resources/views/components/<área>/`, su opción en el menú (tabla `menus`,
     `panel = client`, sembrada en su seeder) y su nombre (archivo, carpeta,
     clase, ruta) **en inglés**. El texto visible sigue en español por `__()`.
+11. **Lo que el plan promete, el sistema lo cumple.** Que una cifra salga de
+    `Plan` (punto 7) no la hace verdad: tres pantallas pueden decir "2 números"
+    de forma perfectamente coherente y falsa — pasó, y lo cazó la dueña, no la
+    suite (2026-09-29). Cada cifra o promesa vendida (landing incluida, aunque
+    esté fuera del panel) necesita **un candado en código** que la haga cumplir,
+    declarado en `tests/Feature/GoldenRulesPlanPromiseTest.php`: `LOCKS` (dónde
+    se hace cumplir), `SOFT` (blando a propósito, con su razón) o `PENDING`
+    (deuda). **Una promesa sin candado se reporta en el log como hallazgo**, no
+    se arregla sola — el cupo lo decide la dueña.
 
 ## 3. Reglas de oro — TODAS, sin excepción
 
@@ -73,7 +82,7 @@ property hooks, planes de una fuente, moderación, reportes, contrato IA,
 migraciones seguras (**jamás** `migrate:fresh/refresh/reset` ni `db:wipe`
 sobre `atendia`; columna nueva = rediseñar la create).
 
-- Hacer **solo** lo que piden estos 10 puntos. Una mejora que no está acá se
+- Hacer **solo** lo que piden estos 11 puntos. Una mejora que no está acá se
   anota en el log como "mejora para decidir", no se implementa.
 - Comandos de Laravel dentro del contenedor:
   `docker exec -w /var/www/html atendia-app <comando>`.
@@ -105,7 +114,7 @@ COMMIT: <subject en inglés, imperativo, ≤ 72 caracteres>
 ESTADO: COMPLETO | PENDIENTE
 ```
 
-- `ESTADO: COMPLETO` solo si los 10 puntos quedaron revisados en todo el panel
+- `ESTADO: COMPLETO` solo si los 11 puntos quedaron revisados en todo el panel
   y no queda nada por arreglar. Si no, `PENDIENTE` (el script lanza otra corrida).
 - La respuesta final de la sesión incluye además "Checklist de salida",
   "Verificación visual" y "Mejoras para decidir" (lo exige el hook Stop).

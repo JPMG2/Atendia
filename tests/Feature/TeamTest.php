@@ -241,3 +241,104 @@ test('an existing department opens its sheet with its own hours loaded', functio
         ->assertSet('department.data.week.1.opens', '09:00')
         ->assertSee(__('team.hours.label'));
 });
+
+test('the plan seats count everybody in the panel and the owner holds the first one', function (): void {
+    $owner = teamOwner();
+    $business = $owner->business;
+
+    // On trial the business sits on the plan that sells 2 seats, and the owner is one.
+    expect($business->teamSeatsUsed())->toBe(1)
+        ->and($business->hasTeamSeatLeft())->toBeTrue();
+
+    teamAgent($business);
+
+    expect($business->teamSeatsUsed())->toBe(2)
+        ->and($business->hasTeamSeatLeft())->toBeFalse();
+
+    $this->actingAs($owner);
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', 'nuevo@shop.test')
+        ->call('saveMember')
+        ->assertDispatched('notify', type: 'warning');
+
+    expect(TeamInvitation::query()->count())->toBe(0);
+    Mail::assertNothingQueued();
+});
+
+test('the floor plan is the owner alone: it has no seat to offer', function (): void {
+    $owner = teamOwner();
+    // Expired trial: the floor plan sells a single seat, and the owner holds it.
+    $owner->business->subscription->update(['trial_ends_at' => now()->subDay()]);
+
+    expect($owner->business->hasTeamSeatLeft())->toBeFalse();
+
+    $this->actingAs($owner);
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', 'nuevo@shop.test')
+        ->call('saveMember')
+        ->assertDispatched('notify', type: 'warning');
+
+    expect(TeamInvitation::query()->count())->toBe(0);
+});
+
+test('an address that already holds an open offer is invited again with the seats full', function (): void {
+    $owner = teamOwner();
+    $business = $owner->business;
+    TeamInvitation::factory()->create(['business_id' => $business->id, 'email' => 'ana@shop.test']);
+
+    expect($business->hasTeamSeatLeft())->toBeFalse()
+        ->and($business->canOfferSeatTo('ana@shop.test'))->toBeTrue();
+
+    $this->actingAs($owner);
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', 'ana@shop.test')
+        ->call('saveMember')
+        ->assertDispatched('notify', type: 'success');
+
+    expect(TeamInvitation::query()->count())->toBe(1);
+});
+
+test('a plan that shrank under an offer already sent stops its link', function (): void {
+    $owner = teamOwner();
+    $business = $owner->business;
+    $token = 'token-that-travels-only-in-the-mail';
+    TeamInvitation::factory()->create([
+        'business_id' => $business->id,
+        'email' => 'lucia@shop.test',
+        'token_hash' => TeamInvitation::hashToken($token),
+    ]);
+
+    // Expired trial: the floor plan sells a single seat, and the owner holds it.
+    $business->subscription->update(['trial_ends_at' => now()->subDay()]);
+
+    $this->get(route('team.join', ['token' => $token]))->assertOk()->assertSee(__('team.join.seats_full', ['business' => $business->name]));
+
+    livewire('team.join', ['token' => $token])
+        ->set('form.name', 'Lucía Paredes')
+        ->set('form.password', 'Secreta-2026!')
+        ->set('form.password_confirmation', 'Secreta-2026!')
+        ->call('join')
+        ->assertNoRedirect();
+
+    expect(User::query()->where('email', 'lucia@shop.test')->exists())->toBeFalse()
+        ->and(TeamInvitation::query()->count())->toBe(1);
+});
+
+test('the freed seat comes back: removing an agent opens the door again', function (): void {
+    $owner = teamOwner();
+    $business = $owner->business;
+    $agent = teamAgent($business);
+
+    expect($business->hasTeamSeatLeft())->toBeFalse();
+
+    Client::for($owner)->team->remove($agent->id);
+
+    expect($business->hasTeamSeatLeft())->toBeTrue()
+        ->and($business->teamSeatsUsed())->toBe(1);
+});

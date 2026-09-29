@@ -246,9 +246,9 @@ new class extends Component
 
         <div class="plan-meter">
             <div class="plan-meter-head">
-                <span>{{ __('plan.meters.numbers') }}</span>
+                <span>{{ __('plan.meters.seats') }}</span>
                 <b>
-                    {{ __('plan.meters.numbers_of', ['used' => $this->business?->isConnected() ? 1 : 0, 'cap' => $this->plan->whatsappNumbers]) }}
+                    {{ __('plan.meters.seats_of', ['used' => $this->business?->teamSeatsUsed() ?? 0, 'cap' => $this->plan->teamSeats]) }}
                 </b>
             </div>
         </div>

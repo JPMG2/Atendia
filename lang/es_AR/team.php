@@ -22,6 +22,7 @@ return [
         'welcome' => 'Ya sos parte del equipo de :business.',
         'expired_body' => 'Venció o ya se usó. Pedile a quien te invitó que te la reenvíe desde Equipo.',
         'taken' => 'Ese correo ya tiene una cuenta en AtendIa. Entrá con él o pedí que te inviten con otro.',
+        'seats_full' => 'El equipo de :business ya tiene todos los lugares de su plan ocupados. Pedile que libere uno y volvé a abrir este enlace.',
     ],
 
     'department' => [
@@ -38,5 +39,9 @@ return [
 
     'invite' => [
         'departments_hint' => 'Podés cambiarlos cuando quieras.',
+    ],
+
+    'notify' => [
+        'seats_full' => 'Tu plan :plan permite :cap personas en el panel, tu cuenta incluida, y ya están todas. Quitá a alguien, cancelá una invitación pendiente o cambiá de plan.',
     ],
 ];

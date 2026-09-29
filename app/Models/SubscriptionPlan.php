@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
  * A row of the plan catalog. Read through App\Classes\Main\Plan, never
  * directly: the catalog is cached whole and every screen asks the same copy.
  */
-#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'whatsapp_numbers', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'trial_days', 'is_featured'])]
+#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'trial_days', 'is_featured'])]
 class SubscriptionPlan extends Model
 {
     private const string CACHE_KEY = 'plans.catalog';
@@ -28,7 +28,7 @@ class SubscriptionPlan extends Model
     /**
      * Every plan by code, floor first. Cached until a row changes.
      *
-     * @return array<string, array{price: int, conversations_per_month: int, whatsapp_numbers: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool}>
      */
     public static function catalog(): array
     {
@@ -38,7 +38,7 @@ class SubscriptionPlan extends Model
             ->mapWithKeys(fn (self $plan): array => [$plan->code => [
                 'price' => (int) $plan->price,
                 'conversations_per_month' => (int) $plan->conversations_per_month,
-                'whatsapp_numbers' => (int) $plan->whatsapp_numbers,
+                'team_seats' => (int) $plan->team_seats,
                 'messages_per_hour' => (int) $plan->messages_per_hour,
                 'audio_minutes_per_month' => (int) $plan->audio_minutes_per_month,
                 'statistics' => (string) $plan->statistics,

@@ -54,6 +54,15 @@ class TeamMemberForm extends BaseForm
         return $this->tryAction(function () use ($team, $validated): NotificationDto {
 
             if ($this->editingId === null) {
+                $seats = $team->seats;
+
+                if (! $team->canOfferSeatTo($validated['email'])) {
+                    return new NotificationDto(__('team.notify.seats_full', [
+                        'plan' => __('plan.names.'.$seats['plan']),
+                        'cap' => $seats['cap'],
+                    ]), NotificationType::Warning);
+                }
+
                 $team->invite($validated, Auth::user());
 
                 return new NotificationDto(__('team.notify.invited', ['email' => $validated['email']]), NotificationType::Success);

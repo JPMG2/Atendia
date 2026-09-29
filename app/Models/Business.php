@@ -494,6 +494,33 @@ class Business extends Model
     }
 
     /**
+     * What the plan's seats count: everybody who signs into the panel — the
+     * owner's own seat is the first one — plus the invitations still open,
+     * because an offered seat is taken until it is answered.
+     */
+    public function teamSeatsUsed(): int
+    {
+        return $this->users()->count() + $this->teamInvitations()->count();
+    }
+
+    public function hasTeamSeatLeft(): bool
+    {
+        return $this->teamSeatsUsed() < $this->plan()->teamSeats;
+    }
+
+    /** Re-offering a seat already held by this address costs nothing: it is the same seat. */
+    public function canOfferSeatTo(string $email): bool
+    {
+        return $this->hasTeamSeatLeft() || $this->teamInvitations()->where('email', $email)->exists();
+    }
+
+    /** A downgrade can shrink the plan under an offer already sent: that link stops working. */
+    public function canFillOfferedSeat(): bool
+    {
+        return $this->teamSeatsUsed() <= $this->plan()->teamSeats;
+    }
+
+    /**
      * The team member whose own phone just wrote, if any. Same suffix match
      * as the owner's: a member treated as a customer would get the assistant
      * answering their relay instead of the customer receiving it.

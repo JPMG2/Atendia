@@ -27,6 +27,10 @@ beforeEach(function (): void {
     $this->agent->departments()->sync([$sales->id]);
 
     TeamInvitation::factory()->create(['business_id' => $this->business->id, 'email' => 'sofia@shop.test']);
+
+    // The team is the owner, an agent and an open offer: three seats, so the
+    // fixture sits on the plan that sells four.
+    $this->business->subscription->update(['plan' => 'premium']);
 });
 
 test('the owner sees the real team, invites, edits a department, and nothing overflows a phone', function (): void {
@@ -69,11 +73,37 @@ test('an agent lands on the inbox with a menu of only what they work', function 
 
 test('the invitation link opens a join page on the guest layout', function (): void {
     $token = 'browser-invitation-token';
+
     TeamInvitation::factory()->create(['business_id' => $this->business->id, 'email' => 'lucia@shop.test', 'token_hash' => TeamInvitation::hashToken($token)]);
 
     visit('/equipo/unirme/'.$token)->resize(1280, 900)
         ->assertSee(__('team.join.submit'))
         ->assertSee('lucia@shop.test')
         ->screenshot(filename: 'team-join')
+        ->assertNoJavaScriptErrors();
+});
+
+test('a link whose plan ran out of seats says so instead of asking for a password', function (): void {
+    $token = 'full-seats-token';
+    TeamInvitation::factory()->create(['business_id' => $this->business->id, 'email' => 'lucia@shop.test', 'token_hash' => TeamInvitation::hashToken($token)]);
+
+    // Expired trial: the floor plan is the owner alone, and this link arrives late.
+    $this->business->subscription->update(['trial_ends_at' => now()->subDay()]);
+
+    visit('/equipo/unirme/'.$token)->resize(1280, 900)
+        ->assertSee(__('team.join.seats_full', ['business' => $this->business->name]))
+        ->assertDontSee(__('team.join.password'))
+        ->screenshot(filename: 'team-join-seats-full')
+        ->assertNoJavaScriptErrors();
+});
+
+test('the plan screen counts people, not lines', function (): void {
+    visit('/login')->resize(1280, 900);
+    auth()->login($this->owner);
+
+    visit('/plan')->resize(1280, 900)
+        ->assertSee(__('plan.meters.seats'))
+        ->assertSee(__('plan.meters.seats_of', ['used' => 3, 'cap' => 4]))
+        ->screenshot(filename: 'plan-seats-meter')
         ->assertNoJavaScriptErrors();
 });

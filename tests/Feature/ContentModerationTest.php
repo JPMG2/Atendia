@@ -240,7 +240,8 @@ test('a suspended business appeals once, and the admin hears of it', function ()
         ->set('form.message', 'Vendemos trajes de baño y la foto es de nuestro catálogo.')
         ->call('send')
         ->assertHasNoErrors()
-        ->assertSee(__('moderation.appeal.waiting', ['date' => now()->format('d/m/Y')]));
+        // The banner prints the business's own clock: at 19:40 UTC a +5 business is already tomorrow.
+        ->assertSee(__('moderation.appeal.waiting', ['date' => now()->inBusinessTime()->format('d/m/Y')]));
 
     expect($business->fresh()->appealed_at)->not->toBeNull();
     Mail::assertQueued(ModerationAppeal::class, fn (ModerationAppeal $mail): bool => $mail->hasTo('admin@atendia.test'));

@@ -30,6 +30,11 @@ class JoinTeamForm extends BaseForm
     {
         $validated = $this->validateServiceData();
 
+        // Said plainly to the guest: the seat was there when the mail left, not now.
+        if (! $invitation->business->canFillOfferedSeat()) {
+            return new NotificationDto(__('team.join.seats_full', ['business' => $invitation->business->name]), NotificationType::Error);
+        }
+
         return $this->tryAction(function () use ($invitation, $validated): NotificationDto {
 
             $user = app(AcceptTeamInvitation::class)->handle($invitation, $validated);

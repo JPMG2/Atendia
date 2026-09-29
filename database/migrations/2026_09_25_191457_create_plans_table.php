@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0)->comment('Orden de la escalera, del piso al techo');
             $table->unsignedInteger('price')->comment('Precio mensual en USD');
             $table->unsignedInteger('conversations_per_month');
-            $table->unsignedSmallInteger('whatsapp_numbers');
+            $table->unsignedSmallInteger('team_seats')->comment('Personas que pueden entrar al panel, el titular incluido');
             $table->unsignedSmallInteger('messages_per_hour')->comment('Ritmo máximo por contacto');
             $table->unsignedInteger('audio_minutes_per_month')->default(0)->comment('0 = sin notas de voz');
             $table->string('statistics', 20)->default('counts')->comment('counts | patterns | trends');

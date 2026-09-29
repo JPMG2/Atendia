@@ -35,11 +35,17 @@ new class extends Component
         return User::emailHasAccount($invitation->email);
     }
 
+    /** The plan shrank after the mail left: said on arrival, not after typing a password. */
+    public function seatsFull(TeamInvitation $invitation): bool
+    {
+        return ! $invitation->business->canFillOfferedSeat();
+    }
+
     public function join(): mixed
     {
         $invitation = $this->invitation();
 
-        if ($invitation === null || $this->emailTaken($invitation)) {
+        if ($invitation === null || $this->emailTaken($invitation) || $this->seatsFull($invitation)) {
             return null;
         }
 
@@ -70,6 +76,12 @@ new class extends Component
             <h2 class="text-strong font-display text-3xl font-extrabold tracking-tight">{{ __('team.join.title', ['business' => $invitation->business->name]) }}</h2>
         </div>
         <x-ui.alert variant="warning" icon="mail" class="mb-6">{{ __('team.join.taken') }}</x-ui.alert>
+        <x-ui.button :href="route('login')" variant="secondary">{{ __('team.join.go_login') }}</x-ui.button>
+    @elseif ($this->seatsFull($invitation))
+        <div class="mb-6">
+            <h2 class="text-strong font-display text-3xl font-extrabold tracking-tight">{{ __('team.join.title', ['business' => $invitation->business->name]) }}</h2>
+        </div>
+        <x-ui.alert variant="warning" icon="users-round" class="mb-6">{{ __('team.join.seats_full', ['business' => $invitation->business->name]) }}</x-ui.alert>
         <x-ui.button :href="route('login')" variant="secondary">{{ __('team.join.go_login') }}</x-ui.button>
     @else
         <div class="mb-8">

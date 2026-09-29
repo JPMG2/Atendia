@@ -141,6 +141,13 @@ lo recuerda cuando el mensaje reclama una regla.
   herramienta es skill, está en el config y en el seeder, y ningún agente la
   instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
   criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
+- **Lo que el plan promete, el sistema lo cumple** → `.ai/guidelines/planes-fuente-unica.md`
+  §"Una fuente no alcanza" · test guardián `tests/Feature/GoldenRulesPlanPromiseTest.php`
+  (cada cifra vendida en `LOCKS`, `SOFT` con su razón o `PENDING` como deuda) ·
+  punto 11 de la skill `client`, que la audita cada noche. Nació el 2026-09-29:
+  "2 números de WhatsApp" viajó meses coherente en tres pantallas y falso en el
+  producto, y lo cazó la dueña. Lección: las 15 reglas miraban CÓMO se escribe el
+  código y ninguna miraba la PROMESA.
 - **Planes con UNA sola fuente (tabla `plans`)** → `.ai/guidelines/planes-fuente-unica.md` ·
   test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` · hook
   `.claude/hooks/check-plan-source-golden-rules.sh`. Patrones espejados (tocar de a

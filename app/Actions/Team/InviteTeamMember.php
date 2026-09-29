@@ -10,6 +10,7 @@ use App\Models\Business;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Offers a seat by email. The token travels only in the mail; the row keeps
@@ -20,6 +21,9 @@ class InviteTeamMember
     /** @param  array{name: string, email: string, whatsapp: ?string, department_ids: list<int>}  $data  Already validated. */
     public function handle(Business $business, array $data, User $inviter): TeamInvitation
     {
+        // The plan's seats are people: the door is here, not in hiding the button.
+        throw_unless($business->canOfferSeatTo($data['email']), RuntimeException::class, 'The plan seats are full.');
+
         $token = Str::random(48);
 
         $invitation = $business->teamInvitations()->updateOrCreate(

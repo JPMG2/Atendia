@@ -7,6 +7,7 @@ namespace App\Actions\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Turns the invitation into a seat: an agent of THAT business. The mail
@@ -18,6 +19,9 @@ class AcceptTeamInvitation
     /** @param  array{name: string, password: string}  $data  Already validated. */
     public function handle(TeamInvitation $invitation, array $data): User
     {
+        // A plan downgraded after the mail left must not let an extra person in.
+        throw_unless($invitation->business->canFillOfferedSeat(), RuntimeException::class, 'The plan seats are full.');
+
         return DB::transaction(function () use ($invitation, $data): User {
             $user = new User([
                 'name' => $data['name'],
