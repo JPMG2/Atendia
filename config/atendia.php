@@ -292,7 +292,9 @@ return [
     | "Ask AtendIa" — the owner's panel assistant
     |--------------------------------------------------------------------------
     | The panel guide: route name => [menu label key, translation group of the
-    | screen]. The assistant explains a module from the very texts it prints.
+    | screen, business column that turns the screen on]. The assistant explains
+    | a module from the very texts it prints, and only the modules this
+    | business has: the third element mirrors the gate of its menu item.
     */
 
     'owner_assistant' => [
@@ -305,6 +307,7 @@ return [
             'assistant.settings' => ['menu.assistant_settings', 'assistant.handoff'],
             'conversations' => ['menu.conversations', 'client.conversations'],
             'customers' => ['menu.customers', 'client.customers'],
+            'agenda' => ['menu.agenda', 'agenda', 'appointments_enabled'],
             'statistics' => ['menu.statistics', 'statistics'],
             'whatsapp' => ['menu.whatsapp', 'whatsapp'],
             'my-plan' => ['menu.plan', 'plan'],

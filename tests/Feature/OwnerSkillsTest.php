@@ -124,7 +124,7 @@ test('plan usage reads the meters of Mi plan', function (): void {
 });
 
 test('the panel guide lists the modules and explains one from its own screen texts', function (): void {
-    $guide = new PanelGuide;
+    $guide = new PanelGuide(Business::factory()->create());
 
     expect((string) $guide->handle(new Request(['module' => 'all'])))->toContain(route('statistics'))
         ->and((string) $guide->handle(new Request(['module' => 'statistics'])))
@@ -135,8 +135,20 @@ test('the panel guide lists the modules and explains one from its own screen tex
 test('the panel guide keeps the base texts under a partial regional file', function (): void {
     app()->setLocale('es_AR');
 
-    expect((string) (new PanelGuide)->handle(new Request(['module' => 'my-products'])))
+    expect((string) (new PanelGuide(Business::factory()->create()))->handle(new Request(['module' => 'my-products'])))
         ->toContain('field_price: '.__('client.products.field_price'));
+});
+
+test('the panel guide only offers the modules this business has', function (): void {
+    $bakery = Business::factory()->create(['appointments_enabled' => false]);
+    $salon = Business::factory()->create(['appointments_enabled' => true]);
+
+    expect((string) (new PanelGuide($bakery))->handle(new Request(['module' => 'all'])))
+        ->not->toContain(route('agenda'))
+        ->and((string) (new PanelGuide($salon))->handle(new Request(['module' => 'all'])))
+        ->toContain(route('agenda'))
+        ->and((string) (new PanelGuide($salon))->handle(new Request(['module' => 'agenda'])))
+        ->toContain(__('agenda.free.title'));
 });
 
 test('an impossible month is said back to the model instead of rolling into next year', function (): void {

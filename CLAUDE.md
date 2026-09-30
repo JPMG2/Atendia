@@ -1273,6 +1273,14 @@ lo recuerda cuando el mensaje reclama una regla.
   ninguna parte — un candado que la corrida no conoce no lo cumple nadie. Es la
   capa B de una regla que vive en un `.md`: acá no hay hook, porque el que
   edita la skill es el mismo agente que corre la suite.
+- **El asistente de la dueña conoce todas sus pantallas** → punto 7 de la skill
+  `client` · test guardián `tests/Feature/GoldenRulesPanelGuideTest.php`: falla
+  si un ítem del menú del cliente con pantalla no está en
+  `atendia.owner_assistant.guide`, o si una entrada se gatea con una columna que
+  `businesses` no tiene. Nació el 2026-09-29: Agenda salió con su menú, su
+  pantalla y sus 3 skills, y nadie la sumó a la guía — "Pregúntale a AtendIa"
+  negaba una pantalla que estaba en el menú. Capa B sola: el incumplimiento
+  nace al sembrar un ítem, no al escribir un archivo que un hook pueda vigilar.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

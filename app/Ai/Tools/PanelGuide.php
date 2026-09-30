@@ -7,6 +7,7 @@ namespace App\Ai\Tools;
 use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\Plan;
 use App\Interfaces\Main\OwnerSkillTool;
+use App\Models\Business;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Arr;
 use Laravel\Ai\Tools\Request;
@@ -21,9 +22,11 @@ class PanelGuide implements OwnerSkillTool
 {
     private const int MAX_CHARS = 9000;
 
+    public function __construct(private readonly Business $business) {}
+
     public static function forOwner(AskAtendia $assistant): ?static
     {
-        return new static;
+        return new static($assistant->business);
     }
 
     public function description(): Stringable|string
@@ -35,7 +38,7 @@ class PanelGuide implements OwnerSkillTool
 
     public function handle(Request $request): Stringable|string
     {
-        $modules = (array) config('atendia.owner_assistant.guide');
+        $modules = $this->modules();
         $module = (string) $request['module'];
 
         if (! array_key_exists($module, $modules)) {
@@ -75,8 +78,22 @@ class PanelGuide implements OwnerSkillTool
         return [
             'module' => $schema->string()
                 ->description('"all" o la clave de un módulo.')
-                ->enum(['all', ...array_keys((array) config('atendia.owner_assistant.guide'))])
+                ->enum(['all', ...array_keys($this->modules())])
                 ->required(),
         ];
+    }
+
+    /**
+     * The modules THIS business has: a gated entry (third element) is dropped
+     * when its business flag is off, exactly as the navigation drops the menu
+     * item — handing a bakery the link to "Agenda" is a contradiction.
+     *
+     * @return array<string, array{0: string, 1: string, 2?: string}>
+     */
+    private function modules(): array
+    {
+        return collect((array) config('atendia.owner_assistant.guide'))
+            ->filter(fn (array $texts): bool => ! isset($texts[2]) || (bool) $this->business->{$texts[2]})
+            ->all();
     }
 }

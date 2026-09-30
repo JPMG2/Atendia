@@ -7,6 +7,7 @@ return [
     'plan' => [
         'voice_note_placeholder' => '🎤 Nota de voz (tu plan no incluye audios: escuchala en tu WhatsApp)',
         'audio' => '¿Me lo contás por mensaje de texto? Por acá no puedo escuchar audios, y por escrito te ayudo enseguida.',
+        'cap_warning' => '🤖 Tu asistente ya atendió :used de las :cap conversaciones que incluye tu plan este mes. Todo sigue funcionando con normalidad; si querés más capacidad, revisá tu plan: :url',
     ],
 
     'media' => [
