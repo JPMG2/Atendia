@@ -299,7 +299,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             $evolution->sendText($this->instance, $this->from, __('assistant.handoff.relay_done', [
                 'name' => $thread->contact_name ?? $thread->contact_phone,
-                'url' => route('conversations'),
+                // Named thread, named link: "también lo ves en tu panel" points
+                // at the chat just answered, like every other door into it.
+                'url' => route('conversations', ['hilo' => $thread->id]),
             ]));
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $thread->id);

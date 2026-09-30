@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Mail\AccountPasswordChanged;
+use App\Models\Business;
 use App\Models\LoginDevice;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -76,6 +77,17 @@ test('the profile card renames the account', function (): void {
         ->assertDispatched('notify');
 
     expect($user->refresh()->name)->toBe('María González');
+});
+
+test('member since is read on the business clock, like every other date in the panel', function (): void {
+    $business = Business::factory()->create(['timezone' => 'America/Argentina/Buenos_Aires']);
+    $user = User::factory()->create(['created_at' => '2026-09-30 01:30:00']); // 22:30 of the 29th there
+    $user->business()->associate($business)->save();
+    $this->actingAs($user->refresh());
+
+    Livewire::test('settings.section-profile')
+        ->assertSee('29/09/2026')
+        ->assertDontSee('30/09/2026');
 });
 
 test('the profile card refuses an empty or marked-up name', function (string $name): void {

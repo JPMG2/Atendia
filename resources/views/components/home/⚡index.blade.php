@@ -245,8 +245,11 @@ new class extends Component
                     {{ __('client.recent.view_all') }}
                 </x-ui.button>
             </div>
+            {{-- The row names a person: it opens THEIR thread, the same deep
+            link the taught-answer row and the owner's own skills use. Landing
+            on the bare inbox made the reader hunt for the name they clicked. --}}
             @foreach ($this->recent as $thread)
-                <a href="{{ route('conversations') }}" wire:navigate wire:key="recent-{{ $thread->id }}" class="recent-row">
+                <a href="{{ route('conversations', ['hilo' => $thread->id]) }}" wire:navigate wire:key="recent-{{ $thread->id }}" class="recent-row">
                     <x-ui.avatar :name="$thread->contact_name ?? $thread->contact_phone" size="sm" />
                     <div class="recent-copy">
                         <b>{{ $thread->contact_name ?? __('client.conversations.anonymous') }}</b>

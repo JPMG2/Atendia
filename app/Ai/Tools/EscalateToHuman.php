@@ -110,7 +110,9 @@ class EscalateToHuman implements AssistantSkillTool
             'name' => $this->conversation->contact_name ?? $this->conversation->contact_phone,
             'phone' => $this->conversation->contact_phone,
             'reason' => $reason !== '' ? $reason : __('assistant.handoff.no_reason'),
-            'url' => route('conversations'),
+            // The alert names ONE customer and says "atiéndelo": the link opens
+            // that thread, not an inbox where the name has to be found again.
+            'url' => route('conversations', ['hilo' => $this->conversation->id]),
         ];
 
         // Nobody available in the room: the owner, as before departments existed.

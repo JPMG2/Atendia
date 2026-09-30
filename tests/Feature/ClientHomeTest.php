@@ -167,6 +167,23 @@ test('the first real thread earns the day-to-day view with real numbers', functi
         ->assertDontSee(__('client.setup.sub'));
 });
 
+test('a recent row opens its own thread, not the bare inbox', function (): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id,
+        'body' => '¿Tienen turnos?',
+    ]);
+    $this->actingAs($user);
+
+    Livewire::test('home.index')
+        ->assertSee(route('conversations', ['hilo' => $thread->id]), escape: false);
+});
+
 test('empty widgets preview what will fill them instead of a naked zero', function (): void {
     $this->actingAs(User::factory()->create());
 

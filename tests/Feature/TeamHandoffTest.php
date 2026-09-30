@@ -129,3 +129,19 @@ test('the owner assistant reads the team: presence, rooms and what waits', funct
 
     expect($answer)->toContain('ausente')->toContain('Pagos')->toContain('1 charlas esperando');
 });
+
+test('every ping that names one customer links to that thread, not the bare inbox', function (): void {
+    [$business, , $agent, $thread] = roomWithAgent();
+
+    (new EscalateToHuman($business, $thread))->handle(new Request(['reason' => 'Reclama un cobro doble.', 'department' => 'pagos']));
+
+    expect(teamPings()[0]['text'])->toContain(route('conversations', ['hilo' => $thread->id]));
+
+    $thread->update(['status' => ConversationStatus::Team, 'escalated_at' => now(), 'department_id' => $agent->departments->first()->id]);
+
+    (new ProcessIncomingWhatsAppMessage('demo', '5491144440000', 'Lucía', 'Ya te lo devolvemos.', 'MSG-B1'))->handle();
+
+    // The customer's relay first, then the confirmation back to whoever answered.
+    expect(teamPings()[2]['number'])->toBe('5491144440000')
+        ->and(teamPings()[2]['text'])->toContain(route('conversations', ['hilo' => $thread->id]));
+});

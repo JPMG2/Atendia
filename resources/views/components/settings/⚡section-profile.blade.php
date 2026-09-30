@@ -72,7 +72,7 @@ new class extends Component
                 name="member_since"
                 class="font-mono"
                 :label="__('settings.profile.member_since')"
-                :value="auth()->user()->created_at?->format('d/m/Y')"
+                :value="auth()->user()->created_at?->inBusinessTime()->format('d/m/Y')"
                 readonly
             />
         </x-catalog.form-row>

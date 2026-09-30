@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -53,4 +55,30 @@ test('my business answers from its own folder', function (): void {
         ->assertNoJavaScriptErrors()
         ->assertSee(__('client.business.title'))
         ->screenshot(filename: 'polish-my-business');
+});
+
+test('a recent row on the home opens the thread it names', function (): void {
+    $thread = Conversation::factory()->create([
+        'business_id' => $this->business->id,
+        'contact_name' => 'Carla Ruiz',
+        'last_message_at' => now(),
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $this->business->id,
+        'body' => '¿Tienen turnos para el jueves?',
+    ]);
+
+    visit('/dashboard')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('client.recent.title'))
+        ->screenshot(filename: 'polish-home-recent')
+        ->click('Carla Ruiz')
+        ->assertPathIs('/conversaciones')
+        ->assertSee($thread->contact_phone)
+        ->screenshot(filename: 'polish-home-recent-lands');
+
+    // The cold path: the link a handoff ping mails to a phone, opened fresh.
+    visit(route('conversations', ['hilo' => $thread->id]))->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee($thread->contact_phone);
 });
