@@ -353,11 +353,27 @@ $company = Company::query()->find($this->recordId) ?? Company::query()->first();
 /** @param  array<int, string>  $recipients */
 ```
 
-## Sin excepciones
+## Alcance: también el CSS (2026-09-30)
 
-La regla nació con **229 archivos** viejos congelados en una lista de pendientes.
-Esa lista **llegó a cero y se borró**: hoy el guardián exige TODOS los archivos,
-sin allowlist. No hay dónde anotar una excepción — si un archivo falla, se arregla.
+El scanner lee `app/`, `database/`, `tests/`, `routes/`, `config/`,
+`resources/js`, `resources/views` **y `resources/css`**. Hasta esa fecha la hoja
+de estilos era el único archivo del proyecto donde el idioma no lo exigía nadie,
+y se notaba: la mitad de sus comentarios en español y la mitad en inglés.
+
+## La única excepción: una deuda que solo baja
+
+La regla nació con **229 archivos** viejos congelados. Esa lista llegó a cero y
+se borró. Al sumar el CSS apareció una deuda nueva —`app.css` traía **154**
+comentarios en español y **11** demasiado largos— y en vez de una allowlist
+plana se congeló como **ratchet descendente** en `CommentScanner::FROZEN`:
+
+- Los números **solo pueden bajar**. Si crecen, el guardián se pone rojo.
+- Un comentario nuevo en español ahí **rompe el build hoy**, no algún día.
+- La entrada **sale de la lista al llegar a cero**, como pasó con la de PHP.
+- El hook no bloquea el archivo congelado (listaría los 154 en cada edición);
+  de ese archivo se encarga el guardián, que es la capa permanente.
+
+Para cualquier OTRO archivo no hay dónde anotar una excepción: si falla, se arregla.
 
 ## Checklist de salida
 

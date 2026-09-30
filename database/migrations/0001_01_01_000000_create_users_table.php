@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('avatar_path')->nullable();
             $table->string('whatsapp', 30)->nullable()->comment('Solo dígitos: dónde le llegan los avisos de derivación a esta persona del equipo');
             $table->boolean('is_available')->default(true)->comment('Disponible/ausente: los avisos solo van a quien está disponible');
+            $table->json('bell_muted')->nullable()->comment('Tipos de aviso que esta persona NO quiere ver en la campana');
             $table->rememberToken();
             $table->timestamps();
             // Closing an account never erases it: the data stays for the

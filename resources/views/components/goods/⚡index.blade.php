@@ -1,7 +1,9 @@
 <?php
 
+use App\Actions\Catalog\WriteMissingDescriptions;
 use App\Classes\Main\Client;
 use App\Classes\Main\ServiceMenu;
+use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\ServiceCategoryForm;
 use App\Livewire\Forms\Client\ServiceForm;
@@ -305,6 +307,22 @@ new class extends Component
         $this->sheet = null;
     }
 
+    /**
+     * The assistant writes the descriptions that are missing, in one pass. It
+     * only ever fills blanks: a line the owner wrote is never overwritten.
+     */
+    public function writeDescriptions(WriteMissingDescriptions $writer): void
+    {
+        $written = $writer->handle(Auth::user()->business, $this->services);
+
+        $this->dispatchNotification(new NotificationDto(
+            trans_choice('client.services.ai_done', $written, ['count' => $written]),
+            $written > 0 ? NotificationType::Success : NotificationType::Info,
+        ));
+
+        $this->refreshList();
+    }
+
     public function saveService(): void
     {
         $notification = $this->form->save();
@@ -402,6 +420,7 @@ new class extends Component
             :title="__('client.services.ai_title')"
             :body="__('client.services.ai_body')"
             :action="__('client.services.ai_action')"
+            call="writeDescriptions"
         />
 
         {{-- ONE surface: toolbar to find, meter to nudge, list to act. The
@@ -420,7 +439,9 @@ new class extends Component
                         'active' => __('client.services.filter_active'),
                         'paused' => __('client.services.filter_paused'),
                     ]" />
-                <div class="flex flex-none items-center gap-3 self-center">
+                {{-- Wrapping, not flex-none: at 390px the two buttons side by
+                side pushed the primary one past the right edge. --}}
+                <div class="flex flex-wrap items-center gap-3 self-center">
                     <x-ui.button variant="secondary" size="sm" icon="plus" wire:click="openCategorySheet">{{ __('client.services.add_category') }}</x-ui.button>
                     <x-ui.button variant="primary" size="sm" icon="plus" wire:click="add">{{ __('client.services.add') }}</x-ui.button>
                 </div>

@@ -202,7 +202,7 @@ Route::get('/ajustes', fn () => view('settings'))
     ->name('settings');
 
 // One deep link per card, the same pattern as "Mi negocio".
-foreach (['perfil', 'correo', 'contrasena', 'dos-pasos', 'dispositivos', 'actividad', 'cuenta'] as $slug) {
+foreach (['perfil', 'correo', 'contrasena', 'dos-pasos', 'dispositivos', 'avisos', 'actividad', 'cuenta'] as $slug) {
     Route::get("/ajustes/{$slug}", fn () => view('settings', ['section' => $slug]))
         ->middleware(['auth', 'verified', 'permission:access-client-app'])
         ->name("settings.{$slug}");

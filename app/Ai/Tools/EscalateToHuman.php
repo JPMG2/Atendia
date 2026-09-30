@@ -7,6 +7,8 @@ namespace App\Ai\Tools;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Enums\ConversationStatus;
 use App\Interfaces\Main\AssistantSkillTool;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\HandedToTeam;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\Department;
@@ -55,6 +57,10 @@ class EscalateToHuman implements AssistantSkillTool
             'handoff_reminded_at' => null,
             'department_id' => $department?->id,
         ]);
+
+        // The panel reads the same news as the pings, and keeps it: a WhatsApp
+        // alert sent at 3am is gone by morning, the bell row is still there.
+        (new Panel($this->conversation, [], HandedToTeam::class))->send();
 
         // Best effort: a failed ping must never break the escalation itself.
         rescue(fn () => $this->alertTeam($reason, $department));

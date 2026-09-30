@@ -29,6 +29,7 @@ return [
         'contrasena' => 'Contraseña',
         'dos-pasos' => 'Verificación en dos pasos',
         'dispositivos' => 'Dispositivos',
+        'avisos' => 'Avisos de la campana',
         'actividad' => 'Actividad reciente',
         'cuenta' => 'Eliminar mi cuenta',
     ],

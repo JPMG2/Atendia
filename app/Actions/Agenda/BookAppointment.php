@@ -6,6 +6,8 @@ namespace App\Actions\Agenda;
 
 use App\Enums\AppointmentSource;
 use App\Enums\AppointmentStatus;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\AppointmentBooked;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
@@ -64,8 +66,16 @@ class BookAppointment
             return $appointment;
         });
 
-        return $appointment instanceof Appointment
-            ? $appointment
-            : throw new RuntimeException('The slot is no longer free.');
+        if (! $appointment instanceof Appointment) {
+            throw new RuntimeException('The slot is no longer free.');
+        }
+
+        // Only what the business did not do itself: an owner booking from the
+        // panel already knows, and a row telling her so is noise.
+        if ($source !== AppointmentSource::Owner) {
+            (new Panel($appointment, [], AppointmentBooked::class))->send();
+        }
+
+        return $appointment;
     }
 }

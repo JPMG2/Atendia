@@ -107,7 +107,7 @@ new class extends Component
             @endif
         </div>
 
-        <aside class="bp-rail">
+        <aside class="bp-rail bp-rail-lead">
             {{-- Value before commitment: the simulated chat answers with
             whatever the profile holds right now, no WhatsApp needed. --}}
             <x-ui.button variant="primary" icon="message-circle" :fullWidth="true" x-on:click="tryOpen = true">

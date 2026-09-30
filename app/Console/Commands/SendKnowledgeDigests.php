@@ -32,6 +32,9 @@ class SendKnowledgeDigests extends Command
             ->whereNotNull('whatsapp_connected_at')
             ->whereNotNull('fallback_whatsapp_number')
             ->get()
+            // Same dial as the evening digest: the weekly recap is sold from
+            // the middle plan up, so the entry plan does not get it.
+            ->filter(fn (Business $business): bool => $business->plan()->hasDailyDigest)
             ->filter(fn (Business $business): bool => $business->isDueAt($time, $weekday));
 
         foreach ($businesses as $business) {

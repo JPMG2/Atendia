@@ -123,3 +123,13 @@ test('the bar shrinks, warms its cta past the price and marks the drawer', funct
 
     expect($page->script('document.querySelectorAll(".nav-link-active").length'))->toBe(2);
 });
+
+test('the entry card promises both the agenda and the catalog', function (): void {
+    // It read "Agenda o catálogo" until 2026-09-30 while every plan shipped
+    // both: the copy understated the product, and the card is where it shows.
+    visit('/')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee('Agenda y catálogo')
+        ->assertDontSee('Agenda o catálogo')
+        ->screenshotElement('#precios', 'landing-pricing-extras');
+});

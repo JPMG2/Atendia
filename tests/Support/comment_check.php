@@ -20,7 +20,9 @@ use Tests\Support\CommentScanner;
 $relative = $argv[1] ?? '';
 $absolute = __DIR__.'/../../'.$relative;
 
-if ($relative === '' || ! is_file($absolute)) {
+// A frozen file is judged by the guardian's descending ratchet, not here:
+// listing its whole debt on every edit would block the file forever.
+if ($relative === '' || ! is_file($absolute) || array_key_exists($relative, CommentScanner::FROZEN)) {
     exit(0);
 }
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\PanelNotification;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -30,3 +31,7 @@ Schedule::command('atendia:retry-ai-backlog')->everyThirtyMinutes()->withoutOver
 
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverlapping(15);
+
+// Nightly, off the busy hours: the bell's inbox drops what aged out of its
+// window (config atendia.bell.keep_days). Nobody empties it by hand.
+Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dailyAt('04:20');

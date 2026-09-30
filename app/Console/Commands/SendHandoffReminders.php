@@ -8,6 +8,8 @@ use App\Actions\Business\TranslateForCustomer;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\CustomerWaiting;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Services\EvolutionApi;
@@ -85,13 +87,18 @@ class SendHandoffReminders extends Command
                 continue;
             }
 
+            $minutes = (int) $thread->escalated_at->diffInMinutes(now());
+
+            // Written whatever the hour: the bell wakes nobody, and a customer
+            // left waiting at closing time is what the owner must find in the
+            // morning. It never revives, so repeating it keeps it readable.
+            rescue(fn () => app(Tenant::class)->for($business->id, fn () => (new Panel($thread, [], CustomerWaiting::class, [$minutes]))->send()));
+
             // Quiet hours: "a person is on the way" is a promise — it only
             // goes out while the business is actually open.
             if (! $business->isOpenNow()) {
                 continue;
             }
-
-            $minutes = (int) $thread->escalated_at->diffInMinutes(now());
 
             // One thread failing (a bad owner number, Evolution down) never
             // blocks the rest, and never re-sends "on the way" every 10 minutes.

@@ -31,6 +31,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('photos_per_item')->default(0)->comment('Fotos por producto o servicio');
             $table->boolean('departments')->default(false)->comment('Departamentos del equipo: la IA deriva a cada uno');
             $table->boolean('reads_media')->default(false)->comment('La IA mira las fotos y lee los PDF que mandan los clientes');
+            $table->boolean('daily_digest')->default(false)->comment('Resumen diario por WhatsApp y recap semanal de aprendizaje');
             $table->unsignedSmallInteger('trial_days')->nullable()->comment('Solo el plan de la prueba gratis');
             $table->boolean('is_featured')->default(false)->comment('El "Más elegido" de las fichas');
 

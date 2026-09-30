@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Actions\Account\SendEmailVerificationLink;
 use App\Actions\Account\SendPasswordResetLink;
+use App\Enums\PanelNotificationType;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -258,7 +259,28 @@ class User extends Authenticatable
             'two_factor_whatsapp_at' => 'datetime',
             'two_factor_recovery_codes' => 'array',
             'is_available' => 'boolean',
+            'bell_muted' => 'array',
         ];
+    }
+
+    /**
+     * The bell kinds this person chose not to see.
+     *
+     * @return list<string>
+     */
+    public function mutedBellTypes(): array
+    {
+        return array_values($this->bell_muted ?? []);
+    }
+
+    /** Flips one kind on or off for this person only: the notice stays for the rest. */
+    public function toggleBellType(PanelNotificationType $type, bool $wanted): void
+    {
+        $muted = collect($this->mutedBellTypes())->reject(fn (string $value): bool => $value === $type->value);
+
+        $this->forceFill([
+            'bell_muted' => $wanted ? $muted->values()->all() : $muted->push($type->value)->values()->all(),
+        ])->save();
     }
 
     /** @return BelongsToMany<Department, $this> */

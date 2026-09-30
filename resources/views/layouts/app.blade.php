@@ -169,14 +169,11 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
 
                     <x-ui.theme-toggle />
 
-                    <button
-                        type="button"
-                        class="icon-btn icon-btn-secondary topbar-notif"
-                        aria-label="{{ __('menu.notifications') }}"
-                    >
-                        <x-icon name="bell" :size="20" />
-                        <span class="topbar-notif-dot"></span>
-                    </button>
+                    {{-- The inbox holds business events, so it rides with the
+                    client panel: admin has no business to be notified about. --}}
+                    @unless ($onAdminPanel)
+                        <livewire:client.bell />
+                    @endunless
 
                     <div class="topbar-user-menu" x-data="{ open: false }">
                         {{-- Just the face (photo, or initials without one): the

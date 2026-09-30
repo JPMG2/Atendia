@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\WhatsAppDisconnected;
 use App\Models\Business;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -175,6 +177,10 @@ class EvolutionWebhookController extends Controller
 
         if ($state === 'close' && $business->isConnected()) {
             $business->update(['whatsapp_connected_at' => null]);
+
+            // The pill only says what is true now; the row says at what hour
+            // the number went quiet, which is what nobody would guess later.
+            (new Panel($business, [], WhatsAppDisconnected::class))->send();
         }
 
         return in_array($state, ['open', 'close'], true);

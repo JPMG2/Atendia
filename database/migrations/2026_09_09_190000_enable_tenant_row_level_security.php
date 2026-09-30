@@ -44,6 +44,7 @@ return new class extends Migration
         'catalog_photos',
         'departments',
         'team_invitations',
+        'panel_notifications',
     ];
 
     /**

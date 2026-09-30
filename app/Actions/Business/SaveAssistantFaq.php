@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Business;
 
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\TaughtByTeammate;
 use App\Models\Business;
 use App\Models\KnowledgeDocument;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * A hand-taught answer becomes a knowledge document: the observer hashes it
@@ -37,6 +40,24 @@ class SaveAssistantFaq
             $business->knowledgeSuggestions()->find($suggestionId)?->markTaught($document);
         }
 
+        $this->tellTheOwner($business, $document);
+
         return $document;
+    }
+
+    /**
+     * When the teacher is not the owner, the bell says so. Told, not asked: the
+     * answer is already live, and an approval queue on the busiest person is
+     * what makes a team stop proposing answers at all.
+     */
+    private function tellTheOwner(Business $business, KnowledgeDocument $document): void
+    {
+        $teacher = Auth::user();
+
+        if ($teacher === null || $teacher->can('manage-business')) {
+            return;
+        }
+
+        new Panel($document, [], TaughtByTeammate::class, [$teacher->name])->send();
     }
 }

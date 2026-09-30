@@ -20,6 +20,13 @@ set -u
 
 command=$(jq -r '.tool_input.command // ""' 2>/dev/null)
 
+# NOMBRAR el binario no es CORRERLO: un `pgrep -f "...pest tests/Browser..."`
+# lleva el comando dentro de su patrón y el hook se contaba a sí mismo
+# (2026-09-30, los dos contadores quedaron inflados).
+case "$command" in
+    *pgrep*|*pkill*|*ps\ -*) exit 0 ;;
+esac
+
 # Solo cuenta la suite ENTERA: con --filter o un archivo puntual no aplica.
 case "$command" in
     *pest*tests/Browser*) ;;

@@ -214,6 +214,12 @@ return [
         'invitation_days' => env('TEAM_INVITATION_DAYS', 7),
     ],
 
+    'bell' => [
+        // Days a panel notice stays in the inbox before it is pruned. Past it
+        // the row is history: what it pointed at was solved or is long gone.
+        'keep_days' => env('BELL_KEEP_DAYS', 60),
+    ],
+
     'handoff' => [
         'reminder_minutes' => env('HANDOFF_REMINDER_MINUTES', 20),
         // Hours with no human word before the assistant takes the thread

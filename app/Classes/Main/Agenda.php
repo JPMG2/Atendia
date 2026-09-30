@@ -26,9 +26,13 @@ class Agenda
 {
     public function __construct(private Business $business) {}
 
-    /** Off by default: a bakery has no slots to give. */
+    /**
+     * Off by default: a bakery has no slots to give. The cast is the point —
+     * the column defaults to false, but a business built without it (a factory,
+     * a partial select) hands back null and a `bool` hook dies with the screen.
+     */
     public bool $isOn {
-        get => $this->business->appointments_enabled;
+        get => (bool) $this->business->appointments_enabled;
     }
 
     /**

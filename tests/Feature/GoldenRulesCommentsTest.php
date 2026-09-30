@@ -18,7 +18,7 @@ use Tests\Support\CommentScanner;
 
 /** Where source lives. `lang/` is out: that copy is Spanish on purpose. */
 const COMMENT_SCANNED_DIRS = [
-    'app', 'database', 'tests', 'routes', 'config', 'resources/js', 'resources/views',
+    'app', 'database', 'tests', 'routes', 'config', 'resources/js', 'resources/views', 'resources/css',
 ];
 
 /**
@@ -36,7 +36,7 @@ function scannedSources(): array
         );
 
         foreach ($files as $file) {
-            if (! $file->isFile() || ! preg_match('/\.(php|js)$/', $file->getFilename())) {
+            if (! $file->isFile() || ! preg_match('/\.(php|js|css)$/', $file->getFilename())) {
                 continue;
             }
 
@@ -48,10 +48,28 @@ function scannedSources(): array
     return $sources;
 }
 
+test('the frozen comment debt only shrinks', function (): void {
+    $sources = scannedSources();
+
+    foreach (CommentScanner::FROZEN as $path => $frozen) {
+        $comments = CommentScanner::commentsIn($path, $sources[$path] ?? '');
+
+        $spanish = count(array_filter($comments, fn (string $c): bool => CommentScanner::isSpanish($c)));
+        $long = count(array_filter($comments, fn (string $c): bool => CommentScanner::isTooLong($c)));
+
+        expect($spanish)->toBeLessThanOrEqual($frozen['spanish'], "{$path} grew a Spanish comment: the debt only goes down.")
+            ->and($long)->toBeLessThanOrEqual($frozen['long'], "{$path} grew an over-long comment: the debt only goes down.");
+    }
+});
+
 test('comments are written in English', function (): void {
     $offenders = [];
 
     foreach (scannedSources() as $path => $contents) {
+        if (array_key_exists($path, CommentScanner::FROZEN)) {
+            continue;
+        }
+
         foreach (CommentScanner::commentsIn($path, $contents) as $comment) {
             if (CommentScanner::isSpanish($comment)) {
                 $offenders[$path] = trim(explode("\n", trim($comment))[0]);
@@ -67,7 +85,7 @@ test('comments stay short', function (): void {
     $offenders = [];
 
     foreach (scannedSources() as $path => $contents) {
-        if (! CommentScanner::judgesLength($path)) {
+        if (! CommentScanner::judgesLength($path) || array_key_exists($path, CommentScanner::FROZEN)) {
             continue;
         }
 

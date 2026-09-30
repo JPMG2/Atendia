@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\DigestWriter;
+use App\Enums\SubscriptionStatus;
 use App\Models\Business;
+use App\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
@@ -22,7 +24,7 @@ beforeEach(function (): void {
 
 function digestBusiness(): Business
 {
-    return Business::factory()->create([
+    $business = Business::factory()->create([
         'name' => 'Laboratorio Vida',
         'whatsapp_instance' => 'atendia-demo',
         'whatsapp_connected_at' => now(),
@@ -30,6 +32,17 @@ function digestBusiness(): Business
         // A fixed clock: the digest leaves at LOCAL 20:30.
         'timezone' => 'UTC',
     ]);
+
+    // The digest is sold from the middle plan up: on the entry plan the
+    // command skips the business, which is the lock these tests ride on.
+    Subscription::factory()->create([
+        'business_id' => $business->id,
+        'plan' => 'negocio',
+        'status' => SubscriptionStatus::Active,
+        'trial_ends_at' => null,
+    ]);
+
+    return $business;
 }
 
 test('the owner receives the day digest on the fallback number', function (): void {

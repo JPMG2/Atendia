@@ -55,6 +55,18 @@ final class CommentScanner
         'campo', 'tabla', 'registro', 'pantalla', 'formulario', 'usuario',
     ];
 
+    /**
+     * Debt frozen the day the rule reached the stylesheet (2026-09-30): until
+     * then nothing read `.css`, and app.css was the one file where the language
+     * was never enforced. The counts may only go DOWN — the guardian fails if
+     * one grows — and the entry leaves at zero, like the PHP ratchet did.
+     *
+     * @var array<string, array{spanish: int, long: int}>
+     */
+    public const FROZEN = [
+        'resources/css/app.css' => ['spanish' => 154, 'long' => 11],
+    ];
+
     /** Longest run of consecutive single-line comments allowed. */
     public const MAX_INLINE_LINES = 3;
 
@@ -89,7 +101,25 @@ final class CommentScanner
             return self::jsComments($contents);
         }
 
+        if (str_ends_with($path, '.css')) {
+            return self::cssComments($contents);
+        }
+
         return self::phpComments($contents);
+    }
+
+    /**
+     * The comments of a stylesheet: block comments only. CSS has no
+     * single-line comment, and reading one would turn every `url(https://…)`
+     * into a comment that is neither English nor Spanish.
+     *
+     * @return list<string>
+     */
+    private static function cssComments(string $contents): array
+    {
+        preg_match_all('#/\*(.*?)\*/#s', $contents, $blocks);
+
+        return array_map(fn (string $block): string => '/*'.$block.'*/', $blocks[1]);
     }
 
     /**

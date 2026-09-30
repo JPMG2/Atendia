@@ -26,6 +26,7 @@ new class extends Component
             'contrasena' => 'settings.section-password',
             'dos-pasos' => 'settings.section-two-factor',
             'dispositivos' => 'settings.section-devices',
+            'avisos' => 'settings.section-bell',
             'actividad' => 'settings.section-activity',
             'cuenta' => 'settings.section-close',
         ];
@@ -69,7 +70,7 @@ new class extends Component
             @endif
         </div>
 
-        <aside class="bp-rail">
+        <aside class="bp-rail bp-rail-lead">
             <x-settings.security-checkup :user="auth()->user()" />
 
             @if ($section === null)

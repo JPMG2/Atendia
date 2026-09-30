@@ -19,6 +19,10 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/require-browser-suite-before-commit.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/block-swallowed-test-output.sh"
           }
         ]
       },
@@ -28,6 +32,15 @@
           {
             "type": "command",
             "command": "bash /var/www/atendia/.claude/hooks/require-design-skill.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /var/www/atendia/.claude/hooks/block-blind-overwrite.sh"
           }
         ]
       }

@@ -82,7 +82,15 @@ const PRINTS_ONLY = [
  *
  * @var array<string, list<string>>
  */
-const EXTRAS_LOCKS = [];
+const EXTRAS_LOCKS = [
+    // Kept by there being NO plan dial: the agenda answers to the business's
+    // own switch, and the test below fails the day someone gates it.
+    'Agenda y catálogo' => ['app/Classes/Main/Agenda.php'],
+    'Resumen diario y reportes a pedido' => [
+        'app/Console/Commands/SendWhatsAppDigests.php',
+        'app/Console/Commands/SendKnowledgeDigests.php',
+    ],
+];
 
 /**
  * Sold with nothing behind it, said out loud. NOT the same debt as a dial's:
@@ -94,8 +102,6 @@ const EXTRAS_LOCKS = [];
  * @var array<string, string>
  */
 const EXTRAS_PENDING = [
-    'Agenda o catálogo' => 'Reads as one OR the other on the floor plan; today every plan has both the agenda and the catalog (`appointments_enabled` is the business own switch, no plan dial).',
-    'Resumen diario y reportes a pedido' => 'Sold from the middle plan up; the digest commands pick every business whose local hour is due and never read `Plan`.',
     'Tu equipo entra cuando hace falta' => 'Carried by the seats dial, which IS locked; kept declared so the line cannot drift away from it.',
     'Tu asistente a tu medida' => 'Work we do by hand for that plan, not something code can hold.',
     'Configuración asistida incluida' => 'Work we do by hand for that plan, not something code can hold.',
@@ -176,6 +182,22 @@ test('every extra line a landing card sells is classified too', function (): voi
         ->all();
 
     expect($unclassified)->toBe([]);
+});
+
+test('the agenda stays outside the plan ladder, as its card promises', function (): void {
+    // "Agenda y catálogo" is kept by the ABSENCE of a dial: the agenda answers
+    // to the business's own switch. Gate it behind a plan and the copy becomes
+    // a lie, so this fails first.
+    expect(File::get(base_path('app/Classes/Main/Agenda.php')))->not->toContain('Plan');
+});
+
+test('the digest commands read the dial that sells them', function (): void {
+    // File-based like its siblings: this guardian judges the code, not a row.
+    expect(File::get(base_path('app/Classes/Main/Plan.php')))->toContain('hasDailyDigest');
+
+    foreach (EXTRAS_LOCKS['Resumen diario y reportes a pedido'] as $command) {
+        expect(File::get(base_path($command)))->toContain('hasDailyDigest');
+    }
 });
 
 test('every declared extra lock exists and is not a place that only prints', function (): void {

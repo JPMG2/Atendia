@@ -56,6 +56,7 @@ return [
         'methods' => ['transfer' => 'Transferencia'],
         'statuses' => ['pending' => 'Por verificar', 'paid' => 'Pagado', 'rejected' => 'Rechazado'],
         'empty' => 'Todavía no hay pagos. El primero aparece aquí apenas subas tu comprobante.',
+        'all_years' => 'Todos los años',
     ],
 
     'billing_data' => [

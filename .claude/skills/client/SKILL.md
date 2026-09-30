@@ -138,6 +138,14 @@ corrida y la corrida cierra con **todos** en verde:
   corrida) y una sola de `tests/Browser`. Lo que falle se re-corre con
   `--filter`, que no cuenta; si pasa aislado es flake y **no se persigue**: se
   anota.
+- **`block-blind-overwrite.sh`**: `Write` es para archivos NUEVOS. Sobre uno que
+  ya existe con contenido, bloquea: se lee primero y se cambia con `Edit`. Nació
+  el 2026-09-30, cuando un `Write` pisó entero `lang/es/notifications.php` (el
+  copy de los toasts de toda la app) por suponer que el nombre estaba libre.
+- **`block-swallowed-test-output.sh`**: una corrida de pest **no** se canaliza
+  por `tail`/`head`/`grep` — el pipe retiene la salida hasta el final y la
+  corrida parece colgada. Va a un archivo y se lee el archivo. Nació el
+  2026-09-30 tras matar un pest que ya había terminado en 33 segundos.
 - **`require-browser-suite-before-commit.sh`**: `nightwatch.sh` lo evalúa antes
   de commitear. Si se tocaron vistas/CSS/JS y `tests/Browser` no corrió
   **después** del último cambio, el trabajo de la corrida queda sin commit.

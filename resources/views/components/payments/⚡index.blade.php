@@ -6,7 +6,9 @@ use App\Enums\SubscriptionStatus;
 use App\Livewire\Forms\Billing\PaymentReceiptForm;
 use App\Models\Business;
 use App\Models\Company;
+use App\Models\Payment;
 use App\Traits\HasNotifications;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -27,6 +29,9 @@ new class extends Component
 
     public bool $uploading = false;
 
+    /** Empty = every year: with two years loaded the history is already long. */
+    public string $year = '';
+
     #[Computed]
     public function billing(): ?Billing
     {
@@ -43,6 +48,46 @@ new class extends Component
     public function instructions(): ?string
     {
         return Company::paymentInstructions();
+    }
+
+    /**
+     * Every payment, read once. The year filter works on THIS collection: the
+     * rows are few and the year has to be the business's, not UTC — a payment
+     * made at 22:00 on 31/12 in Buenos Aires belongs to the year it shows.
+     *
+     * @return Collection<int, Payment>
+     */
+    #[Computed]
+    public function history(): Collection
+    {
+        return $this->billing?->history ?? new Collection;
+    }
+
+    /**
+     * Newest first, for the picker.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function years(): array
+    {
+        return $this->history
+            ->map(fn (Payment $payment): int => $payment->created_at->inBusinessTime()->year)
+            ->unique()
+            ->sortDesc()
+            ->mapWithKeys(fn (int $year): array => [(string) $year => (string) $year])
+            ->all();
+    }
+
+    /** @return Collection<int, Payment> */
+    #[Computed]
+    public function visibleHistory(): Collection
+    {
+        return $this->year === ''
+            ? $this->history
+            : $this->history->filter(
+                fn (Payment $payment): bool => (string) $payment->created_at->inBusinessTime()->year === $this->year
+            )->values();
     }
 
     public function openUpload(): void
@@ -185,9 +230,24 @@ new class extends Component
         <div class="bp-card-head"><h2>{{ __('billing.history.title') }}</h2></div>
         <p class="bp-card-sub">{{ __('billing.history.sub') }}</p>
 
-        @if ($this->billing === null || $this->billing->history->isEmpty())
+        @if ($this->history->isEmpty())
             <p class="text-muted text-sm">{{ __('billing.history.empty') }}</p>
         @else
+            {{-- A declared row, as every toolbar in the panel: the picker keeps
+            its own width and the row still reaches the right edge. --}}
+            @if (count($this->years) > 1)
+                <x-catalog.form-row>
+                    <x-inputsform.combobox
+                        span="short"
+                        name="history_year"
+                        wire:model.live="year"
+                        :value="$year"
+                        :placeholder="__('billing.history.all_years')"
+                        :options="$this->years"
+                    />
+                </x-catalog.form-row>
+            @endif
+
             <div class="pay-table-wrap">
                 <table class="pay-table">
                     <thead>
@@ -202,22 +262,25 @@ new class extends Component
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($this->billing->history as $payment)
+                        @foreach ($this->visibleHistory as $payment)
                             <tr wire:key="payment-{{ $payment->id }}">
-                                <td class="font-mono">{{ $payment->created_at->inBusinessTime()->format('d/m/Y') }}</td>
-                                <td>
+                                {{-- data-label: on a phone the table stacks and each
+                                cell carries its own heading, because a 7-column
+                                table there either scrolls sideways or gets cut. --}}
+                                <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment->created_at->inBusinessTime()->format('d/m/Y') }}</td>
+                                <td data-label="{{ __('billing.history.concept') }}">
                                     {{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}
                                 </td>
-                                <td class="font-mono">
+                                <td class="font-mono" data-label="{{ __('billing.history.period') }}">
                                     @if ($payment->period_starts_at)
                                         {{ $payment->period_starts_at->inBusinessTime()->format('d/m') }} – {{ $payment->period_ends_at?->inBusinessTime()->format('d/m/Y') }}
                                     @else
                                         —
                                     @endif
                                 </td>
-                                <td class="font-mono">{{ $payment->formattedAmount() }}</td>
-                                <td>{{ __('billing.history.methods.'.$payment->method) }}</td>
-                                <td>
+                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment->formattedAmount() }}</td>
+                                <td data-label="{{ __('billing.history.method') }}">{{ __('billing.history.methods.'.$payment->method) }}</td>
+                                <td data-label="{{ __('billing.history.status') }}">
                                     <span
                                         @class([
                                             'status-tag',

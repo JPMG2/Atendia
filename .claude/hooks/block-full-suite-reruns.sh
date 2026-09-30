@@ -22,6 +22,14 @@ set -u
 
 command=$(jq -r '.tool_input.command // ""' 2>/dev/null)
 
+# NOMBRAR el binario no es CORRERLO. Un `pgrep -f ".../vendor/bin/pest..."`
+# —la forma de esperar a que termine otra corrida— lleva el comando dentro de
+# su patrón, y el hook se contaba a sí mismo: el 2026-09-30 dejó los dos
+# contadores inflados con corridas que nunca existieron.
+case "$command" in
+    *pgrep*|*pkill*|*ps\ -*) exit 0 ;;
+esac
+
 # Solo la suite de PHP entera. Los browser tests tienen su propio hook.
 # Se exige el BINARIO, no la palabra: con *pest* un `grep` sobre el paquete
 # vendor/pestphp/... gastaba la corrida del commit sin correr un solo test.

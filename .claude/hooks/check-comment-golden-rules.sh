@@ -20,7 +20,7 @@ file=$(jq -r '.tool_input.file_path // ""' 2>/dev/null)
 case "$file" in
     */lang/*) exit 0 ;;
     */app/*.php|*/database/*.php|*/tests/*.php|*/routes/*.php|*/config/*.php) ;;
-    */resources/views/*.blade.php|*/resources/js/*.js) ;;
+    */resources/views/*.blade.php|*/resources/js/*.js|*/resources/css/*.css) ;;
     *) exit 0 ;;
 esac
 
