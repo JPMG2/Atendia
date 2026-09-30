@@ -6,8 +6,13 @@ declare(strict_types=1);
 return [
     'sub' => 'Quién atiende junto a tu asistente. Invitá a tu equipo y ordenalo por departamentos.',
 
+    'no_business' => [
+        'body' => 'Tu equipo se suma a un negocio. En cuanto termines de crearlo, acá invitás a quien atiende con vos.',
+    ],
+
     'people' => [
         'you' => 'Vos',
+        'cancel_message' => 'El link que le enviamos deja de funcionar. Si querés que entre, vas a tener que invitarla de nuevo.',
     ],
 
     'departments' => [

@@ -330,6 +330,15 @@ test('a plan that shrank under an offer already sent stops its link', function (
         ->and(TeamInvitation::query()->count())->toBe(1);
 });
 
+test('a business yet to be born opens the team screen instead of erroring', function (): void {
+    $this->actingAs(User::factory()->create(['business_id' => null])->refresh());
+
+    livewire('team.index')
+        ->assertOk()
+        ->assertSee(__('team.no_business.title'))
+        ->assertSee(route('onboarding'));
+});
+
 test('the freed seat comes back: removing an agent opens the door again', function (): void {
     $owner = teamOwner();
     $business = $owner->business;

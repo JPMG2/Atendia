@@ -1281,6 +1281,16 @@ lo recuerda cuando el mensaje reclama una regla.
   pantalla y sus 3 skills, y nadie la sumó a la guía — "Pregúntale a AtendIa"
   negaba una pantalla que estaba en el menú. Capa B sola: el incumplimiento
   nace al sembrar un ítem, no al escribir un archivo que un hook pueda vigilar.
+- **Ninguna pantalla del cliente muere sin negocio** → test guardián
+  `tests/Feature/GoldenRulesFreshClientScreensTest.php`: recorre los ítems del
+  menú del cliente (la lista NO se mantiene a mano) como un usuario recién
+  registrado, con `business_id` en null, y falla si alguna pantalla contesta
+  5xx. Nació el 2026-09-29: `Client::for()` deja cada pieza en null hasta que
+  el negocio existe, y Agenda (`day() on null`) y Equipo (`members on null`)
+  salieron leyendo su pieza pelada — un 500 justo para quien recién se
+  registró. Ningún test lo vio porque todos sembraban un negocio primero.
+  Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
+  PostToolUse pueda leer en el archivo.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

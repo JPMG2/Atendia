@@ -48,6 +48,17 @@ new class extends Component
         return Client::for(Auth::user())->agenda;
     }
 
+    /**
+     * Whether there is an agenda to paint at all. Off, the slot finder gives
+     * no hours, so every card below would blame the day for what the switch
+     * did — and a business yet to be born has no agenda piece to ask.
+     */
+    #[Computed]
+    public function isOn(): bool
+    {
+        return $this->agenda?->isOn ?? false;
+    }
+
     /** @return Collection<int, Appointment> */
     #[Computed]
     public function bookings(): Collection
@@ -209,8 +220,20 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('agenda.title')" :sub="__('agenda.sub')">
-        <x-ui.button size="sm" icon="plus" wire:click="book">{{ __('agenda.book') }}</x-ui.button>
+        @if ($this->isOn)
+            <x-ui.button size="sm" icon="plus" wire:click="book">{{ __('agenda.book') }}</x-ui.button>
+        @endif
     </x-ui.page-head>
+
+    @if (! $this->isOn)
+        {{-- The switch is down (or there is no business yet): naming the real
+        reason, because the cards below would blame the day for it. --}}
+        <x-ui.card class="p-6">
+            <x-ui.empty-state icon="calendar-check" :title="__('agenda.off.title')" :body="__('agenda.off.body')">
+                <x-ui.button variant="primary" icon="calendar-check" :href="route('my-business.turnos')" wire:navigate>{{ __('agenda.off.cta') }}</x-ui.button>
+            </x-ui.empty-state>
+        </x-ui.card>
+    @else
 
     @php($onScreen = \Carbon\CarbonImmutable::parse($this->day))
 
@@ -440,5 +463,6 @@ new class extends Component
                 </x-ui.button>
             </x-slot:footer>
         </x-ui.slide-over>
+    @endif
     @endif
 </div>

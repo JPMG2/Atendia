@@ -16,6 +16,10 @@ return [
         'link_hint' => 'Pegalo en tu Instagram o en tu perfil de WhatsApp: tus clientes eligen hueco sin escribirte.',
     ],
 
+    'off' => [
+        'body' => 'Por eso no hay horas para ofrecer: no es que el día esté lleno. Encendelos en Mi negocio · Turnos y tu asistente empieza a dar hora por WhatsApp.',
+    ],
+
     'empty' => [
         'body' => 'Cuando alguien reserve por WhatsApp, aparece acá. También lo podés anotar vos.',
     ],

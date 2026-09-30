@@ -6,6 +6,12 @@ return [
     'title' => 'Equipo',
     'sub' => 'Quién atiende junto a tu asistente. Invita a tu equipo y ordénalo por departamentos.',
 
+    'no_business' => [
+        'title' => 'Primero creamos tu negocio',
+        'body' => 'Tu equipo se suma a un negocio. En cuanto termines de crearlo, acá invitas a quien atiende contigo.',
+        'cta' => 'Crear mi negocio',
+    ],
+
     'people' => [
         'title' => 'Personas',
         'sub' => 'Cada persona entra con su correo y su contraseña. Los agentes solo ven las conversaciones de su departamento.',
@@ -27,6 +33,12 @@ return [
         'remove_message' => 'Deja de entrar al panel. Sus :count charlas abiertas vuelven a su departamento y todo lo que respondió queda en el historial.',
         'remove_message_none' => 'Deja de entrar al panel. Todo lo que respondió queda en el historial.',
         'remove_accept' => 'Quitar del equipo',
+        'cancel_title' => '¿Cancelar la invitación de :name?',
+        'cancel_message' => 'El link que le enviamos deja de funcionar. Si quieres que entre, tendrás que invitarla de nuevo.',
+        'cancel_accept' => 'Cancelar la invitación',
+        // The escape cannot also read "Cancelar" here: both buttons would
+        // start with the same verb and mean the opposite.
+        'cancel_keep' => 'Dejarla como está',
     ],
 
     'availability' => [

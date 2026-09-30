@@ -192,6 +192,25 @@ test('a capacity below one is refused', function (): void {
         ->assertHasErrors(['appointment_capacity' => 'min']);
 });
 
+test('with the bookings off the agenda names the switch instead of blaming the day', function (): void {
+    $owner = agendaOwner(['appointments_enabled' => false]);
+    $this->actingAs($owner);
+
+    livewire('agenda.index')
+        ->assertSee(__('agenda.off.title'))
+        ->assertSee(route('my-business.turnos'))
+        // The two lines that lied: neither the day is full nor can anyone book.
+        ->assertDontSee(__('agenda.free.none'))
+        ->assertDontSee(__('agenda.empty.body'))
+        ->assertDontSee(__('agenda.book'));
+});
+
+test('a business yet to be born opens the agenda instead of erroring', function (): void {
+    $this->actingAs(User::factory()->create(['business_id' => null])->refresh());
+
+    livewire('agenda.index')->assertOk()->assertSee(__('agenda.off.title'));
+});
+
 test('an agent never reaches the agenda', function (): void {
     $owner = agendaOwner();
     $agent = User::factory()->create(['business_id' => $owner->business_id]);

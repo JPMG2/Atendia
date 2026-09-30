@@ -58,6 +58,29 @@ test('the owner sees the real team, invites, edits a department, and nothing ove
         ->assertNoJavaScriptErrors();
 });
 
+test('cancelling a sent invitation asks first, like removing a member does', function (): void {
+    $this->actingAs($this->owner);
+
+    visit('/equipo')->resize(1280, 900)
+        ->click('[aria-label="'.__('team.people.cancel').'"]')
+        ->assertSee(__('team.people.cancel_title', ['name' => 'sofia@shop.test']))
+        // The escape is named: the default "Cancelar" would be the same verb
+        // as the accept button, meaning the opposite.
+        ->assertSee(__('team.people.cancel_keep'))
+        ->screenshot(filename: 'team-cancel-invitation')
+        ->assertNoJavaScriptErrors();
+});
+
+test('a client without a business is pointed at the onboarding, not at a broken team', function (): void {
+    $this->actingAs(User::factory()->create(['business_id' => null]));
+
+    visit('/equipo')->resize(1280, 900)
+        ->assertSee(__('team.no_business.title'))
+        ->assertSee(__('team.no_business.cta'))
+        ->screenshot(filename: 'team-no-business')
+        ->assertNoJavaScriptErrors();
+});
+
 test('an agent lands on the inbox with a menu of only what they work', function (): void {
     $this->actingAs($this->agent);
 

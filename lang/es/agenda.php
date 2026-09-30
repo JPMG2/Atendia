@@ -33,6 +33,12 @@ return [
         'no_show' => 'No vino',
     ],
 
+    'off' => [
+        'title' => 'Los turnos están apagados',
+        'body' => 'Por eso no hay horas para ofrecer: no es que el día esté lleno. Enciéndelos en Mi negocio · Turnos y tu asistente empieza a dar hora por WhatsApp.',
+        'cta' => 'Activar los turnos',
+    ],
+
     'empty' => [
         'title' => 'No hay turnos este día',
         'body' => 'Cuando alguien reserve por WhatsApp, aparece acá. También puedes anotarlo tú.',

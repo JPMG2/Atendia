@@ -99,6 +99,17 @@ test('the public booking link works with no session, on a phone', function (): v
         ->screenshot(filename: 'agenda-public-phone');
 });
 
+test('with the bookings off the agenda explains the switch instead of an empty day', function (): void {
+    $quiet = Business::factory()->create(['name' => 'Panadería Sol', 'appointments_enabled' => false]);
+    $this->actingAs(User::factory()->create(['business_id' => $quiet->id]));
+
+    visit('/agenda')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('agenda.off.title'))
+        ->assertDontSee(__('agenda.free.none'))
+        ->screenshot(filename: 'agenda-off-desktop');
+});
+
 test('the bookings card of Mi negocio shows its four fields in one row', function (): void {
     visit('/negocio/turnos')->resize(1280, 900)
         ->assertNoJavaScriptErrors()

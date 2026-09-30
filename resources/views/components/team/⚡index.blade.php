@@ -131,6 +131,16 @@ new class extends Component
 <div>
     <x-ui.page-head :title="__('team.title')" :sub="__('team.sub')" />
 
+    @if ($this->team === null)
+        {{-- The whole team hangs off the business: without one this screen was
+        reading members on null, a 500 instead of the step that unblocks it. --}}
+        <x-ui.card class="p-6">
+            <x-ui.empty-state icon="users-round" :title="__('team.no_business.title')" :body="__('team.no_business.body')">
+                <x-ui.button variant="primary" icon="store" :href="route('onboarding')" wire:navigate>{{ __('team.no_business.cta') }}</x-ui.button>
+            </x-ui.empty-state>
+        </x-ui.card>
+    @else
+
     @php($team = $this->team)
 
     <div class="bp-layout">
@@ -221,7 +231,22 @@ new class extends Component
                             </div>
                             <div class="flex flex-none items-center gap-1">
                                 <x-ui.icon-button icon="refresh-cw" size="sm" variant="ghost" :label="__('team.people.resend')" wire:click="resend({{ $invitation->id }})" />
-                                <x-ui.icon-button icon="x" size="sm" variant="danger" :label="__('team.people.cancel')" wire:click="cancelInvitation({{ $invitation->id }})" />
+                                {{-- Asks like its neighbours: the link already
+                                left, so cancelling it cannot be undone. --}}
+                                <x-ui.icon-button
+                                    icon="x"
+                                    size="sm"
+                                    variant="danger"
+                                    :label="__('team.people.cancel')"
+                                    x-data
+                                    x-on:click="dialog.confirm({
+                                        title: {{ Js::from(__('team.people.cancel_title', ['name' => $invitation->name ?? $invitation->email])) }},
+                                        message: {{ Js::from(__('team.people.cancel_message')) }},
+                                        accept: {{ Js::from(__('team.people.cancel_accept')) }},
+                                        cancel: {{ Js::from(__('team.people.cancel_keep')) }},
+                                        type: 'danger',
+                                    }).then((yes) => yes && $wire.cancelInvitation({{ $invitation->id }}))"
+                                />
                             </div>
                         </li>
                     @endforeach
@@ -444,5 +469,6 @@ new class extends Component
                 <x-ui.button class="ml-auto" icon="check" wire:click="saveDepartment">{{ __('team.department.save') }}</x-ui.button>
             </x-slot:footer>
         </x-ui.slide-over>
+    @endif
     @endif
 </div>
