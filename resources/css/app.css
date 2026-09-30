@@ -941,6 +941,10 @@
     background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-card);
     padding:var(--space-3) var(--space-4); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:6px;
   }
+  /* La fila de KPIs se lee escaneando los números: si el rótulo del vecino
+     envuelve a dos líneas y el propio no, el número flota y se pierde la línea
+     que el ojo venía siguiendo. Pegado abajo, todos comparten base. */
+  .stat-card > :last-child { margin-top:auto; }
   .stat-label { font-size:var(--text-sm); font-weight:var(--weight-medium); color:var(--text-muted); }
   .stat-value { font-family:var(--font-display); font-size:var(--text-xl); font-weight:var(--weight-bold); color:var(--text-strong); letter-spacing:-0.02em; line-height:1; }
   .stat-icon { width:26px; height:26px; border-radius:var(--radius-md); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -1580,8 +1584,10 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bp-question { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
   .bp-question > span { font-weight:600; color:var(--text-strong); font-size:var(--text-sm); }
   /* Redes en "Mi negocio": la red es corta y el enlace absorbe el sobrante,
-     así quitar y agregar caben en la MISMA fila que sus controles. */
-  .bp-form .config-social-row > .f-short { flex:0 1 150px; min-width:110px; }
+     así quitar y agregar caben en la MISMA fila que sus controles. El piso mide
+     el contenido REAL del combo —"Elige una red" y "X (Twitter)" con su chevron
+     y su x— porque a 900px el sobrante no existe y 150px cortaba la palabra. */
+  .bp-form .config-social-row > .f-short { flex:0 1 200px; min-width:170px; }
   .bp-form .config-social-row > .f-long  { flex:1 1 200px; min-width:0; }
   /* Remove and add sit tight as one pair; the link input takes what they free. */
   .bp-form .config-social-add { margin-left:-10px; }

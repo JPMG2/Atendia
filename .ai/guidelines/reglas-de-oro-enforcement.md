@@ -205,11 +205,15 @@ lo recuerda cuando el mensaje reclama una regla.
   registró. Ningún test lo vio porque todos sembraban un negocio primero.
   Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
   PostToolUse pueda leer en el archivo.
-- **Ninguna pantalla del cliente scrollea de lado en un teléfono** → mandato 1 de
-  `atendiadesign` · test guardián `tests/Browser/ClientResponsiveBrowserTest.php`:
-  recorre los ítems del menú del cliente (la lista NO se mantiene a mano) a
-  390×844 en oscuro, mide `scrollWidth - innerWidth` en cada pantalla y deja la
-  captura de cada una para que un humano la mire. Nació el 2026-09-30: el mandato
+- **Ninguna pantalla del cliente scrollea de lado en un teléfono ni en una
+  tablet** → mandato 1 de `atendiadesign` · test guardián
+  `tests/Browser/ClientResponsiveBrowserTest.php`: recorre los ítems del menú del
+  cliente (la lista NO se mantiene a mano) en los DOS anchos que nombra el
+  mandato —390×844 y 900×1200— en oscuro, mide `scrollWidth - innerWidth` en cada
+  pantalla y deja la captura de cada una para que un humano la mire. Los 900px no
+  son "el teléfono un poco más grande": es el ancho donde el sidebar de 264px
+  todavía ocupa lo suyo y el área de trabajo vive del resto, el más angosto que
+  llega a ser el layout de escritorio. Nació el 2026-09-30: el mandato
   "responsive, mobile-first" llevaba tres meses sin una sola medición, y la
   pasada a mano encontró cuatro pantallas donde un elemento al costado que
   conserva su ancho aplastaba el texto a una tira de una palabra (Inicio, Mi

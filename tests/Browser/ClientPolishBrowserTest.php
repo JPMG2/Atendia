@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\SocialLink;
+use App\Models\SocialNetwork;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -81,4 +83,61 @@ test('a recent row on the home opens the thread it names', function (): void {
     visit(route('conversations', ['hilo' => $thread->id]))->resize(1280, 900)
         ->assertNoJavaScriptErrors()
         ->assertSee($thread->contact_phone);
+});
+
+/**
+ * 900px is the tightest the desktop layout gets: the 264px sidebar keeps its
+ * width and the work area lives on what is left. The network picker is the
+ * narrowest control of the panel, and a picker that cuts its own word is the
+ * abbreviating this project forbids — measured on the input itself, because a
+ * clipped placeholder still reads as present to `assertSee`.
+ */
+test('the network picker shows its whole word on a tablet', function (): void {
+    SocialLink::factory()
+        ->for($this->business, 'linkable')
+        ->for(SocialNetwork::factory()->create(['name' => 'X (Twitter)']))
+        ->create(['url' => 'https://x.com/clinicavida']);
+
+    $page = visit(route('my-business.redes'))->resize(900, 1200);
+
+    $page->assertNoJavaScriptErrors()
+        ->click('@theme-toggle')
+        ->screenshot(filename: 'polish-social-tablet');
+
+    // scrollWidth beats clientWidth exactly when the text does not fit its box.
+    $clipped = $page->script(
+        "(() => { const i = document.querySelector('.config-social-row .combo-control .field-input');
+                  return i.scrollWidth - i.clientWidth; })()"
+    );
+
+    expect((int) $clipped)->toBeLessThanOrEqual(0);
+});
+
+/**
+ * A KPI row is read by scanning the numbers, not the labels: when one card's
+ * label wraps to two lines and its neighbour's does not, the number floats and
+ * the row loses the line the eye was following. Between 601 and 1100px every
+ * label on the statistics screen wraps differently, so this is where it shows.
+ */
+test('the numbers of a KPI row sit on one line on a tablet', function (): void {
+    $page = visit(route('statistics'))->resize(900, 1200);
+
+    $page->assertNoJavaScriptErrors()
+        ->click('@theme-toggle')
+        ->screenshot(filename: 'polish-stats-tablet');
+
+    // Cards that share a top are one row; their values must share one too.
+    $offRows = $page->script(
+        "(() => {
+            const rows = {};
+            document.querySelectorAll('.stat-card').forEach(card => {
+                const top = Math.round(card.getBoundingClientRect().top);
+                const value = card.querySelector('.stat-value').getBoundingClientRect().top;
+                (rows[top] ??= new Set()).add(Math.round(value));
+            });
+            return Object.values(rows).filter(tops => tops.size > 1).length;
+        })()"
+    );
+
+    expect((int) $offRows)->toBe(0);
 });
