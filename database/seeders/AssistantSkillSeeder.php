@@ -39,6 +39,8 @@ class AssistantSkillSeeder extends Seeder
         // "Ask AtendIa": the owner's own questions, read-only, never handed to the WhatsApp assistant.
         $ownerSkills = [
             ['key' => 'owner_conversations', 'name' => 'Conversaciones del período', 'description' => 'Cuántas conversaciones hubo, cuáles esperan al equipo y el enlace a cada una'],
+            ['key' => 'owner_appointments', 'name' => 'Turnos del negocio', 'description' => 'Los turnos reservados en un período: quién viene, a qué hora y cómo terminó'],
+            ['key' => 'owner_free_slots', 'name' => 'Horas libres', 'description' => 'Las horas que le quedan libres a la agenda, de un día o las próximas'],
             ['key' => 'owner_birthdays', 'name' => 'Cumpleaños de clientes', 'description' => 'Quién cumple años en un período y si aceptó recibir mensajes'],
             ['key' => 'owner_statistics', 'name' => 'Estadísticas', 'description' => 'Los números de la pantalla de estadísticas, a la profundidad del plan'],
             ['key' => 'owner_plan', 'name' => 'Mi plan y consumo', 'description' => 'El plan, lo que incluye y cuánto se usó este mes'],

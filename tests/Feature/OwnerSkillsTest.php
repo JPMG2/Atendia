@@ -2,20 +2,27 @@
 
 declare(strict_types=1);
 
+use App\Ai\Agents\AskAtendia;
+use App\Ai\Tools\OwnerAppointments;
 use App\Ai\Tools\OwnerBirthdays;
 use App\Ai\Tools\OwnerConversations;
+use App\Ai\Tools\OwnerFreeSlots;
 use App\Ai\Tools\OwnerPlanUsage;
 use App\Ai\Tools\OwnerStatistics;
 use App\Ai\Tools\PanelGuide;
+use App\Enums\AppointmentStatus;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
 use App\Enums\QuestionResolution;
+use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationAnalysis;
 use App\Models\ConversationMessage;
 use App\Models\ConversationQuestion;
 use App\Models\Customer;
+use App\Models\Service;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Tools\Request;
 
@@ -155,4 +162,147 @@ test('an impossible month is said back to the model instead of rolling into next
     $answer = (string) (new OwnerStatistics(Business::factory()->create()))->handle(new Request(['month' => '2026-13']));
 
     expect($answer)->toContain('Mes inválido');
+});
+
+/** A business with the agenda on, on its own clock, and the Monday the tests book on. */
+function agendaOwnerBusiness(): Business
+{
+    return Business::factory()->create([
+        'timezone' => 'America/Argentina/Buenos_Aires',
+        'appointments_enabled' => true,
+        'appointment_slot_minutes' => 30,
+    ]);
+}
+
+function ownerBookingDay(Business $business): CarbonImmutable
+{
+    return CarbonImmutable::now($business->localTimezone())->addWeek()->startOfWeek();
+}
+
+function ownerBooking(Business $business, CarbonImmutable $startsAt, array $attributes = []): Appointment
+{
+    return Appointment::factory()->create([
+        'business_id' => $business->id,
+        'starts_at' => $startsAt->utc(),
+        'ends_at' => $startsAt->addMinutes(30)->utc(),
+        ...$attributes,
+    ]);
+}
+
+test('appointments read the day of this business, cancelled ones left out', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+    $service = Service::factory()->create(['business_id' => $business->id, 'name' => 'Corte de pelo']);
+    $customer = Customer::factory()->create(['business_id' => $business->id, 'name' => 'Ana Gómez']);
+
+    ownerBooking($business, $day->setTime(9, 0), ['customer_id' => $customer->id, 'service_id' => $service->id]);
+    ownerBooking($business, $day->setTime(10, 0), ['customer_id' => Customer::factory()->create(['business_id' => $business->id, 'name' => 'Juan Pérez'])->id]);
+    ownerBooking($business, $day->setTime(11, 0), ['customer_id' => $customer->id, 'status' => AppointmentStatus::Cancelled]);
+    ownerBooking(agendaOwnerBusiness(), $day->setTime(9, 0));
+
+    $answer = (string) (new OwnerAppointments($business))->handle(new Request([
+        'from' => $day->toDateString(), 'to' => $day->toDateString(),
+    ]));
+
+    expect($answer)->toContain('2 turnos.')
+        ->toContain('09:00 · Ana Gómez · Corte de pelo (30 min)')
+        ->toContain('10:00 · Juan Pérez · turno general (30 min)')
+        ->toContain(route('agenda'))
+        ->not->toContain('11:00');
+});
+
+test('appointments say what happened with a slot only when it is not the confirmed one', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+
+    ownerBooking($business, $day->setTime(9, 0), [
+        'customer_id' => Customer::factory()->create(['business_id' => $business->id, 'name' => 'Ana Gómez'])->id,
+        'status' => AppointmentStatus::NoShow,
+    ]);
+    ownerBooking($business, $day->setTime(10, 0), [
+        'customer_id' => Customer::factory()->create(['business_id' => $business->id, 'name' => 'Juan Pérez'])->id,
+    ]);
+
+    $answer = (string) (new OwnerAppointments($business))->handle(new Request([
+        'from' => $day->toDateString(), 'to' => $day->toDateString(),
+    ]));
+
+    expect($answer)->toContain('Ana Gómez · turno general (30 min) · no vino')
+        ->toContain('Juan Pérez · turno general (30 min)')
+        ->not->toContain('confirmado');
+});
+
+test('an empty day is said as empty, with the screen that shows it', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+
+    $answer = (string) (new OwnerAppointments($business))->handle(new Request([
+        'from' => $day->toDateString(), 'to' => $day->toDateString(),
+    ]));
+
+    expect($answer)->toContain('no hay ningún turno reservado')->toContain(route('agenda'));
+});
+
+test('an appointment carries the chat where it was booked, so she can write back', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+    $thread = Conversation::factory()->create(['business_id' => $business->id]);
+    $customer = Customer::factory()->create(['business_id' => $business->id, 'name' => 'Ana Gómez']);
+
+    ownerBooking($business, $day->setTime(9, 0), ['customer_id' => $customer->id, 'conversation_id' => $thread->id]);
+    ownerBooking($business, $day->setTime(10, 0), ['customer_id' => $customer->id]);
+
+    $answer = (string) (new OwnerAppointments($business))->handle(new Request([
+        'from' => $day->toDateString(), 'to' => $day->toDateString(),
+    ]));
+
+    // The second one was booked by the owner herself: no thread to offer.
+    expect($answer)->toContain('09:00 · Ana Gómez · turno general (30 min) · charla '.route('conversations', ['hilo' => $thread->id]))
+        ->toContain('10:00 · Ana Gómez · turno general (30 min)'."\n");
+});
+
+test('free slots read the day left over after what is already booked', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+
+    foreach (range(1, 5) as $weekday) {
+        $business->hours()->create(['day_of_week' => $weekday, 'opens_at' => '09:00', 'closes_at' => '11:00']);
+    }
+
+    ownerBooking($business, $day->setTime(9, 0), [
+        'customer_id' => Customer::factory()->create(['business_id' => $business->id])->id,
+    ]);
+
+    $answer = (string) (new OwnerFreeSlots($business))->handle(new Request(['date' => $day->toDateString()]));
+
+    // 09:00-11:00 in slots of 30 min, minus the 09:00 already taken.
+    expect($answer)->toContain('3 horas libres el '.mb_strtolower($day->locale('es')->translatedFormat('l j/n')))
+        ->toContain('09:30')->toContain('10:30')->not->toContain('09:00,')
+        ->and($answer)->toContain(route('agenda'));
+});
+
+test('free slots say the next ones when no day is asked, and never a bare no', function (): void {
+    $business = agendaOwnerBusiness();
+    $day = ownerBookingDay($business);
+
+    foreach (range(1, 5) as $weekday) {
+        $business->hours()->create(['day_of_week' => $weekday, 'opens_at' => '09:00', 'closes_at' => '11:00']);
+    }
+
+    expect((string) (new OwnerFreeSlots($business))->handle(new Request(['date' => null])))
+        ->toContain('Próximas horas libres')
+        // A Sunday is closed: the answer says which of the two it is.
+        ->and((string) (new OwnerFreeSlots($business))->handle(new Request(['date' => $day->addDays(6)->toDateString()])))
+        ->toContain('No queda ninguna hora libre')
+        ->toContain('el día esté completo o que el negocio no abra');
+});
+
+test('a business that gives no slots is never handed the agenda skills', function (): void {
+    $bakery = Business::factory()->create(['appointments_enabled' => false]);
+    $salon = agendaOwnerBusiness();
+
+    expect(OwnerAppointments::forOwner(new AskAtendia($bakery, 'Ana')))->toBeNull()
+        ->and(OwnerFreeSlots::forOwner(new AskAtendia($bakery, 'Ana')))->toBeNull()
+        ->and(OwnerAppointments::forOwner(new AskAtendia($salon, 'Ana')))->toBeInstanceOf(OwnerAppointments::class)
+        ->and(OwnerFreeSlots::forOwner(new AskAtendia($salon, 'Ana')))->toBeInstanceOf(OwnerFreeSlots::class);
 });

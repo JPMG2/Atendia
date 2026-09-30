@@ -87,6 +87,7 @@ new class extends Component
         $counts = $this->business?->attentionToday() ?? [];
         $doors = [
             'waiting' => ['message-circle', route('conversations')],
+            'appointments' => ['calendar-check', route('agenda')],
             'to_teach' => ['graduation-cap', route('assistant')],
             'birthdays' => ['cake', route('customers')],
             'conversations' => ['zap', route('conversations')],

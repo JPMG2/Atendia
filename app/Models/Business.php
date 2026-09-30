@@ -11,6 +11,7 @@ use App\Enums\MessageDirection;
 use App\Enums\SuggestionStatus;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\BusinessFactory;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -809,7 +810,7 @@ class Business extends Model
      * What needs the owner today, straight from the tables: the card that
      * opens "Ask AtendIa" costs no AI question. Days on the business's clock.
      *
-     * @return array{waiting: int, to_teach: int, birthdays: int, conversations: int}
+     * @return array{waiting: int, appointments: int, to_teach: int, birthdays: int, conversations: int}
      */
     public function attentionToday(): array
     {
@@ -817,6 +818,7 @@ class Business extends Model
 
         return [
             'waiting' => $this->conversations()->where('status', ConversationStatus::Team)->count(),
+            'appointments' => $this->appointmentsStillToday($today),
             'to_teach' => KnowledgeSuggestion::query()->where('business_id', $this->id)->where('status', SuggestionStatus::Pending)->count(),
             'birthdays' => Customer::query()->where('business_id', $this->id)
                 ->whereMonth('birthday', $today->month)
@@ -829,6 +831,20 @@ class Business extends Model
                 ->distinct('conversation_id')
                 ->count('conversation_id'),
         ];
+    }
+
+    /**
+     * Today's bookings that have NOT started yet: a card that says "necesita tu
+     * atención hoy" with a shift already finished is noise, not attention. Off
+     * switch, off count — nothing to look at and no query to pay for.
+     */
+    private function appointmentsStillToday(CarbonInterface $today): int
+    {
+        return $this->appointments_enabled
+            ? $this->appointments()->holdingSlot()
+                ->whereBetween('starts_at', [$today->copy()->utc(), $today->copy()->endOfDay()->utc()])
+                ->count()
+            : 0;
     }
 
     /** When the monthly quotas start over: the 1st of next month, on the business's clock. */

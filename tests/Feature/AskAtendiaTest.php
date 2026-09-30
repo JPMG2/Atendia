@@ -10,6 +10,7 @@ use App\Enums\MessageDirection;
 use App\Interfaces\Main\AssistantSkillTool;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\AiUsage;
+use App\Models\Appointment;
 use App\Models\AskFeedback;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -220,6 +221,34 @@ test('the day card opens with what needs the owner, each with its screen', funct
         ->assertSee(trans_choice('ask.today.conversations', 1, ['count' => 1]))
         ->assertDontSee(trans_choice('ask.today.to_teach', 1, ['count' => 1]))
         ->assertSee(route('customers'));
+});
+
+test('the day card counts the bookings still to come today, only with the agenda on', function (): void {
+    $user = askClient();
+    $business = $user->business;
+    $business->update(['appointments_enabled' => true]);
+    $today = now($business->localTimezone());
+
+    Appointment::factory()->create([
+        'business_id' => $business->id,
+        'customer_id' => Customer::factory()->create(['business_id' => $business->id])->id,
+        'starts_at' => $today->copy()->endOfDay()->subMinutes(30)->utc(),
+        'ends_at' => $today->copy()->endOfDay()->utc(),
+    ]);
+
+    $this->actingAs($user);
+
+    livewire('client.ask-atendia')
+        ->call('open')
+        ->assertSee(trans_choice('ask.today.appointments', 1, ['count' => 1]))
+        ->assertSee(route('agenda'));
+
+    // Switch off, the row goes: a bakery has no slot waiting for anyone.
+    $business->update(['appointments_enabled' => false]);
+
+    livewire('client.ask-atendia')
+        ->call('open')
+        ->assertDontSee(trans_choice('ask.today.appointments', 1, ['count' => 1]));
 });
 
 test('the panel is drawn only while open, never hidden in every page', function (): void {

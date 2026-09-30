@@ -32,6 +32,7 @@ return [
         'title' => 'Lo que necesita tu atención hoy',
         'clear' => 'Todo al día: no hay nada pendiente por ahora.',
         'waiting' => '{1} 1 conversación espera a tu equipo|[2,*] :count conversaciones esperan a tu equipo',
+        'appointments' => '{1} 1 turno te espera hoy|[2,*] :count turnos te esperan hoy',
         'to_teach' => '{1} 1 respuesta para enseñarle a tu asistente|[2,*] :count respuestas para enseñarle a tu asistente',
         'birthdays' => '{1} 1 cliente cumple años hoy|[2,*] :count clientes cumplen años hoy',
         'conversations' => '{1} 1 conversación con clientes hoy|[2,*] :count conversaciones con clientes hoy',

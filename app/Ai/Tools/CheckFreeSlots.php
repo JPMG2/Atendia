@@ -64,7 +64,7 @@ class CheckFreeSlots implements AssistantSkillTool
         }
 
         $slots = $finder->freeSlots($this->business, $date, $service);
-        $day = $this->slotLabel($date->startOfDay());
+        $day = $this->dayLabel($date);
 
         if ($slots !== []) {
             return "Turnos libres{$forService} el {$day} (duran {$duration} min): ".$this->slotList($slots);

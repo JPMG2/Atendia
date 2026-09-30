@@ -83,9 +83,29 @@ class AskAtendia implements Agent, Conversational, HasTools
             con la clave del módulo; con "all" ves la lista. Explicá con los textos que devuelve.
 
             FORMA. Respuestas cortas: lo que se preguntó, en pocas líneas; listas con "- ". Sin emojis.
+            {$this->agendaBriefing()}
 
             {$contract->clock}
             INSTRUCCIONES;
+    }
+
+    /**
+     * Only for a business that gives slots: a bakery never reads a word about
+     * the agenda, and never pays for these lines.
+     */
+    private function agendaBriefing(): string
+    {
+        if (! $this->business->appointments_enabled) {
+            return '';
+        }
+
+        return <<<'TURNOS'
+
+            AGENDA DE TURNOS. Este negocio reserva turnos: los que tiene reservados —de un día, de
+            una semana, quién no vino— salen de la herramienta de turnos, y las horas que quedan
+            libres, de la herramienta de horas libres; las dos con las fechas del reloj.
+            Reservar, mover o cancelar se hace en la pantalla de Agenda: vos solo los leés.
+            TURNOS;
     }
 
     /** @return list<Message> */

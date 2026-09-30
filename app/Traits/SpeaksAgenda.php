@@ -19,7 +19,16 @@ trait SpeaksAgenda
     /** "lunes 6/10 09:00", on the business's clock and in its language. */
     protected function slotLabel(CarbonImmutable $slot): string
     {
-        return $slot->locale(app()->getLocale())->translatedFormat('l j/n H:i');
+        return $this->dayLabel($slot).$slot->format(' H:i');
+    }
+
+    /**
+     * "lunes 6/10": the day with no hour glued to it. Naming a day with
+     * slotLabel read as "el lunes 6/10 00:00" — an hour nobody meant.
+     */
+    protected function dayLabel(CarbonImmutable $day): string
+    {
+        return $day->locale(app()->getLocale())->translatedFormat('l j/n');
     }
 
     /** @param  list<CarbonImmutable>  $slots */

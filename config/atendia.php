@@ -7,8 +7,10 @@ use App\Ai\Tools\CheckFreeSlots;
 use App\Ai\Tools\EscalateToHuman;
 use App\Ai\Tools\GetBusinessContact;
 use App\Ai\Tools\ManageCustomerAppointments;
+use App\Ai\Tools\OwnerAppointments;
 use App\Ai\Tools\OwnerBirthdays;
 use App\Ai\Tools\OwnerConversations;
+use App\Ai\Tools\OwnerFreeSlots;
 use App\Ai\Tools\OwnerPlanUsage;
 use App\Ai\Tools\OwnerStatistics;
 use App\Ai\Tools\OwnerTeamStatus;
@@ -279,6 +281,8 @@ return [
             'agenda_book' => BookCustomerAppointment::class,
             'agenda_my_appointments' => ManageCustomerAppointments::class,
             'owner_conversations' => OwnerConversations::class,
+            'owner_appointments' => OwnerAppointments::class,
+            'owner_free_slots' => OwnerFreeSlots::class,
             'owner_birthdays' => OwnerBirthdays::class,
             'owner_statistics' => OwnerStatistics::class,
             'owner_plan' => OwnerPlanUsage::class,
