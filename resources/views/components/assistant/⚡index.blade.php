@@ -308,7 +308,7 @@ new class extends Component
     @if ($this->suggestions->isNotEmpty())
         <x-ui.card class="mb-4 p-5">
             <div class="flex flex-wrap items-center gap-3">
-                <div class="min-w-0 flex-1">
+                <div class="min-w-56 flex-1">
                     <h2 class="font-display text-strong text-base">{{ __('client.assistant.suggestions_title') }}</h2>
                     <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.suggestions_sub') }}</p>
                 </div>
@@ -397,7 +397,9 @@ new class extends Component
     {{-- The teachable half: what the catalog cannot say. --}}
     <x-ui.card class="mt-4 p-5">
         <div class="flex flex-wrap items-center gap-3">
-            <div class="min-w-0 flex-1">
+            {{-- A floor, not min-w-0: the copy has to claim its width so the
+                 button wraps below it on a phone instead of squeezing it. --}}
+            <div class="min-w-56 flex-1">
                 <h2 class="font-display text-strong text-base">{{ __('client.assistant.faq_title') }}</h2>
                 <p class="text-muted mt-0.5 text-sm">{{ __('client.assistant.faq_sub') }}</p>
             </div>

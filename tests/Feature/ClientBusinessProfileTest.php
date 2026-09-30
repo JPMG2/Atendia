@@ -569,3 +569,42 @@ test('the try-it-now overlay ships the simulated chat', function (): void {
         ->assertSeeHtml('wizard-phone-frame')
         ->assertSeeHtml('bp-try-overlay');
 });
+
+test('the rail preview introduces the business that is logged in', function (): void {
+    // The card promises "with what you loaded" and shipped the sample
+    // dressmaker to everyone: a saved business read someone else's pitch.
+    $business = Business::factory()->create([
+        'name' => 'Clínica Vida',
+        'description' => 'Odontología general y urgencias.',
+    ]);
+
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    $this->get(route('my-business'))
+        ->assertSee(__('client.business.preview.message', [
+            'name' => 'Clínica Vida',
+            'description' => 'Odontología general y urgencias.',
+        ]));
+});
+
+test('the rail preview never mixes the real name with the sample trade', function (): void {
+    // All-or-nothing: a dental clinic introducing itself as a dressmaker is a
+    // worse lie than the sample pair a brand-new client is meant to see.
+    $business = Business::factory()->create(['name' => 'Clínica Vida', 'description' => null]);
+
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    $this->get(route('my-business'))
+        ->assertSee('Clínica Vida')
+        ->assertDontSee(__('client.business.mock.description'));
+});
+
+test('the rail preview shows the sample while there is no business yet', function (): void {
+    $this->actingAs(User::factory()->create(['business_id' => null])->refresh());
+
+    $this->get(route('my-business'))
+        ->assertSee(__('client.business.preview.message', [
+            'name' => __('client.business.mock.name'),
+            'description' => __('client.business.mock.description'),
+        ]));
+});

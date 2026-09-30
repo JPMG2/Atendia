@@ -1754,8 +1754,11 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .recent-time { color:var(--text-subtle); font-size:var(--text-xs); }
 
   @media (max-width:600px) {
-    .setup-step { flex-wrap:wrap; }
-    .setup-step .btn { margin-left:36px; }
+    /* The button drops under the copy instead of squeezing it into a one-word
+       ribbon. `flex-wrap` alone never fired: the copy can shrink to zero, so
+       nothing ever had to wrap. The grid keeps the tick beside the title. */
+    .setup-step { display:grid; grid-template-columns:24px minmax(0, 1fr); gap:8px 12px; }
+    .setup-step .btn { grid-column:2; justify-self:start; }
     .preview-grid { grid-template-columns:1fr; }
   }
 
@@ -1844,7 +1847,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   }
   @media (max-width:600px) {
     .app-content { padding:20px 16px 40px; }
-    .stat-grid > * { flex:1 1 140px; }
+    /* Equal columns, not flex-basis: a KPI whose longest word beats its basis
+       grows and starves the card beside it, and the grid ends up ragged. */
+    .stat-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
   }
 }
 
@@ -2156,7 +2161,15 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   @media (prefers-reduced-motion:reduce) { .ask-dots i { animation:none; } }
 
   @media (max-width:900px) { .conn-pill { display:none; } }
-  @media (max-width:600px) { .topbar-search { display:none; } }
+  @media (max-width:600px) {
+    .topbar-search { display:none; }
+    /* Same story as the setup steps: a side element that keeps its width turns
+       the line beside it into a one-word ribbon. The hint moves under its own
+       feature, and the QR sits above the copy that explains it. */
+    .plan-feature { display:grid; grid-template-columns:16px minmax(0, 1fr); align-items:start; gap:2px 9px; }
+    .plan-locked-hint { grid-column:2; margin-left:0; white-space:normal; }
+    .referral-qr-row { flex-direction:column; align-items:flex-start; }
+  }
 }
 
 /* ============================================================
@@ -2657,6 +2670,10 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   }
   @media (max-width:680px) {
     .config-social-row > *:not(.config-social-remove):not(.config-social-add) { flex-basis:100%; }
+    /* Once the columns stack, the column names label nothing: they read as two
+       orphan lines above a network picker. Each control carries its own
+       aria-label and its placeholder, so nothing is lost by hiding them. */
+    .config-social-head { display:none; }
   }
   @media (prefers-reduced-motion:reduce) {
     .config-drop { transition:none; }

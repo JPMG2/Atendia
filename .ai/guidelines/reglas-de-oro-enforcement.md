@@ -205,6 +205,18 @@ lo recuerda cuando el mensaje reclama una regla.
   registró. Ningún test lo vio porque todos sembraban un negocio primero.
   Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
   PostToolUse pueda leer en el archivo.
+- **Ninguna pantalla del cliente scrollea de lado en un teléfono** → mandato 1 de
+  `atendiadesign` · test guardián `tests/Browser/ClientResponsiveBrowserTest.php`:
+  recorre los ítems del menú del cliente (la lista NO se mantiene a mano) a
+  390×844 en oscuro, mide `scrollWidth - innerWidth` en cada pantalla y deja la
+  captura de cada una para que un humano la mire. Nació el 2026-09-30: el mandato
+  "responsive, mobile-first" llevaba tres meses sin una sola medición, y la
+  pasada a mano encontró cuatro pantallas donde un elemento al costado que
+  conserva su ancho aplastaba el texto a una tira de una palabra (Inicio, Mi
+  plan, Gana, Conocimiento). Capa B sola, como sus dos hermanos de arriba: el
+  incumplimiento es del RENDER a un ancho, no un patrón que un hook PostToolUse
+  pueda leer en el archivo. Vive en `tests/Browser`, así que corre a demanda con
+  la suite de browser, no en la del commit.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

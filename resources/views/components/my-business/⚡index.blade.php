@@ -28,6 +28,30 @@ new class extends Component
     }
 
     /**
+     * What the rail's bubble introduces itself with. The mock is the EMPTY
+     * state, not the default: the card promises "with what you loaded", and a
+     * business that already saved its name was reading someone else's. It is
+     * all-or-nothing on purpose — a real name over the sample's trade reads
+     * worse than either half alone.
+     *
+     * @return array{name: string, description: string}
+     */
+    #[Computed]
+    public function previewBusiness(): array
+    {
+        $business = Auth::user()?->business;
+
+        if ($business?->name === null || $business?->name === '') {
+            return [
+                'name' => __('client.business.mock.name'),
+                'description' => __('client.business.mock.description'),
+            ];
+        }
+
+        return ['name' => $business->name, 'description' => (string) $business->description];
+    }
+
+    /**
      * Piece → the section card that completes it, for the meter deep links.
      *
      * @return array<string, string>
@@ -135,10 +159,10 @@ new class extends Component
                 <div class="bp-chat">
                     <div class="bp-msg">
                         <div class="bp-msg-who">
-                            <x-ui.avatar :name="__('client.business.mock.name')" size="xs" />
-                            <b data-bp-preview="name">{{ __('client.business.mock.name') }}</b>
+                            <x-ui.avatar :name="$this->previewBusiness['name']" size="xs" />
+                            <b data-bp-preview="name">{{ $this->previewBusiness['name'] }}</b>
                         </div>
-                        <span data-bp-preview="message">{{ __('client.business.preview.message', ['name' => __('client.business.mock.name'), 'description' => __('client.business.mock.description')]) }}</span>
+                        <span data-bp-preview="message">{{ __('client.business.preview.message', $this->previewBusiness) }}</span>
                     </div>
                     {{-- The assistant thanks each saved section from here. --}}
                     <div class="bp-msg bp-msg-thanks" data-bp-preview="thanks" hidden></div>
@@ -205,8 +229,8 @@ new class extends Component
             // filling the profile reads as teaching, not form-filling.
             const template = @js(__('client.business.preview.message'));
             const thanksCopy = @js(__('client.business.preview.thanks'));
-            const fallbackName = @js(__('client.business.mock.name'));
-            const fallbackDescription = @js(__('client.business.mock.description'));
+            const fallbackName = @js($this->previewBusiness['name']);
+            const fallbackDescription = @js($this->previewBusiness['description']);
 
             const nameEl = $wire.$el.querySelector('[data-bp-preview="name"]');
             const messageEl = $wire.$el.querySelector('[data-bp-preview="message"]');
