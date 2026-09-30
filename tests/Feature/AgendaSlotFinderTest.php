@@ -13,6 +13,7 @@ use App\Services\Agenda\SlotFinder;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -178,6 +179,24 @@ test('booking takes the hour and refuses the second taker', function (): void {
 
     app(BookAppointment::class)->handle($business, $customer, $monday, $service);
 })->throws(RuntimeException::class);
+
+test('a booker who arrives while the same hour is being written is refused', function (): void {
+    $business = agendaBusiness();
+    $customer = Customer::factory()->create(['business_id' => $business->id]);
+    $monday = nextMonday($business)->setTime(9, 0);
+
+    // Standing in for the other booker mid-write: the hour is still free in the
+    // table, so only the lock can keep this one out.
+    $held = Cache::lock('agenda:'.$business->id.':'.$monday->utc()->format('YmdHi'), 10);
+    $held->get();
+
+    expect(fn () => app(BookAppointment::class)->handle($business, $customer, $monday))
+        ->toThrow(RuntimeException::class);
+
+    $held->release();
+
+    expect(app(BookAppointment::class)->handle($business, $customer, $monday))->toBeInstanceOf(Appointment::class);
+});
 
 test('a booking moves to a free hour and keeps its own out of the way', function (): void {
     $business = agendaBusiness();

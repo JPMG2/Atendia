@@ -402,8 +402,11 @@ new class extends Component
                         :value="$form->day"
                         wire:model.live="form.day"
                     />
+                    {{-- Not "short": inside the sheet the hour shares the row
+                    with the day, and its own value came out clipped ("08:0…")
+                    behind the clear and the chevron. --}}
                     <x-inputsform.combobox
-                        span="short"
+                        span="text"
                         name="time"
                         :label="__('agenda.form.time')"
                         :options="$this->hoursFor($form->day, $form->editingId === null ? null : $form->time)"

@@ -32,12 +32,15 @@ new class extends Component
     public function mount(string $code): void
     {
         $this->code = $code;
-        $this->form->setup($this->business()->localTimezone() !== null
-            ? CarbonImmutable::now($this->business()->localTimezone())->format('Y-m-d')
-            : now()->format('Y-m-d'));
+        $this->form->setup(CarbonImmutable::now($this->business->localTimezone())->format('Y-m-d'));
     }
 
-    /** The business behind the code; anything else is a dead link. */
+    /**
+     * The business behind the code; anything else is a dead link. Computed so
+     * the hours, the services and the card share ONE lookup: this page is
+     * public, and it was paying the same query three times per paint.
+     */
+    #[Computed]
     public function business(): Business
     {
         $business = Business::forBookingCode($this->code);
@@ -55,7 +58,7 @@ new class extends Component
     #[Computed]
     public function freeHours(): array
     {
-        $business = $this->business();
+        $business = $this->business;
 
         $hours = app(Tenant::class)->for($business->id, fn (): array => array_map(
             fn (CarbonImmutable $slot): string => $slot->format('H:i'),
@@ -72,7 +75,7 @@ new class extends Component
     #[Computed]
     public function serviceOptions(): array
     {
-        $business = $this->business();
+        $business = $this->business;
 
         return app(Tenant::class)->for($business->id, fn (): array => (new Agenda($business))->bookableServices
             ->mapWithKeys(fn (Service $service): array => [$service->id => $service->name])
@@ -92,7 +95,7 @@ new class extends Component
 
     public function book(): void
     {
-        $result = $this->form->book($this->business());
+        $result = $this->form->book($this->business);
         unset($this->freeHours);
 
         if ($result instanceof NotificationDto) {
@@ -108,7 +111,7 @@ new class extends Component
     private function when(Appointment $appointment): string
     {
         return $appointment->starts_at
-            ->setTimezone($this->business()->localTimezone())
+            ->setTimezone($this->business->localTimezone())
             ->locale(app()->getLocale())
             ->translatedFormat('l j/n H:i');
     }
@@ -116,7 +119,7 @@ new class extends Component
 ?>
 
 <div class="bk-page">
-    @php($business = $this->business())
+    @php($business = $this->business)
 
     <x-ui.card class="bk-card">
         @if ($booked !== null)

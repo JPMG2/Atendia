@@ -75,6 +75,32 @@ const PRINTS_ONLY = [
     'resources/views/components/plan/',
 ];
 
+/**
+ * A card also sells lines that are not a dial ("Agenda o catálogo"): they ride
+ * `landing.pricing.{code}.extras` and the buckets above never saw them. Each
+ * line lands here with the file that makes it true.
+ *
+ * @var array<string, list<string>>
+ */
+const EXTRAS_LOCKS = [];
+
+/**
+ * Sold with nothing behind it, said out loud. NOT the same debt as a dial's:
+ * capping what a card offers is the owner's call, so the audit reports these
+ * and she decides (skill `client`, point 11). The ratchet still holds — a line
+ * only LEAVES when its lock is built, and a new one cannot be sold without
+ * landing in one of the two lists.
+ *
+ * @var array<string, string>
+ */
+const EXTRAS_PENDING = [
+    'Agenda o catálogo' => 'Reads as one OR the other on the floor plan; today every plan has both the agenda and the catalog (`appointments_enabled` is the business own switch, no plan dial).',
+    'Resumen diario y reportes a pedido' => 'Sold from the middle plan up; the digest commands pick every business whose local hour is due and never read `Plan`.',
+    'Tu equipo entra cuando hace falta' => 'Carried by the seats dial, which IS locked; kept declared so the line cannot drift away from it.',
+    'Tu asistente a tu medida' => 'Work we do by hand for that plan, not something code can hold.',
+    'Configuración asistida incluida' => 'Work we do by hand for that plan, not something code can hold.',
+];
+
 /** @return list<string> */
 function soldDials(): array
 {
@@ -136,4 +162,36 @@ test('a place that only prints the figure is never declared as its lock', functi
 
 test('nothing is sold without a lock', function (): void {
     expect(array_keys(PENDING))->toBe([]);
+});
+
+test('every extra line a landing card sells is classified too', function (): void {
+    $sold = collect(Plan::ladder())
+        ->flatMap(fn (Plan $plan): array => (array) __("landing.pricing.{$plan->code}.extras"))
+        ->filter(fn (mixed $line): bool => is_string($line))
+        ->values();
+
+    $unclassified = $sold
+        ->reject(fn (string $line): bool => array_key_exists($line, EXTRAS_LOCKS) || array_key_exists($line, EXTRAS_PENDING))
+        ->values()
+        ->all();
+
+    expect($unclassified)->toBe([]);
+});
+
+test('every declared extra lock exists and is not a place that only prints', function (): void {
+    $broken = [];
+
+    foreach (EXTRAS_LOCKS as $line => $files) {
+        foreach ($files as $file) {
+            if (! File::exists(base_path($file))) {
+                $broken[] = "{$line}: {$file} is gone";
+            }
+
+            if (collect(PRINTS_ONLY)->contains(fn (string $printer): bool => str_starts_with($file, $printer))) {
+                $broken[] = "{$line}: {$file} only prints the promise";
+            }
+        }
+    }
+
+    expect($broken)->toBe([]);
 });

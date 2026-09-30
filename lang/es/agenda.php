@@ -40,7 +40,7 @@ return [
 
     'free' => [
         'title' => 'Horas libres',
-        'sub' => 'Las que tu asistente ofrece hoy mismo. Toca una para anotar un turno.',
+        'sub' => 'Las que tu asistente ofrece ese día. Toca una para anotar un turno.',
         'none' => 'No queda ninguna hora libre este día.',
     ],
 
@@ -80,7 +80,7 @@ return [
         'link_label' => 'Tu link de reservas',
         'link_hint' => 'Pégalo en tu Instagram o en tu perfil de WhatsApp: tus clientes eligen hueco sin escribirte.',
         'link_copy' => 'Copiar',
-        'link_copied' => 'Link copiado.',
+        'link_copied' => 'Copiado',
         'powered' => 'Reservas atendidas por AtendIa',
     ],
 

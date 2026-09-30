@@ -25,7 +25,9 @@ beforeEach(function (): void {
         'appointment_slot_minutes' => 30,
     ]);
 
-    foreach (range(1, 5) as $weekday) {
+    // Open every day: these tests run whenever the nightly pass runs, and a
+    // business closed on weekends gave an empty agenda every Saturday.
+    foreach (range(0, 6) as $weekday) {
         $business->hours()->create(['day_of_week' => $weekday, 'opens_at' => '08:00', 'closes_at' => '22:00']);
     }
 
@@ -76,9 +78,12 @@ test('the week view shows the seven days and opens the one pressed', function ()
 });
 
 test('pressing a free hour opens the booking sheet with that hour', function (): void {
+    // Tomorrow, never today: an hour of today is already gone by the evening,
+    // and this test used to pick 13:00 — red every night from 13:01 on.
     visit('/agenda')->resize(1280, 900)
         ->assertNoJavaScriptErrors()
-        ->click('@free-hour-1300')
+        ->click('[aria-label="'.__('agenda.next').'"]')
+        ->click('@free-hour-0800')
         ->assertSee(__('agenda.form.title'))
         ->assertSee(__('agenda.form.customer'))
         ->screenshot(filename: 'agenda-sheet-desktop');
@@ -100,4 +105,15 @@ test('the bookings card of Mi negocio shows its four fields in one row', functio
         ->assertSee(__('client.business.appointments.title'))
         ->assertSee(__('client.business.appointments.capacity'))
         ->screenshot(filename: 'agenda-settings-desktop');
+});
+
+test('copying the booking link answers on the button, without a window to dismiss', function (): void {
+    visit('/negocio/turnos')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('agenda.public.link_label'))
+        ->click(__('agenda.public.link_copy'))
+        ->assertSee(__('agenda.public.link_copied'))
+        ->assertDontSee(__('dialog.accept'))
+        ->screenshot(filename: 'agenda-link-copied')
+        ->assertNoJavaScriptErrors();
 });

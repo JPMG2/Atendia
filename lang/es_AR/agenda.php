@@ -21,7 +21,7 @@ return [
     ],
 
     'free' => [
-        'sub' => 'Las que tu asistente ofrece hoy mismo. Tocá una para anotar un turno.',
+        'sub' => 'Las que tu asistente ofrece ese día. Tocá una para anotar un turno.',
     ],
 
     'form' => [

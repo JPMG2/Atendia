@@ -133,20 +133,19 @@ new class extends Component
                     :value="$this->bookingLink"
                     class="font-mono"
                 />
-                <div class="flex flex-none items-center gap-3 self-center">
+                {{-- Copying says so on the button itself, like the referral
+                link and the recovery codes: a window to dismiss for something
+                that already happened stops her for nothing. --}}
+                <div class="flex flex-none items-center gap-3 self-center" x-data="{ copied: false }">
                     <x-ui.button
                         variant="secondary"
                         size="sm"
                         icon="copy"
-                        x-data
                         x-on:click="navigator.clipboard.writeText({{ Js::from($this->bookingLink) }})
-                            .then(() => dialog.notify({
-                                title: {{ Js::from(__('agenda.public.link_copied')) }},
-                                message: {{ Js::from($this->bookingLink) }},
-                                type: 'success',
-                            }))"
+                            .then(() => { copied = true; setTimeout(() => (copied = false), 2000) })"
                     >
-                        {{ __('agenda.public.link_copy') }}
+                        <span x-show="! copied">{{ __('agenda.public.link_copy') }}</span>
+                        <span x-show="copied" x-cloak>{{ __('agenda.public.link_copied') }}</span>
                     </x-ui.button>
                 </div>
             </x-catalog.form-row>
