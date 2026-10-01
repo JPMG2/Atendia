@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -30,6 +31,8 @@ new class extends Component
 
     public ServiceCategoryForm $categoryForm;
 
+    /** In the URL so the global search can land on the item it named. */
+    #[Url(as: 'buscar', except: '')]
     public string $search = '';
 
     public string $filter = 'all';
@@ -46,10 +49,18 @@ new class extends Component
     /** @var list<string> Groups folded away; the header stays visible. */
     public array $collapsed = [];
 
+    /** The palette's "Crear servicio" lands here with the sheet already open. */
+    #[Url(as: 'nuevo', except: false)]
+    public bool $startBlank = false;
+
     public function mount(): void
     {
         // The Wireable DTO must exist before hydration, or it type-errors.
         $this->form->setup();
+
+        if ($this->startBlank) {
+            $this->sheet = 'service';
+        }
     }
 
     private function menu(): ?ServiceMenu

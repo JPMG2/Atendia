@@ -1,7 +1,11 @@
 <?php
 
+use App\Actions\Business\WriteBusinessBio;
+use App\Dto\NotificationDto;
+use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\IdentityForm;
 use App\Traits\HasNotifications;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -19,6 +23,9 @@ new class extends Component
 
     public IdentityForm $form;
 
+    /** A proposal is on screen: the offer becomes "write me another one". */
+    public bool $proposed = false;
+
     public function mount(): void
     {
         $this->form->setup();
@@ -28,6 +35,33 @@ new class extends Component
     public function logoUrl(): ?string
     {
         return $this->form->logo_path !== null ? Storage::disk('public')->url($this->form->logo_path) : null;
+    }
+
+    /**
+     * Fills the field with a proposal and stops there: the owner reads it,
+     * edits it and saves. The unsaved pill is what tells her nothing is stored.
+     */
+    public function writeBio(WriteBusinessBio $writer): void
+    {
+        $business = Auth::user()?->business;
+        $written = $business !== null ? $writer->handle($business, $this->form->name) : null;
+
+        if ($written === null) {
+            $this->dispatchNotification(new NotificationDto(
+                __('client.business.identity.ai_failed'),
+                NotificationType::Error,
+            ));
+
+            return;
+        }
+
+        $this->form->description = $written;
+        $this->proposed = true;
+
+        $this->dispatchNotification(new NotificationDto(
+            __('client.business.identity.ai_done'),
+            NotificationType::Success,
+        ));
     }
 
     public function save(): void
@@ -51,12 +85,14 @@ new class extends Component
     </div>
     <p class="bp-card-sub">{{ __('client.business.identity.sub') }}</p>
 
-    {{-- A note while nothing writes the bio yet: the label it used to print ran
-    nothing. The copy stays for the day the button gets a method. --}}
+    {{-- It proposes into the field and never saves, so the owner always has
+    the last word on the line her assistant reads to a customer. --}}
     <x-ui.ai-banner
         class="mb-4"
         :title="__('client.business.identity.ai_title')"
         :body="__('client.business.identity.ai_body')"
+        :action="__('client.business.identity.ai_action')"
+        call="writeBio"
     />
 
     <div class="bp-form">
@@ -81,7 +117,20 @@ new class extends Component
                 counter
                 alpine-error="description"
                 wire:model="form.description"
-            />
+            >
+                {{-- Where the writing happens, like Gmail and Copilot: asking
+                for it should not mean scrolling back up to the banner. --}}
+                <x-slot:action>
+                    <x-ui.button
+                        variant="ghost"
+                        size="sm"
+                        icon="sparkles"
+                        wire:click="writeBio"
+                        wire:loading.attr="disabled"
+                        data-testid="identity-bio-write"
+                    >{{ $proposed ? __('client.business.identity.ai_redo') : __('client.business.identity.ai_action') }}</x-ui.button>
+                </x-slot:action>
+            </x-inputsform.textarea>
         </x-catalog.form-row>
         <x-catalog.form-row>
             <x-inputsform.file

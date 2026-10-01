@@ -38,6 +38,9 @@ Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->nam
 // Moderation: what the content filter caught, and the switch to lift a suspension.
 Route::livewire('/moderacion', 'admin.moderation')->name('moderation');
 
+// Support: what the businesses report from their own panel, by arrival.
+Route::livewire('/soporte', 'admin.support')->name('support');
+
 // System logs: the latest entries, built to be copied into a help chat.
 Route::livewire('/logs', 'configuration.logs')->name('logs');
 

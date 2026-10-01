@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Catalog\WriteMissingDescriptions;
 use App\Ai\Agents\CatalogCopywriter;
 use App\Models\Business;
+use App\Models\Product;
 use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -117,4 +118,44 @@ test('the services screen writes them and says how many', function (): void {
 
     expect(Service::query()->where('business_id', $this->business->id)->value('description'))
         ->toBe('Una limpieza completa.');
+});
+
+/*
+ * The products banner sold the spreadsheet lane that already lives below it on
+ * the same screen. It now offers what the writer actually does, and runs it.
+ */
+test('the products screen writes the descriptions its catalog is missing', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    CatalogCopywriter::fake([[
+        'items' => [['name' => 'Shampoo sólido', 'description' => 'Dura tres meses y no deja residuo.']],
+    ]]);
+
+    $user = User::factory()->create();
+    $user->business()->associate($this->business)->save();
+    Product::factory()->for($this->business)->create(['name' => 'Shampoo sólido', 'description' => null]);
+
+    Livewire::actingAs($user)
+        ->test('products.index')
+        ->call('writeDescriptions')
+        ->assertDispatched('notify');
+
+    expect(Product::query()->where('business_id', $this->business->id)->value('description'))
+        ->toBe('Dura tres meses y no deja residuo.');
+});
+
+test('the products screen says it could not write instead of claiming they are done', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    CatalogCopywriter::fake(fn () => throw new RuntimeException('provider down'));
+
+    $user = User::factory()->create();
+    $user->business()->associate($this->business)->save();
+    Product::factory()->for($this->business)->create(['description' => null]);
+
+    Livewire::actingAs($user)
+        ->test('products.index')
+        ->call('writeDescriptions')
+        ->assertDispatched('notify', fn (string $event, array $params): bool => str_contains(
+            json_encode($params, JSON_THROW_ON_ERROR),
+            'No pudimos escribir las descripciones',
+        ));
 });

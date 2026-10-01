@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -20,6 +21,8 @@ new class extends Component
     use HasNotifications;
     use ManagesCustomerSheet;
 
+    /** In the URL so the global search can land on the person it named. */
+    #[Url(as: 'buscar', except: '')]
     public string $search = '';
 
     /** all | optin | birthday (this month). */

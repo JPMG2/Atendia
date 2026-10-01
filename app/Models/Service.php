@@ -6,9 +6,11 @@ namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
 use App\Traits\EmbedsName;
+use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +44,7 @@ class Service extends Model
     use HasFactory;
 
     use LogsActivity;
+    use SearchesText;
 
     // What stops being offered is deactivated or soft-deleted: the assistant's
     // conversations that mention it have to stay traceable.
@@ -109,5 +112,22 @@ class Service extends Model
     public function hasResolvedPrice(): bool
     {
         return $this->price !== null || in_array($this->price_type, ['free', 'talk'], true);
+    }
+
+    /**
+     * The tenant's services whose words match: a hit in the name outranks one
+     * that only appears deep in a description.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'name', 'description', 'is_active'])
+            ->whereTextMatches(['name', 'description'], $term)
+            ->orderByLeadingMatch('name', $term)
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
     }
 }

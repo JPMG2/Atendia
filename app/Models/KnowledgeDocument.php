@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Observers\KnowledgeDocumentObserver;
 use App\Traits\BelongsToBusiness;
+use App\Traits\SearchesText;
 use Database\Factories\KnowledgeDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,6 +22,7 @@ class KnowledgeDocument extends Model
     use BelongsToBusiness;
 
     use HasFactory;
+    use SearchesText;
     use SoftDeletes;
 
     protected $fillable = [
@@ -52,5 +55,21 @@ class KnowledgeDocument extends Model
     public function chunks(): HasMany
     {
         return $this->hasMany(KnowledgeChunk::class);
+    }
+
+    /**
+     * The tenant's knowledge whose words match, by title first.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'title', 'content', 'source_type'])
+            ->whereTextMatches(['title', 'content'], $term)
+            ->orderByLeadingMatch('title', $term)
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
     }
 }

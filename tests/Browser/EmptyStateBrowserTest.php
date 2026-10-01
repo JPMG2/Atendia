@@ -22,7 +22,7 @@ test('customers and conversations share one empty state, on desktop and phone', 
         ->assertNoJavaScriptErrors()
         ->assertSee(__('client.customers.empty_title'))
         ->assertSee(__('client.customers.empty_body'))
-        ->assertAttribute('input[name="search"]', 'placeholder', __('menu.search_placeholder'))
+        ->assertPresent('[data-testid="cmdk-open"]')
         ->screenshot(filename: 'empty-state-customers-desktop');
 
     visit('/conversaciones')->resize(560, 900)

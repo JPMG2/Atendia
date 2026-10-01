@@ -8,9 +8,11 @@ use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Traits\BelongsToBusiness;
+use App\Traits\SearchesText;
 use Carbon\CarbonInterface;
 use Database\Factories\ConversationMessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +27,8 @@ class ConversationMessage extends Model
 
     /** @use HasFactory<ConversationMessageFactory> */
     use HasFactory;
+
+    use SearchesText;
 
     /**
      * Words that carry no question on their own: acknowledgements, greetings,
@@ -185,5 +189,26 @@ class ConversationMessage extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * Messages of this tenant whose body matches, newest first and one per
+     * thread: the palette lists conversations, not lines.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'conversation_id', 'body', 'created_at'])
+            ->whereNotNull('conversation_id')
+            ->where('kind', MessageKind::Message)
+            ->whereTextMatches(['body'], $term)
+            ->with('conversation:id,contact_name,contact_phone')
+            ->orderByDesc('created_at')
+            ->limit($limit * 4)
+            ->get()
+            ->unique('conversation_id')
+            ->take($limit);
     }
 }

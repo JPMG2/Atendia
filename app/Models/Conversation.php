@@ -9,10 +9,12 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Services\Tenant;
 use App\Traits\BelongsToBusiness;
+use App\Traits\SearchesText;
 use Carbon\CarbonInterface;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +32,8 @@ class Conversation extends Model
 
     /** @use HasFactory<ConversationFactory> */
     use HasFactory;
+
+    use SearchesText;
 
     /**
      * @return array<string, string>
@@ -196,5 +200,22 @@ class Conversation extends Model
     {
         return $this->hasOne(ConversationMessage::class)
             ->ofMany(['id' => 'max'], fn ($query) => $query->where('kind', MessageKind::Message));
+    }
+
+    /**
+     * The tenant's threads whose contact matches by name or number. What was
+     * SAID inside them is the meaning lane's job, over the questions' vectors.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'contact_name', 'contact_phone', 'status', 'last_message_at'])
+            ->whereTextMatches(['contact_name', 'contact_phone'], $term)
+            ->orderByLeadingMatch('contact_name', $term)
+            ->orderByDesc('last_message_at')
+            ->limit($limit)
+            ->get();
     }
 }

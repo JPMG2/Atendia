@@ -1,7 +1,9 @@
 <?php
 
+use App\Actions\Catalog\WriteMissingDescriptions;
 use App\Classes\Main\Client;
 use App\Classes\Main\Inventory;
+use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\ProductForm;
 use App\Models\Product;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -30,6 +33,8 @@ new class extends Component
 
     public ProductForm $form;
 
+    /** In the URL so the global search can land on the item it named. */
+    #[Url(as: 'buscar', except: '')]
     public string $search = '';
 
     public string $filter = 'all';
@@ -39,10 +44,18 @@ new class extends Component
 
     public bool $sheetOpen = false;
 
+    /** The palette's "Crear producto" lands here with the sheet already open. */
+    #[Url(as: 'nuevo', except: false)]
+    public bool $startBlank = false;
+
     public function mount(): void
     {
         // The Wireable DTO must exist before hydration, or it type-errors.
         $this->form->setup();
+
+        if ($this->startBlank) {
+            $this->sheetOpen = true;
+        }
     }
 
     private function inventory(): ?Inventory
@@ -151,6 +164,23 @@ new class extends Component
             $this->sheetOpen = false;
             $this->refreshList();
         }
+    }
+
+    /** Same writer the services screen uses: one call for the whole batch. */
+    public function writeDescriptions(WriteMissingDescriptions $writer): void
+    {
+        $written = $writer->handle(Auth::user()->business, $this->products);
+
+        // Null is the model never answering: saying "they all have one already"
+        // there tells the owner the opposite of what happened.
+        $this->dispatchNotification($written === null
+            ? new NotificationDto(__('client.products.ai_failed'), NotificationType::Error)
+            : new NotificationDto(
+                trans_choice('client.products.ai_done', $written, ['count' => $written]),
+                $written > 0 ? NotificationType::Success : NotificationType::Info,
+            ));
+
+        $this->refreshList();
     }
 
     /** The row flips in stock / out of stock; the switch is the feedback. */
@@ -283,12 +313,13 @@ new class extends Component
         @endif
     @else
         <div class="flex flex-col gap-3">
-            {{-- Same humanity note as the services screen, aimed at THIS
-            screen's magic moment: the list the owner already keeps, loaded
-            without typing. --}}
+            {{-- The assistant offers to write; it never blocks the manual path.
+            It used to sell the spreadsheet lane that already lives below. --}}
             <x-ui.ai-banner
                 :title="__('client.products.ai_title')"
                 :body="__('client.products.ai_body')"
+                :action="__('client.products.ai_action')"
+                call="writeDescriptions"
             />
 
             {{-- ONE surface: toolbar to find, list to act; the sheet slides over. --}}

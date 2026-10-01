@@ -17,7 +17,6 @@ return [
     'aria_nav' => 'Navegación principal',
     'sidebar_toggle' => 'Compactar o expandir el menú',
     'open_menu' => 'Abrir menú',
-    'search_placeholder' => 'Buscar en tu panel…',
     'notifications' => 'Notificaciones',
 
     // Upsell card del footer del sidebar (skeleton temporal)
@@ -55,6 +54,7 @@ return [
     'my_payments' => 'Mis pagos',
     'admin_payments' => 'Pagos',
     'admin_moderation' => 'Moderación',
+    'admin_support' => 'Soporte',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

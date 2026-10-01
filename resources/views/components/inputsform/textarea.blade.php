@@ -8,6 +8,7 @@
     'rows' => 3,
     'span' => 'full',      // width BY CONTENT: code | short | text | long | full
     'counter' => false,    // opt-in live character counter; needs a maxlength
+    'action' => null,      // optional control beside the label (e.g. "write it for me")
 ])
 
 @php
@@ -47,13 +48,18 @@
     class="field {{ $spanClass }}"
     @if ($showCounter) x-data="{ count: 0 }" x-init="count = $refs.ta.value.length" @endif
 >
-    @if ($label)
-        <label for="{{ $id }}" class="field-label"
-            >{{ $label }}
-            @if ($isRequired)
-                <span class="field-required" aria-hidden="true">*</span>
+    @if ($label || $action)
+        <div @class(['field-label-row' => $action !== null])>
+            @if ($label)
+                <label for="{{ $id }}" class="field-label"
+                    >{{ $label }}
+                    @if ($isRequired)
+                        <span class="field-required" aria-hidden="true">*</span>
+                    @endif
+                </label>
             @endif
-        </label>
+            {{ $action }}
+        </div>
     @endif
 
     <div class="{{ $controlClasses }}">

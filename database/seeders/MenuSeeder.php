@@ -84,6 +84,7 @@ class MenuSeeder extends Seeder
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'sort_order' => 4]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 5]);
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_moderation', 'icon' => 'shield-check', 'route_name' => 'admin.moderation', 'sort_order' => 6]);
+        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'sort_order' => 7]);
         // Company hangs off Configuration: it is AtendIa's own data, not an area.
         $settings = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'settings', 'sort_order' => 7]);
         Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);

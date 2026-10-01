@@ -6,9 +6,11 @@ namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
 use App\Traits\EmbedsName;
+use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +36,7 @@ class Product extends Model
     use HasFactory;
 
     use LogsActivity;
+    use SearchesText;
 
     // What stops being sold is deactivated or soft-deleted: the assistant's
     // conversations that mention it have to stay traceable.
@@ -79,5 +82,22 @@ class Product extends Model
     public function serviceType(): BelongsTo
     {
         return $this->belongsTo(ServiceType::class);
+    }
+
+    /**
+     * The tenant's products whose words match. The code is searched too: a
+     * vector smears an SKU, so only this lane can find "AB-120".
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'name', 'description', 'code', 'is_active'])
+            ->whereTextMatches(['name', 'description', 'code'], $term)
+            ->orderByLeadingMatch('name', $term)
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
     }
 }

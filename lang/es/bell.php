@@ -63,5 +63,6 @@ return [
         'appointment_booked_plain' => 'Turno nuevo de :name: :when',
         'whatsapp_disconnected' => 'Tu WhatsApp se desconectó a las :at y dejó de responder',
         'taught_by_teammate' => ':who le enseñó a tu asistente a responder: :question',
+        'support_resolved' => 'Resolvimos tu reporte :code',
     ],
 ];

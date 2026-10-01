@@ -29,7 +29,8 @@ test('a disconnected business sees the yellow chip, the short search and the con
         ->assertNoJavaScriptErrors()
         ->assertSee(__('whatsapp.topbar_disconnected'))
         ->assertSee(__('whatsapp.connect.cta'))
-        ->assertAttribute('input[name="search"]', 'placeholder', __('menu.search_placeholder'))
+        // The dead box became the palette: what the topbar offers now answers.
+        ->assertPresent('[data-testid="cmdk-open"]')
         ->screenshot(filename: 'polish-customers-desktop');
 
     visit('/conversaciones')->resize(560, 900)

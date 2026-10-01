@@ -32,6 +32,9 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './resources/js/**/*.js',
+        // PHP writes class names too (a highlighted match, a status tone), and
+        // what Tailwind does not see inside @layer it prunes without a word.
+        './app/**/*.php',
     ],
 
     theme: {

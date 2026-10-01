@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Enums\MessageDirection;
 use App\Traits\BelongsToBusiness;
+use App\Traits\SearchesText;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +31,8 @@ class Customer extends Model
 
     /** @use HasFactory<CustomerFactory> */
     use HasFactory;
+
+    use SearchesText;
 
     /**
      * @return array<string, string>
@@ -196,5 +200,22 @@ class Customer extends Model
             'nombre' => $this->name,
             'correo' => $this->email,
         ], fn (?string $value): bool => $value !== null);
+    }
+
+    /**
+     * The tenant's customers whose words match. No vectors here on purpose:
+     * a phone number or an email is an identifier, and meaning blurs those.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function matching(string $term, int $limit): EloquentCollection
+    {
+        return static::query()
+            ->select(['id', 'name', 'profile_name', 'phone', 'email'])
+            ->whereTextMatches(['name', 'profile_name', 'phone', 'email'], $term)
+            ->orderByLeadingMatch('name', $term)
+            ->orderByDesc('last_activity_at')
+            ->limit($limit)
+            ->get();
     }
 }

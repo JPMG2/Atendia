@@ -137,15 +137,9 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     <x-icon name="menu" :size="20" />
                 </button>
 
-                <div class="topbar-search">
-                    <x-ui.input
-                        name="search"
-                        type="search"
-                        icon="search"
-                        :placeholder="__('menu.search_placeholder')"
-                        autocomplete="off"
-                    />
-                </div>
+                {{-- One instance for the whole panel: the palette is the only
+                search, and ⌘K reaches it from any screen. --}}
+                <livewire:search.palette />
 
                 <div class="topbar-actions">
                     {{-- Only the truth: a fixed "connected" chip contradicted the home's "sin conectar" pill. --}}
@@ -169,6 +163,10 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     {{-- The owner's assistant is a client-panel tool: admin has no business to ask about. --}}
                     @unless ($onAdminPanel)
                         <livewire:client.ask-atendia />
+
+                        {{-- Support sits beside the assistant: both are "help",
+                    one from the machine and one from us. --}}
+                        <livewire:support.widget />
                     @endunless
 
                     <x-ui.theme-toggle />

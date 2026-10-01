@@ -20,6 +20,12 @@ use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Ai\Tools\SearchCatalog;
 use App\Ai\Tools\SendCatalogPhotos;
 use App\Classes\Report\CompanyReport;
+use App\Classes\Search\ConversationSource;
+use App\Classes\Search\CustomerSource;
+use App\Classes\Search\KnowledgeSource;
+use App\Classes\Search\ProductSource;
+use App\Classes\Search\ScreenSource;
+use App\Classes\Search\ServiceSource;
 
 return [
 
@@ -116,6 +122,31 @@ return [
 
     'reports' => [
         'company' => CompanyReport::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Búsqueda global (Ctrl/⌘ + K)
+    |--------------------------------------------------------------------------
+    |
+    | Where the palette looks, in the order the groups are shown. The order is
+    | the contract with the eye: groups never reorder while typing, so a place
+    | learned once stays learned. Each class is an App\Interfaces\Main\SearchSource
+    | and answers two lanes — words and meaning — which GlobalSearch fuses.
+    |
+    */
+
+    'search' => [
+        'sources' => [
+            'screens' => ScreenSource::class,
+            'services' => ServiceSource::class,
+            'products' => ProductSource::class,
+            'customers' => CustomerSource::class,
+            'conversations' => ConversationSource::class,
+            'knowledge' => KnowledgeSource::class,
+        ],
+
+        'per_group' => 5,
     ],
 
     /*
