@@ -11,7 +11,6 @@ use App\Jobs\NotifyUnansweredCustomers;
 use App\Livewire\Forms\Client\AssistantFaqForm;
 use App\Models\KnowledgeSuggestion;
 use App\Traits\HasNotifications;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -286,12 +285,6 @@ new class extends Component
         app(ReindexKnowledgeSource::class)->handle($business, $type);
 
         $this->dispatchNotification(new NotificationDto(__('client.assistant.reindexed'), NotificationType::Success));
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('client.assistant.title'));
     }
 };
 ?>

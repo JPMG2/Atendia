@@ -22,9 +22,9 @@ class WriteMissingDescriptions
 
     /**
      * @param  Collection<int, Model>  $items  Services or products of this business.
-     * @return int how many were written
+     * @return int|null how many were written, or null when the model never answered
      */
-    public function handle(Business $business, Collection $items): int
+    public function handle(Business $business, Collection $items): ?int
     {
         // Filtered in PHP: an item that already reads well never reaches the model.
         $pending = $items
@@ -40,7 +40,9 @@ class WriteMissingDescriptions
         } catch (Throwable $e) {
             report($e);
 
-            return 0;
+            // Not zero: zero means "they all read fine already", and telling the
+            // owner that when the model never answered is a plain lie.
+            return null;
         }
 
         return $this->apply($pending, $response['items'] ?? []);

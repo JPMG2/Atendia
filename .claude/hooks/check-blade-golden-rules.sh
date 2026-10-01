@@ -72,7 +72,7 @@ if ! in_list "$rel" "$hex_allow" && ! is_email_view "$rel" && grep -qE '#[0-9a-f
 fi
 
 if grep -qE '#\[Title\(' "$file"; then
-    violations="${violations}- Hardcodea el título de la página con #[Title(...)]. Un atributo no puede llamar __(): usá render() con \$this->view()->title(__('...')) o el default traducido del layout.\n"
+    violations="${violations}- Hardcodea el título de la página con #[Title(...)]. Un atributo no puede llamar __(): en el panel cliente el nombre lo pone el ítem del menú (Menu::titleFor en AppLayout), y en una pantalla full-page va render() con \$this->view()->title(__('...')).\n"
 fi
 
 if grep -qiE 'data-lucide|lucide\.createIcons' "$file"; then

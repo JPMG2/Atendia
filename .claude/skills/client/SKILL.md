@@ -109,11 +109,12 @@ la guía (A), el test guardián `GoldenRules*` (B) y **el hook** (C). Los de
 `.claude/hooks`, registrados en `.claude/settings.json`, corren solos en cada
 corrida y la corrida cierra con **todos** en verde:
 
-- **Los 17 guardianes `Write|Edit`** — markup (`check-blade-golden-rules.sh`),
+- **Los 18 guardianes `Write|Edit`** — markup (`check-blade-golden-rules.sh`),
   queries en Blade (`check-blade-query-golden-rules.sh`), layout de filas
   (`check-catalog-form-layout.sh`), avisos nativos
   (`check-no-native-alerts.sh`), Flatpickr (`check-datepicker-golden-rules.sh`),
-  comentarios (`check-comment-golden-rules.sh`), consolidación de migraciones
+  comentarios (`check-comment-golden-rules.sh`), controles que contestan
+  (`check-live-control-golden-rules.sh`), consolidación de migraciones
   (`check-migration-consolidation.sh`), orden de campos
   (`check-field-order.sh`), validación en el Form
   (`check-form-validation-golden-rules.sh`), tenancy

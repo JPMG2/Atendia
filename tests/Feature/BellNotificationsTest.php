@@ -254,3 +254,25 @@ test('the panel refuses a message that is not a panel message', function (): voi
     expect(fn (): bool => (new Panel($business, [], Business::class))->send())
         ->toThrow(InvalidArgumentException::class);
 });
+
+/*
+ * A booking taken through the public link may carry no service: the form's
+ * `service_id` is nullable on purpose, for a business that books plain hours.
+ * The row has to read as a sentence anyway.
+ */
+test('a booking with no service reads without a dangling tail', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = bellUser();
+
+    PanelNotification::raise(
+        $user->business,
+        PanelNotificationType::AppointmentBooked,
+        'booking:7',
+        ['name' => 'Ana', 'when' => '06/10 09:00', 'service' => ''],
+    );
+
+    $rendered = Livewire::actingAs($user)->test('client.bell')->call('open')->html();
+
+    expect($rendered)->toContain('Turno nuevo de Ana: 06/10 09:00')
+        ->and($rendered)->not->toContain('09:00, <');
+});

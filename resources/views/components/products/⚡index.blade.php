@@ -289,7 +289,6 @@ new class extends Component
             <x-ui.ai-banner
                 :title="__('client.products.ai_title')"
                 :body="__('client.products.ai_body')"
-                :action="__('client.products.ai_action')"
             />
 
             {{-- ONE surface: toolbar to find, list to act; the sheet slides over. --}}

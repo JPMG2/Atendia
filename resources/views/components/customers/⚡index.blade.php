@@ -4,7 +4,6 @@ use App\Classes\Main\Client;
 use App\Models\Customer;
 use App\Traits\HasNotifications;
 use App\Traits\ManagesCustomerSheet;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -12,7 +11,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Mis clientes" — the tenant's customer directory: every person the
+ * "Clientes" — the tenant's customer directory: every person the
  * assistant has talked to, searchable and filterable. The inbox is the
  * day's flow; this screen is the asset it leaves behind.
  */
@@ -99,12 +98,6 @@ new class extends Component
         return $this->sheetId === null
             ? null
             : Client::for(Auth::user())->directory?->customer($this->sheetId);
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('client.customers.title'));
     }
 };
 ?>

@@ -9,6 +9,7 @@ use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -114,6 +115,28 @@ test('the network picker shows its whole word on a tablet', function (): void {
 });
 
 /**
+ * The user who just registered reads these two screens before anything else,
+ * and both printed their title over a void — no number, no sentence, no step.
+ * Looked at on a phone in light, which is where a bare screen reads worst.
+ */
+test('a client whose business is not born yet reads the step on every screen', function (): void {
+    $this->actingAs(User::factory()->create(['business_id' => null, 'email_verified_at' => now()])->refresh());
+
+    visit(route('statistics'))->resize(390, 844)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('statistics.no_business.title'))
+        ->assertSee(__('statistics.no_business.cta'))
+        ->screenshot(filename: 'fresh-statistics-phone');
+
+    visit(route('referrals'))->resize(390, 844)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('referrals.no_business.title'))
+        ->screenshot(filename: 'fresh-referrals-phone')
+        ->click(__('referrals.no_business.cta'))
+        ->assertPathIs('/alta');
+});
+
+/**
  * A KPI row is read by scanning the numbers, not the labels: when one card's
  * label wraps to two lines and its neighbour's does not, the number floats and
  * the row loses the line the eye was following. Between 601 and 1100px every
@@ -140,4 +163,19 @@ test('the numbers of a KPI row sit on one line on a tablet', function (): void {
     );
 
     expect((int) $offRows)->toBe(0);
+});
+
+/**
+ * With five tabs of the panel open, the tab strip is the only place that says
+ * which screen each one is. Measured in a real browser: the macro that was
+ * supposed to name it never ran outside a page component, and the whole panel
+ * said "AtendIa" for months without a single test noticing.
+ */
+test('the browser tab names the screen, and says the brand once', function (): void {
+    $this->seed(MenuSeeder::class);
+
+    visit(route('statistics'))->assertTitle(__('menu.statistics').' · '.config('app.name'));
+
+    // A name that already carries the brand ("Gana con AtendIa") keeps it once.
+    visit(route('referrals'))->assertTitle(__('menu.referrals'));
 });

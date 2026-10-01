@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Menu extends Model
 {
@@ -159,6 +160,29 @@ class Menu extends Model
             ->get();
 
         return self::filterByPermission($roots, auth()->user());
+    }
+
+    /**
+     * The screen's own name, for a tab that has to say which screen it is.
+     * The client panel's screens are nested components, so Livewire's
+     * ->title() never reaches the head: the menu item names the tab, and a
+     * card's deep link ("settings.correo") falls back to its parent screen.
+     */
+    public static function titleFor(?string $routeName): ?string
+    {
+        if ($routeName === null) {
+            return null;
+        }
+
+        $parent = Str::before($routeName, '.');
+
+        $keys = self::query()
+            ->whereIn('route_name', array_unique([$routeName, $parent]))
+            ->pluck('label_key', 'route_name');
+
+        $key = $keys[$routeName] ?? $keys[$parent] ?? null;
+
+        return $key === null ? null : (string) __($key);
     }
 
     /**

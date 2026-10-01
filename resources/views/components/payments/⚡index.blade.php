@@ -10,7 +10,6 @@ use App\Models\Payment;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -111,12 +110,6 @@ new class extends Component
             $this->uploading = false;
             unset($this->billing);
         }
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('billing.title'));
     }
 };
 ?>

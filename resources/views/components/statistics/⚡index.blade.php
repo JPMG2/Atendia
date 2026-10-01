@@ -3,13 +3,12 @@
 use App\Classes\Main\Client;
 use App\Classes\Main\Plan;
 use App\Classes\Main\Statistics;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
- * "Mis estadísticas" — the GBP "Performance" mold: every block hands the
+ * "Estadísticas" — the GBP "Performance" mold: every block hands the
  * owner its READING, not homework. Depth is a plan dial (counts → patterns
  * → trends) and locked blocks stay visible with their padlock.
  */
@@ -56,19 +55,22 @@ new class extends Component
             'trend' => $percent > 0 ? 'up' : ($percent < 0 ? 'down' : 'flat'),
         ];
     }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('statistics.title'));
-    }
 };
 ?>
 
 <div>
     <x-ui.page-head :title="__('statistics.title')" :sub="__('statistics.sub')" />
 
-    @if ($this->stats !== null)
+    @if ($this->stats === null)
+        {{-- Every block hangs off the business: without one this screen printed
+        its title over a void, while Equipo, Agenda and WhatsApp all name the
+        step that unblocks them. --}}
+        <x-ui.card class="p-6">
+            <x-ui.empty-state icon="bar-chart-3" :title="__('statistics.no_business.title')" :body="__('statistics.no_business.body')">
+                <x-ui.button variant="primary" icon="store" :href="route('onboarding')" wire:navigate>{{ __('statistics.no_business.cta') }}</x-ui.button>
+            </x-ui.empty-state>
+        </x-ui.card>
+    @else
         @php($sinceDayOne = $this->stats->sinceDayOne)
 
         {{-- The retention counter: what Atendia did since the day they hired it. --}}

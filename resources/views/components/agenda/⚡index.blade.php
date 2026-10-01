@@ -12,7 +12,6 @@ use App\Traits\HasNotifications;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -209,11 +208,6 @@ new class extends Component
     private function refreshDay(): void
     {
         unset($this->bookings, $this->freeHours, $this->weekDays);
-    }
-
-    public function render(): View
-    {
-        return $this->view()->title(__('agenda.title'));
     }
 };
 ?>

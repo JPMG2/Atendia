@@ -7,6 +7,7 @@ use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\PanelNotification;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -158,6 +159,45 @@ test('the AI button on Servicios is wired to something', function (): void {
         ->assertNoJavaScriptErrors()
         ->assertPresent('@ai-banner-action')
         ->screenshot(filename: 'services-ai-button');
+});
+
+/*
+ * The other two banners print no button: the label they used to show ran
+ * nothing. What is looked at here is the banner WITHOUT it — a flex row that
+ * loses its last child can leave the copy stretched or the glyph adrift.
+ */
+test('the banners with nothing to run read as notes, not offers', function (): void {
+    // A product has to exist: with an empty catalog the screen shows its
+    // offer-empty block instead, and the banner is not on screen at all.
+    Product::factory()->for($this->business)->create();
+
+    visit('/productos')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->assertSee('¿Tu lista de productos vive en un Excel o en papel?')
+        ->assertMissing('@ai-banner-action')
+        ->screenshot(filename: 'ai-banner-products-note');
+
+    visit('/negocio/identidad')->resize(390, 844)
+        ->assertNoJavaScriptErrors()
+        ->assertSee('¿Te cuesta describir tu negocio?')
+        ->assertMissing('@ai-banner-action')
+        ->screenshot(filename: 'ai-banner-identity-note-phone');
+});
+
+test('a booking with no service reads as a whole sentence', function (): void {
+    PanelNotification::raise(
+        $this->business,
+        PanelNotificationType::AppointmentBooked,
+        'booking:plain',
+        ['name' => 'Ana Sosa', 'when' => '06/10 09:00', 'service' => ''],
+        '/agenda',
+    );
+
+    visit('/dashboard')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->click('@bell')
+        ->assertSee('Turno nuevo de Ana Sosa: 06/10 09:00')
+        ->screenshot(filename: 'bell-booking-no-service');
 });
 
 test('the owner sees what her team taught, already live', function (): void {

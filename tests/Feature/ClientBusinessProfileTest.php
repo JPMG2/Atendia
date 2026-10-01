@@ -373,9 +373,12 @@ test('the identity card hydrates from the business and saves through the identit
     $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
 
     Livewire::test('client.section-identity')
-        // The ai hand rides on the card; the fields stay the manual path.
+        // The note rides on the card; the fields stay the manual path. Its
+        // button is gone until something writes the bio: the label used to
+        // print a control that ran nothing (GoldenRulesLiveControlsTest).
         ->assertSee(__('client.business.identity.ai_title'))
-        ->assertSee(__('client.business.identity.ai_action'))
+        ->assertSee(__('client.business.identity.ai_body'))
+        ->assertDontSee(__('client.business.identity.ai_action'))
         // The hint teaches WHY the casing is kept exactly as typed.
         ->assertSee(__('client.business.identity.name_hint'))
         ->assertSet('form.name', 'Costuras Mary')

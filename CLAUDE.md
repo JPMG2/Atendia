@@ -384,6 +384,74 @@ Para cualquier OTRO archivo no hay dónde anotar una excepción: si falla, se ar
 - [ ] Sin código comentado ni banners decorativos.
 - [ ] `./vendor/bin/pest --filter=GoldenRulesComments` en verde.
 
+=== .ai/controles-vivos rules ===
+
+# Controles vivos — un botón que se dibuja, hace algo (regla de oro)
+
+> Si el panel dibuja un control que invita a actuar, el control actúa. Un botón
+> con la misma pinta que todos los demás que contesta el click con silencio es
+> una mentira: el cliente concluye que el producto está roto, no que la función
+> todavía no existe. Un tema por archivo: acá vive el *cómo*; el enforcement de
+> 3 capas en `reglas-de-oro-enforcement.md`.
+
+Esta regla está **blindada**: el test guardián
+`tests/Feature/GoldenRulesLiveControlsTest.php` y el hook
+`check-live-control-golden-rules.sh` fallan si una vista dibuja un control sin
+nada detrás. Las dos capas comparten el MISMO scanner
+(`tests/Support/ControlScanner.php`), así que no pueden divergir.
+
+## Por qué nació (2026-10-01)
+
+La auditoría nocturna cazó esta misma clase de defecto **cuatro veces a mano**,
+y cada caso había vivido meses porque nada se lo decía al build:
+
+- el chip "WhatsApp conectado" de la barra, texto fijo que le decía *conectado*
+  a todo cliente (muerto desde el 2026-06-27, cazado el 28/09);
+- el punto rojo de la campana, encendido para todos desde junio;
+- el **buscador de la barra**, el control más prominente de todas las pantallas:
+  solo CSS, sin `wire:model` ni listener (sigue así, lo decide la dueña);
+- el banner de IA imprimiendo **"Optimizar con IA" en dos pantallas** (Productos
+  y Mi negocio → Identidad) sin método detrás.
+
+## La regla
+
+- Un `<button>`, un `<x-ui.button>` o un `<x-ui.icon-button>` lleva **algo que
+  lo hace andar**: `wire:click`, `wire:submit`, `href`, `type="submit"`,
+  `x-on:click`/`@click`, o un `data-…` que un script del bundle bindea
+  (así alcanza `hero.js` la demo de la landing).
+- `data-testid` **no cuenta**: es para los tests, no es un handler.
+- Un componente que reenvía el `$attributes` toma su acción del llamador y por
+  eso pasa (`ui/button`, `ui/icon-button`).
+- Un `<button>` **sin un solo atributo** pasa: manda el formulario donde vive,
+  que es exactamente lo que tiene que hacer.
+- Si la capacidad todavía no existe, **no se dibuja el botón**. El copy que la
+  vende puede quedar como nota; el control, no. Un componente que recibe el
+  rótulo pero no el método **no imprime botón** (es el contrato de
+  `<x-ui.ai-banner>`: sin `call`, el banner solo cuenta).
+
+## Qué NO alcanza esta regla
+
+- **`<a href="#">`** — un ítem de menú sin `route_name` (hoy "Ayuda") cae en
+  ese markup. Es la misma mentira por otro mecanismo y está **reportada en el
+  log, pendiente de la dueña**: se suma al guardián el día que se decida el
+  remedio, no antes.
+- **Un campo sin `wire:model`** — hoy el buscador de la barra, que es solo CSS.
+  Mismo caso: reportado desde el 2026-09-30 y pendiente de la dueña (o se
+  construye la búsqueda, o se saca el control). El guardián mira CONTROLES DE
+  ACCIÓN; sumar los campos el día que esa decisión esté tomada.
+- Un botón que **reporta un estado** en vez de ofrecer uno (el "Copiado" que se
+  intercambia por dos segundos con el botón que sí copia). Esos viven en el
+  allowlist `ControlScanner::ALLOWED` **con su razón escrita**, y esa lista
+  **no crece**: un botón mudo se arregla, no se anota.
+
+## Checklist de salida
+
+- [ ] ¿Botón nuevo? Lleva `wire:click` / `href` / `x-on:click` / hook `data-…`.
+- [ ] ¿La capacidad no existe todavía? No se dibuja el control; el copy queda y
+      el hallazgo se reporta.
+- [ ] Nada nuevo en `ControlScanner::ALLOWED`.
+- [ ] `./vendor/bin/pest --filter=GoldenRulesLiveControls` en verde.
+
 === .ai/correo-por-canal rules ===
 
 # Correo por canal — un mail jamás sale por `Mail::` directo (regla de oro)
@@ -600,8 +668,17 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
   (sesión › geo IP › default) y el **selector manual** manda. Detalle completo en la
   memoria `atendia-i18n-variantes-regionales`.
 - **El título de la pestaña también es copy** (blindado): nada de `#[Title('...')]`
-  en un SFC — un atributo PHP no puede llamar `__()`. La vía: `render()` con
-  `$this->view()->title(__('...'))`, o el default traducido del layout (caso wizard).
+  en un SFC — un atributo PHP no puede llamar `__()`.
+  - **Pantalla del panel cliente** (una vista Blade con `<x-app-layout>` y el
+    componente adentro): el nombre lo pone **el ítem del menú**, vía
+    `Menu::titleFor()` en `AppLayout` — no hace falta tocar nada. Un `render()`
+    con `$this->view()->title(...)` ahí **NO hace nada**: ese macro solo corre en
+    un componente de PÁGINA, y 12 pantallas lo tuvieron meses sin efecto
+    (`GoldenRulesScreenTitlesTest`, 2026-10-01).
+  - **Pantalla full-page** (`Route::livewire`, todo el panel admin): ahí sí vale
+    `render()` con `$this->view()->title(__('...'))`.
+  - El layout agrega la marca (`Pantalla · AtendIa`) y no la repite si el nombre
+    ya la trae ("Gana con AtendIa").
 - Estilo (aplica a las tres variantes): **sentence case**, verbo primero, concreto, **sin
   emoji** en la chrome. Errores útiles: *"No pudimos guardar. Revisá el email."*
   (neutro: *"Revisa el email."*).
@@ -1272,6 +1349,16 @@ lo recuerda cuando el mensaje reclama una regla.
   test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
   `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
   dos); sin allowlist — nació en cero el 2026-09-27.
+- **Un botón que se dibuja, hace algo** → `.ai/guidelines/controles-vivos.md` ·
+  test guardián `tests/Feature/GoldenRulesLiveControlsTest.php` · hook
+  `.claude/hooks/check-live-control-golden-rules.sh`. Las dos capas comparten el
+  MISMO scanner (`tests/Support/ControlScanner.php`), como la regla de los
+  comentarios: no pueden divergir. Nació el 2026-10-01, después de que la
+  auditoría cazara la MISMA clase de defecto cuatro veces a mano (el chip falso
+  de WhatsApp, el punto rojo de la campana, el buscador de la barra y un banner
+  de IA con el botón "Optimizar con IA" muerto en dos pantallas): ninguna de las
+  16 reglas miraba si un control CONTESTA. Allowlist con una sola entrada
+  razonada (el "Copiado" que se intercambia con el botón que copia) y no crece.
 - **Ninguna pantalla sin la skill de diseño** → skill `atendiadesign` (capa A) · hook
   `.claude/hooks/require-design-skill.sh` (PreToolUse `Write|Edit|Bash`): bloquea
   editar `resources/views|css` si `atendiadesign` no se cargó en la sesión, y bloquea
@@ -1306,7 +1393,12 @@ lo recuerda cuando el mensaje reclama una regla.
   salieron leyendo su pieza pelada — un 500 justo para quien recién se
   registró. Ningún test lo vio porque todos sembraban un negocio primero.
   Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
-  PostToolUse pueda leer en el archivo.
+  PostToolUse pueda leer en el archivo. **Desde el 2026-10-01 el guardián
+  también exige que la pantalla DIGA algo**: mide el texto que queda dentro de
+  `<main>` al sacarle el encabezado (el chrome que el layout regala) y falla
+  por debajo de 40 caracteres. Un 200 no es una respuesta: Estadísticas y Gana
+  imprimían su título sobre un vacío —cero caracteres— mientras Equipo, Agenda
+  y WhatsApp nombraban el paso que las desbloquea.
 - **Ninguna pantalla del cliente scrollea de lado en un teléfono ni en una
   tablet** → mandato 1 de `atendiadesign` · test guardián
   `tests/Browser/ClientResponsiveBrowserTest.php`: recorre los ítems del menú del
@@ -1323,6 +1415,20 @@ lo recuerda cuando el mensaje reclama una regla.
   incumplimiento es del RENDER a un ancho, no un patrón que un hook PostToolUse
   pueda leer en el archivo. Vive en `tests/Browser`, así que corre a demanda con
   la suite de browser, no en la del commit.
+- **Ninguna pantalla del cliente deja la pestaña sin nombre** →
+  `.ai/guidelines/formularios.md` §4 · test guardián
+  `tests/Feature/GoldenRulesScreenTitlesTest.php`: recorre los ítems del menú del
+  cliente (la lista NO se mantiene a mano), lee el `<title>` que sale del render y
+  falla si dice solo la marca —o si la dice dos veces—. Nació el 2026-10-01: la
+  regla escrita blindaba el CÓMO viaja el título (`render()` con `__()`, nunca
+  `#[Title]`) y nadie miraba si viajaba. Las 23 pantallas del panel decían
+  "AtendIa" y nada más: ese macro de Livewire solo corre en un componente de
+  PÁGINA, y las del cliente son una vista Blade con el componente adentro, así que
+  12 `->title()` escritos a conciencia no hacían nada. Ahora el nombre lo pone el
+  ítem del menú (`Menu::titleFor()` en `AppLayout`) y el panel admin —full-page de
+  verdad— sigue con el suyo. Capa B sola: el título es una propiedad del RENDER, y
+  qué componente sirve a un ítem del menú no está escrito en el archivo que un
+  hook PostToolUse podría leer.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

@@ -65,6 +65,7 @@ return [
         'no_results' => 'Nada coincide con tu búsqueda. Probá con otro nombre.',
         'ai_title' => '¿No sabés cómo redactar las descripciones?',
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus servicios.',
+        'ai_failed' => 'No pudimos escribir las descripciones ahora. Intentá de nuevo en un momento.',
         'sheet_hint' => 'Todo lo que cargues acá, tu asistente lo responde en WhatsApp.',
         // "Adelanto" is the neutral base; Argentina says "seña".
         'field_deposit' => 'Seña',

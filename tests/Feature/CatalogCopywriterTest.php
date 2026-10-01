@@ -69,6 +69,37 @@ test('an answer that comes back reordered still describes the right item', funct
         ->and($second->fresh()->description)->toBe('Brackets y control mensual.');
 });
 
+/*
+ * A model that never answers used to return 0, which the toast words as
+ * "Todos tus servicios ya tienen descripción" — the owner is told the opposite
+ * of what happened, and the blanks are still blank.
+ */
+test('a model that never answers is not reported as nothing to do', function (): void {
+    CatalogCopywriter::fake(fn () => throw new RuntimeException('provider down'));
+
+    $blank = Service::factory()->for($this->business)->create(['name' => 'Limpieza dental', 'description' => null]);
+
+    expect(app(WriteMissingDescriptions::class)->handle($this->business, collect([$blank])))->toBeNull()
+        ->and($blank->fresh()->description)->toBeNull();
+});
+
+test('the services screen says it could not write instead of claiming they are done', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    CatalogCopywriter::fake(fn () => throw new RuntimeException('provider down'));
+
+    $user = User::factory()->create();
+    $user->business()->associate($this->business)->save();
+    Service::factory()->for($this->business)->create(['description' => null]);
+
+    Livewire::actingAs($user)
+        ->test('goods.index')
+        ->call('writeDescriptions')
+        ->assertDispatched('notify', fn (string $event, array $params): bool => str_contains(
+            json_encode($params, JSON_THROW_ON_ERROR),
+            'No pudimos escribir las descripciones',
+        ));
+});
+
 test('the services screen writes them and says how many', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     CatalogCopywriter::fake([[

@@ -170,6 +170,16 @@ lo recuerda cuando el mensaje reclama una regla.
   test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
   `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
   dos); sin allowlist — nació en cero el 2026-09-27.
+- **Un botón que se dibuja, hace algo** → `.ai/guidelines/controles-vivos.md` ·
+  test guardián `tests/Feature/GoldenRulesLiveControlsTest.php` · hook
+  `.claude/hooks/check-live-control-golden-rules.sh`. Las dos capas comparten el
+  MISMO scanner (`tests/Support/ControlScanner.php`), como la regla de los
+  comentarios: no pueden divergir. Nació el 2026-10-01, después de que la
+  auditoría cazara la MISMA clase de defecto cuatro veces a mano (el chip falso
+  de WhatsApp, el punto rojo de la campana, el buscador de la barra y un banner
+  de IA con el botón "Optimizar con IA" muerto en dos pantallas): ninguna de las
+  16 reglas miraba si un control CONTESTA. Allowlist con una sola entrada
+  razonada (el "Copiado" que se intercambia con el botón que copia) y no crece.
 - **Ninguna pantalla sin la skill de diseño** → skill `atendiadesign` (capa A) · hook
   `.claude/hooks/require-design-skill.sh` (PreToolUse `Write|Edit|Bash`): bloquea
   editar `resources/views|css` si `atendiadesign` no se cargó en la sesión, y bloquea
@@ -204,7 +214,12 @@ lo recuerda cuando el mensaje reclama una regla.
   salieron leyendo su pieza pelada — un 500 justo para quien recién se
   registró. Ningún test lo vio porque todos sembraban un negocio primero.
   Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
-  PostToolUse pueda leer en el archivo.
+  PostToolUse pueda leer en el archivo. **Desde el 2026-10-01 el guardián
+  también exige que la pantalla DIGA algo**: mide el texto que queda dentro de
+  `<main>` al sacarle el encabezado (el chrome que el layout regala) y falla
+  por debajo de 40 caracteres. Un 200 no es una respuesta: Estadísticas y Gana
+  imprimían su título sobre un vacío —cero caracteres— mientras Equipo, Agenda
+  y WhatsApp nombraban el paso que las desbloquea.
 - **Ninguna pantalla del cliente scrollea de lado en un teléfono ni en una
   tablet** → mandato 1 de `atendiadesign` · test guardián
   `tests/Browser/ClientResponsiveBrowserTest.php`: recorre los ítems del menú del
@@ -221,6 +236,20 @@ lo recuerda cuando el mensaje reclama una regla.
   incumplimiento es del RENDER a un ancho, no un patrón que un hook PostToolUse
   pueda leer en el archivo. Vive en `tests/Browser`, así que corre a demanda con
   la suite de browser, no en la del commit.
+- **Ninguna pantalla del cliente deja la pestaña sin nombre** →
+  `.ai/guidelines/formularios.md` §4 · test guardián
+  `tests/Feature/GoldenRulesScreenTitlesTest.php`: recorre los ítems del menú del
+  cliente (la lista NO se mantiene a mano), lee el `<title>` que sale del render y
+  falla si dice solo la marca —o si la dice dos veces—. Nació el 2026-10-01: la
+  regla escrita blindaba el CÓMO viaja el título (`render()` con `__()`, nunca
+  `#[Title]`) y nadie miraba si viajaba. Las 23 pantallas del panel decían
+  "AtendIa" y nada más: ese macro de Livewire solo corre en un componente de
+  PÁGINA, y las del cliente son una vista Blade con el componente adentro, así que
+  12 `->title()` escritos a conciencia no hacían nada. Ahora el nombre lo pone el
+  ítem del menú (`Menu::titleFor()` en `AppLayout`) y el panel admin —full-page de
+  verdad— sigue con el suyo. Capa B sola: el título es una propiedad del RENDER, y
+  qué componente sirve a un ítem del menú no está escrito en el archivo que un
+  hook PostToolUse podría leer.
 - **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
   test guardián para migraciones cuando se sumen las reglas).*
 

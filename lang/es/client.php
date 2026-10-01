@@ -256,6 +256,7 @@ return [
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por ti textos claros y atractivos para tus servicios.',
         'ai_action' => 'Optimizar con IA',
         'ai_done' => '{0}Todos tus servicios ya tienen descripción|{1}Listo: escribimos 1 descripción|[2,*]Listo: escribimos :count descripciones',
+        'ai_failed' => 'No pudimos escribir las descripciones ahora. Intenta de nuevo en un momento.',
         'meter' => ':done de :total servicios con precio',
         'meter_hint' => 'Los completos venden mejor: tu asistente responde sin dudar.',
         'no_price' => 'Sin precio',

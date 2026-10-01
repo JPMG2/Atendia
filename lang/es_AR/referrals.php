@@ -7,6 +7,9 @@ return [
     'title' => 'Ganá con AtendIa',
     'sub' => 'Compartí tu enlace y ganá descuentos cuando un negocio se suscribe gracias a vos.',
     'how_share' => 'Compartí tu enlace con otros negocios, por WhatsApp o donde quieras.',
+    'no_business' => [
+        'body' => 'Tu enlace de recomendación sale a nombre de tu negocio. En cuanto lo crees, lo compartís y ganás descuentos cuando alguien se suscribe por vos.',
+    ],
     'how_invited' => 'Quien llega con tu enlace estrena AtendIa con :days días de prueba gratis.',
     'how_reward' => 'Cuando ese negocio paga su primer mes, vos ganás un :percent% de descuento en tu próxima factura.',
     'share_text' => 'Mirá AtendIa: atiende tu WhatsApp con inteligencia artificial, las 24 horas. Con mi enlace probás gratis :days días: :url',

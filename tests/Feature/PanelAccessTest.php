@@ -38,7 +38,7 @@ test('an admin can access the catalogs page', function (): void {
     $this->actingAs($admin)->get('/admin/catalogs')
         ->assertOk()
         ->assertSee(__('catalog.hub.title'))
-        ->assertSee('<title>Catálogos del sistema</title>', false);
+        ->assertSee('<title>Catálogos del sistema · AtendIa</title>', false);
 });
 
 test('a client cannot access the catalogs page', function (): void {

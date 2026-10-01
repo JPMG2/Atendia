@@ -57,7 +57,7 @@ test('an admin sees the company screen with both steps', function (): void {
     $this->actingAs(companyAdmin())->get('/admin/company')
         ->assertOk()
         ->assertSee(__('company.title'))
-        ->assertSee('<title>Compañía</title>', false)
+        ->assertSee('<title>Compañía · AtendIa</title>', false)
         ->assertSee(__('company.steps.main.label'))
         ->assertSee(__('company.steps.commercial.label'));
 });

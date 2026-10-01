@@ -75,7 +75,7 @@ test('a client cannot reach the logs page', function (): void {
 test('the logs page carries its translated tab title', function (): void {
     $this->actingAs(logsAdmin())->get('/admin/logs')
         ->assertOk()
-        ->assertSee('<title>Logs del sistema</title>', false);
+        ->assertSee('<title>Logs del sistema · AtendIa</title>', false);
 });
 
 test('an admin sees the latest entries, newest first', function (): void {

@@ -51,13 +51,12 @@ new class extends Component
     </div>
     <p class="bp-card-sub">{{ __('client.business.identity.sub') }}</p>
 
-    {{-- The assistant offers to write the bio; the fields below stay the
-    manual path — an offer, never a gate. --}}
+    {{-- A note while nothing writes the bio yet: the label it used to print ran
+    nothing. The copy stays for the day the button gets a method. --}}
     <x-ui.ai-banner
         class="mb-4"
         :title="__('client.business.identity.ai_title')"
         :body="__('client.business.identity.ai_body')"
-        :action="__('client.business.identity.ai_action')"
     />
 
     <div class="bp-form">

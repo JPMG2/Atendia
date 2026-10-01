@@ -6,7 +6,6 @@ use App\Enums\NotificationType;
 use App\Models\Business;
 use App\Models\Subscription;
 use App\Traits\HasNotifications;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -195,12 +194,6 @@ new class extends Component
         $this->scheduledPlan = null;
         $this->dispatchNotification(new NotificationDto(__('plan.change.cancelled', ['plan' => __('plan.names.'.$this->plan->code)]), NotificationType::Success));
     }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('plan.title'));
-    }
 };
 ?>
 
@@ -266,7 +259,10 @@ new class extends Component
             <x-plan.ask-quota
                 :used="$this->askQuestionsUsed"
                 :cap="$this->plan->askPerMonth"
-                :renewsOn="$this->business->quotaRenewsOn()->format('d/m/Y')"
+                {{-- Same fallback as the topbar's own quota line: every other
+                read on this screen already defends, and the day the entry plan
+                opens "Ask" this one would 500 for a client with no business. --}}
+                :renewsOn="($this->business?->quotaRenewsOn() ?? now()->startOfMonth()->addMonthNoOverflow())->format('d/m/Y')"
             />
         </div>
     @endif

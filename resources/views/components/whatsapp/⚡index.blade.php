@@ -6,7 +6,6 @@ use App\Enums\NotificationType;
 use App\Models\Business;
 use App\Services\EvolutionApi;
 use App\Traits\HasNotifications;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -89,12 +88,6 @@ new class extends Component
     {
         $this->linking = false;
         $this->qr = null;
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('whatsapp.title'));
     }
 };
 ?>

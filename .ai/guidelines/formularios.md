@@ -81,8 +81,17 @@ evita llegar a ese error; el blindaje lo hace imposible de incumplir.
   (sesión › geo IP › default) y el **selector manual** manda. Detalle completo en la
   memoria `atendia-i18n-variantes-regionales`.
 - **El título de la pestaña también es copy** (blindado): nada de `#[Title('...')]`
-  en un SFC — un atributo PHP no puede llamar `__()`. La vía: `render()` con
-  `$this->view()->title(__('...'))`, o el default traducido del layout (caso wizard).
+  en un SFC — un atributo PHP no puede llamar `__()`.
+  - **Pantalla del panel cliente** (una vista Blade con `<x-app-layout>` y el
+    componente adentro): el nombre lo pone **el ítem del menú**, vía
+    `Menu::titleFor()` en `AppLayout` — no hace falta tocar nada. Un `render()`
+    con `$this->view()->title(...)` ahí **NO hace nada**: ese macro solo corre en
+    un componente de PÁGINA, y 12 pantallas lo tuvieron meses sin efecto
+    (`GoldenRulesScreenTitlesTest`, 2026-10-01).
+  - **Pantalla full-page** (`Route::livewire`, todo el panel admin): ahí sí vale
+    `render()` con `$this->view()->title(__('...'))`.
+  - El layout agrega la marca (`Pantalla · AtendIa`) y no la repite si el nombre
+    ya la trae ("Gana con AtendIa").
 - Estilo (aplica a las tres variantes): **sentence case**, verbo primero, concreto, **sin
   emoji** en la chrome. Errores útiles: *"No pudimos guardar. Revisá el email."*
   (neutro: *"Revisa el email."*).

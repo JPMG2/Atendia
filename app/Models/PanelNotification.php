@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * One event in the bell's inbox. The notice belongs to the business; the read
@@ -155,12 +156,26 @@ class PanelNotification extends Model
         $this->readers()->syncWithoutDetaching([$user->id => ['read_at' => now()]]);
     }
 
-    /** The escape hatch for whoever fell behind, without opening each row. */
+    /**
+     * The escape hatch for whoever fell behind, without opening each row. One
+     * statement, not one per row: the pivot is written through the builder
+     * because sixty days of unread notices is a round trip each otherwise.
+     */
     public static function markAllReadFor(User $user): void
     {
-        self::query()->visibleTo($user)->unreadBy($user)->get()->each(function (self $notice) use ($user): void {
-            $notice->markReadBy($user);
-        });
+        $unread = self::query()->visibleTo($user)->unreadBy($user)->pluck('id');
+
+        if ($unread->isEmpty()) {
+            return;
+        }
+
+        DB::table('panel_notification_reads')->insertOrIgnore(
+            $unread->map(fn (int $id): array => [
+                'panel_notification_id' => $id,
+                'user_id' => $user->id,
+                'read_at' => now(),
+            ])->all(),
+        );
     }
 
     /**

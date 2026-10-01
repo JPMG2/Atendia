@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PanelNotificationType;
 use App\Models\Business;
 use App\Models\PanelNotification;
 use App\Models\User;
@@ -132,10 +133,24 @@ new class extends Component
             'key' => 'n'.$notice->id,
             'ids' => [$notice->id],
             'type' => $notice->type,
-            'text' => __('bell.lines.'.$notice->type->value, $notice->payload),
+            'text' => __($this->lineFor($notice), $notice->payload),
             'at' => $notice->created_at,
             'read' => (bool) $notice->read,
         ];
+    }
+
+    /**
+     * A booking taken without choosing a service (the public link allows it)
+     * has no tail to print, and the line that names one would end in a comma
+     * and nothing. Resolved HERE, where the reader's locale is the one in use.
+     */
+    private function lineFor(PanelNotification $notice): string
+    {
+        $key = 'bell.lines.'.$notice->type->value;
+        $plain = $notice->type === PanelNotificationType::AppointmentBooked
+            && trim((string) ($notice->payload['service'] ?? '')) === '';
+
+        return $plain ? $key.'_plain' : $key;
     }
 
     /**

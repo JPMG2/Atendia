@@ -6,7 +6,6 @@ use App\Enums\HandoffLevel;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\HandoffRulesForm;
 use App\Traits\HasNotifications;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -49,12 +48,6 @@ new class extends Component
     public function saveHandoffRules(): void
     {
         $this->dispatchNotification($this->handoffForm->save());
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('client.assistant.settings_title'));
     }
 };
 ?>

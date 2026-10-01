@@ -10,7 +10,6 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -102,12 +101,6 @@ new class extends Component
             NotificationType::Success,
         ));
     }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('referrals.title'));
-    }
 };
 ?>
 
@@ -122,7 +115,15 @@ new class extends Component
         @endif
     </x-ui.page-head>
 
-    @if ($this->business !== null)
+    @if ($this->business === null)
+        {{-- The link is minted for the business: without one the screen printed
+        its title over a void instead of the step that unblocks it. --}}
+        <x-ui.card class="p-6">
+            <x-ui.empty-state icon="gift" :title="__('referrals.no_business.title')" :body="__('referrals.no_business.body')">
+                <x-ui.button variant="primary" icon="store" :href="route('onboarding')" wire:navigate>{{ __('referrals.no_business.cta') }}</x-ui.button>
+            </x-ui.empty-state>
+        </x-ui.card>
+    @else
         <div class="duo-grid">
             <x-ui.card class="p-6">
                 <h2 class="block-title">{{ __('referrals.link_title') }}</h2>

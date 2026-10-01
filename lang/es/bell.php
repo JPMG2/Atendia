@@ -58,6 +58,9 @@ return [
         'customer_waiting' => ':name espera respuesta desde hace :minutes minutos',
         'handed_to_team' => 'Tu asistente derivó la charla con :name al equipo',
         'appointment_booked' => 'Turno nuevo de :name: :when, :service',
+        // Reservado sin elegir servicio (el link público lo permite): la línea
+        // que nombra uno terminaría en una coma y nada.
+        'appointment_booked_plain' => 'Turno nuevo de :name: :when',
         'whatsapp_disconnected' => 'Tu WhatsApp se desconectó a las :at y dejó de responder',
         'taught_by_teammate' => ':who le enseñó a tu asistente a responder: :question',
     ],

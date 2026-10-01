@@ -11,6 +11,12 @@ return [
     'since' => 'Desde el :date, tu asistente respondió :questions consultas en :conversations conversaciones.',
     'gathering' => 'Tu asistente todavía está juntando datos. Vuelve en unos días.',
 
+    'no_business' => [
+        'title' => 'Primero creamos tu negocio',
+        'body' => 'Tus estadísticas salen de lo que tu asistente atiende. En cuanto tengas tu negocio con el WhatsApp conectado, acá ves cuánto resolvió solo y qué te preguntan más.',
+        'cta' => 'Crear mi negocio',
+    ],
+
     'kpis' => [
         'conversations' => 'Conversaciones del mes',
         'resolution' => 'Resueltas por tu asistente',

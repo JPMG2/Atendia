@@ -7,7 +7,11 @@
     {{-- security-alerts.js keys its private Echo channel on this id. --}}
     <meta name="auth-user-id" content="{{ auth()->id() }}" />
 
-    <title>{{ $title ?? config('app.name', 'AtendIa') }}</title>
+    {{-- The screen first: with five tabs open, the brand alone names none of
+    them. A name that already carries the brand ("Gana con AtendIa") keeps it once. --}}
+    @php($brand = config('app.name', 'AtendIa'))
+    @php($tab = blank($title ?? null) || str_contains((string) $title, $brand) ? ($title ?: $brand) : $title.' · '.$brand)
+    <title>{{ $tab }}</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
 

@@ -315,10 +315,14 @@ new class extends Component
     {
         $written = $writer->handle(Auth::user()->business, $this->services);
 
-        $this->dispatchNotification(new NotificationDto(
-            trans_choice('client.services.ai_done', $written, ['count' => $written]),
-            $written > 0 ? NotificationType::Success : NotificationType::Info,
-        ));
+        // Null is the model never answering: saying "they all have one already"
+        // there tells the owner the opposite of what happened.
+        $this->dispatchNotification($written === null
+            ? new NotificationDto(__('client.services.ai_failed'), NotificationType::Error)
+            : new NotificationDto(
+                trans_choice('client.services.ai_done', $written, ['count' => $written]),
+                $written > 0 ? NotificationType::Success : NotificationType::Info,
+            ));
 
         $this->refreshList();
     }

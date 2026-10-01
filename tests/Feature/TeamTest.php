@@ -222,6 +222,23 @@ test('presence flips from the avatar menu', function (): void {
     expect($agent->refresh()->is_available)->toBeFalse();
 });
 
+/*
+ * The toggle lives in the avatar menu, so it fires while the owner stands on
+ * Equipo: the row for that same person has to follow it. The event was
+ * dispatched for months with nobody listening, and the row said the opposite.
+ */
+test('the team list follows a presence change made from the avatar menu', function (): void {
+    $owner = teamOwner();
+    $agent = teamAgent($owner->business);
+    $this->actingAs($owner);
+
+    $list = livewire('team.index')->assertSee(__('team.people.available'));
+
+    $agent->forceFill(['is_available' => false])->save();
+
+    $list->dispatch('presence-changed')->assertSee(__('team.people.away'));
+});
+
 test('an agent can never close the account, which would take the business with it', function (): void {
     $agent = teamAgent(teamOwner()->business);
 

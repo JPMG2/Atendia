@@ -42,5 +42,10 @@
              montado (/var/www/html) para que SOBREVIVAN a recrear el contenedor y sean
              legibles por www-data (el tests corre como ese usuario). Ver .playwright-browsers. -->
         <env name="PLAYWRIGHT_BROWSERS_PATH" value="/var/www/html/.playwright-browsers"/>
+        <!-- La suite entera corre en UN proceso: su marca de agua medida es ~240MB
+             sobre las 2000+ pruebas, y el escritor de xlsx pide UN bloque de 16MB
+             (ZipStream, 0x1000000). Con el 256M del contenedor eso agota la memoria
+             justo ahí y la puerta del commit cae por el techo, no por un test. -->
+        <ini name="memory_limit" value="512M"/>
     </php>
 </phpunit>

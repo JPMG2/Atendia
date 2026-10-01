@@ -14,6 +14,12 @@ return [
     'how_reward' => 'Cuando ese negocio paga su primer mes, tú ganas un :percent% de descuento en tu próxima factura.',
     'how_stack' => 'Los descuentos se acumulan: varios referidos pueden dejarte el mes en cero.',
 
+    'no_business' => [
+        'title' => 'Primero creamos tu negocio',
+        'body' => 'Tu enlace de recomendación sale a nombre de tu negocio. En cuanto lo crees, lo compartes y ganas descuentos cuando alguien se suscribe por ti.',
+        'cta' => 'Crear mi negocio',
+    ],
+
     'link_title' => 'Tu enlace de recomendación',
     'copy' => 'Copiar enlace',
     'copied' => 'Copiado',

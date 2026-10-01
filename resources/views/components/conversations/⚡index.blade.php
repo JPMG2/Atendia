@@ -13,7 +13,6 @@ use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Traits\HasNotifications;
 use App\Traits\ManagesCustomerSheet;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -451,12 +450,6 @@ new class extends Component
         unset($this->thread, $this->humanHeld);
 
         $this->dispatchNotification(new NotificationDto(__('client.conversations.resolved_done'), NotificationType::Success));
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('client.conversations.title'));
     }
 };
 ?>

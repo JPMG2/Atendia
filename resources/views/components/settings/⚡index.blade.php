@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\View\View;
 use Livewire\Component;
 
 /**
@@ -37,12 +36,6 @@ new class extends Component
         }
 
         return $sections;
-    }
-
-    /** The tab title comes from translations; a PHP attribute cannot call __(). */
-    public function render(): View
-    {
-        return $this->view()->title(__('settings.title'));
     }
 };
 ?>

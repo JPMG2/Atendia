@@ -10,8 +10,8 @@ use App\Livewire\Forms\Team\TeamMemberForm;
 use App\Models\Country;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -121,9 +121,15 @@ new class extends Component
         $this->dispatchNotification(new NotificationDto(__('team.notify.removed'), NotificationType::Success));
     }
 
-    public function render(): View
+    /**
+     * The avatar menu switches your own availability from any screen: standing
+     * on Equipo, the row for that same person kept saying the opposite until a
+     * reload. The toggle dispatched this for months with nobody listening.
+     */
+    #[On('presence-changed')]
+    public function presenceChanged(): void
     {
-        return $this->view()->title(__('team.title'));
+        unset($this->team);
     }
 };
 ?>

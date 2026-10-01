@@ -71,18 +71,26 @@ test('the badge renders its variant class and an optional dot', function (): voi
 |--------------------------------------------------------------------------
 */
 test('the ai banner renders its copy, the sparkles icon and the optional action', function (): void {
-    $html = Blade::render('<x-ui.ai-banner title="Need a hand?" body="We write it." action="Optimize" />');
+    $html = Blade::render('<x-ui.ai-banner title="Need a hand?" body="We write it." action="Optimize" call="optimize" />');
 
     expect($html)
         ->toContain('ai-banner')
         ->toContain('Need a hand?')
         ->toContain('We write it.')
         ->toContain('Optimize')
+        ->toContain('wire:click="optimize"')
         ->toContain('<svg');
 });
 
 test('the ai banner without an action stays a plain informative block', function (): void {
     expect(Blade::render('<x-ui.ai-banner title="T" body="B" />'))->not->toContain('<button');
+});
+
+// A label with nothing to run drew a button that answered the click with silence.
+test('the ai banner drops an action label that has no method behind it', function (): void {
+    $html = Blade::render('<x-ui.ai-banner title="T" body="B" action="Optimize" />');
+
+    expect($html)->not->toContain('<button')->not->toContain('Optimize');
 });
 
 /*
