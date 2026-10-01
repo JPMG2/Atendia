@@ -27,6 +27,29 @@ fi
 
 log() { printf '[%s] %s\n' "$(date '+%F %T')" "$*"; }
 
+# A browser run killed mid-flight leaves its pest AND its playwright server
+# alive, holding atendia_testing: that is where this environment's "a different
+# test fails every night" comes from (orphans found on 28/09, 30/09 and twice
+# on 01/10). At gate time nothing of ours runs, so whatever is alive is an
+# orphan. The bracket in the pattern keeps pgrep from matching this very shell.
+kill_orphan_tests() {
+    local alive
+    alive=$(docker exec atendia-app sh -c \
+        "pgrep -fa '[v]endor/bin/pest|[p]laywright run-server'" 2>/dev/null) || return 0
+    [ -n "$alive" ] || return 0
+
+    log "Orphan test processes still holding atendia_testing:"
+    printf '%s\n' "$alive" | sed 's/^/    /'
+    docker exec atendia-app sh -c \
+        "pgrep -f '[v]endor/bin/pest|[p]laywright run-server' | xargs -r kill" 2>/dev/null
+    sleep 3
+    docker exec atendia-app sh -c \
+        "pgrep -f '[v]endor/bin/pest|[p]laywright run-server' | xargs -r kill -9" 2>/dev/null
+
+    printf -- '- Script: mató %s proceso(s) de test huérfanos antes de la suite (tomaban atendia_testing).\n' \
+        "$(printf '%s\n' "$alive" | wc -l)" >>"$SUMMARY"
+}
+
 # Goes out through the app's own EvolutionApi service and connected instance;
 # the text travels as an env var so no quoting can break the tinker line.
 notify() {
@@ -95,6 +118,7 @@ for run in $(seq 1 "$MAX_RUNS"); do
         printf -- '- Script: sin cambios para commitear.\n' >>"$SUMMARY"
     else
         # Golden rule: the full suite is the commit gate, run once per commit.
+        kill_orphan_tests
         log "Running the full suite as the commit gate..."
         suite_output=$(docker exec -w /var/www/html atendia-app ./vendor/bin/pest --compact 2>&1)
         suite_status=$?
