@@ -27,6 +27,9 @@ fi
 cat <<'RULES'
 REGLAS DE TRABAJO (no-mediocre.md — se cumplen en ESTE turno):
 1. Construir EXACTAMENTE lo pedido. Nada de features, estados o "mejoras" no pedidas.
+   Un hallazgo que NO es la tarea (un defecto, una deuda, algo que podría estar mejor) se
+   ANOTA en hallazgos.md y NO se toca. Al cerrar el turno se nombra en una línea y decide ella.
+   Perseguir cada hallazgo es lo que convierte una tarea de una hora en una mañana entera.
 2. Una mejora se ofrece en UNA línea y decide ella. Toda tarea de UI cierra con 2–3 mejoras investigadas.
 3. Antes de construir algo nuevo: repetir la spec en una línea.
 4. Antes de decir "listo": verificación VISUAL real. Un test verde no alcanza.
