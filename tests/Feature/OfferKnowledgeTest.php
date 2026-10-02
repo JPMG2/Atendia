@@ -62,8 +62,8 @@ test('the services document tells price semantics, category and curated attribut
     expect($document->content)
         ->toContain('Servicio: Corte y barba')
         ->toContain('Categoría: Barba')
-        ->toContain('Precio: $ 16500')
-        ->toContain('Adelanto para reservar: $ 5000')
+        ->toContain('Precio: $ 16.500')
+        ->toContain('Adelanto para reservar: $ 5.000')
         ->toContain('Duración: 45 minutos')
         ->toContain('Preparación previa: Llega con el pelo seco.')
         // The curated field speaks with THIS type's label.
@@ -86,7 +86,7 @@ test('the products document keeps out-of-stock rows listed and says so', functio
     expect($document->content)
         ->toContain('Producto: Alternador')
         ->toContain('Código: ALT-021')
-        ->toContain('Precio: $ 185000')
+        ->toContain('Precio: $ 185.000')
         ->toContain('Correa')
         ->toContain('Disponibilidad: sin stock por ahora');
 });
@@ -117,7 +117,7 @@ test('saving from the services sheet publishes the offer in the act', function (
 
     expect(KnowledgeDocument::query()->where('source_type', 'services')->sole()->content)
         ->toContain('Servicio: Ecodoppler')
-        ->toContain('Precio: $ 15000');
+        ->toContain('Precio: $ 15.000');
 });
 
 test('the row toggle republishes: a paused service leaves the answers', function (): void {

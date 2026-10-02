@@ -691,12 +691,20 @@ class Business extends Model
         }
 
         $now = now($this->localTimezone());
-        $time = $now->format('H:i:s');
+        $today = (int) $now->format('w');
+        $minutes = ((int) $now->format('G')) * 60 + (int) $now->format('i');
 
+        // Yesterday comes along because a night shift spills into today: at
+        // 01:00 what is open is last night's 22:00–02:00, not today's.
         return $this->hours()
-            ->where('day_of_week', (int) $now->format('w'))
+            ->whereIn('day_of_week', [$today, ($today + 6) % 7])
             ->get()
-            ->contains(fn (BusinessHour $shift): bool => $time >= (string) $shift->opens_at && $time <= (string) $shift->closes_at);
+            ->contains(function (BusinessHour $shift) use ($today, $minutes): bool {
+                [$opens, $closes] = $shift->spanInMinutes();
+                $at = $shift->day_of_week === $today ? $minutes : $minutes + 1440;
+
+                return $at >= $opens && $at <= $closes;
+            });
     }
 
     /**
@@ -937,7 +945,7 @@ class Business extends Model
     /**
      * What the wizard actually persisted, for its closing recap.
      *
-     * @return array{name: string, activity: ?string, services: int, products: int, phones: bool, email: bool}
+     * @return array{name: string, activity: ?string, services: int, products: int, phones: bool, connected: bool, email: bool}
      */
     public function wizardSummary(): array
     {
@@ -946,7 +954,10 @@ class Business extends Model
             'activity' => $this->primaryActivity()?->name,
             'services' => $this->services()->count(),
             'products' => $this->products()->count(),
+            // Two separate truths: the numbers she typed, and whether the line
+            // is actually connected. Printing only the first read as both.
             'phones' => filled($this->whatsapp_number) && filled($this->fallback_whatsapp_number),
+            'connected' => $this->isConnected(),
             'email' => filled($this->email),
         ];
     }

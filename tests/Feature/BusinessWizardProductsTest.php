@@ -50,7 +50,7 @@ test('finishing writes the on-screen list to the tenant', function (): void {
         ->call('add', 'Pan de campo')
         ->call('add', 'Alfajor triple')
         ->call('finish')
-        ->assertDispatched('wizard:step-completed', step: 4);
+        ->assertDispatched('wizard:step-completed', step: 4, skipped: false);
 
     expect($business->products()->pluck('name')->all())->toBe(['Pan de campo', 'Alfajor triple']);
 });
@@ -106,7 +106,7 @@ test('continuing with nothing loaded advances in silence, no scolding toast', fu
     Livewire::test('business.step-products')
         ->call('finish')
         ->assertNotDispatched('notify')
-        ->assertDispatched('wizard:step-completed', step: 4);
+        ->assertDispatched('wizard:step-completed', step: 4, skipped: false);
 });
 
 test('skipping the step writes nothing, as promised', function (): void {

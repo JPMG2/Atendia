@@ -271,6 +271,12 @@ step actually saves: the exit can then ask before losing real keystrokes. --}}
                                 <x-icon :name="$this->summary['phones'] ? 'check' : 'clock'" :size="16" />
                                 {{ __('wizard.done.recap.phones') }}
                             </li>
+                            {{-- The line the paragraph below talks about: without
+                            it, "tus números anotados" was read as connected. --}}
+                            <li @class(['is-pending' => ! $this->summary['connected']])>
+                                <x-icon :name="$this->summary['connected'] ? 'check' : 'clock'" :size="16" />
+                                {{ __('wizard.done.recap.connected') }}
+                            </li>
                             <li @class(['is-pending' => ! $this->summary['email']])>
                                 <x-icon :name="$this->summary['email'] ? 'check' : 'clock'" :size="16" />
                                 {{ __('wizard.done.recap.email') }}
@@ -295,13 +301,19 @@ step actually saves: the exit can then ask before losing real keystrokes. --}}
 
             <div class="wizard-tip">
                 <span class="tag">{{ __('wizard.tip_tag') }}</span>
-                <p>{!! __('wizard.tips.'.min($step, 6)) !!}</p>
+                {{-- The minutes come from the same config the landing's
+                calculator shows, so the two can never quote a different one. --}}
+                <p>{!! __('wizard.tips.'.min($step, 6), ['minutes' => config('atendia.calculator_minutes')]) !!}</p>
             </div>
 
             <x-ui.card class="wizard-todo-card">
                 <h3>{{ __('wizard.todo.title') }}</h3>
                 @foreach (range(1, 5) as $n)
-                    <div wire:key="todo-{{ $n }}" @class(['wizard-todo', 'done' => in_array($n, $done, true)])>
+                    {{-- The last line says "WhatsApp conectado", so it follows
+                    the real connection and not the step being walked past:
+                    "Conectar después" used to tick it green all the same. --}}
+                    @php($ticked = $n === 5 ? ($this->summary['connected'] ?? false) : in_array($n, $done, true))
+                    <div wire:key="todo-{{ $n }}" @class(['wizard-todo', 'done' => $ticked])>
                         <span class="box"><x-icon name="check" :size="11" /></span>
                         {{ __('wizard.todo.'.$n) }}
                         @if ($n === 4)

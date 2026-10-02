@@ -113,6 +113,8 @@ return [
             'closes' => 'Cierra',
             'time_placeholder' => '09:00',
             'remove_shift' => 'Quitar este turno',
+            'overlaps' => 'Este turno se pisa con el de :shift. Si se superponen, la misma hora se ofrece dos veces.',
+            'overnight_hint' => 'Si cierras después de medianoche, escribe la hora igual: 22:00 – 02:00.',
         ],
 
         'appointments' => [

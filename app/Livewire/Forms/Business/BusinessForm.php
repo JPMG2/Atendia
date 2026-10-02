@@ -163,11 +163,11 @@ class BusinessForm extends BaseForm
         // where a listener's failure cannot turn a good save into an error.
         $saved = null;
 
-        $notification = $this->tryAction(function () use ($validated, $user, $business, &$saved): NotificationDto {
+        $notification = $this->tryAction(function () use ($validated, $user, &$saved): NotificationDto {
 
             $saved = Client::for($user)->personalData->saveConnection($validated);
 
-            return $this->notificationService()->notificationFor($business, 'updated');
+            return new NotificationDto(__('wizard.saved.connection'), NotificationType::Success);
 
         }, __('notifications.not_updated'));
 
@@ -232,12 +232,12 @@ class BusinessForm extends BaseForm
             [$relation.'.*' => $attribute],
         )->validate();
 
-        return $this->tryAction(function () use ($business, $action, $names, $known): NotificationDto {
+        return $this->tryAction(function () use ($business, $relation, $action, $names, $known): NotificationDto {
 
             $changed = $action->handle($business, $names->all(), $known);
 
             return $changed
-                ? $this->notificationService()->updatedRelated($business)
+                ? new NotificationDto(__('wizard.saved.'.$relation), NotificationType::Success)
                 : $this->notificationService()->notificationFor($business, 'updated');
 
         }, __('notifications.not_updated'));

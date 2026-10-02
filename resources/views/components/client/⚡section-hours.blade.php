@@ -72,6 +72,9 @@ new class extends Component
         </span>
     </div>
     <p class="bp-card-sub">{{ __('client.business.hours.sub') }}</p>
+    {{-- Said out loud because the capability is invisible otherwise: nobody
+    types 02:00 into a "closes" box that used to refuse it. --}}
+    <p class="bp-card-sub">{{ __('client.business.hours.overnight_hint') }}</p>
 
     <div class="bp-hours">
         @foreach ([1, 2, 3, 4, 5, 6, 0] as $day)

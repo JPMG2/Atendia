@@ -22,13 +22,15 @@ if [ "$tool" = "Bash" ]; then
     # Nombrar una vista no es escribirla. La versión anterior miraba si el
     # comando traía `>` en cualquier lado y bloqueó un comando de SOLO LECTURA
     # por su `>/dev/null` (2026-10-02). Se mira el destino de la escritura.
-    probe=$(sed -E 's#(1>|2>|\&>|>)[[:space:]]*/dev/null##g; s#2>&1##g' <<<"$cmd")
+    # Fuera lo que NUNCA es escribir: /dev/null, 2>&1, y la flecha de PHP
+    # (`->price` dentro de un patrón de grep se leía como redirección).
+    probe=$(sed -E 's#(1>|2>|\&>|>)[[:space:]]*/dev/null##g; s#2>&1##g; s#->##g' <<<"$cmd")
     view='resources/(views|css)'
 
     if grep -Eq ">[[:space:]]*\"?[^|;&]*${view}" <<<"$probe" \
         || grep -Eq "(sed -i|perl -i|tee|cp|mv|install)[^|;&]*${view}" <<<"$probe" \
         || { grep -Eq "(python3?|php|node)[^|;&]*${view}" <<<"$probe" \
-            && grep -Eq "(open\(|'w'|\"w\"|file_put_contents|writeFile| -i )" <<<"$probe"; }; then
+            && grep -Eq "('w'|\"w\"|\.write\(|writelines|file_put_contents|writeFile| -i )" <<<"$probe"; }; then
         echo "BLOQUEADO: las vistas y el CSS no se escriben por Bash (sed/python/redirección)." >&2
         echo "Usá Edit o Write: así corren los hooks de reglas de oro sobre el archivo." >&2
         exit 2

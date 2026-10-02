@@ -136,7 +136,11 @@ return [
             'activity' => 'Rubro y actividad',
             'services' => '{0} Servicios|{1} Un servicio cargado|[2,*] :count servicios cargados',
             'products' => '{0} Productos|{1} Un producto|[2,*] :count productos',
-            'phones' => 'Teléfonos de WhatsApp',
+            // Lo que el tilde verifica son los números ANOTADOS, no la conexión:
+            // con "WhatsApp" a secas se leía como conectado, justo arriba del
+            // texto que dice que lo conectes desde el panel.
+            'phones' => 'Tus números anotados',
+            'connected' => 'WhatsApp conectado',
             'email' => 'Correo del negocio',
         ],
     ],
@@ -162,6 +166,14 @@ return [
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por ti.',
     ],
 
+    // Cada paso dice QUÉ guardó: los tres decían "Negocio actualizado" y, uno
+    // sobre otro al cerrar el alta, parecían el mismo aviso repetido tres veces.
+    'saved' => [
+        'services' => 'Servicios guardados',
+        'products' => 'Productos guardados',
+        'connection' => 'Tus números guardados',
+    ],
+
     'tip_tag' => 'Tip de experto',
     'tips' => [
         1 => 'Responder en menos de <b>5 minutos</b> multiplica por <b>21</b> las chances de cerrar la venta. Tu asistente va a responder en segundos.',
@@ -169,7 +181,7 @@ return [
         3 => 'Con tus servicios cargados, tu asistente <b>nunca más dice «no sé»</b>: cada consulta curiosa se vuelve un turno posible.',
         4 => 'Con tu inventario adentro, cada «¿tienen…?» se contesta solo. <b>Incluso a las 3 de la mañana.</b>',
         5 => 'El <b>90%</b> de los mensajes de WhatsApp se leen en menos de 3 minutos. Del otro lado, ahora siempre hay alguien.',
-        6 => 'Los negocios que atienden con IA recuperan en promedio <b>horas por día</b>. Las tuyas empiezan ahora.',
+        6 => 'Responder una consulta te lleva unos <b>:minutes minutos</b>. Tu asistente las contesta todas, en segundos, desde ahora.',
     ],
 
     'todo' => [

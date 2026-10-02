@@ -134,7 +134,7 @@ test('the catalog finds the item by meaning with its price, and only in this bus
 
     expect((string) $tool->handle(new Request(['item' => 'el tiroideo'])))
         ->toContain('Perfil tiroideo')
-        ->toContain('16500')
+        ->toContain('16.500')
         ->toContain('Ayuno de 8 horas')
         ->not->toContain('premium')
         ->and((string) $tool->handle(new Request(['item' => 'resonancia'])))->toContain('No hay nada parecido')

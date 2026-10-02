@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
 use App\Traits\EmbedsName;
+use App\Traits\FormatsPrice;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Database\Factories\ProductFactory;
@@ -29,7 +30,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['service_type_id', 'name', 'code', 'description', 'price', 'stock', 'attribute_values', 'in_stock', 'is_active'])]
 class Product extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, FormatsPrice;
     use EmbedsName;
 
     /** @use HasFactory<ProductFactory> */

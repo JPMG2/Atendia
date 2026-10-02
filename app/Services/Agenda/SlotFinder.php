@@ -6,6 +6,7 @@ namespace App\Services\Agenda;
 
 use App\Models\Appointment;
 use App\Models\Business;
+use App\Models\BusinessHour;
 use App\Models\Service;
 use Carbon\CarbonImmutable;
 
@@ -34,7 +35,13 @@ class SlotFinder
         $now ??= CarbonImmutable::now($timezone);
         $minutes = $this->slotMinutes($business, $service);
 
-        $dayEnd = $day->endOfDay();
+        // A night shift ends on the next calendar day, so what is already
+        // booked in those early hours has to come along or it gets offered twice.
+        $dayEnd = $business->hours
+            ->where('day_of_week', (int) $day->format('w'))
+            ->contains(fn (BusinessHour $shift): bool => $shift->runsPastMidnight())
+                ? $day->addDay()->endOfDay()
+                : $day->endOfDay();
 
         // A booking being MOVED must not block its own new hour.
         $booked = Appointment::between($business, $day, $dayEnd)
@@ -53,6 +60,10 @@ class SlotFinder
         foreach ($business->hours->where('day_of_week', (int) $day->format('w')) as $shift) {
             $opens = $this->at($day, (string) $shift->opens_at);
             $closes = $this->at($day, (string) $shift->closes_at);
+
+            if ($shift->runsPastMidnight()) {
+                $closes = $closes->addDay();
+            }
 
             for ($slot = $opens; $slot->addMinutes($minutes)->lessThanOrEqualTo($closes); $slot = $slot->addMinutes($minutes)) {
                 if ($slot->lessThanOrEqualTo($now)) {

@@ -1,7 +1,5 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+    <div class="mb-4 text-sm text-gray-600">{{ __('auth.forgot.intro') }}</div>
 
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -11,7 +9,7 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" :value="__('auth.fields.email')" />
             <x-text-input
                 id="email"
                 class="mt-1 block w-full"
@@ -25,7 +23,7 @@
         </div>
 
         <div class="mt-4 flex items-center justify-end">
-            <x-primary-button> {{ __('Email Password Reset Link') }} </x-primary-button>
+            <x-primary-button> {{ __('auth.forgot.submit') }} </x-primary-button>
         </div>
     </form>
 </x-guest-layout>

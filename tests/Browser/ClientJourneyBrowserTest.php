@@ -228,7 +228,8 @@ test('a person registers, loads her offer and her own price reaches the assistan
     // model cannot prove its own wording, but this proves the data it reads.
     $answer = (string) (new SearchCatalog($business))->handle(new Request(['item' => 'ecodoppler']));
 
-    // The skill says the bare number; the screen prints it grouped. What the
-    // journey pins is that the VALUE is hers, not how each side spells it.
-    expect($answer)->toContain('Servicio: Ecodoppler')->toContain('8000');
+    // Spelled exactly as the screen spells it. They used to disagree —
+    // "$ 8.000" for her, "8000" for her customer — and two spellings of one
+    // price read as two prices.
+    expect($answer)->toContain('Servicio: Ecodoppler')->toContain('$ 8.000');
 });

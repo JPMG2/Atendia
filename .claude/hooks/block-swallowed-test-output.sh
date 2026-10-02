@@ -36,6 +36,11 @@ case "$run" in
     tail\ *|cat\ *|head\ *|grep\ *|less\ *|sed\ *|awk\ *|ps\ *|pgrep*|wc\ *|ls\ *) exit 0 ;;
 esac
 
+# `make:test --pest` writes a file, it does not run anything.
+case "$run" in
+    *make:test*) exit 0 ;;
+esac
+
 # A redirection to a FILE is the way out: the output is whole and readable.
 # Any `>` used to be enough, and a plain `2>&1` walked right through it — that
 # is how a failure's name was lost on 2026-10-02. Those two are not an escape.

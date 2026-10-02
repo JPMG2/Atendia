@@ -4,11 +4,9 @@
             class="text-strong font-display"
             style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
         >
-            Hola de nuevo
+            {{ __('auth.login.heading') }}
         </h2>
-        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">
-            Ingresá para seguir atendiendo con tu asistente.
-        </p>
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('auth.login.sub') }}</p>
     </div>
 
     {{-- Landing spot of session-expired.js: a Livewire 419 redirects here
@@ -49,12 +47,12 @@
         @csrf
 
         <x-ui.input
-            label="Email"
+            :label="__('auth.fields.email')"
             name="email"
             type="email"
             icon="mail"
             :value="old('email')"
-            placeholder="vos@tunegocio.com"
+            :placeholder="__('auth.register.email_placeholder')"
             required
             autofocus
             autocomplete="username"
@@ -68,7 +66,7 @@
 
         <div>
             <x-ui.input
-                label="Contraseña"
+                :label="__('auth.fields.password')"
                 name="password"
                 type="password"
                 icon="lock"
@@ -84,21 +82,26 @@
                         class="text-brand font-semibold hover:underline"
                         style="font-size: var(--text-sm)"
                     >
-                        ¿Olvidaste tu contraseña?
+                        {{ __('auth.login.forgot') }}
                     </a>
                 </div>
             @endif
         </div>
 
-        <x-ui.checkbox name="remember" label="Mantener la sesión iniciada" />
+        <x-ui.checkbox name="remember" :label="__('auth.login.remember')" />
 
-        <x-ui.button type="submit" variant="primary" size="lg" :fullWidth="true" class="mt-1"> Ingresar </x-ui.button>
+        <x-ui.button type="submit" variant="primary" size="lg" :fullWidth="true" class="mt-1">
+            {{ __('auth.login.submit') }}
+        </x-ui.button>
     </form>
 
     @if (Route::has('register'))
         <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">
-            ¿Todavía no tenés cuenta?
-            <a href="{{ route('register') }}" class="text-brand font-semibold hover:underline">Empezá gratis</a>
+            {{ __('auth.login.no_account') }}
+            <a
+                href="{{ route('register') }}"
+                class="text-brand font-semibold hover:underline"
+            >{{ __('auth.login.register_cta') }}</a>
         </p>
     @endif
 </x-guest-layout>

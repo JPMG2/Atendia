@@ -10,6 +10,7 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\BusinessHour;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Opening-hours card of "Mi negocio": one row per day, several shifts per
@@ -77,6 +78,7 @@ class HoursForm extends BaseForm
         }
 
         $this->validateServiceData();
+        $this->assertShiftsDoNotOverlap();
 
         // Built from the known day keys only: an id injected into the public
         // array can never reach the table.
@@ -102,6 +104,44 @@ class HoursForm extends BaseForm
             return $this->notificationService()->updatedRelated($business);
 
         }, __('notifications.not_updated'));
+    }
+
+    /**
+     * Two shifts that step on each other make the SAME hour be offered twice
+     * — to her in the agenda and to her customer over WhatsApp. The error
+     * lands on the second shift, which is the one she has to move.
+     *
+     * @throws ValidationException
+     */
+    private function assertShiftsDoNotOverlap(): void
+    {
+        $errors = [];
+
+        foreach ($this->week as $day => $shifts) {
+            foreach ($shifts as $index => $shift) {
+                $pieces = BusinessHour::pieces($shift['opens_at'], $shift['closes_at']);
+
+                foreach (array_slice($shifts, 0, $index, true) as $earlier) {
+                    // Touching ends are fine (09–12 then 12–18); only a real
+                    // overlap offers the same minute twice.
+                    $collides = collect(BusinessHour::pieces($earlier['opens_at'], $earlier['closes_at']))
+                        ->crossJoin($pieces)
+                        ->contains(fn (array $pair): bool => $pair[0][0] < $pair[1][1] && $pair[1][0] < $pair[0][1]);
+
+                    if ($collides) {
+                        $errors["week.{$day}.{$index}.opens_at"] = __('client.business.hours.overlaps', [
+                            'shift' => $earlier['opens_at'].'–'.$earlier['closes_at'],
+                        ]);
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     /** Rebuilt per request: a Livewire form cannot hold it in a constructor. */
@@ -159,8 +199,11 @@ class HoursForm extends BaseForm
         return [
             'week' => ['array'],
             'week.*' => ['array'],
+            // No "after": a shift CAN close before it opens — that is the
+            // night shift closing the next day. Equal times are the one thing
+            // that means nothing, and overlap is checked after this.
             'week.*.*.opens_at' => ['required', 'date_format:H:i'],
-            'week.*.*.closes_at' => ['required', 'date_format:H:i', 'after:week.*.*.opens_at'],
+            'week.*.*.closes_at' => ['required', 'date_format:H:i', 'different:week.*.*.opens_at'],
         ];
     }
 

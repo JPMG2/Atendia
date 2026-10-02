@@ -4,11 +4,9 @@
             class="text-strong font-display"
             style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
         >
-            Creá tu cuenta
+            {{ __('auth.register.heading') }}
         </h2>
-        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">
-            Tres datos y tu asistente empieza a tomar forma.
-        </p>
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('auth.register.sub') }}</p>
     </div>
 
     {{-- `novalidate` on purpose: the browser's native bubbles are the one
@@ -25,24 +23,24 @@
         @csrf
 
         <x-ui.input
-            :label="__('Name')"
+            :label="__('auth.fields.name')"
             name="name"
             alpine-error="name"
             icon="users"
             :value="old('name')"
-            placeholder="María Gómez"
+            :placeholder="__('auth.register.name_placeholder')"
             autofocus
             autocomplete="name"
         />
 
         <x-ui.input
-            label="Email"
+            :label="__('auth.fields.email')"
             name="email"
             type="email"
             alpine-error="email"
             icon="mail"
             :value="old('email')"
-            placeholder="vos@tunegocio.com"
+            :placeholder="__('auth.register.email_placeholder')"
             autocomplete="username"
             x-ref="emailInput"
             x-on:blur="mailHint = suggestEmail($event.target.value)"
@@ -52,12 +50,12 @@
         <x-ui.email-suggest />
 
         <x-ui.input
-            :label="__('Password')"
+            :label="__('auth.fields.password')"
             name="password"
             type="password"
             alpine-error="password"
             icon="lock"
-            placeholder="Ej. MiClave#2026"
+            :placeholder="__('auth.register.password_placeholder')"
             autocomplete="new-password"
             x-on:input="pw = $event.target.value"
         />
@@ -96,12 +94,12 @@
         </ul>
 
         <x-ui.input
-            :label="__('Confirm Password')"
+            :label="__('auth.fields.password_confirmation')"
             name="password_confirmation"
             type="password"
             alpine-error="password_confirmation"
             icon="lock"
-            placeholder="La misma contraseña, para estar seguros"
+            :placeholder="__('auth.register.confirm_placeholder')"
             autocomplete="new-password"
         />
 
@@ -111,12 +109,12 @@
                 class="text-brand font-semibold hover:underline"
                 style="font-size: var(--text-sm)"
             >
-                {{ __('Already registered?') }}
+                {{ __('auth.register.already') }}
             </a>
 
             {{-- type="submit" explicit: the component defaults to "button"
             (right for wire:click) and a default here is a dead form. --}}
-            <x-ui.button type="submit" variant="primary">{{ __('Register') }}</x-ui.button>
+            <x-ui.button type="submit" variant="primary">{{ __('auth.register.submit') }}</x-ui.button>
         </div>
     </form>
 

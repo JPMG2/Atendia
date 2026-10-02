@@ -30,9 +30,9 @@ results: state rides next to the name, actions sit on the row. --}}
         @elseif ($service->price !== null)
             <p class="text-strong font-mono text-base font-bold">
                 @if ($service->price_type === 'from')
-                    {{ __('client.services.price_from_amount', ['amount' => number_format((float) $service->price, 0, ',', '.')]) }}
+                    {{ __('client.services.price_from_amount', ['amount' => $service->priceAmount()]) }}
                 @else
-                    $ {{ number_format((float) $service->price, 0, ',', '.') }}
+                    $ {{ $service->priceAmount() }}
                 @endif
             </p>
         @else

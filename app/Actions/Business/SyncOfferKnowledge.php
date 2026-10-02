@@ -81,13 +81,13 @@ class SyncOfferKnowledge
         $parts[] = match (true) {
             $service->price_type === 'free' => 'Precio: gratis',
             $service->price_type === 'talk' => 'Precio: a convenir',
-            $service->price !== null && $service->price_type === 'from' => 'Precio: desde $ '.$this->amount($service->price),
-            $service->price !== null => 'Precio: $ '.$this->amount($service->price),
+            $service->price !== null && $service->price_type === 'from' => 'Precio: desde $ '.$service->priceAmount(),
+            $service->price !== null => 'Precio: $ '.$service->priceAmount(),
             default => 'Precio: consultar',
         };
 
         if ($service->deposit !== null) {
-            $parts[] = 'Adelanto para reservar: $ '.$this->amount($service->deposit);
+            $parts[] = 'Adelanto para reservar: $ '.Service::formatPrice($service->deposit);
         }
 
         if ($service->duration_minutes !== null) {
@@ -115,7 +115,7 @@ class SyncOfferKnowledge
         }
 
         if ($product->price !== null) {
-            $parts[] = 'Precio: $ '.$this->amount($product->price);
+            $parts[] = 'Precio: $ '.$product->priceAmount();
         }
 
         if ($product->stock !== null) {

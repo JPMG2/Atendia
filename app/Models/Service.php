@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
 use App\Traits\EmbedsName;
+use App\Traits\FormatsPrice;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceFactory;
@@ -37,7 +38,7 @@ class Service extends Model
      */
     public const array PRICE_TYPES = ['fixed', 'from', 'free', 'talk'];
 
-    use BelongsToBusiness;
+    use BelongsToBusiness, FormatsPrice;
     use EmbedsName;
 
     /** @use HasFactory<ServiceFactory> */

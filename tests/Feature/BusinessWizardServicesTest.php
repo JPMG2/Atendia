@@ -56,7 +56,7 @@ test('picking services reports success even though the business row is untouched
         ->call('finish')
         ->assertDispatched('notify',
             type: NotificationType::Success->value,
-            message: __('notifications.updated.male', ['entity' => __('notifications.entities.business')]),
+            message: __('wizard.saved.services'),
         );
 });
 
@@ -68,7 +68,7 @@ test('re-saving the same list advances in silence: Continuar is navigation', fun
     Livewire::test('business.step-services')
         ->call('finish')
         ->assertNotDispatched('notify')
-        ->assertDispatched('wizard:step-completed', step: 3);
+        ->assertDispatched('wizard:step-completed', step: 3, skipped: false);
 });
 
 test('finishing writes the list and a suggested name adopts its type', function (): void {
@@ -79,7 +79,7 @@ test('finishing writes the list and a suggested name adopts its type', function 
         ->call('add', 'Corte de caballero')
         ->call('add', 'Ecodoppler')
         ->call('finish')
-        ->assertDispatched('wizard:step-completed', step: 3);
+        ->assertDispatched('wizard:step-completed', step: 3, skipped: false);
 
     expect($business->services()->where('name', 'Corte de caballero')->value('service_type_id'))
         ->toBe($suggestion->service_type_id)

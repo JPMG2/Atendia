@@ -296,7 +296,9 @@ test('the hours card hydrates from the business and saves the week through the c
         ->toBe(['13:00:00', '20:00:00']);
 });
 
-test('the hours card rejects a shift that closes before it opens', function (): void {
+test('the hours card takes a shift that closes the next day', function (): void {
+    // It used to refuse this as "closes before it opens". A bar that shuts at
+    // 02:00 could not load its own hours. See NightShiftHoursTest.
     $business = Business::factory()->create();
     $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
 
@@ -305,9 +307,9 @@ test('the hours card rejects a shift that closes before it opens', function (): 
         ->set('form.week.1.0.opens_at', '18:00')
         ->set('form.week.1.0.closes_at', '09:00')
         ->call('save')
-        ->assertHasErrors(['week.1.0.closes_at']);
+        ->assertHasNoErrors();
 
-    expect($business->hours()->count())->toBe(0);
+    expect($business->hours()->sole()->runsPastMidnight())->toBeTrue();
 });
 
 test('the hours card rejects an hour that is not HH:MM', function (): void {
