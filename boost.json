@@ -4,6 +4,10 @@
     ],
     "cloud": false,
     "guidelines": true,
+    "packages": [
+        "livewire/blaze",
+        "spatie/laravel-permission"
+    ],
     "skills": [
         "infer-conventions",
         "ai-sdk-development",
@@ -11,6 +15,8 @@
         "testing-best-practices",
         "livewire-development",
         "echo-development",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "blaze-optimize",
+        "laravel-permission-development"
     ]
 }
