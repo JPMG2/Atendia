@@ -8,9 +8,9 @@
 # 1) Si el turno tocó código: corre los guardianes GoldenRules* + aislamiento.
 #    En rojo bloquea, salvo que la respuesta lo diga ("guardián en rojo").
 # 2) Si el turno tocó vistas (resources/views|css|js): la respuesta final
-#    trae "Checklist de salida", "Verificación visual" y "Mejoras para
-#    decidir", y hubo evidencia visual real en el turno (browser test,
-#    captura). Sin evidencia, hay que decirlo: "Sin verificación visual".
+#    hubo evidencia visual REAL en el turno (browser test, captura mirada).
+#    Sin evidencia, hay que decirlo: "Sin verificación visual". No se vigilan
+#    frases en la respuesta: eso verificaba la liturgia, no el trabajo.
 # 3) Si se tocó una guía de .ai/guidelines: regenera CLAUDE.md (boost:update).
 #
 # El inicio del turno lo marca inject-work-rules.sh (UserPromptSubmit).
@@ -92,20 +92,8 @@ y el archivo culpable, y recién ahí cerrar."
     fi
 fi
 
-# 2) Vistas: checklist + verificación visual + mejoras.
+# 2) Vistas: evidencia visual real.
 if printf '%s\n' "$touched" | grep -qE '^resources/(views|css|js)/'; then
-    missing=""
-    printf '%s' "$last_message" | grep -qi 'checklist de salida' || missing="$missing \"Checklist de salida\""
-    printf '%s' "$last_message" | grep -qi 'verificación visual' || missing="$missing \"Verificación visual\""
-    printf '%s' "$last_message" | grep -qi 'mejoras para decidir' || missing="$missing \"Mejoras para decidir\""
-
-    if [ -n "$missing" ]; then
-        reject "BLOQUEADO: este turno tocó vistas y la respuesta final no trae:$missing.
-
-Cerrar con esos tres bloques: el checklist de salida recorrido (atendiadesign /
-formularios.md §7), la verificación visual hecha y 2–3 mejoras de una línea."
-    fi
-
     evidence=$(printf '%s' "$turn_entries" | jq -r '
         [ .[] | .message.content[]? | select(.type == "tool_use")
           | select(

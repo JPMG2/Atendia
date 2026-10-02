@@ -1,0 +1,256 @@
+# Reglas de oro — receta de enforcement (convención del proyecto)
+
+> Para que una "regla de oro" se cumpla **a rajatabla** no alcanza con escribirla:
+> una guía es contexto pasivo y se puede pasar por alto. La garantía real la da
+> una verificación **determinística** que corre la herramienta, no el modelo.
+
+Toda regla de oro de este proyecto se implementa con **3 capas**. Las dos primeras
+hacen que casi siempre salga bien; la tercera lo hace **imposible de incumplir**.
+
+## Capa A — Skill con checklist de salida
+- Las reglas viven en un **skill** con `description` (trigger) inequívoca que
+  active al entrar al dominio (p. ej. "usar SIEMPRE al crear un formulario o un
+  componente Livewire").
+- El skill **termina con un checklist explícito** que debo verificar **antes de
+  dar la tarea por terminada**. Convierte la regla en un paso de salida, no en un
+  buen deseo.
+
+## Capa B — Garantía determinística (SIEMPRE, si es regla de oro)
+Elegí la herramienta según el dominio:
+- **PHP (modelos, clases)** → **arch test de Pest** (`arch()`), hecho para esto.
+- **Migraciones / markup Blade** → **test guardián**: un test Pest que recorre los
+  archivos del dominio y **falla** si encuentra un patrón prohibido.
+- Ambos corren en la suite / CI → protegen también ediciones de humanos u otras
+  herramientas. Es la red permanente.
+
+## Capa C — Hook `PostToolUse` (corrección instantánea)
+- Un hook en `.claude/settings.json` que matchea `Write|Edit` sobre los archivos
+  del dominio, valida el archivo recién escrito y, si viola algo, **devuelve el
+  error en el momento** (exit 2) para corregir antes de que corran los tests.
+
+## Cómo se clasifica cada regla
+Cuando se suma un set de reglas de oro:
+1. Separar cada regla en **verificable por patrón** (va a capa B y C) vs **de
+   criterio/UX** (queda solo en el checklist del skill, capa A).
+2. Definir un **allowlist de excepciones** explícito y comentado para no generar
+   falsos positivos (primitivos, casos legítimos, deuda pre-existente).
+3. **Ratchet:** si hay incumplimientos previos que no se arreglan ahora, se
+   congelan en el allowlist con su razón — **nunca se agrega nada nuevo a esa
+   lista**, se arregla.
+
+## Capa D — Puerta de salida del turno (hooks `Stop` + `UserPromptSubmit`)
+
+- **`inject-work-rules.sh` (UserPromptSubmit)**: con cada mensaje reinyecta las 7
+  reglas de `no-mediocre.md` en ~10 líneas (no quedan enterradas en CLAUDE.md) y
+  marca el inicio del turno.
+- **`enforce-turn-exit.sh` (Stop)**: si el turno tocó código corre
+  `GoldenRules|BusinessIsolation` (~5s) y en rojo **no deja cerrar**. Si tocó
+  vistas exige en la respuesta final "Checklist de salida", "Verificación visual"
+  y "Mejoras para decidir", más evidencia visual real en el turno (browser test o
+  captura). Escapes honestos, nunca silenciosos: "guardián en rojo" (rojo ajeno,
+  nombrado) y "Sin verificación visual" (con el porqué). Tope anti-bucle: 3.
+- Así las reglas de CRITERIO (que ningún patrón detecta) también son obligatorias:
+  se verifica que el paso se hizo y se dijo, no solo que existe la guía.
+
+## Ratchet de incumplimientos (obligatorio)
+
+Cada vez que la dueña caza una regla rota, **en la misma sesión y antes de seguir**
+esa regla gana su control automático (guardián y/o hook). Una regla que se rompió
+dos veces estando solo escrita es una regla sin cerradura. `inject-work-rules.sh`
+lo recuerda cuando el mensaje reclama una regla.
+
+## Implementaciones vivas (ejemplos de esta receta)
+- **Formularios / markup** → checklist en skill `atendiadesign` · test guardián
+  `tests/Feature/GoldenRulesMarkupTest.php` · hook
+  `.claude/hooks/check-blade-golden-rules.sh`.
+- **No perseguir un flake** → memoria `atendia-feedback-modo-trabajo` (capa A) ·
+  hook `.claude/hooks/block-browser-suite-reruns.sh` (capa C), que bloquea la
+  TERCERA corrida de la suite de browser entera. Escrito ya había estado y se
+  incumplió igual varios días seguidos: por eso hay hook.
+- **Una corrida de la suite entera por commit** → memoria
+  `atendia-feedback-modo-trabajo` (capa A) · hook
+  `.claude/hooks/block-full-suite-reruns.sh` (capa C), que bloquea la SEGUNDA
+  corrida completa si no hubo un commit en el medio. Mientras se trabaja va
+  `--filter`; la completa es la puerta del commit. Escrito estaba, y se
+  incumplió el mismo día: 4 corridas (~350s) donde hacía falta una.
+- **Suite de browser antes de cada commit que toque pantallas** → memoria
+  `atendia-feedback-modo-trabajo` (capa A) · hook
+  `.claude/hooks/require-browser-suite-before-commit.sh` (capa C), que bloquea un
+  `git commit` con cambios en `resources/views|css|js` más nuevos que la última
+  corrida de la suite de browser (la anota `block-browser-suite-reruns.sh`). Nació
+  el 2026-09-24: la suite es a demanda y 8 tests llevaban semanas viejos sin que
+  nadie los corriera. Lo que falla se re-corre con `--filter`; si pasa aislado es flake.
+- **Formularios / layout (aprovechar el ancho)** → `.ai/guidelines/formularios.md` §5 +
+  checklist del skill · test guardián `tests/Feature/GoldenRulesFormLayoutTest.php` ·
+  hook `.claude/hooks/check-catalog-form-layout.sh`. **Desde el 2026-09-14 alcanza
+  TODO el repo** (panel cliente incluido, toolbars incluidas): un blade con
+  `<x-inputsform.*>` sin `<x-catalog.form-row>` falla (los `span=` son inertes
+  fuera de `.form-row`), y `<x-ui.select>` está prohibido — el estándar es
+  `<x-inputsform.combobox>`. Nació de las toolbars de Servicios/Productos que
+  salieron sin fila declarada DOS veces prometidas. Ratchet congelado (wizard,
+  section-hours, ws-demo, chrome `q`) espejado test+hook: tocar de a dos.
+- **Comentarios / PHPDoc en inglés y cortos** → `.ai/guidelines/comentarios.md` ·
+  test guardián `tests/Feature/GoldenRulesCommentsTest.php` · hook
+  `.claude/hooks/check-comment-golden-rules.sh`. Las capas B y C comparten el
+  MISMO scanner (`tests/Support/CommentScanner.php`), así que no pueden divergir
+  —a diferencia de los allowlists espejados de la regla de markup, que hay que
+  tocar de a dos—. El ratchet llegó a cero y se borró: hoy no hay allowlist.
+  Ojo con el ALCANCE del scanner: un `.blade.php` puede ser un SFC de Livewire y
+  llevar su clase entera en un bloque `<?php`; mirar solo los `{{-- --}}` deja sin
+  vigilar la mitad del archivo (pasó, y los docblocks quedaron en español).
+- **Queries en el modelo (un Blade jamás arma una query)** →
+  `.ai/guidelines/queries-en-el-modelo.md` · test guardián
+  `tests/Feature/GoldenRulesBladeQueriesTest.php` · hook
+  `.claude/hooks/check-blade-query-golden-rules.sh`. Allowlists espejados
+  (tocar de a dos); los verbos compartidos con Collection no se prohíben.
+- **Validación en un Form, nunca inline en el componente** →
+  `.ai/guidelines/formularios.md` §1 · test guardián
+  `tests/Feature/GoldenRulesFormValidationTest.php` · hook
+  `.claude/hooks/check-form-validation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-09, cuando las 6
+  cards del perfil salieron con `rules()` inline mientras la guía escrita
+  todavía PRESCRIBÍA ese patrón: la regla vivía solo en el código.
+- **Tenancy (un cliente jamás ve a otro)** → `.ai/guidelines/tenancy.md` ·
+  guardianes `tests/Feature/GoldenRulesTenancyTest.php` (trait obligatorio por
+  INTROSPECCIÓN del esquema — la lista no se mantiene a mano — y cero
+  `withoutGlobalScope`) + `tests/Feature/BusinessIsolationTest.php` (dataset
+  de dos negocios sobre los 6 modelos tenant) · hook
+  `.claude/hooks/check-tenancy-golden-rules.sh`. Sin allowlist de patrones;
+  la única excepción razonada es `User` (membresía, no dato tenant).
+- **Getters como property hooks (clases PHP puras)** →
+  `.ai/guidelines/clases-php-modernas.md` · test guardián
+  `tests/Feature/GoldenRulesPropertyHooksTest.php` · hook
+  `.claude/hooks/check-php-getter-golden-rules.sh`. Patrón espejado (tocar de
+  a dos); sin allowlist — nació en cero el 2026-09-11 al migrar las piezas de
+  `Client` y `RetrievedChunkDto`. Alcance: `app/Classes` + `app/Dto`; Eloquent
+  y Livewire quedan fuera a propósito.
+- **Correo por canal (cero `Mail::` fuera de app/Messaging)** →
+  `.ai/guidelines/correo-por-canal.md` · test guardián
+  `tests/Feature/GoldenRulesMailChannelTest.php` · hook
+  `.claude/hooks/check-mail-channel-golden-rules.sh`. Sin allowlist — nació
+  en cero el 2026-09-19 (la auditoría cazó a DeviceChallenge desviado).
+- **Fechas SIEMPRE con Flatpickr** → `.ai/guidelines/fechas.md` · test guardián
+  `tests/Feature/GoldenRulesDatepickerTest.php` · hook
+  `.claude/hooks/check-datepicker-golden-rules.sh`. Patrones espejados (tocar
+  de a dos); sin allowlist — nació en cero el 2026-09-20. Ojo: la documentación
+  del porqué se escribe SIN el atributo literal, o el guardián se caza a sí mismo.
+- **Skills del asistente (todo lo que la IA pueda manejar, es un skill)** →
+  `.ai/guidelines/skills-del-asistente.md` · test guardián
+  `tests/Feature/GoldenRulesAssistantSkillsTest.php` · hook
+  `.claude/hooks/check-assistant-skill-golden-rules.sh`. Lo verificable: toda
+  herramienta es skill, está en el config y en el seeder, y ningún agente la
+  instancia. La pregunta "¿esto lo pediría un cliente por WhatsApp?" es de
+  criterio: vive en el checklist. Sin allowlist — nació en cero el 2026-09-24.
+- **Lo que el plan promete, el sistema lo cumple** → `.ai/guidelines/planes-fuente-unica.md`
+  §"Una fuente no alcanza" · test guardián `tests/Feature/GoldenRulesPlanPromiseTest.php`
+  (cada cifra vendida en `LOCKS`, `SOFT` con su razón o `PENDING` como deuda) ·
+  punto 11 de la skill `client`, que la audita cada noche. Nació el 2026-09-29:
+  "2 números de WhatsApp" viajó meses coherente en tres pantallas y falso en el
+  producto, y lo cazó la dueña. Lección: las 15 reglas miraban CÓMO se escribe el
+  código y ninguna miraba la PROMESA.
+- **Planes con UNA sola fuente (tabla `plans`)** → `.ai/guidelines/planes-fuente-unica.md` ·
+  test guardián `tests/Feature/GoldenRulesPlanSourceTest.php` · hook
+  `.claude/hooks/check-plan-source-golden-rules.sh`. Patrones espejados (tocar de a
+  dos); sin allowlist — nació en cero el 2026-09-25, tras "Hasta 5 números" vs 4.
+- **Contrato de los asistentes IA (reloj + verdad, uno solo)** →
+  `.ai/guidelines/ia-contrato-asistentes.md` · test guardián
+  `tests/Feature/GoldenRulesAgentContractTest.php` · hook
+  `.claude/hooks/check-ai-agent-golden-rules.sh`. Sin allowlist — nació en
+  cero el 2026-09-26.
+- **Economía de tokens (modelo declarado, memoria acotada, reloj último)** →
+  `.ai/guidelines/ia-economia-tokens.md` · test guardián
+  `tests/Feature/GoldenRulesAgentEconomyTest.php` · el MISMO hook de agentes
+  (patrones espejados: tocar de a dos).
+- **Moderación de lo que sube un negocio** → `.ai/guidelines/moderacion-contenido.md` ·
+  test guardián `tests/Feature/GoldenRulesUploadModerationTest.php` · hook
+  `.claude/hooks/check-upload-moderation-golden-rules.sh`. Patrones espejados
+  (tocar de a dos); sin allowlist — nació en cero el 2026-09-27. Fuera de
+  alcance a propósito: los forms del admin (Configuration, Admin).
+- **Reportes (PDF/Excel/CSV por una sola capa, un solo botón)** → `.ai/guidelines/reportes.md` ·
+  test guardián `tests/Feature/GoldenRulesReportsTest.php` · hook
+  `.claude/hooks/check-report-golden-rules.sh`. Patrones espejados (tocar de a
+  dos); sin allowlist — nació en cero el 2026-09-27.
+- **Un botón que se dibuja, hace algo** → `.ai/guidelines/controles-vivos.md` ·
+  test guardián `tests/Feature/GoldenRulesLiveControlsTest.php` · hook
+  `.claude/hooks/check-live-control-golden-rules.sh`. Las dos capas comparten el
+  MISMO scanner (`tests/Support/ControlScanner.php`), como la regla de los
+  comentarios: no pueden divergir. Nació el 2026-10-01, después de que la
+  auditoría cazara la MISMA clase de defecto cuatro veces a mano (el chip falso
+  de WhatsApp, el punto rojo de la campana, el buscador de la barra y un banner
+  de IA con el botón "Optimizar con IA" muerto en dos pantallas): ninguna de las
+  16 reglas miraba si un control CONTESTA. Allowlist con una sola entrada
+  razonada (el "Copiado" que se intercambia con el botón que copia) y no crece.
+- **Ninguna pantalla sin la skill de diseño** → skill `atendiadesign` (capa A) · hook
+  `.claude/hooks/require-design-skill.sh` (PreToolUse `Write|Edit|Bash`): bloquea
+  editar `resources/views|css` si `atendiadesign` no se cargó en la sesión, y bloquea
+  ESCRIBIR vistas/CSS por Bash (sed/python/redirección) — por esa vía ningún hook
+  PostToolUse de las reglas de oro corría. Nació el 2026-09-27 (visor de fotos de B3
+  hecho sin la skill y editado por scripts). Instalado por la dueña, probado 8/8.
+- **La skill de la corrida nocturna conoce todos sus candados** → §3.1 de
+  `.claude/skills/client/SKILL.md` · test guardián
+  `tests/Feature/GoldenRulesClientSkillSyncTest.php`: falla si un hook de
+  `.claude/settings.json` no está nombrado en esa sección, si la sección nombra
+  un script que ya no corre, o si una cifra escrita ahí (los guardianes
+  `Write|Edit`, los puntos auditados) dejó de coincidir con lo que cuenta.
+  Nació el 2026-09-29, al sumar los hooks a la skill: los 17 `check-*` estaban
+  descritos por tema pero sin nombre, e `inject-work-rules.sh` no figuraba en
+  ninguna parte — un candado que la corrida no conoce no lo cumple nadie. Es la
+  capa B de una regla que vive en un `.md`: acá no hay hook, porque el que
+  edita la skill es el mismo agente que corre la suite.
+- **El asistente de la dueña conoce todas sus pantallas** → punto 7 de la skill
+  `client` · test guardián `tests/Feature/GoldenRulesPanelGuideTest.php`: falla
+  si un ítem del menú del cliente con pantalla no está en
+  `atendia.owner_assistant.guide`, o si una entrada se gatea con una columna que
+  `businesses` no tiene. Nació el 2026-09-29: Agenda salió con su menú, su
+  pantalla y sus 3 skills, y nadie la sumó a la guía — "Pregúntale a AtendIa"
+  negaba una pantalla que estaba en el menú. Capa B sola: el incumplimiento
+  nace al sembrar un ítem, no al escribir un archivo que un hook pueda vigilar.
+- **Ninguna pantalla del cliente muere sin negocio** → test guardián
+  `tests/Feature/GoldenRulesFreshClientScreensTest.php`: recorre los ítems del
+  menú del cliente (la lista NO se mantiene a mano) como un usuario recién
+  registrado, con `business_id` en null, y falla si alguna pantalla contesta
+  5xx. Nació el 2026-09-29: `Client::for()` deja cada pieza en null hasta que
+  el negocio existe, y Agenda (`day() on null`) y Equipo (`members on null`)
+  salieron leyendo su pieza pelada — un 500 justo para quien recién se
+  registró. Ningún test lo vio porque todos sembraban un negocio primero.
+  Capa B sola: el incumplimiento es del RENDER, no un patrón que un hook
+  PostToolUse pueda leer en el archivo. **Desde el 2026-10-01 el guardián
+  también exige que la pantalla DIGA algo**: mide el texto que queda dentro de
+  `<main>` al sacarle el encabezado (el chrome que el layout regala) y falla
+  por debajo de 40 caracteres. Un 200 no es una respuesta: Estadísticas y Gana
+  imprimían su título sobre un vacío —cero caracteres— mientras Equipo, Agenda
+  y WhatsApp nombraban el paso que las desbloquea.
+- **Ninguna pantalla del cliente scrollea de lado en un teléfono ni en una
+  tablet** → mandato 1 de `atendiadesign` · test guardián
+  `tests/Browser/ClientResponsiveBrowserTest.php`: recorre los ítems del menú del
+  cliente (la lista NO se mantiene a mano) en los DOS anchos que nombra el
+  mandato —390×844 y 900×1200— en oscuro, mide `scrollWidth - innerWidth` en cada
+  pantalla y deja la captura de cada una para que un humano la mire. Los 900px no
+  son "el teléfono un poco más grande": es el ancho donde el sidebar de 264px
+  todavía ocupa lo suyo y el área de trabajo vive del resto, el más angosto que
+  llega a ser el layout de escritorio. Nació el 2026-09-30: el mandato
+  "responsive, mobile-first" llevaba tres meses sin una sola medición, y la
+  pasada a mano encontró cuatro pantallas donde un elemento al costado que
+  conserva su ancho aplastaba el texto a una tira de una palabra (Inicio, Mi
+  plan, Gana, Conocimiento). Capa B sola, como sus dos hermanos de arriba: el
+  incumplimiento es del RENDER a un ancho, no un patrón que un hook PostToolUse
+  pueda leer en el archivo. Vive en `tests/Browser`, así que corre a demanda con
+  la suite de browser, no en la del commit.
+- **Ninguna pantalla del cliente deja la pestaña sin nombre** →
+  `.ai/guidelines/formularios.md` §4 · test guardián
+  `tests/Feature/GoldenRulesScreenTitlesTest.php`: recorre los ítems del menú del
+  cliente (la lista NO se mantiene a mano), lee el `<title>` que sale del render y
+  falla si dice solo la marca —o si la dice dos veces—. Nació el 2026-10-01: la
+  regla escrita blindaba el CÓMO viaja el título (`render()` con `__()`, nunca
+  `#[Title]`) y nadie miraba si viajaba. Las 23 pantallas del panel decían
+  "AtendIa" y nada más: ese macro de Livewire solo corre en un componente de
+  PÁGINA, y las del cliente son una vista Blade con el componente adentro, así que
+  12 `->title()` escritos a conciencia no hacían nada. Ahora el nombre lo pone el
+  ítem del menú (`Menu::titleFor()` en `AppLayout`) y el panel admin —full-page de
+  verdad— sigue con el suyo. Capa B sola: el título es una propiedad del RENDER, y
+  qué componente sirve a un ítem del menú no está escrito en el archivo que un
+  hook PostToolUse podría leer.
+- **Migraciones / modelos** → *(pendiente: skill propio + `arch()` para modelos +
+  test guardián para migraciones cuando se sumen las reglas).*
+
+Ver también: [[documentacion-y-memoria]] (un tema por archivo, legibilidad).

@@ -33,17 +33,18 @@ REGLAS DE TRABAJO (no-mediocre.md — se cumplen en ESTE turno):
 5. Orden directa = ejecutar. No repreguntar lo ya decidido.
 6. Seguir el patrón que el proyecto ya usa; no inventar uno paralelo.
 7. Sin excusas: si algo salió mal, se asume y se corrige.
-Al cerrar con código tocado, el hook Stop corre los guardianes GoldenRules* y, si hubo vistas, exige en la respuesta los bloques "Checklist de salida", "Verificación visual" y "Mejoras para decidir".
+Al cerrar con código tocado, el hook Stop corre los guardianes GoldenRules*; si hubo vistas, exige verificación visual REAL (browser test o captura), no frases.
 Si se toca app/Ai: checklist de .ai/guidelines/ia-economia-tokens.md.
 RULES
 
-# Ratchet: si el mensaje reclama una regla rota, esa regla gana su control
-# automático ANTES de seguir con cualquier otra cosa.
+# Si el mensaje reclama una regla rota: se arregla, y si necesita candado, ese
+# candado REEMPLAZA a uno existente. El sistema no crece por acumulación
+# (reglas-de-oro-enforcement.md).
 if printf '%s' "$prompt" | grep -qiE 'regla(s)? de oro|rompiste|incumpl|no cumpl|(otra vez|de nuevo) (lo mismo|rompiste|te olvidaste|no)|te (la|las) pasaste|te salteaste|te olvidaste'; then
     cat <<'RATCHET'
-RATCHET: este mensaje parece reclamar una regla incumplida. ANTES de seguir con la tarea:
-identificar la regla, sumarle su control automático (test guardián y/o hook, receta en
-reglas-de-oro-enforcement.md) y recién después continuar. Una regla solo escrita no alcanza.
+REGLA RECLAMADA: identificar cuál es y arreglarla ANTES de seguir. Si hace falta un candado,
+tiene que REEMPLAZAR a uno existente o consolidarse con él — no se suma uno más. El candado que
+sirve mide el render, la base o la pantalla; nunca las palabras de la respuesta.
 RATCHET
 fi
 
