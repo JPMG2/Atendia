@@ -75,7 +75,7 @@ class MenuSeeder extends Seeder
 
         // Bottom navigation group.
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'settings', 'placement' => 'bottom', 'sort_order' => 1]);
-        Menu::create(['label_key' => 'menu.help', 'icon' => 'life-buoy', 'placement' => 'bottom', 'sort_order' => 2]);
+        Menu::create(['label_key' => 'menu.help', 'icon' => 'life-buoy', 'route_name' => 'help', 'placement' => 'bottom', 'sort_order' => 2]);
 
         // --- ADMIN panel (configuration) — skeleton; routes come later. ---
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_home', 'icon' => 'layout-dashboard', 'route_name' => 'admin.dashboard', 'sort_order' => 1]);

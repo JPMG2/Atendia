@@ -17,6 +17,8 @@ return [
 
     'body_hint' => 'Escríbelo como se lo contarías a una persona. Con eso alcanza.',
     'kind_legend' => '¿Qué tipo de mensaje es?',
+    'maybe_this' => '¿Te sirve alguna de estas?',
+    'from_article' => 'Leí «:title» y no me resolvió. Lo que me pasa es: ',
     'screen_placeholder' => 'No es de una pantalla en particular',
     'attachment_hint' => 'Si una imagen lo explica mejor, súbela tú. Nosotros no tomamos fotos de tu pantalla.',
 
@@ -77,6 +79,11 @@ return [
         'answered' => 'Respuesta enviada.',
         'answered_at' => 'Respondido :when',
         'pain_title' => 'Las pantallas más reportadas',
+        'failing_title' => 'Artículos de ayuda que no están sirviendo',
+        'stale_title' => 'Artículos sin tocar hace rato: ¿siguen vigentes?',
+        'deflection_title' => '¿La ayuda está resolviendo?',
+        'deflection_opened' => '{1}Se abrió 1 respuesta|[2,*]Se abrieron :count respuestas',
+        'deflection_tickets' => '{0}y ninguna terminó en un reporte.|{1}y 1 terminó en un reporte igual.|[2,*]y :count terminaron en un reporte igual.',
         'context' => 'Lo que capturamos',
         'attachment' => 'Ver imagen adjunta',
         'count' => '{0}Sin reportes|{1}1 reporte|[2,*]:count reportes',

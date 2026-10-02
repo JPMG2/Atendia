@@ -33,6 +33,9 @@ class SupportTicketForm extends BaseForm
 
     public ?string $screen = null;
 
+    /** True when Help handed her over: the deflection that did not work. */
+    public bool $afterHelp = false;
+
     /**
      * Untyped on purpose: Livewire holds a TemporaryUploadedFile here, and a
      * type would reject the plain UploadedFile a test hands over.
@@ -62,6 +65,7 @@ class SupportTicketForm extends BaseForm
                 screen: $validated['screen'],
                 context: $context,
                 attachment: $validated['attachment'],
+                afterHelp: $this->afterHelp,
             );
 
             return new NotificationDto(

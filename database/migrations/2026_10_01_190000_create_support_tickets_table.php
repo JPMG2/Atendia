@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('kind', 20)->default('problem');
             $table->string('status', 20)->default('new');
             $table->string('screen', 80)->nullable()->comment('Route name it was opened from, null when opened with no screen in mind');
+            $table->boolean('after_help')->default(false)->comment('She read an article first and it did not solve it: the deflection that failed');
             $table->text('body');
             $table->string('attachment_path')->nullable()->comment('Only what the person chose to attach: nothing is captured on its own');
             $table->jsonb('context')->nullable()->comment('URL, viewport, browser, plan — captured, never asked');

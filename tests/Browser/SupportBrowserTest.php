@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\HelpArticle;
 use App\Models\SupportTicket;
 use App\Models\User;
+use Database\Seeders\HelpArticleSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,8 +88,23 @@ test('the inbox names the screens that hurt most and opens a reply box', functio
     ]);
     SupportTicket::factory()->for($this->business)->create(['screen' => 'my-products']);
 
+    // An article nobody found useful belongs beside the tickets: it is the
+    // one that will produce tomorrow's.
+    $this->seed(HelpArticleSeeder::class);
+    HelpArticle::query()->where('slug', 'conectar-whatsapp')->sole()
+        ->forceFill(['unhelpful_count' => 5, 'helpful_count' => 1, 'opened_count' => 24])->saveQuietly();
+    HelpArticle::query()->where('slug', 'cambiar-plan')->sole()
+        ->forceFill(['updated_at' => now()->subMonths(9)])->saveQuietly();
+    SupportTicket::factory()->for($this->business)->create(['after_help' => true]);
+
     visit('/admin/soporte')->resize(1280, 900)
         ->assertNoJavaScriptErrors()
+        ->assertSee(__('support.admin.deflection_title'))
+        // The grammar has to agree: "1 terminaron" is what this pins.
+        ->assertSee('1 terminó en un reporte igual')
+        ->assertSee(__('support.admin.stale_title'))
+        ->assertSee(__('support.admin.failing_title'))
+        ->assertSee('Cómo conecto mi WhatsApp')
         ->assertSee(__('support.admin.pain_title'))
         ->click('[data-testid="sup-expand-'.$first->id.'"]')
         ->waitForText(__('support.admin.reply'))

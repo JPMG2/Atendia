@@ -37,13 +37,14 @@ class CreateSupportTicket
         ?string $screen,
         array $context,
         mixed $attachment = null,
+        bool $afterHelp = false,
     ): SupportTicket {
         $path = $attachment instanceof UploadedFile
             ? $attachment->store('businesses/'.$user->business_id.'/support', 'public')
             : null;
 
         try {
-            $ticket = $this->write($user, $body, $kind, $screen, $context, $path);
+            $ticket = $this->write($user, $body, $kind, $screen, $context, $path, $afterHelp);
         } catch (Throwable $e) {
             // The file is useless without its row, and storage is not free.
             if ($path !== null) {
@@ -68,6 +69,7 @@ class CreateSupportTicket
         ?string $screen,
         array $context,
         ?string $path,
+        bool $afterHelp,
     ): SupportTicket {
         $attempt = 0;
 
@@ -80,6 +82,7 @@ class CreateSupportTicket
                     'kind' => $kind,
                     'status' => SupportTicketStatus::New,
                     'screen' => $screen,
+                    'after_help' => $afterHelp,
                     'body' => $body,
                     'attachment_path' => $path,
                     'context' => $context,

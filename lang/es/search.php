@@ -19,6 +19,7 @@ return [
         'customers' => 'Clientes',
         'conversations' => 'Conversaciones',
         'knowledge' => 'Lo que sabe tu asistente',
+        'help' => 'Ayuda de AtendIa',
     ],
 
     'subtitles' => [

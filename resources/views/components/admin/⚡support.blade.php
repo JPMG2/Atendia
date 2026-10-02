@@ -4,6 +4,7 @@ use App\Actions\Support\AnswerSupportTicket;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Enums\SupportTicketStatus;
+use App\Models\HelpArticle;
 use App\Models\Menu;
 use App\Models\SupportTicket;
 use App\Traits\HasNotifications;
@@ -95,6 +96,34 @@ new class extends Component
         return SupportTicket::painPoints();
     }
 
+    /**
+     * The answers that are not answering. Sits next to the tickets because it
+     * is the same job: a failing article is tomorrow's ticket.
+     *
+     * @return Collection<int, HelpArticle>
+     */
+    #[Computed]
+    public function failingArticles(): Collection
+    {
+        return HelpArticle::failing();
+    }
+
+    /** Written long ago and never touched: an outdated answer is a trap. */
+    #[Computed]
+    public function staleArticles(): Collection
+    {
+        return HelpArticle::stale();
+    }
+
+    /**
+     * @return array{opened: int, tickets: int}
+     */
+    #[Computed]
+    public function deflection(): array
+    {
+        return HelpArticle::deflection();
+    }
+
     /** @return array<string, string> */
     #[Computed]
     public function statuses(): array
@@ -128,6 +157,52 @@ new class extends Component
             <span class="status-tag">{{ trans_choice('support.admin.count', $this->tickets->count(), ['count' => $this->tickets->count()]) }}</span>
         </x-slot:inline>
     </x-ui.page-head>
+
+    @if ($this->deflection['opened'] > 0)
+        {{-- The only number that says whether any of the help works: of all
+        the answers read, how many still ended in a report. --}}
+        <x-ui.card class="p-5 mb-3">
+            <p class="sup-meta">{{ __('support.admin.deflection_title') }}</p>
+            {{-- Two choices, not one sentence: "1 terminaron" is the kind of
+            dangling grammar nobody reads twice but everybody notices. --}}
+            <p class="sup-body">
+                {{ trans_choice('support.admin.deflection_opened', $this->deflection['opened'], ['count' => $this->deflection['opened']]) }}
+                {{ trans_choice('support.admin.deflection_tickets', $this->deflection['tickets'], ['count' => $this->deflection['tickets']]) }}
+            </p>
+        </x-ui.card>
+    @endif
+
+    @if ($this->staleArticles->isNotEmpty())
+        <x-ui.card class="p-5 mb-3">
+            <p class="sup-meta">{{ __('support.admin.stale_title') }}</p>
+            <div class="support-kinds">
+                @foreach ($this->staleArticles as $article)
+                    <a class="support-chip" href="{{ route('help', ['buscar' => $article->title]) }}"
+                        wire:navigate wire:key="stale-{{ $article->id }}">
+                        {{ $article->title }}
+                        <span class="sup-age">{{ $article->updated_at?->diffForHumans() }}</span>
+                    </a>
+                @endforeach
+            </div>
+        </x-ui.card>
+    @endif
+
+    @if ($this->failingArticles->isNotEmpty())
+        {{-- A failing article is tomorrow's ticket: it belongs here, not in a
+        report nobody opens. --}}
+        <x-ui.card class="p-5 mb-3">
+            <p class="sup-meta">{{ __('support.admin.failing_title') }}</p>
+            <div class="support-kinds">
+                @foreach ($this->failingArticles as $article)
+                    <a class="support-chip" href="{{ route('help', ['buscar' => $article->title]) }}"
+                        wire:navigate wire:key="failing-{{ $article->id }}">
+                        {{ $article->title }}
+                        <strong class="font-mono">{{ $article->unhelpful_count }}</strong>
+                    </a>
+                @endforeach
+            </div>
+        </x-ui.card>
+    @endif
 
     @if ($this->painPoints->isNotEmpty())
         {{-- The same screen reported over and over is the thing to fix, and a

@@ -346,3 +346,41 @@ test('the floor plan shows no quota card', function (): void {
 
     livewire('plan.index')->assertDontSee(__('ask.quota.of', ['cap' => 100]));
 });
+
+/*
+ * An invited agent has access-client-app, so the old gate let them ask — and
+ * the skills would read out loud the very screens the panel answers with a
+ * 403, spending the business's monthly quota doing it.
+ */
+test('an invited agent cannot ask the assistant about a business that is not theirs', function (): void {
+    $owner = askClient();
+
+    // syncRoles, not assignRole: the factory already gave it `client`, which
+    // carries manage-business — adding a role would not take that away.
+    $agent = User::factory()->create(['name' => 'Agente invitado']);
+    $agent->syncRoles(['agent']);
+    $agent->business()->associate($owner->business)->save();
+
+    $this->actingAs($agent->refresh());
+
+    expect($agent->can('access-client-app'))->toBeTrue()
+        ->and($agent->can('manage-business'))->toBeFalse();
+
+    livewire('client.ask-atendia')->call('ask', '¿Cuánto vendí ayer?')->assertForbidden();
+});
+
+test('the panel stops offering the assistant to someone who may not use it', function (): void {
+    $owner = askClient();
+
+    $agent = User::factory()->create();
+    $agent->syncRoles(['agent']);
+    $agent->business()->associate($owner->business)->save();
+
+    $this->actingAs($agent->refresh())->get('/conversaciones')
+        ->assertOk()
+        ->assertDontSee('data-testid="ask-atendia"', false);
+
+    $this->actingAs($owner)->get('/conversaciones')
+        ->assertOk()
+        ->assertSee('data-testid="ask-atendia"', false);
+});

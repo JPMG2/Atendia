@@ -22,6 +22,7 @@ use App\Ai\Tools\SendCatalogPhotos;
 use App\Classes\Report\CompanyReport;
 use App\Classes\Search\ConversationSource;
 use App\Classes\Search\CustomerSource;
+use App\Classes\Search\HelpSource;
 use App\Classes\Search\KnowledgeSource;
 use App\Classes\Search\ProductSource;
 use App\Classes\Search\ScreenSource;
@@ -144,6 +145,7 @@ return [
             'customers' => CustomerSource::class,
             'conversations' => ConversationSource::class,
             'knowledge' => KnowledgeSource::class,
+            'help' => HelpSource::class,
         ],
 
         'per_group' => 5,
@@ -356,6 +358,7 @@ return [
             'referrals' => ['menu.referrals', 'referrals'],
             'team' => ['menu.team', 'team'],
             'settings' => ['menu.settings', 'settings'],
+            'help' => ['menu.help', 'help'],
         ],
     ],
 

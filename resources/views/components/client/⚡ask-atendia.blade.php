@@ -120,7 +120,10 @@ new class extends Component
     /** A suggestion or a chart's "Preguntar" passes its question; typing goes through the input. */
     public function ask(?string $suggested = null): void
     {
-        abort_unless(Auth::user()?->can('access-client-app') && $this->business !== null, 403);
+        // manage-business, not access-client-app: an invited agent has the
+        // second one, and the panel already answers 403 to the screens this
+        // assistant would read out loud — while spending the business's quota.
+        abort_unless(Auth::user()?->can('manage-business') && $this->business !== null, 403);
 
         if (! $this->plan->allowsAsk || $this->questionsLeft === 0) {
             return;
@@ -150,7 +153,7 @@ new class extends Component
     /** One thumb per answer, kept with its question: the thread itself is never stored. */
     public function rate(int $index, string $rating): void
     {
-        abort_unless(Auth::user()?->can('access-client-app') && $this->business !== null, 403);
+        abort_unless(Auth::user()?->can('manage-business') && $this->business !== null, 403);
 
         $answer = $this->messages[$index] ?? null;
         $question = $this->messages[$index - 1] ?? null;

@@ -2,7 +2,10 @@
 
 use App\Enums\SupportTicketKind;
 use App\Livewire\Forms\Client\SupportTicketForm;
+use App\Models\HelpArticle;
 use App\Models\Menu;
+use App\Services\Help\HelpFinder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -39,11 +42,21 @@ new class extends Component
         $this->from = $from ?? request()->route()?->getName();
     }
 
-    public function open(): void
+    /**
+     * `$screen` and `$about` arrive when Help hands the person over after an
+     * article did not solve it: the form opens pointing at that screen with
+     * the article named, instead of asking her to retype what she just read.
+     */
+    public function open(?string $screen = null, ?string $about = null): void
     {
         $this->opened = true;
         $this->sentCode = null;
-        $this->form->screen = $this->from;
+        $this->form->screen = $screen ?? $this->from;
+        $this->form->afterHelp = $about !== null;
+
+        if ($about !== null && trim($this->form->body) === '') {
+            $this->form->body = __('support.from_article', ['title' => $about]);
+        }
     }
 
     public function close(): void
@@ -67,6 +80,25 @@ new class extends Component
             ->unique('route_name')
             ->mapWithKeys(fn (Menu $item): array => [(string) $item->route_name => $item->label])
             ->sort();
+    }
+
+    /**
+     * Up to three answers while she writes, the way Zendesk and Intercom do
+     * it — offered, never imposed: the send button is there from the start.
+     * Below 12 characters there is nothing to match on yet.
+     *
+     * @return EloquentCollection<int, HelpArticle>
+     */
+    #[Computed]
+    public function suggestions(): EloquentCollection
+    {
+        $term = trim($this->form->body);
+
+        if (mb_strlen($term) < 12) {
+            return new EloquentCollection;
+        }
+
+        return app(HelpFinder::class)->find($this->form->screen, $term);
     }
 
     /** @return array<int, array{value: string, label: string, icon: string}> */
@@ -129,7 +161,7 @@ new class extends Component
     class="support"
     x-data="{
         open: false,
-        show() {
+        show(screen, about) {
             this.open = true;
             /* Captured, not asked: the url, the window and the errors the page
                already collected. Nothing here is a question. */
@@ -139,8 +171,8 @@ new class extends Component
                 agent: navigator.userAgent,
                 errors: (window.atendiaErrors || []).slice(-5).join(' | '),
             };
-            const ready = $wire.opened ? Promise.resolve() : $wire.open();
-            return Promise.resolve(ready).then(() => $nextTick(() => this.$refs.body?.focus()));
+            return Promise.resolve($wire.open(screen ?? null, about ?? null))
+                .then(() => $nextTick(() => this.$refs.body?.focus()));
         },
         hide() {
             this.open = false;
@@ -148,6 +180,8 @@ new class extends Component
         },
     }"
     x-on:slide-over-close.window="if (open) hide()"
+    {{-- Help hands the person over when an article did not solve it. --}}
+    x-on:support-open.window="show($event.detail?.screen, $event.detail?.about)"
 >
     <button
         type="button"
@@ -193,9 +227,24 @@ new class extends Component
                                     :rows="5"
                                     maxlength="2000"
                                     counter
-                                    wire:model="form.body"
+                                    wire:model.live.debounce.500ms="form.body"
                                 />
                             </x-catalog.form-row>
+
+                            @if ($this->suggestions->isNotEmpty())
+                                {{-- Offered, never imposed: Send stays right
+                                there. Forcing a read is the anti-pattern. --}}
+                                <div class="support-hints" data-testid="support-suggestions">
+                                    <p class="support-legend">{{ __('support.maybe_this') }}</p>
+                                    @foreach ($this->suggestions as $article)
+                                        <a class="support-hint" href="{{ route('help', ['buscar' => $article->title]) }}"
+                                            wire:navigate wire:key="hint-{{ $article->id }}">
+                                            <x-icon name="book-open" :size="16" />
+                                            <span>{{ $article->title }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
 
                             <p class="support-legend">{{ __('support.kind_legend') }}</p>
                             <div class="support-kinds" role="group" aria-label="{{ __('support.fields.kind') }}">

@@ -160,9 +160,14 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                         @endif
                     @endif
 
-                    {{-- The owner's assistant is a client-panel tool: admin has no business to ask about. --}}
+                    {{-- The owner's assistant is a client-panel tool: admin has
+                    no business to ask about, and an invited agent would be told
+                    screens the panel answers with a 403. The lock is in the
+                    action; this only stops offering it. --}}
                     @unless ($onAdminPanel)
-                        <livewire:client.ask-atendia />
+                        @can('manage-business')
+                            <livewire:client.ask-atendia />
+                        @endcan
 
                         {{-- Support sits beside the assistant: both are "help",
                     one from the machine and one from us. --}}

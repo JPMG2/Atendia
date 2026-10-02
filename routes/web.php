@@ -161,6 +161,12 @@ Route::get('/equipo', fn () => view('team'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('team');
 
+// Help: the answers before a ticket. Reachable by an invited agent too — they
+// hit the same problems and the articles hold no business data.
+Route::get('/ayuda', fn () => view('help'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app'])
+    ->name('help');
+
 // "Gana con AtendIa": the client's referral link and its tally.
 Route::get('/gana', fn () => view('referrals'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
