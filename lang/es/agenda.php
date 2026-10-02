@@ -92,6 +92,11 @@ return [
 
     'reminder' => '🔔 *:business*: te esperamos :day a las :time para :what. Responde *Confirmo* si vienes, o *Reprogramar* si necesitas otro horario.',
 
+    // Se cierra el día y alguien tenía la hora tomada: enterarse al llegar a
+    // la puerta cerrada es lo único que no se puede permitir.
+    'closure_notice' => '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos. Escríbenos y lo reprogramamos.',
+    'closure_notice_reason' => '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos (:reason). Escríbenos y lo reprogramamos.',
+
     'notify' => [
         'booked' => 'Turno reservado.',
         'moved' => 'El turno quedó en su nuevo horario.',

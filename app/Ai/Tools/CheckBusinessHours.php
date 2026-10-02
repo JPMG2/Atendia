@@ -8,6 +8,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\AssistantContract;
 use App\Interfaces\Main\AssistantSkillTool;
 use App\Models\Business;
+use App\Models\BusinessClosure;
 use App\Models\BusinessHour;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Tools\Request;
@@ -61,12 +62,31 @@ class CheckBusinessHours implements AssistantSkillTool
             }
 
             $weekday = $days[(int) $date->format('w')];
-            $answer .= "\nEl {$date->format('d/m/Y')} es {$weekday}. Horario de ese día: "
-                .(collect($lines)->first(fn (string $line): bool => str_starts_with($line, $weekday.':')) ?? $weekday.': cerrado')
-                .'. No hay feriados ni cierres especiales cargados: es el horario habitual de ese día.';
+            $closed = BusinessClosure::sentenceFor($this->business->closures()->covering($date)->get());
+
+            $answer .= "\nEl {$date->format('d/m/Y')} es {$weekday}. ";
+            $answer .= $closed !== null
+                ? $closed.' No ofrezcas horarios de ese día.'
+                : 'Horario de ese día: '
+                    .(collect($lines)->first(fn (string $line): bool => str_starts_with($line, $weekday.':')) ?? $weekday.': cerrado')
+                    .'. Ningún cierre especial cargado para esa fecha: es el horario habitual.';
         }
 
-        return $answer."\nHorarios de atención:\n".implode("\n", $lines);
+        $answer .= "\nHorarios de atención:\n".implode("\n", $lines);
+
+        // What is still ahead, so a customer asking "¿abren esta semana?" is
+        // told about the holiday instead of finding it closed.
+        $ahead = $this->business->closures()->upcoming()->get();
+
+        if ($ahead->isNotEmpty()) {
+            $answer .= "\nDías distintos: ".$ahead
+                ->map(fn (BusinessClosure $closure): string => $closure->label()
+                    .($closure->isFullDay() ? '' : ' abre '.$closure->hoursLabel())
+                    .($closure->reason !== null ? ' ('.$closure->reason.')' : ''))
+                ->implode(' · ');
+        }
+
+        return $answer;
     }
 
     public function schema(JsonSchema $schema): array

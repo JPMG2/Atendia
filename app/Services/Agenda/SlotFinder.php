@@ -32,6 +32,16 @@ class SlotFinder
 
         $timezone = $business->localTimezone();
         $day = $day->setTimezone($timezone)->startOfDay();
+
+        // A day she marked closed offers nothing, whatever the weekly hours
+        // say: the holiday has to reach the customer asking for an hour.
+        $closure = $business->closureOn($day);
+
+        if ($closure?->isFullDay() === true) {
+            return [];
+        }
+
+        $special = $closure;
         $now ??= CarbonImmutable::now($timezone);
         $minutes = $this->slotMinutes($business, $service);
 
@@ -57,7 +67,13 @@ class SlotFinder
         $capacity = max(1, (int) $business->appointment_capacity);
         $slots = [];
 
-        foreach ($business->hours->where('day_of_week', (int) $day->format('w')) as $shift) {
+        // Special hours REPLACE the weekly ones for that day: offering both
+        // would hand out the very hours she decided not to work.
+        $shifts = $special === null
+            ? $business->hours->where('day_of_week', (int) $day->format('w'))
+            : collect([new BusinessHour(['opens_at' => $special->opens_at, 'closes_at' => $special->closes_at])]);
+
+        foreach ($shifts as $shift) {
             $opens = $this->at($day, (string) $shift->opens_at);
             $closes = $this->at($day, (string) $shift->closes_at);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Business;
 
 use App\Models\Business;
+use App\Models\BusinessClosure;
 use App\Models\KnowledgeDocument;
 
 /**
@@ -52,6 +53,22 @@ class SyncProfileKnowledge
     {
         $lines = $business->scheduleLines();
 
-        return $lines === [] ? [] : ['Horarios de atención:', ...$lines];
+        if ($lines === []) {
+            return [];
+        }
+
+        // The days she marked closed ride along: the weekly grid alone makes
+        // a holiday look like any other Tuesday.
+        $closed = $business->closures()->upcoming()->get()
+            ->map(fn (BusinessClosure $closure): string => $closure->label()
+                .($closure->isFullDay() ? ': no abre' : ': abre '.$closure->hoursLabel())
+                .($closure->reason !== null ? ' ('.$closure->reason.')' : ''))
+            ->all();
+
+        return [
+            'Horarios de atención:',
+            ...$lines,
+            ...($closed === [] ? [] : ['Días distintos: '.implode(' · ', $closed)]),
+        ];
     }
 }

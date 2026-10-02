@@ -12,12 +12,8 @@ use App\Http\Controllers\Settings\ConfirmEmailChangeController;
 use App\Http\Controllers\Settings\RestoreAccountController;
 use App\Http\Controllers\Settings\VerifyAccountEmailController;
 use App\Models\Business;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 
 Route::get('/', fn () => view('welcome'));
 
@@ -178,28 +174,6 @@ Route::get('/gana', fn () => view('referrals'))
 Route::livewire('/alta', 'business.wizard')
     ->middleware(['auth', 'permission:access-client-app', 'permission:manage-business'])
     ->name('onboarding');
-
-// TEMPORARY, local only: walk the wizard without registering — signs in a
-// throwaway demo client. Listed in aproduccion.md to be deleted at go-live.
-if (app()->environment('local')) {
-    Route::get('/alta-demo', function () {
-        // Every visit starts a pristine run: the wizard now persists and
-        // preloads on re-entry, so the previous demo tenant must leave whole
-        // (every business_id FK cascades — the demo user included).
-        User::query()->where('email', 'demo@atendia.test')->first()?->business?->forceDelete();
-
-        $demo = User::query()->firstOrCreate(
-            ['email' => 'demo@atendia.test'],
-            ['name' => 'Demo AtendIa', 'password' => Hash::make(Str::random(32))],
-        );
-
-        $demo->assignRole('client');
-
-        Auth::login($demo);
-
-        return redirect()->route('onboarding');
-    })->name('onboarding.demo');
-}
 
 // "Ajustes": the person behind the business — name, login email, password,
 // devices and closing the account. Same lock as every client screen.

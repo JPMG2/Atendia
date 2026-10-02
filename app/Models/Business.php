@@ -332,6 +332,33 @@ class Business extends Model
     }
 
     /**
+     * The days it keeps closed on top of the weekly hours: holidays, a family
+     * matter, a fortnight at the beach.
+     *
+     * @return HasMany<BusinessClosure, $this>
+     */
+    public function closures(): HasMany
+    {
+        return $this->hasMany(BusinessClosure::class)->orderBy('starts_on');
+    }
+
+    /**
+     * What she loaded for that day, when she loaded anything: a day shut, or
+     * a day open on special hours. Asked by the clock and by the agenda,
+     * which is every path a customer can reach.
+     */
+    public function closureOn(CarbonInterface $day): ?BusinessClosure
+    {
+        return $this->closures()->covering($day)->first();
+    }
+
+    /** Shut for the whole day — special hours are not a closed day. */
+    public function isClosedOn(CarbonInterface $day): bool
+    {
+        return $this->closureOn($day)?->isFullDay() === true;
+    }
+
+    /**
      * The activities the business declared, the primary one first.
      *
      * Several on purpose: a bakery that puts out tables adds a coffee-shop
@@ -691,8 +718,26 @@ class Business extends Model
         }
 
         $now = now($this->localTimezone());
+
         $today = (int) $now->format('w');
         $minutes = ((int) $now->format('G')) * 60 + (int) $now->format('i');
+
+        // What she loaded for TODAY beats the weekly hours: a holiday on a
+        // Tuesday used to be answered as a normal Tuesday.
+        $closure = $this->closureOn($now);
+
+        if ($closure !== null) {
+            if ($closure->isFullDay()) {
+                return false;
+            }
+
+            [$opens, $closes] = BusinessHour::span(
+                substr((string) $closure->opens_at, 0, 5),
+                substr((string) $closure->closes_at, 0, 5),
+            );
+
+            return $minutes >= $opens && $minutes <= $closes;
+        }
 
         // Yesterday comes along because a night shift spills into today: at
         // 01:00 what is open is last night's 22:00–02:00, not today's.

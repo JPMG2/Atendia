@@ -36,9 +36,13 @@
         'long' => 'f-long', 'full' => 'f-full'][$span] ?? 'f-text';
 @endphp
 
+{{-- `datepicker-reset` with this field's name empties it from outside: the
+picker lives behind wire:ignore, so a form that clears its model on save
+leaves the old date painted unless somebody tells it. --}}
 <div
     class="field {{ $spanClass }}"
     x-data="inputsformDatepicker({ mode: {{ \Illuminate\Support\Js::from($mode) }}, initial: {{ \Illuminate\Support\Js::from((string) $value) }} })"
+    @if ($name) x-on:datepicker-reset.window="$event.detail?.name === {{ \Illuminate\Support\Js::from($name) }} && clear()" @endif
 >
     @if ($label)
         <label for="{{ $id }}" class="field-label">{{ $label }}</label>

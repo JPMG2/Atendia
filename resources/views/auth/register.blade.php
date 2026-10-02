@@ -118,16 +118,6 @@
         </div>
     </form>
 
-    {{-- TEMPORARY, local only: jump into the wizard without creating an
-    account (a demo client signs in). Deleted at go-live with its route. --}}
-    @if (app()->environment('local'))
-        <div class="mt-6 flex justify-center">
-            <x-ui.button variant="ghost" size="sm" href="{{ route('onboarding.demo') }}">
-                Ver el alta sin crear cuenta (atajo temporal) →
-            </x-ui.button>
-        </div>
-    @endif
-
     <script>
         // Front mirror of RegisteredUserController's rules: what cannot pass
         // there is stopped here, before the request leaves.
