@@ -55,6 +55,7 @@ return [
     'admin_payments' => 'Pagos',
     'admin_moderation' => 'Moderación',
     'admin_support' => 'Soporte',
+    'admin_adoption' => 'Adopción',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

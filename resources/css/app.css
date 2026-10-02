@@ -2142,6 +2142,34 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     .sup-side { width:100%; justify-content:space-between; }
   }
 
+  /* Adoption: the funnel reads left to right, so the steps are chips in the
+  order they happen and the count is the number that carries the news. */
+  .adp-funnel { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .adp-step { display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:var(--radius-pill);
+    border:1px solid var(--border-subtle); background:var(--surface-card); }
+  .adp-step-label { font-size:var(--text-xs); color:var(--text-muted); }
+  .adp-step-total { font-size:var(--text-sm); color:var(--text-strong); }
+
+  .adp-row { display:flex; align-items:flex-start; gap:24px; padding:10px; border-bottom:1px solid var(--border-subtle); }
+  .adp-row:last-child { border-bottom:none; }
+  .adp-row:hover { background:var(--surface-sunken); }
+  .adp-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .adp-name { font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
+  .adp-side { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none; }
+  .adp-idle { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-body); }
+  .adp-legs-title { margin-top:16px; }
+  /* The row washes on hover, so the open detail needs an edge of its own or
+  it dissolves into the row exactly when it is being read. */
+  .adp-detail { display:flex; flex-direction:column; gap:2px; margin-top:6px; padding:8px 10px;
+    border:1px solid var(--border-subtle); border-radius:var(--radius-md);
+    background:var(--surface-card); max-width:420px; }
+  .adp-detail-line { display:flex; justify-content:space-between; gap:16px; font-size:var(--text-xs); color:var(--text-muted); }
+
+  @media (max-width:700px) {
+    .adp-row { flex-direction:column; gap:8px; }
+    .adp-side { width:100%; align-items:flex-start; }
+  }
+
   /* A finger has no Ctrl key: naming one is naming something that is not there. */
   @media (hover:none) and (pointer:coarse) {
     .cmdk-kbd { display:none; }

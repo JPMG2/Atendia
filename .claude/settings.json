@@ -64,75 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-blade-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-blade-query-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-catalog-form-layout.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-no-native-alerts.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-datepicker-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-comment-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-live-control-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-migration-consolidation.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-field-order.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-form-validation-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-tenancy-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-php-getter-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-mail-channel-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-assistant-skill-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-plan-source-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-ai-agent-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-upload-moderation-golden-rules.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash /var/www/atendia/.claude/hooks/check-report-golden-rules.sh"
+            "command": "bash /var/www/atendia/.claude/hooks/run-checks.sh"
           }
         ]
       }

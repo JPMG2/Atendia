@@ -46,3 +46,7 @@ Route::livewire('/logs', 'configuration.logs')->name('logs');
 
 // Proof of life for the WebSocket. It goes when the real chat exists.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
+
+// Adoption: where each business stalled on the way to being answered by its
+// own assistant. The one screen that measures product, not code.
+Route::livewire('/adopcion', 'admin.adoption')->name('adoption');

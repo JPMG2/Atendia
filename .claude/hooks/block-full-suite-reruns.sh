@@ -3,7 +3,7 @@
 # Hook PreToolUse (Bash): una corrida de la suite ENTERA por commit. La segunda
 # se bloquea.
 #
-# La suite tarda ~90s. La regla escrita es "mientras trabajo corro solo lo
+# La suite tarda ~340s (medido el 2026-10-02: 341s, 2148 tests). La regla escrita es "mientras trabajo corro solo lo
 # afectado con --filter; la completa una sola vez, antes del commit" — y se
 # incumplió el mismo día en que se escribió: 4 corridas completas (~350s) donde
 # hacía falta una. Por eso es un hook y no un buen deseo.
@@ -72,7 +72,7 @@ if [ "$runs" -ge 2 ]; then
     cat >&2 <<'MSG'
 BLOQUEADO: segunda corrida de la suite ENTERA sin un commit en el medio.
 
-La suite completa es la puerta del commit, no un "a ver cómo va". Cuesta ~90s
+La suite completa es la puerta del commit, no un "a ver cómo va". Cuesta ~340s
 cada vez y el usuario los está esperando.
 
 Qué hacer AHORA:

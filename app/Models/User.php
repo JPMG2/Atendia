@@ -6,11 +6,19 @@ namespace App\Models;
 
 use App\Actions\Account\SendEmailVerificationLink;
 use App\Actions\Account\SendPasswordResetLink;
+use App\Dto\AdoptionRowDto;
+use App\Enums\AdoptionStep;
+use App\Enums\MessageAuthor;
+use App\Enums\MessageDirection;
 use App\Enums\PanelNotificationType;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -311,5 +319,130 @@ class User extends Authenticatable
     public function whatsappDigits(): string
     {
         return (string) preg_replace('/\D/', '', (string) $this->whatsapp);
+    }
+
+    /**
+     * Every owner account with the step it reached, the ones that stalled
+     * first and, inside that, the longest away. Anchored on the ACCOUNT and
+     * not the business on purpose: the first drop-off happens before a
+     * business row exists, in the middle of the wizard.
+     *
+     * @return Collection<int, AdoptionRowDto>
+     */
+    public static function adoptionRows(): Collection
+    {
+        $owners = self::query()
+            ->select('users.*')
+            ->role('client')
+            ->with('business:id,name,whatsapp_connected_at,created_at')
+            ->addSelect(['last_seen_at' => LoginActivity::query()
+                ->selectRaw('max(created_at)')
+                ->whereColumn('user_id', 'users.id')])
+            ->get();
+
+        $businessIds = $owners->pluck('business_id')->filter()->unique()->all();
+
+        $services = self::totalsByBusiness(Service::query(), $businessIds);
+        $products = self::totalsByBusiness(Product::query(), $businessIds);
+        $conversations = self::totalsByBusiness(Conversation::query(), $businessIds);
+        $tickets = self::totalsByBusiness(SupportTicket::query(), $businessIds);
+        $answerQuery = fn (): Builder => ConversationMessage::query()
+            ->where('direction', MessageDirection::Out)
+            ->where('author', MessageAuthor::Assistant);
+
+        $answers = self::totalsByBusiness($answerQuery(), $businessIds);
+
+        // When each rung happened, for the legs of the funnel and the row's
+        // own detail. Catalog takes whichever came first, a service or a product.
+        $firstCatalog = self::earliestByBusiness(Service::query(), $businessIds);
+        foreach (self::earliestByBusiness(Product::query(), $businessIds) as $business => $at) {
+            $firstCatalog[$business] = min($at, $firstCatalog[$business] ?? $at);
+        }
+
+        $firstConversation = self::earliestByBusiness(Conversation::query(), $businessIds);
+        $firstAnswer = self::earliestByBusiness($answerQuery(), $businessIds);
+
+        return $owners
+            ->map(function (self $owner) use ($services, $products, $conversations, $tickets, $answers, $firstCatalog, $firstConversation, $firstAnswer): AdoptionRowDto {
+                $id = (int) $owner->business_id;
+                $lastSeen = $owner->getAttribute('last_seen_at');
+
+                return new AdoptionRowDto(
+                    owner: (string) $owner->name,
+                    email: (string) $owner->email,
+                    business: $owner->business?->name,
+                    step: AdoptionStep::reached(
+                        hasBusiness: $owner->business !== null,
+                        catalogItems: ($services[$id] ?? 0) + ($products[$id] ?? 0),
+                        connected: $owner->business?->whatsapp_connected_at !== null,
+                        conversations: $conversations[$id] ?? 0,
+                        answers: $answers[$id] ?? 0,
+                    ),
+                    registeredAt: CarbonImmutable::parse($owner->created_at),
+                    lastSeenAt: $lastSeen === null ? null : CarbonImmutable::parse($lastSeen),
+                    conversations: $conversations[$id] ?? 0,
+                    tickets: $tickets[$id] ?? 0,
+                    milestones: [
+                        AdoptionStep::BusinessCreated->value => self::momentOf($owner->business?->created_at),
+                        AdoptionStep::CatalogLoaded->value => self::momentOf($firstCatalog[$id] ?? null),
+                        AdoptionStep::WhatsAppConnected->value => self::momentOf($owner->business?->whatsapp_connected_at),
+                        AdoptionStep::FirstConversation->value => self::momentOf($firstConversation[$id] ?? null),
+                        AdoptionStep::AssistantAnswered->value => self::momentOf($firstAnswer[$id] ?? null),
+                    ],
+                );
+            })
+            ->sortBy([
+                [fn (AdoptionRowDto $row): int => $row->step->position(), 'asc'],
+                [fn (AdoptionRowDto $row): int => $row->daysIdle ?? 0, 'desc'],
+            ])
+            ->values();
+    }
+
+    /**
+     * One grouped count per business, so a screen of N rows still costs one
+     * query per counter instead of N.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @param  list<int>  $businessIds
+     * @return array<int, int>
+     */
+    private static function totalsByBusiness(Builder $query, array $businessIds): array
+    {
+        if ($businessIds === []) {
+            return [];
+        }
+
+        return $query->whereIn('business_id', $businessIds)
+            ->selectRaw('business_id, count(*) as total')
+            ->groupBy('business_id')
+            ->pluck('total', 'business_id')
+            ->map(fn (int|string $total): int => (int) $total)
+            ->all();
+    }
+
+    /**
+     * When each business first did this, which is what turns the funnel into
+     * durations instead of a pile of counts.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @param  list<int>  $businessIds
+     * @return array<int, string>
+     */
+    private static function earliestByBusiness(Builder $query, array $businessIds): array
+    {
+        if ($businessIds === []) {
+            return [];
+        }
+
+        return $query->whereIn('business_id', $businessIds)
+            ->selectRaw('business_id, min(created_at) as first_at')
+            ->groupBy('business_id')
+            ->pluck('first_at', 'business_id')
+            ->all();
+    }
+
+    private static function momentOf(CarbonInterface|string|null $value): ?CarbonImmutable
+    {
+        return $value === null ? null : CarbonImmutable::parse($value);
     }
 }

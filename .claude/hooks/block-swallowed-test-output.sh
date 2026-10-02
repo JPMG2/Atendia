@@ -22,13 +22,26 @@ print(d.get("tool_input", {}).get("command", "") or "")
 
 [ -n "$command" ] || exit 0
 
-case "$command" in
+# Lo que importa es que haya una CORRIDA antes del pipe. Nombrar pest no es
+# correrlo: leer un log que se llama pest.log, o contar procesos con ps, caía
+# en la misma red (2026-10-02).
+run="${command%%|*}"
+
+case "$run" in
     *pest*|*"artisan test"*) ;;
     *) exit 0 ;;
 esac
 
-# A redirection to a file is the way out: the output is whole and readable.
-case "$command" in
+case "$run" in
+    tail\ *|cat\ *|head\ *|grep\ *|less\ *|sed\ *|awk\ *|ps\ *|pgrep*|wc\ *|ls\ *) exit 0 ;;
+esac
+
+# A redirection to a FILE is the way out: the output is whole and readable.
+# Any `>` used to be enough, and a plain `2>&1` walked right through it — that
+# is how a failure's name was lost on 2026-10-02. Those two are not an escape.
+probe="$(printf '%s' "$command" | sed -E 's#(1>|2>|&>|>)[[:space:]]*/dev/null##g; s#2>&1##g')"
+
+case "$probe" in
     *">"*) exit 0 ;;
 esac
 

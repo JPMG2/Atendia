@@ -35,3 +35,7 @@ Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverla
 // Nightly, off the busy hours: the bell's inbox drops what aged out of its
 // window (config atendia.bell.keep_days). Nobody empties it by hand.
 Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dailyAt('04:20');
+
+// Weekly on purpose: an account that went quiet is a call to make this week,
+// and a daily copy of the same list stops being read by the second one.
+Schedule::command('atendia:adoption-alert')->weeklyOn(1, '09:00')->withoutOverlapping(60);

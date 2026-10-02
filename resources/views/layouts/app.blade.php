@@ -6,6 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     {{-- security-alerts.js keys its private Echo channel on this id. --}}
     <meta name="auth-user-id" content="{{ auth()->id() }}" />
+    {{-- Whether there is a WebSocket to dial at all. Off in the browser suite:
+    without this the panel calls /app/<key>, the test server answers 404 and
+    kills whatever test had the page open. --}}
+    <meta name="broadcasting" content="{{ config('broadcasting.default') === 'null' ? 'off' : 'on' }}" />
 
     {{-- The screen first: with five tabs open, the brand alone names none of
     them. A name that already carries the brand ("Gana con AtendIa") keeps it once. --}}
