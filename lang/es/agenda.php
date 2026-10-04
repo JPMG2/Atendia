@@ -87,7 +87,7 @@ return [
         'link_hint' => 'Pégalo en tu Instagram o en tu perfil de WhatsApp: tus clientes eligen hueco sin escribirte.',
         'link_copy' => 'Copiar',
         'link_copied' => 'Copiado',
-        'powered' => 'Reservas atendidas por AtendIa',
+        'powered' => 'Reservas atendidas por :brand',
     ],
 
     'reminder' => '🔔 *:business*: te esperamos :day a las :time para :what. Responde *Confirmo* si vienes, o *Reprogramar* si necesitas otro horario.',

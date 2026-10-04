@@ -50,7 +50,7 @@ return [
 
     'email' => [
         'title' => 'Correo de acceso',
-        'sub' => 'Con este correo entras a AtendIa y te llegan los avisos de seguridad. Para cambiarlo, confirmamos que el nuevo sea tuyo.',
+        'sub' => 'Con este correo entras a :brand y te llegan los avisos de seguridad. Para cambiarlo, confirmamos que el nuevo sea tuyo.',
         'verified' => 'Verificado',
         'unverified' => 'Sin verificar',
         'current' => 'Correo actual',
@@ -126,9 +126,9 @@ return [
 
     'links' => [
         'confirmed_title' => 'Tu correo quedó al día',
-        'confirmed_body' => 'Desde ahora entras a AtendIa con :email.',
+        'confirmed_body' => 'Desde ahora entras a :brand con :email.',
         'verified_title' => 'Tu correo quedó verificado',
-        'verified_body' => ':email ya está confirmado. Puedes volver a AtendIa desde cualquier dispositivo.',
+        'verified_body' => ':email ya está confirmado. Puedes volver a :brand desde cualquier dispositivo.',
         'invalid_title' => 'Este enlace ya no sirve',
         'invalid_body' => 'Venció, ya se usó o hubo un cambio más nuevo. Pide otro desde tus ajustes.',
         'cancelled_title' => 'Frenamos el cambio',

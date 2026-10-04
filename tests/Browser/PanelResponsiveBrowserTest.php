@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 use App\Models\Appointment;
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\KnowledgeDocument;
 use App\Models\Menu;
+use App\Models\ModerationFlag;
 use App\Models\PanelNotification;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\SupportTicket;
 use App\Models\TeamInvitation;
+use App\Models\Testimonial;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -23,10 +27,27 @@ use Laravel\Ai\Embeddings;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+/**
+ * The panel under test, with the rows it has to survive. Which user signs in
+ * and what is on screen both depend on the panel, and `beforeEach` cannot read
+ * a dataset argument — so the setup moved into the test itself.
+ */
+function openPanel(string $panel): void
+{
     app()->setLocale('es');
-    $this->seed(RolesAndPermissionsSeeder::class);
-    $this->seed(MenuSeeder::class);
+    test()->seed(RolesAndPermissionsSeeder::class);
+    test()->seed(MenuSeeder::class);
+
+    if ($panel === 'admin') {
+        fillTheAdminDesk();
+
+        $admin = User::factory()->create(['name' => 'Administración de la plataforma']);
+        $admin->assignRole('admin');
+
+        test()->actingAs($admin->refresh());
+
+        return;
+    }
 
     $business = Business::factory()->create([
         'name' => 'Centro Odontológico Integral del Sur',
@@ -38,8 +59,33 @@ beforeEach(function (): void {
 
     fillTheBusiness($business, $owner);
 
-    $this->actingAs($owner);
-});
+    test()->actingAs($owner);
+}
+
+/**
+ * The admin desk on a working day. Emptiness is the other guardian's job
+ * (`GoldenRulesFreshScreensTest`); this one measures the layout under rows,
+ * which is where it gives way.
+ */
+function fillTheAdminDesk(): void
+{
+    Embeddings::fake();
+
+    Company::factory()->create(['legal_name' => 'AtendIa Servicios Digitales S.R.L.']);
+
+    $businesses = Business::factory()->count(5)->create();
+
+    $businesses->each(function (Business $business): void {
+        Payment::factory()->count(2)->for($business)->create([
+            'status' => 'pending',
+            'receipt_path' => 'businesses/'.$business->id.'/receipts/transferencia-bancaria.jpg',
+        ]);
+
+        SupportTicket::factory()->for($business)->create();
+        Testimonial::factory()->for($business)->create();
+        ModerationFlag::factory()->for($business)->create();
+    });
+}
 
 /**
  * Rows, not emptiness. Every capture until 2026-09-30 was taken on a business
@@ -90,7 +136,7 @@ function fillTheBusiness(Business $business, User $owner): void
  * its width there and the work area lives on what is left, which is why it needs
  * its own measurement instead of being assumed fine because the phone passed.
  */
-dataset('client viewports', [
+dataset('viewports', [
     'phone' => ['phone', 390, 844],
     'tablet' => ['tablet', 900, 1200],
 ]);
@@ -99,25 +145,22 @@ dataset('client viewports', [
  * Mandate 2 names both themes and only the dark one had ever been looked at.
  * Light is the default, so it is the one every new client meets first.
  */
-dataset('client themes', [
+dataset('themes', [
     'light' => ['light', false],
     'dark' => ['dark', true],
 ]);
 
 /**
- * Mandates 1 and 2 of the design system, measured instead of eyeballed: a screen
- * that scrolls sideways hides half of whatever the row was saying, and nobody
- * goes looking for it. The list comes from the menu, so a screen added tomorrow
- * is swept without anyone maintaining an array here. The dark shot of each one
- * is the evidence a human still has to look at.
+ * Mandates 1 and 2, measured instead of eyeballed: a screen that scrolls
+ * sideways hides half of whatever the row was saying. The list comes from the
+ * menu, so tomorrow's screen is swept without maintaining an array. Swept the
+ * client panel only until 2026-10-03, so the admin tables had never been
+ * measured at any width. The shots are the evidence a human still looks at.
  */
-test('no client screen scrolls sideways on a small screen', function (string $label, int $width, int $height, string $theme, bool $flip): void {
-    $routes = Menu::query()
-        ->where('panel', 'client')
-        ->whereNotNull('route_name')
-        ->pluck('route_name')
-        ->unique()
-        ->values();
+test('no screen scrolls sideways on a small screen', function (string $panel, string $label, int $width, int $height, string $theme, bool $flip): void {
+    openPanel($panel);
+
+    $routes = panelRoutes($panel);
 
     expect($routes)->not->toBeEmpty();
 
@@ -133,7 +176,7 @@ test('no client screen scrolls sideways on a small screen', function (string $la
         }
 
         $page->assertNoJavaScriptErrors()
-            ->screenshot(filename: $label.'-'.$theme.'-'.str_replace('.', '-', $name));
+            ->screenshot(filename: $panel.'-'.$label.'-'.$theme.'-'.str_replace('.', '-', $name));
 
         $overflow = $page->script('document.documentElement.scrollWidth - window.innerWidth');
 
@@ -143,4 +186,4 @@ test('no client screen scrolls sideways on a small screen', function (string $la
     }
 
     expect($wide)->toBe([]);
-})->with('client viewports')->with('client themes');
+})->with('panels')->with('viewports')->with('themes');

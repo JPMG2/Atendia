@@ -67,7 +67,7 @@
         class="bd-subtle text-subtle mx-auto flex flex-wrap items-center justify-between gap-2.5 border-t"
         style="max-width: var(--container-xl); padding: 16px 24px; font-size: var(--text-xs)"
     >
-        <span>© {{ date('Y') }} {{ $company?->legal_name ?: 'AtendIa' }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
+        <span>© {{ date('Y') }} {{ $company?->legal_name ?: \App\Models\Company::brand() }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
             {{-- Language picker: geolocation suggests, the person decides. --}}
             <span x-data="{ open: false }" class="relative">

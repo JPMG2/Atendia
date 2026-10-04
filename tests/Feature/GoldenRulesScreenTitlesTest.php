@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Business;
-use App\Models\Menu;
-use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,7 +10,7 @@ uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
-| Golden rule: every client screen names itself in the browser tab
+| Golden rule: every screen of every panel names itself in the browser tab
 |--------------------------------------------------------------------------
 | The tab title is copy (`formularios.md` §4) and the written rule only
 | fenced HOW it travels — `render()` with `__()`, never a PHP attribute.
@@ -21,27 +18,23 @@ uses(RefreshDatabase::class);
 | and Productos fell back to the bare app name and four open tabs of the
 | panel read the same word while their eleven siblings named themselves.
 |
+| Swept `panel = 'client'` only until 2026-10-03, which left the admin free
+| to repeat it while the client panel was fenced. The dataset is the fence
+| for both now.
+|
 | Capa B only on purpose: the title is a property of the RENDER, and which
 | component serves a menu item is not written in the component's file, so
 | no PostToolUse hook could read it there. The menu is the source of the
 | list, so a screen added tomorrow is covered with nobody editing an array.
 */
 
-test('every client screen names itself in the browser tab', function (): void {
+test('every screen names itself in the browser tab', function (string $panel): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
 
-    $user = User::factory()->create();
-    $user->business()->associate(Business::factory()->create())->save();
+    signInOnPanel($panel);
 
-    $this->actingAs($user->refresh());
-
-    $routes = Menu::query()
-        ->where('panel', 'client')
-        ->whereNotNull('route_name')
-        ->pluck('route_name')
-        ->unique()
-        ->values();
+    $routes = panelRoutes($panel);
 
     expect($routes)->not->toBeEmpty();
 
@@ -70,4 +63,4 @@ test('every client screen names itself in the browser tab', function (): void {
     }
 
     expect($nameless)->toBe([]);
-});
+})->with('panels');

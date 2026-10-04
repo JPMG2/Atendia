@@ -32,6 +32,7 @@ return [
 
     // Company: the invoice issuer.
     'legal_name' => 'razón social',
+    'brand_name' => 'nombre comercial',
     'tagline' => 'tagline',
     'address' => 'dirección',
     'city' => 'ciudad',

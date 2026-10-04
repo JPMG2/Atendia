@@ -98,7 +98,7 @@ test('waving the ask away is remembered and never nags again', function (): void
 test('the admin desk approves a consented word and it publishes', function (): void {
     $testimonial = Testimonial::factory()->create();
 
-    livewire('admin.testimonials')
+    livewire('admin.testimonials.index')
         ->assertSee($testimonial->display_name)
         ->call('approve', $testimonial->id);
 
@@ -109,7 +109,7 @@ test('the admin desk approves a consented word and it publishes', function (): v
 test('approval is refused when the owner never consented', function (): void {
     $testimonial = Testimonial::factory()->create(['consent_given_at' => null]);
 
-    livewire('admin.testimonials')
+    livewire('admin.testimonials.index')
         ->call('approve', $testimonial->id);
 
     expect($testimonial->refresh()->status)->toBe(TestimonialStatus::Pending);
@@ -118,7 +118,7 @@ test('approval is refused when the owner never consented', function (): void {
 test('a rejected word never reaches the landing', function (): void {
     $testimonial = Testimonial::factory()->approved()->create();
 
-    livewire('admin.testimonials')
+    livewire('admin.testimonials.index')
         ->call('reject', $testimonial->id);
 
     expect($testimonial->refresh()->status)->toBe(TestimonialStatus::Rejected)

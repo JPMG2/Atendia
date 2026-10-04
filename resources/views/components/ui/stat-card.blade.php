@@ -1,10 +1,11 @@
 @props([
     'label',
     'value',
-    'delta' => null,        // ej. "+12%"
+    'delta' => null,        // a short figure like "+12%", never a sentence
     'trend' => 'up',        // up | down | flat
     'icon' => null,
     'tint' => 'brand',      // brand | accent | info | warning
+    'href' => null,         // with one, the tile IS the link to its queue
 ])
 
 @php
@@ -20,7 +21,14 @@
     $arrow = ['up' => '↑', 'down' => '↓', 'flat' => '→'][$trend] ?? '↑';
 @endphp
 
-<div {{ $attributes->merge(['class' => 'stat-card']) }}>
+{{-- A tile that counts a queue takes her to it: counting without the door
+makes her look for what the screen already found (atendiadesign §7.2). --}}
+@php($tag = $href ? 'a' : 'div')
+
+<{{ $tag }}
+    @if ($href) href="{{ $href }}" wire:navigate @endif
+    {{ $attributes->merge(['class' => 'stat-card'.($href ? ' is-link' : '')]) }}
+>
     <div class="flex items-center justify-between gap-3">
         <span class="stat-label">{{ $label }}</span>
         @if ($icon)
@@ -38,4 +46,10 @@
             >{{ $arrow }} {{ $delta }}</span>
         @endif
     </div>
-</div>
+
+    {{-- A figure without its context is not understood: the slot is where the
+    caller says what it is made of ("4 suscripciones pagando"). --}}
+    @if (filled(trim($slot)))
+        <p class="stat-foot">{{ $slot }}</p>
+    @endif
+</{{ $tag }}>

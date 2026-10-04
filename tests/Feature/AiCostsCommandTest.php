@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\ConversationAnalyst;
+use App\Models\AiModel;
 use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -50,9 +51,18 @@ test('every agent call is metered under its business, cached input apart', funct
 });
 
 test('the report shows each client volume and real cost, split by kind', function (): void {
-    config()->set('atendia.ai_rates.prompt_per_million', 2.0);
-    config()->set('atendia.ai_rates.cached_per_million', 0.5);
-    config()->set('atendia.ai_rates.completion_per_million', 10.0);
+    // The token prices belong to the MODEL that answered, so a later model
+    // change cannot revalue this month (E12, 2026-10-03). Embeddings and audio
+    // are not priced per chat model and stay in config.
+    AiModel::create([
+        'code' => 'gpt-6-astra',
+        'label' => 'GPT-6 Astra',
+        'effective_from' => now()->startOfMonth()->subYear(),
+        'prompt_per_million' => 2.0,
+        'cached_per_million' => 0.5,
+        'completion_per_million' => 10.0,
+    ]);
+
     config()->set('atendia.ai_rates.embedding_per_million', 0.02);
     config()->set('atendia.ai_rates.audio_per_minute', 0.003);
 
@@ -62,8 +72,8 @@ test('the report shows each client volume and real cost, split by kind', functio
     ConversationMessage::factory()->out()->for($conversation)->create(['business_id' => $business->id]);
 
     // $2 in + $1 cached + $1 out + $0.02 embeddings + $0.006 audio.
-    AiUsage::query()->create(['business_id' => $business->id, 'kind' => 'AsistenteAtendia', 'input_tokens' => 1_000_000, 'cached_tokens' => 2_000_000, 'output_tokens' => 100_000]);
-    AiUsage::query()->create(['business_id' => $business->id, 'kind' => AiUsage::EMBEDDINGS, 'input_tokens' => 1_000_000]);
+    AiUsage::query()->create(['business_id' => $business->id, 'kind' => 'AsistenteAtendia', 'model' => 'gpt-6-astra', 'input_tokens' => 1_000_000, 'cached_tokens' => 2_000_000, 'output_tokens' => 100_000]);
+    AiUsage::query()->create(['business_id' => $business->id, 'kind' => AiUsage::EMBEDDINGS, 'model' => 'text-embedding-3-small', 'input_tokens' => 1_000_000]);
 
     expect(Artisan::call('atendia:ai-costs'))->toBe(0);
 
@@ -95,4 +105,26 @@ test('a month with no usage says so', function (): void {
     expect(Artisan::call('atendia:ai-costs', ['--month' => '2020-01']))->toBe(0);
 
     expect(Artisan::output())->toContain('No AI usage recorded for 2020-01');
+});
+
+/*
+| The honest number: a call whose model has no published price is NOT worth
+| zero, it is unknown. Saying zero would be the screen lying about money.
+*/
+test('a call with no published price says so instead of showing zero', function (): void {
+    $business = Business::factory()->create(['name' => 'Laboratorio Vida']);
+
+    AiUsage::query()->create([
+        'business_id' => $business->id,
+        'kind' => 'AsistenteAtendia',
+        'model' => 'modelo-sin-precio',
+        'input_tokens' => 1_000_000,
+        'output_tokens' => 100_000,
+    ]);
+
+    expect(Artisan::call('atendia:ai-costs'))->toBe(0);
+
+    expect(Artisan::output())
+        ->toContain('configurar tarifas')
+        ->not->toContain('$0.00');
 });

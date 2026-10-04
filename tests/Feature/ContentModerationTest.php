@@ -204,7 +204,7 @@ test('only the admin opens the moderation desk, and lifting wakes the business',
     $admin->syncRoles(['admin']);
     $this->actingAs($admin)->get(route('admin.moderation'))->assertOk()->assertSee('Costuras Mary');
 
-    Livewire::test('admin.moderation')->call('lift', $business->id);
+    Livewire::test('admin.moderation.index')->call('lift', $business->id);
 
     expect($business->fresh()->isSuspended())->toBeFalse()
         ->and(ModerationFlag::query()->sole()->reviewed_at)->not->toBeNull();

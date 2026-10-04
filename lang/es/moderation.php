@@ -17,17 +17,17 @@ return [
 
     'mail' => [
         'eyebrow' => 'Políticas de uso',
-        'subject' => 'Suspendimos tu asistente de AtendIa',
+        'subject' => 'Suspendimos tu asistente de :brand',
         'preheader' => 'Detectamos contenido que incumple nuestras políticas de uso.',
         'title' => 'Tu asistente está suspendido',
         'intro' => 'Hola, detectamos contenido que incumple nuestras políticas de uso en lo que se cargó en la cuenta de :name.',
         'body' => 'Tu asistente dejó de responder mientras lo revisamos. No se borró nada. Si crees que es un error, apela desde tu panel y lo revisamos.',
         'cta' => 'Ir a mi panel',
         'closing' => 'Estamos para ayudarte.',
-        'reason' => 'Recibiste este correo porque eres parte del equipo de este negocio en AtendIa.',
+        'reason' => 'Recibiste este correo porque eres parte del equipo de este negocio en :brand.',
     ],
 
-    'whatsapp' => '⚠️ *AtendIa*: suspendimos el asistente de *:name* por contenido que incumple nuestras políticas de uso. No se borró nada. Si crees que es un error, apela desde tu panel.',
+    'whatsapp' => '⚠️ *:brand*: suspendimos el asistente de *:name* por contenido que incumple nuestras políticas de uso. No se borró nada. Si crees que es un error, apela desde tu panel.',
 
     'alert' => [
         'subject' => 'Moderación: :business · :severity',
@@ -37,7 +37,7 @@ return [
         'intro' => 'Origen: :source · Categoría: :category · Puntaje: :score',
         'cta' => 'Revisar en el panel',
         'closing' => 'El contenido no se guardó: solo su huella.',
-        'reason' => 'Recibiste este correo porque eres la administradora de AtendIa.',
+        'reason' => 'Recibiste este correo porque eres la administradora de :brand.',
     ],
 
     'appeal' => [

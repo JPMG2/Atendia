@@ -40,7 +40,7 @@ return [
         'wrong_code' => 'Ese código no es. Revisa tu WhatsApp e intenta de nuevo.',
     ],
 
-    'whatsapp_code' => 'Tu código de AtendIa es *:code*. Vence en 10 minutos. Si no fuiste tú, no lo compartas con nadie.',
+    'whatsapp_code' => 'Tu código de :brand es *:code*. Vence en 10 minutos. Si no fuiste tú, no lo compartas con nadie.',
 
     'revoked' => [
         'title' => 'Ese dispositivo quedó fuera',

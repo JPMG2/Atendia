@@ -79,6 +79,25 @@ elif docker inspect -f '{{.State.Running}}' atendia-app 2>/dev/null | grep -q tr
         --filter='GoldenRules|BusinessIsolation' 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
 
     if printf '%s' "$output" | grep -qE 'Tests:.*failed'; then
+        # La capa B también deja rastro: hasta hoy catches.tsv solo contaba lo
+        # que atrapaban los hooks, así que la regla "un candado que no atrapó
+        # nada en 60 días se borra" tenía datos de una sola de las dos capas.
+        # Se registra ANTES de decidir si bloquea: una atrapada es una atrapada
+        # aunque el rojo venga de un archivo ajeno.
+        state="$root/.claude/hooks/state"
+        mkdir -p "$state"
+
+        printf '%s' "$output" \
+            | grep -E '(FAIL|FAILED)' \
+            | grep -oE '(GoldenRules[A-Za-z]*|BusinessIsolation)Test' \
+            | sort -u \
+            | while read -r guardian; do
+                printf '%s\tguardian:%s\t%s\n' \
+                    "$(date -u +%Y-%m-%d)" \
+                    "$guardian" \
+                    "$(printf '%s\n' "$touched" | head -1)" >> "$state/catches.tsv"
+            done
+
         if ! printf '%s' "$last_message" | grep -qi 'guardián en rojo'; then
             failures=$(printf '%s' "$output" | grep -E 'FAILED|^\s*\+' | head -20)
             reject "BLOQUEADO: hay guardianes de reglas de oro en ROJO y el turno tocó código.

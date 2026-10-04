@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
+use App\Models\Menu;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 /*
@@ -47,6 +51,70 @@ expect()->extend('toBeOne', fn () => $this->toBe(1));
 function something(): void
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| The two panels
+|--------------------------------------------------------------------------
+|
+| Three guardians used to walk `panel = 'client'` and nothing walked the
+| admin, so every defect they closed on the client panel could be repeated
+| there untouched. They are one guardian each now, swept over both panels:
+| consolidating beats a sibling test per panel, which drifts apart the day
+| one of the two is edited (reglas-de-oro-enforcement.md).
+|
+*/
+
+dataset('panels', [
+    'client' => ['client'],
+    'admin' => ['admin'],
+]);
+
+/**
+ * Every route the menu of a panel points at. The menu is the source of the
+ * list on purpose: a screen added tomorrow is swept without anybody
+ * maintaining an array in a test.
+ *
+ * @return Collection<int, string>
+ */
+function panelRoutes(string $panel): Collection
+{
+    return Menu::query()
+        ->where('panel', $panel)
+        ->whereNotNull('route_name')
+        ->pluck('route_name')
+        ->unique()
+        ->values();
+}
+
+/**
+ * The user a panel answers to: an owner with her business for the client
+ * panel, the platform's admin for the other. `RolesAndPermissionsSeeder`
+ * has to have run — the role carries the area permission.
+ *
+ * `$withBusiness = false` is the user whose business is not born yet, the
+ * one the fresh-render guardian needs.
+ */
+function signInOnPanel(string $panel, bool $withBusiness = true): User
+{
+    if ($panel === 'admin') {
+        $admin = User::factory()->create(['email_verified_at' => now()]);
+        $admin->assignRole('admin');
+
+        return tap($admin->refresh(), fn (User $user) => test()->actingAs($user));
+    }
+
+    $owner = User::factory()->create([
+        'business_id' => null,
+        'email_verified_at' => now(),
+    ]);
+
+    if ($withBusiness) {
+        $owner->business()->associate(Business::factory()->create())->save();
+    }
+
+    return tap($owner->refresh(), fn (User $user) => test()->actingAs($user));
 }
 
 /**

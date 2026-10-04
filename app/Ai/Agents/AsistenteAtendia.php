@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Middleware\ModelOrchestrator;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Classes\Main\AssistantContract;
 use App\Enums\HandoffLevel;
@@ -20,6 +21,7 @@ use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
+use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Enums\Lab;
@@ -35,9 +37,17 @@ use Stringable;
 // grounding is enforced by the instructions instead.
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-class AsistenteAtendia implements Agent, Conversational, HasTools
+class AsistenteAtendia implements Agent, Conversational, HasMiddleware, HasTools
 {
     use Promptable;
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new ModelOrchestrator];
+    }
 
     /** Turns of memory handed to the model; enough thread, bounded cost. */
     private const int MEMORY_LIMIT = 12;

@@ -21,6 +21,7 @@ class CompanyDto implements FormData
      */
     public function __construct(
         public string $legal_name = '',
+        public ?string $brand_name = null,
         public ?string $tagline = null,
         public ?int $country_id = null,
         public ?int $province_id = null,
@@ -57,6 +58,7 @@ class CompanyDto implements FormData
     {
         return [
             'legal_name' => $this->legal_name,
+            'brand_name' => $this->brand_name,
             'tagline' => $this->tagline,
             'country_id' => $this->country_id,
             'province_id' => $this->province_id,
@@ -78,6 +80,7 @@ class CompanyDto implements FormData
     {
         return new self(
             legal_name: $data['legal_name'] ?? '',
+            brand_name: $data['brand_name'] ?? null,
             tagline: DtoCast::toNullableString($data['tagline'] ?? null),
             country_id: DtoCast::toNullableId($data['country_id'] ?? null),
             province_id: DtoCast::toNullableId($data['province_id'] ?? null),
@@ -105,6 +108,7 @@ class CompanyDto implements FormData
     {
         return [
             'legal_name' => DtoCast::squish($this->legal_name) ?? '',
+            'brand_name' => DtoCast::squish($this->brand_name),
             'tagline' => DtoCast::squish($this->tagline),
             'region_id' => $this->region_id,
             'address' => DtoCast::squish($this->address),

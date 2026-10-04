@@ -19,7 +19,7 @@ return [
         'customers' => 'Clientes',
         'conversations' => 'Conversaciones',
         'knowledge' => 'Lo que sabe tu asistente',
-        'help' => 'Ayuda de AtendIa',
+        'help' => 'Ayuda de :brand',
     ],
 
     'subtitles' => [
@@ -54,7 +54,7 @@ return [
     ],
 
     'ask' => [
-        'title' => 'Preguntarle a AtendIa: «:term»',
+        'title' => 'Preguntarle a :brand: «:term»',
         'sub' => 'Tu asistente responde con los datos de tu negocio',
     ],
 

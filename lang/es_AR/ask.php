@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 // Solo overrides de voseo; lo que no está cae a lang/es/ask.php.
 return [
-    'button' => 'Preguntale a AtendIa',
-    'title' => 'Preguntale a AtendIa',
+    'button' => 'Preguntale a :brand',
+    'title' => 'Preguntale a :brand',
     'intro' => 'Soy el :assistant: te respondo con los datos de tu negocio y te explico cómo usar cada módulo del panel. ¿Qué querés saber?',
     'suggestions_title' => 'Podés preguntar, por ejemplo:',
     'placeholder' => 'Escribí tu pregunta…',
@@ -20,7 +20,7 @@ return [
     ],
 
     'locked' => [
-        'title' => 'Preguntale a AtendIa por tu negocio',
+        'title' => 'Preguntale a :brand por tu negocio',
         'body' => 'Preguntá con tus palabras y te respondo con tus datos reales: consultas, clientes, cumpleaños y más.',
     ],
 ];

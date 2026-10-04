@@ -41,7 +41,7 @@ return [
     'customers' => 'Clientes',
     'agenda' => 'Agenda',
     'statistics' => 'Estadísticas',
-    'referrals' => 'Gana con AtendIa',
+    'referrals' => 'Gana con :brand',
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
     'team' => 'Equipo',
@@ -60,6 +60,12 @@ return [
 
     // Panel admin (configuración)
     'admin_home' => 'Inicio',
+    'admin_businesses' => 'Negocios',
+    'admin_all_businesses' => 'Todos',
+    'admin_billing' => 'Cobros',
+    'admin_trust' => 'Moderación',
+    'admin_content' => 'Contenido',
+    'admin_platform' => 'Plataforma',
     'admin_users' => 'Usuarios',
     'admin_catalogs' => 'Catálogos',
     'admin_testimonials' => 'Testimonios',

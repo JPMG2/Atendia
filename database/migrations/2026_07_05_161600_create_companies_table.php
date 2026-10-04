@@ -21,6 +21,10 @@ return new class extends Migration
         Schema::create('companies', function (Blueprint $table): void {
             $table->id();
             $table->string('legal_name')->comment('Razón social');
+            // The brand is NOT the legal name: "AtendIa" vs "AtendIa S.R.L.".
+            // Every visible text reads this one, so a rename is a row, not a
+            // search and replace across the repository.
+            $table->string('brand_name', 60)->nullable()->comment('Nombre comercial: el que ve el usuario en toda pantalla');
             $table->string('tax_id', 20)->comment('Número de identificación fiscal (RIF / CUIT)');
             $table->foreignIdFor(Region::class)->constrained()->restrictOnDelete();
             $table->foreignIdFor(TaxCondition::class)->nullable()->constrained()->nullOnDelete();

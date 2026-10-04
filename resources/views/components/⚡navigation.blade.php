@@ -69,14 +69,22 @@ new class extends Component
      *
      * @param  Collection<int, Menu>  $items
      */
-    private function overlayModerationBadge($items): void
+    private function overlayModerationBadge($items, ?int $pending = null, ?Menu $parent = null): void
     {
-        $pending = ModerationFlag::pendingCount();
+        $pending ??= ModerationFlag::pendingCount();
 
         foreach ($items as $item) {
-            if ($item->route_name === 'admin.moderation') {
-                $item->badge = $pending > 0 ? (string) $pending : null;
+            if ($item->route_name === 'admin.moderation' && $pending > 0) {
+                $item->badge = (string) $pending;
+
+                // The group carries it too, or news she has to act on hides
+                // behind a branch she never opened.
+                if ($parent !== null) {
+                    $parent->badge = (string) $pending;
+                }
             }
+
+            $this->overlayModerationBadge($item->childrenRecursive ?? collect(), $pending, $item);
         }
     }
 

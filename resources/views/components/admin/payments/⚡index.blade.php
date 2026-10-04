@@ -94,12 +94,14 @@ new class extends Component
                     <tbody>
                         @foreach ($this->queue as $payment)
                             <tr wire:key="pending-{{ $payment->id }}">
-                                <td class="font-mono">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
-                                <td>{{ $payment->business?->name }}</td>
-                                <td>{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
-                                <td class="font-mono">{{ $payment->formattedAmount() }}</td>
-                                <td class="font-mono">{{ $payment->reference ?? '—' }}</td>
-                                <td>
+                                {{-- data-label: stacked below 991px the header row is gone,
+                                so each cell has to say what it is. --}}
+                                <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
+                                <td data-label="{{ __('billing.admin.business') }}">{{ $payment->business?->name }}</td>
+                                <td data-label="{{ __('billing.history.concept') }}">{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment->formattedAmount() }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.admin.reference') }}">{{ $payment->reference ?? '—' }}</td>
+                                <td data-label="{{ __('billing.history.receipt') }}">
                                     @if ($payment->receipt_path)
                                         <a class="st-link" href="{{ route('admin.payments.receipt', $payment) }}" target="_blank" rel="noopener">
                                             {{ __('billing.history.receipt') }}</a>

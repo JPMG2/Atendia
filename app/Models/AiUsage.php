@@ -33,14 +33,17 @@ class AiUsage extends Model
      */
     public static function monthlyTotals(CarbonInterface $month): Collection
     {
+        // Grouped by MODEL too: the price belongs to the model that answered,
+        // or a model change revalues every past call at the new rate.
         return self::query()
-            ->selectRaw('business_id, kind, count(*) as calls, sum(input_tokens) as input_tokens, sum(cached_tokens) as cached_tokens, sum(output_tokens) as output_tokens')
+            ->selectRaw('business_id, kind, model, count(*) as calls, sum(input_tokens) as input_tokens, sum(cached_tokens) as cached_tokens, sum(output_tokens) as output_tokens')
             ->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->groupBy('business_id', 'kind')
+            ->groupBy('business_id', 'kind', 'model')
             ->get()
             ->map(fn (self $row): object => (object) [
                 'business_id' => $row->business_id !== null ? (int) $row->business_id : null,
                 'kind' => (string) $row->kind,
+                'model' => $row->model,
                 'calls' => (int) $row->getAttribute('calls'),
                 'input_tokens' => (int) $row->input_tokens,
                 'cached_tokens' => (int) $row->cached_tokens,

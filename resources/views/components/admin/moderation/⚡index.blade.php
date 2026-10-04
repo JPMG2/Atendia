@@ -88,8 +88,10 @@ new class extends Component
                     <tbody>
                         @foreach ($this->queue as $flag)
                             <tr wire:key="flag-{{ $flag->id }}">
-                                <td class="font-mono">{{ $flag->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
+                                {{-- data-label: stacked below 991px the header row is gone,
+                                so each cell has to say what it is. --}}
+                                <td class="font-mono" data-label="{{ __('moderation.admin.date') }}">{{ $flag->created_at->format('d/m/Y H:i') }}</td>
+                                <td data-label="{{ __('moderation.admin.business') }}">
                                     {{ $flag->business?->name }}
                                     @if ($flag->business?->isSuspended())
                                         <span class="status-tag is-danger">{{ __('moderation.admin.suspended') }}</span>
@@ -99,10 +101,10 @@ new class extends Component
                                             <b>{{ __('moderation.appeal.admin_label') }}:</b> {{ $flag->business->appeal_message }}</p>
                                     @endif
                                 </td>
-                                <td>{{ __('moderation.sources.'.$flag->source) }}</td>
-                                <td class="font-mono">{{ $flag->category }}</td>
-                                <td class="font-mono">{{ number_format((float) $flag->score, 2, ',', '.') }}</td>
-                                <td>
+                                <td data-label="{{ __('moderation.admin.source') }}">{{ __('moderation.sources.'.$flag->source) }}</td>
+                                <td class="font-mono" data-label="{{ __('moderation.admin.category') }}">{{ $flag->category }}</td>
+                                <td class="font-mono" data-label="{{ __('moderation.admin.score') }}">{{ number_format((float) $flag->score, 2, ',', '.') }}</td>
+                                <td data-label="{{ __('moderation.admin.result') }}">
                                     <span @class([
                                         'status-tag',
                                         'is-danger' => $flag->severity === ModerationSeverity::Severe,

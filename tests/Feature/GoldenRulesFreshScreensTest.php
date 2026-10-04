@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Menu;
-use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,7 +55,7 @@ function bodyBelowTheHead(string $full): string
 
 /*
 |--------------------------------------------------------------------------
-| Golden rule: a client whose business is not born yet still gets a screen
+| Golden rule: a panel with nothing in it still gives back a screen
 |--------------------------------------------------------------------------
 | `Client::for()` leaves every piece null until the business exists, so a
 | screen that reads its piece bare answers a 500 to the very user who has
@@ -65,24 +63,24 @@ function bodyBelowTheHead(string $full): string
 | and Equipo ("members on null") shipped like that and the suite never
 | noticed — every test seeded a business first.
 |
+| The admin panel has the same hole with a different shape: no Company row,
+| no businesses and no payments is its empty database, and `Company::current()`
+| returning null is already a known defect of the live one. Swept the client
+| panel only until 2026-10-03; the dataset sweeps both now.
+|
 | Capa B only on purpose: the break is a runtime property of the render,
 | not a pattern in a file a PostToolUse hook could read. The menu is the
 | source of the list, so a screen added tomorrow is covered without anyone
 | maintaining an array here.
 */
 
-test('every client screen renders for a user whose business is not born yet', function (): void {
+test('every screen renders on an empty database', function (string $panel): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
 
-    $this->actingAs(User::factory()->create(['business_id' => null, 'email_verified_at' => now()])->refresh());
+    signInOnPanel($panel, withBusiness: false);
 
-    $routes = Menu::query()
-        ->where('panel', 'client')
-        ->whereNotNull('route_name')
-        ->pluck('route_name')
-        ->unique()
-        ->values();
+    $routes = panelRoutes($panel);
 
     expect($routes)->not->toBeEmpty();
 
@@ -98,7 +96,7 @@ test('every client screen renders for a user whose business is not born yet', fu
     }
 
     expect($broken)->toBe([]);
-});
+})->with('panels');
 
 /*
 | A 200 is not an answer. Statistics and Gana printed their title over a void
@@ -106,18 +104,13 @@ test('every client screen renders for a user whose business is not born yet', fu
 | the step that unblocks them — the same defect as the 500s above, one HTTP
 | code quieter, and the guardian walked right past it.
 */
-test('every client screen tells a user whose business is not born yet what to do', function (): void {
+test('every screen on an empty database says what fills it', function (string $panel): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
 
-    $this->actingAs(User::factory()->create(['business_id' => null, 'email_verified_at' => now()])->refresh());
+    signInOnPanel($panel, withBusiness: false);
 
-    $routes = Menu::query()
-        ->where('panel', 'client')
-        ->whereNotNull('route_name')
-        ->pluck('route_name')
-        ->unique()
-        ->values();
+    $routes = panelRoutes($panel);
 
     $mute = [];
 
@@ -138,4 +131,4 @@ test('every client screen tells a user whose business is not born yet what to do
     }
 
     expect($mute)->toBe([]);
-});
+})->with('panels');

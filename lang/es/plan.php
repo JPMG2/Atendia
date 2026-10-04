@@ -67,7 +67,7 @@ return [
         'audio' => ':cap minutos de audio transcriptos',
         'departments' => 'Departamentos: cada charla llega a la persona que corresponde',
         'media' => 'Tu asistente mira las fotos y lee los PDF de tus clientes',
-        'ask' => 'Pregúntale a AtendIa: :cap consultas al mes',
+        'ask' => 'Pregúntale a :brand: :cap consultas al mes',
         'photos' => ':cap fotos de catálogo, hasta :per por producto o servicio',
         'statistics' => [
             'counts' => 'Estadísticas del negocio',

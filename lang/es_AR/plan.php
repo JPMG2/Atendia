@@ -13,6 +13,6 @@ return [
     ],
 
     'features' => [
-        'ask' => 'Preguntale a AtendIa: :cap consultas al mes',
+        'ask' => 'Preguntale a :brand: :cap consultas al mes',
     ],
 ];

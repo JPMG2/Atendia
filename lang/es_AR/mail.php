@@ -18,7 +18,7 @@ return [
         'preheader' => 'Compartilo con otros negocios y ganá descuentos en tu factura.',
         'qr_hint' => 'Imprimí este código y pegalo en tu mostrador: quien lo escanea llega con tu enlace.',
         'title' => 'Este enlace es tuyo: compartilo y ganá',
-        'body' => 'Reenviá este correo o compartí el enlace donde quieras: quien se registre con él estrena AtendIa con :days días de prueba gratis, y cuando pague su primer mes vos ganás un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
+        'body' => 'Reenviá este correo o compartí el enlace donde quieras: quien se registre con él estrena :brand con :days días de prueba gratis, y cuando pague su primer mes vos ganás un :percent% de descuento en tu próxima factura. Los descuentos se acumulan.',
     ],
 
     'challenge' => [
@@ -40,7 +40,7 @@ return [
 
     'account' => [
         'password_reset' => [
-            'subject' => 'Restablecé tu contraseña de AtendIa',
+            'subject' => 'Restablecé tu contraseña de :brand',
             'preheader' => 'Un clic y elegís una contraseña nueva.',
             'title' => 'Elegí una contraseña nueva',
             'body' => 'Tocá el botón para elegir una nueva. El enlace vence en :minutes minutos.',
@@ -51,7 +51,7 @@ return [
             'body' => 'Cuando alguien entre desde un dispositivo nuevo, el código va a llegar a tu WhatsApp. Guardá tus códigos de respaldo por si perdés el teléfono.',
         ],
         'verify' => [
-            'subject' => 'Verificá tu correo de AtendIa',
+            'subject' => 'Verificá tu correo de :brand',
             'title' => 'Verificá tu correo',
             'intro' => 'Hola :name, confirmá que esta dirección es tuya:',
             'closing' => 'Así nos aseguramos de que tu cuenta llegue solo a vos.',
@@ -69,7 +69,7 @@ return [
             'alert' => 'Si no fuiste vos, cancelá el cambio ahora y cambiá tu contraseña.',
         ],
         'email_updated' => [
-            'preheader' => 'Desde ahora entrás a AtendIa con esta dirección.',
+            'preheader' => 'Desde ahora entrás a :brand con esta dirección.',
             'alert' => 'Si no hiciste este cambio, entrá a tu panel y revisá tus ajustes.',
         ],
         'password_changed' => [

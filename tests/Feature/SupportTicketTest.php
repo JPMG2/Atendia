@@ -147,7 +147,7 @@ test('the admin moves a ticket along and the resolved one gets its date', functi
     $ticket = SupportTicket::factory()->for($this->business)->create();
 
     Livewire::actingAs($admin)
-        ->test('admin.support')
+        ->test('admin.support.index')
         ->call('setStatus', $ticket->id, 'resolved')
         ->assertDispatched('notify');
 
@@ -170,7 +170,7 @@ test('the admin answers from the inbox and the reply travels to her WhatsApp', f
         ->withArgs(fn (string $instance, string $number, string $text): bool => str_contains($text, 'Lo miramos y ya está'));
 
     Livewire::actingAs($admin)
-        ->test('admin.support')
+        ->test('admin.support.index')
         ->call('toggle', $ticket->id)
         ->set('reply', 'Lo miramos y ya está arreglado en tu panel')
         ->call('answer', $ticket->id)
@@ -190,7 +190,7 @@ test('resolving it rings the bell of the business that reported it', function ()
     $ticket = SupportTicket::factory()->for($this->business)->create();
 
     Livewire::actingAs($admin)
-        ->test('admin.support')
+        ->test('admin.support.index')
         ->call('setStatus', $ticket->id, 'resolved');
 
     $notification = PanelNotification::query()->withoutGlobalScopes()->first();

@@ -1,0 +1,421 @@
+# 🛠️ Panel Admin — pendientes
+
+> Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
+> `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
+> Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
+> Última revisión: 2026-10-03.
+
+## Cómo se cierra un punto de esta lista
+
+Lo que salió mal en el panel cliente fue cerrar pantallas sin estas cuatro cosas.
+Acá cada punto se cierra con las cuatro, o no se cierra:
+
+1. **Dato real, no maqueta.** Si la pantalla muestra un número, ese número sale de la
+   base y es verdad. Una cifra de adorno es un defecto, no un avance.
+2. **Nada mudo.** Ningún tile, botón ni ítem de menú se dibuja sin su destino
+   (`controles-vivos.md`). Si la capacidad no existe todavía, no se dibuja el control.
+3. **Los candados del panel admin ya existen** (cerrados el 2026-10-03): pestaña con nombre ·
+   render con la base VACÍA · 390px y 900px con filas reales · ítem de menú sin destino.
+   Ojo: el de 390/900px mide el desborde de la PÁGINA, no el de una tabla dentro de su card.
+4. **Verificación visual real** (captura o browser test) + suite de browser antes del commit.
+
+Lo que YA cubre al admin sin tocar nada: los 19 `check-*.sh` que `run-checks.sh` corre sobre
+CUALQUIER archivo escrito (blade, queries, comentarios, controles vivos, avisos nativos,
+validación en Form, fechas, tenancy, orden de campos, filas de formulario, planes, reportes,
+getters, migraciones, correo) y la skill `atendiadesign`, que `require-design-skill.sh` exige
+para tocar cualquier archivo de `resources/views/`. Única excepción a propósito:
+`check-upload-moderation-golden-rules.sh` se saltea `app/Livewire/Forms/Admin/*` y
+`Configuration/*` — la moderación es para lo que sube un NEGOCIO, no para lo que carga ella.
+
+**Cerrado el 2026-10-03, antes de la primera pantalla:**
+- La skill `atendiadesign` tenía CERO líneas sobre una pantalla de administración (su
+  checklist de salida se titulaba "formularios y componentes Livewire"), así que el admin
+  se iba a construir con la vara de un formulario. Ahora tiene su **§7 "Pantalla de
+  administración"** con reglas propias: falta ≠ cero, sello de frescura, todo tile es una
+  puerta, la tabla es la pantalla, vacío de verdad, voz operativa, y su propio checklist.
+  Y la skill dejaba de mentir: decía que el stack tenía n8n (está descartado) y escribía
+  "Atendia" en lugar de "AtendIa".
+- `check-panel-screen.sh` (capa C, nuevo): al escribir una vista del admin exige **en el
+  acto** que ya tenga su ruta en `routes/admin.php` y su ítem en `MenuSeeder.php`. Probado
+  contra las 8 pantallas que ya existen (ninguna falsa alarma) y contra una nueva
+  incompleta (atrapa las dos faltas). Allowlist: `ws-demo`, con su razón escrita.
+- `catches.tsv` ahora registra también las atrapadas de los **guardianes Pest**, no solo de
+  los hooks, y `catches.sh` avisa cuántos días de historia real tiene el registro: sin eso,
+  "0 atrapadas en 60 días" se leía como evidencia cuando era el primer día, y se iban a
+  borrar 17 candados sanos.
+
+---
+
+## A · Lo que se puede construir ya (no depende de nadie)
+
+### A1. El Inicio del admin de verdad — HECHO 2026-10-03 (falta 1 número)
+Era `resources/views/admin/dashboard.blade.php`, una rejilla de 6 tiles con 4 que no iban a
+ningún lado. Ahora es `components/admin/home/⚡index.blade.php` (la convención de carpeta por
+opción de menú), con las queries en `Subscription` y `Payment`, no en el Blade.
+
+- [x] ~~Comprobantes por verificar~~ → tile que lleva a `/admin/pagos`
+- [x] ~~Renovaciones de la semana, con monto~~ → tabla con negocio, plan, ciclo, fecha y monto
+- [x] ~~Vencidos / pausados~~ → tabla "Vencidos y pausados", con en gracia vs. pausado
+- [x] ~~MRR~~ → anual prorrateado a 12; cuenta activos y en gracia, no las pruebas, y dice
+      de cuántas suscripciones sale
+- [x] ~~Subidas de plan por verificar~~ → comprobante pendiente cuyo plan ≠ el de la suscripción
+- [x] ~~Los 4 tiles muertos~~ → la rejilla entera se fue; sus áreas ya viven en el menú
+- [x] ~~**Bajas programadas (plan, monto y fecha)**~~ — HECHO 2026-10-03, con A6.
+      Tile en el Inicio con el monto mensual que se va, y tabla con negocio, plan, monto,
+      fecha de fin y fecha en que la pidió. **Los 6 números del Inicio ya existen.**
+      Decisión de ella y diseño que salió de ella:
+      Decisión de ella (2026-10-03): la baja son dos momentos, cuándo la pide y cuándo
+      termina; y **si ya pagó, el asistente sigue andando hasta la fecha real de baja**.
+      Diseño que sale de eso:
+      - UNA columna, `subscriptions.canceled_at` = cuándo la pidió.
+      - El fin efectivo es `current_period_ends_at`, que YA existe. No se duplica.
+      - Todo lo demás se DERIVA, sin estado nuevo y sin job: está dada de baja y todavía
+        anda si `canceled_at` tiene valor y el período no venció; terminó cuando venció.
+        Es el mismo patrón que ya usa la prueba vencida ("this row never needs a
+        downgrade job").
+      - Al vencer una baja NO hay gracia ni pausa: termina y punto.
+      - Se registra desde la ficha del negocio (A6), con diálogo de confirmación.
+      - **Toda la política vive en `App\Actions\Billing\CancelSubscription`** — hoy: corre
+        hasta el fin del período pagado, sin devolución y sin preaviso. Si el abogado o el
+        contador lo cambian, es ESE archivo y ninguno más.
+      - [ ] Pendiente de §B: la baja por autogestión del negocio. No puede existir antes que
+            el pago por autogestión.
+
+### A2. Ajustes de plataforma — tabla editable
+Orden de ella (2026-09-24): lo que hoy es un valor fijo de comportamiento vive en
+`config/atendia.php` con un comentario que lo dice, y pasa a BD editable acá.
+- [ ] Umbral de charla terminada (2 h, `atendia.analysis.idle_hours`) y umbrales de similitud
+- [ ] Horas locales de los automáticos, en la hora de CADA negocio: cumpleaños 09:15 ·
+      resumen nocturno 20:30 · recordatorio de pago 09:00 · resumen semanal lunes 09:30
+- [ ] Cómo elige el sistema a qué cliente va la respuesta de la dueña desde su WhatsApp
+- [ ] Cumpleaños solo con opt-in del cliente (hoy fijo en sí)
+- [ ] Derivación y referidos
+- [ ] Al sumar un ajuste nuevo de plataforma: anotarlo acá y comentarlo en el config
+
+### A3. Consumo de IA por cliente
+Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`). Falta la cara.
+- [ ] Pantalla: volumen por negocio, costo y desglose por tipo
+- [ ] Cargar las tarifas `AI_RATE_PROMPT` / `AI_RATE_CACHED` / `AI_RATE_COMPLETION` en `.env`
+      (sin esto el costo sale en cero y la pantalla miente)
+
+### A4. Usuarios y accesos
+- [ ] La pantalla (el tile y el ítem de menú `menu.admin_users` existen y no tienen ruta)
+
+### A5. Seguridad — roles, permisos y auditoría
+- [ ] La pantalla (`spatie/laravel-permission` y `activitylog` ya registran; nadie los mira)
+
+### A6. Módulo "Negocios" — HECHO 2026-10-03
+`/admin/negocios`: la lista con plan, estado, vencimiento y deuda, y la ficha de cada uno
+con su plan, próximo cobro, lo que debe, sus últimos 10 pagos y la baja.
+- [x] ~~Pantalla de negocios (ficha, plan, estado, suspensión)~~
+- [x] La query vive en `Business::directory()` y `Business::ledger()`, nunca en el Blade.
+- [ ] Falta: buscador y filtro por estado cuando haya más de una pantalla de negocios.
+
+### A7. Aviso diario de charlas que salieron mal
+Anotado el 2026-09-24, nunca construido.
+- [ ] Las charlas con problema del día: errores del log, jobs fallidos, cliente que repite,
+      se enoja o pide una persona
+
+### A8. Tags de la demo del hero, configurables con estacionalidad
+Pedido de ella 2026-09-22. Diseño e investigación ya hechos (memoria
+`atendia-demo-tags-estacionales`): `demo_tags` evergreen + `demo_seasonal_variants` con
+ventana de fechas y prioridad, resolución en UN método del modelo, preview "ver como si
+fuera tal fecha", y las trampas anotadas (timezone fijo, solapamientos, caché, embeddings
+al guardar, probar el FIN de la ventana).
+- [ ] Tags evergreen administrables
+- [ ] Variantes estacionales con ventana y prioridad
+- [ ] Preview por fecha
+
+### A9. Calificaciones de la IA — las dos, y hoy existe una sola
+Pedido de ella 2026-09-25 ("dejalo en pendiente") y ampliado el 2026-10-03.
+Verificado hoy: los pulgares existen **solo** en `⚡ask-atendia.blade.php` (el asistente de
+ELLA) y se guardan en `ask_feedback` (pregunta, respuesta, rating, negocio, usuario). El
+asistente que atiende a los clientes del negocio por WhatsApp **no tiene pulgares ni tabla**.
+- [ ] Pantalla de `ask_feedback`, pulgar abajo primero, para corregir la IA donde falla
+- [ ] **Capturar la calificación de la IA que atiende al cliente del negocio** — hoy no se
+      guarda nada, y es la señal que de verdad sirve para entrenar: es la IA que habla con
+      desconocidos, no la que le contesta a ella
+- [ ] Decidir CÓMO se pide por WhatsApp sin molestar al cliente del negocio (un pulgar en un
+      chat no es un botón en una pantalla: se pide una vez, no en cada respuesta)
+- [ ] La pantalla del admin manda sobre las dos: qué respuestas fallaron, de qué negocio, y
+      qué se corrigió
+
+### A10. Radar de personas
+`platform_contacts` ya junta los datos cross-negocio (sin `business_id`, capa plataforma).
+- [ ] Pintarlo
+
+### A11. Tasa de cambio automática (Bs/USD)
+Pedido de ella 2026-09-23. Investigación hecha (memoria `atendia-tasa-cambio-auto`):
+`ve.dolarapi.com` funciona, el BCV no tiene API (tabla + SSL incompleto).
+**EN PAUSA por orden de ella (2026-10-03).**
+- [ ] Cadena de fuentes: API → BCV → última tasa guardada
+- [ ] Tabla de tasas con fecha y fuente + validación de cordura (variación diaria máxima)
+- [ ] Aviso al admin si todas fallan o la tasa queda vieja
+- [ ] **Decisión de ella pendiente:** qué hacemos si la API muere o el BCV cambia el diseño
+
+---
+
+## B · Esperando la reunión (abogado + contador)
+
+- [ ] **Medio de pago definitivo.** Hoy: comprobante + verificación del admin en
+      `/admin/pagos`. Cuando se defina la pasarela entra como otro `method` en `payments`,
+      sin tocar pantallas ni historial.
+- [ ] **Instrucciones de pago** cargadas en Admin → Compañía (`companies.payment_instructions`)
+      antes de salir a producción.
+- [ ] **Pregunta abierta de ella:** ¿entra el cambio mensual↔anual? (estándar: pasar a anual
+      cuando quieras pagando el año; volver a mensual solo en la renovación).
+- [ ] **Moderación de archivos:** qué evidencia se guarda ante un positivo de menores (hoy
+      SOLO hash + categoría + puntaje + fecha, el archivo nunca se guarda) · a quién se
+      denuncia (NCMEC / autoridades locales) · causales de suspensión y vía de APELACIÓN en
+      los Términos · si hay que avisarle a Meta al pasar a la Cloud API.
+- [ ] **Términos de uso:** causales por negocio-fachada ilegal. El bloqueo técnico está
+      (`SuspendBusiness` + `/admin/moderacion`); el respaldo legal no.
+- [ ] **Derecho de supresión de datos** (Ley 25.326 AR y equivalentes): "Eliminar mi cuenta"
+      hace borrado lógico. Falta la vía para ANONIMIZAR nombre/correo/teléfono conservando
+      estadísticas.
+
+---
+
+## C · Deudas chicas que ensucian el admin
+
+- [ ] Borrar el usuario `demo@atendia.test` de `atendia`: aparece en `/admin/adopcion` como
+      un negocio más que nunca pasó del wizard y ensucia el embudo.
+- [ ] No hay fila de Compañía en `atendia` (`Company::current()` devuelve null): el pie de
+      la landing y los correos que la usan caen al fallback.
+
+---
+
+## D · Candados que al panel admin le faltaban (capa B) — CERRADO 2026-10-03
+
+Los tres guardianes que cerraron los defectos del panel cliente recorrían SOLO
+`panel = 'client'`. Se GENERALIZARON a los dos paneles en vez de duplicarse, y se sumó el
+cuarto. Lo que quedó, con lo que lo prueba:
+
+- [x] ~~**Pestaña con nombre**~~ → `GoldenRulesScreenTitlesTest`, dataset `panels`. Verde.
+      Verificado que no pasa en vacío: las 10 rutas del admin dan 200 y se nombran. La nota
+      de abajo era FALSA: `AppLayout` ya resolvía el título por el menú en los dos paneles.
+- [x] ~~**Render con la base vacía**~~ → `GoldenRulesFreshScreensTest` (renombrado), dataset
+      `panels`. Verde: sin Compañía, sin negocios y sin pagos ninguna pantalla da 5xx ni queda muda.
+- [x] ~~**390px y 900px con filas reales**~~ → `PanelResponsiveBrowserTest` (renombrado),
+      dataset `panels`. Los 4 recorridos del admin PASAN con 5 negocios, comprobantes,
+      tickets, testimonios y moderación. 40 capturas en `tests/Browser/Screenshots/admin-*`.
+- [x] ~~**Ítem de menú sin ruta y sin hijos**~~ → dentro de `GoldenRulesLiveControlsTest`
+      (es la misma regla de oro, no un archivo nuevo). Atrapó `menu.admin_users` y se sacó
+      del `MenuSeeder`: su pantalla es A4 y todavía no existe.
+
+Texto original, para no re-discutirlo:
+
+- [ ] **Pestaña con nombre** — hermano de `GoldenRulesScreenTitlesTest` para `panel = 'admin'`
+      (`admin.dashboard` y `admin.catalogs` no llaman a `->title()`).
+- [ ] **Render con la base vacía** — hermano de `GoldenRulesFreshClientScreensTest`: sin fila
+      de Compañía, sin negocios y sin pagos, ninguna pantalla del admin da 500 (es
+      literalmente el hallazgo de la Compañía nula).
+- [ ] **390px y 900px con filas reales** — hermano de `ClientResponsiveBrowserTest` para las
+      tablas del admin (pagos, moderación, soporte, adopción).
+- [ ] **Ítem de menú sin ruta y sin hijos no se siembra** (hoy `menu.admin_users` se dibuja y
+      no lleva a ninguna parte) — el equivalente de "controles vivos" para el menú.
+      Ojo: `check-panel-screen.sh` cierra la dirección **pantalla → ruta → menú**; esta es la
+      inversa (**menú → ruta**), que necesita la BD y por eso va de guardián Pest.
+
+---
+
+## E · Peticiones de ella del 2026-10-03, cruzadas con lo que ya había
+
+Cada punto dice si es NUEVO, si **ya estaba** (y dónde), o si **ya está hecho**.
+
+### E1. Mover las pantallas del admin a `components/admin/<opción>/` — HECHO 2026-10-03
+Regla en `arquitectura-paneles.md`.
+- [x] ~~Las cinco movidas~~ con `git mv`: `admin/payments/⚡index`, `moderation/`, `support/`,
+      `testimonials/`, `adoption/`. El Inicio ya había nacido en la carpeta nueva.
+- [x] ~~`check-panel-screen.sh` ajustado~~ a la forma anidada; las 6 pantallas lo pasan.
+- [x] Ojo con la trampa: `admin.payments` era a la vez nombre de RUTA y de COMPONENTE. Solo
+      cambió el del componente (`admin.payments.index`); la ruta, el menú y los `route()`
+      siguen igual. El primer reemplazo los pisó a los dos y 4 tests se cayeron.
+- [ ] **Sin mover a propósito**: `catalog.manager` y los tres de `configuration.*` sirven al
+      admin pero viven en sus propias carpetas. `catalog/` arrastra 14 maestros; moverlos es
+      otra tarea y hay que decidirla aparte.
+
+### E2. Tickets de soporte en orden de llegada
+**YA ESTÁ HECHO** · `/admin/soporte` (`admin/⚡support.blade.php`)
+Verificado hoy: ordena por llegada, el más viejo sin responder arriba y lo resuelto se hunde.
+- [ ] Único pendiente: pasarlo por el checklist de `atendiadesign` §7 (sello de frescura,
+      acción en la fila, 390/900px) cuando se revise el panel completo
+
+### E3. Testimonios: ninguno sale sin aprobación
+**YA ESTÁ HECHO** · `/admin/testimonios`
+Verificado hoy: `Testimonial` solo publica `status = Approved`, y `ModerateTestimonial`
+además exige el consentimiento del negocio. La mano del admin es la última puerta.
+
+### E4. Pantalla de clientes que incurrieron en un incumplimiento
+NUEVO · **pregunta abierta de ella: qué cuenta como "incumplimiento"**
+Hoy los incumplimientos viven desparramados en tres lugares que no se hablan: moderación de
+contenido (`moderation_flags` + suspensión), pagos vencidos o pausados, y los reclamos de
+soporte. La pantalla que ella pide es el **legajo por negocio**: todo lo que un negocio hizo
+mal, en un solo lugar y en orden.
+- [ ] **Antes de construir, una pasada de investigación** (pedido de ella, 2026-10-03):
+      cómo arman los grandes el expediente de confianza de una cuenta, no una lista de retos.
+- [ ] Definir qué entra: ¿solo moderación? ¿también impago? ¿también abuso de la IA?
+- [ ] La pantalla (legajo por negocio, con el historial y qué se hizo)
+
+### E5. Datos del WhatsApp del landing configurables en días especiales
+NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
+- [ ] Número, horario de atención y mensaje de apertura del WhatsApp de la landing, con
+      variantes por fecha (feriados, vacaciones, fin de año)
+- [ ] Se resuelve con el mismo patrón de A8 (evergreen + variante con ventana y prioridad):
+      si se construyen juntos, es un solo mecanismo en vez de dos
+
+### E6. Compañía toma vida en todo el proyecto — HECHO 2026-10-03
+El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces** (118 en
+`lang/`, 22 en vistas). Ahora sale de `companies.brand_name` por una sola puerta.
+- [x] ~~Columna `brand_name`~~ + campo en la pantalla de Compañía (DTO, Form, vista, lang).
+- [x] ~~`Company::brand()`~~: fuente única, con fallback mientras no haya fila.
+- [x] ~~Las 118 de `lang/` dicen `:brand`~~ y un traductor propio
+      (`BrandAwareTranslator`) lo rellena solo. Sin tocar las 118 llamadas a `__()`.
+- [x] ~~Las 22 de vistas~~ leen `Company::brand()`.
+- [x] ~~Candado~~ `GoldenRulesBrandSourceTest`: nadie vuelve a escribir el nombre, y PRUEBA
+      que renombrar la fila renombra el producto entero.
+- [ ] **Falta que cargues la fila de Compañía** desde `/admin/company`. No la creé: no voy a
+      inventar la razón social ni el CUIT de tu empresa. Hasta entonces manda el fallback.
+- [ ] Pie de la landing, correos y errores leyendo dirección y redes de Compañía (el nombre
+      ya sale de ahí; faltan los otros datos).
+
+### E6-bis. Lo que quedó del pedido original de Compañía
+NUEVO · **crítico** · regla en `arquitectura-paneles.md` · bloquea a C2 (no hay fila de Compañía en `atendia`)
+- [ ] Crear la fila de Compañía en `atendia` (hoy `Company::current()` devuelve null)
+- [ ] Sumar a `companies` lo que la plataforma muestra y hoy no está ahí: **nombre de marca**
+      y las redes sociales (ya existe la tabla polimórfica `social_links`, falta colgarla de
+      Compañía igual que de un negocio)
+- [ ] Reemplazar `config('app.name')` por el nombre de Compañía en todo texto visible
+- [ ] Pie de la landing, correos y páginas de error leyendo dirección, redes y contacto de
+      Compañía
+- [ ] **Candado**: un guardián que falle si una vista imprime un dato de plataforma que
+      debería salir de Compañía (es la única forma de que no vuelva a soltarse)
+
+### E7. Configurar los planes desde el Admin
+NUEVO (la pantalla) sobre cimiento YA HECHO
+La fuente única ya existe y está blindada: tabla `plans`, clase `Plan`, guardianes
+`GoldenRulesPlanSourceTest` y `GoldenRulesPlanPromiseTest`. Falta la cara para editarla.
+- [ ] CRUD de planes con el patrón de Catálogos: precio, cupos, consultas de IA, días de
+      prueba, "Más elegido", líneas de la ficha
+- [ ] Guardar invalida el caché de `Plan` (ya está previsto) y la landing cambia sola
+- [ ] Ojo: `GoldenRulesPlanPromiseTest` exige que toda cifra vendida tenga candado, soft con
+      razón escrita, o quede anotada como deuda. Editar un plan desde el admin no afloja eso
+
+### E8. Enum que puedan vivir en BD
+NUEVO · criterio en `arquitectura-paneles.md`
+Hoy hay 23 Enum en `app/Enums/`. La mayoría son estados que el código ramifica y **se quedan**
+(`PaymentStatus`, `MessageDirection`, `SubscriptionStatus`, `ModerationSeverity`…).
+- [ ] Revisar uno por uno con ese criterio y pasar a BD solo los que son LISTA
+      (candidatos a mirar primero: `SupportTicketKind`, `NotificationType`, `HandoffLevel`)
+- [ ] Lo que pase a BD va con el patrón Catálogos: maestro + seeder `updateOrCreate`
+
+### E9. Visibilidad total: clientes, pagos, deudas, próximos pagos
+**AMPLÍA A6** (que decía solo "pantalla de negocios")
+- [x] ~~La ficha del negocio muestra su historia de pagos, lo que debe, su próximo
+      vencimiento y su plan~~ — HECHO 2026-10-03 con A6.
+- [ ] Vista cruzada: quién debe, quién vence esta semana, quién está en gracia o pausado
+      (los números de A1 llevan acá, cada tile a su cola filtrada)
+
+### E10. Menú del admin con jerarquía — HECHO 2026-10-03
+De 9 ítems sueltos a **6 grupos**, agrupados por lo que ella HACE y rotulados con
+sustantivos (criterio investigado: la IA se decide antes que el layout).
+
+```
+Inicio
+Negocios ──── Todos · Adopción            ← acá entran Incumplimientos (E4) y Radar (A10)
+Cobros ────── Pagos                       ← acá entran Planes (E7) y Consumo de IA (A3)
+Moderación ── Contenido · Testimonios     ← acá entra Calificaciones de la IA (A9)
+Soporte
+Plataforma ── Compañía · Catálogos · Integraciones · Logs
+                                          ← acá entran Ajustes (A2), Tags (A8), Accesos (A4/A5)
+```
+
+- [x] ~~Árbol diseñado y sembrado~~. Cada punto pendiente ya tiene su rama, así que la
+      próxima pantalla NO vuelve a reordenar el menú.
+- [x] Arreglado de paso: el aviso de Moderación solo recorría el primer nivel, así que
+      anidado desaparecía. Ahora es recursivo y el GRUPO también lo lleva — si no, una
+      novedad que pide su decisión se escondía detrás de una rama sin abrir.
+- [ ] Decisión futura: "Cobros" tiene un solo hijo hoy. Se dejó como grupo a propósito
+      porque Planes y Consumo de IA ya están en la lista; si no llegaran, Pagos vuelve arriba.
+
+---
+
+## E11. Livewire 4: islands y lazy en el panel admin
+Orden de ella del 2026-10-03: *"el admin necesita tener mucha data en tiempo real; Livewire 4
+tiene islands y lazy loading, muy útiles en todo el proyecto."*
+
+Lo investigado en los docs de Livewire 4 (`@island(name:)`, `wire:island=`, `lazy`, `defer`,
+`wire:poll`), aplicado al Inicio que ya existe:
+- **Island en Acreditar: NO, y hay que decir por qué.** Al acreditar cambian el contador del
+  tile Y el MRR. Si la acción solo refresca la isla de la cola, los tiles quedan viejos y la
+  pantalla miente (`atendiadesign` §7.1). Hoy re-renderiza todo a propósito.
+- [ ] **Island + `wire:poll` en la cola de comprobantes**: ahí SÍ sirve — un comprobante que
+      llega mientras ella mira la pantalla aparece solo, sin recargar. Es el "tiempo real"
+      que pidió, y el único que no ensucia otro número.
+- [ ] **`lazy` / `defer` en lo caro**: decidir MIDIENDO, no por si acaso. Hoy las consultas
+      del Inicio son `count()` y sumas chicas; diferirlas sin medir es complejidad gratis.
+      Cuando entre Consumo de IA (A3) o el Radar (A10), ahí sí.
+- [ ] **Lo que de verdad aguanta MUCHOS negocios no son los islands** (pregunta de ella,
+      2026-10-03): es paginar `Business::directory()`, que hoy los trae todos, y precalcular
+      los números del Inicio con jobs (§F). El island sirve para el tiempo real; la escala
+      se resuelve con paginación y precálculo.
+- [ ] Al definirlo, anotarlo como patrón para TODO el panel, no pantalla por pantalla.
+
+### E12. Orquestador de IA — HECHO 2026-10-03 (la mitad que importaba)
+- [x] ~~**DEFECTO arreglado**~~: el costo se calcula con la tarifa del modelo que respondió,
+      vigente ESE día (`ai_models` con `effective_from`). Un cambio de modelo ya no revalúa
+      el pasado. Probado con dos precios del mismo modelo en fechas distintas.
+- [x] ~~Maestro `ai_models`~~ con historial de precios + `AiModelSeeder` con la tarifa de
+      `gpt-6-astra` verificada y su fuente escrita en la fila.
+- [x] ~~Tarea → modelo~~: tabla `ai_tasks` con una fila por agente, todas sin asignar. El
+      middleware `ModelOrchestrator` aplica la asignación y los 12 agentes lo declaran.
+      Cambiar el modelo de una tarea es UNA fila; sin fila, manda el `#[Model]` del agente.
+- [ ] **Falta la pantalla** en el admin para editar modelos y tareas (hoy es por seeder o
+      por tinker). Va bajo `Cobros` en el menú, que ya tiene la rama.
+- [ ] **Falta medir**: `is_mechanical` marca 10 candidatos a modelo barato. La guía dice
+      elegirlo MIDIENDO, así que eso se hace con la batería de `tests/Eval`, no a ojo.
+- [ ] **Plan B** si el proveedor retira el modelo: sigue pendiente.
+
+### E12-bis. Lo original, para no re-discutirlo
+NUEVO · pregunta de ella del 2026-10-03: *"¿qué pasa si mañana cambio el modelo?"*
+Verificado ese día: el modelo está escrito a mano en los **12 agentes** y el costo se calcula
+con UNA tarifa global que ignora la columna `model` que `ai_usages` sí guarda.
+
+- [ ] **DEFECTO que se activa al primer cambio de modelo**: el histórico se recalcula con la
+      tarifa nueva. Las llamadas viejas quedan valuadas al precio del modelo que no usaron.
+      Las tarifas de `.env` son un parche que sirve mientras haya UN solo modelo.
+- [ ] **Maestro `ai_models`** con patrón Catálogos: código, precio input/cacheado/salida y
+      **vigente desde**. La tarifa deja de ser 3 líneas en `.env` y pasa a tener historial.
+- [ ] **Tarea → modelo**: el agente declara su TAREA, no su modelo. Hoy no se puede cumplir
+      la regla que ya está escrita (`ia-economia-tokens.md` §8: "tarea mecánica → evaluar el
+      modelo barato MIDIENDO") sin editar código. Conversar con un cliente y arreglar el
+      nombre de un producto no deberían costar lo mismo.
+- [ ] **Costo con la tarifa vigente al momento de la llamada**, por `model`.
+- [ ] **Plan B**: si el modelo configurado falla o lo retiran, cae a uno conocido y avisa.
+      Hoy si OpenAI retira `gpt-6-astra` se cae todo junto.
+- [ ] Para el NEGOCIO el cambio es transparente (sigue hablando por WhatsApp igual); para
+      ella no: cambia el costo y puede cambiar la calidad, y sin esto no hay forma de
+      comparar antes y después.
+
+---
+
+## F · Jobs de fondo (no son el panel admin, pero son del mismo plan)
+
+Ideas de ella del 2026-10-03. No son pantallas: son trabajo que corre solo cada X tiempo.
+El worker ya existe (supervisor: queue, reverb, schedule), así que el riel está puesto.
+
+- [ ] **Alta de cliente nuevo**: avisarle por correo y/o WhatsApp (hoy hay correo de bienvenida
+      del negocio; falta el aviso a ELLA de que entró alguien)
+- [ ] **Quién eligió plan de verdad**: distinguir el que se registró del que pagó, y avisar
+- [ ] **Jobs que alimenten el dashboard**: los negocios con más movimiento, de WhatsApp, de IA
+      — precalculados, no contados al abrir la pantalla
+- [ ] **Snapshot mensual de MRR**: hoy NO se puede comparar el MRR contra el mes pasado y
+      decirlo con verdad — no hay historial de estados de suscripción. Un job que guarde la
+      cifra una vez al mes es lo único que lo hace posible.
+- [ ] **Decisión de diseño pendiente**: un número del dashboard que lo calcula un job lleva
+      sello de frescura (`atendiadesign` §7.1). Antes de construirlos hay que fijar cada cuánto
+      corren, o la pantalla miente con cara de verdad
+
+> Lo que se le pide a un job acá no es "que corra": es que su resultado se pueda MOSTRAR con
+> su frescura dicha, y que si falla se note. Un job que alimenta un tile y muere en silencio
+> deja un número viejo con cara de nuevo — exactamente el defecto que §7.1 prohíbe.

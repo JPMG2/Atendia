@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\BrandAwareTranslator;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Translation\Translator;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Blaze\Blaze;
 use Livewire\Livewire;
@@ -38,6 +40,16 @@ class AppServiceProvider extends ServiceProvider
         // business must look at the SAME instance. Otherwise the business set is
         // lost, the filter never applies, and every business's data is readable.
         $this->app->singleton(Tenant::class);
+
+        // Every lang string gets `:brand` for free. Swapped by rebuilding the
+        // translator rather than wrapping it: the loader and the locale are its
+        // whole state, and a decorator would miss `setLocale` from the outside.
+        $this->app->extend('translator', function (Translator $translator): BrandAwareTranslator {
+            $swapped = new BrandAwareTranslator($translator->getLoader(), $translator->getLocale());
+            $swapped->setFallback($translator->getFallback());
+
+            return $swapped;
+        });
     }
 
     /**

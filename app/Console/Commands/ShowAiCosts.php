@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\AiModel;
 use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\ConversationMessage;
+use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -42,7 +44,7 @@ class ShowAiCosts extends Command
 
         $this->table(
             ['Negocio', 'Hilos', 'Mensajes', 'Llamadas IA', 'Tokens in', 'Caché', 'Tokens out', 'Audio (min)', 'Costo (USD)'],
-            $ids->map(function (?int $id) use ($usage, $volume, $names): array {
+            $ids->map(function (?int $id) use ($usage, $volume, $names, $month): array {
                 $calls = $usage->where('business_id', $id);
                 $traffic = $volume->get($id);
                 $audioSeconds = (int) ($traffic->audio_seconds ?? 0);
@@ -56,7 +58,7 @@ class ShowAiCosts extends Command
                     number_format($calls->sum('cached_tokens')),
                     number_format($calls->sum('output_tokens')),
                     number_format($audioSeconds / 60, 1),
-                    $this->money($this->cost($calls, $audioSeconds)),
+                    $this->money($this->cost($calls, $audioSeconds, $month)),
                 ];
             })->all(),
         );
@@ -69,7 +71,7 @@ class ShowAiCosts extends Command
                 number_format($calls->sum('input_tokens')),
                 number_format($calls->sum('cached_tokens')),
                 number_format($calls->sum('output_tokens')),
-                $this->money($this->cost($calls, 0)),
+                $this->money($this->cost($calls, 0, $month)),
             ])->sortKeys()->values()->all(),
         );
 
@@ -82,23 +84,39 @@ class ShowAiCosts extends Command
      *
      * @param  Collection<int, object>  $calls
      */
-    private function cost(Collection $calls, int $audioSeconds): ?float
+    private function cost(Collection $calls, int $audioSeconds, CarbonInterface $month): ?float
     {
         $rates = config('atendia.ai_rates');
+        $missing = false;
 
-        if ($rates['prompt_per_million'] === null || $rates['completion_per_million'] === null) {
+        $tokens = $calls->sum(function (object $row) use ($rates, $month, &$missing): float {
+            if ($row->kind === AiUsage::TRANSCRIPTION) {
+                return 0.0;
+            }
+
+            if ($row->kind === AiUsage::EMBEDDINGS) {
+                return $row->input_tokens * (float) $rates['embedding_per_million'];
+            }
+
+            // The price the model had THAT month, not the one it has today.
+            $rate = $row->model === null ? null : AiModel::rateOn($row->model, $month);
+
+            if ($rate === null) {
+                $missing = true;
+
+                return 0.0;
+            }
+
+            return $row->input_tokens * (float) $rate->prompt_per_million
+                + $row->cached_tokens * (float) $rate->cached_per_million
+                + $row->output_tokens * (float) $rate->completion_per_million;
+        });
+
+        if ($missing) {
             return null;
         }
 
-        $cached = (float) ($rates['cached_per_million'] ?? $rates['prompt_per_million']);
-
-        return $calls->sum(fn (object $row): float => match ($row->kind) {
-            AiUsage::EMBEDDINGS => $row->input_tokens * (float) $rates['embedding_per_million'],
-            AiUsage::TRANSCRIPTION => 0.0,
-            default => $row->input_tokens * (float) $rates['prompt_per_million']
-                + $row->cached_tokens * $cached
-                + $row->output_tokens * (float) $rates['completion_per_million'],
-        }) / 1_000_000 + ($audioSeconds / 60) * (float) $rates['audio_per_minute'];
+        return $tokens / 1_000_000 + ($audioSeconds / 60) * (float) $rates['audio_per_minute'];
     }
 
     private function money(?float $usd): string

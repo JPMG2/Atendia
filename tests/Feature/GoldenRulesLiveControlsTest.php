@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\Menu;
+use Database\Seeders\MenuSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\ControlScanner;
+
+uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +22,9 @@ use Tests\Support\ControlScanner;
 | Fix when red: wire the control, or stop drawing it. The allowlist of
 | ControlScanner holds the ones that report a state instead of offering one and
 | it does not grow — a silent button is fixed, not registered.
+|
+| The menu is the same rule on another surface, so it lives here and not in a
+| file of its own. It needs the database, not the scanner.
 */
 
 test('no view draws an action control that runs nothing', function (): void {
@@ -49,4 +57,27 @@ test('the scanner names a control with nothing behind it', function (): void {
 
     expect($silent)->toHaveCount(1)
         ->and($silent[0]['line'])->toBe(1);
+});
+
+/*
+| An item that leads nowhere promises more than a mute button: it names a whole
+| screen. `menu.admin_users` was drawn with no route behind it. A parent without
+| a route is legal — it opens its children; a leaf with nothing is not.
+*/
+test('no menu item is drawn without somewhere to go', function (): void {
+    $this->seed(MenuSeeder::class);
+
+    $items = Menu::query()->get(['id', 'parent_id', 'panel', 'label_key', 'route_name']);
+
+    expect($items)->not->toBeEmpty();
+
+    $parents = $items->whereNotNull('parent_id')->pluck('parent_id')->unique();
+
+    $mute = $items
+        ->filter(fn (Menu $item): bool => $item->route_name === null && ! $parents->contains($item->id))
+        ->map(fn (Menu $item): string => $item->panel.' · '.$item->label_key.' has no route and no children')
+        ->values()
+        ->all();
+
+    expect($mute)->toBe([]);
 });

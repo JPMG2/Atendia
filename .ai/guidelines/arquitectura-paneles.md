@@ -12,3 +12,14 @@
   `App\Livewire\App\*`; y **tests de acceso sí o sí** (cliente↛admin = 403).
 - Menú data-driven: tabla `menus` con `panel` y `permission`; `Menu::tree($panel)` filtra
   recursivo. Iconos en `config/icons.php`.
+- El menú se piensa como ÁRBOL: una opción nueva entra como hija de su padre, no como un
+  ítem suelto más. El padre se decide antes de sembrar la fila.
+- La pantalla vive en `resources/views/components/<opción del menú>/<nombre en inglés>.blade.php`.
+  En el admin la opción va bajo el panel: `components/admin/<opción>/<nombre>.blade.php`.
+- Lo que se configura, se configura DESDE el admin, con el patrón de `Catálogos` (maestro en
+  BD + seeder `updateOrCreate`). Un Enum de `app/Enums` se queda en código si el código lo
+  ramifica; si es una lista que ella podría renombrar, reordenar o ampliar, va a BD.
+- Los datos de la plataforma (nombre de marca, dirección, contacto, redes, logo, tagline,
+  copyright) salen de la fila de `companies` vía `Company::current()`. Ni `config()`, ni una
+  constante, ni texto escrito en una vista: la marca va a cambiar de nombre y tiene que ser
+  una fila editada.

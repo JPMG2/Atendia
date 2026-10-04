@@ -185,7 +185,7 @@ test('the admin desk credits and rejects with a reason the client reads', functi
     $admin->syncRoles(['admin']);
     $this->actingAs($admin->refresh());
 
-    livewire('admin.payments')
+    livewire('admin.payments.index')
         ->assertSee($user->business->name)
         ->call('approve', $credited->id)
         ->call('startReject', $rejected->id)

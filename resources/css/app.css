@@ -952,6 +952,11 @@
      envuelve a dos líneas y el propio no, el número flota y se pierde la línea
      que el ojo venía siguiendo. Pegado abajo, todos comparten base. */
   .stat-card > :last-child { margin-top:auto; }
+  /* A tile that is its own link: it has to answer the pointer like any row. */
+  .stat-card.is-link { text-decoration:none; transition:border-color var(--dur-fast) var(--ease-out),
+                       box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+  .stat-card.is-link:hover { border-color:var(--brand); box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+  .stat-foot { font-size:var(--text-sm); color:var(--text-muted); }
   .stat-label { font-size:var(--text-sm); font-weight:var(--weight-medium); color:var(--text-muted); }
   .stat-value { font-family:var(--font-display); font-size:var(--text-xl); font-weight:var(--weight-bold); color:var(--text-strong); letter-spacing:-0.02em; line-height:1; }
   .stat-icon { width:26px; height:26px; border-radius:var(--radius-md); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -1870,11 +1875,12 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
        reads fine at the end. */
     .bp-rail-lead { order:-1; }
   }
-  @media (max-width:600px) {
-    .app-content { padding:20px 16px 40px; }
-    /* The history stacks instead of scrolling sideways: seven columns on a
-       phone either cut the amount off the right edge or hide it behind a
-       scroll nobody discovers. Each cell wears its own heading. */
+  /* The table stacks instead of scrolling sideways, each cell wearing its own
+     heading: a column cut off the right edge hides behind a scroll nobody
+     discovers. 991px is measured, not guessed (2026-10-03): the table needs
+     680px and the sidebar eats 264px until it turns into a drawer at 860px,
+     which left the admin's MONTO cut at 900px. One breakpoint, both gaps. */
+  @media (max-width:991px) {
     .pay-table-wrap { overflow-x:visible; }
     .pay-table { min-width:0; }
     .pay-table thead { display:none; }
@@ -1886,6 +1892,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                             font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em;
                             text-transform:uppercase; }
     .pay-table td:not([data-label]) { justify-content:flex-start; padding-top:6px; }
+  }
+  @media (max-width:600px) {
+    .app-content { padding:20px 16px 40px; }
     /* Equal columns, not flex-basis: a KPI whose longest word beats its basis
        grows and starves the card beside it, and the grid ends up ragged. */
     .stat-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }

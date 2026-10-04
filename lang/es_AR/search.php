@@ -23,7 +23,7 @@ return [
     ],
 
     'ask' => [
-        'title' => 'Preguntarle a AtendIa: «:term»',
+        'title' => 'Preguntarle a :brand: «:term»',
         'sub' => 'Tu asistente responde con los datos de tu negocio',
     ],
 

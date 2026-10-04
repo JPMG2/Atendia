@@ -9,7 +9,7 @@ compiled CSS tokens and static assets. --}}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>{{ $title }} — AtendIa</title>
+    <title>{{ $title }} — {{ \App\Models\Company::brand() }}</title>
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
 
@@ -110,7 +110,7 @@ compiled CSS tokens and static assets. --}}
 
     <footer class="px-5 pb-8 text-center">
         <p class="text-subtle" style="font-size: var(--text-sm)">
-            © {{ date('Y') }} AtendIa · Tu negocio, atendido por IA.
+            © {{ date('Y') }} {{ \App\Models\Company::brand() }} · {{ __('landing.tagline') }}
         </p>
     </footer>
 </body>

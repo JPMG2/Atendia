@@ -1,18 +1,26 @@
 ---
 name: atendiadesign
-description: Reglas de oro del sistema de diseño de Atendia. Usar SIEMPRE al crear, editar o revisar cualquier interfaz, vista Blade, componente Livewire, página de marketing o pantalla del dashboard de Atendia. Define marca (jade + coral), tipografía (Sora / Plus Jakarta Sans / JetBrains Mono), tokens semánticos, voz/copy en español rioplatense, y los tres mandatos no negociables — responsive, tema claro/oscuro y configuración global en resources/css/app.css.
+description: Reglas de oro del sistema de diseño de AtendIa. Usar SIEMPRE al crear, editar o revisar cualquier interfaz, vista Blade, componente Livewire, página de marketing, pantalla del panel cliente o pantalla del panel ADMIN de AtendIa. Define marca (jade + coral), tipografía (Sora / Plus Jakarta Sans / JetBrains Mono), tokens semánticos, voz/copy en español rioplatense, las reglas propias de una pantalla de administración (tile con dato real, tabla operativa, dato faltante que no se disfraza de cero), y los tres mandatos no negociables — responsive, tema claro/oscuro y configuración global en resources/css/app.css.
 user-invocable: true
 ---
 
-# Atendia — Sistema de diseño (reglas de oro)
+# AtendIa — Sistema de diseño (reglas de oro)
 
-> **Marca:** Atendia — *"Tu negocio, atendido por IA."*
-> Atención y publicidad automatizada por WhatsApp (WhatsApp → n8n → Laravel).
+> **Marca:** AtendIa — *"Tu negocio, atendido por IA."* La grafía es **AtendIa**, con I
+> mayúscula, en todo texto visible (el logo es aparte).
+> Atención y publicidad automatizada por WhatsApp (WhatsApp → Laravel: agente propio + RAG).
 > **Rubro-agnóstico:** la misma UI sirve a un cardiólogo que agenda turnos y a una
 > vendedora de golosinas que muestra su catálogo. **Regla madre:** confiable para un
 > médico, amigable para un comercio. Ni corporativo frío, ni juvenil.
 
-Stack real del producto: **Laravel 13 · Livewire 4 · TailwindCSS 3 · Alpine.js · n8n · Evolution API (WhatsApp)**.
+Stack real del producto: **Laravel 13 · PHP 8.5 · Livewire 4 · TailwindCSS 3 · Alpine.js ·
+Postgres + Redis · Evolution API (WhatsApp)**. No hay n8n: el asistente es un agente propio
+en `app/Ai` sobre `laravel/ai`, y Evolution solo entrega y recibe los mensajes.
+
+**Tres superficies, un solo sistema de diseño:** la landing (le vende a un desconocido),
+el panel cliente (el negocio trabaja) y el panel admin (la dueña opera la plataforma).
+Los tokens, la tipografía y los componentes son los mismos; lo que cambia es la densidad
+y qué cuenta como "terminado" — las reglas del panel admin están en §7.
 
 ---
 
@@ -59,7 +67,8 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 
 - **Display — Sora** (700/800, tracking `-0.02em`): titulares, hero, números grandes. Clase `font-display`.
 - **Cuerpo/UI — Plus Jakarta Sans** (400–700): todo lo legible. Es `font-sans` (default).
-- **Mono — JetBrains Mono:** precios, teléfonos, IDs, horarios, nodos n8n. Clase `font-mono`. **Nunca** texto corrido.
+- **Mono — JetBrains Mono:** precios, teléfonos, IDs, códigos, horarios y toda cifra que se
+  compara de a varias en columna. Clase `font-mono`. **Nunca** texto corrido.
 - Escala rem `--text-xs … --text-7xl`. **Mínimo UI: 14px (`--text-sm`).**
 
 ## 3. Forma, espaciado, sombras, motion
@@ -73,7 +82,7 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 - Motion calmo: `--dur-fast` (140ms) hovers, `--dur-base` (220ms) transiciones, `--ease-out` por defecto.
   `--ease-spring` solo en micro-interacciones (knob del switch). Respetar `prefers-reduced-motion`.
 
-### Densidad y respiración — REGLAS DE ORO (2026-09-06, pedidas por el dueño)
+### Densidad y respiración — REGLAS DE ORO (2026-09-06, pedidas por la dueña)
 
 1. **Primer impacto compacto.** El primer pantallazo es el más importante: listas,
    checklists y grillas SIN aire muerto entre filas (filas de lista ~8-10px de
@@ -127,6 +136,102 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 
 Origen: guía de e-commerce de Shopify (https://www.shopify.com/blog/best-ecommerce-sites),
 adaptada — solo se adoptó lo de confianza; lo de fotografía de producto no aplica a un SaaS.
+
+## 7. Pantalla de administración — otra vara (2026-10-03)
+
+> Nació de un reclamo real de la dueña: el panel cliente se construyó con la vara de
+> un formulario, y esta skill no tenía una sola línea sobre una pantalla de operación.
+> Una pantalla del panel admin **no** es una pantalla del panel cliente con otros datos.
+
+**La diferencia que manda todo lo demás.** Un panel de analítica se mira para entender; un
+panel de operación se abre para **trabajar**: ella entra, ve qué está esperándola, lo
+resuelve y se va. Acá la densidad es una virtud, no un descuido, y el trabajo del diseño
+es **abaratar la acción**, no decorar el número. Una pantalla admin se mide por una sola
+pregunta: *¿cuántos clicks hay entre abrirla y resolver lo que la trajo?*
+
+### 7.1 El número o es verdad, o no se dibuja
+
+- **Falta ≠ cero.** Un tile que muestra `0` porque el dato no se puede calcular **miente**,
+  y entrena a desconfiar de toda la pantalla. Cero es "lo medí y es cero". Faltante se
+  dibuja distinto (`—` o guión em en `text-muted`) y **dice por qué** en una línea:
+  *"Sin tarifas cargadas"*, *"Todavía no hay pagos"*. Caso real que lo justifica: el
+  consumo de IA sale en cero si no están las tarifas en `.env`.
+- **Cifra de adorno = defecto, no avance.** Si el número todavía no sale de la base, la
+  pantalla no se cierra. Una maqueta con números inventados no es un paso intermedio.
+- **El dato viejo se tiene que ver viejo.** Toda cifra que no es del momento lleva su sello
+  de frescura (*"Al 03/10 09:15"*). Sin sello, ella decide con un número de ayer creyendo
+  que es de hoy.
+- **Un número sin su comparación no se entiende**: contra el período anterior, contra la
+  meta, o contra el total del que es parte. `<x-ui.stat-card>` ya trae `delta` y `trend`.
+
+### 7.2 Todo tile es una puerta
+
+- Un tile que cuenta una cola (*"4 comprobantes por verificar"*) **lleva a esa cola**, ya
+  filtrada. Contar sin llevar obliga a buscar a mano lo que la pantalla acaba de encontrar.
+- Un tile sin destino es un control mudo: aplica `controles-vivos.md` igual que a un botón.
+  **Si la capacidad no existe, no se dibuja el tile.**
+- **Máximo 5–7 tiles** en la tira de arriba. Pasado eso nadie los lee: se eligen los que
+  piden una acción HOY y el resto vive en su pantalla.
+- Orden por urgencia operativa, no por prolijidad: primero lo que está trabado esperándola.
+
+### 7.3 La tabla es la pantalla
+
+En un panel de operación la tabla es la superficie principal y el gráfico es la excepción
+(solo cuando una tendencia necesita forma). Chrome callado, densidad alta: la jerarquía
+sale del **peso tipográfico y el espaciado**, no de bordes, sombras ni color.
+
+- Filas compactas (~8–10px de padding vertical), hover en toda la fila, cifras en `font-mono`
+  para que la columna se compare de un barrido vertical.
+- **Jamás scroll horizontal** (regla ya blindada en las tablas de catálogo): a 1280px entra
+  todo, y lo que no entra se saca de la tabla, no se abrevia.
+- La acción de la fila vive **en la fila** (resolver, verificar, rechazar), no en otra pantalla.
+- Si una fila puede resolverse sin salir, se resuelve ahí (slide-over o inline), y la lista
+  se queda donde estaba.
+
+### 7.4 Vacío, y vacío de verdad
+
+- Toda pantalla admin se mira **con la base vacía**: sin negocios, sin pagos, sin fila de
+  Compañía. No da 500 y no deja un panel en blanco que se lee como roto.
+- El vacío nombra qué va a aparecer ahí y, si hay una, ofrece la acción que lo llena
+  (`<x-ui.empty-state>`). En el admin, muchas veces el vacío es **buena noticia**
+  (*"Nada por verificar"*): se dice así, sin dramatizar.
+
+### 7.5 Voz del panel admin
+
+El panel cliente le habla a un negocio y lo acompaña; el panel admin le habla **a ella**,
+una sola persona que ya sabe cómo funciona su producto.
+
+- Operativo y seco: *"4 por verificar"*, no *"¡Tenés 4 comprobantes esperándote!"*.
+- Nada de celebrar ni de vender. Sin emoji. Sentence case, verbo primero, igual que siempre.
+- Todo por `__()` en `lang/es*/` igual que el resto, aunque hoy la lea una sola persona.
+
+### ✅ Checklist de salida — pantalla del panel admin (NO NEGOCIABLE)
+
+Además del checklist de formularios de abajo, y **sumado** a los `check-*.sh` que
+`run-checks.sh` ya corre sobre cualquier vista (entre ellos `check-panel-screen.sh`, que
+exige la ruta y el ítem de menú de la pantalla en el momento de escribirla):
+
+- [ ] **Cada cifra sale de la base** y es verdad. Ninguna inventada, ninguna de adorno.
+- [ ] **Falta se dibuja distinto de cero**, con su motivo en una línea.
+- [ ] **Cada tile lleva a su cola** ya filtrada; ningún tile ni ítem de menú sin destino.
+- [ ] **Sello de frescura** en toda cifra que no es del momento.
+- [ ] **Render con la base vacía**: ni 500 ni panel en blanco.
+- [ ] **390px y 900px con filas reales**, sin scroll horizontal, en claro y en oscuro.
+- [ ] **La pestaña se nombra** (`render()` con `$this->view()->title(__('...'))`).
+- [ ] **Verificación visual real** (captura mirada o browser test). Un test verde no alcanza.
+
+> **Los cuatro últimos tienen guardián** desde el 2026-10-03, y recorren los DOS paneles:
+> `GoldenRulesScreenTitlesTest`, `GoldenRulesFreshScreensTest`, `PanelResponsiveBrowserTest`
+> y el ítem de menú mudo dentro de `GoldenRulesLiveControlsTest`. Ojo con uno: el de
+> 390/900px mide el desborde de la PÁGINA, no el de una tabla dentro de su card, así que
+> una columna cortada pasa en verde. Eso se ve mirando, no testeando.
+
+Origen de esta sección (investigado, no inventado): la distinción entre panel de analítica
+y panel de operación, el patrón "tabla primero, gráfico por excepción" de Stripe y Linear,
+el chrome callado con densidad alta, y "falta no es cero" + el sello de frescura:
+https://5of10.com/articles/dashboard-design-best-practices/ ·
+https://www.setproduct.com/blog/effective-dashboard-design-principles ·
+https://carbondesignsystem.com/patterns/empty-states-pattern/
 
 ---
 
@@ -196,15 +301,15 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 - [ ] **Cerrar con ideas para ENAMORAR (obligatorio, no opcional).** Toda tarea de
       UI termina ofreciendo 2–3 mejoras atractivas de UNA línea cada una — sacadas
       de patrones reales del mercado (SaaS conocidos, GBP, WhatsApp Business), no
-      inventos genéricos. El dueño decide cuáles entran; NUNCA se implementan sin
+      inventos genéricos. La dueña decide cuáles entran; NUNCA se implementan sin
       su OK. Ver la sección de abajo.
 
 ## Enamorar al cliente — el diseño también se investiga (regla de oro, 2026-09-10)
 
-> Nació de un reclamo real del dueño: tenía que ir a OTRAS IAs a buscar ideas de
+> Nació de un reclamo real de la dueña: tenía que ir a OTRAS IAs a buscar ideas de
 > diseño atractivas porque acá "nunca das mejoras atractivas". Construir exacto lo
 > pedido (regla no-mediocre §1) NO significa callarse las ideas: la regla §2 dice
-> que se OFRECEN en una línea y él decide. Ofrecerlas es parte del trabajo.
+> que se OFRECEN en una línea y ella decide. Ofrecerlas es parte del trabajo.
 
 - **El estándar no es "funciona", es "enamora al potencial cliente".** Un panel
   correcto pero frío es una tarea a medias: humanidad (la IA que se ofrece a

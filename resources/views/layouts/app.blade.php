@@ -12,8 +12,8 @@
     <meta name="broadcasting" content="{{ config('broadcasting.default') === 'null' ? 'off' : 'on' }}" />
 
     {{-- The screen first: with five tabs open, the brand alone names none of
-    them. A name that already carries the brand ("Gana con AtendIa") keeps it once. --}}
-    @php($brand = config('app.name', 'AtendIa'))
+    them. A screen name that already carries the brand keeps it only once. --}}
+    @php($brand = \App\Models\Company::brand())
     @php($tab = blank($title ?? null) || str_contains((string) $title, $brand) ? ($title ?: $brand) : $title.' · '.$brand)
     <title>{{ $tab }}</title>
 
@@ -104,7 +104,11 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                 wire:navigate
                 class="sidebar-header"
             >
-                <img src="{{ asset('assets/logo-mark.svg') }}" alt="AtendIa" class="sidebar-logo" />
+                <img
+                    src="{{ asset('assets/logo-mark.svg') }}"
+                    alt="{{ \App\Models\Company::brand() }}"
+                    class="sidebar-logo"
+                />
                 <span class="sidebar-wordmark">Atend<span>ia</span></span>
                 @if ($onAdminPanel)
                     <x-ui.badge variant="accent">Admin</x-ui.badge>
@@ -198,7 +202,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                             :aria-expanded="open"
                         >
                             <x-ui.avatar
-                                :name="auth()->user()?->name ?? 'AtendIa'"
+                                :name="auth()->user()?->name ?? \App\Models\Company::brand()"
                                 :src="auth()->user()?->avatarUrl()"
                                 size="sm"
                                 :status="auth()->user()?->is_available === false ? 'away' : 'online'"

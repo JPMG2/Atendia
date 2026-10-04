@@ -292,6 +292,17 @@ field in red from an attempt you had stopped looking at. --}}
                             wire:model="form.data.legal_name"
                         />
 
+                        {{-- The brand is not the legal name, and every visible
+                        text of the platform reads THIS field. --}}
+                        <x-inputsform.input
+                            span="short"
+                            name="brand_name"
+                            alpine-error="brand_name"
+                            :label="__('company.fields.brand_name')"
+                            :hint="__('company.fields.brand_name_hint')"
+                            wire:model="form.data.brand_name"
+                        />
+
                         <x-inputsform.input
                             span="long"
                             name="tagline"

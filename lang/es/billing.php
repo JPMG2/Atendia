@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Mis pagos — copy del módulo de pagos del cliente a AtendIa
+| Mis pagos — copy del módulo de pagos del cliente a :brand
 |--------------------------------------------------------------------------
 |
 | Base NEUTRA (tuteo). Voseo en `lang/es_AR/billing.php`.
@@ -44,7 +44,7 @@ return [
 
     'history' => [
         'title' => 'Historial de pagos',
-        'sub' => 'Todo lo que le pagaste a AtendIa, con su comprobante.',
+        'sub' => 'Todo lo que le pagaste a :brand, con su comprobante.',
         'date' => 'Fecha',
         'concept' => 'Concepto',
         'period' => 'Período',
@@ -105,9 +105,9 @@ return [
     'badge' => '{0} hoy|{1} 1 d|[2,*] :count d',
 
     'whatsapp' => [
-        'upcoming' => '🔔 *AtendIa*: te avisamos con tiempo — tu plan :plan (:amount) se renueva el :date, en :days días. Cuando lo tengas listo, sube el comprobante en Mis pagos y tu asistente sigue atendiendo sin cortes: :url',
-        'overdue' => '⚠️ *AtendIa*: el pago del plan :plan (:amount) está vencido. Tu asistente sigue atendiendo :days días más; después se pausa hasta que lo recibamos: :url',
-        'paused' => '⏸️ *AtendIa*: pausamos tu asistente porque no recibimos el pago del plan :plan (:amount). No se borró nada: apenas se acredite, vuelve a atender: :url',
+        'upcoming' => '🔔 *:brand*: te avisamos con tiempo — tu plan :plan (:amount) se renueva el :date, en :days días. Cuando lo tengas listo, sube el comprobante en Mis pagos y tu asistente sigue atendiendo sin cortes: :url',
+        'overdue' => '⚠️ *:brand*: el pago del plan :plan (:amount) está vencido. Tu asistente sigue atendiendo :days días más; después se pausa hasta que lo recibamos: :url',
+        'paused' => '⏸️ *:brand*: pausamos tu asistente porque no recibimos el pago del plan :plan (:amount). No se borró nada: apenas se acredite, vuelve a atender: :url',
     ],
 
     'admin' => [

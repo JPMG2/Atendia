@@ -125,7 +125,7 @@ test('the screen says where each account stopped', function (): void {
     $admin->syncRoles(['admin']);
 
     Livewire::actingAs($admin)
-        ->test('admin.adoption')
+        ->test('admin.adoption.index')
         ->assertSet('filter', 'stalled')
         ->assertSee('Creó el negocio')
         ->assertSee('Cargó su catálogo')

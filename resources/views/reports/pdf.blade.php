@@ -61,7 +61,7 @@ the palette arrives as data from PdfExporter, never typed here. --}}
     </style>
 </head>
 <body>
-    <div class="brand">AtendIa</div>
+    <div class="brand">{{ \App\Models\Company::brand() }}</div>
     <h1>{{ $report->title }}</h1>
     @if ($report->subtitle)
         <p class="sub">{{ $report->subtitle }}</p>

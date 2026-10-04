@@ -5,7 +5,7 @@ declare(strict_types=1);
 // La mesa de moderación de testimonios del panel admin.
 return [
     'title' => 'Testimonios',
-    'sub' => 'Lo que tus clientes dicen de AtendIa. Solo lo aprobado con permiso sale en la página.',
+    'sub' => 'Lo que tus clientes dicen de :brand. Solo lo aprobado con permiso sale en la página.',
     'empty_title' => 'Todavía no hay testimonios',
     'empty_body' => 'Cuando un negocio alcance su hito y deje su opinión, la vas a ver aquí para aprobarla.',
     'approve' => 'Aprobar',

@@ -27,11 +27,11 @@ return [
     'hero' => [
         'badge' => 'Atiende por vos en WhatsApp',
         'perk_try' => 'Probalo acá mismo, sin registrarte',
-        'subtitle' => 'AtendIa responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras hacés lo tuyo. Lo conectás en minutos, sin saber de tecnología.',
+        'subtitle' => ':brand responde tu WhatsApp, llena tu agenda y muestra tu catálogo a cualquier hora — también a las 3 de la mañana, mientras hacés lo tuyo. Lo conectás en minutos, sin saber de tecnología.',
     ],
 
     'features' => [
-        'subtitle' => 'Sea una clínica o un kiosco, AtendIa se adapta a cómo trabajás.',
+        'subtitle' => 'Sea una clínica o un kiosco, :brand se adapta a cómo trabajás.',
         'schedule' => [
             'body' => 'Definí días, horarios y capacidad. El asistente ofrece huecos libres y confirma sin que muevas un dedo.',
         ],
@@ -64,12 +64,12 @@ return [
         'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
         'save_yearly' => 'Ahorrás :amount al año',
         'multilang' => 'En cualquier idioma — vos lo leés todo en español',
-        'ask_title' => 'Preguntale a AtendIa',
+        'ask_title' => 'Preguntale a :brand',
         'ask' => 'Preguntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',
         'calculator' => [
             'subtitle' => 'Mové el control con las consultas de un día normal.',
             'slider_label' => 'Consultas que recibís por día',
-            'with_lead' => 'AtendIa responde por vos.',
+            'with_lead' => ':brand responde por vos.',
             'with_note' => 'De día y de noche. Vos solo mirás.',
             'verdict_recover' => 'Recuperás',
             'verdict_save' => 'y ahorrás',
@@ -115,7 +115,7 @@ return [
     ],
 
     'closing' => [
-        'subtitle' => 'Conectá tu WhatsApp y que AtendIa responda por vos en minutos.',
+        'subtitle' => 'Conectá tu WhatsApp y que :brand responda por vos en minutos.',
     ],
 
     'phone' => [

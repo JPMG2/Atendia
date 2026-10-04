@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\PaymentStatus;
 use App\Traits\BelongsToBusiness;
+use Carbon\Carbon;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,14 +60,54 @@ class Payment extends Model
         $query->where('status', PaymentStatus::Pending)->oldest();
     }
 
+    /** How many receipts are waiting for the admin right now. */
+    public static function pendingReviewCount(): int
+    {
+        return self::query()->awaitingReview()->count();
+    }
+
+    /**
+     * Whole days the oldest waiting receipt has been waiting. A count says how
+     * much there is; this says how long someone has been without an answer,
+     * which is what turns a number into an urgency. Null when nothing waits.
+     */
+    public static function oldestPendingAgeInDays(): ?int
+    {
+        $oldest = self::query()->awaitingReview()->value('created_at');
+
+        return $oldest === null ? null : (int) Carbon::parse($oldest)->diffInDays(now());
+    }
+
+    /** Money actually credited in the window: what came in, not what was promised. */
+    public static function collectedInTheLastDays(int $days): float
+    {
+        return (float) self::query()
+            ->where('status', PaymentStatus::Paid)
+            ->where('paid_at', '>=', now()->subDays($days))
+            ->sum('amount');
+    }
+
+    /**
+     * Waiting receipts that pay for a plan the business is not on yet: a plan
+     * change nobody has credited. They are inside `pendingReviewCount()` too —
+     * this says how many of those move someone up or down a plan.
+     */
+    public static function planChangesAwaitingReview(): int
+    {
+        return self::query()
+            ->awaitingReview()
+            ->whereHas('subscription', fn (Builder $query): Builder => $query->whereColumn('subscriptions.plan', '!=', 'payments.plan'))
+            ->count();
+    }
+
     /**
      * The admin's review desk: receipts waiting, oldest first, with their business.
      *
      * @return Collection<int, Payment>
      */
-    public static function reviewQueue(): Collection
+    public static function reviewQueue(?int $limit = null): Collection
     {
-        return self::query()->awaitingReview()->with('business')->get();
+        return self::query()->awaitingReview()->with('business')->when($limit, fn (Builder $query): Builder => $query->limit($limit))->get();
     }
 
     /**

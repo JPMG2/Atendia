@@ -26,6 +26,7 @@ class Company extends Model
      */
     protected $fillable = [
         'legal_name',
+        'brand_name',
         'tax_id',
         'region_id',
         'tax_condition_id',
@@ -50,6 +51,19 @@ class Company extends Model
     public static function current(): ?self
     {
         return once(fn (): ?self => self::query()->with('socialLinks.socialNetwork')->first());
+    }
+
+    /**
+     * The name the user reads, everywhere. The brand is being renamed (the
+     * current one is taken), so it is a row and not a constant: the day it
+     * changes, one field changes with it. Falls back to the configured name
+     * while nobody has saved this screen yet.
+     */
+    public static function brand(): string
+    {
+        $brand = self::current()?->brand_name;
+
+        return filled($brand) ? $brand : (string) config('app.name', 'AtendIa');
     }
 
     /**

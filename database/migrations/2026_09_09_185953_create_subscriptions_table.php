@@ -28,6 +28,9 @@ return new class extends Migration
             $table->string('status', 12)->default('trialing')->comment('trialing | active | past_due (en gracia) | paused (asistente en pausa por falta de pago)');
             $table->timestamp('current_period_ends_at')->nullable()->comment('Fin del período en curso: la fecha del próximo pago. En prueba, el fin de la prueba');
             $table->timestamp('paused_at')->nullable()->comment('Cuándo se pausó el asistente por falta de pago; null = atiende');
+            // Only the FACT, never the policy: a lawyer may change whether there
+            // is a refund or a notice period, and that lives in CancelSubscription.
+            $table->timestamp('canceled_at')->nullable()->comment('Cuándo PIDIÓ la baja; sigue andando hasta current_period_ends_at');
             $table->timestamps();
 
             // No unique on purpose: plan changes append rows (billing history);

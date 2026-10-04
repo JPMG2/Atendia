@@ -9,14 +9,38 @@
 >
 > Formato: una línea por hallazgo, con la fecha y dónde está. Cuando se arregla, se borra.
 
+## 2026-10-03
+
+- **`atendia_testing` se ensucia entre corridas y arruina la lectura de la suite.** La corrida
+  completa de hoy dio **109 rojos**; 108 eran filas sobrantes de corridas anteriores (ej. una
+  provincia "Feliciano Medio — JMR" que no siembra ningún seeder) y **pasan aislados**. El rojo
+  real era UNO. Pasó por correr tests filtrados durante la sesión. Vale la pena un
+  `migrate:fresh` sobre `atendia_testing` (NUNCA sobre `atendia`) antes de la corrida que
+  decide un commit, o la suite completa deja de servir para leer.
+
+- **El costo de IA se calcula con una tarifa global e ignora la columna `model`**
+  (`ShowAiCosts.php:87-98`). Hoy no se nota porque hay un solo modelo; el día que cambie,
+  todo el histórico se revalúa al precio nuevo. Detalle y arreglo: `pendientes-admin.md` §E12.
+
+- **`/admin/soporte` reparte mal el ancho a 900px**: la columna del ticket queda angosta y
+  parte el texto en 8 líneas, mientras el selector de estado al lado es ancho y va casi vacío.
+  Visto en `admin-tablet-light-admin-support.png`. Es anterior al movimiento de carpetas.
+
+
+- **`PanelResponsiveBrowserTest` mide el desborde de la PÁGINA, no el de un contenedor.**
+  Por eso da verde con la columna de arriba cortada. Ampliarlo a medir el `scrollWidth` de
+  cada `.card`/tabla es una decisión de ella: es tocar el candado, no la pantalla.
+
+
 ## 2026-10-02
 
 - **El panel izquierdo de las pantallas de acceso dice "Automatizá tu WhatsApp" también en
   `es_VE`**: ese titular sale de `landing`, y `lang/es_VE/landing.php` existe pero no lo pisa.
   Visto en la captura `auth-register-es_VE`.
 
-- **3 rojos de browser bajo carga** (`CatalogSocialNetworkEdit`, `ClientResponsive`, `DemoChat`):
-  pasan aislados, fallan en la corrida entera de 17 min. No se persiguen por orden de ella.
+- **3 rojos de browser bajo carga** (`CatalogCurrencyEdit`, `PanelResponsive`, `DemoChat`):
+  pasan aislados, fallan en la corrida entera de 18 min. No se persiguen por orden de ella.
+  Confirmado otra vez el 2026-10-03: los 3 fallaron en la suite y pasaron solos a los 2 min.
 - **Solo 2 de 18 hooks comparten el scanner con su guardián** (comentarios y controles vivos).
   Hoy ninguno miente (probado 8 de 8), pero los otros 16 pueden divergir el día que cambie un criterio.
 - **`resources/js/echo.js` tiene un comentario en español** (línea 19): la regla de comentarios

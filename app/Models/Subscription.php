@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /**
  * The business's plan row. The effective plan is resolved by
@@ -42,8 +43,116 @@ class Subscription extends Model
             'trial_ends_at' => 'datetime',
             'current_period_ends_at' => 'datetime',
             'paused_at' => 'datetime',
+            'canceled_at' => 'datetime',
             'status' => SubscriptionStatus::class,
         ];
+    }
+
+    /**
+     * What the platform charges next, within the window: the renewals the admin
+     * should expect money for. Ordered by date, so the nearest is read first.
+     *
+     * @return Collection<int, Subscription>
+     */
+    public static function renewingWithin(int $days): Collection
+    {
+        return self::query()
+            ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::Trialing])
+            ->whereNotNull('current_period_ends_at')
+            ->whereBetween('current_period_ends_at', [now(), now()->addDays($days)])
+            ->with('business')
+            ->orderBy('current_period_ends_at')
+            ->get();
+    }
+
+    /**
+     * The ones that did not pay: inside the grace days, or already silenced.
+     * One list because the admin acts on both the same way — she calls them.
+     *
+     * @return Collection<int, Subscription>
+     */
+    public static function struggling(): Collection
+    {
+        return self::query()
+            ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
+            ->with('business')
+            ->orderBy('current_period_ends_at')
+            ->get();
+    }
+
+    /** Owes a period: inside the grace days, or already silenced for not paying. */
+    public function isBehind(): bool
+    {
+        return in_array($this->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Paused], true);
+    }
+
+    /**
+     * Asked to leave, still being served: she paid for the period, so it runs
+     * to its end. Derived on purpose — a second status would need a job at
+     * midnight and could drift from the date that actually decides it, the
+     * same reason an expired trial is not downgraded by a job either.
+     */
+    public function isCanceling(): bool
+    {
+        return $this->canceled_at !== null && ! $this->hasEnded();
+    }
+
+    /** The cancellation ran its course: no grace, no pause, it is over. */
+    public function hasEnded(): bool
+    {
+        return $this->canceled_at !== null
+            && $this->periodEndsAt() !== null
+            && $this->periodEndsAt()->isPast();
+    }
+
+    /**
+     * The ones leaving but still served, nearest departure first. What the
+     * admin needs is the money she is about to stop receiving, and when.
+     *
+     * @return Collection<int, Subscription>
+     */
+    public static function scheduledCancellations(): Collection
+    {
+        return self::query()
+            ->whereNotNull('canceled_at')
+            ->where('current_period_ends_at', '>=', now())
+            ->with('business')
+            ->orderBy('current_period_ends_at')
+            ->get();
+    }
+
+    /** How many subscriptions the recurring revenue is actually made of. */
+    public static function payingCount(): int
+    {
+        return self::query()
+            ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
+            ->count();
+    }
+
+    /** How many are still on their trial: future revenue, not current. */
+    public static function trialingCount(): int
+    {
+        return self::query()->where('status', SubscriptionStatus::Trialing)->count();
+    }
+
+    /**
+     * Monthly recurring revenue: what a month of the paying subscriptions is
+     * worth, with a yearly cycle spread over its twelve months. Past due counts
+     * — it is a customer inside the grace days, not a loss yet; a trial does
+     * not, because nobody paid for it.
+     */
+    public static function monthlyRecurringRevenue(): float
+    {
+        return self::query()
+            ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
+            ->get(['plan', 'billing_cycle'])
+            ->sum(function (Subscription $subscription): float {
+                $plan = Plan::named($subscription->plan);
+
+                return $subscription->billing_cycle === 'yearly'
+                    ? $plan->yearlyPrice / 12
+                    : (float) $plan->price;
+            });
     }
 
     /** A paid subscription is off trial even if its trial date is still ahead. */

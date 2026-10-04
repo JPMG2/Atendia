@@ -16,7 +16,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', fn () => view('admin.dashboard'))->name('dashboard');
+// Home: what is waiting for her right now, with the rows behind each number.
+Route::livewire('/', 'admin.home.index')->name('dashboard');
+
+// Businesses: the ledger of everyone the platform serves. /admin/adopcion
+// measures the funnel; this one administers.
+Route::livewire('/negocios', 'admin.businesses.index')->name('businesses');
 
 // Catalogs, the system masters: a master-detail hub. Each master's CRUD is
 // wired when its turn comes.
@@ -29,17 +34,17 @@ Route::livewire('/company', 'configuration.company')->name('company');
 Route::livewire('/integrations', 'configuration.integrations')->name('integrations');
 
 // Testimonials: the moderation desk before an owner's word hits the landing.
-Route::livewire('/testimonios', 'admin.testimonials')->name('testimonials');
+Route::livewire('/testimonios', 'admin.testimonials.index')->name('testimonials');
 
 // Payments: receipts waiting to be credited or rejected, and the latest ones.
-Route::livewire('/pagos', 'admin.payments')->name('payments');
+Route::livewire('/pagos', 'admin.payments.index')->name('payments');
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt');
 
 // Moderation: what the content filter caught, and the switch to lift a suspension.
-Route::livewire('/moderacion', 'admin.moderation')->name('moderation');
+Route::livewire('/moderacion', 'admin.moderation.index')->name('moderation');
 
 // Support: what the businesses report from their own panel, by arrival.
-Route::livewire('/soporte', 'admin.support')->name('support');
+Route::livewire('/soporte', 'admin.support.index')->name('support');
 
 // System logs: the latest entries, built to be copied into a help chat.
 Route::livewire('/logs', 'configuration.logs')->name('logs');
@@ -49,4 +54,4 @@ Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
 
 // Adoption: where each business stalled on the way to being answered by its
 // own assistant. The one screen that measures product, not code.
-Route::livewire('/adopcion', 'admin.adoption')->name('adoption');
+Route::livewire('/adopcion', 'admin.adoption.index')->name('adoption');

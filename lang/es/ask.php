@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-// "Pregúntale a AtendIa": el asistente del panel cliente que responde a la
+// "Pregúntale a :brand": el asistente del panel cliente que responde a la
 // dueña con los datos de su negocio. Solo consultas; el cupo va por plan.
 return [
-    'button' => 'Pregúntale a AtendIa',
-    'title' => 'Pregúntale a AtendIa',
+    'button' => 'Pregúntale a :brand',
+    'title' => 'Pregúntale a :brand',
     'subtitle' => 'Te respondo con los datos de tu negocio.',
     'hello' => 'Hola, :name',
-    'assistant' => 'asistente :ia de AtendIa',
+    'assistant' => 'asistente :ia de :brand',
     'ia' => 'IA',
     'intro' => 'Soy el :assistant: te respondo con los datos de tu negocio y te explico cómo usar cada módulo del panel. ¿Qué quieres saber?',
     'suggestions_title' => 'Puedes preguntar, por ejemplo:',
@@ -55,7 +55,7 @@ return [
     ],
 
     'locked' => [
-        'title' => 'Pregúntale a AtendIa por tu negocio',
+        'title' => 'Pregúntale a :brand por tu negocio',
         'body' => 'Pregunta con tus palabras y te respondo con tus datos reales: consultas, clientes, cumpleaños y más.',
         'plan' => 'Viene con el plan :plan: :cap consultas al mes.',
         'examples' => 'Preguntas que podrías hacer:',
@@ -68,7 +68,7 @@ return [
         'statistics' => [
             'conversations' => 'Conversaciones: las conversaciones donde un cliente escribió al menos un mensaje en el mes.',
             'new_contacts' => 'Contactos nuevos: conversaciones que empezaron por primera vez en el mes.',
-            'questions' => 'Preguntas: las preguntas de clientes que AtendIa detectó al leer las conversaciones del mes.',
+            'questions' => 'Preguntas: las preguntas de clientes que :brand detectó al leer las conversaciones del mes.',
             'resolution' => 'Resueltas por el asistente: de esas preguntas, el porcentaje que respondió el asistente solo, sin el equipo. Se mide por pregunta, no por conversación: si respondió 3 de 4 preguntas de una charla, cuentan las 3.',
             'audio_minutes' => 'Minutos de audio: los minutos de notas de voz de clientes que el asistente transcribió en el mes.',
             'recovered' => 'Clientes recuperados: clientes a los que se les avisó una respuesta que el negocio enseñó después y que volvieron a escribir.',

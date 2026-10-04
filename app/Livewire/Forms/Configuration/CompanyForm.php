@@ -520,6 +520,7 @@ class CompanyForm extends BaseForm
     {
         return [
             'legal_name' => config('nicename.legal_name'),
+            'brand_name' => config('nicename.brand_name'),
             'tagline' => config('nicename.tagline'),
             'region_id' => config('nicename.region_id'),
             'address' => config('nicename.address'),
@@ -642,6 +643,8 @@ class CompanyForm extends BaseForm
             self::STEP_MAIN => [
 
                 'legal_name' => AttributeValidator::stringValid(true, '3'),
+
+                'brand_name' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
 
                 'tagline' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
 

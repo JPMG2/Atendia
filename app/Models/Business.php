@@ -830,6 +830,38 @@ class Business extends Model
         return $this->hasMany(Payment::class);
     }
 
+    /**
+     * Every business the platform serves, with the plan row that judges it.
+     * The one screen that administers them, as opposed to `/admin/adopcion`,
+     * which measures the funnel.
+     *
+     * @return Collection<int, Business>
+     */
+    public static function directory(): Collection
+    {
+        return self::query()->with('subscription')->orderBy('name')->get();
+    }
+
+    /**
+     * One business with its money history, for the open row. Loaded apart from
+     * the list on purpose: every payment of every business is a page nobody reads.
+     */
+    public static function ledger(int $id, int $payments = 10): ?self
+    {
+        return self::query()
+            ->whereKey($id)
+            ->with(['subscription', 'payments' => fn (HasMany $query) => $query->latest()->limit($payments)])
+            ->first();
+    }
+
+    /** What it owes right now: the period it did not pay, or nothing. */
+    public function owes(): float
+    {
+        $subscription = $this->subscription;
+
+        return $subscription !== null && $subscription->isBehind() ? $subscription->nextAmount() : 0.0;
+    }
+
     public function plan(): Plan
     {
         return Plan::for($this);

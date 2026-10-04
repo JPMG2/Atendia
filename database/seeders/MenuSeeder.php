@@ -77,21 +77,38 @@ class MenuSeeder extends Seeder
         Menu::create(['label_key' => 'menu.settings', 'icon' => 'settings', 'route_name' => 'settings', 'placement' => 'bottom', 'sort_order' => 1]);
         Menu::create(['label_key' => 'menu.help', 'icon' => 'life-buoy', 'route_name' => 'help', 'placement' => 'bottom', 'sort_order' => 2]);
 
-        // --- ADMIN panel (configuration) — skeleton; routes come later. ---
+        /*
+         * ADMIN panel, as a tree (2026-10-03). Nine loose items became six
+         * groups: she scans the group she is working IN, not a wall of names.
+         * Grouped by what she does, labelled with nouns — and every pending
+         * screen already has its branch, so the next one does not reshuffle
+         * this again (pendientes-admin.md §E10).
+         */
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_home', 'icon' => 'layout-dashboard', 'route_name' => 'admin.dashboard', 'sort_order' => 1]);
-        // Second on purpose: it is the screen that says whether any of the
-        // rest is being used, and a number nobody opens changes nothing.
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'sort_order' => 2]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_users', 'icon' => 'users', 'sort_order' => 3]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'sort_order' => 4]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'sort_order' => 5]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 6]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_moderation', 'icon' => 'shield-check', 'route_name' => 'admin.moderation', 'sort_order' => 7]);
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'sort_order' => 8]);
-        // Company hangs off Configuration: it is AtendIa's own data, not an area.
-        $settings = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'settings', 'sort_order' => 9]);
-        Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_integrations', 'icon' => 'workflow', 'route_name' => 'admin.integrations', 'sort_order' => 2]);
-        Menu::create(['parent_id' => $settings->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'sort_order' => 3]);
+
+        // Negocios: who she serves. Incumplimientos (E4) and Radar (A10) land here.
+        $businesses = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_businesses', 'icon' => 'briefcase', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_all_businesses', 'icon' => 'store', 'route_name' => 'admin.businesses', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'sort_order' => 2]);
+
+        // Cobros: the money. Planes (E7) and Consumo de IA (A3) land here.
+        $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 1]);
+
+        // Approving a testimonial IS moderation, so it belongs inside this
+        // branch and not beside it. The AI ratings screen (A9) lands here too.
+        $trust = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_trust', 'icon' => 'shield-check', 'sort_order' => 4]);
+        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_content', 'icon' => 'eye', 'route_name' => 'admin.moderation', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'sort_order' => 2]);
+
+        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'sort_order' => 5]);
+
+        // How the product is set up, not the daily work. Platform settings
+        // (A2), the hero tags (A8) and access control (A4, A5) land here.
+        $platform = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_platform', 'icon' => 'settings', 'sort_order' => 6]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_integrations', 'icon' => 'workflow', 'route_name' => 'admin.integrations', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'sort_order' => 4]);
     }
 }
