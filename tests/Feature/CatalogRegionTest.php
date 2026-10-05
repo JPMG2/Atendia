@@ -64,6 +64,11 @@ test('the country of every region is eager loaded, not queried once per row', fu
     };
 
     Region::factory()->create(['province_id' => $province->id]);
+
+    // Warm first, measure after. The screen also reads the company row, which
+    // is cached from then on: left in, the FIRST measurement carried one query
+    // the second never repeats, and the two were not comparable.
+    $countQueries();
     $withOne = $countQueries();
 
     Region::factory()->count(20)->create(['province_id' => $province->id]);

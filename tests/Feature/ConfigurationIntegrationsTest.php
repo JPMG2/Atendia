@@ -178,7 +178,16 @@ test('the integrations option hangs from the settings item of the admin menu', f
     expect(config('icons.workflow'))->not->toBeNull();
 });
 
-test('the dashboard tile for integrations is live and navigates to the screen', function (): void {
+/*
+| It used to ask the admin home for a TILE, and the tile grid was taken out on
+| purpose on 2026-10-03 — its areas live in the menu now. What is worth
+| guarding is not the tile but the same promise: the panel she opens really
+| carries a way in. The test above reads the menus ROW; this one renders the
+| panel and looks for the href, so a label with no destination is caught.
+*/
+test('the panel she opens carries a real link to the integrations screen', function (): void {
+    $this->seed(MenuSeeder::class);
+
     $this->actingAs(integrationsAdmin())->get('/admin')
         ->assertOk()
         ->assertSee(route('admin.integrations'));

@@ -11,21 +11,13 @@
 
 ## 2026-10-05
 
-- **La suite entera no se corría desde el 2026-10-03 y escondía 4 rojos reales** (18 rojos en
-  total: 12 eran flake y pasaron aislados). Los 4 vienen del commit `3600753`, no del trabajo
-  de hoy:
-  - 3 tests (`ConfigurationCompany`, `ConfigurationLogs`, `ConfigurationIntegrations`) buscaban
-    el ítem de menú `menu.admin_settings`, que ese commit renombró a `menu.admin_platform`.
-    **Arreglado hoy** (una línea cada uno).
-  - `ConfigurationIntegrationsTest > the dashboard tile…` exige un tile en `/admin` que lleve a
-    `admin.integrations`, y ese commit sacó la rejilla de tiles a propósito ("sus áreas ya
-    viven en el menú"). **Sin tocar**: re-apuntarlo al menú o borrarlo cambia qué afirma el
-    test, y eso lo decide ella. Hoy el ítem de menú ya está cubierto por el test de al lado.
-- **`CatalogRegionTest > the country of every region is eager loaded` exige igualdad EXACTA de
-  consultas y falla con 6 contra 5.** El N+1 que vigila NO existe: con 21 regiones corre MENOS
-  consultas que con 1. Lo que rompe es que el primer render calienta un caché y el segundo ya
-  no lo consulta. Falla aislado y sin que nadie toque el catálogo. El arreglo es
-  `toBeLessThanOrEqual`, no una consulta menos.
+- **La suite entera no se corría desde el 2026-10-03 y escondía 6 rojos reales** (18 rojos en
+  total: 12 eran flake y pasaron aislados). Los 6 venían del commit `3600753`, no del trabajo
+  de ese día, y quedaron TODOS arreglados: 3 buscaban el ítem `menu.admin_settings` (renombrado
+  a `menu.admin_platform`), 2 del Inicio leían filas que ese commit movió detrás de tabs, y el
+  del tile de Integraciones exigía una rejilla que ese commit sacó a propósito. **Lección que
+  queda:** la suite completa es la única que ve el daño colateral de un rename o de un rediseño,
+  y entre el 03 y el 05 nadie la corrió.
 
 - **Dos archivos de browser en la MISMA corrida se pisan la base y el error miente.**
   `AdminAiUsageBrowserTest` + `PanelResponsiveBrowserTest` juntos dieron 5 rojos con
