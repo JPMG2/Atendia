@@ -1471,12 +1471,13 @@ test('the subject and the body come from translations, like every visible copy',
 });
 
 test('the welcome wears the brand chrome, not the Laravel default', function (): void {
-    $rendered = (new NewCompany(Company::factory()->create()))->render();
+    $company = Company::factory()->create(['brand_name' => 'Conversa']);
+    $rendered = (new NewCompany($company))->render();
 
-    // Wordmark, jade band and rights come from our own email layout; the hex
-    // is legit there (mail clients never load app.css), spelled as Pint's
-    // Blade rule normalizes it. The wordmark staying glued is what matters.
-    expect($rendered)->toContain('Atend<span style="color: #0ea47a">ia</span>')
+    // The wordmark follows the ROW, so a rename reaches the mail too, and it
+    // stays glued: the two halves apart print "Conver sa". The hex is legit
+    // here and only here — a mail client never loads app.css.
+    expect($rendered)->toContain('Conver<span style="color: #0ea47a">sa</span>')
         ->toContain('background-color:#0EA47A')
         ->toContain(__('mail.new_company.eyebrow'))
         ->toContain(__('mail.layout.rights', ['year' => now()->year]));

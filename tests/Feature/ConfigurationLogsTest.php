@@ -112,8 +112,67 @@ test('the copy control feeds the clipboard from the raw block', function (): voi
 
     $html = Livewire::test('configuration.logs')->html();
 
-    expect($html)->toContain('navigator.clipboard.writeText($refs.raw.textContent)')
-        ->toContain('x-ref="raw"');
+    // Verbatim from the raw block, with the environment in front of it: an
+    // entry pasted alone starts a round of questions about PHP and install.
+    expect($html)->toContain("+ '\\n\\n' + \$refs.raw.textContent")
+        ->toContain('x-ref="raw"')
+        ->toContain('Entorno');
+});
+
+/*
+| The north star she set: she copies the problem and pastes it for someone
+| to read. That only works if the paste carries what the reader would have
+| asked for anyway, and if the same error forty times does not bury the rest.
+*/
+test('the same error over and over is one line that says how many', function (): void {
+    writeLog($this->logDir, 'laravel.log', <<<'LOG'
+[2026-09-02 10:00:00] local.ERROR: Connection refused
+[2026-09-02 10:00:05] local.ERROR: Connection refused
+[2026-09-02 10:00:09] local.ERROR: Connection refused
+[2026-09-02 11:00:00] local.INFO: The queue worker started.
+LOG);
+
+    $entries = app(LogReader::class)->entries('laravel.log');
+
+    expect($entries)->toHaveCount(2);
+
+    $repeated = $entries->firstWhere('level', 'error');
+
+    expect($repeated->occurrences)->toBe(3)
+        // The newest is the one kept: its trace is the one worth pasting.
+        ->and($repeated->timestamp)->toBe('2026-09-02 10:00:09')
+        ->and($repeated->firstAt)->toBe('2026-09-02 10:00:00');
+});
+
+test('two different errors are never folded into one', function (): void {
+    writeLog($this->logDir, 'laravel.log', <<<'LOG'
+[2026-09-02 10:00:00] local.ERROR: Connection refused
+[2026-09-02 10:00:01] local.ERROR: Disk is full
+LOG);
+
+    expect(app(LogReader::class)->entries('laravel.log'))->toHaveCount(2);
+});
+
+test('the context says what a reader would have had to ask for', function (): void {
+    $context = app(LogReader::class)->context('laravel.log');
+
+    expect($context)->toContain(PHP_VERSION)
+        ->toContain(app()->version())
+        ->toContain('laravel.log')
+        // Never guessed: only what this process really knows.
+        ->toContain(app()->environment());
+});
+
+test('the whole file travels in one paste, context first', function (): void {
+    writeLog($this->logDir, 'laravel.log', sampleLog());
+
+    $this->actingAs(logsAdmin());
+
+    $html = Livewire::test('configuration.logs')->html();
+
+    expect($html)->toContain('x-ref="bundle"')
+        ->toContain('Undefined variable')
+        ->toContain('The queue worker started');
 });
 
 test('only the tail of a huge log is read, and only whole entries survive', function (): void {

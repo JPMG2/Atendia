@@ -11,6 +11,23 @@
 
 ## 2026-10-05
 
+- **Los 15 rojos de la corrida completa tienen UNA causa, y ya está diagnosticada.**
+  `Company::current()` memoiza con `once()`, que guarda **para todo el PROCESO, no para el
+  test**: una prueba que guarda una compañía deja a las siguientes leyendo esa fila. Por eso
+  `SiteFooterCompanyTest` (8 rojos), `WelcomePageTest` (2) y compañía fallan juntos en la
+  corrida entera y pasan aislados. No es mío ni lo amplifiqué: ya fallaba en la corrida de la
+  mañana, antes de tocar `Company`.
+  **El arreglo es `Once::flush()` en `TestCase::setUp()`** — lo probé y cierra la clase entera.
+  Lo revertí porque destapa 4 tests de `ConfigurationCompanyTest` que pasaban JUSTAMENTE por
+  la memoria rancia (esperan que no haya compañía y la hay). Entra como tarea propia: flush +
+  ajustar esos 4, no a las apuradas antes de un commit.
+
+- **`referral.reward_percent` (25%) se promete y nadie lo paga.** Lo imprimen la pantalla de
+  referidos y el correo de invitación, y NINGÚN archivo de `app/` lo lee: no hay descuento, ni
+  crédito, ni asiento. Es la categoría exacta de `GoldenRulesPlanPromiseTest`: mostrar la cifra
+  no es hacerla cumplir. Por eso NO entra como ajuste editable — sería un control que no hace
+  nada. O se construye el pago, o la cifra sale del copy.
+
 - **La suite entera no se corría desde el 2026-10-03 y escondía 6 rojos reales** (18 rojos en
   total: 12 eran flake y pasaron aislados). Los 6 venían del commit `3600753`, no del trabajo
   de ese día, y quedaron TODOS arreglados: 3 buscaban el ítem `menu.admin_settings` (renombrado

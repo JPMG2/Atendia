@@ -19,8 +19,16 @@ new class extends Component
     #[Locked]
     public string $file = '';
 
-    /** @var array<int, array{timestamp: string, environment: string, level: string, message: string, raw: string}> */
+    /** @var array<int, array{timestamp: string, environment: string, level: string, message: string, raw: string, occurrences: int, firstAt: string}> */
     public array $entries = [];
+
+    /**
+     * The environment block that rides along with every copy.
+     *
+     * An entry pasted alone starts a round of questions — which PHP, which
+     * install, which day. Pasting the answer with it skips all of them.
+     */
+    public string $context = '';
 
     public function mount(): void
     {
@@ -31,9 +39,13 @@ new class extends Component
 
     public function load(): void
     {
+        $reader = app(LogReader::class);
+
         $this->entries = $this->file === ''
             ? []
-            : app(LogReader::class)->entries($this->file)->map(fn ($entry) => $entry->toArray())->all();
+            : $reader->entries($this->file)->map(fn ($entry) => $entry->toArray())->all();
+
+        $this->context = $this->file === '' ? '' : $reader->context($this->file);
     }
 
     public function selectFile(string $file): void
@@ -57,17 +69,46 @@ new class extends Component
 
 {{-- The level filter lives in Alpine: the entries are already on screen and
 switching levels must not cost a request. --}}
-<div x-data="{ level: 'all' }">
+<div x-data="{ level: 'all', bundled: false }">
     <div class="page-head">
         <div>
             <h1 class="page-head-title">{{ __('logs.title') }}</h1>
             <p class="page-head-sub">{{ __('logs.subtitle') }}</p>
         </div>
 
-        <x-ui.button variant="secondary" icon="refresh-cw" wire:click="load" wire:loading.attr="disabled">
-            {{ __('logs.refresh') }}
-        </x-ui.button>
+        <span class="log-head-actions">
+            {{-- When the problem is not one entry but a sequence: the context
+            plus every entry on screen, in one paste. --}}
+            @if ($entries !== [])
+                <x-ui.button
+                    variant="secondary"
+                    icon="copy"
+                    x-on:click="
+                        navigator.clipboard.writeText($refs.bundle.textContent).then(() => {
+                            bundled = true;
+                            setTimeout(() => (bundled = false), 1600);
+                        })
+                    "
+                >
+                    <span x-show="! bundled">{{ __('logs.copy_all') }}</span>
+                    <span x-show="bundled" x-cloak>{{ __('logs.copied') }}</span>
+                </x-ui.button>
+            @endif
+
+            <x-ui.button variant="secondary" icon="refresh-cw" wire:click="load" wire:loading.attr="disabled">
+                {{ __('logs.refresh') }}
+            </x-ui.button>
+        </span>
     </div>
+
+    {{-- Off screen and not rendered twice: the clipboard reads from here, so
+    what travels is exactly what the log says. --}}
+    <pre x-ref="bundle" class="sr-only">{{ $context }}
+
+@foreach ($entries as $bundled)
+{{ $bundled['raw'] }}
+
+@endforeach</pre>
 
     <div class="log-toolbar">
         <div class="log-pills" role="tablist">
@@ -128,17 +169,25 @@ switching levels must not cost a request. --}}
                     <span class="log-time font-mono">{{ $entry['timestamp'] }}</span>
                     <p class="log-message">{{ $entry['message'] }}</p>
 
+                    @if ($entry['occurrences'] > 1)
+                        {{-- The same error forty times is one line saying forty:
+                        forty blocks bury everything else on the screen. --}}
+                        <span class="log-repeats" title="{{ __('logs.since', ['time' => $entry['firstAt']]) }}">
+                            {{ trans_choice('logs.repeats', $entry['occurrences'], ['count' => $entry['occurrences']]) }}
+                        </span>
+                    @endif
+
                     <span class="log-actions">
-                        {{-- The clipboard gets the entry VERBATIM from the raw
-                        block, expanded or not: what is pasted for help must
-                        be exactly what the log says. --}}
+                        {{-- The clipboard gets the entry VERBATIM, with the
+                        environment block in front: pasted alone it starts a
+                        round of questions about PHP, install and day. --}}
                         <x-ui.icon-button
                             size="sm"
                             variant="ghost"
                             :label="__('logs.copy')"
                             data-testid="log-copy"
                             x-on:click="
-                                navigator.clipboard.writeText($refs.raw.textContent).then(() => {
+                                navigator.clipboard.writeText({{ \Illuminate\Support\Js::from($context) }} + '\n\n' + $refs.raw.textContent).then(() => {
                                     copied = true;
                                     setTimeout(() => (copied = false), 1600);
                                 })

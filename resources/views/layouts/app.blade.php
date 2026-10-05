@@ -109,7 +109,7 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     alt="{{ \App\Models\Company::brand() }}"
                     class="sidebar-logo"
                 />
-                <span class="sidebar-wordmark">Atend<span>ia</span></span>
+                <span class="sidebar-wordmark"><x-site.wordmark /></span>
                 @if ($onAdminPanel)
                     <x-ui.badge variant="accent">Admin</x-ui.badge>
                 @endif

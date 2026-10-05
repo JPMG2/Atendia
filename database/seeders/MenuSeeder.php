@@ -88,29 +88,33 @@ class MenuSeeder extends Seeder
 
         // Negocios: who she serves. Incumplimientos (E4) and Radar (A10) land here.
         $businesses = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_businesses', 'icon' => 'briefcase', 'sort_order' => 2]);
-        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_all_businesses', 'icon' => 'store', 'route_name' => 'admin.businesses', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_all_businesses', 'icon' => 'store', 'route_name' => 'admin.businesses', 'permission' => 'businesses.view', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'permission' => 'adoption.view', 'sort_order' => 2]);
 
         // Cobros: the money. Planes (E7) and Consumo de IA (A3) land here.
         $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 3]);
-        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai', 'icon' => 'bot', 'route_name' => 'admin.ai', 'sort_order' => 2]);
-        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_usage', 'icon' => 'bar-chart-3', 'route_name' => 'admin.ai-usage', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'permission' => 'payments.view', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai', 'icon' => 'bot', 'route_name' => 'admin.ai', 'permission' => 'ai.manage', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_usage', 'icon' => 'bar-chart-3', 'route_name' => 'admin.ai-usage', 'permission' => 'ai.view', 'sort_order' => 3]);
 
         // Approving a testimonial IS moderation, so it belongs inside this
         // branch and not beside it. The AI ratings screen (A9) lands here too.
         $trust = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_trust', 'icon' => 'shield-check', 'sort_order' => 4]);
-        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_content', 'icon' => 'eye', 'route_name' => 'admin.moderation', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_content', 'icon' => 'eye', 'route_name' => 'admin.moderation', 'permission' => 'moderation.view', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'permission' => 'testimonials.moderate', 'sort_order' => 2]);
 
-        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'sort_order' => 5]);
+        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'permission' => 'support.view', 'sort_order' => 5]);
 
         // How the product is set up, not the daily work. Platform settings
         // (A2), the hero tags (A8) and access control (A4, A5) land here.
         $platform = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_platform', 'icon' => 'settings', 'sort_order' => 6]);
-        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'sort_order' => 1]);
-        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'sort_order' => 2]);
-        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_integrations', 'icon' => 'workflow', 'route_name' => 'admin.integrations', 'sort_order' => 3]);
-        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'sort_order' => 4]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_company', 'icon' => 'building-2', 'route_name' => 'admin.company', 'permission' => 'company.manage', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_catalogs', 'icon' => 'library', 'route_name' => 'admin.catalogs', 'permission' => 'catalogs.manage', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_integrations', 'icon' => 'workflow', 'route_name' => 'admin.integrations', 'permission' => 'integrations.view', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_settings', 'icon' => 'sliders-horizontal', 'route_name' => 'admin.settings', 'permission' => 'settings.manage', 'sort_order' => 4]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_users', 'icon' => 'users', 'route_name' => 'admin.users', 'permission' => 'users.view', 'sort_order' => 5]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_roles', 'icon' => 'shield-check', 'route_name' => 'admin.roles', 'permission' => 'roles.manage', 'sort_order' => 6]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_audit', 'icon' => 'history', 'route_name' => 'admin.audit', 'permission' => 'audit.view', 'sort_order' => 7]);
+        Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'permission' => 'logs.view', 'sort_order' => 8]);
     }
 }

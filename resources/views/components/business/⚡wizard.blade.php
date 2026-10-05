@@ -190,7 +190,7 @@ step actually saves: the exit can then ask before losing real keystrokes. --}}
 >
     <header class="wizard-top">
         <div class="wizard-top-in">
-            <a class="wizard-wordmark" href="{{ url('/') }}">Atend<b>ia</b></a>
+            <a class="wizard-wordmark" href="{{ url('/') }}"><x-site.wordmark tag="b" /></a>
             <span class="wizard-crumb">{{ __('wizard.title') }}</span>
             <span class="wizard-spacer"></span>
             {{-- On screen the account stage does not count: steps 2..5 read as 1..4. --}}

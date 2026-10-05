@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -28,6 +29,34 @@ test('the loss headline and the faq accordion, in the flesh', function (): void 
         ->assertSee('nunca inventa')
         ->assertSee(__('landing.faq.more_cta'))
         ->screenshotElement('#preguntas', 'landing-faq-open');
+});
+
+/*
+| The footer is where a stranger checks whether there is a real company behind
+| the subscription: a human line, a monitored mailbox and an address. All three
+| come from the Company row, so none of them may be written into the markup.
+*/
+test('the footer carries a real way to reach the company', function (): void {
+    $company = Company::factory()->create([
+        'brand_name' => 'AtendIa',
+        'email' => 'soporte@atendia.com',
+        'phone' => '5492995529100',
+        'address' => 'Calle 24 - 2 - 4',
+    ]);
+
+    $page = visit('/');
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee(__('landing.footer.col_contact'))
+        ->assertSee($company->email)
+        ->assertSee($company->address)
+        ->assertSee(__('landing.footer.whatsapp'))
+        ->screenshotElement('footer', 'landing-footer-contact');
+
+    // The human line opens a chat, it does not merely print a number.
+    $href = $page->script('document.querySelector("footer a[href*=\'wa.me\']")?.getAttribute("href") ?? ""');
+
+    expect((string) $href)->toContain('wa.me/5492995529100');
 });
 
 test('the features bento fills its last tile too', function (): void {

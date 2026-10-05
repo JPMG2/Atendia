@@ -6,7 +6,7 @@
         ->all();
 
     // Same door as Premium's pricing CTA; unset number = the line simply hides.
-    $salesWhatsapp = config('atendia.sales_whatsapp');
+    $salesWhatsapp = \App\Models\Company::whatsapp();
 
     // The same items feed the visible accordion and the FAQPage structured
     // data: Google lifts these into rich results, one copy of the truth.

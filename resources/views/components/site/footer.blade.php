@@ -16,6 +16,15 @@
         ]],
     ];
 
+    // Nobody pays a brand they cannot reach: a human line, an address and a
+    // monitored mailbox are what say "this is a real company" on a page that
+    // is asking a stranger for a subscription. Each one hides if it is empty.
+    $whatsapp = \App\Models\Company::whatsapp();
+    $region = $company?->region;
+    $place = collect([$region?->name, $region?->province?->name, $region?->province?->country?->name])
+        ->filter()
+        ->implode(', ');
+
     $locales = config('locales.supported');
     $labels = config('locales.labels');
     $current = app()->getLocale();
@@ -23,7 +32,7 @@
 
 <footer class="bg-card bd-subtle border-t">
     <div
-        class="mx-auto grid grid-cols-2 gap-8 lg:grid-cols-[1.6fr_1fr]"
+        class="mx-auto grid grid-cols-2 gap-8 lg:grid-cols-[1.4fr_1fr_1fr]"
         style="max-width: var(--container-xl); padding: 48px 24px 28px"
     >
         <div class="col-span-2 flex flex-col gap-3 lg:col-span-1" style="max-width: 280px">
@@ -62,6 +71,51 @@
                 @endforeach
             </div>
         @endforeach
+
+        @if ($whatsapp || $company?->email || $company?->address)
+            <div class="col-span-2 flex flex-col gap-2.5 lg:col-span-1">
+                <div class="text-strong" style="font-weight: 700; font-size: var(--text-sm)">
+                    {{ __('landing.footer.col_contact') }}
+                </div>
+
+                @if ($whatsapp)
+                    <a
+                        href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode(__('landing.footer.whatsapp_text')) }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-muted hover:text-brand inline-flex items-center gap-2 transition"
+                        style="font-size: var(--text-sm)"
+                    >
+                        <x-icon name="message-circle" :size="15" />
+                        {{ __('landing.footer.whatsapp') }}
+                    </a>
+                @endif
+
+                @if ($company?->email)
+                    <a
+                        href="mailto:{{ $company->email }}"
+                        class="text-muted hover:text-brand inline-flex items-center gap-2 transition"
+                        style="font-size: var(--text-sm)"
+                    >
+                        <x-icon name="mail" :size="15" />
+                        {{ $company->email }}
+                    </a>
+                @endif
+
+                @if ($company?->address)
+                    <span class="text-muted inline-flex items-start gap-2" style="font-size: var(--text-sm)">
+                        <x-icon name="map-pin" :size="15" class="mt-0.5 flex-none" />
+                        <span
+                            >{{ $company->address }}
+                            @if ($place)
+                                <br
+                                />{{ $place }}
+                            @endif
+                        </span>
+                    </span>
+                @endif
+            </div>
+        @endif
     </div>
     <div
         class="bd-subtle text-subtle mx-auto flex flex-wrap items-center justify-between gap-2.5 border-t"

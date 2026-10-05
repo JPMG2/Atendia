@@ -28,8 +28,23 @@ function brandOffendersIn(string $path, string $brand): array
     foreach (File::allFiles(base_path($path)) as $file) {
         $contents = File::get($file->getPathname());
 
+        // Comments go WHOLE, not line by line: a name on the second line of a
+        // `{{-- --}}` block was reported as if it printed. The newlines stay,
+        // or every line number after a comment would point at the wrong line.
+        $contents = preg_replace_callback(
+            '/\{\{--.*?--\}\}|\/\*.*?\*\//su',
+            fn (array $m): string => str_repeat("\n", substr_count($m[0], "\n")),
+            $contents,
+        ) ?? $contents;
+
         foreach (explode("\n", $contents) as $number => $line) {
-            if (! str_contains($line, $brand)) {
+            // What reaches the screen: the wordmark split the name across tags
+            // and this guard never saw it. Standing alone and in any case, so
+            // `AskAtendia` or `config('atendia.x')` stay out of it.
+            $printed = strip_tags($line);
+            $alone = '/(?<![\w\-.\/])'.preg_quote($brand, '/').'(?![\w\-.\/])/iu';
+
+            if (preg_match($alone, $printed) !== 1) {
                 continue;
             }
 

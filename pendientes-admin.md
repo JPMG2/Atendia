@@ -81,16 +81,28 @@ opción de menú), con las queries en `Subscription` y `Payment`, no en el Blade
       - [ ] Pendiente de §B: la baja por autogestión del negocio. No puede existir antes que
             el pago por autogestión.
 
-### A2. Ajustes de plataforma — tabla editable
-Orden de ella (2026-09-24): lo que hoy es un valor fijo de comportamiento vive en
-`config/atendia.php` con un comentario que lo dice, y pasa a BD editable acá.
-- [ ] Umbral de charla terminada (2 h, `atendia.analysis.idle_hours`) y umbrales de similitud
-- [ ] Horas locales de los automáticos, en la hora de CADA negocio: cumpleaños 09:15 ·
-      resumen nocturno 20:30 · recordatorio de pago 09:00 · resumen semanal lunes 09:30
+### A2. Ajustes de plataforma — PANTALLA HECHA 2026-10-05
+`/admin/ajustes`, bajo Plataforma. **La fila PISA al `config` en el arranque**: los ~15
+llamadores que ya leen `config('atendia.…')` no se tocaron, `config/atendia.php` queda como
+el default escrito, y lo que ella edita manda. Agrupado por TAREA y no por archivo de config,
+cada ajuste dice qué pasa si lo movés, con su default al lado y un botón para volver.
+- [x] ~~Umbral de charla terminada~~ (`analysis.idle_hours`, 1–48 h).
+- [x] ~~Horas locales de los automáticos~~: cumpleaños, resumen del día, avisos de pago,
+      resumen semanal (hora Y día) y recordatorio de turno.
+- [x] ~~Derivación~~ (`handoff.reminder_minutes`, `handoff.customer_idle_hours`) y
+      ~~referidos~~ (`referral.invited_trial_days`, `referral.founders`) + días de gracia.
+- [ ] **Umbrales de similitud** (`same_intent_similarity`, `catalog_similarity`,
+      `same_question_similarity`…): NO entraron. Son vectores medidos sobre datos reales, no
+      preferencias; moverlos a ciegas rompe el análisis sin que se note. Van cuando haya una
+      pantalla que muestre el efecto de moverlos, no un campo suelto.
 - [ ] Cómo elige el sistema a qué cliente va la respuesta de la dueña desde su WhatsApp
-- [ ] Cumpleaños solo con opt-in del cliente (hoy fijo en sí)
-- [ ] Derivación y referidos
-- [ ] Al sumar un ajuste nuevo de plataforma: anotarlo acá y comentarlo en el config
+      (todavía no hay un valor configurable: primero hay que decidir la regla).
+- [ ] Cumpleaños solo con opt-in del cliente (hoy fijo en sí) — es una COLUMNA de negocio,
+      no un ajuste de plataforma.
+- [x] ~~Al sumar un ajuste nuevo: anotarlo acá~~ — hoy se suma una fila al `PlatformSettingSeeder`
+      y aparece sola en la pantalla, agrupada y validada por su tipo.
+- **Fuera a propósito**: `referral.reward_percent`. Nada en `app/` lo paga (ver `hallazgos.md`):
+  sería un control que no hace nada.
 
 ### A3. Consumo de IA por cliente — HECHO 2026-10-04
 Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
@@ -114,13 +126,95 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
       1280px sin cortar. Sigue dentro del costo y en los tres exportables. Si lo querés en
       pantalla, hay que sacarle el lugar a otra columna.
 
-### A4. Usuarios y accesos
-- [ ] La pantalla. El ítem `menu.admin_users` ya NO se siembra (lo sacó el candado del menú
-      mudo, bloque D) y no hay tile: lo único que sobrevive es la clave en `lang/es/menu.php`,
-      esperando la pantalla.
+### A4. Usuarios y accesos — HECHO 2026-10-05
+`/admin/usuarios`, bajo Plataforma.
+
+**Lo entregué mal la primera vez y ella lo frenó.** Armé la pantalla desde la TABLA `users`,
+así que listaba también a los dueños de negocio: la pantalla decía que sus clientes eran
+personal de la plataforma. Un cliente es un cliente y vive en **Negocios**.
+
+> **Definición (de ella, 2026-10-05):** usuario = cuenta creada DESDE el dashboard admin.
+> El único que viene del seeder es `admin@admin.com`; **cualquier otro se crea en el sistema**.
+
+- [x] ~~La lista son las cuentas con `access-admin-panel`~~, leído del PERMISO y no de una lista
+      de roles: un rol nuevo entra solo con que se le dé el permiso.
+- [x] ~~Alta desde la pantalla~~: nombre, correo y rol. No se elige contraseña — la persona
+      recibe el correo de acceso y la define ella.
+- [x] ~~**El super-admin NO se puede regalar desde la web**~~: el rol `admin` pasa todos los
+      gates por `Gate::before`, así que el selector no lo ofrece Y la regla lo rechaza aunque
+      lo manden a mano. Lo que la web reparte es el rol `support`: el panel, sin super-admin.
+- [x] ~~Un permiso gobierna quién puede crear usuarios~~ (`manage-admin-users`), y la cerradura
+      está en la ACCIÓN, no en ocultar el botón.
+- [x] ~~Reenviar el acceso~~ desde la fila, solo a quien no verificó (reenviárselo a quien ya
+      verificó es un correo que confunde).
+- [x] ~~El último acceso es el de verdad, y dice desde dónde~~: sale de `login_activities`
+      (las sesiones viven en Redis, esa tabla está vacía).
+- [x] ~~**Hallazgo del primer uso**: `admin@admin.com` figuraba SIN VERIFICAR.~~ Lo encontró la
+      pantalla apenas abrió y ella lo resolvió con el botón de la fila (2026-10-05 18:04). El
+      circuito entero quedó probado de punta a punta: botón → cola → correo → link.
+- **Movido**: suplantar a un usuario ("ver el panel como esta persona") se pensó para ayudar a
+  un CLIENTE que no puede entrar, así que pertenece a la ficha del Negocio, no acá.
 
 ### A5. Seguridad — roles, permisos y auditoría
-- [ ] La pantalla (`spatie/laravel-permission` y `activitylog` ya registran; nadie los mira)
+**Parte 1 (cerraduras) HECHA 2026-10-05.** Hasta hoy TODA ruta admin pedía solo
+`access-admin-panel`: dejar entrar a alguien de soporte era darle la plataforma entera.
+Ahora cada área tiene su llave, y la misma llave va en la ruta Y en el ítem de menú.
+- [x] ~~16 permisos por área~~ (`businesses.view`, `payments.view/verify`, `support.view`,
+      `moderation.view`, `ai.view/manage`, `catalogs.manage`, `company.manage`,
+      `settings.manage`, `users.view`, `logs.view`, `adoption.view`, `integrations.view`,
+      `testimonials.moderate`, `businesses.manage`).
+- [x] ~~Las 15 rutas admin exigen el suyo~~, y un guardián falla si mañana alguien suma una
+      pantalla sin permiso propio (`AdminAreaPermissionsTest`).
+- [x] ~~El menú lleva el mismo permiso que la ruta~~: no se ofrece una puerta que da 403.
+- [x] ~~`support` quedó con lo mínimo~~ (su ejemplo): trabaja reclamos y mira el negocio
+      detrás de uno. Sin catálogos, sin compañía, sin ajustes. Probado con 403 en cada uno.
+- [x] ~~**DEFECTO del menú que esto destapó**~~: un GRUPO sin ruta propia seguía dibujándose
+      aunque los permisos le vaciaran todos los hijos — "Plataforma" quedaba en el menú de
+      soporte sin poder abrir nada. `Menu::filterByPermission` ahora lo descarta.
+
+**Parte 2 (pantalla de Roles) HECHA 2026-10-05.** `/admin/roles`, con permiso `roles.manage`.
+Un rol nuevo nace acá: los que vienen — diseño, call center, programación — ya no necesitan
+tocar el seeder.
+- [x] ~~Matriz rol × permiso agrupada por ÁREA~~, y cada permiso dice QUÉ habilita
+      ("Condiciones fiscales", no `catalog.tax-condition`). Nadie necesita saber la clave.
+- [x] ~~`admin` protegido de verdad~~: no se lista para editar (`Access::staffRole()` nunca lo
+      devuelve), no se guarda y no se borra. Probado por los tres lados.
+- [x] ~~`access-admin-panel` es implícito~~, no una casilla: un rol sin eso serían llaves de un
+      edificio al que nadie puede entrar.
+- [x] ~~Un rol que alguien tiene no se borra~~ (dejaría gente afuera); uno que no tiene nadie sí,
+      con diálogo de confirmación.
+- [x] ~~Guardar invalida el caché de spatie~~: sin eso un permiso recién sacado sigue dejando
+      pasar hasta que caduque.
+- [x] ~~**El rastro de quién reparte las llaves** (2026-10-05)~~. El resto de la auditoría va
+      con `LogsActivity` sobre un modelo, y eso NO podía ver esto: darle un permiso a un rol
+      escribe una fila PIVOTE y no dispara evento de modelo. Sin esto el log decía quién editó
+      un catálogo pero no quién le dio el panel a alguien. Ahora `events_enabled` de spatie +
+      `RecordAccessChange` escriben en `activity_log` con `log_name = access`: qué se dio o se
+      quitó, a quién, y quién lo hizo. Guarda NOMBRES, no ids — un id no le dice nada a quien
+      lea esto en un año, y apunta a una fila que puede haberse renombrado.
+- [x] ~~**Pantalla de auditoría** (2026-10-05)~~: `/admin/auditoria`, permiso `audit.view`.
+      El filtro es la PERSONA, porque la pregunta es "qué hizo Rocío", nunca "qué pasó en
+      `businesses`"; y "El sistema" es una opción propia porque **757 de los 848 registros no
+      tienen persona detrás** (son sugerencias que archiva la IA). Abre en lo fuerte — bajas,
+      restauraciones y cambios de acceso —, que es lo que el ruido tapaba.
+      Arreglado de paso: un negocio eliminado salía como "Negocio #12" (spatie tenía
+      `include_soft_deleted_subjects` apagado), y con el filtro en "solo lo fuerte" se pintaban
+      TODAS las filas, que es no destacar nada.
+
+### A5-bis. Logs del sistema, para su norte — HECHO 2026-10-05
+Ella preguntó si debía ser tabla; le dije que NO, con razones: una entrada es un bloque con
+traza, una tabla la trunca o copia basura separada por tabulaciones, y su norte es **copiar y
+pegar el problema**. Así lo hacen Sentry, Telescope y Papertrail: lista colapsable con bloque
+crudo y acción de copiar. Lo que faltaba no era la forma, era el contenido:
+- [x] ~~El copiado lleva CONTEXTO~~: app, entorno, PHP, Laravel, archivo y cuándo se copió.
+      Pegada sola, una entrada abre una ronda de preguntas; con esto se contesta de una.
+      Nunca adivina: solo lo que el proceso sabe de verdad.
+- [x] ~~Repetidos agrupados~~: el mismo error 40 veces es UNA línea que dice 40, con la hora
+      del primero. Se conserva la traza del más nuevo.
+- [x] ~~"Copiar todo"~~: contexto + todas las entradas, para cuando el problema es una
+      secuencia y no una entrada.
+- [x] ~~Bug que introduje y cacé con un test viejo~~: ordenar por timestamp barajaba todo lo
+      escrito dentro del mismo segundo. El agrupado ya conserva el orden de aparición.
 
 ### A6. Módulo "Negocios" — HECHO 2026-10-03
 `/admin/negocios`: la lista con plan, estado, vencimiento y deuda, y la ficha de cada uno
@@ -303,17 +397,26 @@ El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces**
 - [ ] Pie de la landing, correos y errores leyendo dirección y redes de Compañía (el nombre
       ya sale de ahí; faltan los otros datos).
 
-### E6-bis. Lo que quedó del pedido original de Compañía
-NUEVO · **crítico** · regla en `arquitectura-paneles.md` · bloquea a C2 (no hay fila de Compañía en `atendia`)
-- [ ] Crear la fila de Compañía en `atendia` (hoy `Company::current()` devuelve null)
-- [ ] Sumar a `companies` lo que la plataforma muestra y hoy no está ahí: **nombre de marca**
-      y las redes sociales (ya existe la tabla polimórfica `social_links`, falta colgarla de
-      Compañía igual que de un negocio)
-- [ ] Reemplazar `config('app.name')` por el nombre de Compañía en todo texto visible
-- [ ] Pie de la landing, correos y páginas de error leyendo dirección, redes y contacto de
-      Compañía
-- [ ] **Candado**: un guardián que falle si una vista imprime un dato de plataforma que
-      debería salir de Compañía (es la única forma de que no vuelva a soltarse)
+### E6-bis. Lo que quedó del pedido original de Compañía — CERRADO 2026-10-05
+- [x] ~~Crear la fila de Compañía en `atendia`~~ — la cargó ella el 2026-10-05.
+- [x] ~~Marca y redes en `companies`~~ (`brand_name` + `social_links` polimórfica).
+- [x] ~~Reemplazar `config('app.name')` en texto visible~~ — quedaba el `<title>` del correo.
+- [x] ~~**El wordmark estaba escrito a mano en 5 superficies**~~ (logo de la landing, sidebar
+      del panel, wizard, correo y páginas de error), partido con etiquetas:
+      `Atend<span>ia</span>`. Ahora es `<x-site.wordmark>`, que lee `Company::brand()` y
+      acentúa las dos últimas letras, así el día que la marca cambie cambia en los cinco.
+- [x] ~~Pie de la landing con el contacto~~: WhatsApp a un click, correo y dirección con su
+      región, todo de la fila y cada línea se esconde sola si está vacía. Es además la señal
+      de confianza que pide `atendiadesign` §6: nadie paga si no sabe a quién reclamarle.
+- [x] ~~**Una sola puerta para el WhatsApp**~~: `config('atendia.sales_whatsapp')` lo leían la
+      landing, los precios y el ticket de soporte, así que cambiar quién atiende era una
+      variable de entorno y un deploy. Ahora `Company::whatsapp()`, con el env de respaldo
+      mientras la fila esté vacía (igual que `brand()`).
+- [x] ~~**Candado**~~ — el guardián existía y no veía nada: buscaba el literal en el CÓDIGO,
+      así que un nombre partido por etiquetas y escrito con minúscula se le escapaba. Ahora
+      mira el texto IMPRESO (`strip_tags`), sin importar mayúsculas, y solo cuando el nombre
+      va suelto — `AskAtendia` o `config('atendia.x')` no son la marca. También saltea
+      comentarios de varias líneas, que antes reportaba como si imprimieran.
 
 ### E7. Configurar los planes desde el Admin
 NUEVO (la pantalla) sobre cimiento YA HECHO
@@ -425,8 +528,13 @@ datos y los candados están bien (son reales y están probados), lo que no sirve
       el browser test de la pantalla medían el desborde de la PÁGINA, no el de la tabla
       dentro de su card. `AdminAiUsageBrowserTest` ahora mide el `scrollWidth` de cada
       `.pay-table-wrap`, y atrapó 60px de tabla cortados a 1280px que antes pasaban.
-- [ ] **Modelos de IA** (`/admin/ia`) sigue con la misma pseudo-tabla inventada (`aim-row`,
-      `aim-task`, `aim-prices`, `aim-side`). Es el mismo arreglo: pasarla a `.pay-table`.
+- [x] ~~**Modelos de IA** (`/admin/ia`), rehecha el 2026-10-05.~~ Las dos mitades a `.pay-table`:
+      **Tareas** con `TAREA · HOY CORRE · MODELO · RESPALDO` dicho UNA vez (estaba repetido en
+      las 12 filas) y **un solo Guardar** en lugar de doce — guarda únicamente las filas que
+      cambiaron, y valida todas antes de escribir una (media asignación es peor que ninguna
+      cuando el par decide quién le contesta a un cliente). **Precios** en columnas, que es
+      para lo que se abre la pantalla: apilados dentro de cada fila no se podía ver de un
+      barrido que Claude es más barato que GPT-6 en las tres tarifas.
 
 ### E14-bis. Las 3 mejoras de Consumo de IA — HECHAS 2026-10-05
 Ofrecidas al cerrar el rediseño y pedidas por ella en el acto.

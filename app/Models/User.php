@@ -11,6 +11,7 @@ use App\Enums\AdoptionStep;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\PanelNotificationType;
+use App\Traits\SearchesText;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
@@ -22,12 +23,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'whatsapp', 'is_available'])]
@@ -35,7 +39,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SearchesText, SoftDeletes;
 
     /**
      * Mirrors of the column defaults: a user created in this very request
@@ -66,6 +70,19 @@ class User extends Authenticatable
     public function loginDevices(): HasMany
     {
         return $this->hasMany(LoginDevice::class);
+    }
+
+    /**
+     * The last time this person got in, and from where.
+     *
+     * A date alone says when; the place is what turns the column into a
+     * security signal she can act on.
+     *
+     * @return HasOne<LoginActivity, $this>
+     */
+    public function latestLogin(): HasOne
+    {
+        return $this->hasOne(LoginActivity::class)->latestOfMany();
     }
 
     /** @return HasMany<LoginActivity, $this> */
@@ -170,6 +187,92 @@ class User extends Authenticatable
             ->where('email', mb_strtolower($email))
             ->where('deleted_at', '>=', now()->subDays((int) config('atendia.account_restore_days')))
             ->first();
+    }
+
+    /**
+     * The platform's OWN people: whoever may open the admin panel.
+     *
+     * Not every row of `users`. A business owner is a CLIENT and lives in
+     * Negocios; listing them here read as if they were staff, which is a
+     * screen telling a lie about who holds the keys. The gate is the area
+     * permission, so a new staff role joins the list by being granted it.
+     *
+     * @param  string  $state  '' | active | unverified | closed
+     * @return Collection<int, self>
+     */
+    public static function directory(string $search = '', string $state = ''): Collection
+    {
+        return self::withTrashed()
+            ->permission('access-admin-panel')
+            ->with(['roles:id,name', 'latestLogin'])
+            ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name', 'email'], trim($search)))
+            ->when($state === 'active', fn (Builder $q) => $q->whereNull('deleted_at')->whereNotNull('email_verified_at'))
+            ->when($state === 'unverified', fn (Builder $q) => $q->whereNull('deleted_at')->whereNull('email_verified_at'))
+            ->when($state === 'closed', fn (Builder $q) => $q->whereNotNull('deleted_at'))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * The role names that open the admin panel.
+     *
+     * The access screen shows these and no other: almost everybody also holds
+     * `client`, and printing it there turned the column into noise about a
+     * panel this screen is not about.
+     *
+     * @return list<string>
+     */
+    public static function panelRoleNames(): array
+    {
+        return Role::query()
+            ->whereHas('permissions', fn (Builder $query) => $query->where('name', 'access-admin-panel'))
+            ->pluck('name')
+            ->all();
+    }
+
+    /** A role's name in her words, falling back to the stored one. */
+    public static function roleLabel(string $role): string
+    {
+        $key = 'admin.users.roles.'.$role;
+
+        return Lang::has($key) ? __($key) : $role;
+    }
+
+    /**
+     * A staff account still waiting on its address, by id.
+     *
+     * The state is part of the lookup on purpose: resending a link to an
+     * address somebody already verified is a mail that confuses whoever
+     * receives it.
+     */
+    public static function staffAwaitingVerification(int $id): ?self
+    {
+        return self::query()
+            ->permission('access-admin-panel')
+            ->whereKey($id)
+            ->whereNull('email_verified_at')
+            ->first();
+    }
+
+    /**
+     * What the access screen filters by, with the keys its labels use.
+     *
+     * @return array<string, string>
+     */
+    public static function accessStates(): array
+    {
+        return collect(['active', 'unverified', 'closed', 'admin'])
+            ->mapWithKeys(fn (string $state): array => [$state => __('admin.users.states.'.$state)])
+            ->all();
+    }
+
+    /** Where this account stands, in the one word the screen shows. */
+    public string $accessState {
+        get => match (true) {
+            $this->trashed() => 'closed',
+            $this->email_verified_at === null => 'unverified',
+            default => 'active',
+        };
     }
 
     /** Closed accounts count: their address stays reserved for the restore. */

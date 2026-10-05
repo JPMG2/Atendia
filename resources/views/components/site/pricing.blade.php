@@ -3,7 +3,7 @@
 
     // The best demo of the product is the product: Premium's CTA opens a real
     // WhatsApp chat with sales. Unset number = quiet fallback to register.
-    $salesWhatsapp = config('atendia.sales_whatsapp');
+    $salesWhatsapp = \App\Models\Company::whatsapp();
 
     // Every figure comes from the plans table through Plan — prices, the
     // yearly deal, the featured card and the lines — so this card can never

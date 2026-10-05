@@ -100,9 +100,15 @@ test('every screen with form fields declares its rows — client panel included'
         ->filter(function ($file): bool {
             $blade = $file->getContents();
 
+            // In a table cell the COLUMN declares the width, which is why no
+            // field there asks for a `span` — and `span` is the whole reason
+            // this rule exists.
+            $inTable = str_contains($blade, 'pay-table') && ! str_contains($blade, 'span="');
+
             return preg_match('/^\s*<x-inputsform\./m', $blade) === 1
                 && ! str_contains($blade, '<x-catalog.form-row')
-                && ! str_contains($blade, 'config-social-row');
+                && ! str_contains($blade, 'config-social-row')
+                && ! $inTable;
         })
         ->map(fn ($file): string => $file->getFilename());
 

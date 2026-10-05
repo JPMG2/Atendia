@@ -79,9 +79,9 @@ new class extends Component
         return AiModel::assignable(AiModel::providerOf($this->tasks->model[$taskId] ?? null));
     }
 
-    public function assign(int $taskId): void
+    public function assign(): void
     {
-        $this->dispatchNotification($this->tasks->save($taskId));
+        $this->dispatchNotification($this->tasks->saveAll());
 
         unset($this->rows);
     }
@@ -141,53 +141,68 @@ new class extends Component
                 :body="__('admin.ai.tasks_empty')"
             />
         @else
-            <div class="aim-rows">
-                @foreach ($this->rows as $row)
-                    <div class="aim-row" wire:key="task-{{ $row['id'] }}">
-                        <span class="aim-task">
-                            <span class="aim-task-head">
-                                <span class="aim-task-name">{{ $row['label'] }}</span>
-                                @if ($row['mechanical'])
-                                    <span class="status-tag is-neutral">{{ __('admin.ai.mechanical') }}</span>
-                                @endif
-                            </span>
-                            <span class="sup-meta">
-                                <span>{{ __('admin.ai.running') }}:</span>
-                                @forelse ($row['running'] as $provider => $code)
-                                    <span class="font-mono">{{ $provider }} · {{ $code ?? __('admin.ai.provider_default') }}</span>
-                                @empty
-                                    <span class="text-muted">{{ __('admin.ai.no_agent') }}</span>
-                                @endforelse
-                            </span>
-                        </span>
+            {{-- A table, so "Modelo" and "Respaldo" are said once at the top
+            instead of twelve times down the page, and the whole assignment is
+            one decision with one Guardar under it. --}}
+            <div class="pay-table-wrap">
+                <table class="pay-table aim-assign">
+                    <thead>
+                        <tr>
+                            <th>{{ __('admin.ai.columns.task') }}</th>
+                            <th>{{ __('admin.ai.running') }}</th>
+                            <th class="is-pick">{{ __('admin.ai.model') }}</th>
+                            <th class="is-pick">{{ __('admin.ai.fallback') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($this->rows as $row)
+                            <tr wire:key="task-{{ $row['id'] }}">
+                                <td class="is-name" data-label="{{ __('admin.ai.columns.task') }}">
+                                    <span class="aiu-name">
+                                        {{ $row['label'] }}
+                                        @if ($row['mechanical'])
+                                            <span class="status-tag is-neutral">{{ __('admin.ai.mechanical') }}</span>
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="is-running font-mono" data-label="{{ __('admin.ai.running') }}">
+                                    @forelse ($row['running'] as $provider => $code)
+                                        {{ $provider }} · {{ $code ?? __('admin.ai.provider_default') }}
+                                    @empty
+                                        <span class="text-muted">{{ __('admin.ai.no_agent') }}</span>
+                                    @endforelse
+                                </td>
+                                <td class="is-pick" data-label="{{ __('admin.ai.model') }}">
+                                    <x-inputsform.combobox
+                                        size="s"
+                                        :name="'model-'.$row['id']"
+                                        :options="$this->options"
+                                        :placeholder="__('admin.ai.unassigned')"
+                                        :aria-label="__('admin.ai.model')"
+                                        wire:model="tasks.model.{{ $row['id'] }}"
+                                    />
+                                </td>
+                                <td class="is-pick" data-label="{{ __('admin.ai.fallback') }}">
+                                    <x-inputsform.combobox
+                                        size="s"
+                                        :name="'fallback-'.$row['id']"
+                                        :options="$this->fallbackOptions($row['id'])"
+                                        :placeholder="__('admin.ai.no_fallback')"
+                                        :aria-label="__('admin.ai.fallback')"
+                                        wire:model="tasks.fallback.{{ $row['id'] }}"
+                                    />
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                        <span class="aim-pick">
-                            <x-inputsform.combobox
-                                size="s"
-                                span="text"
-                                :label="__('admin.ai.model')"
-                                :name="'model-'.$row['id']"
-                                :options="$this->options"
-                                :placeholder="__('admin.ai.unassigned')"
-                                wire:model="tasks.model.{{ $row['id'] }}"
-                            />
-
-                            <x-inputsform.combobox
-                                size="s"
-                                span="text"
-                                :label="__('admin.ai.fallback')"
-                                :name="'fallback-'.$row['id']"
-                                :options="$this->fallbackOptions($row['id'])"
-                                :placeholder="__('admin.ai.no_fallback')"
-                                wire:model="tasks.fallback.{{ $row['id'] }}"
-                            />
-
-                            <x-ui.button size="sm" variant="secondary" icon="check" wire:click="assign({{ $row['id'] }})">
-                                {{ __('admin.ai.save') }}
-                            </x-ui.button>
-                        </span>
-                    </div>
-                @endforeach
+            <div class="aim-actions">
+                <x-ui.button variant="primary" icon="check" wire:click="assign">
+                    {{ __('admin.ai.save') }}
+                </x-ui.button>
+                <span class="sup-age">{{ __('admin.ai.save_hint') }}</span>
             </div>
         @endif
     </x-ui.card>
@@ -311,38 +326,50 @@ new class extends Component
                 :body="__('admin.ai.models_empty')"
             />
         @else
-            <div class="aim-rows">
-                @foreach ($this->models as $priced)
-                    <div class="aim-row" wire:key="model-{{ $priced->id }}">
-                        <span class="aim-task">
-                            <span class="aim-task-head">
-                                <span class="aim-task-name">{{ $priced->label }}</span>
-                                <span class="status-tag {{ $priced->is_active ? 'is-brand' : 'is-neutral' }}">
-                                    {{ $priced->is_active ? __('admin.ai.active') : __('admin.ai.inactive') }}
-                                </span>
-                            </span>
-                            <span class="sup-meta">
-                                <span class="font-mono">{{ $priced->provider }} · {{ $priced->code }}</span>
-                                @if ($priced->source !== null)
-                                    <span>{{ $priced->source }}</span>
-                                @endif
-                            </span>
-                        </span>
-
-                        <span class="aim-prices sup-meta">
-                            <span>{{ __('admin.ai.columns.prompt') }} <strong class="font-mono">{{ $priced->prompt_per_million }}</strong></span>
-                            <span>{{ __('admin.ai.columns.cached') }} <strong class="font-mono">{{ $priced->cached_per_million }}</strong></span>
-                            <span>{{ __('admin.ai.columns.completion') }} <strong class="font-mono">{{ $priced->completion_per_million }}</strong></span>
-                            <span>{{ __('admin.ai.columns.effective_from') }} <strong class="font-mono">{{ $priced->effective_from->format('d/m/Y') }}</strong></span>
-                        </span>
-
-                        <span class="aim-side">
-                            <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $priced->id }})">
-                                {{ __('admin.ai.edit') }}
-                            </x-ui.button>
-                        </span>
-                    </div>
-                @endforeach
+            {{-- The prices are why this screen is opened: whether a mechanical
+            task can move to a cheaper model. Stacked inside each row they
+            could not be compared, so they are columns read top to bottom. --}}
+            <div class="pay-table-wrap">
+                <table class="pay-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('admin.ai.columns.model') }}</th>
+                            <th class="is-num">{{ __('admin.ai.columns.prompt') }}</th>
+                            <th class="is-num">{{ __('admin.ai.columns.cached') }}</th>
+                            <th class="is-num">{{ __('admin.ai.columns.completion') }}</th>
+                            <th class="is-num">{{ __('admin.ai.columns.effective_from') }}</th>
+                            <th>{{ __('admin.ai.fields.status') }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($this->models as $priced)
+                            <tr wire:key="model-{{ $priced->id }}">
+                                <td class="is-name" data-label="{{ __('admin.ai.columns.model') }}">
+                                    <span class="aiu-name">{{ $priced->label }}</span>
+                                    <span class="aiu-note font-mono">{{ $priced->provider }} · {{ $priced->code }}</span>
+                                    @if ($priced->source !== null)
+                                        <span class="aiu-note">{{ $priced->source }}</span>
+                                    @endif
+                                </td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.prompt') }}">{{ $priced->prompt_per_million }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.cached') }}">{{ $priced->cached_per_million }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.completion') }}">{{ $priced->completion_per_million }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.effective_from') }}">{{ $priced->effective_from->format('d/m/Y') }}</td>
+                                <td data-label="{{ __('admin.ai.fields.status') }}">
+                                    <span class="status-tag {{ $priced->is_active ? 'is-brand' : 'is-neutral' }}">
+                                        {{ $priced->is_active ? __('admin.ai.active') : __('admin.ai.inactive') }}
+                                    </span>
+                                </td>
+                                <td data-label="">
+                                    <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $priced->id }})">
+                                        {{ __('admin.ai.edit') }}
+                                    </x-ui.button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         @endif
     </x-ui.card>

@@ -122,4 +122,8 @@ return [
         'b7' => '¿Me pasás la dirección?',
     ],
 
+    'footer' => [
+        'whatsapp' => 'Escribinos por WhatsApp',
+    ],
+
 ];

@@ -82,7 +82,7 @@ test('assigning a model writes the row the agents read', function (): void {
 
     Livewire::test('admin.ai.index')
         ->set("tasks.model.{$task->id}", 'modelo-barato')
-        ->call('assign', $task->id)
+        ->call('assign')
         ->assertHasNoErrors();
 
     expect($task->refresh()->model_code)->toBe('modelo-barato')
@@ -98,7 +98,7 @@ test('a fallback on the same lab is rejected instead of silently dropped', funct
     Livewire::test('admin.ai.index')
         ->set("tasks.model.{$task->id}", 'modelo-primero')
         ->set("tasks.fallback.{$task->id}", 'modelo-hermano')
-        ->call('assign', $task->id)
+        ->call('assign')
         ->assertHasErrors('fallback_model_code');
 
     expect($task->refresh()->fallback_model_code)->toBeNull();
@@ -113,13 +113,45 @@ test('a fallback on another lab becomes the second attempt', function (): void {
     Livewire::test('admin.ai.index')
         ->set("tasks.model.{$task->id}", 'modelo-primero')
         ->set("tasks.fallback.{$task->id}", 'modelo-respaldo')
-        ->call('assign', $task->id)
+        ->call('assign')
         ->assertHasNoErrors();
 
     expect(AiTask::ladderFor('FaqDrafter'))->toBe([
         'openai' => 'modelo-primero',
         'anthropic' => 'modelo-respaldo',
     ]);
+});
+
+test('one Guardar saves every task that changed, and only those', function (): void {
+    aiAdmin();
+    aiPriced('openai', 'modelo-barato');
+
+    $moved = AiTask::create(['key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes']);
+    $alsoMoved = AiTask::create(['key' => 'DigestWriter', 'label' => 'Arma el resumen del día']);
+    $untouched = AiTask::create(['key' => 'ReplyTranslator', 'label' => 'Traduce una respuesta']);
+
+    Livewire::test('admin.ai.index')
+        ->set("tasks.model.{$moved->id}", 'modelo-barato')
+        ->set("tasks.model.{$alsoMoved->id}", 'modelo-barato')
+        ->call('assign')
+        ->assertHasNoErrors();
+
+    expect($moved->refresh()->model_code)->toBe('modelo-barato')
+        ->and($alsoMoved->refresh()->model_code)->toBe('modelo-barato')
+        // The row nobody touched is not written: a save that rewrites the whole
+        // table makes every audit entry a lie about what she actually changed.
+        ->and($untouched->refresh()->model_code)->toBeNull();
+});
+
+test('saving with nothing changed says so instead of claiming a save', function (): void {
+    aiAdmin();
+    aiPriced('openai', 'modelo-barato');
+    AiTask::create(['key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes']);
+
+    Livewire::test('admin.ai.index')
+        ->call('assign')
+        ->assertHasNoErrors()
+        ->assertDispatched('notify');
 });
 
 test('a new price is a new row, so what was consumed keeps its own', function (): void {

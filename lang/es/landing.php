@@ -418,6 +418,9 @@ return [
         'link_faq' => 'Preguntas',
         'copyright' => 'Hecho para los que atienden.',
         'language' => 'Idioma',
+        'col_contact' => 'Contacto',
+        'whatsapp' => 'Escríbenos por WhatsApp',
+        'whatsapp_text' => 'Hola, quiero saber más sobre :brand.',
     ],
 
     'phone' => [

@@ -10,6 +10,7 @@ use App\Mail\SupportTicketOpened as SupportTicketOpenedMail;
 use App\Messaging\Channels\Email;
 use App\Messaging\Channels\WhatsApp;
 use App\Messaging\WhatsApp\SupportTicketOpened as SupportTicketOpenedMessage;
+use App\Models\Company;
 use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -109,7 +110,7 @@ class CreateSupportTicket
             }
         }
 
-        $whatsapp = preg_replace('/\D+/', '', (string) config('atendia.sales_whatsapp')) ?? '';
+        $whatsapp = (string) Company::whatsapp();
 
         if ($whatsapp !== '') {
             try {

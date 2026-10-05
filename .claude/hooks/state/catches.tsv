@@ -11,3 +11,16 @@
 2026-10-04	check-comment-golden-rules	app/Traits/ProbeLongComment.php
 2026-10-04	check-comment-golden-rules	resources/views/components/admin/home/⚡index.blade.php
 2026-10-05	check-php-getter-golden-rules	app/Classes/Main/AiTrend.php
+2026-10-05	check-comment-golden-rules	tests/Feature/GoldenRulesBrandSourceTest.php
+2026-10-05	check-comment-golden-rules	tests/Feature/GoldenRulesBrandSourceTest.php
+2026-10-05	check-comment-golden-rules	app/Providers/AppServiceProvider.php
+2026-10-05	check-catalog-form-layout	resources/views/components/admin/settings/⚡index.blade.php
+2026-10-05	check-comment-golden-rules	tests/Feature/GoldenRulesFormLayoutTest.php
+2026-10-05	check-panel-screen	resources/views/components/admin/users/⚡index.blade.php
+2026-10-05	check-blade-query-golden-rules	resources/views/components/admin/users/⚡index.blade.php
+2026-10-05	check-comment-golden-rules	database/seeders/RolesAndPermissionsSeeder.php
+2026-10-05	check-comment-golden-rules	database/seeders/RolesAndPermissionsSeeder.php
+2026-10-05	check-blade-query-golden-rules	resources/views/components/admin/roles/⚡index.blade.php
+2026-10-05	check-blade-query-golden-rules	resources/views/components/admin/roles/⚡index.blade.php
+2026-10-05	check-comment-golden-rules	config/permission.php
+2026-10-05	check-blade-golden-rules	resources/views/components/configuration/⚡logs.blade.php

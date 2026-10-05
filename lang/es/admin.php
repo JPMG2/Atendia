@@ -20,8 +20,11 @@ return [
         'fallback' => 'Respaldo',
         'unassigned' => 'El del agente',
         'no_fallback' => 'Sin respaldo',
-        'save' => 'Guardar',
+        'save' => 'Guardar las asignaciones',
+        'save_hint' => 'Se guardan juntas las tareas que hayas cambiado.',
         'saved' => 'Listo. La tarea ya corre con ese modelo.',
+        'saved_count' => 'Listo. :count tarea ya corre con el modelo que elegiste.|Listo. :count tareas ya corren con los modelos que elegiste.',
+        'nothing_changed' => 'No cambiaste ninguna tarea.',
 
         'models' => 'Modelos y precios',
         'models_sub' => 'Un precio nuevo es una fila nueva: lo ya consumido conserva el suyo.',
@@ -36,6 +39,8 @@ return [
         'inactive' => 'Inactivo',
 
         'columns' => [
+            'task' => 'Tarea',
+            'model' => 'Modelo',
             'prompt' => 'Entrada',
             'cached' => 'Cacheada',
             'completion' => 'Salida',
@@ -54,6 +59,300 @@ return [
             'source' => 'De dónde salió el precio',
             'source_hint' => 'Para poder auditarlo después, ej. "Precio publicado, verificado el 04/10".',
             'status' => 'Estado',
+        ],
+    ],
+
+    'audit' => [
+        'title' => 'Auditoría',
+        'sub' => 'Quién hizo qué. Abre en lo que no se deshace, no en el ruido de todos los días.',
+        'count' => ':count movimiento|:count movimientos',
+        'empty' => 'No hay movimientos con ese filtro.',
+
+        'who' => 'Quién',
+        'what' => 'Qué pasó',
+        'when' => 'Cuándo',
+        'on' => 'Sobre qué',
+        'anybody' => 'Cualquiera',
+        'system' => 'El sistema',
+        'strong_only' => 'Qué mostrar',
+        'strong_on' => 'Solo lo fuerte',
+        'strong_off' => 'Todo',
+
+        'actions' => [
+            'created' => 'Creó',
+            'updated' => 'Modificó',
+            'deleted' => 'Eliminó',
+            'restored' => 'Restauró',
+            'granted' => 'Dio acceso',
+            'revoked' => 'Quitó acceso',
+        ],
+
+        'subjects' => [
+            'Business' => 'Negocio',
+            'User' => 'Persona',
+            'Role' => 'Rol',
+            'Product' => 'Producto',
+            'Service' => 'Servicio',
+            'SuggestedService' => 'Servicio sugerido',
+            'Currency' => 'Moneda',
+            'ServiceType' => 'Tipo de servicio',
+            'ServiceModality' => 'Modalidad de servicio',
+            'ServiceAttribute' => 'Atributo de servicio',
+        ],
+    ],
+
+    'roles' => [
+        'title' => 'Roles y permisos',
+        'sub' => 'Qué puertas abre cada trabajo. Un rol nuevo nace acá, sin tocar código.',
+        'new' => 'Nuevo rol',
+        'edit' => 'Editar',
+        'delete' => 'Eliminar',
+        'save' => 'Guardar el rol',
+        'cancel' => 'Cancelar',
+        'saved' => 'Listo. El rol :role quedó guardado.',
+        'deleted' => 'El rol :role se eliminó.',
+        'in_use' => 'No se puede eliminar: lo tienen :count persona(s). Primero cambiales el rol.',
+        'protected' => 'Ese rol no se edita desde una pantalla.',
+        'protected_tag' => 'No se edita',
+        'panel_implicit' => 'Entrar al panel va incluido en todo rol: lo que elegís es qué ve adentro.',
+        'opens_everything' => 'Abre todo, incluso lo que se agregue mañana.',
+        'opens_count' => 'Abre :count área|Abre :count áreas',
+
+        'delete_title' => 'Eliminar el rol',
+        'delete_body' => '¿Eliminamos el rol :role? No lo tiene nadie, así que no deja a ninguna persona afuera.',
+        'delete_accept' => 'Eliminar el rol',
+
+        'columns' => [
+            'role' => 'Rol',
+            'people' => 'Personas',
+            'opens' => 'Qué abre',
+        ],
+
+        'fields' => [
+            'name' => 'Clave del rol',
+            'name_hint' => 'En minúsculas y sin espacios, como la usa el código: soporte, diseno, call-center.',
+            'permissions' => 'Permisos',
+        ],
+
+        'areas' => [
+            'businesses' => 'Negocios',
+            'payments' => 'Cobros',
+            'support' => 'Soporte',
+            'moderation' => 'Moderación',
+            'testimonials' => 'Testimonios',
+            'ai' => 'Inteligencia artificial',
+            'adoption' => 'Adopción',
+            'catalog' => 'Catálogos',
+            'company' => 'Compañía',
+            'integrations' => 'Integraciones',
+            'settings' => 'Ajustes de la plataforma',
+            'users' => 'Usuarios',
+            'roles' => 'Roles y permisos',
+            'logs' => 'Logs del sistema',
+        ],
+
+        // Anidadas: la clave de un permiso lleva punto y `__()` lo lee como
+        // profundidad, así que 'businesses.view' nunca se encontraría.
+        'permissions' => [
+            'businesses' => [
+                'view' => 'Ver los negocios y su ficha',
+                'manage' => 'Suspender o reactivar un negocio',
+            ],
+            'payments' => [
+                'view' => 'Ver los pagos y sus comprobantes',
+                'verify' => 'Acreditar o rechazar un pago',
+            ],
+            'support' => ['view' => 'Atender los reportes de los negocios'],
+            'moderation' => ['view' => 'Ver lo que atrapó el filtro de contenido'],
+            'testimonials' => ['moderate' => 'Aprobar o rechazar testimonios'],
+            'ai' => [
+                'view' => 'Ver cuánto consume la IA y qué cuesta',
+                'manage' => 'Elegir el modelo de cada tarea y sus precios',
+            ],
+            'adoption' => ['view' => 'Ver dónde se traba cada negocio nuevo'],
+            'catalogs' => ['manage' => 'Entrar al hub de catálogos'],
+            'catalog' => [
+                'country' => 'Países',
+                'province' => 'Provincias',
+                'region' => 'Regiones',
+                'currency' => 'Monedas',
+                'tax-condition' => 'Condiciones fiscales',
+                'status' => 'Estados',
+                'social-network' => 'Redes sociales',
+                'business-sector' => 'Rubros',
+                'business-activity' => 'Actividades',
+                'service-modality' => 'Modalidades de servicio',
+                'service-attribute' => 'Atributos de servicio',
+                'service-type' => 'Tipos de servicio',
+            ],
+            'company' => ['manage' => 'Editar los datos de la compañía'],
+            'integrations' => ['view' => 'Ver el estado de las integraciones'],
+            'settings' => ['manage' => 'Cambiar los ajustes de la plataforma'],
+            'users' => ['view' => 'Ver quién puede entrar al panel'],
+            'manage-admin-users' => 'Crear usuarios y darles acceso',
+            'roles' => ['manage' => 'Crear y editar roles'],
+            'logs' => ['view' => 'Leer los logs del sistema'],
+        ],
+    ],
+
+    'users' => [
+        'title' => 'Usuarios y accesos',
+        'sub' => 'Quién puede entrar a la plataforma, y quién entra de verdad.',
+        'count' => ':count persona|:count personas',
+        'empty' => 'Todavía no hay ninguna cuenta.',
+        'no_match' => 'Ninguna persona coincide con lo que buscaste.',
+
+        'search' => 'Buscar',
+        'search_placeholder' => 'Nombre o correo',
+        'all_states' => 'Todos los estados',
+
+        'person' => 'Persona',
+        'role' => 'Rol',
+        'state' => 'Estado',
+        'two_factor' => 'Doble factor',
+        'two_factor_on' => 'Activo',
+        'last_login' => 'Último acceso',
+        'never' => 'Nunca entró',
+
+        'new' => 'Nuevo usuario',
+        'save' => 'Crear el usuario',
+        'cancel' => 'Cancelar',
+        'no_password' => 'No se elige contraseña: la persona recibe un correo y la define ella.',
+        'created' => 'Listo. Le mandamos el correo de acceso a :email.',
+        'resend' => 'Reenviar acceso',
+        'verification_sent' => 'Correo reenviado a :email.',
+
+        'fields' => [
+            'name' => 'Nombre',
+            'email' => 'Correo',
+            'email_hint' => 'Ahí le llega el acceso. Una dirección de una cuenta cerrada sigue reservada.',
+            'role' => 'Rol',
+        ],
+
+        'roles' => [
+            'admin' => 'Super - Admin',
+            'support' => 'Soporte',
+        ],
+
+        'states' => [
+            'active' => 'Activa',
+            'unverified' => 'Sin verificar',
+            'closed' => 'Cerrada',
+        ],
+    ],
+
+    'settings' => [
+        'title' => 'Ajustes de la plataforma',
+        'sub' => 'Lo que cambia cómo se comporta el producto, sin tocar código ni esperar un deploy.',
+        'save' => 'Guardar los ajustes',
+        'save_hint' => 'Se guardan juntos los que hayas cambiado.',
+        'restore' => 'Volver a los valores del código',
+        'saved' => 'Listo. :count ajuste ya está en vigencia.|Listo. :count ajustes ya están en vigencia.',
+        'nothing_changed' => 'No cambiaste ningún ajuste.',
+        'moved' => ':count ajuste cambiado|:count ajustes cambiados',
+
+        'columns' => [
+            'name' => 'Ajuste',
+            'value' => 'Valor',
+            'default' => 'Trae el código',
+        ],
+
+        'weekdays' => [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+            7 => 'Domingo',
+        ],
+
+        'groups' => [
+            'sends' => [
+                'title' => 'Cuándo salen los mensajes automáticos',
+                'sub' => 'Cada hora es la del negocio, no la del servidor: las 09:15 en Caracas son las 09:15 en Caracas.',
+            ],
+            'analysis' => [
+                'title' => 'Cuándo se da una charla por terminada',
+                'sub' => 'Una charla terminada es la que la IA lee entera para sacar temas y ánimo.',
+            ],
+            'handoff' => [
+                'title' => 'Cuando la IA le pasa la charla a una persona',
+                'sub' => 'Qué tan encima se le recuerda al equipo, y cuándo se da por ida a la persona.',
+            ],
+            'billing' => [
+                'title' => 'Cobros',
+                'sub' => 'Cuánto aire tiene un negocio después de la fecha de pago antes de que su asistente calle.',
+            ],
+            'referral' => [
+                'title' => 'Referidos',
+                'sub' => 'Lo que recibe un negocio que llega invitado por otro.',
+            ],
+        ],
+
+        // Anidadas, no con el punto en la clave: `__()` lee el punto como
+        // profundidad, así que 'analysis.idle_hours' nunca se encontraría.
+        'keys' => [
+            'schedule' => [
+                'birthday_greetings' => [
+                    'label' => 'Saludo de cumpleaños',
+                    'hint' => 'A qué hora le llega el saludo al cliente del negocio que cumple años.',
+                ],
+                'whatsapp_digest' => [
+                    'label' => 'Resumen del día',
+                    'hint' => 'A qué hora recibe el negocio por WhatsApp el resumen de su jornada.',
+                ],
+                'billing_cycle' => [
+                    'label' => 'Avisos de pago',
+                    'hint' => 'A qué hora salen los recordatorios de pago y los avisos de gracia.',
+                ],
+                'knowledge_digest' => [
+                    'time' => [
+                        'label' => 'Resumen semanal: hora',
+                        'hint' => 'A qué hora llega el recap de lo que la IA aprendió esa semana.',
+                    ],
+                    'weekday' => [
+                        'label' => 'Resumen semanal: día',
+                        'hint' => 'Qué día de la semana llega ese recap.',
+                    ],
+                ],
+                'appointment_reminder_hours' => [
+                    'label' => 'Recordatorio de turno',
+                    'hint' => 'Cuántas horas antes del turno se le avisa al cliente.',
+                ],
+            ],
+            'analysis' => [
+                'idle_hours' => [
+                    'label' => 'Silencio para dar por terminada una charla',
+                    'hint' => 'Horas sin que nadie escriba. Más bajo, la IA analiza antes pero puede cortar una charla viva; más alto, los temas del día aparecen más tarde.',
+                ],
+            ],
+            'handoff' => [
+                'reminder_minutes' => [
+                    'label' => 'Recordatorio al equipo',
+                    'hint' => 'Minutos sin que nadie conteste una charla derivada antes de volver a avisarle al equipo.',
+                ],
+                'customer_idle_hours' => [
+                    'label' => 'Cliente que no volvió',
+                    'hint' => 'Horas sin respuesta del cliente para dar la derivación por cerrada.',
+                ],
+            ],
+            'billing' => [
+                'grace_days' => [
+                    'label' => 'Días de gracia',
+                    'hint' => 'Días después del vencimiento en los que el asistente sigue atendiendo. Pasados, se pausa.',
+                ],
+            ],
+            'referral' => [
+                'invited_trial_days' => [
+                    'label' => 'Prueba del invitado',
+                    'hint' => 'Días de prueba que recibe un negocio que llega por el link de otro.',
+                ],
+                'founders' => [
+                    'label' => 'Cupos de fundador',
+                    'hint' => 'Cuántos negocios entran como fundadores antes de que el beneficio se cierre.',
+                ],
+            ],
         ],
     ],
 

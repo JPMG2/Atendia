@@ -10,7 +10,7 @@ load app.css — the one place the brand lives outside the tokens. --}}
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
-    <title>{{ config('app.name') }}</title>
+    <title>{{ \App\Models\Company::brand() }}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #eef4f1; -webkit-text-size-adjust: 100%">
     @if ($preheader)
@@ -42,7 +42,8 @@ load app.css — the one place the brand lives outside the tokens. --}}
                                     letter-spacing: -0.03em;
                                     color: #0b5440;
                                 "
-                            >Atend<span style="color: #0ea47a">ia</span></span>
+                                ><x-site.wordmark accent="#0ea47a"
+                            /></span>
                         </td>
                     </tr>
                     <tr>

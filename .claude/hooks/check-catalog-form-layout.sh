@@ -87,7 +87,15 @@ case "$file" in
         esac
 
         if [ "$skip" -eq 0 ]; then
-            if grep -qE '^\s*<x-inputsform\.' "$file" \
+            # En una celda de tabla el ancho lo declara la COLUMNA, por eso esos
+            # campos no piden `span=` — y `span=` es la razón de esta regla.
+            in_table=0
+            if grep -q 'pay-table' "$file" && ! grep -q 'span="' "$file"; then
+                in_table=1
+            fi
+
+            if [ "$in_table" -eq 0 ] \
+                && grep -qE '^\s*<x-inputsform\.' "$file" \
                 && ! grep -q '<x-catalog.form-row' "$file" \
                 && ! grep -q 'config-social-row' "$file"; then
                 violations="${violations}- Tiene campos <x-inputsform.*> sin UNA fila declarada. Los span= son INERTES fuera de .form-row: la fila queda corta. Envolvé los campos (toolbars incluidas) en <x-catalog.form-row>.\n"

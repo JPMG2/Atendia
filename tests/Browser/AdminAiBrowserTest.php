@@ -55,6 +55,17 @@ test('the ai models screen holds at every width in both themes', function (strin
     $overflow = $page->script('document.documentElement.scrollWidth - window.innerWidth');
 
     expect((int) $overflow)->toBeLessThanOrEqual(0);
+
+    // The page not overflowing says nothing about the tables: a column cut off
+    // inside its own card hides behind a scrollbar nobody discovers, and the
+    // page-level check passes green on exactly that.
+    $cut = $page->script(
+        'Array.from(document.querySelectorAll(".pay-table-wrap"))
+            .map(w => w.scrollWidth - w.clientWidth)
+            .reduce((a, b) => Math.max(a, b), 0)'
+    );
+
+    expect((int) $cut)->toBe(0);
 })->with([
     'desktop light' => ['desktop', 1280, 900, false],
     'desktop dark' => ['desktop', 1280, 900, true],

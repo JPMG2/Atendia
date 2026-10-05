@@ -193,12 +193,21 @@ class Menu extends Model
      */
     protected static function filterByPermission(Collection $items, ?Authenticatable $user): Collection
     {
+        // Which ones are GROUPS, before the filter empties any of them.
+        $groups = $items->filter(fn (Menu $item): bool => $item->childrenRecursive->isNotEmpty())->pluck('id')->all();
+
         return $items
             ->filter(fn (Menu $item): bool => $item->isVisibleTo($user))
             ->each(fn (Menu $item) => $item->setRelation(
                 'childrenRecursive',
                 self::filterByPermission($item->childrenRecursive, $user),
             ))
+            // A group is a heading over its children and has no route of its
+            // own: emptied by permissions it opened nothing, and "Plataforma"
+            // stayed on the menu of a support person who could enter none of it.
+            ->reject(fn (Menu $item): bool => $item->route_name === null
+                && in_array($item->id, $groups, true)
+                && $item->childrenRecursive->isEmpty())
             ->values();
     }
 }

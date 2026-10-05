@@ -58,10 +58,54 @@ class LogReader
             return collect();
         }
 
-        return $this->parse($this->tail($this->directory().'/'.$file))
-            ->reverse()
-            ->values()
-            ->take($limit);
+        return $this->group(
+            $this->parse($this->tail($this->directory().'/'.$file))->reverse()->values()
+        )->take($limit);
+    }
+
+    /**
+     * The same error forty times is ONE line that says forty, not forty
+     * blocks burying everything else. The newest occurrence is the one kept:
+     * its trace is the one worth pasting.
+     *
+     * @param  Collection<int, LogEntryDto>  $entries
+     * @return Collection<int, LogEntryDto>
+     */
+    private function group(Collection $entries): Collection
+    {
+        return $entries
+            ->groupBy(fn (LogEntryDto $entry): string => $entry->level.'|'.$entry->message)
+            ->map(function (Collection $same): LogEntryDto {
+                $newest = $same->first();
+
+                return $same->count() === 1
+                    ? $newest
+                    : $newest->repeated($same->count(), (string) $same->last()->timestamp);
+            })
+            // NOT re-sorted: grouping already keeps the order they appeared
+            // in, and sorting by timestamp shuffles everything written inside
+            // the same second — which is most of a busy log.
+            ->values();
+    }
+
+    /**
+     * What a person reading the paste needs before the trace itself.
+     *
+     * Pasted alone, an entry starts a round of questions — which PHP, which
+     * environment, which install. This is the answer to all of them, and it
+     * never guesses: only what this process really knows.
+     */
+    public function context(string $file): string
+    {
+        return implode("\n", [
+            '--- '.__('logs.context.title').' ---',
+            __('logs.context.app').': '.config('app.name').' · '.config('app.url'),
+            __('logs.context.environment').': '.app()->environment(),
+            __('logs.context.versions').': PHP '.PHP_VERSION.' · Laravel '.app()->version(),
+            __('logs.context.file').': '.$file,
+            __('logs.context.copied_at').': '.now()->format('d/m/Y H:i:s T'),
+            '---',
+        ]);
     }
 
     private function directory(): string

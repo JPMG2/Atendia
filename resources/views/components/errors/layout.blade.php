@@ -37,7 +37,8 @@ compiled CSS tokens and static assets. --}}
             <span
                 class="font-display"
                 style="font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: var(--text-strong)"
-            >Atend<span class="text-brand">ia</span></span>
+                ><x-site.wordmark accent="var(--brand)"
+            /></span>
         </a>
     </header>
 

@@ -35,7 +35,9 @@ return [
      * If set to true, the subject relationship on activities
      * will include soft deleted models.
      */
-    'include_soft_deleted_subjects' => false,
+    // On: the whole point of the trail is the row that outlived its subject.
+    // "Negocio #12" is not an answer to "who deleted Panadería del Centro".
+    'include_soft_deleted_subjects' => true,
 
     /*
      * This model will be used to log activity.

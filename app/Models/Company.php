@@ -67,6 +67,22 @@ class Company extends Model
     }
 
     /**
+     * The number a person writes to, digits only and ready for a wa.me link.
+     *
+     * One door: the landing, the pricing cards and a support ticket were each
+     * reading `atendia.sales_whatsapp`, so changing who answers meant an env
+     * var and a deploy. The env stays as the fallback while nobody saved the
+     * screen, the same way the brand name works.
+     */
+    public static function whatsapp(): ?string
+    {
+        $number = self::current()?->phone ?: config('atendia.sales_whatsapp');
+        $digits = preg_replace('/\D+/', '', (string) $number) ?? '';
+
+        return $digits === '' ? null : $digits;
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

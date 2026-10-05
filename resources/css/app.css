@@ -1905,8 +1905,11 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      680px and the sidebar eats 264px until it turns into a drawer at 860px,
      which left the admin's MONTO cut at 900px. One breakpoint, both gaps. */
   @media (max-width:991px) {
-    .pay-table-wrap { overflow-x:visible; }
-    .pay-table { min-width:0; }
+    .pay-table-wrap { overflow-x:visible; min-width:0; }
+    /* Stacked there are no columns left to honour, so the table must take the
+    width it is given: left to its own min-content it pushed the page 4px wide
+    and the horizontal scroll came back on a phone. */
+    .pay-table { min-width:0; max-width:100%; table-layout:fixed; }
     .pay-table thead { display:none; }
     .pay-table tr { display:block; padding:10px 0; border-bottom:1px solid var(--border-subtle); }
     .pay-table tr:last-child { border-bottom:none; }
@@ -1924,6 +1927,16 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     name cell is a block: its parts belong under each other. */
     .pay-table td.is-name { display:block; }
     .pay-table td.is-name::before { display:block; margin-bottom:4px; }
+    /* A column width is a desktop idea. Stacked, a field kept at 220px minus
+    its own label was left showing "El del ag": the control takes the row. */
+    /* A pill is a flex item, and a flex item refuses to shrink under its own
+    text: a long role name pushed straight off the right edge of a phone. */
+    .pay-table td .status-tag { min-width:0; flex-wrap:wrap; }
+    /* An address has no spaces to break at, so on a phone it ran past its own
+    cell: the element fit, its text did not. Any long string may break here. */
+    .pay-table td { overflow-wrap:anywhere; }
+    .pay-table td.is-pick { display:block; width:auto; }
+    .pay-table td.is-pick::before { display:block; margin-bottom:4px; }
     .pay-table tfoot th, .pay-table tfoot td { background:none; border-top:none; }
     .pay-table tfoot tr { border-bottom:none; padding:10px 12px;
                           border-radius:var(--radius-md); background:var(--surface-sunken); }
@@ -2291,7 +2304,22 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     border-color var(--dur-fast) var(--ease-out); }
   .row-link:hover { color:var(--brand); border-bottom-color:var(--brand); }
   .aiu-cost-now { font-weight:600; color:var(--text-strong); }
-  .aim-actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
+  .aim-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:16px; }
+  /* The permission matrix: one block per area, its keys in columns so a job
+  is read as a shape and not as a list forty checkboxes long. */
+  .role-area { margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle); }
+  .role-area:first-of-type { border-top:none; padding-top:0; }
+  .role-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px 20px; margin-top:8px; }
+  /* A field inside a cell cannot ask for its width with `span`: that only
+  works inside a `.form-row`. The column declares it, once, in the header. */
+  .aim-assign th.is-pick, .aim-assign td.is-pick { width:220px; }
+  .aim-assign td { vertical-align:middle; }
+  /* The pair is one name, not two words: broken over two lines it doubled
+  every row of the table and read as a different model on each line. */
+  .aim-assign td.is-running { white-space:nowrap; }
+  /* Here the hint IS the column: capped at 260px it wrapped to four lines
+  beside an empty half-table. The settings screen lets it use the cell. */
+  .aim-assign td.is-name .aiu-note { max-width:none; }
 
   @media (max-width:900px) {
     .aim-row { flex-direction:column; gap:10px; }
@@ -2616,6 +2644,14 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .log-badge.is-warning { color:var(--warning); background:var(--warning-soft); }
   .log-badge.is-info { color:var(--info); background:var(--info-soft); }
   .log-badge.is-debug { color:var(--text-muted); background:var(--surface-sunken); }
+  /* How many times the same headline came back: the one number that tells a
+  one-off apart from something that has been failing all afternoon. */
+  .log-repeats { font-size:var(--text-2xs); font-weight:700; white-space:nowrap;
+    padding:2px 8px; border-radius:999px; color:var(--warning); background:var(--warning-soft); }
+  .log-head-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  /* Read by the clipboard, never by the eye. */
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
   .log-time { font-size:var(--text-xs); color:var(--text-subtle); white-space:nowrap; }
   .log-message { flex:1; min-width:0; font-size:var(--text-sm); color:var(--text-body);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

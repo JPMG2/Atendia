@@ -138,7 +138,9 @@ return [
      *
      * To enable, set to true, and then create listeners to watch these events.
      */
-    'events_enabled' => false,
+    // On: an access change is what an audit has to be able to reconstruct,
+    // and the pivot fires no model events. App\Listeners\RecordAccessChange.
+    'events_enabled' => true,
 
     /*
      * Teams Feature.

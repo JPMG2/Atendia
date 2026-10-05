@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\BrandAwareTranslator;
 use App\Services\Tenant;
@@ -27,6 +28,7 @@ use Livewire\Livewire;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -66,10 +68,30 @@ class AppServiceProvider extends ServiceProvider
         $this->configureLivewire();
         $this->configurePasswords();
         $this->configureVectorSearch();
+        $this->applyPlatformSettings();
         Model::preventLazyLoading(! app()->isProduction());
         Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
         Model::preventAccessingMissingAttributes(! app()->isProduction());
         Blaze::optimize()->in(resource_path('views/components'));
+    }
+
+    /**
+     * What she edited in Ajustes wins over what the file says.
+     *
+     * The override lands on the CONFIG, so the fifteen places already reading
+     * `config('atendia.…')` keep working and the file stays as the default.
+     * Wrapped: a panel that cannot boot before its migration ran is a panel
+     * nobody can install.
+     */
+    private function applyPlatformSettings(): void
+    {
+        try {
+            foreach (PlatformSetting::overrides() as $key => $value) {
+                config()->set('atendia.'.$key, $value);
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     /**

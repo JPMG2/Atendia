@@ -32,7 +32,21 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
         ];
 
-        foreach ([...$areaPermissions, ...$catalogPermissions] as $permission) {
+        // One key per door of the admin panel. Until 2026-10-05 every route
+        // asked only for the area key, so anyone let in saw the whole panel:
+        // support could not work a ticket without reaching the settings.
+        $adminPermissions = [
+            'businesses.view', 'businesses.manage',
+            'payments.view', 'payments.verify',
+            'moderation.view', 'testimonials.moderate',
+            'support.view',
+            'ai.view', 'ai.manage',
+            'adoption.view',
+            'catalogs.manage', 'company.manage', 'integrations.view',
+            'settings.manage', 'users.view', 'logs.view', 'roles.manage', 'audit.view',
+        ];
+
+        foreach ([...$areaPermissions, ...$catalogPermissions, ...$adminPermissions] as $permission) {
             Permission::findOrCreate($permission);
         }
 
@@ -40,16 +54,27 @@ class RolesAndPermissionsSeeder extends Seeder
         // owner's; an invited agent only works the inbox.
         Permission::findOrCreate('manage-business');
 
+        // Who may give somebody else a key to the admin panel. It is its own
+        // permission so the owner can hand the panel to a support person
+        // without handing over the ability to create more of them.
+        Permission::findOrCreate('manage-admin-users');
+
         $admin = Role::findOrCreate('admin');
         $client = Role::findOrCreate('client');
         $agent = Role::findOrCreate('agent');
+
+        // Staff: the panel WITHOUT super-admin, which stays seeder-only
+        // because `admin` passes every gate. Least privilege, her own example:
+        // works the claims, looks up the business, no catalogs and no settings.
+        $support = Role::findOrCreate('support');
+        $support->syncPermissions(['access-admin-panel', 'support.view', 'businesses.view']);
 
         // The client reaches its own panel. The admin also passes through
         // Gate::before, but gets the permissions explicitly so the middleware
         // lets it through without leaning on super-admin alone.
         $client->givePermissionTo(['access-client-app', 'manage-business']);
         $agent->givePermissionTo('access-client-app');
-        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', 'manage-business', ...$catalogPermissions]);
+        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', 'manage-business', 'manage-admin-users', ...$catalogPermissions, ...$adminPermissions]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
