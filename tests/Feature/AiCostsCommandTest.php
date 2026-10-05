@@ -55,6 +55,7 @@ test('the report shows each client volume and real cost, split by kind', functio
     // change cannot revalue this month (E12, 2026-10-03). Embeddings and audio
     // are not priced per chat model and stay in config.
     AiModel::create([
+        'provider' => 'openai',
         'code' => 'gpt-6-astra',
         'label' => 'GPT-6 Astra',
         'effective_from' => now()->startOfMonth()->subYear(),

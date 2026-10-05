@@ -5,6 +5,7 @@ GoldenRulesReportsTest — no other view may link a report. --}}
     'report',
     'format' => 'pdf',
     'size' => 'md',
+    'params' => [], // what the report needs to answer, e.g. ['mes' => '2026-10']
 ])
 
 @php
@@ -14,7 +15,7 @@ GoldenRulesReportsTest — no other view may link a report. --}}
 @endphp
 
 <a
-    href="{{ route('reports.show', ['report' => $report, 'format' => $format]) }}"
+    href="{{ route('reports.show', array_merge(['report' => $report, 'format' => $format], $params)) }}"
     @if ($format === 'pdf') target="_blank" rel="noopener" @endif
     aria-label="{{ __('reports.aria.'.$format) }}"
     {{ $attributes->merge(['class' => 'btn btn-export '.$sizeClass]) }}

@@ -2,7 +2,8 @@
 #
 # Hook PostToolUse (Write|Edit): un agente de app/Ai/Agents cumple el contrato
 # y la economía de tokens en el momento de escribirlo (exit 2 si no).
-#  - Todo agente declara #[Provider] y #[Model] (el costo se elige, no se hereda).
+#  - Todo agente declara #[Provider] y #[Model] (el costo se elige, no se hereda)
+#    y usa RunsAssignedModel, para que la fila de ai_tasks pueda pisar ese par.
 #  - Nadie arma su propio reloj ("Hoy es", "FECHA Y HORA", now()).
 #  - Un agente Conversational usa AssistantContract (grounding + clock), con
 #    el reloj ÚLTIMO en las instrucciones, y acota su memoria (MEMORY_LIMIT).
@@ -27,6 +28,7 @@ errors=""
 
 grep -q '#\[Provider(' "$file" || errors="$errors\n- Falta #[Provider(...)]."
 grep -q '#\[Model(' "$file" || errors="$errors\n- Falta #[Model(...)]: el modelo (y su costo) se declara explícito."
+grep -q 'RunsAssignedModel' "$file" || errors="$errors\n- Falta el trait RunsAssignedModel: sin él la fila de ai_tasks no puede cambiarle el modelo ni el proveedor."
 
 if grep -qE 'Hoy es |FECHA Y HORA|\bnow\(|CarbonImmutable::now' "$file"; then
     errors="$errors\n- Arma su propio reloj: la fecha sale de AssistantContract::for(...)->clock."

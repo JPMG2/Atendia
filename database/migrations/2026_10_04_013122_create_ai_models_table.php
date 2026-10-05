@@ -12,14 +12,15 @@ return new class extends Migration
      * The models the platform may use, and what each one COST on a given day.
      *
      * Prices are versioned, not overwritten: the cost report read one global
-     * rate, so the first model change would have revalued every past call at
-     * the new price. A row per price keeps last month as last month.
+     * rate, so the first model change would have revalued every past call.
+     * The provider rides along, because what gets called is the pair.
      */
     public function up(): void
     {
         Schema::create('ai_models', function (Blueprint $table): void {
             $table->id();
 
+            $table->string('provider', 20)->comment("La clave del proveedor en config('ai.providers'), ej. openai");
             $table->string('code', 80)->comment('El identificador del proveedor, ej. gpt-6-astra');
             $table->string('label', 60)->comment('Nombre legible para el panel');
 

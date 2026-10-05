@@ -19,6 +19,7 @@ use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Ai\Tools\SearchCatalog;
 use App\Ai\Tools\SendCatalogPhotos;
+use App\Classes\Report\AiSpendReport;
 use App\Classes\Report\CompanyReport;
 use App\Classes\Search\ConversationSource;
 use App\Classes\Search\CustomerSource;
@@ -123,6 +124,7 @@ return [
 
     'reports' => [
         'company' => CompanyReport::class,
+        'ai-spend' => AiSpendReport::class,
     ],
 
     /*
@@ -225,6 +227,10 @@ return [
     | provider's price for the active model is confirmed.
     |
     */
+
+    // The alert threshold is NOT here: it rides each plan row
+    // (`plans.ai_alert_share`), because the same 40 USD of AI is a rounding
+    // error on Premium and a loss on the floor plan. Read it by `Plan`.
 
     'ai_rates' => [
         'prompt_per_million' => env('AI_RATE_PROMPT'),

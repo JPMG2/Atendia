@@ -32,6 +32,7 @@ return new class extends Migration
             $table->boolean('departments')->default(false)->comment('Departamentos del equipo: la IA deriva a cada uno');
             $table->boolean('reads_media')->default(false)->comment('La IA mira las fotos y lee los PDF que mandan los clientes');
             $table->boolean('daily_digest')->default(false)->comment('Resumen diario por WhatsApp y recap semanal de aprendizaje');
+            $table->unsignedSmallInteger('ai_alert_share')->default(35)->comment('Umbral de aviso: % del precio que puede comerse la IA antes de avisar');
             $table->unsignedSmallInteger('trial_days')->nullable()->comment('Solo el plan de la prueba gratis');
             $table->boolean('is_featured')->default(false)->comment('El "Más elegido" de las fichas');
 

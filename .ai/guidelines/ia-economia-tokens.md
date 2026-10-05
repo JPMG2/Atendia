@@ -10,7 +10,9 @@
 5. **Herramientas que contestan datos, no párrafos**, con el "no hay dato" dicho.
 6. Skills del rubro diferidos con ToolSearch; universales directos.
 7. **Salida estructurada** (`HasStructuredOutput`) para clasificar o extraer.
-8. **`#[Model]` explícito** en todo agente. Tarea mecánica → evaluar el modelo barato MIDIENDO.
+8. **El par explícito** (`#[Provider]` + `#[Model]`) en todo agente, y el trait
+   `RunsAssignedModel`: el atributo es el default escrito en código, la fila de `ai_tasks`
+   manda (modelo, proveedor y respaldo). Tarea mecánica → evaluar el modelo barato MIDIENDO.
 9. **Medir antes y después**: `php artisan atendia:ai-costs`. Una optimización sin número es
    una opinión.
 

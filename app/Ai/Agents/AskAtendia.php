@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
-use App\Ai\Middleware\ModelOrchestrator;
 use App\Classes\Main\AssistantContract;
 use App\Models\Business;
 use App\Services\OwnerSkills;
+use App\Traits\RunsAssignedModel;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
-use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Enums\Lab;
@@ -27,17 +26,9 @@ use Stringable;
  */
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-class AskAtendia implements Agent, Conversational, HasMiddleware, HasTools
+class AskAtendia implements Agent, Conversational, HasTools
 {
-    use Promptable;
-
-    /**
-     * @return array<int, object>
-     */
-    public function middleware(): array
-    {
-        return [new ModelOrchestrator];
-    }
+    use Promptable, RunsAssignedModel;
 
     /** Turns of the panel thread handed back to the model: enough to follow "¿y ayer?". */
     private const int MEMORY_LIMIT = 10;

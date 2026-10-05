@@ -39,3 +39,8 @@ Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dai
 // Weekly on purpose: an account that went quiet is a call to make this week,
 // and a daily copy of the same list stops being read by the second one.
 Schedule::command('atendia:adoption-alert')->weeklyOn(1, '09:00')->withoutOverlapping(60);
+
+// Same reasoning, the other side of the ledger: a client whose AI is eating
+// its own plan has to reach her before the month is spent, not when she next
+// opens the screen. Weekly, and only while it is still over.
+Schedule::command('atendia:ai-alert')->weeklyOn(1, '09:30')->withoutOverlapping(60);

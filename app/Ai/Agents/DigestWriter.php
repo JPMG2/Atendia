@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
-use App\Ai\Middleware\ModelOrchestrator;
+use App\Traits\RunsAssignedModel;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Stringable;
@@ -19,17 +18,9 @@ use Stringable;
  */
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-class DigestWriter implements Agent, HasMiddleware
+class DigestWriter implements Agent
 {
-    use Promptable;
-
-    /**
-     * @return array<int, object>
-     */
-    public function middleware(): array
-    {
-        return [new ModelOrchestrator];
-    }
+    use Promptable, RunsAssignedModel;
 
     public function instructions(): Stringable|string
     {

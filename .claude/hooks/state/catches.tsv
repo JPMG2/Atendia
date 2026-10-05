@@ -6,3 +6,8 @@
 2026-10-04	check-comment-golden-rules	database/seeders/MenuSeeder.php
 2026-10-04	check-comment-golden-rules	database/seeders/MenuSeeder.php
 2026-10-04	check-comment-golden-rules	app/Models/Company.php
+2026-10-04	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-04	check-panel-screen	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-04	check-comment-golden-rules	app/Traits/ProbeLongComment.php
+2026-10-04	check-comment-golden-rules	resources/views/components/admin/home/⚡index.blade.php
+2026-10-05	check-php-getter-golden-rules	app/Classes/Main/AiTrend.php

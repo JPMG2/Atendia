@@ -156,6 +156,10 @@ new class extends Component
         <x-slot:inline>
             <span class="status-tag">{{ trans_choice('support.admin.count', $this->tickets->count(), ['count' => $this->tickets->count()]) }}</span>
         </x-slot:inline>
+
+        {{-- Every figure here is counted on load, so it carries the moment it
+        was read (atendiadesign §7.1). --}}
+        <span class="sup-age">{{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i')]) }}</span>
     </x-ui.page-head>
 
     @if ($this->deflection['opened'] > 0)
@@ -245,7 +249,9 @@ new class extends Component
                     </button>
                     <span class="sup-meta">
                         <span class="sup-code">{{ $ticket->code }}</span>
-                        <span>{{ $ticket->business?->name }}</span>
+                        @if ($ticket->business_id !== null)
+                            <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $ticket->business_id]) }}">{{ $ticket->business?->name }}</a>
+                        @endif
                         <span>{{ __('support.kinds.'.$ticket->kind->value) }}</span>
                         <span>{{ $this->screenName($ticket->screen) }}</span>
                         <span class="sup-age">{{ $ticket->created_at?->diffForHumans() }}</span>

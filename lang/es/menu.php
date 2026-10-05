@@ -53,6 +53,8 @@ return [
     'plan_payments' => 'Plan y pagos',
     'my_payments' => 'Mis pagos',
     'admin_payments' => 'Pagos',
+    'admin_ai' => 'Modelos de IA',
+    'admin_ai_usage' => 'Consumo de IA',
     'admin_moderation' => 'Moderación',
     'admin_support' => 'Soporte',
     'admin_adoption' => 'Adopción',

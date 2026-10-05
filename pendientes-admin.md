@@ -92,14 +92,32 @@ Orden de ella (2026-09-24): lo que hoy es un valor fijo de comportamiento vive e
 - [ ] Derivación y referidos
 - [ ] Al sumar un ajuste nuevo de plataforma: anotarlo acá y comentarlo en el config
 
-### A3. Consumo de IA por cliente
-Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`). Falta la cara.
-- [ ] Pantalla: volumen por negocio, costo y desglose por tipo
-- [ ] Cargar las tarifas `AI_RATE_PROMPT` / `AI_RATE_CACHED` / `AI_RATE_COMPLETION` en `.env`
-      (sin esto el costo sale en cero y la pantalla miente)
+### A3. Consumo de IA por cliente — HECHO 2026-10-04
+Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
+- [x] ~~Pantalla~~: `/admin/consumo-ia` bajo `Cobros`. Volumen por negocio (llamadas, hilos,
+      mensajes, audio), tokens de entrada/cacheada/salida, costo del mes contra el anterior y
+      desglose por tipo de llamada. Selector de los últimos 12 meses.
+- [x] ~~Las tarifas de `.env`~~: ya no hacen falta para el costo de los tokens. El precio sale
+      de `ai_models`, vigente el día de la llamada; `.env` solo conserva embeddings y audio,
+      que tienen default. Una llamada sin precio publicado NO cuenta como cero: la cifra dice
+      cuántas llamadas quedaron afuera.
+- [x] ~~Un solo cálculo~~: `App\Classes\Main\AiSpend` lo resuelve para la pantalla y para el
+      comando, leyendo el libro de precios UNA vez (antes era una consulta por fila).
+- [x] ~~Las 3 mejoras ofrecidas~~ (2026-10-04, elegidas por ella): **alerta contra el plan**
+      (chip rojo cuando el costo supera `atendia.ai_alert_share` del precio de su plan),
+      **costo por conversación** en cada fila, y **exportar el mes** por la capa de reportes
+      (`AiSpendReport`, Imprimir/Excel/CSV, con el mes en la URL).
+- [x] ~~La fila lleva a la ficha~~ (2026-10-04), igual que el Inicio y Soporte.
+- [x] ~~Rehecha entera el 2026-10-05~~ (ver E14 y E14-bis): era legible como dato y
+      ilegible como pantalla.
+- [ ] **El minutaje de audio perdió su columna** al pasar a tabla: nueve columnas no entran a
+      1280px sin cortar. Sigue dentro del costo y en los tres exportables. Si lo querés en
+      pantalla, hay que sacarle el lugar a otra columna.
 
 ### A4. Usuarios y accesos
-- [ ] La pantalla (el tile y el ítem de menú `menu.admin_users` existen y no tienen ruta)
+- [ ] La pantalla. El ítem `menu.admin_users` ya NO se siembra (lo sacó el candado del menú
+      mudo, bloque D) y no hay tile: lo único que sobrevive es la clave en `lang/es/menu.php`,
+      esperando la pantalla.
 
 ### A5. Seguridad — roles, permisos y auditoría
 - [ ] La pantalla (`spatie/laravel-permission` y `activitylog` ya registran; nadie los mira)
@@ -109,7 +127,12 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`). Fal
 con su plan, próximo cobro, lo que debe, sus últimos 10 pagos y la baja.
 - [x] ~~Pantalla de negocios (ficha, plan, estado, suspensión)~~
 - [x] La query vive en `Business::directory()` y `Business::ledger()`, nunca en el Blade.
-- [ ] Falta: buscador y filtro por estado cuando haya más de una pantalla de negocios.
+- [x] ~~Filtro por estado~~ (2026-10-04): combobox en la pantalla y `?estado=` en la URL, para
+      que un tile del Inicio aterrice en SU cola. `problem` agrupa vencidos y pausados, que es
+      el par que el Inicio muestra junto.
+- [x] ~~Buscador por nombre~~ (2026-10-04): va a la base con `whereTextMatches`, así que
+      "Odontologico" encuentra "Odontológico"; `?buscar=` en la URL y "ningún negocio coincide"
+      dicho distinto de "todavía no hay negocios".
 
 ### A7. Aviso diario de charlas que salieron mal
 Anotado el 2026-09-24, nunca construido.
@@ -178,8 +201,8 @@ Pedido de ella 2026-09-23. Investigación hecha (memoria `atendia-tasa-cambio-au
 
 ## C · Deudas chicas que ensucian el admin
 
-- [ ] Borrar el usuario `demo@atendia.test` de `atendia`: aparece en `/admin/adopcion` como
-      un negocio más que nunca pasó del wizard y ensucia el embudo.
+- [x] ~~Borrar `demo@atendia.test` de `atendia`~~ (2026-10-04): no lo sembraba ningún seeder
+      y no tenía negocio colgando, así que se borró la fila y nada más.
 - [ ] No hay fila de Compañía en `atendia` (`Company::current()` devuelve null): el pie de
       la landing y los correos que la usan caen al fallback.
 
@@ -238,8 +261,9 @@ Regla en `arquitectura-paneles.md`.
 ### E2. Tickets de soporte en orden de llegada
 **YA ESTÁ HECHO** · `/admin/soporte` (`admin/⚡support.blade.php`)
 Verificado hoy: ordena por llegada, el más viejo sin responder arriba y lo resuelto se hunde.
-- [ ] Único pendiente: pasarlo por el checklist de `atendiadesign` §7 (sello de frescura,
-      acción en la fila, 390/900px) cuando se revise el panel completo
+- [x] ~~Checklist §7~~ (2026-10-04): sello de frescura en el encabezado, el negocio del ticket
+      lleva a su ficha, y el selector de estado dejó de comerse el ancho a 900px (era el
+      hallazgo del 03/10: el texto del ticket se partía en 8 líneas).
 
 ### E3. Testimonios: ninguno sale sin aprobación
 **YA ESTÁ HECHO** · `/admin/testimonios`
@@ -367,14 +391,75 @@ Lo investigado en los docs de Livewire 4 (`@island(name:)`, `wire:island=`, `laz
       el pasado. Probado con dos precios del mismo modelo en fechas distintas.
 - [x] ~~Maestro `ai_models`~~ con historial de precios + `AiModelSeeder` con la tarifa de
       `gpt-6-astra` verificada y su fuente escrita en la fila.
-- [x] ~~Tarea → modelo~~: tabla `ai_tasks` con una fila por agente, todas sin asignar. El
-      middleware `ModelOrchestrator` aplica la asignación y los 12 agentes lo declaran.
+- [x] ~~Tarea → modelo~~: tabla `ai_tasks` con una fila por agente, todas sin asignar.
       Cambiar el modelo de una tarea es UNA fila; sin fila, manda el `#[Model]` del agente.
-- [ ] **Falta la pantalla** en el admin para editar modelos y tareas (hoy es por seeder o
-      por tinker). Va bajo `Cobros` en el menú, que ya tiene la rama.
+- [x] ~~**Tarea → PROVEEDOR**~~ — HECHO 2026-10-04. El `ModelOrchestrator` solo podía
+      `withModel()`, así que un modelo de otro lab se mandaba igual a OpenAI. Ahora los 12
+      agentes usan el trait `RunsAssignedModel` (`provider()` pisa el atributo) y la fila
+      manda proveedor + modelo. Probado con una llamada real que se fue a Anthropic.
+- [x] ~~**Pantalla**~~ — HECHA 2026-10-04: `/admin/ia` bajo `Cobros`. Asignación por fila
+      (modelo + respaldo) y alta/edición de precios, con su browser test en 3 anchos.
+- [x] ~~**Plan B** si el proveedor retira el modelo~~: `ai_tasks.fallback_model_code`. Tiene
+      que ser de OTRO lab (la escalera del paquete se indexa por proveedor) y la pantalla
+      solo ofrece esos.
 - [ ] **Falta medir**: `is_mechanical` marca 10 candidatos a modelo barato. La guía dice
       elegirlo MIDIENDO, así que eso se hace con la batería de `tests/Eval`, no a ojo.
-- [ ] **Plan B** si el proveedor retira el modelo: sigue pendiente.
+- [x] ~~El aviso cuando entra el respaldo~~ (2026-10-04): `AnnounceModelFailover` escucha
+      `AgentFailedOver` y deja un warning con el agente, el proveedor que falló y el motivo.
+      Se lee en `/admin/logs`; no hay campana de plataforma (la campana es por negocio), y
+      inventarle una era otra pantalla.
+
+### E14. Las dos pantallas de Cobros, rechazadas por diseño
+Veredicto de ella, 2026-10-04 al cerrar: *"la ventana de Cobros que hiciste un niño de 2 años
+puede hacer algo mejor y con una sola mano"*. Son **Modelos de IA** y **Consumo de IA**: los
+datos y los candados están bien (son reales y están probados), lo que no sirve es cómo se ven.
+- [x] ~~**Consumo de IA**, rehecha el 2026-10-05.~~ La causa no era cosmética: era una
+      pseudo-tabla de `<span>` en flex con los lados en `flex:none`, así que cada fila
+      calculaba su ancho por su contenido y NADA se alineaba en vertical entre filas. Ahora
+      usa `.pay-table`, la tabla que el proyecto ya tenía (Pagos, Negocios, Moderación,
+      Inicio): `<thead>` real, cifras a la derecha en `font-mono`, fila `Total del mes` que
+      cierra cada columna, apilado por `data-label` a <991px. De paso: separador de miles en
+      español (convivían `4,240,000` y `$161,37`), "hilos" → `Conversaciones`, y un 500 real
+      tapado (la × del selector dejaba el mes vacío y `createFromFormat` tiraba excepción).
+- [x] ~~**El candado que daba verde con la pantalla rota**~~: `PanelResponsiveBrowserTest` y
+      el browser test de la pantalla medían el desborde de la PÁGINA, no el de la tabla
+      dentro de su card. `AdminAiUsageBrowserTest` ahora mide el `scrollWidth` de cada
+      `.pay-table-wrap`, y atrapó 60px de tabla cortados a 1280px que antes pasaban.
+- [ ] **Modelos de IA** (`/admin/ia`) sigue con la misma pseudo-tabla inventada (`aim-row`,
+      `aim-task`, `aim-prices`, `aim-side`). Es el mismo arreglo: pasarla a `.pay-table`.
+
+### E14-bis. Las 3 mejoras de Consumo de IA — HECHAS 2026-10-05
+Ofrecidas al cerrar el rediseño y pedidas por ella en el acto.
+- [x] ~~**Sparkline de 12 meses por negocio**~~ (patrón de Stripe/Vercel): `<x-ui.sparkline>`
+      con su test, bajo el nombre en la fila. Los 12 meses salen de UNA consulta
+      (`AiUsage::trailingTotals`) y los valora `AiPrices`, la MISMA clase que valora el mes en
+      pantalla: la tendencia no puede contradecir a la fila en la que está.
+- [x] ~~**Ahorro del caché en plata**~~: bajo cada % de caché, lo que el caché le quitó a la
+      factura (`AiPrices::savingOf`). Un porcentaje no es un argumento; los dólares sí.
+- [x] ~~**Umbral por plan, con aviso**~~ (patrón del budget alert de OpenAI): columna
+      `plans.ai_alert_share`, leída por `Plan::$aiAlertShare`. La fila que lo pasa se PINTA
+      (no solo lleva chip), y `atendia:ai-alert` le manda el correo los lunes 09:30 mientras
+      siga arriba. Probado que el mismo gasto está arriba del umbral en el plan piso y no en
+      Premium. El `atendia.ai_alert_share` global se borró: dos fuentes para lo mismo era
+      justo la enfermedad que veníamos sacando.
+- [ ] **Queda sin decidir**: el umbral es 35% en los tres planes (lo que había de global). Si
+      querés distinto por plan, se cambia en `PlanSeeder` — o entra en el CRUD de planes (E7).
+
+### E13. El Inicio lleva, no solo cuenta — HECHO 2026-10-04
+Reclamo de ella: *"la información está bien ordenada pero no aporta casi nada, nada es
+clickeable, nada tiene anclada una acción"*. Verificado: de las 4 tarjetas solo Comprobantes
+tenía acción en la fila; Renovaciones, Bajas y Vencidos eran 15 filas sin un solo link, y
+ningún tile aterrizaba FILTRADO.
+- [x] ~~Toda mención de un negocio abre su ficha~~: `#[Url(as: 'negocio')]` en `/admin/negocios`
+      hace la ficha direccionable, y las 4 tablas del Inicio enlazan el nombre (`.row-link`).
+- [x] ~~El tile de bajas aterriza filtrado~~ (`?estado=canceling`), y Vencidos y pausados cierra
+      con su puerta (`?estado=problem`).
+- [x] ~~Probado el aterrizaje, no solo el link~~: un browser test hace click en el nombre y
+      verifica que la URL lleva el id y que la ficha abrió.
+- [x] ~~Progressive disclosure~~ (2026-10-04): las tres tablas de suscripciones son UNA
+      tarjeta con pestañas (Renovaciones · Bajas · Vencidos, cada una con su contador), y
+      **abre en la que tiene algo trabado**, no en la primera. El Inicio pasó de 4 tablas
+      apiladas a 1 cola + 1 tarjeta.
 
 ### E12-bis. Lo original, para no re-discutirlo
 NUEVO · pregunta de ella del 2026-10-03: *"¿qué pasa si mañana cambio el modelo?"*

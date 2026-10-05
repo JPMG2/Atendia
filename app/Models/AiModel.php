@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /** A model the platform may use, and what it cost from a given day on. */
-#[Fillable(['code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'effective_from', 'source', 'is_active'])]
+#[Fillable(['provider', 'code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'effective_from', 'source', 'is_active'])]
 class AiModel extends Model
 {
     /**
@@ -25,6 +25,35 @@ class AiModel extends Model
             'cached_per_million' => 'decimal:4',
             'completion_per_million' => 'decimal:4',
         ];
+    }
+
+    /** A price row carries the provider too, so saving one drops the cache. */
+    protected static function booted(): void
+    {
+        self::saved(function (): void {
+            cache()->forget('ai.models.providers');
+            cache()->forget('ai.tasks');
+        });
+
+        self::deleted(function (): void {
+            cache()->forget('ai.models.providers');
+            cache()->forget('ai.tasks');
+        });
+    }
+
+    /**
+     * Which provider answers for each model code. Cached: every prompt reads
+     * it to know WHERE to send the model name — the name alone says nothing,
+     * and sending an Anthropic one to OpenAI is a 400.
+     *
+     * @return array<string, string>
+     */
+    public static function providersByCode(): array
+    {
+        return cache()->remember('ai.models.providers', 300, fn (): array => self::query()
+            ->distinct()
+            ->pluck('provider', 'code')
+            ->all());
     }
 
     /**
@@ -56,5 +85,48 @@ class AiModel extends Model
     public static function options(): array
     {
         return self::query()->where('is_active', true)->orderBy('label')->pluck('label', 'code')->all();
+    }
+
+    /**
+     * Every price row for the admin table, newest price of each code first.
+     *
+     * @return Collection<int, AiModel>
+     */
+    public static function board(): Collection
+    {
+        return self::query()->orderBy('code')->orderByDesc('effective_from')->get();
+    }
+
+    /**
+     * The models a task can be sent to, labelled with their lab because the
+     * code alone does not say who answers it.
+     *
+     * @param  string|null  $exceptProvider  Leaves out one lab: a fallback on
+     *                                       the failed lab is not a fallback.
+     * @return array<string, string>
+     */
+    public static function assignable(?string $exceptProvider = null): array
+    {
+        return self::query()
+            ->where('is_active', true)
+            ->when($exceptProvider !== null, fn ($query) => $query->where('provider', '!=', $exceptProvider))
+            ->orderBy('provider')
+            ->orderBy('label')
+            ->get()
+            ->unique('code')
+            ->mapWithKeys(fn (self $model): array => [$model->code => "{$model->label} · {$model->provider}"])
+            ->all();
+    }
+
+    /** One price row to edit, by id. */
+    public static function priceRow(int $id): ?self
+    {
+        return self::query()->whereKey($id)->first();
+    }
+
+    /** Which lab answers for a code, straight from the price rows. */
+    public static function providerOf(?string $code): ?string
+    {
+        return $code === null ? null : (self::providersByCode()[$code] ?? null);
     }
 }

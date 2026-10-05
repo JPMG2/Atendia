@@ -40,6 +40,13 @@ Route::livewire('/testimonios', 'admin.testimonials.index')->name('testimonials'
 Route::livewire('/pagos', 'admin.payments.index')->name('payments');
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt');
 
+// AI: which model answers each task, and what each model costs. Under Cobros
+// because a model change is a cost change before it is anything else.
+Route::livewire('/ia', 'admin.ai.index')->name('ai');
+
+// AI spend: what each business consumed in a month, and what it cost her.
+Route::livewire('/consumo-ia', 'admin.ai-usage.index')->name('ai-usage');
+
 // Moderation: what the content filter caught, and the switch to lift a suspension.
 Route::livewire('/moderacion', 'admin.moderation.index')->name('moderation');
 

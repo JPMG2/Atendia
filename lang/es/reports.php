@@ -16,6 +16,14 @@ return [
     ],
     'generated' => 'Generado el :date',
 
+    'ai_spend' => [
+        'title' => 'Consumo de IA por negocio',
+        'filename' => 'consumo-ia',
+        'cost' => 'Costo (USD)',
+        'per_thread' => 'Costo por conversación (USD)',
+        'unpriced' => 'Llamadas sin precio',
+    ],
+
     'company' => [
         'title' => 'Datos de la compañía',
         'filename' => 'compania',

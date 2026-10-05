@@ -172,7 +172,7 @@ new class extends Component
             :value="(string) $this->leaving->count()"
             icon="log-out"
             :tint="$this->leaving->isNotEmpty() ? 'accent' : 'brand'"
-            :href="route('admin.businesses')"
+            :href="route('admin.businesses', ['estado' => 'canceling'])"
         >{{ $this->leaving->isEmpty()
             ? __('admin.home.tiles.leaving_none')
             : __('admin.home.tiles.leaving_amount', ['amount' => number_format($this->leavingAmount, 2, ',', '.')]) }}</x-ui.stat-card>
@@ -214,7 +214,9 @@ new class extends Component
                         @foreach ($this->queue as $payment)
                             <tr wire:key="queue-{{ $payment->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.home.queue.date') }}">{{ $payment->created_at?->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('admin.home.queue.business') }}">{{ $payment->business?->name }}</td>
+                                <td data-label="{{ __('admin.home.queue.business') }}">
+                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $payment->business_id]) }}">{{ $payment->business?->name }}</a>
+                                </td>
                                 <td data-label="{{ __('admin.home.queue.plan') }}">{{ __('plan.names.'.$payment->plan) }}</td>
                                 <td class="font-mono" data-label="{{ __('admin.home.queue.amount') }}">{{ $payment->currency }} {{ number_format((float) $payment->amount, 2, ',', '.') }}</td>
                                 <td data-label="{{ __('admin.home.queue.action') }}">
@@ -242,7 +244,21 @@ new class extends Component
         @endif
     </x-ui.card>
 
+    {{-- Three lists answering one question (what happens with the
+    subscriptions this week) in ONE card with tabs. Four stacked tables made
+    her read the whole screen to find the row she had to act on. --}}
     <x-ui.card class="bp-card mt-3">
+        {{-- It opens on what is stuck, not on the first tab: a business that
+        did not pay beats one that renews on Friday. --}}
+        <x-ui.tabs
+            :default="$this->struggling->isNotEmpty() ? 'struggling' : 'renewals'"
+            :tabs="[
+                ['value' => 'renewals', 'label' => __('admin.home.renewals.tab'), 'icon' => 'repeat', 'badge' => $this->renewals->count()],
+                ['value' => 'leaving', 'label' => __('admin.home.leaving.tab'), 'icon' => 'log-out', 'badge' => $this->leaving->count()],
+                ['value' => 'struggling', 'label' => __('admin.home.struggling.tab'), 'icon' => 'alert-triangle', 'badge' => $this->struggling->count()],
+            ]"
+        >
+        <div x-show="tab === 'renewals'" x-cloak>
         <div class="bp-card-head">
             <h2>{{ __('admin.home.renewals.title') }}</h2>
             @if ($this->renewals->isNotEmpty())
@@ -278,7 +294,9 @@ new class extends Component
                         @foreach ($this->renewals as $subscription)
                             <tr>
                                 <td class="font-mono" data-label="{{ __('admin.home.renewals.due') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('admin.home.renewals.business') }}">{{ $subscription->business?->name }}</td>
+                                <td data-label="{{ __('admin.home.renewals.business') }}">
+                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                </td>
                                 <td data-label="{{ __('admin.home.renewals.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td data-label="{{ __('admin.home.renewals.cycle') }}">
                                     @if ($subscription->status === SubscriptionStatus::Trialing)
@@ -296,13 +314,15 @@ new class extends Component
                 </table>
             </div>
         @endif
-    </x-ui.card>
+        </div>
 
-    @if ($this->leaving->isNotEmpty())
-        <x-ui.card class="bp-card mt-3">
+        <div x-show="tab === 'leaving'" x-cloak>
             <div class="bp-card-head"><h2>{{ __('admin.home.leaving.title') }}</h2></div>
             <p class="bp-card-sub">{{ __('admin.home.leaving.sub') }}</p>
 
+            @if ($this->leaving->isEmpty())
+                <p class="text-muted text-sm">{{ __('admin.home.leaving.empty') }}</p>
+            @else
             <div class="pay-table-wrap">
                 <table class="pay-table">
                     <thead>
@@ -318,7 +338,9 @@ new class extends Component
                         @foreach ($this->leaving as $subscription)
                             <tr wire:key="leaving-{{ $subscription->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.home.leaving.ends') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('admin.home.leaving.business') }}">{{ $subscription->business?->name }}</td>
+                                <td data-label="{{ __('admin.home.leaving.business') }}">
+                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                </td>
                                 <td data-label="{{ __('admin.home.leaving.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td class="font-mono" data-label="{{ __('admin.home.leaving.amount') }}">USD {{ number_format($subscription->nextAmount(), 2, ',', '.') }}</td>
                                 <td class="font-mono" data-label="{{ __('admin.home.leaving.asked') }}">{{ $subscription->canceled_at?->format('d/m/Y') }}</td>
@@ -327,10 +349,10 @@ new class extends Component
                     </tbody>
                 </table>
             </div>
-        </x-ui.card>
-    @endif
+            @endif
+        </div>
 
-    <x-ui.card class="bp-card mt-3">
+        <div x-show="tab === 'struggling'" x-cloak>
         <div class="bp-card-head"><h2>{{ __('admin.home.struggling.title') }}</h2></div>
         <p class="bp-card-sub">{{ __('admin.home.struggling.sub') }}</p>
 
@@ -351,7 +373,9 @@ new class extends Component
                         @foreach ($this->struggling as $subscription)
                             <tr>
                                 <td class="font-mono" data-label="{{ __('admin.home.struggling.since') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('admin.home.struggling.business') }}">{{ $subscription->business?->name }}</td>
+                                <td data-label="{{ __('admin.home.struggling.business') }}">
+                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                </td>
                                 <td data-label="{{ __('admin.home.struggling.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td data-label="{{ __('admin.home.struggling.state') }}">
                                     @if ($subscription->status === SubscriptionStatus::Paused)
@@ -365,6 +389,16 @@ new class extends Component
                     </tbody>
                 </table>
             </div>
+
+            {{-- The card's own door: the same list this table previews, cut by
+            the pair of states it shows (atendiadesign §7.2). --}}
+            <div class="bp-card-actions">
+                <x-ui.button variant="ghost" size="sm" :href="route('admin.businesses', ['estado' => 'problem'])" wire:navigate>
+                    {{ __('admin.home.struggling.see_all') }}
+                </x-ui.button>
+            </div>
         @endif
+        </div>
+        </x-ui.tabs>
     </x-ui.card>
 </div>

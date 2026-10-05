@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
-use App\Ai\Middleware\ModelOrchestrator;
 use App\Services\ProductImport\NameReviewer;
+use App\Traits\RunsAssignedModel;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
@@ -24,17 +23,9 @@ use Stringable;
  */
 #[Provider(Lab::OpenAI)]
 #[Model('gpt-6-astra')]
-class ProductNameFixer implements Agent, HasMiddleware, HasStructuredOutput
+class ProductNameFixer implements Agent, HasStructuredOutput
 {
-    use Promptable;
-
-    /**
-     * @return array<int, object>
-     */
-    public function middleware(): array
-    {
-        return [new ModelOrchestrator];
-    }
+    use Promptable, RunsAssignedModel;
 
     public function instructions(): Stringable|string
     {

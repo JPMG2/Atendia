@@ -19,7 +19,7 @@ final class Plan
     /** Yearly billing pays ten months: two free, the same promise everywhere. */
     private const int PAID_MONTHS_PER_YEAR = 10;
 
-    /** @param array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool} $limits */
+    /** @param array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -83,6 +83,15 @@ final class Plan
         get => (bool) ($this->limits['daily_digest'] ?? false);
     }
 
+    /**
+     * How much of this plan's price its AI may eat before the admin is told,
+     * as a share. It is an operating threshold, not a figure sold to anybody:
+     * it rides the plan because what is cheap on 149 USD is ruinous on 29.
+     */
+    public float $aiAlertShare {
+        get => ((int) ($this->limits['ai_alert_share'] ?? 0)) / 100;
+    }
+
     /** The trial plan's length; null on every other plan. */
     public ?int $trialDays {
         get => $this->limits['trial_days'] ?? null;
@@ -138,7 +147,7 @@ final class Plan
     }
 
     /**
-     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int}>
      *
      * @throws RuntimeException
      */

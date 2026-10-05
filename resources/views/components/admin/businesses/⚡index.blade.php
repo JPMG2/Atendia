@@ -8,6 +8,7 @@ use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -19,14 +20,52 @@ new class extends Component
 {
     use HasNotifications;
 
-    /** The open row. One at a time: a ficha is read, not scanned. */
+    /**
+     * The open row, in the URL: a tile of the Inicio that counts three
+     * businesses has to be able to LAND on one of them, not on the list.
+     */
+    #[Url(as: 'negocio')]
     public ?int $open = null;
+
+    /** The state the list is cut by, also in the URL, for the same reason. */
+    #[Url(as: 'estado')]
+    public string $state = '';
+
+    /** What she typed to find one business by name. */
+    #[Url(as: 'buscar')]
+    public string $search = '';
 
     /** @return Collection<int, Business> */
     #[Computed]
     public function businesses(): Collection
     {
-        return Business::directory();
+        $all = Business::directory($this->search);
+
+        if ($this->state === '') {
+            return $all;
+        }
+
+        // Filtering an already-loaded Collection is presentation, not a query
+        // (`queries-en-el-modelo.md`): the state is read per row, not stored.
+        return $all->filter(fn (Business $business): bool => in_array(
+            $this->stateOf($business),
+            $this->state === 'problem' ? ['past_due', 'paused'] : [$this->state],
+            true,
+        ))->values();
+    }
+
+    /**
+     * What the list can be cut by. "problem" is the one group: it is the pair
+     * the Inicio shows together under "les está costando pagar".
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function stateOptions(): array
+    {
+        return collect(['problem', 'trialing', 'active', 'past_due', 'paused', 'canceling', 'ended', 'suspended', 'none'])
+            ->mapWithKeys(fn (string $state): array => [$state => __('admin.businesses.states.'.$state)])
+            ->all();
     }
 
     #[Computed]
@@ -108,8 +147,34 @@ new class extends Component
     </div>
 
     <x-ui.card class="bp-card">
+        <x-catalog.form-row>
+            <x-inputsform.input
+                size="s"
+                span="text"
+                :label="__('admin.businesses.search')"
+                name="search"
+                icon="search"
+                :placeholder="__('admin.businesses.search_placeholder')"
+                wire:model.live.debounce.400ms="search"
+            />
+
+            <x-inputsform.combobox
+                size="s"
+                span="short"
+                :label="__('admin.businesses.state')"
+                name="state"
+                :options="$this->stateOptions"
+                :value="$state"
+                :placeholder="__('admin.businesses.all_states')"
+                wire:model.live="state"
+            />
+        </x-catalog.form-row>
+
         @if ($this->businesses->isEmpty())
-            <p class="text-muted text-sm">{{ __('admin.businesses.empty') }}</p>
+            {{-- Nothing found is not the same sentence as nothing exists. --}}
+            <p class="text-muted text-sm">
+                {{ $search === '' && $state === '' ? __('admin.businesses.empty') : __('admin.businesses.no_match') }}
+            </p>
         @else
             <div class="pay-table-wrap">
                 <table class="pay-table">

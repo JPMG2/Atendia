@@ -188,7 +188,7 @@ test('an empty log says so instead of showing a blank page', function (): void {
 test('the logs option hangs from the settings item of the admin menu', function (): void {
     $this->seed(MenuSeeder::class);
 
-    $settings = Menu::query()->where('label_key', 'menu.admin_settings')->sole();
+    $settings = Menu::query()->where('label_key', 'menu.admin_platform')->sole();
 
     $this->assertDatabaseHas('menus', [
         'panel' => 'admin',

@@ -4,6 +4,105 @@ declare(strict_types=1);
 
 return [
 
+    'ai' => [
+        'title' => 'Modelos de IA',
+        'sub' => 'Qué modelo responde cada tarea, en qué proveedor y a qué precio.',
+
+        'tasks' => 'Tareas',
+        'tasks_sub' => 'Sin asignar, la tarea corre con el modelo escrito en su agente.',
+        'tasks_empty_title' => 'Todavía no hay tareas',
+        'tasks_empty' => 'Las tareas se siembran con AiModelSeeder: una por agente.',
+        'mechanical' => 'Mecánica',
+        'running' => 'Hoy corre',
+        'provider_default' => 'el que trae el proveedor',
+        'no_agent' => 'El agente de esta fila ya no existe en el código.',
+        'model' => 'Modelo',
+        'fallback' => 'Respaldo',
+        'unassigned' => 'El del agente',
+        'no_fallback' => 'Sin respaldo',
+        'save' => 'Guardar',
+        'saved' => 'Listo. La tarea ya corre con ese modelo.',
+
+        'models' => 'Modelos y precios',
+        'models_sub' => 'Un precio nuevo es una fila nueva: lo ya consumido conserva el suyo.',
+        'models_empty_title' => 'Todavía no hay modelos',
+        'models_empty' => 'Cargá el primero con su precio y desde qué día rige.',
+        'new' => 'Nuevo precio',
+        'edit' => 'Editar',
+        'save_model' => 'Guardar el modelo',
+        'cancel' => 'Cancelar',
+        'model_saved' => 'Listo. El modelo quedó guardado.',
+        'active' => 'Activo',
+        'inactive' => 'Inactivo',
+
+        'columns' => [
+            'prompt' => 'Entrada',
+            'cached' => 'Cacheada',
+            'completion' => 'Salida',
+            'effective_from' => 'Rige desde',
+        ],
+
+        'fields' => [
+            'provider' => 'Proveedor',
+            'code' => 'Código del modelo',
+            'code_hint' => 'Tal cual lo nombra el proveedor, ej. gpt-6-astra.',
+            'label' => 'Nombre',
+            'prompt' => 'Entrada (USD/millón)',
+            'cached' => 'Cacheada (USD/millón)',
+            'completion' => 'Salida (USD/millón)',
+            'effective_from' => 'Rige desde',
+            'source' => 'De dónde salió el precio',
+            'source_hint' => 'Para poder auditarlo después, ej. "Precio publicado, verificado el 04/10".',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'ai_usage' => [
+        'title' => 'Consumo de IA',
+        'sub' => 'Qué consumió cada negocio en el mes y cuánto te costó atenderlo.',
+        'month' => 'Mes',
+        'measured' => 'Medido al :when',
+        'previous' => 'Mes anterior',
+        'no_price' => 'El total deja afuera :count llamada: su modelo no tiene precio publicado.|El total deja afuera :count llamadas: su modelo no tiene precio publicado.',
+        'no_price_short' => ':count llamada sin precio|:count llamadas sin precio',
+        'empty_title' => 'Nada medido en este mes',
+        'empty' => 'Cuando un negocio use su asistente, su consumo aparece acá.',
+        'platform' => 'Plataforma',
+        'platform_hint' => 'La demo del sitio y lo que corre la plataforma.',
+        'unpriced' => 'sin precio',
+        'business' => 'Negocio',
+        'per_thread' => 'Por conversación',
+        'over_plan' => 'Se come :share% de su plan',
+        'threads' => 'Conversaciones',
+        'messages' => 'Mensajes',
+        'audio' => 'Audio',
+        'calls' => 'Llamadas',
+        'tokens' => 'Tokens',
+        'cached' => 'Cacheado',
+        'cost' => 'Costo',
+        'month_total' => 'Total del mes',
+        'saved' => '−:amount',
+        'saved_hint' => 'Bajo cada % está lo que el caché le quitó a la factura.',
+        'trend_label' => 'Consumo de los últimos 12 meses de :name',
+        'trend_since' => 'La tendencia cubre :count meses, desde :month',
+        'previous_is' => 'Mes anterior: :amount',
+        'tokens_in' => 'Entrada',
+        'tokens_cached' => 'Cacheada',
+        'tokens_out' => 'Salida',
+        'by_kind' => 'Desglose por tipo de llamada',
+        'kind' => 'Tipo',
+
+        'mail' => [
+            'eyebrow' => 'Consumo de IA',
+            'subject' => ':count negocio se está comiendo su plan|:count negocios se están comiendo su plan',
+            'preheader' => 'La IA de estos negocios pasó el umbral de su plan.',
+            'intro' => 'En :month, estos negocios pasaron el umbral de consumo que tiene su plan.',
+            'line' => ':name — :cost, el :share% de su plan (umbral: :limit%)',
+            'cta' => 'Ver el consumo',
+            'closing' => 'Mientras sigan arriba del umbral, este aviso vuelve cada lunes.',
+        ],
+    ],
+
     'businesses' => [
         'title' => 'Negocios',
         'sub' => 'Todos los que atiende la plataforma, con su plan y su plata.',
@@ -18,7 +117,13 @@ return [
         'open' => 'Ver la ficha',
         'close' => 'Cerrar la ficha',
 
+        'all_states' => 'Todos los estados',
+        'search' => 'Buscar',
+        'search_placeholder' => 'Nombre del negocio',
+        'no_match' => 'Ningún negocio coincide con lo que buscaste.',
+
         'states' => [
+            'problem' => 'En gracia o pausado',
             'trialing' => 'En prueba',
             'active' => 'Al día',
             'past_due' => 'En gracia',
@@ -99,6 +204,7 @@ return [
         ],
 
         'renewals' => [
+            'tab' => 'Renovaciones',
             'title' => 'Renovaciones de esta semana',
             'sub' => 'Lo que vence en los próximos 7 días, lo más cerca primero.',
             'vs_last_week' => 'La semana pasada se cobró USD :amount',
@@ -116,6 +222,7 @@ return [
         ],
 
         'leaving' => [
+            'tab' => 'Bajas',
             'title' => 'Bajas programadas',
             'sub' => 'Pidieron la baja y siguen andando hasta la fecha que ya pagaron.',
             'empty' => 'Ningún negocio pidió la baja.',
@@ -127,6 +234,8 @@ return [
         ],
 
         'struggling' => [
+            'tab' => 'Vencidos',
+            'see_all' => 'Ver los vencidos y pausados en Negocios',
             'title' => 'Vencidos y pausados',
             'sub' => 'No pagaron: en gracia, o ya con el asistente callado.',
             'empty' => 'Ningún negocio vencido ni pausado.',

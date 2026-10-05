@@ -9,6 +9,7 @@ use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
 use App\Enums\SuggestionStatus;
+use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -45,6 +46,7 @@ class Business extends Model
 
     use Localizable;
     use LogsActivity;
+    use SearchesText;
 
     // A business is never deleted, only deactivated: the records hanging off it
     // have to stay traceable.
@@ -837,9 +839,32 @@ class Business extends Model
      *
      * @return Collection<int, Business>
      */
-    public static function directory(): Collection
+    public static function directory(string $search = ''): Collection
     {
-        return self::query()->with('subscription')->orderBy('name')->get();
+        return self::query()
+            ->with('subscription')
+            // The term goes to the database, not to a filter in memory: that is
+            // what makes "Odontologico" find "Odontológico".
+            ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name'], trim($search)))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * The given businesses with the subscription their plan is read from, keyed
+     * by id. For a screen that starts from metered rows and only then needs the
+     * name and the plan behind each one.
+     *
+     * @param  iterable<int, int|null>  $ids
+     * @return Collection<int, Business>
+     */
+    public static function withPlansFor(iterable $ids): Collection
+    {
+        return self::query()
+            ->whereIn('id', collect($ids)->filter()->values())
+            ->with('subscription')
+            ->get()
+            ->keyBy('id');
     }
 
     /**

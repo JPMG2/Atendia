@@ -126,9 +126,11 @@ test('a scheduled baja lights the home tile with its plan, amount and date', fun
 
     $page = visit(route('admin.dashboard'))->resize(1280, 1400);
 
+    // The tile is always on screen; the row behind it lives in the "Bajas" tab.
     $page->assertSee(__('admin.home.tiles.leaving'))
-        ->assertSee('Kiosco El Trébol')
         ->assertSee('Se deja de cobrar USD 79,00 por mes')
+        ->click('Bajas')
+        ->assertSee('Kiosco El Trébol')
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'admin-home-leaving');
 
@@ -171,9 +173,12 @@ test('the admin home says the queues are empty instead of showing a void', funct
 
     $page = visit(route('admin.dashboard'))->resize(1280, 900);
 
+    // The three subscription lists share one card behind tabs, so each empty
+    // message is only on screen while its own tab is open.
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Nada vence esta semana.')
-        ->assertSee('Ningún negocio vencido ni pausado.')
         ->assertSee('Nada por verificar')
+        ->assertSee('Nada vence esta semana.')
+        ->click('Vencidos')
+        ->assertSee('Ningún negocio vencido ni pausado.')
         ->screenshot(filename: 'admin-home-empty');
 });

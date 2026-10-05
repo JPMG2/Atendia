@@ -94,6 +94,8 @@ class MenuSeeder extends Seeder
         // Cobros: the money. Planes (E7) and Consumo de IA (A3) land here.
         $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 3]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai', 'icon' => 'bot', 'route_name' => 'admin.ai', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_usage', 'icon' => 'bar-chart-3', 'route_name' => 'admin.ai-usage', 'sort_order' => 3]);
 
         // Approving a testimonial IS moderation, so it belongs inside this
         // branch and not beside it. The AI ratings screen (A9) lands here too.

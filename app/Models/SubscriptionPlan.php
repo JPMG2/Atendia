@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
  * A row of the plan catalog. Read through App\Classes\Main\Plan, never
  * directly: the catalog is cached whole and every screen asks the same copy.
  */
-#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'daily_digest', 'trial_days', 'is_featured'])]
+#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'daily_digest', 'trial_days', 'is_featured', 'ai_alert_share'])]
 class SubscriptionPlan extends Model
 {
     private const string CACHE_KEY = 'plans.catalog';
@@ -50,6 +50,7 @@ class SubscriptionPlan extends Model
                 'daily_digest' => (bool) $plan->daily_digest,
                 'trial_days' => $plan->trial_days === null ? null : (int) $plan->trial_days,
                 'is_featured' => (bool) $plan->is_featured,
+                'ai_alert_share' => (int) $plan->ai_alert_share,
             ]])
             ->all());
     }

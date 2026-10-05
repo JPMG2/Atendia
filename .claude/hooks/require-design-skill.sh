@@ -17,6 +17,13 @@
 #     línea, y `python3 - <<'PY'` en una línea con la ruta en otra nunca casaba.
 #     El comando se aplana antes de medirlo.
 #
+# 2026-10-04: el mismo agujero, por otra puerta. El bloqueo de Bash cubría solo
+# las vistas, así que `app/`, `database/` y `tests/` se escribieron por heredoc
+# y NINGÚN hook de reglas de oro corrió sobre ellos: los comentarios largos
+# salieron recién en el guardián, media hora después y con tokens de ella. El
+# bloqueo pasa a cubrir TODO lo que un hook PostToolUse vigila. No es un candado
+# nuevo: es este mismo, dejando de tener un costado abierto.
+#
 # Receta: .ai/guidelines/reglas-de-oro-enforcement.md
 #
 set -u
@@ -49,16 +56,28 @@ if [ "$tool" = "Bash" ]; then
     # Abrir no es escribir: `open(` a secas marcaba como escritura un
     # `print(open(p).read())`. La señal es el MODO o el método que escribe.
     writes="'w'|\"w\"|\\.write\\(|writelines|file_put_contents|writeFile"
-    view='resources/(views|css)'
+    # Las carpetas que vigila algún hook PostToolUse (el alcance de
+    # CommentScanner, más las vistas y el CSS). El borde a la izquierda evita
+    # que `atendia-app/` o `midapp/` cuenten como `app/`.
+    guarded='(^|[^A-Za-z0-9_.-])(app|database|tests|routes|config|resources)/'
 
-    if grep -Eq ">[[:space:]]*\"?[^|;&]*${view}" <<<"$probe" \
-        || grep -Eq "(sed -i|perl -i|tee|cp|mv|install)[^|;&]*${view}" <<<"$probe" \
-        || { grep -Eq "(python3?|php|node)[^|;&]*${view}" <<<"$probe" \
+    # El destino de una redirección es una RUTA pegada al `>`: solo caracteres
+    # de ruta, sin espacios ni comillas en el medio. Con `[^|;&]*` alcanzaba con
+    # que la ruta apareciera EN ALGÚN LADO después de un `>`, y un
+    # `grep -n '</div>' app/Foo.php` —solo lectura— quedaba bloqueado
+    # (2026-10-04, la segunda vez que este hook frena una lectura).
+    target=">[[:space:]]*[\"']?/?([A-Za-z0-9_.~-]+/)*(app|database|tests|routes|config|resources)/"
+
+    if grep -Eq "$target" <<<"$probe" \
+        || grep -Eq "(sed -i|perl -i|tee|cp|mv|install)[^|;&]*${guarded}" <<<"$probe" \
+        || { grep -Eq "(python3?|php|node)[^|;&]*${guarded}" <<<"$probe" \
             && grep -Eq "(${writes}| -i )" <<<"$probe"; } \
-        || { grep -q '<<' <<<"$blob" && grep -Eq "${view}" <<<"$blob" \
+        || { grep -q '<<' <<<"$blob" && grep -Eq "${guarded}" <<<"$blob" \
             && grep -Eq "${writes}" <<<"$blob"; }; then
-        echo "BLOQUEADO: las vistas y el CSS no se escriben por Bash (sed/python/redirección)." >&2
-        echo "Usá Edit o Write: así corren los hooks de reglas de oro sobre el archivo." >&2
+        echo "BLOQUEADO: no se escribe por Bash (sed/python/heredoc/redirección) en" >&2
+        echo "app/ database/ tests/ routes/ config/ resources/." >&2
+        echo "Usá Edit o Write: así corren los hooks de reglas de oro sobre el archivo," >&2
+        echo "en el acto y no media hora después en un guardián." >&2
         exit 2
     fi
     exit 0

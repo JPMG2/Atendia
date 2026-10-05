@@ -89,25 +89,29 @@ test('the admin panel shows the admin menu, not the client menu', function (): v
     $admin = User::factory()->create();
     $admin->syncRoles('admin');
 
+    // The admin tree is the one E10 seeded (2026-10-03): six groups, and no
+    // orphan item — "Usuarios" left with the menu lock, its screen is A4.
     $this->actingAs($admin)
         ->get('/admin')
         ->assertSuccessful()
-        ->assertSee('Usuarios')          // admin menu
-        ->assertSee('Configuración')
-        ->assertDontSee('Conversaciones'); // client menu
+        ->assertSee(__('menu.admin_businesses'))
+        ->assertSee(__('menu.admin_billing'))
+        ->assertSee(__('menu.admin_platform'))
+        ->assertDontSee(__('menu.conversations')); // client menu
 });
 
-test('the admin dashboard shows the configuration skeleton tiles', function (): void {
+test('the admin menu reaches the platform screens that exist', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
     $admin = User::factory()->create();
     $admin->syncRoles('admin');
 
     $this->actingAs($admin)
         ->get('/admin')
         ->assertSuccessful()
-        ->assertSee('Configuración')
-        ->assertSee('Integraciones')
-        ->assertSee('Seguridad');
+        ->assertSee(__('menu.admin_company'))
+        ->assertSee(__('menu.admin_integrations'))
+        ->assertSee(__('menu.admin_catalogs'));
 });
 
 test('the client dashboard shows the client menu, not the admin menu', function (): void {

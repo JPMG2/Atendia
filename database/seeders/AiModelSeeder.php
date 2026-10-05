@@ -21,6 +21,7 @@ class AiModelSeeder extends Seeder
         AiModel::updateOrCreate(
             ['code' => 'gpt-6-astra', 'effective_from' => '2026-09-03'],
             [
+                'provider' => 'openai',
                 'label' => 'GPT-6 Astra',
                 'prompt_per_million' => 10,
                 'cached_per_million' => 1,
@@ -30,9 +31,9 @@ class AiModelSeeder extends Seeder
             ],
         );
 
-        // One row per agent, all unassigned: nothing changes until she decides.
-        // `is_mechanical` only marks the candidates — the guide says the cheap
-        // model is chosen by MEASURING, never by assuming.
+        // One row per agent, all unassigned: an unassigned task runs on the
+        // pair written in its agent, and `is_mechanical` only marks the
+        // candidates — the cheap model is chosen by MEASURING.
         $tasks = [
             ['AsistenteAtendia', 'Atiende a los clientes del negocio por WhatsApp', false],
             ['AskAtendia', 'Responde las consultas de la dueña sobre su plataforma', false],

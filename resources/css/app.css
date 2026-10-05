@@ -699,9 +699,15 @@
   .checkbox-desc { font-size:var(--text-xs); color:var(--text-muted); }
 
   /* ---- Tabs ---- */
+  /* Inside a card the bar needs air: without it the tab sits on the title of
+  the panel it opens and the two read as one block. */
+  .bp-card > div > .tabs { margin-bottom:16px; }
+
+  /* It wraps instead of pushing the page sideways: three tabs do not fit on a
+  phone, and a bar that overflows takes the whole screen with it. */
   .tabs {
-    display:inline-flex; gap:4px; padding:4px; background:var(--surface-sunken);
-    border-radius:var(--radius-md); border:1px solid var(--border-subtle);
+    display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; background:var(--surface-sunken);
+    border-radius:var(--radius-md); border:1px solid var(--border-subtle); max-width:100%;
   }
   .tab {
     display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:none; cursor:pointer;
@@ -1701,6 +1707,24 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                   text-transform:uppercase; color:var(--text-subtle); border-bottom:1px solid var(--border-subtle); }
   .pay-table td { padding:10px; border-bottom:1px solid var(--border-subtle); color:var(--text-body); vertical-align:top; }
   .pay-table tr:hover td { background:var(--surface-sunken); }
+  /* A column of figures is read down, not across: right-aligned so the digits
+  line up by place value, and the heading follows its own data. */
+  .pay-table th.is-num, .pay-table td.is-num { text-align:right; white-space:nowrap; }
+  /* A note under a figure is a short mark, not a sentence: left to `nowrap`
+  it widened its column by half and pushed the table off the card, and left to
+  wrap it stacked one word per line and trebled the row. */
+  .pay-table td.is-num .aiu-note { white-space:nowrap; }
+  /* A field sitting straight on the table heading reads as part of it. */
+  .form-row + .pay-table-wrap { margin-top:18px; }
+  .pay-table tfoot th, .pay-table tfoot td { padding:10px; border-top:1px solid var(--border-default);
+    border-bottom:none; font-weight:700; color:var(--text-strong); background:var(--surface-sunken); }
+  .pay-table tfoot th { text-align:left; font-size:var(--text-sm); letter-spacing:normal; text-transform:none; }
+  .pay-table tfoot tr:hover td, .pay-table tfoot tr:hover th { background:var(--surface-sunken); }
+  /* Over its threshold: the row carries a wash and a left edge, so it is found
+  by scrolling past it rather than by reading every tag. */
+  .pay-table tbody tr.is-over td { background:var(--danger-soft); }
+  .pay-table tbody tr.is-over td:first-child { box-shadow:inset 3px 0 0 var(--danger); }
+  .pay-table tbody tr.is-over:hover td { background:var(--danger-soft); filter:brightness(.98); }
   .pay-kv { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:8px 0 12px; font-size:var(--text-sm); }
   .pay-kv dt { color:var(--text-muted); }
   .pay-kv dd { color:var(--text-strong); font-weight:600; }
@@ -1892,6 +1916,17 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                             font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em;
                             text-transform:uppercase; }
     .pay-table td:not([data-label]) { justify-content:flex-start; padding-top:6px; }
+    /* Stacked there is no column to line up with, and the figure belongs to
+    the label it sits beside, so the right edge stops meaning anything. */
+    .pay-table td.is-num { text-align:left; }
+    /* Stacked, a cell is a flex row of label and value — which laid the name,
+    its hint and its trend side by side and pushed the trend off the card. The
+    name cell is a block: its parts belong under each other. */
+    .pay-table td.is-name { display:block; }
+    .pay-table td.is-name::before { display:block; margin-bottom:4px; }
+    .pay-table tfoot th, .pay-table tfoot td { background:none; border-top:none; }
+    .pay-table tfoot tr { border-bottom:none; padding:10px 12px;
+                          border-radius:var(--radius-md); background:var(--surface-sunken); }
   }
   @media (max-width:600px) {
     .app-content { padding:20px 16px 40px; }
@@ -2152,9 +2187,14 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .sup-age { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-subtle); }
   .sup-context { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-subtle); word-break:break-all; }
 
-  @media (max-width:700px) {
+  /* The status select is a control, not a column: bounded, or at 900px it eats
+  the width and the ticket text breaks into eight lines (found 2026-10-03). */
+  .sup-side .field { width:170px; margin:0; }
+
+  @media (max-width:900px) {
     .sup-row { flex-direction:column; gap:8px; }
     .sup-side { width:100%; justify-content:space-between; }
+    .sup-side .field { width:100%; }
   }
 
   /* Adoption: the funnel reads left to right, so the steps are chips in the
@@ -2195,6 +2235,69 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   @media (max-width:700px) {
     .adp-row { flex-direction:column; gap:8px; }
     .adp-side { width:100%; align-items:flex-start; }
+  }
+
+  /* Both AI screens share this row: name on the left, figures in the middle,
+  the action or the cost on the right. On the models one the two selects are
+  the work of the row, so they get its width. */
+  .aim-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .aim-rows { margin-top:10px; }
+  .aim-row { display:flex; align-items:flex-start; gap:20px; padding:10px;
+    border-bottom:1px solid var(--border-subtle); }
+  .aim-row:last-child { border-bottom:none; }
+  .aim-row:hover { background:var(--surface-sunken); }
+  .aim-task { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .aim-task-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .aim-task-name { font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
+  /* The two selects carry the work of the row: below their own width they
+  stop showing which model is chosen, so they wrap instead of shrinking. */
+  .aim-pick { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; flex:none; width:min(520px, 100%); }
+  .aim-pick > * { flex:1 1 180px; min-width:180px; }
+  .aim-pick > .btn { flex:none; min-width:0; }
+  .aim-prices { flex:none; display:flex; flex-direction:column; gap:2px; align-items:flex-start; }
+  .aim-prices strong { color:var(--text-strong); }
+  .aim-side { display:flex; align-items:center; gap:10px; flex:none; }
+  .aim-form { margin:14px 0 4px; padding-bottom:14px; border-bottom:1px solid var(--border-subtle); }
+  /* Spend: the screen is a table, so what is left here only dresses the name
+  cell and the notes under it. Every figure lines up because the table lines
+  it up, not because a span was pushed against the right edge. */
+  /* The picker keeps its own width: alone on its row it stretched across the
+  card, which read as a search box over the table rather than a month. The
+  `.f-short` span is named so the rule outweighs it wherever it is declared. */
+  .form-row.aiu-toolbar > .f-short { flex:0 0 280px; }
+  /* The shape of a year, in the row. It borrows the row's colour so it reads
+  as part of the name and not as a chart someone dropped in the table. */
+  .sparkline { display:inline-flex; align-items:center; color:var(--brand); }
+  .sparkline { max-width:100%; }
+  .sparkline svg { display:block; overflow:visible; max-width:100%; height:auto; }
+  .aiu-trend { display:flex; align-items:center; margin-top:5px; }
+  .aiu-name { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-weight:600; color:var(--text-strong); }
+  /* Capped on purpose: a table lays its columns out by the widest line they
+  could hold, so one sentence left to run on steals the width of every figure
+  column and pushes the last of them off the card. */
+  .aiu-note { display:block; max-width:260px; margin-top:2px; font-size:var(--text-xs);
+    font-weight:400; color:var(--text-subtle); }
+  .aiu-section { font-size:var(--text-sm); font-weight:700; color:var(--text-strong); margin-bottom:6px; }
+  .aiu-foot { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:12px;
+    font-size:var(--text-xs); color:var(--text-muted); }
+  .aiu-warn { color:var(--warning); }
+
+  /* A name that opens its own file. The admin home counts businesses in four
+  tables, and reading a name there is useless if acting on it means going to
+  another screen and finding it again by eye. */
+  .row-link { color:var(--text-strong); font-weight:600; text-decoration:none;
+    border-bottom:1px solid transparent; transition:color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out); }
+  .row-link:hover { color:var(--brand); border-bottom-color:var(--brand); }
+  .aiu-cost-now { font-weight:600; color:var(--text-strong); }
+  .aim-actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
+
+  @media (max-width:900px) {
+    .aim-row { flex-direction:column; gap:10px; }
+    .aim-pick { width:100%; flex-wrap:wrap; }
+    .aim-prices { flex-direction:row; flex-wrap:wrap; gap:4px 14px; }
+    .aim-side { width:100%; }
   }
 
   /* A finger has no Ctrl key: naming one is naming something that is not there. */

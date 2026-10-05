@@ -135,7 +135,7 @@ test('the company option hangs from the settings item of the admin menu', functi
     // lives inside the configuration branch and not next to it.
     $this->seed(MenuSeeder::class);
 
-    $settings = Menu::query()->where('label_key', 'menu.admin_settings')->sole();
+    $settings = Menu::query()->where('label_key', 'menu.admin_platform')->sole();
 
     $this->assertDatabaseHas('menus', [
         'panel' => 'admin',
