@@ -11,12 +11,26 @@
 
 ## 2026-10-07
 
-- **Dos rojos nuevos de la base compartida, distintos de la familia `Company::current()`.**
-  En la corrida entera `TaxConditionSeederTest` cuenta 11 condiciones donde espera 10 (sus dos
-  tests) y `TracksUserActionsTest` ve 2 monedas vivas donde espera 0 tras un `forceDelete`.
-  **Los tres pasan aislados**, así que es contaminación cruzada sobre `atendia_testing`, no
-  lógica: los conteos absolutos (`toBe(10)`, `toBe(0)`) son lo que los hace frágiles. Entran
-  con el arreglo de `Once::flush()` ya anotado, que es la misma clase de problema.
+- **`block-full-suite-reruns.sh` cuenta `pest --list-tests` como una corrida entera.** Listar
+  no ejecuta nada y cuesta segundos, pero el hook lo frena igual, así que verificar qué
+  testsuite corre por defecto no se puede hacer con la herramienta que lo dice. El hook ya
+  distingue `--filter` y una ruta de archivo: falta que distinga también las opciones que
+  solo LISTAN.
+
+- **El hook `Stop` corre los guardianes sobre la MISMA base que la puerta, y la arruina.**
+  Cerré un turno mientras la corrida de la puerta estaba a mitad de camino: los guardianes
+  `GoldenRules*` arrancaron su propio `RefreshDatabase` sobre `atendia_testing` y la corrida
+  pasó de 17 rojos a **118**, con `QueryException`, `MultipleRecordsFound` y uniques por todas
+  partes. Los 29 archivos afectados, corridos juntos después, dan **522 verdes**. El daño no es
+  el rojo: es que una puerta de 8 minutos deja de medir y hay que repetirla. Falta que el hook
+  (o el de reruns, que ya lleva un contador) vea que hay una corrida en curso y espere.
+
+- **Dos rojos de conteo absoluto que todavía no tienen causa escrita.**
+  `TaxConditionSeederTest` contó 11 condiciones donde espera 10, y `TracksUserActionsTest` vio
+  2 monedas vivas donde espera 0 tras un `forceDelete`. Pasan aislados y pasaron también en la
+  corrida conjunta de 29 archivos del 07/10, así que `Once::flush()` pudo haberlos cerrado de
+  paso, pero NO está confirmado en una corrida completa limpia. Lo que los hace frágiles es el
+  conteo absoluto (`toBe(10)`, `toBe(0)`) sobre una base que comparten todos.
 
 - **El contenedor no tiene fuente de emoji, y las capturas lo muestran.** En
   `hero-demo-chat.png` el emoji del guion de la ferretería sale como el rectángulo vacío de
@@ -24,23 +38,7 @@
   con fuentes de emoji se ve bien. Molesta sólo para revisar capturas; se arregla instalando
   `fonts-noto-color-emoji` en la imagen.
 
-- **`CountryFactory` choca con `countries_name_unique` cuando la corrida es larga.**
-  `MessagingChannelTest` y `WhatsAppChannelTest` murieron con `duplicate key … (name)=(Haití)`
-  y `(Costa de Marfil)`: el faker repite nombre de país y el unique lo frena. No es el código
-  de los canales. El arreglo es que la factory derive el nombre de una secuencia, no del faker.
-
 ## 2026-10-05
-
-- **Los 15 rojos de la corrida completa tienen UNA causa, y ya está diagnosticada.**
-  `Company::current()` memoiza con `once()`, que guarda **para todo el PROCESO, no para el
-  test**: una prueba que guarda una compañía deja a las siguientes leyendo esa fila. Por eso
-  `SiteFooterCompanyTest` (8 rojos), `WelcomePageTest` (2) y compañía fallan juntos en la
-  corrida entera y pasan aislados. No es mío ni lo amplifiqué: ya fallaba en la corrida de la
-  mañana, antes de tocar `Company`.
-  **El arreglo es `Once::flush()` en `TestCase::setUp()`** — lo probé y cierra la clase entera.
-  Lo revertí porque destapa 4 tests de `ConfigurationCompanyTest` que pasaban JUSTAMENTE por
-  la memoria rancia (esperan que no haya compañía y la hay). Entra como tarea propia: flush +
-  ajustar esos 4, no a las apuradas antes de un commit.
 
 - **`referral.reward_percent` (25%) se promete y nadie lo paga.** Lo imprimen la pantalla de
   referidos y el correo de invitación, y NINGÚN archivo de `app/` lo lee: no hay descuento, ni

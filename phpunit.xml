@@ -3,13 +3,22 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         defaultTestSuite="Unit,Feature"
 >
+    <!-- Browser is declared but kept OUT of the default run by defaultTestSuite
+         above: it drives a real Chromium and takes ~22 min against the ~8 of the
+         other two, so it stays its own gate (`pest tests/Browser`, which the
+         commit hook asks for separately). Declared anyway so the suite names
+         what it skips, and so it can be selected by name. -->
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
         </testsuite>
     </testsuites>
     <source>

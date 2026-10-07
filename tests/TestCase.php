@@ -10,6 +10,7 @@ use Database\Seeders\PlanSeeder;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Once;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
@@ -32,6 +33,11 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // `once()` memoizes for the PROCESS, not for the test: a test that saved
+        // a company left every later one reading that row, which is what made
+        // the footer, the landing and the hub fail only in a full run.
+        Once::flush();
 
         $this->guardAgainstProductionDatabase();
         $this->fakeLeakedPasswordCheck();

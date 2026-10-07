@@ -29,3 +29,5 @@
 2026-10-06	check-comment-golden-rules	database/migrations/2026_10_06_190129_create_seasonal_windows_table.php
 2026-10-06	check-comment-golden-rules	database/migrations/2026_10_06_190130_create_demo_tags_table.php
 2026-10-06	check-blade-query-golden-rules	resources/views/components/catalog/⚡seasonal-window.blade.php
+2026-10-07	guardian:BusinessIsolationTest	tests/TestCase.php
+2026-10-07	guardian:BusinessIsolationTest	tests/TestCase.php
