@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -33,6 +34,20 @@ class ConversationMessageFactory extends Factory
 
     public function out(): static
     {
-        return $this->state(fn (): array => ['direction' => MessageDirection::Out]);
+        // Authored by the assistant, which is what an outgoing message IS
+        // unless a person took the thread: in the live table 8 of the 11
+        // outgoing rows say `assistant`, and a null author is pre-column.
+        return $this->state(fn (): array => [
+            'direction' => MessageDirection::Out,
+            'author' => MessageAuthor::Assistant,
+        ]);
+    }
+
+    public function byHuman(): static
+    {
+        return $this->state(fn (): array => [
+            'direction' => MessageDirection::Out,
+            'author' => MessageAuthor::Human,
+        ]);
     }
 }

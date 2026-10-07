@@ -54,6 +54,10 @@ return new class extends Migration
             $table->unsignedSmallInteger('appointments_per_day')->nullable()->comment('Tope de turnos por día; null = solo manda la capacidad');
             $table->unsignedSmallInteger('appointment_slot_minutes')->default(30)->comment('Cuánto dura un turno cuando el servicio no declara su duración');
             $table->boolean('is_active')->default(true)->comment('Cortar el servicio sin borrar datos');
+            // Deduced from the seeded email, any new demo with a different one
+            // counted as a real client: on 2026-10-07 eight of them were 632 of
+            // the 790 the Inicio was showing as monthly revenue.
+            $table->boolean('is_demo')->default(false)->comment('Negocio de muestra de la landing: NUNCA cuenta como cliente ni como plata');
             $table->timestamp('suspended_at')->nullable()->comment('Suspendido por moderación de contenido: la IA calla y solo el admin lo levanta');
             $table->string('suspension_reason', 60)->nullable()->comment('Categoría de moderación que disparó la suspensión');
             $table->text('appeal_message')->nullable()->comment('Apelación del negocio suspendido: la lee el admin antes de decidir');

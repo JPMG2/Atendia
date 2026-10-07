@@ -1716,10 +1716,19 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .pay-table td.is-num .aiu-note { white-space:nowrap; }
   /* A field sitting straight on the table heading reads as part of it. */
   .form-row + .pay-table-wrap { margin-top:18px; }
+  /* A quote from a conversation, not a data field: it is the evidence of what
+  went wrong, so it keeps two lines at most. Left free, one customer writing a
+  paragraph owns the whole row and the severity tag scrolls out of sight. */
+  .inc-excerpt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    max-width:36ch; color:var(--text-muted); font-style:italic; }
   .pay-table tfoot th, .pay-table tfoot td { padding:10px; border-top:1px solid var(--border-default);
     border-bottom:none; font-weight:700; color:var(--text-strong); background:var(--surface-sunken); }
   .pay-table tfoot th { text-align:left; font-size:var(--text-sm); letter-spacing:normal; text-transform:none; }
   .pay-table tfoot tr:hover td, .pay-table tfoot tr:hover th { background:var(--surface-sunken); }
+  /* The row's action belongs to the row's FIRST LINE. The button is 38px tall
+  and centres its label, so against cells aligned to the top it sank 9px — half
+  the difference between its height and a line of text. Measured, not guessed. */
+  .pay-table td > .btn-sm { margin-block:-9px; }
   /* Over its threshold: the row carries a wash and a left edge, so it is found
   by scrolling past it rather than by reading every tag. */
   .pay-table tbody tr.is-over td { background:var(--danger-soft); }
@@ -1910,6 +1919,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     width it is given: left to its own min-content it pushed the page 4px wide
     and the horizontal scroll came back on a phone. */
     .pay-table { min-width:0; max-width:100%; table-layout:fixed; }
+    /* Stacked, the action gets a line of its own and the pull-up that aligned
+    it with the first line would only crowd the cell above it. */
+    .pay-table td > .btn-sm { margin-block:0; }
     .pay-table thead { display:none; }
     .pay-table tr { display:block; padding:10px 0; border-bottom:1px solid var(--border-subtle); }
     .pay-table tr:last-child { border-bottom:none; }

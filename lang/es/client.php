@@ -404,6 +404,9 @@ return [
         'qr_services' => 'Servicios',
         'human_tag' => 'Equipo',
         'teach' => 'Enseñarle esto a tu asistente',
+        'rate_good' => 'Esta respuesta estuvo bien',
+        'rate_bad' => 'Esta respuesta estuvo mal, corregirla',
+        'rated_good' => 'Anotado. Así sabemos qué respuestas te sirven.',
         'sources_toggle' => '¿De dónde salió?',
         'department_hint' => 'El departamento al que tu asistente derivó esta charla',
         'files' => [

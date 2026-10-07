@@ -63,6 +63,19 @@ class AssistantFaqForm extends BaseForm
         $this->answer = (string) ($suggestion->teamAnswer?->answer ?? $this->answer);
     }
 
+    /**
+     * The sheet opens from a reply somebody marked as wrong: the customer's
+     * question is already there and the answer is left EMPTY on purpose. The
+     * wrong text as a draft invites editing a word; blank asks for the right
+     * answer, which is what the assistant will repeat from now on.
+     */
+    public function setupFromRejectedReply(?string $question, ?int $conversationId): void
+    {
+        $this->setup();
+        $this->conversationId = $conversationId;
+        $this->question = mb_substr((string) $question, 0, 200);
+    }
+
     public function save(): NotificationDto
     {
         $business = Auth::user()?->business;

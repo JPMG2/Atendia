@@ -7,6 +7,7 @@ namespace App\Actions\Billing;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\BillingPaymentReviewed;
+use App\Mail\FirstPaymentReceived;
 use App\Messaging\Channels\Email;
 use App\Models\Payment;
 use App\Models\User;
@@ -20,6 +21,10 @@ class ApprovePayment
 {
     public function handle(Payment $payment, User $reviewer): Payment
     {
+        // Read BEFORE the transaction writes Active over it: a renewal and a
+        // first payment look identical afterwards, and only one is news.
+        $wasTrialing = $payment->subscription?->status === SubscriptionStatus::Trialing;
+
         DB::transaction(function () use ($payment, $reviewer): void {
             $subscription = $payment->subscription;
             $end = $subscription?->periodEndsAt();
@@ -51,7 +56,24 @@ class ApprovePayment
 
         $this->mailVerdict($payment);
 
+        if ($wasTrialing) {
+            $this->mailConversion($payment);
+        }
+
         return $payment;
+    }
+
+    /**
+     * Only the FIRST payment reaches her. Every renewal would be noise, and
+     * noise is how a mailbox teaches somebody to archive without reading.
+     */
+    private function mailConversion(Payment $payment): void
+    {
+        $admin = User::where('email', (string) config('atendia.admin_email'))->first();
+
+        if ($admin !== null) {
+            (new Email($payment, [(string) $admin->email], FirstPaymentReceived::class))->send();
+        }
     }
 
     private function mailVerdict(Payment $payment): void

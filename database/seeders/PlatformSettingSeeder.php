@@ -30,6 +30,11 @@ class PlatformSettingSeeder extends Seeder
             // When a conversation counts as over, which is when it is read.
             ['key' => 'analysis.idle_hours', 'group' => 'analysis', 'type' => 'integer', 'default_value' => '2', 'min' => 1, 'max' => 48, 'sort_order' => 1],
 
+            // How long the assistant may leave a customer's last word hanging
+            // before the admin desk calls it a failure.
+            ['key' => 'incidents.unanswered_minutes', 'group' => 'analysis', 'type' => 'integer', 'default_value' => '15', 'min' => 5, 'max' => 240, 'sort_order' => 2],
+            ['key' => 'incidents.digest_time', 'group' => 'sends', 'type' => 'time', 'default_value' => '20:00', 'sort_order' => 7],
+
             // Handing a chat to a person, and getting it back.
             ['key' => 'handoff.reminder_minutes', 'group' => 'handoff', 'type' => 'integer', 'default_value' => '20', 'min' => 5, 'max' => 240, 'sort_order' => 1],
             ['key' => 'handoff.customer_idle_hours', 'group' => 'handoff', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 168, 'sort_order' => 2],

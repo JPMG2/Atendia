@@ -56,6 +56,21 @@ class ConversationMessage extends Model
     }
 
     /**
+     * What the customer asked right before a given reply. That is what the
+     * assistant will be asked again, so it is what has to be taught when its
+     * answer was wrong.
+     */
+    public static function questionBefore(int $conversationId, int $replyId): ?string
+    {
+        return self::query()
+            ->where('conversation_id', $conversationId)
+            ->where('direction', MessageDirection::In)
+            ->where('id', '<', $replyId)
+            ->latest('id')
+            ->value('body');
+    }
+
+    /**
      * The month's traffic per business: the volume half of the usage meter.
      *
      * @return Collection<int, object{business_id: int, threads: int, messages: int, audio_seconds: int}>

@@ -44,6 +44,17 @@ Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dai
 // and a daily copy of the same list stops being read by the second one.
 Schedule::command('atendia:adoption-alert')->weeklyOn(1, '09:00')->withoutOverlapping(60);
 
+// The month's revenue, kept so next month has something to be compared with.
+// Daily and before midnight: a server down on the 1st would otherwise lose
+// that month's photo for good.
+Schedule::command('atendia:revenue-snapshot')->dailyAt('23:40')->withoutOverlapping(30);
+
+// What went wrong today, brought to her. Daily and in the evening, and quiet
+// on a clean day: a nightly "nothing happened" teaches her to archive unread.
+Schedule::command('atendia:incidents-digest')
+    ->dailyAt((string) config('atendia.incidents.digest_time'))
+    ->withoutOverlapping(30);
+
 // Same reasoning, the other side of the ledger: a client whose AI is eating
 // its own plan has to reach her before the month is spent, not when she next
 // opens the screen. Weekly, and only while it is still over.

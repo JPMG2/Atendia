@@ -305,6 +305,26 @@ return [
         'knowledge_digest' => ['weekday' => 1, 'time' => '09:30'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Incidents
+    |--------------------------------------------------------------------------
+    |
+    | unanswered_minutes: how long a customer's last word may sit with no reply
+    | before the admin desk calls it a failure. Short enough to still be worth
+    | saving the conversation, long enough not to flag a reply in flight.
+    | She turns it from Admin → Ajustes (`incidents.unanswered_minutes`).
+    |
+    */
+
+    'incidents' => [
+        'unanswered_minutes' => env('INCIDENTS_UNANSWERED_MINUTES', 15),
+        // When the day's incidents reach her by mail. Evening on purpose: it
+        // is a read-and-plan list, not an alarm — an alarm would be a push the
+        // moment the first customer went unanswered, and that is another tool.
+        'digest_time' => env('INCIDENTS_DIGEST_TIME', '20:00'),
+    ],
+
     'analysis' => [
         'idle_hours' => env('ANALYSIS_IDLE_HOURS', 2),
         'same_intent_similarity' => 0.75,

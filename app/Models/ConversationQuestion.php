@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\QuestionResolution;
 use App\Traits\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -87,5 +88,35 @@ class ConversationQuestion extends Model
     public function message(): BelongsTo
     {
         return $this->belongsTo(ConversationMessage::class, 'conversation_message_id');
+    }
+
+    /**
+     * Threads where the customer asked more than once and nobody ever
+     * answered: insisting is what somebody does before giving up, and it is
+     * the only one of these signals the customer sends on purpose.
+     *
+     * One row per thread, carrying the LAST question — the words they used
+     * when they were already tired of asking.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function repeatedUnanswered(int $sinceDays): EloquentCollection
+    {
+        $threads = static::query()
+            ->selectRaw('conversation_id')
+            ->where('resolved_by', QuestionResolution::Nobody)
+            ->where('created_at', '>=', now()->subDays($sinceDays))
+            ->groupBy('conversation_id')
+            ->havingRaw('count(*) >= 2');
+
+        return static::query()
+            ->whereIn('conversation_id', $threads)
+            ->where('resolved_by', QuestionResolution::Nobody)
+            ->whereNotIn('business_id', Business::demoIds())
+            ->with(['business:id,name', 'conversation:id,contact_name,contact_phone'])
+            ->latest('id')
+            ->get()
+            ->unique('conversation_id')
+            ->values();
     }
 }

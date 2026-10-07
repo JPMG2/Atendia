@@ -3,7 +3,8 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-03.
+> Última revisión: 2026-10-07 (bloque A y bloque E verificados contra el código, no contra
+> lo que decía esta lista: 25 casillas estaban hechas y seguían abiertas).
 
 ## Cómo se cierra un punto de esta lista
 
@@ -101,6 +102,9 @@ cada ajuste dice qué pasa si lo movés, con su default al lado y un botón para
       no un ajuste de plataforma.
 - [x] ~~Al sumar un ajuste nuevo: anotarlo acá~~ — hoy se suma una fila al `PlatformSettingSeeder`
       y aparece sola en la pantalla, agrupada y validada por su tipo.
+- Dos ajustes nuevos el 2026-10-07, del escritorio de incidencias (A7):
+  `incidents.unanswered_minutes` (15 min, cuándo una charla sin respuesta cuenta como falla) y
+  `incidents.digest_time` (20:00, cuándo le llega el correo del día).
 - **Fuera a propósito**: `referral.reward_percent`. Nada en `app/` lo paga (ver `hallazgos.md`):
   sería un control que no hace nada.
 
@@ -123,8 +127,11 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
 - [x] ~~Rehecha entera el 2026-10-05~~ (ver E14 y E14-bis): era legible como dato y
       ilegible como pantalla.
 - [ ] **El minutaje de audio perdió su columna** al pasar a tabla: nueve columnas no entran a
-      1280px sin cortar. Sigue dentro del costo y en los tres exportables. Si lo querés en
-      pantalla, hay que sacarle el lugar a otra columna.
+      1280px sin cortar. Sigue dentro del costo (`AiSpend` lo valoriza) pero **NO está en los
+      tres exportables**: `AiSpendReport` tiene 10 columnas y ninguna es audio (corregido el
+      2026-10-07; antes esta línea afirmaba que sí salía). Hoy el dato no se ve en ninguna
+      parte: si lo querés en pantalla hay que sacarle el lugar a otra columna, y en los
+      exportables entra sin pelear por ancho.
 
 ### A4. Usuarios y accesos — HECHO 2026-10-05
 `/admin/usuarios`, bajo Plataforma.
@@ -228,10 +235,30 @@ con su plan, próximo cobro, lo que debe, sus últimos 10 pagos y la baja.
       "Odontologico" encuentra "Odontológico"; `?buscar=` en la URL y "ningún negocio coincide"
       dicho distinto de "todavía no hay negocios".
 
-### A7. Aviso diario de charlas que salieron mal
-Anotado el 2026-09-24, nunca construido.
-- [ ] Las charlas con problema del día: errores del log, jobs fallidos, cliente que repite,
-      se enoja o pide una persona
+### A7. Aviso diario de charlas que salieron mal — HECHO 2026-10-07
+Anotado el 2026-09-24. Investigado antes de construir (Intercom, Linear, el patrón de daily
+digest): el orden por llegada es operativamente **incorrecto** y un contador no sirve — sirve
+la fila con la evidencia, porque cada una es una relación recuperable.
+
+- [x] ~~Las charlas con problema del día~~ → pantalla **Qué salió mal** (`/admin/incidencias`,
+      permiso `incidents.view`, bajo Negocios), ordenada por severidad y no por fecha:
+      sin responder · trabajo caído · derivada sin atender · respuesta marcada mal · cliente
+      molesto. Cada fila lleva negocio, cliente, cuánto espera, lo último dicho y su acción.
+      Abre en la peor pestaña que tenga filas. Una charla con dos males es UNA fila, bajo su
+      peor categoría (lo cacé mirando la captura: el mismo cliente salía dos veces y el
+      encabezado prometía más trabajo del que había).
+- [x] ~~Que el aviso le llegue sin abrir la pantalla~~ → `atendia:incidents-digest` diario a
+      las 20:00 (`incidents.digest_time`, girable desde Ajustes). **En un día limpio no manda
+      nada**: un correo nocturno que dice "no pasó nada" enseña a archivarlo sin leer.
+- [x] ~~El patrón de fondo, no solo las filas~~ → cuando un negocio concentra 2 o más del
+      mismo problema, se nombra arriba de la tabla sin sacar ninguna fila.
+- [x] ~~Falta "el cliente que repite"~~ (2026-10-07): entró como quinta señal, **sin
+      embeddings ni umbrales**: dos o más preguntas de la misma charla que `resolved_by`
+      marcó como `nobody`. Lleva la ÚLTIMA pregunta, que son las palabras que usó cuando ya
+      estaba cansado de preguntar, y pesa más que una derivación: insistir es lo que hace
+      alguien justo antes de irse, y es la única señal que el cliente manda a propósito.
+- [ ] El umbral de "sin responder" quedó en 15 min (`incidents.unanswered_minutes`): hay que
+      mirarlo con tráfico real, no decidirlo a ojo.
 
 ### A8. Tags de la demo del hero, configurables con estacionalidad — HECHO 2026-10-06
 Pedido de ella 2026-09-22. Dos maestros nuevos en el hub de Catálogos, grupo **Landing**.
@@ -260,23 +287,46 @@ Pedido de ella 2026-09-22. Dos maestros nuevos en el hub de Catálogos, grupo **
       viene"** (clona ventana y variantes con las fechas corridas 365 días, APAGADA: se escribe
       un año antes y se enciende cuando se leyó; repetir dos veces no deja dos copias).
 
-### A9. Calificaciones de la IA — las dos, y hoy existe una sola
+### A9. Calificaciones de la IA — la del cliente YA ESTÁ (2026-10-07); falta la de ella
 Pedido de ella 2026-09-25 ("dejalo en pendiente") y ampliado el 2026-10-03.
-Verificado hoy: los pulgares existen **solo** en `⚡ask-atendia.blade.php` (el asistente de
-ELLA) y se guardan en `ask_feedback` (pregunta, respuesta, rating, negocio, usuario). El
-asistente que atiende a los clientes del negocio por WhatsApp **no tiene pulgares ni tabla**.
-- [ ] Pantalla de `ask_feedback`, pulgar abajo primero, para corregir la IA donde falla
-- [ ] **Capturar la calificación de la IA que atiende al cliente del negocio** — hoy no se
-      guarda nada, y es la señal que de verdad sirve para entrenar: es la IA que habla con
-      desconocidos, no la que le contesta a ella
-- [ ] Decidir CÓMO se pide por WhatsApp sin molestar al cliente del negocio (un pulgar en un
-      chat no es un botón en una pantalla: se pide una vez, no en cada respuesta)
-- [ ] La pantalla del admin manda sobre las dos: qué respuestas fallaron, de qué negocio, y
-      qué se corrigió
+Los pulgares de ELLA siguen en `⚡ask-atendia.blade.php` sobre `ask_feedback` y **sin
+pantalla**. Los del asistente que atiende a los clientes ya existen en la charla, sobre
+`assistant_ratings`, y su 👎 llega al escritorio de incidencias.
+- [x] ~~Pantalla de `ask_feedback`, pulgar abajo primero~~ (2026-10-07): **Calidad de la IA**
+      (`/admin/calidad-ia`, bajo Cobros, permiso `ai.view`). Las dos IA SEPARADAS: la que
+      atiende a los clientes, por negocio y con los "mal" primero, y la tuya con sus pulgares
+      abajo y la pregunta que falló.
+- [x] ~~**Capturar la calificación de la IA que atiende al cliente del negocio**~~
+      (2026-10-07): tabla `assistant_ratings` (tenant + RLS) y los dos pulgares en la charla,
+      sobre lo que escribió **la IA** nada más. El 👎 **abre la corrección** con la pregunta
+      del cliente cargada y la respuesta en blanco, porque pedir sólo una calificación no
+      consigue calificaciones: pedir que arreglen lo que les molestó, sí. Marcar dos veces
+      corrige en vez de acumular.
+- [x] ~~Decidir CÓMO se pide por WhatsApp~~ — **DECIDIDO QUE NO, 2026-10-07, freno de ella.**
+      `businesses` no tiene columna de canal: hoy TODOS cuelgan de Evolution, o sea del canal
+      no oficial. Un mensaje extra, idéntico y no solicitado a cada cliente es el patrón por
+      el que Baileys bloquea, y el número que se quema es **el del negocio**, no el nuestro.
+      Entra sólo el día que exista Cloud API, detrás de una bandera por negocio: hasta
+      entonces el control no se dibuja (`controles-vivos.md`). Investigado: con la API oficial
+      también haría falta plantilla aprobada pasadas las 24 h.
+- [x] ~~La pantalla del admin manda sobre las dos~~ (2026-10-07, la mitad del cliente): un
+      pulgar abajo aparece en **Qué salió mal** como "Respuesta marcada mal", con negocio,
+      cliente y la respuesta rechazada, y se queda **7 días** — los demás son hechos que
+      pasan, éste es un defecto que sigue contestando mal hasta que alguien le enseñe.
+- [x] ~~Falta el otro lado y la calidad por negocio~~ (2026-10-07): **el porcentaje NUNCA
+      viaja solo.** Va con la cantidad de marcas sobre las que se calculó y, por debajo de 20,
+      con un aviso de que no alcanza para concluir nada. Un negocio que nadie marcó **no
+      aparece** en vez de salir en 0%: inventarle un cero acusa a un asistente que puede
+      estar contestando perfecto.
 
 ### A10. Radar de personas
 `platform_contacts` ya junta los datos cross-negocio (sin `business_id`, capa plataforma).
-- [ ] Pintarlo
+Se llena en cada mensaje entrante (`ProcessIncomingWhatsAppMessage`) y en `AdoptOrphanCustomers`.
+- [x] ~~Pintarlo~~ (2026-10-07): **Radar de personas** (`/admin/radar`, bajo Negocios,
+      permiso `contacts.view`). Ordena por cantidad de negocios y no por fecha, porque el
+      solapamiento —la misma persona escribiéndole a dos negocios— es lo ÚNICO que esta tabla
+      sabe y que ningún negocio puede ver desde su panel. Cuando no hay nadie compartido lo
+      dice con palabras, en vez de dejar un cero para interpretar.
 
 ### A11. Tasa de cambio automática (Bs/USD)
 Pedido de ella 2026-09-23. Investigación hecha (memoria `atendia-tasa-cambio-auto`):
@@ -312,10 +362,19 @@ Pedido de ella 2026-09-23. Investigación hecha (memoria `atendia-tasa-cambio-au
 
 ## C · Deudas chicas que ensucian el admin
 
+- [x] ~~**El MRR del Inicio estaba inflado 5 veces**~~ (2026-10-07, MEDIDO en `atendia`):
+      mostraba 790 y **632 eran los 8 negocios demo de la landing**, que el seeder crea con
+      suscripción. El real era 158, y "pagando: 10" eran 2. La regla "los demos nunca inflan"
+      existía para el contador público de la landing y a la PLATA nunca se le había aplicado.
+      Arreglado en las seis consultas de plata con un solo filtro, y la deducción por correo
+      sembrado murió: ahora hay columna `businesses.is_demo`, que es el `test mode` de Stripe
+      en un flag. Antes, un demo nuevo con otro correo entraba como cliente real.
 - [x] ~~Borrar `demo@atendia.test` de `atendia`~~ (2026-10-04): no lo sembraba ningún seeder
       y no tenía negocio colgando, así que se borró la fila y nada más.
-- [ ] No hay fila de Compañía en `atendia` (`Company::current()` devuelve null): el pie de
-      la landing y los correos que la usan caen al fallback.
+- [x] ~~No hay fila de Compañía en `atendia`~~ (2026-10-07): la cargaste. `Company::count()`
+      = 1, con razón social, marca, CUIT, dirección, correo, teléfono, región y condición
+      fiscal. Siguen vacíos `web`, los dos logos y `payment_instructions` (esta última
+      espera tu reunión): son carga tuya, no código.
 
 ---
 
@@ -337,19 +396,27 @@ cuarto. Lo que quedó, con lo que lo prueba:
       (es la misma regla de oro, no un archivo nuevo). Atrapó `menu.admin_users` y se sacó
       del `MenuSeeder`: su pantalla es A4 y todavía no existe.
 
-Texto original, para no re-discutirlo:
+Texto original, para no re-discutirlo. **Sin casilla a propósito** (2026-10-07): escrito con
+`- [ ]` se contaba como pendiente abierto en cada revisión, y los cuatro están cerrados arriba.
 
-- [ ] **Pestaña con nombre** — hermano de `GoldenRulesScreenTitlesTest` para `panel = 'admin'`
-      (`admin.dashboard` y `admin.catalogs` no llaman a `->title()`).
-- [ ] **Render con la base vacía** — hermano de `GoldenRulesFreshClientScreensTest`: sin fila
-      de Compañía, sin negocios y sin pagos, ninguna pantalla del admin da 500 (es
-      literalmente el hallazgo de la Compañía nula).
-- [ ] **390px y 900px con filas reales** — hermano de `ClientResponsiveBrowserTest` para las
-      tablas del admin (pagos, moderación, soporte, adopción).
-- [ ] **Ítem de menú sin ruta y sin hijos no se siembra** (hoy `menu.admin_users` se dibuja y
-      no lleva a ninguna parte) — el equivalente de "controles vivos" para el menú.
-      Ojo: `check-panel-screen.sh` cierra la dirección **pantalla → ruta → menú**; esta es la
-      inversa (**menú → ruta**), que necesita la BD y por eso va de guardián Pest.
+> **Pestaña con nombre** — hermano de `GoldenRulesScreenTitlesTest` para `panel = 'admin'`
+> (`admin.dashboard` y `admin.catalogs` no llaman a `->title()`).
+>
+> **Render con la base vacía** — hermano de `GoldenRulesFreshClientScreensTest`: sin fila
+> de Compañía, sin negocios y sin pagos, ninguna pantalla del admin da 500 (es
+> literalmente el hallazgo de la Compañía nula).
+>
+> **390px y 900px con filas reales** — hermano de `ClientResponsiveBrowserTest` para las
+> tablas del admin (pagos, moderación, soporte, adopción).
+>
+> **Ítem de menú sin ruta y sin hijos no se siembra** (hoy `menu.admin_users` se dibuja y
+> no lleva a ninguna parte) — el equivalente de "controles vivos" para el menú.
+> Ojo: `check-panel-screen.sh` cierra la dirección **pantalla → ruta → menú**; esta es la
+> inversa (**menú → ruta**), que necesita la BD y por eso va de guardián Pest.
+
+Los nombres cambiaron después de escribir esto: hoy son `GoldenRulesFreshScreensTest` y
+`PanelResponsiveBrowserTest`, y `menu.admin_users` volvió al seeder CON su ruta
+(`MenuSeeder.php:115`), así que no viola el candado.
 
 ---
 
@@ -412,10 +479,12 @@ El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces**
 - [x] ~~Las 22 de vistas~~ leen `Company::brand()`.
 - [x] ~~Candado~~ `GoldenRulesBrandSourceTest`: nadie vuelve a escribir el nombre, y PRUEBA
       que renombrar la fila renombra el producto entero.
-- [ ] **Falta que cargues la fila de Compañía** desde `/admin/company`. No la creé: no voy a
-      inventar la razón social ni el CUIT de tu empresa. Hasta entonces manda el fallback.
-- [ ] Pie de la landing, correos y errores leyendo dirección y redes de Compañía (el nombre
-      ya sale de ahí; faltan los otros datos).
+- [x] ~~Falta que cargues la fila de Compañía~~ (2026-10-07): cargada, `Company::count()` = 1.
+      El fallback ya no manda. Quedan vacíos `web` y los dos logos: carga tuya.
+- [ ] Correos y errores leyendo dirección y redes de Compañía. **El pie de la landing YA lo
+      hace** (`site/footer.blade.php`: redes, dirección, razón social y copyright); los dos
+      layouts que faltan leen sólo `Company::brand()` (`email/layout.blade.php:13` y
+      `errors/layout.blade.php:12,114`).
 
 ### E6-bis. Lo que quedó del pedido original de Compañía — CERRADO 2026-10-05
 - [x] ~~Crear la fila de Compañía en `atendia`~~ — la cargó ella el 2026-10-05.
@@ -450,7 +519,8 @@ La fuente única ya existe y está blindada: tabla `plans`, clase `Plan`, guardi
 
 ### E8. Enum que puedan vivir en BD
 NUEVO · criterio en `arquitectura-paneles.md`
-Hoy hay 23 Enum en `app/Enums/`. La mayoría son estados que el código ramifica y **se quedan**
+Hoy hay **25** Enum en `app/Enums/` (eran 23 cuando se escribió; contados el 2026-10-07).
+La mayoría son estados que el código ramifica y **se quedan**
 (`PaymentStatus`, `MessageDirection`, `SubscriptionStatus`, `ModerationSeverity`…).
 - [ ] Revisar uno por uno con ese criterio y pasar a BD solo los que son LISTA
       (candidatos a mirar primero: `SupportTicketKind`, `NotificationType`, `HandoffLevel`)
@@ -482,8 +552,8 @@ Plataforma ── Compañía · Catálogos · Integraciones · Logs
 - [x] Arreglado de paso: el aviso de Moderación solo recorría el primer nivel, así que
       anidado desaparecía. Ahora es recursivo y el GRUPO también lo lleva — si no, una
       novedad que pide su decisión se escondía detrás de una rama sin abrir.
-- [ ] Decisión futura: "Cobros" tiene un solo hijo hoy. Se dejó como grupo a propósito
-      porque Planes y Consumo de IA ya están en la lista; si no llegaran, Pagos vuelve arriba.
+- [x] ~~Decisión futura: "Cobros" tiene un solo hijo hoy~~ (2026-10-07): ya tiene tres —
+      Pagos, Modelos de IA y Consumo de IA. La condición que lo ponía en duda no se cumple.
 
 ---
 
@@ -525,8 +595,10 @@ Lo investigado en los docs de Livewire 4 (`@island(name:)`, `wire:island=`, `laz
 - [x] ~~**Plan B** si el proveedor retira el modelo~~: `ai_tasks.fallback_model_code`. Tiene
       que ser de OTRO lab (la escalera del paquete se indexa por proveedor) y la pantalla
       solo ofrece esos.
-- [ ] **Falta medir**: `is_mechanical` marca 10 candidatos a modelo barato. La guía dice
-      elegirlo MIDIENDO, así que eso se hace con la batería de `tests/Eval`, no a ojo.
+- [ ] **Falta medir**: `is_mechanical` marca **9** candidatos a modelo barato (eran 10 en el
+      texto original; contados en `ai_tasks` el 2026-10-07: 12 filas, 9 mecánicas, y
+      **ninguna con `model_code` asignado**, así que todas corren con el default del código).
+      La guía dice elegirlo MIDIENDO, así que eso se hace con la batería de `tests/Eval`.
 - [x] ~~El aviso cuando entra el respaldo~~ (2026-10-04): `AnnounceModelFailover` escucha
       `AgentFailedOver` y deja un warning con el agente, el proveedor que falló y el motivo.
       Se lee en `/admin/logs`; no hay campana de plataforma (la campana es por negocio), y
@@ -594,21 +666,28 @@ NUEVO · pregunta de ella del 2026-10-03: *"¿qué pasa si mañana cambio el mod
 Verificado ese día: el modelo está escrito a mano en los **12 agentes** y el costo se calcula
 con UNA tarifa global que ignora la columna `model` que `ai_usages` sí guarda.
 
-- [ ] **DEFECTO que se activa al primer cambio de modelo**: el histórico se recalcula con la
-      tarifa nueva. Las llamadas viejas quedan valuadas al precio del modelo que no usaron.
-      Las tarifas de `.env` son un parche que sirve mientras haya UN solo modelo.
-- [ ] **Maestro `ai_models`** con patrón Catálogos: código, precio input/cacheado/salida y
-      **vigente desde**. La tarifa deja de ser 3 líneas en `.env` y pasa a tener historial.
-- [ ] **Tarea → modelo**: el agente declara su TAREA, no su modelo. Hoy no se puede cumplir
-      la regla que ya está escrita (`ia-economia-tokens.md` §8: "tarea mecánica → evaluar el
-      modelo barato MIDIENDO") sin editar código. Conversar con un cliente y arreglar el
-      nombre de un producto no deberían costar lo mismo.
-- [ ] **Costo con la tarifa vigente al momento de la llamada**, por `model`.
-- [ ] **Plan B**: si el modelo configurado falla o lo retiran, cae a uno conocido y avisa.
-      Hoy si OpenAI retira `gpt-6-astra` se cae todo junto.
-- [ ] Para el NEGOCIO el cambio es transparente (sigue hablando por WhatsApp igual); para
-      ella no: cambia el costo y puede cambiar la calidad, y sin esto no hay forma de
-      comparar antes y después.
+**Sin casilla a propósito** (2026-10-07): los seis los cerró E12 y escritos con `- [ ]` se
+contaban como pendientes abiertos en cada revisión. Lo único vivo de este bloque es la
+medición de la línea 540.
+
+> **DEFECTO que se activa al primer cambio de modelo**: el histórico se recalcula con la
+> tarifa nueva. Las llamadas viejas quedan valuadas al precio del modelo que no usaron.
+> → cerrado: `ai_models` con `effective_from` y unique `code + effective_from`.
+>
+> **Maestro `ai_models`** con patrón Catálogos: código, precio input/cacheado/salida y
+> **vigente desde**. → cerrado, con su pantalla en `/admin/ia`.
+>
+> **Tarea → modelo**: el agente declara su TAREA, no su modelo. → cerrado: `ai_tasks` +
+> trait `RunsAssignedModel`.
+>
+> **Costo con la tarifa vigente al momento de la llamada**, por `model`. → cerrado:
+> `AiModel` resuelve la tarifa del día de la llamada.
+>
+> **Plan B**: si el modelo configurado falla o lo retiran, cae a uno conocido y avisa.
+> → cerrado: `fallback_model_code` en `ai_tasks`.
+>
+> Para el NEGOCIO el cambio es transparente; para ella no: cambia el costo y puede cambiar
+> la calidad. → es el porqué de todo el bloque, no una tarea.
 
 ---
 
@@ -617,14 +696,23 @@ con UNA tarifa global que ignora la columna `model` que `ai_usages` sí guarda.
 Ideas de ella del 2026-10-03. No son pantallas: son trabajo que corre solo cada X tiempo.
 El worker ya existe (supervisor: queue, reverb, schedule), así que el riel está puesto.
 
-- [ ] **Alta de cliente nuevo**: avisarle por correo y/o WhatsApp (hoy hay correo de bienvenida
-      del negocio; falta el aviso a ELLA de que entró alguien)
-- [ ] **Quién eligió plan de verdad**: distinguir el que se registró del que pagó, y avisar
+- [x] ~~**Alta de cliente nuevo**~~ (2026-10-07): segundo listener colgado de
+      `BusinessCreated` — el evento se escribió el día 1 diciendo "mañana van a colgar más
+      efectos de acá", y así fue, sin tocar el primero. Le llega a ella por correo con el
+      negocio, su correo y su país, y el botón a la ficha.
+- [x] ~~**Quién eligió plan de verdad**~~ (2026-10-07): sale en `ApprovePayment`, leyendo el
+      estado ANTES de pisarlo con `Active` — después, una renovación y un primer pago son
+      idénticos y sólo uno es noticia. **Las renovaciones NO le llegan**: eso es lo que
+      convierte un correo en ruido y un buzón en algo que se archiva sin leer.
 - [ ] **Jobs que alimenten el dashboard**: los negocios con más movimiento, de WhatsApp, de IA
       — precalculados, no contados al abrir la pantalla
-- [ ] **Snapshot mensual de MRR**: hoy NO se puede comparar el MRR contra el mes pasado y
-      decirlo con verdad — no hay historial de estados de suscripción. Un job que guarde la
-      cifra una vez al mes es lo único que lo hace posible.
+- [x] ~~**Snapshot mensual de MRR**~~ (2026-10-07): tabla `revenue_snapshots` (una fila por
+      mes, re-tomarla CORRIGE en vez de duplicar) + `atendia:revenue-snapshot` diario a las
+      23:40 — diario y no mensual para que un servidor caído el día 1 no pierda la foto del
+      mes para siempre. Guarda el MRR, las suscripciones que lo sostienen y **los movimientos**
+      (lo que entró y lo que se fue), porque un total solo no explica nada: ganar 200 y perder
+      180 se lee "+20" y esconde que cambió media cartera. La comparación se VE en Cobranza; sin
+      mes anterior dice "primer mes medido" en vez de inventar un crecimiento contra cero.
 - [ ] **Decisión de diseño pendiente**: un número del dashboard que lo calcula un job lleva
       sello de frescura (`atendiadesign` §7.1). Antes de construirlos hay que fijar cada cuánto
       corren, o la pantalla miente con cara de verdad

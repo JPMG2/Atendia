@@ -78,3 +78,19 @@ Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
 // Adoption: where each business stalled on the way to being answered by its
 // own assistant. The one screen that measures product, not code.
 Route::livewire('/adopcion', 'admin.adoption.index')->name('adoption')->middleware('permission:adoption.view');
+
+// The desk of what went wrong: threads left unanswered, handoffs nobody took,
+// customers who left annoyed and jobs that died. Sorted by severity.
+Route::livewire('/incidencias', 'admin.incidents.index')->name('incidents')->middleware('permission:incidents.view');
+
+// The radar: the people who reach the platform, and the ones who talk to more
+// than one business — the only view no single business can have.
+Route::livewire('/radar', 'admin.contacts.index')->name('contacts')->middleware('permission:contacts.view');
+
+// How the two assistants are being marked: the one answering customers and
+// the one answering her. Same permission as the rest of the AI screens.
+Route::livewire('/calidad-ia', 'admin.ai-quality.index')->name('ai-quality')->middleware('permission:ai.view');
+
+// The collection queue, worth first: who to ring today, how much is hanging
+// off it and since when.
+Route::livewire('/cobranza', 'admin.collections.index')->name('collections')->middleware('permission:payments.view');

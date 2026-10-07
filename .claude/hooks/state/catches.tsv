@@ -31,3 +31,14 @@
 2026-10-06	check-blade-query-golden-rules	resources/views/components/catalog/⚡seasonal-window.blade.php
 2026-10-07	guardian:BusinessIsolationTest	tests/TestCase.php
 2026-10-07	guardian:BusinessIsolationTest	tests/TestCase.php
+2026-10-07	check-comment-golden-rules	app/Classes/Main/Incidents.php
+2026-10-07	check-panel-screen	resources/views/components/admin/incidents/⚡index.blade.php
+2026-10-07	check-comment-golden-rules	database/migrations/2026_09_09_180100_create_assistant_ratings_table.php
+2026-10-07	check-blade-query-golden-rules	resources/views/components/conversations/⚡index.blade.php
+2026-10-07	check-blade-query-golden-rules	resources/views/components/conversations/⚡index.blade.php
+2026-10-07	check-comment-golden-rules	database/migrations/2026_09_09_185963_create_assistant_ratings_table.php
+2026-10-07	check-comment-golden-rules	tests/Browser/AdminAiQualityBrowserTest.php
+2026-10-07	guardian:GoldenRulesBrandSourceTest	app/Actions/Billing/ApprovePayment.php
+2026-10-07	check-plan-source-golden-rules	resources/views/components/admin/collections/⚡index.blade.php
+2026-10-07	check-plan-source-golden-rules	resources/views/components/admin/collections/⚡index.blade.php
+2026-10-07	check-comment-golden-rules	database/migrations/2026_08_12_184546_create_businesses_table.php

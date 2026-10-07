@@ -42,7 +42,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'moderation.view', 'testimonials.moderate',
             'support.view',
             'ai.view', 'ai.manage',
-            'adoption.view',
+            'adoption.view', 'incidents.view', 'contacts.view',
             'catalogs.manage', 'company.manage', 'integrations.view',
             'settings.manage', 'users.view', 'logs.view', 'roles.manage', 'audit.view',
         ];

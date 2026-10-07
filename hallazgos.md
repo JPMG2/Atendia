@@ -11,6 +11,12 @@
 
 ## 2026-10-07
 
+- **La API de Mailpit responde 404 y no se puede leer un correo entregado.** `atendia-mailpit`
+  tiene el 8025 abierto y algo contesta ahí, pero `/api/v1/messages`, `/api/v1/info` y la raíz
+  dan 404 desde el contenedor de la app. Sirve igual para que el correo NO se vaya a internet,
+  pero hoy un correo se verifica renderizando el Mailable, no mirando lo que llegó. Posible
+  causa a confirmar: `MP_WEBROOT` con un prefijo de path.
+
 - **`block-full-suite-reruns.sh` cuenta `pest --list-tests` como una corrida entera.** Listar
   no ejecuta nada y cuesta segundos, pero el hook lo frena igual, así que verificar qué
   testsuite corre por defecto no se puede hacer con la herramienta que lo dice. El hook ya

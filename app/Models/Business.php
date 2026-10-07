@@ -42,7 +42,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Company}, which is AtendIa itself — the one
  * issuing the invoice, a single row. Every operational record hangs off here.
  */
-#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])]
+#[Fillable(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'is_demo', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])]
 class Business extends Model
 {
     /** @use HasFactory<BusinessFactory> */
@@ -67,7 +67,7 @@ class Business extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])
+            ->logOnly(['name', 'country_id', 'province_id', 'timezone', 'billing_email', 'whatsapp_number', 'fallback_whatsapp_number', 'whatsapp_instance', 'whatsapp_connected_at', 'handoff_level', 'handoff_rules', 'email', 'web', 'logo_path', 'address', 'city', 'has_premises', 'description', 'currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'is_active', 'is_demo', 'appointments_enabled', 'appointment_capacity', 'appointments_per_day', 'appointment_slot_minutes'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
@@ -83,6 +83,7 @@ class Business extends Model
             'whatsapp_connected_at' => 'datetime',
             'handoff_level' => HandoffLevel::class,
             'is_active' => 'boolean',
+            'is_demo' => 'boolean',
             'appointments_enabled' => 'boolean',
             'appointment_capacity' => 'integer',
             'appointments_per_day' => 'integer',
@@ -258,13 +259,27 @@ class Business extends Model
     }
 
     /**
+     * The ids of the landing's own businesses, as a subquery to exclude.
+     *
+     * The ONE place that answers "is this ours": asking the column instead of
+     * matching the seeded email means a demo added tomorrow with any other
+     * address cannot sneak into the money. Stripe's test mode, in one flag.
+     *
+     * @return Builder<self>
+     */
+    public static function demoIds(): Builder
+    {
+        return self::query()->where('is_demo', true)->select('id');
+    }
+
+    /**
      * The landing's social proof: how many businesses already answer through
      * the assistant. The view hides it below a floor so the early days never
      * read as an empty room. The demo businesses are ours, so they never count.
      */
     public static function servedCount(): int
     {
-        return self::query()->whereNotIn('billing_email', self::DEMO_EMAILS)->orWhereNull('billing_email')->count();
+        return self::query()->where('is_demo', false)->count();
     }
 
     /**

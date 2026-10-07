@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Events\BusinessCreated;
+use App\Listeners\NotifyPlatformOfNewBusiness;
 use App\Listeners\SendBusinessWelcome;
 use App\Livewire\Forms\Business\BusinessForm;
 use App\Mail\BusinessWelcome;
+use App\Mail\NewBusinessJoined;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
@@ -97,6 +99,30 @@ test('the listener hangs off the event, so tomorrow\'s effects can join it', fun
     Event::fake();
 
     Event::assertListening(BusinessCreated::class, SendBusinessWelcome::class);
+    // Tomorrow arrived: the second effect joined without touching the first.
+    Event::assertListening(BusinessCreated::class, NotifyPlatformOfNewBusiness::class);
+});
+
+test('she hears about the new business the day it signs up', function (): void {
+    Mail::fake();
+    config()->set('atendia.admin_email', 'equipo@atendia.test');
+    User::factory()->create(['email' => 'equipo@atendia.test']);
+
+    [$form] = welcomeReadyForm();
+    $form->saveIdentity();
+
+    Mail::assertQueued(NewBusinessJoined::class, fn ($mail): bool => $mail->hasTo('equipo@atendia.test'));
+});
+
+test('with no admin account the signup still goes through', function (): void {
+    Mail::fake();
+    config()->set('atendia.admin_email', 'nadie@atendia.test');
+
+    [$form] = welcomeReadyForm();
+    $form->saveIdentity();
+
+    Mail::assertQueued(BusinessWelcome::class);
+    Mail::assertNotQueued(NewBusinessJoined::class);
 });
 
 test('the mail names the business and points at the one next step', function (): void {

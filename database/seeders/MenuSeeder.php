@@ -90,12 +90,16 @@ class MenuSeeder extends Seeder
         $businesses = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_businesses', 'icon' => 'briefcase', 'sort_order' => 2]);
         Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_all_businesses', 'icon' => 'store', 'route_name' => 'admin.businesses', 'permission' => 'businesses.view', 'sort_order' => 1]);
         Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'permission' => 'adoption.view', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_incidents', 'icon' => 'frown', 'route_name' => 'admin.incidents', 'permission' => 'incidents.view', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_contacts', 'icon' => 'users', 'route_name' => 'admin.contacts', 'permission' => 'contacts.view', 'sort_order' => 4]);
 
         // Cobros: the money. Planes (E7) and Consumo de IA (A3) land here.
         $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 3]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'permission' => 'payments.view', 'sort_order' => 1]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_collections', 'icon' => 'alert-triangle', 'route_name' => 'admin.collections', 'permission' => 'payments.view', 'sort_order' => 2]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai', 'icon' => 'bot', 'route_name' => 'admin.ai', 'permission' => 'ai.manage', 'sort_order' => 2]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_usage', 'icon' => 'bar-chart-3', 'route_name' => 'admin.ai-usage', 'permission' => 'ai.view', 'sort_order' => 3]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_quality', 'icon' => 'thumbs-up', 'route_name' => 'admin.ai-quality', 'permission' => 'ai.view', 'sort_order' => 4]);
 
         // Approving a testimonial IS moderation, so it belongs inside this
         // branch and not beside it. The AI ratings screen (A9) lands here too.

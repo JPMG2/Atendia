@@ -9,6 +9,7 @@ use App\Enums\SubscriptionStatus;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Mail\BillingPaymentReviewed;
 use App\Mail\BillingReminder;
+use App\Mail\FirstPaymentReceived;
 use App\Models\Business;
 use App\Models\Company;
 use App\Models\ConversationMessage;
@@ -161,6 +162,32 @@ test('crediting a payment continues the period and mails the client', function (
         ->and($subscription->current_period_ends_at->equalTo($end->copy()->addMonth()))->toBeTrue();
 
     Mail::assertQueued(BillingPaymentReviewed::class, fn ($mail): bool => $mail->hasTo('pagos@shop.test'));
+});
+
+test('the first payment of a trial is the one she hears about', function (): void {
+    config()->set('atendia.admin_email', 'equipo@atendia.test');
+    User::factory()->create(['email' => 'equipo@atendia.test']);
+
+    $user = billingClient();
+    dueIn($user, 3, SubscriptionStatus::Trialing);
+    $payment = Payment::factory()->create(['business_id' => $user->business_id, 'subscription_id' => $user->business->subscription->id]);
+
+    app(ApprovePayment::class)->handle($payment, User::factory()->create());
+
+    Mail::assertQueued(FirstPaymentReceived::class, fn ($mail): bool => $mail->hasTo('equipo@atendia.test'));
+});
+
+test('a renewal is not news, so it never reaches her', function (): void {
+    config()->set('atendia.admin_email', 'equipo@atendia.test');
+    User::factory()->create(['email' => 'equipo@atendia.test']);
+
+    $user = billingClient();
+    dueIn($user, 3, SubscriptionStatus::Active);
+    $payment = Payment::factory()->create(['business_id' => $user->business_id, 'subscription_id' => $user->business->subscription->id]);
+
+    app(ApprovePayment::class)->handle($payment, User::factory()->create());
+
+    Mail::assertNotQueued(FirstPaymentReceived::class);
 });
 
 test('crediting a paused business wakes the assistant from today', function (): void {

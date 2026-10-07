@@ -29,7 +29,10 @@ class DemoBusinessSeeder extends Seeder
         foreach ($this->rubros() as $rubro => $definition) {
             $business = Business::query()->updateOrCreate(
                 ['billing_email' => Business::DEMO_EMAILS[$rubro]],
-                ['name' => $definition['name'], 'city' => 'Buenos Aires', 'country_id' => $countryId, 'is_active' => true],
+                // `is_demo` is written on every run on purpose: it is what
+                // keeps these eight out of the money, and a demo that lost the
+                // flag would be counted as a paying client.
+                ['name' => $definition['name'], 'city' => 'Buenos Aires', 'country_id' => $countryId, 'is_active' => true, 'is_demo' => true],
             );
 
             foreach ($definition['faqs'] as $faq) {

@@ -58,6 +58,10 @@ return [
     'admin_moderation' => 'Moderación',
     'admin_support' => 'Soporte',
     'admin_adoption' => 'Adopción',
+    'admin_incidents' => 'Qué salió mal',
+    'admin_contacts' => 'Radar de personas',
+    'admin_ai_quality' => 'Calidad de la IA',
+    'admin_collections' => 'Cobranza',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

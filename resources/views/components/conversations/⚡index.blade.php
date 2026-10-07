@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Business\RateAssistantReply;
 use App\Actions\Business\SaveInternalNote;
 use App\Actions\Business\SendHumanReply;
 use App\Classes\Main\Client;
@@ -8,6 +9,7 @@ use App\Dto\NotificationDto;
 use App\Enums\ConversationStatus;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\AssistantFaqForm;
+use App\Models\AssistantRating;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
@@ -261,6 +263,55 @@ new class extends Component
     public function teachable(): array
     {
         return $this->selected === null ? [] : ($this->inbox()?->teachableMessages($this->selected) ?? []);
+    }
+
+    /**
+     * How this thread's replies were marked, so the thumbs show their state.
+     *
+     * @return array<int, bool> message id => true when it was marked as good
+     */
+    #[Computed]
+    public function ratings(): array
+    {
+        return $this->selected === null ? [] : AssistantRating::forThread($this->selected);
+    }
+
+    /**
+     * The thumb, from the thread. A wrong answer opens the correction right
+     * away: asked only to rate, nobody rates — asked to fix what bothered
+     * them, they do, and the assistant stops repeating it.
+     */
+    public function rate(int $messageId, bool $isGood): void
+    {
+        $business = Auth::user()?->business;
+
+        if ($business === null) {
+            return;
+        }
+
+        app(RateAssistantReply::class)->handle($business, $messageId, $isGood);
+
+        unset($this->ratings);
+
+        if ($isGood) {
+            $this->dispatchNotification(new NotificationDto(__('client.conversations.rated_good'), NotificationType::Success));
+
+            return;
+        }
+
+        $this->openCorrection($messageId);
+    }
+
+    /**
+     * The customer's question is the one right before the reply: that is what
+     * the assistant will be asked again, so it is what has to be taught.
+     */
+    private function openCorrection(int $messageId): void
+    {
+        $question = ConversationMessage::questionBefore((int) $this->selected, $messageId);
+
+        $this->form->setupFromRejectedReply($question, $this->selected);
+        $this->sheetOpen = true;
     }
 
     /** From the thread: the rewritten question and the team's draft, settling its suggestion. */
@@ -796,6 +847,35 @@ new class extends Component
                                                         {{ $message->created_at?->inBusinessTime()->format('H:i') }}
                                                     </span>
                                                 </div>
+                                                @if ($message->direction === App\Enums\MessageDirection::Out && $message->author === App\Enums\MessageAuthor::Assistant)
+                                                    {{-- Only on what the assistant WROTE: a human reply is
+                                                    the team's own work, not an answer to judge. Marked
+                                                    stays lit; the rest asoma al pasar el mouse. --}}
+                                                    <x-ui.icon-button
+                                                        icon="thumbs-up"
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        @class([
+                                                            'ml-1 self-center transition-opacity',
+                                                            'opacity-100 text-brand' => ($this->ratings[$message->id] ?? null) === true,
+                                                            'opacity-60 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100' => ($this->ratings[$message->id] ?? null) !== true,
+                                                        ])
+                                                        :label="__('client.conversations.rate_good')"
+                                                        wire:click="rate({{ $message->id }}, true)"
+                                                    />
+                                                    <x-ui.icon-button
+                                                        icon="thumbs-down"
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        @class([
+                                                            'self-center transition-opacity',
+                                                            'opacity-100 text-accent' => ($this->ratings[$message->id] ?? null) === false,
+                                                            'opacity-60 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100' => ($this->ratings[$message->id] ?? null) !== false,
+                                                        ])
+                                                        :label="__('client.conversations.rate_bad')"
+                                                        wire:click="rate({{ $message->id }}, false)"
+                                                    />
+                                                @endif
                                                 @if (isset($this->teachable[$message->id]))
                                                     {{-- Only where the analysis saw the assistant fall short: that is what teaching fixes.
                                                     Hover-revealed on desktop; touch has no hover, so it stays faintly visible. --}}

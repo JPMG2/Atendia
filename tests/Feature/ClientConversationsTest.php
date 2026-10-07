@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\Incidents;
+use App\Enums\IncidentKind;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\QuestionResolution;
 use App\Enums\SuggestionStatus;
 use App\Jobs\IndexKnowledgeDocument;
+use App\Models\AssistantRating;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationAnalysis;
@@ -817,6 +820,86 @@ test('a thread with nothing attached shows no files button', function (): void {
     livewire('conversations.index')
         ->call('open', $thread->id)
         ->assertDontSee(__('client.conversations.files.open'));
+});
+
+test('a thumb up on the assistant reply is recorded against that message', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Abrimos de 9 a 18.');
+    $reply = $thread->messages()->where('direction', MessageDirection::Out)->sole();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('rate', $reply->id, true);
+
+    expect(AssistantRating::query()->where('conversation_message_id', $reply->id)->sole())
+        ->is_good->toBeTrue()
+        ->business_id->toBe($user->business_id)
+        ->user_id->toBe($user->id);
+});
+
+test('marking the same reply twice corrects the mark instead of stacking another', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Abrimos de 9 a 18.');
+    $reply = $thread->messages()->where('direction', MessageDirection::Out)->sole();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('rate', $reply->id, true)
+        ->call('rate', $reply->id, false);
+
+    expect(AssistantRating::query()->where('conversation_message_id', $reply->id)->count())->toBe(1)
+        ->and(AssistantRating::query()->where('conversation_message_id', $reply->id)->value('is_good'))->toBeFalse();
+});
+
+test('a thumb down opens the correction with the customer question already loaded', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Abrimos los domingos.');
+    $reply = $thread->messages()->where('direction', MessageDirection::Out)->sole();
+    $this->actingAs($user);
+
+    // Asked only to rate, nobody rates: the thumb down has to be the shortcut
+    // to fixing what bothered them, with the answer left blank to be written.
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('rate', $reply->id, false)
+        ->assertSet('sheetOpen', true)
+        ->assertSet('form.question', 'Hola')
+        ->assertSet('form.answer', '');
+});
+
+test('only what the assistant wrote can be rated', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Listo.');
+    $customerMessage = $thread->messages()->where('direction', MessageDirection::In)->sole();
+    $this->actingAs($user);
+
+    livewire('conversations.index')
+        ->call('open', $thread->id)
+        ->call('rate', $customerMessage->id, false)
+        ->assertHasErrors();
+
+    expect(AssistantRating::query()->count())->toBe(0);
+})->throws(RuntimeException::class);
+
+test('a thumb down reaches the admin desk as what it is', function (): void {
+    $user = conversationsClient();
+    $thread = threadFor($user, 'Carla', '5491111111111', 'Abrimos los domingos.');
+    $reply = $thread->messages()->where('direction', MessageDirection::Out)->sole();
+
+    AssistantRating::query()->create([
+        'business_id' => $user->business_id,
+        'conversation_message_id' => $reply->id,
+        'user_id' => $user->id,
+        'is_good' => false,
+    ]);
+
+    $desk = Incidents::now();
+
+    expect($desk->countOf(IncidentKind::AnswerRejected))->toBe(1)
+        ->and($desk->all->first()->excerpt)->toBe('Abrimos los domingos.')
+        ->and($desk->all->first()->customer)->toBe('Carla');
 });
 
 test('the inbox counts each thread attachments and the thread search reaches inside PDFs', function (): void {

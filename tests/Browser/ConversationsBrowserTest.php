@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\MessageAuthor;
+use App\Models\AssistantRating;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -28,6 +29,47 @@ beforeEach(function (): void {
 | Flatpickr and the Alpine glue live in JS the PHP tests never execute:
 | only a browser proves the calendar actually opens and commits.
 */
+
+test('the thumb marks the reply and the thumb down opens the correction', function (): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Carla',
+        'contact_phone' => '5491111111111',
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id, 'body' => '¿Abren los domingos?',
+    ]);
+    ConversationMessage::factory()->out()->for($thread)->create([
+        'business_id' => $user->business_id, 'body' => 'Sí, abrimos los domingos de 9 a 13.',
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/conversaciones')->resize(1280, 900);
+
+    // The thumbs hide until the row is hovered, so the thread stays readable.
+    $page->click('Carla')
+        ->wait(1)
+        ->assertSee('Sí, abrimos los domingos de 9 a 13.')
+        ->hover('.pm-row.out >> nth=0')
+        ->screenshotElement('.pm-row.out >> nth=0', 'conversation-reply-thumbs');
+
+    // Thumb down: it saves the mark AND opens the sheet to teach the right
+    // answer, with the customer's question already in place.
+    $page->click('button[aria-label="'.__('client.conversations.rate_bad').'"]')
+        ->wait(1)
+        ->assertSee(__('client.assistant.sheet_new'))
+        // The question travels loaded; the empty answer is the point of the
+        // sheet, so its value is asserted in the PHP test by `form.answer`.
+        ->assertValue('input[name="question"]', '¿Abren los domingos?')
+        ->screenshot(filename: 'conversation-reply-rejected')
+        ->assertNoJavaScriptErrors();
+
+    expect(AssistantRating::query()->where('is_good', false)->count())->toBe(1);
+});
 
 test('the date filter opens the house-dressed calendar and picking a day filters the list', function (): void {
     $user = User::factory()->create();

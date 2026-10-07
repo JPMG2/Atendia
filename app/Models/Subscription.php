@@ -10,6 +10,7 @@ use App\Traits\BelongsToBusiness;
 use Carbon\CarbonInterface;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -57,6 +58,7 @@ class Subscription extends Model
     public static function renewingWithin(int $days): Collection
     {
         return self::query()
+            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::Trialing])
             ->whereNotNull('current_period_ends_at')
             ->whereBetween('current_period_ends_at', [now(), now()->addDays($days)])
@@ -74,6 +76,7 @@ class Subscription extends Model
     public static function struggling(): Collection
     {
         return self::query()
+            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
             ->with('business')
             ->orderBy('current_period_ends_at')
@@ -114,6 +117,7 @@ class Subscription extends Model
     public static function scheduledCancellations(): Collection
     {
         return self::query()
+            ->ofRealBusinesses()
             ->whereNotNull('canceled_at')
             ->where('current_period_ends_at', '>=', now())
             ->with('business')
@@ -125,6 +129,7 @@ class Subscription extends Model
     public static function payingCount(): int
     {
         return self::query()
+            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
             ->count();
     }
@@ -132,7 +137,7 @@ class Subscription extends Model
     /** How many are still on their trial: future revenue, not current. */
     public static function trialingCount(): int
     {
-        return self::query()->where('status', SubscriptionStatus::Trialing)->count();
+        return self::query()->ofRealBusinesses()->where('status', SubscriptionStatus::Trialing)->count();
     }
 
     /**
@@ -144,15 +149,75 @@ class Subscription extends Model
     public static function monthlyRecurringRevenue(): float
     {
         return self::query()
+            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
             ->get(['plan', 'billing_cycle'])
-            ->sum(function (Subscription $subscription): float {
-                $plan = Plan::named($subscription->plan);
+            ->sum(fn (Subscription $subscription): float => $subscription->monthlyValue());
+    }
 
-                return $subscription->billing_cycle === 'yearly'
-                    ? $plan->yearlyPrice / 12
-                    : (float) $plan->price;
-            });
+    /**
+     * Out with the landing's eight demo businesses. They carry a seeded
+     * subscription each, and counted in they were 632 of the 790 the Inicio
+     * showed as MRR: a figure 5 times its truth, read as the real one.
+     *
+     * @param  Builder<Subscription>  $query
+     */
+    public function scopeOfRealBusinesses(Builder $query): void
+    {
+        $query->whereNotIn('business_id', Business::demoIds());
+    }
+
+    /**
+     * What this one subscription is worth a month, a yearly cycle spread over
+     * its twelve. The same arithmetic the MRR total uses, so a row and the
+     * headline above it can never disagree.
+     */
+    public function monthlyValue(): float
+    {
+        $plan = Plan::named($this->plan);
+
+        return $this->billing_cycle === 'yearly'
+            ? $plan->yearlyPrice / 12
+            : (float) $plan->price;
+    }
+
+    /**
+     * The collection queue, worth first. Sorting by how long somebody has
+     * owed puts a small account that lapsed in March above the biggest one
+     * that lapsed on Friday — and the call that is worth making today is the
+     * second. Grace, paused and the week's renewals travel together: the
+     * question is "who do I ring", and it is the same answer for all three.
+     *
+     * @return Collection<int, Subscription>
+     */
+    public static function collectionQueue(int $renewalDays = 7): Collection
+    {
+        return self::query()
+            ->ofRealBusinesses()
+            ->where(fn (Builder $owing): Builder => $owing
+                ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
+                ->orWhere(fn (Builder $soon): Builder => $soon
+                    ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::Trialing])
+                    ->whereNotNull('current_period_ends_at')
+                    ->whereBetween('current_period_ends_at', [now(), now()->addDays($renewalDays)])))
+            ->with('business:id,name')
+            ->get()
+            ->sortByDesc(fn (Subscription $subscription): float => $subscription->monthlyValue())
+            ->values();
+    }
+
+    /**
+     * The money hanging off subscriptions that did not pay. This is the
+     * headline, not the count: three businesses owing is a number; what it
+     * costs if all three leave is a decision.
+     */
+    public static function amountAtRisk(): float
+    {
+        return self::query()
+            ->ofRealBusinesses()
+            ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
+            ->get(['plan', 'billing_cycle'])
+            ->sum(fn (Subscription $subscription): float => $subscription->monthlyValue());
     }
 
     /** A paid subscription is off trial even if its trial date is still ahead. */

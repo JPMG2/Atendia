@@ -22,7 +22,10 @@ test('the dto mirrors every column of the businesses table, so a profile slice c
         // like the audit trio: no profile form may carry them.
         ->diff(['referral_code', 'referred_by_business_id', 'booking_code'])
         // Only content moderation writes the suspension, and only the admin lifts it.
-        ->diff(['suspended_at', 'suspension_reason', 'appeal_message', 'appealed_at']);
+        ->diff(['suspended_at', 'suspension_reason', 'appeal_message', 'appealed_at'])
+        // The platform decides what is a demo of its own landing, never the
+        // business: on the profile it would be a switch for leaving the books.
+        ->diff(['is_demo']);
 
     expect((new BusinessDto)->toPayload())->toHaveKeys($columns->all());
 });

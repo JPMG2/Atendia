@@ -218,7 +218,7 @@ test('the live tally speaks only from the floor up and never counts the demo', f
 
     // Two real replies plus two demo ones: still under the floor.
     ConversationMessage::factory()->out()->count(2)->create();
-    $demo = Business::factory()->create(['billing_email' => Business::DEMO_EMAILS['clinica']]);
+    $demo = Business::factory()->create(['is_demo' => true]);
     ConversationMessage::factory()->out()->count(2)->create(['business_id' => $demo->id]);
 
     $this->get('/')->assertDontSee('conversaciones respondidas esta semana');

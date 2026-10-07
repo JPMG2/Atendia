@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Services\Tenant;
@@ -60,11 +61,54 @@ class Conversation extends Model
         return app(Tenant::class)->for(null, fn (): int => ConversationMessage::query()
             ->where('direction', MessageDirection::Out)
             ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotIn('business_id', Business::query()
-                ->whereIn('billing_email', Business::DEMO_EMAILS)
-                ->select('id'))
+            ->whereNotIn('business_id', Business::demoIds())
             ->distinct('conversation_id')
             ->count('conversation_id'));
+    }
+
+    /**
+     * Threads the assistant left hanging: the last word is the customer's and
+     * the wait is past the window. A thread with the team is excluded on
+     * purpose — there the assistant is meant to stay quiet, so silence is the
+     * design and not a failure.
+     *
+     * Demo businesses are out: the landing's own phone is not a customer.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function unanswered(int $minutes): EloquentCollection
+    {
+        return static::query()
+            ->where('status', '!=', ConversationStatus::Team)
+            ->where('last_message_at', '<=', now()->subMinutes($minutes))
+            ->whereNotIn('business_id', Business::demoIds())
+            ->whereHas('latestMessage', fn (Builder $last): Builder => $last->where('direction', MessageDirection::In))
+            ->with(['business:id,name', 'latestMessage'])
+            ->orderBy('last_message_at')
+            ->get();
+    }
+
+    /**
+     * Threads handed to a person where no person came: escalated past the
+     * window with no human reply after the handoff. The assistant is quiet by
+     * design here, so nobody is answering this customer at all.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public static function handoffUnattended(int $minutes): EloquentCollection
+    {
+        return static::query()
+            ->where('status', ConversationStatus::Team)
+            ->whereNotNull('escalated_at')
+            ->where('escalated_at', '<=', now()->subMinutes($minutes))
+            ->whereNotIn('business_id', Business::demoIds())
+            ->whereDoesntHave('messages', fn (Builder $reply): Builder => $reply
+                ->where('direction', MessageDirection::Out)
+                ->where('author', MessageAuthor::Human)
+                ->whereColumn('conversation_messages.created_at', '>=', 'conversations.escalated_at'))
+            ->with(['business:id,name', 'latestMessage'])
+            ->orderBy('escalated_at')
+            ->get();
     }
 
     /**
