@@ -150,22 +150,11 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                 <livewire:search.palette />
 
                 <div class="topbar-actions">
-                    {{-- Only the truth: a fixed "connected" chip contradicted the home's "sin conectar" pill. --}}
+                    {{-- Only the truth: a fixed "connected" chip contradicted the home's
+                    "sin conectar" pill. Green now needs a bridge answer behind it — the
+                    stamp alone stayed green through a whole outage. --}}
                     @if (! $onAdminPanel && auth()->user()?->business)
-                        @if (auth()->user()->business->isConnected())
-                            <span class="conn-pill">
-                                <span class="conn-dot"></span>{{ __('whatsapp.topbar_connected') }}
-                            </span>
-                        @else
-                            <a
-                                href="{{ route('whatsapp') }}"
-                                wire:navigate
-                                class="conn-pill conn-pill-warning"
-                                data-testid="conn-pill-disconnected"
-                            >
-                                <span class="conn-dot"></span>{{ __('whatsapp.topbar_disconnected') }}
-                            </a>
-                        @endif
+                        <livewire:whatsapp.pill />
                     @endif
 
                     {{-- The owner's assistant is a client-panel tool: admin has

@@ -9,12 +9,36 @@ return [
     'no_business_cta' => 'Crear mi negocio',
     'topbar_connected' => 'WhatsApp conectado',
     'topbar_disconnected' => 'WhatsApp sin conectar',
+    'topbar_unverified' => 'WhatsApp sin verificar',
+    'topbar_connected_as' => 'Conectado como :name',
+    'topbar_verified_ago' => 'Verificado :ago',
 
     'connected' => [
         'tag' => 'Conectado',
         'title' => 'Tu WhatsApp está conectado',
         'body' => 'Tu asistente responde por este número con tu oferta al día.',
         'since' => 'Atendiendo desde el',
+        'no_profile_name' => 'Sin nombre de perfil',
+        'identity_hint' => 'Este es el número que quedó vinculado. Si no es el de tu negocio, desconéctalo y vincula el correcto.',
+    ],
+
+    'history' => [
+        'title' => 'Los últimos :days días',
+        'since' => 'Desde el :date',
+        'clean' => 'Tu número respondió sin interrupciones.',
+        'outages' => 'Se desconectó',
+        'times' => '{1}1 vez|[2,*]:count veces',
+        'down' => 'y estuvo sin responder',
+        'hours' => '{1}1 hora|[2,*]:count horas',
+        'minutes' => '{0}menos de un minuto|{1}1 minuto|[2,*]:count minutos',
+        'device_removed' => 'La última vez fue porque se desvinculó el dispositivo desde el teléfono: eso solo se arregla escaneando de nuevo.',
+    ],
+
+    'unverified' => [
+        'tag' => 'Sin verificar',
+        'title' => 'No pudimos comprobar tu conexión',
+        'body' => 'El servicio que enlaza tu WhatsApp no respondió, así que preferimos no decirte un estado que no pudimos confirmar. Tus mensajes no se pierden: se entregan cuando vuelve.',
+        'retry' => 'Volver a comprobar',
     ],
 
     'connect' => [

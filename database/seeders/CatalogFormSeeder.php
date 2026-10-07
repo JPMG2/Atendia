@@ -36,6 +36,10 @@ class CatalogFormSeeder extends Seeder
             // Sistema
             ['group' => 'Sistema', 'title' => 'Estados', 'description' => 'Estados genéricos reutilizables por el sistema.', 'component' => 'catalog.status', 'permission_key' => 'catalog.status', 'icon' => 'check', 'order' => 11],
             ['group' => 'Sistema', 'title' => 'Redes sociales', 'description' => 'Catálogo de redes con su URL base e ícono.', 'component' => 'catalog.social-network', 'permission_key' => 'catalog.social-network', 'icon' => 'message-circle', 'order' => 12],
+
+            // Landing
+            ['group' => 'Landing', 'title' => 'Temporadas', 'description' => 'Rangos de fechas que encienden y apagan solos lo que se muestra en esos días.', 'component' => 'catalog.seasonal-window', 'permission_key' => 'catalog.seasonal-window', 'icon' => 'calendar', 'order' => 13],
+            ['group' => 'Landing', 'title' => 'Ejemplos del hero', 'description' => 'Los negocios de ejemplo que prueba el visitante, con su versión de temporada.', 'component' => 'catalog.demo-tag', 'permission_key' => 'catalog.demo-tag', 'icon' => 'message-circle', 'order' => 14],
         ];
 
         foreach ($catalogs as $catalog) {

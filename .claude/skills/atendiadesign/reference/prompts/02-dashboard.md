@@ -84,7 +84,7 @@ Toggle en topbar, persistir en `localStorage`, clase `.dark` en `<html>`. Todo d
 - Navegación entre vistas: rutas reales o `wire:navigate` (SPA-like) para que el shell no recargue.
 - Drawer, toggle de tema, dropdowns: **Alpine.js**.
 - Conexión de WhatsApp: la pill de estado refleja el estado real de la instancia de **Evolution API**; la pantalla de conexión muestra el **QR** que devuelve la API.
-- Inbox: el flujo entrante real llega vía **n8n → webhook Laravel**; las respuestas del asistente se marcan visualmente como "Asistente" para distinguir de la intervención humana.
+- Inbox: el flujo entrante real llega vía **webhook de Evolution → Laravel**; las respuestas del asistente se marcan visualmente como "Asistente" para distinguir de la intervención humana.
 - Iconos Lucide; mantené componentes chicos y bien factorizados.
 - No inventar vistas ni datos de relleno innecesarios; los placeholders se diseñan cuando los pidas.
 ```

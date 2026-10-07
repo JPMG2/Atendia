@@ -33,8 +33,9 @@ class WhatsAppDisconnected extends PanelMessage
         return ['at' => now($this->model->localTimezone())->format('H:i')];
     }
 
+    /** Lands with the QR already asked for: the two clicks that matter when it fell at 3 AM. */
     public function url(): ?string
     {
-        return route('whatsapp');
+        return route('whatsapp', ['conectar' => 1]);
     }
 }

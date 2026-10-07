@@ -508,3 +508,23 @@ test('skipping with no business yet saves nothing and still moves on', function 
 
     expect(Business::count())->toBe(0);
 });
+
+test('the step offers the same linking card the panel shows', function (): void {
+    $client = actingAsClient();
+    $client->business()->associate(Business::factory()->create())->save();
+
+    Livewire::test('business.step-whatsapp')
+        ->assertSee(__('wizard.whatsapp.link_heading'))
+        ->assertSee(__('whatsapp.connect.cta'));
+});
+
+test('a number linked during the wizard reaches the closing recap as connected', function (): void {
+    actingAsClient();
+
+    // The linking card reports its own success; the step only has to carry
+    // it to the recap, which read "te espera" even after a real pairing.
+    Livewire::test('business.step-whatsapp')
+        ->dispatch('whatsapp:connected')
+        ->call('finishLater', true)
+        ->assertDispatched('wizard:step-completed', step: 5, skipped: true, connected: true);
+});

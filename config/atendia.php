@@ -89,6 +89,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Seasons
+    |--------------------------------------------------------------------------
+    |
+    | seasonal_timezone: the ONE clock a seasonal window is read against. The
+    | app runs on UTC and visitors arrive from anywhere, so without a fixed
+    | reference a season would start at a different hour for each of them.
+    | Editable from Admin → Ajustes once it is worth a row there.
+    |
+    */
+
+    'seasonal_timezone' => env('SEASONAL_TIMEZONE', 'America/Argentina/Buenos_Aires'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Account settings
     |--------------------------------------------------------------------------
     |

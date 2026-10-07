@@ -6,19 +6,23 @@ use App\Models\Country;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
- * Wizard step 5 — the connection DATA, wired to {@see BusinessForm}: the two
- * WhatsApp numbers (the one the AI answers on, and a human's phone for what
- * it cannot answer) plus the business email, where the welcome lands. No QR
- * and no "connected" claim: the real switch-on lives in the panel, later.
+ * Wizard step 5 — where the business goes live: the two WhatsApp numbers
+ * (the one the AI answers on, and a human's phone for what it cannot
+ * answer), the email the welcome lands on, and the real switch-on, through
+ * the same linking card the panel uses.
  */
 new class extends Component
 {
     use HasNotifications;
 
     public BusinessForm $form;
+
+    /** Whether the number got linked here, which the closing recap reports. */
+    public bool $connected = false;
 
     /** The DTO must exist before the first render: `setup()` is not a hook. */
     public function mount(): void
@@ -45,11 +49,14 @@ new class extends Component
         return Country::dialCode($this->form->data?->country_id);
     }
 
-    /**
-     * The three fields, validated and saved. `connected` stays false on
-     * purpose: nothing connects here — that claim returns with the real
-     * Cloud API switch-on.
-     */
+    /** The linking card below the fields reports its own success up here. */
+    #[On('whatsapp:connected')]
+    public function linked(): void
+    {
+        $this->connected = true;
+    }
+
+    /** The three fields, validated and saved. */
     public function finish(): void
     {
         $notification = $this->form->saveConnection();
@@ -60,7 +67,7 @@ new class extends Component
             return;
         }
 
-        $this->dispatch('wizard:step-completed', step: 5, skipped: false, connected: false);
+        $this->dispatch('wizard:step-completed', step: 5, skipped: false, connected: $this->connected);
     }
 
     /**
@@ -82,7 +89,7 @@ new class extends Component
             }
         }
 
-        $this->dispatch('wizard:step-completed', step: 5, skipped: true, connected: false);
+        $this->dispatch('wizard:step-completed', step: 5, skipped: true, connected: $this->connected);
     }
 };
 ?>
@@ -139,6 +146,13 @@ new class extends Component
             <x-ui.button variant="primary" x-on:click="guard"> {{ __('wizard.whatsapp.save') }} </x-ui.button>
         </div>
     </x-ui.card>
+
+    {{-- The switch-on, in the same card the panel shows: linking here is what
+    makes the closing recap say "conectado" instead of "te espera". --}}
+    <h3 class="wizard-subhead">{{ __('wizard.whatsapp.link_heading') }}</h3>
+    <p class="lead">{{ __('wizard.whatsapp.link_lead') }}</p>
+
+    <livewire:whatsapp.link />
 </div>
 
 @script

@@ -24,3 +24,8 @@
 2026-10-05	check-blade-query-golden-rules	resources/views/components/admin/roles/⚡index.blade.php
 2026-10-05	check-comment-golden-rules	config/permission.php
 2026-10-05	check-blade-golden-rules	resources/views/components/configuration/⚡logs.blade.php
+2026-10-06	check-comment-golden-rules	app/Actions/Business/VerifyWhatsAppLink.php
+2026-10-06	check-comment-golden-rules	resources/views/components/whatsapp/⚡link.blade.php
+2026-10-06	check-comment-golden-rules	database/migrations/2026_10_06_190129_create_seasonal_windows_table.php
+2026-10-06	check-comment-golden-rules	database/migrations/2026_10_06_190130_create_demo_tags_table.php
+2026-10-06	check-blade-query-golden-rules	resources/views/components/catalog/⚡seasonal-window.blade.php

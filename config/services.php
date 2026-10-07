@@ -45,13 +45,4 @@ return [
         'webhook_secret' => env('EVOLUTION_WEBHOOK_SECRET'),
     ],
 
-    'n8n' => [
-        'api_url' => env('N8N_API_URL'),
-        'webhook_url' => env('N8N_WEBHOOK_URL'),
-    ],
-
-    'chatwoot' => [
-        'url' => env('CHATWOOT_URL'),
-    ],
-
 ];

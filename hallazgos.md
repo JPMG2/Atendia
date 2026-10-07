@@ -9,6 +9,26 @@
 >
 > Formato: una línea por hallazgo, con la fecha y dónde está. Cuando se arregla, se borra.
 
+## 2026-10-07
+
+- **Dos rojos nuevos de la base compartida, distintos de la familia `Company::current()`.**
+  En la corrida entera `TaxConditionSeederTest` cuenta 11 condiciones donde espera 10 (sus dos
+  tests) y `TracksUserActionsTest` ve 2 monedas vivas donde espera 0 tras un `forceDelete`.
+  **Los tres pasan aislados**, así que es contaminación cruzada sobre `atendia_testing`, no
+  lógica: los conteos absolutos (`toBe(10)`, `toBe(0)`) son lo que los hace frágiles. Entran
+  con el arreglo de `Once::flush()` ya anotado, que es la misma clase de problema.
+
+- **El contenedor no tiene fuente de emoji, y las capturas lo muestran.** En
+  `hero-demo-chat.png` el emoji del guion de la ferretería sale como el rectángulo vacío de
+  "glifo que falta". Es el Chromium headless del contenedor, no la landing: en un navegador
+  con fuentes de emoji se ve bien. Molesta sólo para revisar capturas; se arregla instalando
+  `fonts-noto-color-emoji` en la imagen.
+
+- **`CountryFactory` choca con `countries_name_unique` cuando la corrida es larga.**
+  `MessagingChannelTest` y `WhatsAppChannelTest` murieron con `duplicate key … (name)=(Haití)`
+  y `(Costa de Marfil)`: el faker repite nombre de país y el unique lo frena. No es el código
+  de los canales. El arreglo es que la factory derive el nombre de una secuencia, no del faker.
+
 ## 2026-10-05
 
 - **Los 15 rojos de la corrida completa tienen UNA causa, y ya está diagnosticada.**
@@ -112,3 +132,43 @@
   Redis y no pasa. Entrena a ignorar errores en pantalla, igual que el 404 de Reverb.
 - **No hay fila de Compañía en `atendia`** (`Company::current()` devuelve null): el pie de la
   landing y cualquier correo que la use caen al fallback.
+- **26 procesos node huérfanos de VS Code Dev Containers** (`vscode-remote-containers-server-*.js`),
+  uno con 65 días de vida, otros con 19, 16 y 10 días. Son sesiones de VS Code ya cerradas que
+  nunca murieron. **Medido: suman solo 0,2 GB de RAM**, así que NO son el problema de memoria que
+  parecían — es prolijidad, no urgencia. Conviene entender por qué no se cierran solos antes de
+  matarlos a mano.
+- **Sobras del camino viejo tras retirar chatwoot y n8n** (2026-10-06): el servicio Swarm
+  `ai_project_ai_project2025` está en 0/0 (muerto, nunca arranca); `ai_project_pgadmin` sigue
+  arriba con su imagen de 507 MB; hay **dos Redis** (`ai_project_redis` y `ai_project_redis-shared`)
+  y no está claro si AtendIa usa uno, el otro o ninguno; y la base `laravel_prod` (7,8 MB, 9 tablas)
+  no es de AtendIa. Cada uno hay que identificarlo antes de tocarlo.
+- **La barra de pasos del wizard desborda 44px a 390px** (2026-10-06): `nav.wizard-steps` mide
+  434px con sus 4 pestañas, y eso ensancha el documento entero — la 4ª ("04 Conexión") queda
+  cortada en un teléfono. Es deuda vieja, no la tocó la tarjeta de conexión: lo midió
+  `WhatsAppLinkBrowserTest`. Nunca lo atrapó `PanelResponsiveBrowserTest` porque barre las rutas
+  del MENÚ y `/alta` no es una de ellas.
+- **Evolution arranca antes que Postgres** (2026-10-06, tras el reboot al kernel -146): intentó
+  sus migraciones Prisma dos veces contra `ai_project_postgres-shared:5432` todavía caído
+  (`P1001`) y recién levantó al tercer intento. El reboot se va a repetir: falta una dependencia
+  de arranque o un reintento del paso de migración.
+  **CORRECCIÓN (mismo día):** el reboot NO perdió el emparejamiento, como escribí primero.
+  `fetchInstances` dice `disconnectionAt 2026-10-02T23:22:53`, código 401,
+  `tag: conflict / type: device_removed`: el dispositivo se desvinculó desde el teléfono el 2 de
+  octubre. El webhook sí llegó — la fila 1 de `panel_notifications` es de un segundo después.
+- **No hay pantalla de conexión de WhatsApp**: `EvolutionApi::qrCode()` existe y su PHPDoc dice
+  "la pantalla de conexión se lo pedirá", pero ningún Blade la llama. Hoy re-emparejar obliga a
+  entrar al Manager de Evolution por fuera de AtendIa.
+- **La tabla del hub de Catálogos nunca fue responsive** (2026-10-06, MEDIDO): con un maestro
+  abierto a 390px el documento desborda — 264px en Redes sociales (5 columnas), 362px en
+  Ejemplos del hero (6). Es la chrome compartida `<x-catalog.table>`, así que son los 14
+  maestros, no una pantalla. `PanelResponsiveBrowserTest` nunca lo atrapó porque visita
+  `/admin/catalogs` SIN abrir un maestro: mide el riel, no la tabla. Arreglarlo es apilar por
+  `data-label` como ya hace `.pay-table` en Cobros.
+- **`inDarkMode()` de Pest no oscurece la página** (2026-10-06): la captura sale en claro igual.
+  Todas las capturas `*-dark` que hay hoy (`whatsapp-panel-connected-dark`, etc.) están
+  mintiendo: muestran el tema claro con otro nombre de archivo. Lo que sí funciona es
+  `->script('document.documentElement.classList.add("dark")')`. Revisar las que ya existen.
+- **La píldora del topbar vuelve a amarillo sólo al recargar** (2026-10-06): ahora se pone verde
+  en vivo con `whatsapp:connected`, pero el camino inverso (se cae el vínculo mientras ella mira
+  otra pantalla) no tiene aviso. La campana ya escucha `private-business.{id}` y el webhook ya
+  levanta esa notificación: la píldora podría colgarse del MISMO socket, sin poll ni costo nuevo.

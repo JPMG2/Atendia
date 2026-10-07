@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use Database\Seeders\DemoBusinessSeeder;
+use Database\Seeders\DemoTagSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 
@@ -11,6 +12,10 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     app()->setLocale('es');
+
+    // Every test here clicks a chip of the hero, and the chips are rows of
+    // the table she edits: with no master seeded the phone draws no example.
+    $this->seed(DemoTagSeeder::class);
 });
 
 test('the visitor chats with the demo hardware store inside the hero phone', function (): void {

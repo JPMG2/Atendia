@@ -1,10 +1,10 @@
 # Atendia — Design System
 
-> **Atendia** (working name — *atender* + *IA*) is an advertising & customer-service automation platform. It connects **WhatsApp → n8n → Laravel** so any business can be *attended by AI*: a customer messages on WhatsApp, n8n routes the message to the Laravel backend, and the assistant answers, books appointments, or shows products automatically. Each client also gets a **dashboard** to configure their availability, capacity, prices, products, and services.
+> **Atendia** (working name — *atender* + *IA*) is an advertising & customer-service automation platform. It connects **WhatsApp → Laravel** so any business can be *attended by AI*: a customer messages on WhatsApp, the Evolution API hands the message straight to the Laravel backend, and the assistant — grounded on the business's own knowledge base — answers, books appointments, or shows products automatically. Each client also gets a **dashboard** to configure their availability, capacity, prices, products, and services.
 
 The platform is rubro-agnostic: the same product serves **a cardiologist managing medical turnos** and **a candy seller showing her catalog**. That duality drives every design decision — it must feel **trustworthy enough for a doctor, friendly enough for a small shop**: not too corporate, not too playful.
 
-**Tech stack the product is built on:** Laravel · Livewire · TailwindCSS · n8n · Evolution API (WhatsApp).
+**Tech stack the product is built on:** Laravel 13 (PHP 8.5) · Livewire 4 (Blade SFC) · TailwindCSS · Vite · Postgres + pgvector · Redis · `laravel/ai` over OpenAI · Evolution API (WhatsApp).
 
 > ⚠️ **Working brand.** No name, logo, or fonts were provided. "Atendia", the jade+coral palette, the speech-bubble mark, and the Google-Font typefaces (Sora / Plus Jakarta Sans / JetBrains Mono) are all proposals — rename or replace freely. See **Caveats** at the bottom.
 
@@ -50,7 +50,7 @@ The vibe: **modern, clean, optimistic, breathable.** A confident jade-green syst
 ### Type
 - **Display — Sora** (700/800, tracking `-0.02em`): headlines, hero, big numbers. Geometric and confident.
 - **Body/UI — Plus Jakarta Sans** (400–700): everything readable. Humanist, friendly, neutral.
-- **Mono — JetBrains Mono:** numbers, prices, phone numbers, IDs, n8n flow nodes — never body text.
+- **Mono — JetBrains Mono:** numbers, prices, phone numbers, IDs, codes — never body text.
 - Scale is rem-based; UI minimum is 14px (`--text-sm`), hero up to `--text-7xl`.
 
 ### Backgrounds

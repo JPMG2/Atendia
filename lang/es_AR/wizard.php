@@ -26,7 +26,7 @@ return [
         ],
         5 => [
             'label' => 'Conexión',
-            'lead' => 'Dejá listos los números y el correo de tu negocio: la conexión se enciende desde el panel cuando quieras.',
+            'lead' => 'Dejá listos los números y el correo de tu negocio, y encendé la conexión acá mismo.',
         ],
     ],
 
@@ -55,6 +55,11 @@ return [
         'text_connected' => 'Tu número quedó conectado. Lo que salteaste te espera en el panel, sin apuro.',
         'text_pending' => 'Lo pendiente te espera en el panel. Conectá tu WhatsApp desde ahí cuando quieras.',
         'cta' => 'Ir a mi panel',
+    ],
+
+    'whatsapp' => [
+        'link_heading' => 'Encendé tu asistente',
+        'link_lead' => 'Vinculá el número ahora y tu asistente empieza a atender al salir de acá. Si preferís, lo conectás más tarde desde tu panel.',
     ],
 
     'preview' => [

@@ -18,7 +18,7 @@ use Throwable;
  * doing: on and answering, configured but failing, or simply not configured.
  *
  * Every probe is bounded by a short timeout: this feeds a screen, and one
- * dead integration must not hang the seven others behind it.
+ * dead integration must not hang the five others behind it.
  */
 class IntegrationHealth
 {
@@ -41,7 +41,7 @@ class IntegrationHealth
      */
     public function keys(): array
     {
-        return ['database', 'redis', 'mail', 'whatsapp', 'n8n', 'chatwoot', 'openai', 'reverb'];
+        return ['database', 'redis', 'mail', 'whatsapp', 'openai', 'reverb'];
     }
 
     /**
@@ -59,8 +59,6 @@ class IntegrationHealth
             'redis' => $this->checkRedis(),
             'mail' => $this->checkMail(),
             'whatsapp' => $this->checkEvolution(),
-            'n8n' => $this->checkN8n(),
-            'chatwoot' => $this->checkChatwoot(),
             'openai' => $this->checkOpenAi(),
             'reverb' => $this->checkReverb(),
             default => new IntegrationStatusDto($key, IntegrationState::Off, detail: __('integrations.detail.unknown')),
@@ -123,51 +121,6 @@ class IntegrationHealth
                 ? __('integrations.detail.answering')
                 : __('integrations.detail.version', ['version' => $version]), null];
         }, __('integrations.hint.whatsapp'));
-    }
-
-    private function checkN8n(): IntegrationStatusDto
-    {
-        $api = (string) config('services.n8n.api_url');
-
-        if ($api === '') {
-            return new IntegrationStatusDto('n8n', IntegrationState::Off, detail: __('integrations.detail.not_configured'));
-        }
-
-        // The health endpoint lives at the ROOT, not under /api/v1: the base
-        // is rebuilt from the configured URL instead of asking for one more.
-        $parts = parse_url($api);
-        $base = ($parts['scheme'] ?? 'http').'://'.($parts['host'] ?? '').(isset($parts['port']) ? ':'.$parts['port'] : '');
-
-        return $this->timed('n8n', function () use ($base): array {
-            Http::connectTimeout(self::TIMEOUT_SECONDS)
-                ->timeout(self::TIMEOUT_SECONDS)
-                ->get($base.'/healthz')
-                ->throw();
-
-            return [__('integrations.detail.answering'), null];
-        }, __('integrations.hint.n8n'));
-    }
-
-    private function checkChatwoot(): IntegrationStatusDto
-    {
-        $url = (string) config('services.chatwoot.url');
-
-        if ($url === '') {
-            return new IntegrationStatusDto('chatwoot', IntegrationState::Off, detail: __('integrations.detail.not_configured'));
-        }
-
-        return $this->timed('chatwoot', function () use ($url): array {
-            $response = Http::connectTimeout(self::TIMEOUT_SECONDS)
-                ->timeout(self::TIMEOUT_SECONDS)
-                ->get(rtrim($url, '/').'/api')
-                ->throw();
-
-            $version = (string) $response->json('version', '');
-
-            return [$version === ''
-                ? __('integrations.detail.answering')
-                : __('integrations.detail.version', ['version' => $version]), null];
-        }, __('integrations.hint.chatwoot'));
     }
 
     private function checkOpenAi(): IntegrationStatusDto

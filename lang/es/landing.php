@@ -50,6 +50,10 @@ return [
         'rubro_label' => 'Elige un negocio de ejemplo',
         'placeholder' => 'Escribe tu consulta…',
         'send' => 'Enviar',
+
+        // SEMILLA, no copy vivo: la landing lee estos ejemplos de `demo_tags`,
+        // la tabla que se edita desde Admin → Catálogos. Esto es lo que siembra
+        // `DemoTagSeeder` en una base nueva, y nada más lo lee.
         'rubros' => [
             'ferreteria' => [
                 'label' => 'Ferretería',

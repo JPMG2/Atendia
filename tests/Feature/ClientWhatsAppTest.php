@@ -30,6 +30,15 @@ function whatsappScreenClient(array $attributes = []): User
     return $user;
 }
 
+/** The bridge's verdict on the link, which is what the screen may claim. */
+function bridgeSays(string $state): void
+{
+    Http::fake(['http://evolution.test/*' => Http::response([
+        'instance' => ['state' => $state],
+        'base64' => 'data:image/png;base64,QR',
+    ])]);
+}
+
 test('guests are sent to the login', function (): void {
     $this->get(route('whatsapp'))->assertRedirect(route('login'));
 });
@@ -56,7 +65,10 @@ test('an unconnected business sees the steps and the connect call', function ():
 });
 
 test('a connected business sees its state and since when', function (): void {
+    bridgeSays('open');
+
     $this->actingAs(whatsappScreenClient([
+        'whatsapp_instance' => 'business-99',
         'whatsapp_connected_at' => '2026-09-17 10:00:00',
     ]));
 
@@ -65,13 +77,70 @@ test('a connected business sees its state and since when', function (): void {
         ->assertSee('17/09/2026');
 });
 
+test('the connected card names the number that actually got linked', function (): void {
+    Http::fake(['http://evolution.test/*' => Http::response([
+        'instance' => ['state' => 'open'],
+        '0' => ['ownerJid' => '5492995243890@s.whatsapp.net', 'profileName' => 'Fortin IA', 'profilePicUrl' => null],
+    ])]);
+
+    $this->actingAs(whatsappScreenClient([
+        'whatsapp_instance' => 'business-99',
+        'whatsapp_connected_at' => now(),
+    ]));
+
+    $this->get(route('whatsapp'))
+        ->assertSee('Fortin IA')
+        ->assertSee('5492995243890')
+        ->assertSee(__('whatsapp.connected.identity_hint'));
+});
+
+test('arriving from the it-fell notice already asks for the qr', function (): void {
+    bridgeSays('close');
+
+    $user = whatsappScreenClient();
+    $this->actingAs($user);
+
+    $this->get(route('whatsapp', ['conectar' => 1]))
+        ->assertSuccessful()
+        ->assertSee(__('whatsapp.connect.qr_hint'));
+
+    expect($user->business->refresh()->whatsapp_instance)->not->toBeNull();
+});
+
+test('a silent bridge is drawn as unverified, never as connected', function (): void {
+    Http::fake(['http://evolution.test/*' => Http::response(['error' => 'down'], 500)]);
+
+    $this->actingAs(whatsappScreenClient([
+        'whatsapp_instance' => 'business-99',
+        'whatsapp_connected_at' => '2026-09-17 10:00:00',
+    ]));
+
+    $this->get(route('whatsapp'))
+        ->assertSee(__('whatsapp.unverified.title'))
+        ->assertDontSee(__('whatsapp.connected.title'));
+});
+
+test('a stamp the bridge contradicts is cleared, not shown', function (): void {
+    bridgeSays('close');
+
+    $user = whatsappScreenClient([
+        'whatsapp_instance' => 'business-99',
+        'whatsapp_connected_at' => '2026-09-17 10:00:00',
+    ]);
+    $this->actingAs($user);
+
+    $this->get(route('whatsapp'))->assertSee(__('whatsapp.connect.title'));
+
+    expect($user->business->refresh()->whatsapp_connected_at)->toBeNull();
+});
+
 test('connecting provisions the instance, points the webhook home and shows the qr', function (): void {
     Http::fake(['http://evolution.test/*' => Http::response(['base64' => 'data:image/png;base64,QR'])]);
 
     $user = whatsappScreenClient();
     $this->actingAs($user);
 
-    livewire('whatsapp.index')
+    livewire('whatsapp.link')
         ->call('connect')
         ->assertSet('linking', true)
         ->assertSet('qr', 'data:image/png;base64,QR');
@@ -91,7 +160,7 @@ test('a half-done linking resumes without provisioning again', function (): void
 
     $this->actingAs(whatsappScreenClient(['whatsapp_instance' => 'business-99']));
 
-    livewire('whatsapp.index')
+    livewire('whatsapp.link')
         ->call('connect')
         ->assertSet('linking', true);
 
@@ -103,25 +172,39 @@ test('a dead bridge turns into a toast, not a crash', function (): void {
 
     $this->actingAs(whatsappScreenClient());
 
-    livewire('whatsapp.index')
+    livewire('whatsapp.link')
         ->call('connect')
         ->assertSet('linking', false)
         ->assertDispatched('notify');
 });
 
-test('the poll flips to connected when the webhook has stamped the column', function (): void {
-    Http::fake();
+test('the poll flips to connected when the bridge says the number answers', function (): void {
+    bridgeSays('open');
 
     $user = whatsappScreenClient(['whatsapp_instance' => 'business-99']);
     $this->actingAs($user);
 
-    $component = livewire('whatsapp.index')->set('linking', true);
-
-    // The connection webhook stamps the column out of band.
-    $user->business->update(['whatsapp_connected_at' => now()]);
-
-    $component->call('checkLink')
+    livewire('whatsapp.link')
+        ->set('linking', true)
+        ->call('checkLink')
         ->assertSet('linking', false)
         ->assertSet('qr', null)
-        ->assertDispatched('notify');
+        ->assertDispatched('notify')
+        ->assertDispatched('whatsapp:connected');
+
+    // The poll is also what stamps the column: linking no longer waits on
+    // a webhook that a restarted bridge may never send.
+    expect($user->business->refresh()->whatsapp_connected_at)->not->toBeNull();
+});
+
+test('the poll keeps waiting while the bridge has not paired yet', function (): void {
+    bridgeSays('connecting');
+
+    $this->actingAs(whatsappScreenClient(['whatsapp_instance' => 'business-99']));
+
+    livewire('whatsapp.link')
+        ->set('linking', true)
+        ->call('checkLink')
+        ->assertSet('linking', true)
+        ->assertNotDispatched('whatsapp:connected');
 });

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Actions\Business\VerifyWhatsAppLink;
 use App\Classes\Main\Plan;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
 use App\Enums\SuggestionStatus;
+use App\Enums\WhatsAppLinkState;
+use App\Services\EvolutionApi;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
@@ -27,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Localizable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -995,6 +999,77 @@ class Business extends Model
     public function isConnected(): bool
     {
         return $this->whatsapp_connected_at !== null;
+    }
+
+    /**
+     * How long a bridge answer stays good for. Three missed reconcile ticks:
+     * one late run is not news, a quarter hour of silence is.
+     */
+    private const int VERIFIED_MINUTES = 15;
+
+    /** How long the linked phone's own name and picture stay good for. */
+    private const int PROFILE_MINUTES = 10;
+
+    /** Stamped by {@see VerifyWhatsAppLink} every time the bridge answers, whatever it answered. */
+    public function markLinkVerified(): void
+    {
+        Cache::put($this->linkVerifiedKey(), now()->toIso8601String(), now()->addMinutes(self::VERIFIED_MINUTES));
+    }
+
+    /**
+     * When the bridge last answered, so a green claim can say how old it is.
+     * Null while unverified, and also for a stamp left by an older release
+     * that only wrote a flag.
+     */
+    public function linkVerifiedAt(): ?CarbonImmutable
+    {
+        $at = Cache::get($this->linkVerifiedKey());
+
+        return is_string($at) ? CarbonImmutable::parse($at) : null;
+    }
+
+    /**
+     * Who the linked phone says it is. Cached because it costs a round trip to
+     * the bridge and two screens ask for it: the card and the topbar pill.
+     *
+     * @return array{number: string, name: string, picture: ?string}|null
+     */
+    public function whatsAppProfile(): ?array
+    {
+        if ($this->whatsapp_instance === null) {
+            return null;
+        }
+
+        return Cache::remember(
+            'wa:profile:'.$this->id,
+            now()->addMinutes(self::PROFILE_MINUTES),
+            fn (): ?array => rescue(
+                fn (): ?array => app(EvolutionApi::class)->profile((string) $this->whatsapp_instance),
+                null,
+                false,
+            ),
+        );
+    }
+
+    /**
+     * What the panel is allowed to claim. A stamp nobody has confirmed
+     * lately is Unverified, not Connected: the column alone said "green"
+     * through a whole outage, because only a webhook ever cleared it.
+     */
+    public function linkState(): WhatsAppLinkState
+    {
+        if (! $this->isConnected()) {
+            return WhatsAppLinkState::Disconnected;
+        }
+
+        return Cache::has($this->linkVerifiedKey())
+            ? WhatsAppLinkState::Connected
+            : WhatsAppLinkState::Unverified;
+    }
+
+    private function linkVerifiedKey(): string
+    {
+        return 'wa:verified:'.$this->id;
     }
 
     public function catalogPhotosCount(): int

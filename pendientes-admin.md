@@ -233,15 +233,32 @@ Anotado el 2026-09-24, nunca construido.
 - [ ] Las charlas con problema del día: errores del log, jobs fallidos, cliente que repite,
       se enoja o pide una persona
 
-### A8. Tags de la demo del hero, configurables con estacionalidad
-Pedido de ella 2026-09-22. Diseño e investigación ya hechos (memoria
-`atendia-demo-tags-estacionales`): `demo_tags` evergreen + `demo_seasonal_variants` con
-ventana de fechas y prioridad, resolución en UN método del modelo, preview "ver como si
-fuera tal fecha", y las trampas anotadas (timezone fijo, solapamientos, caché, embeddings
-al guardar, probar el FIN de la ventana).
-- [ ] Tags evergreen administrables
-- [ ] Variantes estacionales con ventana y prioridad
-- [ ] Preview por fecha
+### A8. Tags de la demo del hero, configurables con estacionalidad — HECHO 2026-10-06
+Pedido de ella 2026-09-22. Dos maestros nuevos en el hub de Catálogos, grupo **Landing**.
+- [x] ~~Tags evergreen administrables~~: tabla `demo_tags`, maestro "Ejemplos del hero".
+      Los 8 rubros salieron de `lang` y hoy se editan; el bloque de `lang` quedó marcado
+      como SEMILLA y nada lo renderiza. `DemoTagSeeder` usa `firstOrCreate` y no
+      `updateOrCreate` justamente para no pisarle una tarde de ediciones.
+- [x] ~~Variantes estacionales con ventana y prioridad~~: tabla `seasonal_windows` (el
+      CUÁNDO, sin contenido propio) + filas de `demo_tags` con esa ventana. **Una variante
+      es un DELTA**: lo que llena pisa, lo que deja vacío hereda, y por eso todo menos el
+      slug es nullable. La resolución vive en UN método, `DemoTag::resolved($día)`.
+- [x] ~~Preview por fecha~~: "Ver como si fuera" debajo de la lista, con datepicker; dice
+      qué temporada manda ese día y pinta las pastillas resueltas. No cambia nada.
+- **Trampas de la memoria, atendidas**: zona horaria FIJA (`atendia.seasonal_timezone`, no
+      UTC ni la del visitante); prioridad explícita para solapamientos; caché solo del día
+      de HOY, invalidada al guardar (una fecha de preview no se cachea); y el test que
+      importa es el del FIN de la ventana — al día siguiente vuelve el evergreen entero.
+- La lista distingue "En curso" de "Activa": encendida y dentro de sus fechas no son lo
+      mismo, y solo la segunda es lo que el visitante está viendo.
+- Falta el cajón de embeddings: una variante no reindexa nada todavía porque su contenido
+      es la demo del hero, que no entra al RAG.
+- [x] ~~Las 3 mejoras ofrecidas al cerrar~~, pedidas por ella el mismo día: **prender y apagar
+      desde la fila** (una temporada que sale mal se apaga en un click, no entrando a editar),
+      **el preview con el teléfono** (las pastillas eligen y abajo se lee la conversación que
+      leería el visitante, con el nombre del negocio en el encabezado) y **"Repetir el año que
+      viene"** (clona ventana y variantes con las fechas corridas 365 días, APAGADA: se escribe
+      un año antes y se enciende cuando se leyó; repetir dos veces no deja dos copias).
 
 ### A9. Calificaciones de la IA — las dos, y hoy existe una sola
 Pedido de ella 2026-09-25 ("dejalo en pendiente") y ampliado el 2026-10-03.
@@ -379,8 +396,11 @@ mal, en un solo lugar y en orden.
 NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
 - [ ] Número, horario de atención y mensaje de apertura del WhatsApp de la landing, con
       variantes por fecha (feriados, vacaciones, fin de año)
-- [ ] Se resuelve con el mismo patrón de A8 (evergreen + variante con ventana y prioridad):
-      si se construyen juntos, es un solo mecanismo en vez de dos
+- [x] ~~Se resuelve con el mismo patrón de A8~~: el riel ya está puesto y probado
+      (2026-10-06). `seasonal_windows` es compartida y no sabe nada de tags: E5 monta
+      encima con una fila evergreen y sus variantes, sin tabla de fechas propia.
+      Lo que falta es solo SU contenido — el horario de atención no existe hoy en ningún
+      lado, así que esa columna hay que decidirla antes (vive en `companies`).
 
 ### E6. Compañía toma vida en todo el proyecto — HECHO 2026-10-03
 El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces** (118 en

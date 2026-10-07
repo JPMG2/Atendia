@@ -40,7 +40,7 @@ return [
         5 => [
             'label' => 'Conexión',
             'heading' => 'Los números de tu WhatsApp',
-            'lead' => 'Deja listos los números y el correo de tu negocio: la conexión se enciende desde el panel cuando quieras.',
+            'lead' => 'Deja listos los números y el correo de tu negocio, y enciende la conexión aquí mismo.',
         ],
     ],
 
@@ -124,6 +124,8 @@ return [
         'discard_accept' => 'Salir y descartar',
         'later' => 'Completar después',
         'save' => 'Guardar y continuar',
+        'link_heading' => 'Enciende tu asistente',
+        'link_lead' => 'Vincula el número ahora y tu asistente empieza a atender al salir de aquí. Si prefieres, lo conectas más tarde desde tu panel.',
     ],
 
     'done' => [

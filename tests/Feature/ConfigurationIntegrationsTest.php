@@ -41,8 +41,6 @@ function fakeHealthyWorld(): void
 {
     Http::fake([
         '*evolution-api*' => Http::response(['status' => 200, 'version' => '2.1.1']),
-        '*n8n*' => Http::response(['status' => 'ok']),
-        '*chatwoot*' => Http::response(['version' => '3.12.0']),
         '*openai.com*' => Http::response(['data' => []]),
         '*' => Http::response([], 200),
     ]);
@@ -63,7 +61,7 @@ test('a client cannot reach the integrations page', function (): void {
 });
 
 test('an admin sees every integration, still probing on the first paint', function (): void {
-    // The probes travel AFTER the first render (wire:init): eight checks with
+    // The probes travel AFTER the first render (wire:init): six checks with
     // timeouts must never hold the page hostage.
     $this->actingAs(integrationsAdmin())->get('/admin/integrations')
         ->assertOk()
@@ -71,7 +69,7 @@ test('an admin sees every integration, still probing on the first paint', functi
         ->assertSee(__('integrations.title'))
         ->assertSee(__('integrations.checking'))
         ->assertSee(__('integrations.names.whatsapp'))
-        ->assertSee(__('integrations.names.n8n'))
+        ->assertSee(__('integrations.names.reverb'))
         ->assertSee(__('integrations.names.openai'))
         ->assertSee(__('integrations.names.database'));
 });
@@ -89,7 +87,6 @@ test('loading probes every integration and reports state, latency and detail', f
         ->and($statuses['whatsapp']['state'])->toBe(IntegrationState::Connected->value)
         ->and($statuses['whatsapp']['detail'])->toContain('2.1.1')
         ->and($statuses['whatsapp']['latency_ms'])->not->toBeNull()
-        ->and($statuses['n8n']['state'])->toBe(IntegrationState::Connected->value)
         ->and($statuses['database']['state'])->toBe(IntegrationState::Connected->value)
         ->and($statuses['reverb']['state'])->toBe(IntegrationState::Connected->value);
 });

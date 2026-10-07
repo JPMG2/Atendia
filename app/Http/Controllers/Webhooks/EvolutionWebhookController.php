@@ -9,6 +9,7 @@ use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Messaging\Channels\Panel;
 use App\Messaging\Panel\WhatsAppDisconnected;
 use App\Models\Business;
+use App\Models\WhatsAppLinkEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -173,10 +174,14 @@ class EvolutionWebhookController extends Controller
 
         if ($state === 'open' && ! $business->isConnected()) {
             $business->update(['whatsapp_connected_at' => now()]);
+
+            WhatsAppLinkEvent::record($business, true, 'paired');
         }
 
         if ($state === 'close' && $business->isConnected()) {
             $business->update(['whatsapp_connected_at' => null]);
+
+            WhatsAppLinkEvent::record($business, false, $this->fallReason($request));
 
             // The pill only says what is true now; the row says at what hour
             // the number went quiet, which is what nobody would guess later.
@@ -184,5 +189,19 @@ class EvolutionWebhookController extends Controller
         }
 
         return in_array($state, ['open', 'close'], true);
+    }
+
+    /**
+     * Why it fell, when Baileys says so. 401 is the one worth naming: the
+     * phone unlinked the device, which no amount of retrying fixes — only a
+     * new scan does. Laboratorio Vida fell that way on 2026-10-02.
+     */
+    private function fallReason(Request $request): ?string
+    {
+        return match ((int) $request->input('data.statusReason', 0)) {
+            401 => 'device_removed',
+            0 => null,
+            default => 'bridge_closed',
+        };
     }
 }

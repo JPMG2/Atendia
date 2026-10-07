@@ -7,6 +7,7 @@ use App\Models\Business;
 use App\Models\DemoMetric;
 use App\Models\KnowledgeDocument;
 use Database\Seeders\DemoBusinessSeeder;
+use Database\Seeders\DemoTagSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -129,6 +130,10 @@ test('the demo businesses never inflate the landing social proof', function (): 
 });
 
 test('the hero phone offers the interactive composer', function (): void {
+    // The hero examples live in the table she edits, so the phone is empty
+    // until the master is seeded.
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee(__('landing.demo.try_label'))
         ->assertSee('¿Cuánto sale una ecografía?')
@@ -137,6 +142,8 @@ test('the hero phone offers the interactive composer', function (): void {
 });
 
 test('the hero phone offers the rubro selector and the english chip', function (): void {
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee(__('landing.demo.rubro_label'))
         ->assertSee('Peluquería')
@@ -147,6 +154,8 @@ test('the hero phone offers the rubro selector and the english chip', function (
 });
 
 test('the rubro carousel ships all 8 pills but only the first 3 visible', function (): void {
+    $this->seed(DemoTagSeeder::class);
+
     $response = $this->get('/')
         ->assertSee('data-demo-rubro-track', false)
         ->assertSee('Dr. Juan')
@@ -163,6 +172,8 @@ test('the rubro carousel ships all 8 pills but only the first 3 visible', functi
 });
 
 test('every rubro ships its own scripted conversation, some in english', function (): void {
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee('data-live-pools', false)
         // A themed line per pool: the phone talks like THAT business.
@@ -175,6 +186,8 @@ test('every rubro ships its own scripted conversation, some in english', functio
 });
 
 test('each pill carries its live dot, pressed state and rubro-named invite', function (): void {
+    $this->seed(DemoTagSeeder::class);
+
     $response = $this->get('/')
         ->assertSee('pill-live-dot')
         ->assertSee('Crear el asistente de mi panadería')
@@ -229,6 +242,8 @@ test('a registration with no demo behind it counts nothing', function (): void {
 });
 
 test('the phone ships the per-rubro greeting and the share door', function (): void {
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee('Soy el asistente de Peluquería Lumen')
         ->assertSee(__('landing.demo.share'))

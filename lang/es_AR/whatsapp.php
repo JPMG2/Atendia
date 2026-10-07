@@ -7,6 +7,10 @@ return [
     'sub' => 'Conectá el número que atiende tu asistente.',
     'no_business' => 'Primero creá tu negocio y después conectamos tu WhatsApp.',
 
+    'connected' => [
+        'identity_hint' => 'Este es el número que quedó vinculado. Si no es el de tu negocio, desconectalo y vinculá el correcto.',
+    ],
+
     'connect' => [
         'title' => 'Conectá tu WhatsApp',
         'body' => 'Vinculá el número de tu negocio y tu asistente empieza a responder por vos, las 24 horas.',

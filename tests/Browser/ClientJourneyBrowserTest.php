@@ -87,8 +87,11 @@ beforeEach(function (): void {
     ]);
 });
 
-/** The primary button of the step currently on screen: three more sit hidden. */
-const JOURNEY_STEP_CTA = '.wizard-panel > div:not([hidden]) button.btn-primary';
+/**
+ * The advance button of the step currently on screen: three more sit hidden.
+ * Scoped to the footer since step 5 also offers a primary "connect" button.
+ */
+const JOURNEY_STEP_CTA = '.wizard-panel > div:not([hidden]) .wizard-foot button.btn-primary';
 
 /** What Evolution was asked to send out, in order. @return list<HttpRequest> */
 function journeySentTexts(): array
@@ -187,7 +190,7 @@ test('a person registers, loads her offer and her own price reaches the assistan
     // calls and then the real `connection.update` delivery Evolution sends.
     $this->actingAs($owner);
 
-    livewire('whatsapp.index')->call('connect');
+    livewire('whatsapp.link')->call('connect');
 
     expect($business->refresh()->whatsapp_instance)->toBe('business-'.$business->id);
 

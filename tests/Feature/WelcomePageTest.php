@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Classes\Main\Plan;
 use App\Models\Business;
 use App\Models\ConversationMessage;
+use Database\Seeders\DemoTagSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -139,6 +140,10 @@ test('the hero charms in the details: pulsing dot, sparking cta and clear anchor
 });
 
 test('the landing sells the any-language plus in the features and the live demo', function (): void {
+    // The hero examples live in the table she edits, so the phone is empty
+    // until the master is seeded.
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee(__('landing.features.always.title'))
         ->assertSee(__('landing.features.always.body'))
@@ -152,6 +157,8 @@ test('the landing sells the any-language plus in the features and the live demo'
 test('the demo opens on a shop, where a bookings-only assistant cannot follow', function (): void {
     // Differentiation audit (2026-09-26): the rival's hero books a salon;
     // ours leads with commerce and keeps every service rubro behind it.
+    $this->seed(DemoTagSeeder::class);
+
     $this->get('/')
         ->assertSee('Ferretería El Tornillo · Asistente')
         ->assertSeeInOrder(['data-demo-rubro="ferreteria"', 'data-demo-rubro="kiosco"', 'data-demo-rubro="clinica"'], false);

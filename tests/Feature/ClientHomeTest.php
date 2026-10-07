@@ -91,6 +91,8 @@ test('the topbar claims a connected whatsapp only when the number is linked', fu
     $this->get(route('dashboard'))->assertDontSee(__('whatsapp.topbar_connected'));
 
     $business->forceFill(['whatsapp_connected_at' => now()])->save();
+    // Green needs both halves: the stamp, and a bridge answer behind it.
+    $business->markLinkVerified();
 
     $this->get(route('dashboard'))
         ->assertSee('conn-pill', false)

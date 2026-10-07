@@ -169,6 +169,112 @@ return [
         ],
     ],
 
+    'seasonal_window' => [
+        'search_placeholder' => 'Buscar por nombre',
+        'search_label' => 'Buscar temporada',
+        'singular' => 'temporada',
+        'plural' => 'temporadas',
+        'create' => 'Crear temporada',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva temporada',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay temporadas que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Temporada',
+            'starts_at' => 'Desde',
+            'ends_at' => 'Hasta',
+            'priority' => 'Prioridad',
+            'running' => 'Hoy',
+            'status' => 'Estado',
+            'repeat' => 'Repetir',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+            'running' => 'En curso',
+            'waiting' => 'Fuera de fecha',
+        ],
+
+        'repeat' => 'Repetir el año que viene',
+        'repeated' => 'Listo: :name quedó creada y apagada, para que la revises antes.',
+        'repeat_exists' => 'Esa temporada ya tiene su copia del año que viene.',
+        'toggled_on' => ':name quedó activa.',
+        'toggled_off' => ':name quedó inactiva.',
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Navidad 2026',
+            'range' => 'Desde y hasta',
+            'range_hint' => 'La temporada se prende sola el primer día y se apaga sola el último',
+            'starts_at' => 'Desde',
+            'ends_at' => 'Hasta',
+            'priority' => 'Prioridad',
+            'priority_hint' => 'Si dos temporadas se pisan, manda la de número más alto',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'demo_tag' => [
+        'search_placeholder' => 'Buscar por clave, nombre o temporada',
+        'search_label' => 'Buscar ejemplo',
+        'singular' => 'ejemplo',
+        'plural' => 'ejemplos',
+        'create' => 'Crear ejemplo',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo ejemplo',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay ejemplos que coincidan con la búsqueda.',
+
+        'columns' => [
+            'slug' => 'Clave',
+            'label' => 'Pastilla',
+            'business_name' => 'Negocio',
+            'season' => 'Temporada',
+            'sort_order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+            'evergreen' => 'Siempre',
+            'inherits' => 'Hereda',
+        ],
+
+        'fields' => [
+            'slug' => 'Clave',
+            'slug_hint' => 'La misma del negocio de ejemplo: ferreteria, kiosco',
+            'label' => 'Pastilla',
+            'label_placeholder' => 'Ej. Ferretería',
+            'business_name' => 'Nombre del negocio',
+            'business_name_placeholder' => 'Ej. Ferretería El Tornillo',
+            'noun' => 'Rubro en minúscula',
+            'noun_hint' => 'Se usa en el botón: "Quiero esto para mi ferretería"',
+            'season' => 'Temporada',
+            'season_placeholder' => 'Siempre (sin temporada)',
+            'season_hint' => 'Sin temporada es la versión de todo el año; con temporada, solo esos días',
+            'chips' => 'Preguntas sugeridas',
+            'chips_hint' => 'Una por línea. En blanco hereda las de la versión de todo el año',
+            'pool' => 'Conversación de ejemplo',
+            'pool_hint' => 'Una burbuja por línea: «cliente: …» o «asistente: …»',
+            'sort_order' => 'Orden',
+            'sort_order_hint' => 'De menor a mayor, como aparecen en el hero',
+            'status' => 'Estado',
+        ],
+
+        'preview' => [
+            'title' => 'Ver como si fuera',
+            'hint' => 'Elige un día y mira con qué ejemplos abre el hero. No cambia nada.',
+            'date' => 'Día',
+            'none' => 'Ese día no hay ninguna temporada: sale la versión de todo el año.',
+            'season' => 'Temporada en curso: :name',
+            'empty' => 'Ese día el hero no tendría ningún ejemplo que mostrar.',
+            'no_script' => 'Este ejemplo no tiene conversación cargada: el hero abriría el chat vacío.',
+        ],
+    ],
+
     'province' => [
         'search_placeholder' => 'Buscar por nombre o país',
         'search_label' => 'Buscar provincia',

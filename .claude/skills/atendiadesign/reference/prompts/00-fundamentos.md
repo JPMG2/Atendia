@@ -1,13 +1,13 @@
 # Atendia — Fundamentos de diseño (base compartida para web y dashboard)
 
-> Pegá este bloque al inicio de cualquier prompt de construcción, o importá los tokens a tu `tailwind.config.js`. Ambos productos (sitio del negocio y dashboard de clientes) comparten **exactamente** estos fundamentos. Stack objetivo: **Laravel · Livewire · TailwindCSS · n8n · Evolution API**.
+> Pegá este bloque al inicio de cualquier prompt de construcción, o importá los tokens a tu `tailwind.config.js`. Ambos productos (sitio del negocio y dashboard de clientes) comparten **exactamente** estos fundamentos. Stack objetivo: **Laravel 13 · PHP 8.5 · Livewire 4 · TailwindCSS · Alpine.js · Postgres + Redis · Evolution API**.
 
 ---
 
 ## 1. Marca
 
 - **Nombre (provisional):** Atendia — *atender + IA*. Tagline: **"Tu negocio, atendido por IA."**
-- **Qué es:** atención y publicidad automatizada por WhatsApp. El cliente escribe → n8n enruta a Laravel → el asistente responde, agenda turnos o muestra productos. Cada cliente configura todo desde su dashboard.
+- **Qué es:** atención y publicidad automatizada por WhatsApp. El cliente escribe → Evolution entrega el mensaje a Laravel → el asistente responde, agenda turnos o muestra productos. Cada cliente configura todo desde su dashboard.
 - **Rubro-agnóstico:** sirve igual a un cardiólogo que agenda turnos y a una vendedora de golosinas que muestra su catálogo. Regla de oro de diseño: **confiable para un médico, amigable para un comercio.** Ni corporativo frío, ni juvenil.
 - **Logo:** globo de chat redondeado con tres nodos (dos blancos + uno coral) = chat + mini flujo de automatización. Wordmark en Sora 800 con "ia" en jade: **Atend·ia**.
 
@@ -83,7 +83,7 @@ Construí siempre con **tokens semánticos**, nunca con el valor crudo, para que
 |---|---|---|---|
 | **Display** | **Sora** | 700 / 800 | Titulares, hero, números grandes. `letter-spacing: -0.02em`. |
 | **Cuerpo / UI** | **Plus Jakarta Sans** | 400–700 | Todo lo legible. Humanista, amigable. |
-| **Mono** | **JetBrains Mono** | 400–600 | Precios, teléfonos, IDs, horarios, nodos n8n. **Nunca** texto corrido. |
+| **Mono** | **JetBrains Mono** | 400–600 | Precios, teléfonos, IDs, horarios, códigos. **Nunca** texto corrido. |
 
 Escala (rem): `xs .75` · `sm .875` · `base 1` · `lg 1.125` · `xl 1.25` · `2xl 1.5` · `3xl 1.875` · `4xl 2.25` · `5xl 3` · `6xl 3.75` · `7xl 4.75`. **Mínimo UI: 14px.**
 

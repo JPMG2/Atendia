@@ -2406,9 +2406,15 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   }
   .topbar-actions { margin-left:auto; display:flex; align-items:center; gap:12px; }
 
+  /* The Livewire root around the pill: it must not become a flex item itself,
+     or the pill would sit inside a box instead of beside its neighbours. */
+  .conn-pill-slot { display:contents; }
   .conn-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:var(--radius-pill);
                background:var(--success-soft); color:var(--success); font-size:var(--text-xs); font-weight:700; white-space:nowrap; }
   .conn-dot { width:7px; height:7px; border-radius:50%; background:var(--success); flex-shrink:0; }
+  /* The greeting after pairing: the avatar sets the height, so the pill gives up
+     its left padding instead of growing taller than the topbar's other controls. */
+  .conn-pill-greeting { padding:4px 12px 4px 4px; gap:8px; }
   /* Not connected: a warning, and a way out — it links to the WhatsApp screen. */
   .conn-pill-warning { background:var(--warning-soft); color:var(--warning); text-decoration:none;
                        transition:filter var(--dur-fast) var(--ease-out); }
@@ -2915,6 +2921,38 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      el dato. El mono ya distingue al código del nombre; no hace falta encerrarlo. */
   .catalog-code { font-family:var(--font-mono); font-size:var(--text-xs); font-weight:600;
                   letter-spacing:.04em; color:var(--text-strong); }
+  /* The hero preview under the demo examples list: a season is approved weeks
+     before it runs, so this is where it gets looked at. */
+  .demo-preview { margin-top:var(--space-5); padding:var(--space-5); display:flex;
+                  flex-direction:column; gap:var(--space-3); }
+  .demo-preview-head h3 { font-size:var(--text-base); color:var(--text-strong); }
+  .demo-preview-pills { display:flex; flex-wrap:wrap; gap:6px; }
+  .demo-preview-pill { display:inline-flex; align-items:center; gap:6px; padding:5px 12px;
+                       border:1px solid transparent; cursor:pointer; font-family:inherit;
+                       border-radius:var(--radius-pill); background:var(--surface-sunken);
+                       color:var(--text-body); font-size:var(--text-xs); font-weight:600;
+                       transition:background-color var(--dur-fast) var(--ease-out); }
+  .demo-preview-pill:hover { background:var(--brand-soft); }
+  .demo-preview-pill.is-on { background:var(--brand-soft); color:var(--brand-soft-text);
+                             border-color:var(--brand); }
+
+  /* The hero's phone, cut down to what this screen answers: who speaks and
+     what they say. The bubble classes are the landing's own. */
+  .demo-preview-phone { max-width:380px; border:1px solid var(--border-subtle);
+                        border-radius:var(--radius-lg); overflow:hidden;
+                        background:var(--chat-canvas); }
+  .demo-preview-phone-head { display:flex; align-items:center; gap:8px; padding:10px 12px;
+                             background:var(--bubble-out); color:var(--bubble-out-text);
+                             font-size:var(--text-xs); font-weight:700; }
+  .demo-preview-phone-avatar { display:inline-flex; align-items:center; justify-content:center;
+                               width:26px; height:26px; border-radius:50%;
+                               background:rgb(255 255 255 / .18); flex-shrink:0; }
+  .demo-preview-phone-body { display:flex; flex-direction:column; gap:7px; padding:12px; }
+  .demo-preview-phone-chips { display:flex; flex-wrap:wrap; gap:6px; padding:0 12px 12px; }
+  .demo-preview-phone-chips span { padding:4px 10px; border-radius:var(--radius-pill);
+                                   background:var(--surface-sunken); color:var(--text-muted);
+                                   font-size:var(--text-2xs); }
+
   .catalog-cell-name { color:var(--text-strong); font-weight:600; }
   .catalog-cell-sym { font-family:var(--font-mono); color:var(--text-body); }
   .catalog-cell-num { text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
@@ -2925,6 +2963,12 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .catalog-status.is-on { color:var(--success); background:var(--success-soft); }
   .catalog-status.is-off { color:var(--text-muted); background:var(--surface-sunken);
                            border:1px solid var(--border-subtle); }
+  /* The same pill, but it answers: a season is switched off from its row. */
+  .catalog-status-toggle { border:1px solid transparent; cursor:pointer; font-family:inherit;
+                           transition:filter var(--dur-fast) var(--ease-out); }
+  .catalog-status-toggle:hover { filter:brightness(.95); }
+  .catalog-status-toggle.is-off { border-color:var(--border-subtle); }
+
   .catalog-row-go { color:var(--brand); opacity:1; transform:none;
                     transition:opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
                     display:inline-flex; }
@@ -3149,6 +3193,10 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                      font-size:clamp(1.35rem,2.4vw,1.75rem); }
   .wizard-panel .lead { margin:6px 0 16px; color:var(--text-muted); font-size:var(--text-base); max-width:560px; }
   .wizard-panel .card { padding:22px; }
+  /* A step's second block: separates without competing with the step's h2. */
+  .wizard-subhead { font-family:var(--font-display); font-weight:var(--weight-extra);
+                    letter-spacing:-.02em; color:var(--text-strong);
+                    font-size:var(--text-xl); margin-top:28px; }
   .wizard-optional { display:inline-block; font-size:var(--text-2xs); font-weight:var(--weight-bold);
                      letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);
                      background:var(--surface-sunken); border-radius:var(--radius-pill);

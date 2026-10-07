@@ -42,7 +42,7 @@ Encabezado de sección: eyebrow *"Funciones"* + `h2` 4xl *"Todo lo que tu negoci
 - Contenedor card grande (radio 28px, padding 48px). Eyebrow *"Cómo funciona"* + `h2` *"De la pregunta a la respuesta, automático"*.
 - 4 pasos en fila (colapsa a 2×2 ≤900px), cada uno con número mono (`01`–`04`), icono en cuadro (el paso 3 usa `accent-soft`/`accent` para romper el ritmo), título `lg`, cuerpo `sm`:
   1. **El cliente escribe** (`message-square`)
-  2. **Atendia lo procesa** (`workflow`) — n8n entiende y busca en tu config
+  2. **Atendia lo procesa** (`workflow`) — el asistente entiende y busca en tu config
   3. **Responde por vos** (`sparkles`)
   4. **Vos supervisás** (`layout-dashboard`)
 

@@ -169,6 +169,35 @@ class EvolutionApi
     }
 
     /**
+     * Who the linked phone says it is. Shown right after pairing so the owner
+     * confirms she linked the BUSINESS line and not her personal one, while
+     * the warning about that is still on screen.
+     *
+     * @return array{number: string, name: string, picture: ?string}|null
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function profile(string $instance): ?array
+    {
+        $row = (array) ($this->request()
+            ->get('/instance/fetchInstances', ['instanceName' => $instance])
+            ->throw()
+            ->json('0') ?? []);
+
+        $jid = (string) ($row['ownerJid'] ?? '');
+
+        if ($jid === '') {
+            return null;
+        }
+
+        return [
+            'number' => (string) strstr($jid, '@', true),
+            'name' => trim((string) ($row['profileName'] ?? '')),
+            'picture' => filled($row['profilePicUrl'] ?? null) ? (string) $row['profilePicUrl'] : null,
+        ];
+    }
+
+    /**
      * @throws ConnectionException|RequestException
      */
     public function connectionState(string $instance): string

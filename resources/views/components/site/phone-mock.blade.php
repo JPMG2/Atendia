@@ -6,20 +6,17 @@
         ['side' => 'out', 'time' => '09:42', 'text' => __('landing.phone.b4')],
     ];
 
+    // The examples she edits, with whichever season is running already applied.
+    // Read once: four spots on this page used to ask for the same list.
+    $rubros = App\Models\DemoTag::resolved();
+
     // One scripted pool per rubro: the carousel replays the conversation of
-    // whichever tag is active. The clinic reuses the canonical
-    // landing.phone.b5..b10 lines (the closing section pins them too).
-    $livePools = collect(__('landing.demo.rubros'))
-        ->map(fn (array $rubro): array => $rubro['pool'] ?? [])
-        ->put('clinica', [
-            ['side' => 'in',  'text' => __('landing.phone.b5')],
-            ['side' => 'out', 'text' => __('landing.phone.b6')],
-            ['side' => 'in',  'text' => __('landing.phone.b7')],
-            ['side' => 'out', 'text' => __('landing.phone.b8')],
-            ['side' => 'in',  'text' => __('landing.phone.b9')],
-            ['side' => 'out', 'text' => __('landing.phone.b10')],
-        ])
-        ->toArray();
+    // whichever tag is active.
+    $livePools = collect($rubros)->mapWithKeys(
+        fn (array $rubro): array => [$rubro['slug'] => $rubro['pool']],
+    )->all();
+
+    $firstName = $rubros[0]['name'] ?? '';
 @endphp
 
 <div class="hero-phone-enter relative">
@@ -36,10 +33,10 @@
             style="transition: opacity 0.25s"
             aria-label="{{ __('landing.demo.rubro_label') }}"
         >
-            @foreach (__('landing.demo.rubros') as $slug => $rubro)
+            @foreach ($rubros as $rubro)
                 <button
                     type="button"
-                    data-demo-rubro="{{ $slug }}"
+                    data-demo-rubro="{{ $rubro['slug'] }}"
                     data-demo-name="{{ $rubro['name'] }}"
                     data-demo-header-text="{{ __('landing.demo.header', ['name' => $rubro['name']]) }}"
                     data-demo-greeting="{{ __('landing.demo.greeting', ['name' => $rubro['name']]) }}"
@@ -118,7 +115,7 @@
                 </span>
                 <div style="line-height: 1.2">
                     <div data-demo-header style="color: var(--bubble-out-text); font-weight: 700; font-size: 14px">
-                        {{ __('landing.demo.header', ['name' => collect(__('landing.demo.rubros'))->first()['name']]) }}
+                        {{ __('landing.demo.header', ['name' => $firstName]) }}
                     </div>
                     <div
                         class="flex items-center gap-1.5"
@@ -162,9 +159,9 @@
                 <p class="text-subtle" style="font-size: 11px; margin-bottom: 6px">
                     {{ __('landing.demo.try_label') }}
                 </p>
-                @foreach (__('landing.demo.rubros') as $slug => $rubro)
+                @foreach ($rubros as $rubro)
                     <div
-                        data-demo-chips="{{ $slug }}"
+                        data-demo-chips="{{ $rubro['slug'] }}"
                         class="flex gap-1.5 overflow-x-auto"
                         style="margin-bottom: 8px; scrollbar-width: none; {{ $loop->first ? '' : 'display: none' }}"
                     >

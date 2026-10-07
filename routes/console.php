@@ -29,6 +29,10 @@ Schedule::command('atendia:appointment-reminders')->everyFifteenMinutes()->witho
 Schedule::command('atendia:analyze-conversations')->everyTenMinutes()->withoutOverlapping(10);
 Schedule::command('atendia:retry-ai-backlog')->everyThirtyMinutes()->withoutOverlapping(30);
 
+// The net under the connection webhook: a `close` lost to a bridge restart
+// would otherwise leave the panel green over a number that answers nobody.
+Schedule::command('atendia:whatsapp-reconcile')->everyFiveMinutes()->withoutOverlapping(5);
+
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverlapping(15);
 

@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call(MenuSeeder::class);
         $this->call(HelpArticleSeeder::class);
+        // The hero has no fallback copy any more: with no rows it shows no
+        // examples at all, so a fresh database has to start with them.
+        $this->call(DemoTagSeeder::class);
         $this->call(AdminUserSeeder::class);
     }
 }

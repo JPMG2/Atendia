@@ -45,6 +45,7 @@ return new class extends Migration
         'departments',
         'team_invitations',
         'panel_notifications',
+        'whatsapp_link_events',
     ];
 
     /**
