@@ -20,14 +20,17 @@ return new class extends Migration
         Schema::create('ai_models', function (Blueprint $table): void {
             $table->id();
 
-            $table->string('provider', 20)->comment("La clave del proveedor en config('ai.providers'), ej. openai");
+            $table->string('provider', 20)->comment("El laboratorio: el 'driver' de config('ai.providers'), ej. openai. Varias conexiones (claves) pueden compartirlo");
+            $table->string('capability', 20)->default('text')->comment('Qué sabe hacer: text, vision o transcription. Decide la unidad del precio y a qué tareas se puede asignar');
             $table->string('code', 80)->comment('El identificador del proveedor, ej. gpt-6-astra');
             $table->string('label', 60)->comment('Nombre legible para el panel');
 
-            // Per MILLION tokens, which is how providers publish them.
-            $table->decimal('prompt_per_million', 10, 4)->comment('USD por millón de tokens de entrada');
-            $table->decimal('cached_per_million', 10, 4)->comment('USD por millón de tokens de entrada cacheados');
-            $table->decimal('completion_per_million', 10, 4)->comment('USD por millón de tokens de salida');
+            // Per MILLION tokens, which is how providers publish them. A model
+            // billed by the minute leaves them at zero and fills `per_minute`.
+            $table->decimal('prompt_per_million', 10, 4)->default(0)->comment('USD por millón de tokens de entrada');
+            $table->decimal('cached_per_million', 10, 4)->default(0)->comment('USD por millón de tokens de entrada cacheados');
+            $table->decimal('completion_per_million', 10, 4)->default(0)->comment('USD por millón de tokens de salida');
+            $table->decimal('per_minute', 10, 4)->nullable()->comment('USD por minuto de audio; solo los modelos de voz a texto');
 
             $table->date('effective_from')->comment('Desde cuándo rige este precio: lo anterior conserva el suyo');
             $table->string('source')->nullable()->comment('De dónde salió el precio, para poder auditarlo');

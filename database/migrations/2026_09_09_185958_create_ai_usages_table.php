@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->string('kind', 40)->comment('Qué llamó: el agente (AsistenteAtendia, ConversationAnalyst...), embeddings o transcription');
             $table->string('model', 80)->nullable();
+            $table->string('connection_key', 40)->nullable()->comment("La clave por la que pasó la llamada (entrada de config('ai.providers')); null = anterior a que se midiera");
             $table->unsignedInteger('input_tokens')->default(0)->comment('Entrada a tarifa completa (incluye la escritura en caché)');
             $table->unsignedInteger('cached_tokens')->default(0)->comment('Entrada leída de la caché del proveedor: se cobra más barata');
             $table->unsignedInteger('output_tokens')->default(0)->comment('Salida, razonamiento incluido');

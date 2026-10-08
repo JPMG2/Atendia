@@ -36,7 +36,7 @@ new class extends Component
     #[Computed]
     public function groups(): Collection
     {
-        $order = ['sends', 'analysis', 'handoff', 'billing', 'referral'];
+        $order = ['sends', 'analysis', 'handoff', 'support', 'billing', 'costs', 'referral'];
 
         return PlatformSetting::board()
             ->groupBy('group')

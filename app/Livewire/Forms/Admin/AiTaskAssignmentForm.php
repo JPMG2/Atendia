@@ -12,17 +12,18 @@ use App\Models\AiTask;
 use Illuminate\Validation\Rule;
 
 /**
- * Which model answers each task, edited in the row it belongs to.
+ * Which model, through which key, answers each task, edited in its row.
  *
- * Unassigning is a first-class choice: an empty select sends the task back to
- * the pair written in its agent, which is where every one of them starts.
+ * Both selects carry "connection|code": the same model behind two keys is two
+ * different choices. Unassigning is a first-class choice: an empty select sends
+ * the task back to the pair written in its agent, where every one starts.
  */
 class AiTaskAssignmentForm extends BaseForm
 {
-    /** @var array<int, string> Model code per task id; empty means unassigned. */
+    /** @var array<int, string> "connection|code" per task id; empty means unassigned. */
     public array $model = [];
 
-    /** @var array<int, string> Fallback code per task id. */
+    /** @var array<int, string> The same, for the fallback. */
     public array $fallback = [];
 
     /** The row being saved: the rules only ever look at one of them. */
@@ -36,31 +37,12 @@ class AiTaskAssignmentForm extends BaseForm
         $this->fallback = $tasks->mapWithKeys(fn (array $row): array => [$row['id'] => $row['fallback'] ?? ''])->all();
     }
 
-    public function save(int $taskId): NotificationDto
-    {
-        $this->taskId = $taskId;
-        $validated = $this->validateServiceData();
-        $task = AiTask::find($taskId);
-
-        if ($task === null) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
-        return $this->tryAction(function () use ($task, $validated): NotificationDto {
-            $task->update($validated);
-            $this->setup();
-
-            return new NotificationDto(__('admin.ai.saved'), NotificationType::Success);
-        }, __('notifications.not_updated'));
-    }
-
     /**
      * Every row that changed, saved in one go.
      *
-     * A button per row made her save three times to change three tasks, and
-     * the table reads as one decision: which model answers what. The rows are
-     * all validated BEFORE one is written — half an assignment is worse than
-     * none when the pair decides who answers a customer.
+     * The table reads as one decision (which model answers what), so it has
+     * one Guardar. All rows are validated BEFORE one is written: half an
+     * assignment is worse than none when the pair decides who answers a customer.
      */
     public function saveAll(): NotificationDto
     {
@@ -74,7 +56,7 @@ class AiTaskAssignmentForm extends BaseForm
 
         foreach ($changed as $row) {
             $this->taskId = $row['id'];
-            $payloads[$row['id']] = $this->validateServiceData();
+            $payloads[$row['id']] = $this->columns($this->validateServiceData());
         }
 
         return $this->tryAction(function () use ($payloads): NotificationDto {
@@ -102,26 +84,47 @@ class AiTaskAssignmentForm extends BaseForm
             || (string) ($this->fallback[$row['id']] ?? '') !== (string) ($row['fallback'] ?? '');
     }
 
-    protected function transformServiceData(): array
+    /**
+     * The two validated pairs, split into the columns they live in.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, string|null>
+     */
+    private function columns(array $validated): array
     {
-        $model = $this->codeIn($this->model);
+        [$connection, $code] = $this->split($validated['model'] ?? null);
+        [$fallbackConnection, $fallbackCode] = $this->split($validated['fallback'] ?? null);
 
         return [
-            'model_code' => $model,
+            'connection_key' => $connection,
+            'model_code' => $code,
+            'fallback_connection_key' => $fallbackConnection,
+            'fallback_model_code' => $fallbackCode,
+        ];
+    }
+
+    protected function transformServiceData(): array
+    {
+        $model = $this->pairIn($this->model);
+
+        return [
+            'model' => $model,
             // A fallback with no model to fall back FROM is noise: cleared here
             // instead of sitting in the row waiting to confuse the next read.
-            'fallback_model_code' => $model === null ? null : $this->codeIn($this->fallback),
+            'fallback' => $model === null ? null : $this->pairIn($this->fallback),
         ];
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        $needs = AiTask::find($this->taskId)?->capability;
+
         return [
-            'model_code' => ['nullable', 'string', Rule::in(array_keys(AiModel::assignable()))],
-            // Only another lab: the ladder is keyed by provider, so a second
-            // model of the same one would silently replace the first.
-            'fallback_model_code' => ['nullable', 'string', Rule::in(array_keys(
-                AiModel::assignable(AiModel::providerOf($this->codeIn($this->model))),
+            'model' => ['nullable', 'string', Rule::in($needs === null ? [] : array_keys(AiModel::assignable($needs)))],
+            // Another KEY: the ladder is keyed by connection, so a second model
+            // behind the same one would silently replace the first.
+            'fallback' => ['nullable', 'string', Rule::in($needs === null ? [] : array_keys(
+                AiModel::assignable($needs, $this->split($this->pairIn($this->model))[0]),
             ))],
         ];
     }
@@ -130,20 +133,28 @@ class AiTaskAssignmentForm extends BaseForm
     protected function getValidationAttributes(): array
     {
         return [
-            'model_code' => __('admin.ai.model'),
-            'fallback_model_code' => __('admin.ai.fallback'),
+            'model' => __('admin.ai.model'),
+            'fallback' => __('admin.ai.fallback'),
         ];
     }
 
     /**
-     * The code chosen for the row being saved, or null when it is empty.
+     * The pair chosen for the row being saved, or null when it is empty.
      *
      * @param  array<int, string>  $values
      */
-    private function codeIn(array $values): ?string
+    private function pairIn(array $values): ?string
     {
-        $code = trim((string) ($values[$this->taskId] ?? ''));
+        $pair = trim((string) ($values[$this->taskId] ?? ''));
 
-        return $code === '' ? null : $code;
+        return $pair === '' ? null : $pair;
+    }
+
+    /**
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function split(?string $pair): array
+    {
+        return $pair === null ? [null, null] : explode('|', $pair, 2) + [null, null];
     }
 }

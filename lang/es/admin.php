@@ -6,7 +6,78 @@ return [
 
     'ai' => [
         'title' => 'Modelos de IA',
-        'sub' => 'Qué modelo responde cada tarea, en qué proveedor y a qué precio.',
+        'sub' => 'Qué modelo responde cada tipo de trabajo, con qué clave y a qué precio. Los modelos salen del catálogo y el catálogo solo acepta laboratorios que tengan clave.',
+
+        'tabs' => [
+            'assign' => 'Asignación',
+            'catalog' => 'Catálogo',
+            'connections' => 'Conexiones',
+            'connections_badge' => ':ready de :total con clave',
+        ],
+
+        'groups' => [
+            'conversation' => [
+                'title' => 'Conversación y consultas',
+                'sub' => 'Un cambio acá lo nota una persona. Se prueba con la batería de 70 preguntas antes de asignarlo.',
+            ],
+            'background' => [
+                'title' => 'Trabajo de fondo',
+                'sub' => 'Nadie lo lee en el momento: corregir un nombre, traducir, redactar un borrador. Un modelo más barato ahorra acá, y se decide midiendo.',
+            ],
+            'audio' => [
+                'title' => 'Mensajes de voz',
+                'sub' => 'Convierte la nota de voz del cliente en texto antes de que conteste el asistente. Se cobra por minuto de audio.',
+            ],
+        ],
+
+        'capabilities' => [
+            'text' => 'Texto',
+            'text_hint' => 'Contesta, redacta y analiza.',
+            'vision' => 'Texto y fotos',
+            'vision_hint' => 'Además lee las imágenes que manda el cliente.',
+            'transcription' => 'Voz a texto',
+            'transcription_hint' => 'Transcribe audios.',
+            'needs' => 'Necesita: :capability',
+        ],
+
+        'embeddings' => [
+            'title' => 'Búsqueda del conocimiento',
+            'lab' => 'Embeddings',
+            'dimensions' => ':count dimensiones',
+            'locked' => 'Es el único modelo que no se cambia suelto: todo lo que el asistente sabe quedó guardado con este modelo. Cambiarlo es una migración con pasos, no una asignación.',
+            'how' => 'Cómo se cambia',
+            'steps_title' => 'Cambiar el modelo de búsqueda, en orden:',
+            'step_1' => 'Se re-convierte todo el conocimiento con el modelo nuevo, en paralelo, mientras el asistente sigue buscando con el actual.',
+            'step_2' => 'Cuando terminó y se verificó, se cambia de uno al otro de golpe. Si algo falla, el anterior sigue intacto.',
+            'step_3' => 'Todavía no está construido: hoy el modelo se fija en config/rag.php y cambiarlo exige re-indexar a mano.',
+        ],
+
+        'connections' => [
+            'title' => 'Conexiones',
+            'sub' => 'Solo lectura: dice si el servidor tiene la clave de cada una. Para sumar una se carga su clave en el servidor y aparece acá.',
+            'key' => 'Clave',
+            'ready' => 'Con clave',
+            'missing' => 'Sin clave',
+            'lab' => 'Laboratorio',
+            'models' => 'Modelos',
+        ],
+
+        'eval' => [
+            'conversation' => 'Conversación: :passed de :total · :date',
+            'mechanical' => 'Mecánicas: :passed de :total · :date',
+            'unmeasured' => 'Sin medir con la batería',
+            'how' => 'Dos baterías, contra el modelo real: conversación (70 preguntas con un juez) y mecánicas (las 9 tareas de fondo, sin juez). Gastan tokens, por eso no corren desde un botón. Se corren así (la segunda con tests/Eval/MechanicalEvalTest.php):',
+            'key' => 'clave',
+            'model' => 'modelo',
+        ],
+
+        'bulk' => [
+            'label' => 'El mismo modelo para todo el grupo',
+            'placeholder' => 'Elegí un modelo',
+            'apply' => 'Aplicar a la tarea|Aplicar a las :count tareas',
+            'applied' => ':count tarea quedó con ese modelo. Falta guardar.|:count tareas quedaron con ese modelo. Falta guardar.',
+            'kept' => 'Una no lo admite y quedó como estaba.|:count no lo admiten y quedaron como estaban.',
+        ],
 
         'tasks' => 'Tareas',
         'tasks_sub' => 'Sin asignar, la tarea corre con el modelo escrito en su agente.',
@@ -14,15 +85,16 @@ return [
         'tasks_empty' => 'Las tareas se siembran con AiModelSeeder: una por agente.',
         'mechanical' => 'Mecánica',
         'running' => 'Hoy corre',
-        'provider_default' => 'el que trae el proveedor',
+        'provider_default' => 'el predeterminado del paquete',
         'no_agent' => 'El agente de esta fila ya no existe en el código.',
         'model' => 'Modelo',
-        'fallback' => 'Respaldo',
-        'unassigned' => 'El del agente',
+        'fallback' => 'Respaldo (otra conexión)',
+        'unassigned' => 'Sin asignar',
         'no_fallback' => 'Sin respaldo',
-        'save' => 'Guardar las asignaciones',
-        'save_hint' => 'Se guardan juntas las tareas que hayas cambiado.',
-        'saved' => 'Listo. La tarea ya corre con ese modelo.',
+        'no_model_for_task' => 'Ningún modelo cargado sirve para esto',
+        'no_fallback_available' => 'Hace falta otra conexión con clave',
+        'save' => 'Guardar la asignación',
+        'save_hint' => 'Guarda solo las filas que cambiaste. Si una no es válida no se guarda ninguna.',
         'saved_count' => 'Listo. :count tarea ya corre con el modelo que elegiste.|Listo. :count tareas ya corren con los modelos que elegiste.',
         'nothing_changed' => 'No cambiaste ninguna tarea.',
 
@@ -30,7 +102,7 @@ return [
         'models_sub' => 'Un precio nuevo es una fila nueva: lo ya consumido conserva el suyo.',
         'models_empty_title' => 'Todavía no hay modelos',
         'models_empty' => 'Cargá el primero con su precio y desde qué día rige.',
-        'new' => 'Nuevo precio',
+        'new' => 'Agregar modelo',
         'edit' => 'Editar',
         'save_model' => 'Guardar el modelo',
         'cancel' => 'Cancelar',
@@ -45,16 +117,21 @@ return [
             'cached' => 'Cacheada',
             'completion' => 'Salida',
             'effective_from' => 'Rige desde',
+            'capability' => 'Hace',
+            'per_minute' => 'Por minuto de audio',
         ],
 
         'fields' => [
-            'provider' => 'Proveedor',
+            'capability' => 'Qué hace',
+            'per_minute' => 'Por minuto (USD)',
+            'per_minute_unit' => 'por minuto',
+            'provider' => 'Laboratorio',
             'code' => 'Código del modelo',
             'code_hint' => 'Tal cual lo nombra el proveedor, ej. gpt-6-astra.',
             'label' => 'Nombre',
-            'prompt' => 'Entrada (USD/millón)',
-            'cached' => 'Cacheada (USD/millón)',
-            'completion' => 'Salida (USD/millón)',
+            'prompt' => 'Entrada (USD/1M)',
+            'cached' => 'Cacheada (USD/1M)',
+            'completion' => 'Salida (USD/1M)',
             'effective_from' => 'Rige desde',
             'source' => 'De dónde salió el precio',
             'source_hint' => 'Para poder auditarlo después, ej. "Precio publicado, verificado el 04/10".',
@@ -284,6 +361,14 @@ return [
                 'title' => 'Cobros',
                 'sub' => 'Cuánto aire tiene un negocio después de la fecha de pago antes de que su asistente calle.',
             ],
+            'support' => [
+                'title' => 'Soporte',
+                'sub' => 'Cuánto puede esperar un reporte antes de que la cola lo marque como atrasado.',
+            ],
+            'costs' => [
+                'title' => 'Costos fijos',
+                'sub' => 'Lo que cuesta la plataforma cada mes además de la IA. Con esto, Consumo de IA muestra el resultado neto y no solo el margen.',
+            ],
             'referral' => [
                 'title' => 'Referidos',
                 'sub' => 'Lo que recibe un negocio que llega invitado por otro.',
@@ -343,6 +428,18 @@ return [
                     'hint' => 'Días después del vencimiento en los que el asistente sigue atendiendo. Pasados, se pausa.',
                 ],
             ],
+            'support' => [
+                'overdue_hours' => [
+                    'label' => 'Reporte atrasado',
+                    'hint' => 'Horas que un negocio puede esperar tu respuesta antes de que su reporte se pinte de rojo en Soporte.',
+                ],
+            ],
+            'costs' => [
+                'fixed_monthly_usd' => [
+                    'label' => 'Costos fijos del mes',
+                    'hint' => 'Servidor, WhatsApp, dominio y lo demás que pagás por mes, en dólares y sin contar la IA. En cero, el resultado neto no se muestra.',
+                ],
+            ],
             'referral' => [
                 'invited_trial_days' => [
                     'label' => 'Prueba del invitado',
@@ -390,6 +487,30 @@ return [
         'tokens_out' => 'Salida',
         'by_kind' => 'Desglose por tipo de llamada',
         'kind' => 'Tipo',
+        'loses' => 'Pierde :amount',
+        'leaves' => 'Deja :amount',
+        'on_trial' => 'En prueba',
+        'trial_hint' => 'En prueba: lo que cuesta es el precio de ganar al cliente, no una pérdida.',
+
+        'result' => [
+            'revenue' => 'Ingresos del mes',
+            'revenue_hint' => 'Lo que pagan los negocios; el anual, repartido en 12.',
+            'revenue_missing' => 'Sin registro de ingresos de ese mes.',
+            'cost' => 'Costo de la IA',
+            'cost_hint' => 'Medido llamada por llamada, no estimado.',
+            'margin' => 'Margen sobre la IA',
+            'margin_before' => 'El mes anterior: :amount. No incluye servidor ni otros costos fijos.',
+            'first_month' => 'Primer mes medido. No incluye servidor ni otros costos fijos.',
+            'net' => 'Resultado neto',
+            'net_hint' => 'El margen menos :amount de costos fijos.',
+            'net_missing' => 'Cargá los costos fijos del mes en Ajustes para ver el neto.',
+        ],
+
+        'by_connection' => 'Desglose por clave',
+        'connection' => 'Clave',
+        'no_connection' => 'Sin clave registrada',
+        'no_connection_hint' => 'Llamadas anteriores a que se midiera por clave.',
+        'by_connection_hint' => 'El audio se cobra por minuto y no se reparte por clave: no está en estas cifras.',
 
         'mail' => [
             'eyebrow' => 'Consumo de IA',

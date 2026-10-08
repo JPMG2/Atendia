@@ -3,8 +3,9 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-07 (bloque A y bloque E verificados contra el código, no contra
-> lo que decía esta lista: 25 casillas estaban hechas y seguían abiertas).
+> Última revisión: 2026-10-08, al cerrar el día (Modelos de IA, lo contable de Consumo de IA y
+> Soporte rehechos; el bloque G tiene lo que quedó abierto de esa jornada). Antes: 2026-10-07
+> (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
 
 ## Cómo se cierra un punto de esta lista
 
@@ -105,6 +106,9 @@ cada ajuste dice qué pasa si lo movés, con su default al lado y un botón para
 - Dos ajustes nuevos el 2026-10-07, del escritorio de incidencias (A7):
   `incidents.unanswered_minutes` (15 min, cuándo una charla sin respuesta cuenta como falla) y
   `incidents.digest_time` (20:00, cuándo le llega el correo del día).
+- Dos ajustes nuevos el 2026-10-08: `support.overdue_hours` (24 h, cuándo un reporte sin respuesta se
+  pinta de rojo en Soporte) y `costs.fixed_monthly_usd` (0 = "no cargado"; con valor, Consumo de IA
+  muestra el resultado neto).
 - **Fuera a propósito**: `referral.reward_percent`. Nada en `app/` lo paga (ver `hallazgos.md`):
   sería un control que no hace nada.
 
@@ -124,6 +128,16 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
       **costo por conversación** en cada fila, y **exportar el mes** por la capa de reportes
       (`AiSpendReport`, Imprimir/Excel/CSV, con el mes en la URL).
 - [x] ~~La fila lleva a la ficha~~ (2026-10-04), igual que el Inicio y Soporte.
+- [x] ~~**Lo contable, definido** (2026-10-08, pedido de ella)~~: **Ingreso** = la regla del MRR (activos y
+      en gracia, el anual ÷ 12, las pruebas no, los demos afuera). **Costo** = IA medida, valuada
+      al precio de ese mes, con el audio incluido (el total del mes lo dejaba afuera y no cerraba
+      con las filas). **Margen sobre la IA** = ingreso − costo de TODA la IA, pruebas y demos
+      incluidos. Un negocio que paga y cuesta más de lo que paga sale con "Pierde $X"; uno en
+      prueba dice "En prueba" (su costo es el de ganarlo, no una pérdida). Un mes anterior lee su
+      ingreso de la foto de `revenue_snapshots`; sin foto no hay margen, nunca un ingreso cero.
+      Es margen sobre la IA: servidor, WhatsApp y demás costos fijos no se miden en la app.
+- [ ] **Costos fijos del mes** (servidor, WhatsApp, dominio) como ajuste de plataforma, para que el
+      resultado sea el neto y no solo el margen sobre la IA. Idea ofrecida, sin decidir.
 - [x] ~~Rehecha entera el 2026-10-05~~ (ver E14 y E14-bis): era legible como dato y
       ilegible como pantalla.
 - [ ] **El minutaje de audio perdió su columna** al pasar a tabla: nueve columnas no entran a
@@ -337,6 +351,27 @@ Pedido de ella 2026-09-23. Investigación hecha (memoria `atendia-tasa-cambio-au
 - [ ] Aviso al admin si todas fallan o la tasa queda vieja
 - [ ] **Decisión de ella pendiente:** qué hacemos si la API muere o el BCV cambia el diseño
 
+### A12. Feriados por país, cargables desde el admin
+Pedido de ella 2026-10-07. Los feriados ya existen y el horario los respeta, pero el maestro
+**no se puede tocar sin un deploy**, y lo MEDIDO el mismo día dice que el agujero es grande:
+
+- `country_holidays` tiene **24 filas para 2 países** (Argentina 12, Venezuela 12) de los **22
+  países** que el sistema conoce. Los otros 20 no tienen NINGÚN feriado: un negocio de México
+  abre el 16 de septiembre porque nadie le dijo que no.
+- Las columnas son `month`, `day` y `easter_offset`: **solo entra lo que se repite todos los
+  años** (fijo, o calculado desde la Pascua). Un feriado de FECHA concreta —el que mueve un
+  decreto, el puente que se anuncia en octubre, el aniversario de una provincia— no tiene
+  dónde guardarse.
+- No hay maestro en Catálogos ni ruta en el admin: `grep` de `country_holidays` en
+  `routes/admin.php` y en `CatalogFormSeeder` no devuelve nada.
+
+- [ ] Maestro de feriados en Catálogos, con el patrón de siempre (tabla + seeder
+      `updateOrCreate`), para agregar los que faltan sin tocar código
+- [ ] Soportar el feriado de UN AÑO (columna de fecha concreta), que es justo el que hoy no
+      entra y el que más se anuncia tarde
+- [ ] Cargar los países que ya tienen negocio antes que el resto: hoy son Argentina (9) y
+      Venezuela (1), y el resto puede esperar a tener a alguien adentro
+
 ---
 
 ## B · Esperando la reunión (abogado + contador)
@@ -437,7 +472,15 @@ Regla en `arquitectura-paneles.md`.
       otra tarea y hay que decidirla aparte.
 
 ### E2. Tickets de soporte en orden de llegada
-**YA ESTÁ HECHO** · `/admin/soporte` (`admin/⚡support.blade.php`)
+**RECONSTRUIDO el 2026-10-08.** La cola pasó a ser la pantalla: tabla con la **espera** de cada reporte
+en la primera columna (en dos unidades, "3d 4h"), el atrasado pintado (más de `support.overdue_hours`,
+24 h por defecto, editable en Ajustes) y el más viejo sin responder nombrado en el encabezado. Filtros
+por cola (por responder, esperando al negocio, resueltos), tipo, negocio y búsqueda sin acentos (en la
+URL). La evidencia que captura el widget se lee como datos ("Safari 17 · iOS", "390×844 · teléfono") y
+los errores del navegador van aparte; el JSON crudo ya no se muestra. El análisis de la ayuda quedó en
+su propia pestaña. Browser test propio a 1280/900/390 en claro y oscuro. "Esperando tu respuesta" se
+cambió por "Con el negocio" en el panel admin: leído por ella decía lo contrario.
+**Antes:** `/admin/soporte` (`admin/⚡support.blade.php`)
 Verificado hoy: ordena por llegada, el más viejo sin responder arriba y lo resuelto se hunde.
 - [x] ~~Checklist §7~~ (2026-10-04): sello de frescura en el encabezado, el negocio del ticket
       lleva a su ficha, y el selector de estado dejó de comerse el ancho a 900px (era el
@@ -530,8 +573,12 @@ La mayoría son estados que el código ramifica y **se quedan**
 **AMPLÍA A6** (que decía solo "pantalla de negocios")
 - [x] ~~La ficha del negocio muestra su historia de pagos, lo que debe, su próximo
       vencimiento y su plan~~ — HECHO 2026-10-03 con A6.
-- [ ] Vista cruzada: quién debe, quién vence esta semana, quién está en gracia o pausado
-      (los números de A1 llevan acá, cada tile a su cola filtrada)
+- [x] ~~Vista cruzada: quién debe, quién vence esta semana, quién está en gracia o pausado~~
+      (2026-10-07): es la pantalla **Cobranza** (`/admin/cobranza`), y trae lo que faltaba de
+      verdad: **cuánto** se juega en cada uno. Ordena por plata en riesgo y no por antigüedad,
+      porque la deuda más vieja suele ser la más chica y la llamada que se paga sola es la del
+      que está por irse con más. Lo que vence esta semana viaja en la MISMA cola que lo que ya
+      se debe: la pregunta es "a quién llamo", y la respuesta es la misma para los tres casos.
 
 ### E10. Menú del admin con jerarquía — HECHO 2026-10-03
 De 9 ítems sueltos a **6 grupos**, agrupados por lo que ella HACE y rotulados con
@@ -595,10 +642,10 @@ Lo investigado en los docs de Livewire 4 (`@island(name:)`, `wire:island=`, `laz
 - [x] ~~**Plan B** si el proveedor retira el modelo~~: `ai_tasks.fallback_model_code`. Tiene
       que ser de OTRO lab (la escalera del paquete se indexa por proveedor) y la pantalla
       solo ofrece esos.
-- [ ] **Falta medir**: `is_mechanical` marca **9** candidatos a modelo barato (eran 10 en el
-      texto original; contados en `ai_tasks` el 2026-10-07: 12 filas, 9 mecánicas, y
-      **ninguna con `model_code` asignado**, así que todas corren con el default del código).
-      La guía dice elegirlo MIDIENDO, así que eso se hace con la batería de `tests/Eval`.
+- [x] ~~**Falta medir**: las 9 mecánicas~~ (2026-10-08): batería propia (`MechanicalEvalTest`, 25 casos
+      objetivos, sin juez) → Astra 25/25 y Luna 25/25, y las 9 corren ahora en `gpt-6-luna` por
+      la clave APP, con `gpt-6-astra` de respaldo. La conversación quedó medida con Sol (69/71) y
+      NO se asignó: ver el bloque G.
 - [x] ~~El aviso cuando entra el respaldo~~ (2026-10-04): `AnnounceModelFailover` escucha
       `AgentFailedOver` y deja un warning con el agente, el proveedor que falló y el motivo.
       Se lee en `/admin/logs`; no hay campana de plataforma (la campana es por negocio), y
@@ -627,6 +674,29 @@ datos y los candados están bien (son reales y están probados), lo que no sirve
       cuando el par decide quién le contesta a un cliente). **Precios** en columnas, que es
       para lo que se abre la pantalla: apilados dentro de cada fila no se podía ver de un
       barrido que Claude es más barato que GPT-6 en las tres tarifas.
+
+- [ ] **`Modelos de IA` REHECHA el 2026-10-08, falta su veredicto.** Se investigó (LiteLLM,
+      OpenRouter, Portkey, Vercel AI Gateway), se maquetó y ella aprobó la maqueta. Ahora son
+      tres pestañas: **Asignación** por tipo de trabajo (conversación, fondo, voz) con un select
+      que solo ofrece modelos que sirven para esa tarea y el exacto que corre hoy; **Catálogo**
+      con la capacidad de cada modelo (texto, texto y fotos, voz a texto) y su unidad de precio;
+      **Conexiones** (una por clave: `openai` = `OPENAI_API_KEY` para audio y búsqueda y
+      `openai-app` = `OPENAI_API_KEY_APP` para la IA del cliente, solo lectura). Las tres
+      ideas para enamorar entraron el mismo día: asignar un modelo a todo un grupo de tareas,
+      el gasto por clave en Consumo de IA y el puntaje de la batería en cada modelo.
+      La transcripción dejó de estar clavada.
+      Embeddings aparece bloqueado y explica por qué (cambiarlo es una migración).
+      Lo que sigue abierto de esto: la migración de embeddings (re-indexar en paralelo y
+      cambiar de golpe) NO está construida, y el costo del audio usa UN precio por minuto para
+      todo el mes (el del modelo asignado), porque los segundos salen de los mensajes y no de
+      un modelo.
+- [x] ~~Historia: veredicto de ella, 2026-10-07: *"muy lejos de ser aceptada"*.~~ Verificado el mismo día: el markup ya NO es el problema — la pantalla
+      usa `.pay-table` y no queda nada de la pseudo-tabla `aim-*`, así que la reescritura del
+      05/10 arregló la estructura y **no ganó su aprobación**. Es un rechazo de DISEÑO, y
+      rehacerla a ciegas una tercera vez es la forma más cara de errarle: antes hay que verla
+      CON ella (qué espera ver al abrirla y qué decide ahí) o traer referencias reales de
+      pantallas de modelos/precios de IA, como se hizo con Cobranza y con el escritorio.
+      Ojo: `Consumo de IA` sí quedó aceptada, así que el problema es de ESTA pantalla.
 
 ### E14-bis. Las 3 mejoras de Consumo de IA — HECHAS 2026-10-05
 Ofrecidas al cerrar el rediseño y pedidas por ella en el acto.
@@ -720,3 +790,26 @@ El worker ya existe (supervisor: queue, reverb, schedule), así que el riel est�
 > Lo que se le pide a un job acá no es "que corra": es que su resultado se pueda MOSTRAR con
 > su frescura dicha, y que si falla se note. Un job que alimenta un tile y muere en silencio
 > deja un número viejo con cara de nuevo — exactamente el defecto que §7.1 prohíbe.
+
+---
+
+## G · Lo que quedó abierto de la jornada del 2026-10-08
+
+Modelos de IA, lo contable de Consumo de IA y Soporte quedaron construidos y verificados; esto es
+lo único que falta, y casi todo es una decisión o un dato de ella, no construcción.
+
+- [ ] **Decidir la conversación en `gpt-6-sol`.** Dio 69/71 y no se asignó (falló un día futuro y un
+      horario incompleto). Para saber si son fallas de Sol o de la prueba falta la misma batería con
+      Astra (~3 a 4 USD, en tandas: ver `AssistantEvalTest`). Si Astra falla lo mismo, Sol puede
+      tomar la conversación a una quinta parte del costo.
+- [ ] **Cargar los costos fijos del mes** en Ajustes → Costos fijos (dato de ella). Hasta entonces
+      el resultado neto de Consumo de IA no se muestra.
+- [ ] **Revisar en platform.openai.com** que la clave APP esté en un Project distinto del de la
+      clave principal, con su presupuesto y su alerta (dato de ella).
+- [ ] **Modelo de voz.** El que corre (`gpt-4o-transcribe-diarize`) no tiene precio verificado: su
+      costo se estima con 0,003 por minuto. Asignar uno del catálogo (`gpt-4o-mini-transcribe`,
+      0,003) vuelve real la cifra, pero la calidad del audio no tiene batería.
+- [ ] **Migración de embeddings** (re-indexar en paralelo y cambiar de golpe). No urge: hoy el
+      modelo se fija en `config/rag.php` y la pantalla lo muestra bloqueado y explicado.
+- [ ] **Veredicto de ella sobre Modelos de IA** (E14), rehecha hoy con su maqueta aprobada.
+- [ ] **Veredicto de ella sobre Soporte** (E2), reconstruida hoy.

@@ -38,4 +38,29 @@ enum SupportTicketStatus: string
     {
         return in_array($this, [self::New, self::Open, self::Waiting], true);
     }
+
+    /** The ball is in OUR court: a person is waiting for us, not the other way round. */
+    public function isOurs(): bool
+    {
+        return in_array($this, [self::New, self::Open], true);
+    }
+
+    /**
+     * The statuses a queue view stands for, by its name in the URL. Null is "no
+     * filter": every ticket, the settled ones included.
+     *
+     * @return list<string>|null
+     */
+    public static function inScope(string $scope): ?array
+    {
+        $cases = match ($scope) {
+            'answer' => [self::New, self::Open],
+            'waiting' => [self::Waiting],
+            'resolved' => [self::Resolved, self::Closed],
+            'all' => null,
+            default => [self::New, self::Open, self::Waiting],
+        };
+
+        return $cases === null ? null : array_map(fn (self $case): string => $case->value, $cases);
+    }
 }

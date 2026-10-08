@@ -7,6 +7,8 @@ namespace App\Classes\Main;
 use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\ConversationMessage;
+use App\Models\RevenueSnapshot;
+use App\Models\Subscription;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -60,8 +62,29 @@ final class AiSpend
     public Collection $byKind {
         get => $this->rows
             ->groupBy('kind')
-            ->map(fn (Collection $rows, string $kind): object => $this->totalsOf($rows, 0, $kind))
+            // Audio is billed by the minute, so it lives on the transcription
+            // line: left at zero there it would read as "transcribing is free".
+            ->map(fn (Collection $rows, string $kind): object => $this->totalsOf(
+                $rows,
+                $kind === AiUsage::TRANSCRIPTION ? $this->audioSeconds : 0,
+                $kind,
+            ))
             ->sortKeys()
+            ->values();
+    }
+
+    /**
+     * The same totals, cut by the key each call went through. Calls metered
+     * before the key was recorded stay in their own row (key null): folding
+     * them into a real key would make that key look dearer than it was.
+     *
+     * @var Collection<int, object{kind: string, calls: int, input: int, cached: int, output: int, cost: float|null, unpriced: int}>
+     */
+    public Collection $byConnection {
+        get => $this->rows
+            ->groupBy(fn (object $row): string => (string) $row->connection_key)
+            ->map(fn (Collection $rows, string $key): object => $this->totalsOf($rows, 0, $key))
+            ->sortBy(fn (object $total): string => $total->kind === '' ? '~' : $total->kind)
             ->values();
     }
 
@@ -72,7 +95,52 @@ final class AiSpend
      * @var object{kind: string, calls: int, input: int, cached: int, output: int, cost: float|null, unpriced: int}
      */
     public object $bill {
-        get => $this->totalsOf($this->rows, 0);
+        get => $this->totalsOf($this->rows, $this->audioSeconds);
+    }
+
+    /**
+     * Every second of voice note transcribed that month, summed from the same
+     * rows the board shows. The month's bill without it was short by exactly
+     * the audio, while each row above it included its own.
+     */
+    public int $audioSeconds {
+        get => (int) round($this->board->sum('audio') * 60);
+    }
+
+    /**
+     * What the month left after the AI: recurring revenue minus ALL the AI cost,
+     * trials and demos included, or the margin would flatter. The running month
+     * reads live revenue, an earlier one the photo taken then; with no photo
+     * there is no margin, never a revenue of zero.
+     *
+     * @var object{revenue: float|null, cost: float|null, margin: float|null, share: float|null, fixed: float|null, net: float|null, unpriced: int}
+     */
+    public object $result {
+        get {
+            $revenue = $this->isCurrent ? Subscription::monthlyRecurringRevenue() : RevenueSnapshot::mrrOf($this->month);
+            $cost = $this->bill->cost;
+            $margin = $revenue !== null && $cost !== null ? $revenue - $cost : null;
+            // Fixed costs keep no history, so only the running month can be
+            // netted: an earlier one would borrow today's figure. Zero is "not loaded".
+            $fixed = $this->isCurrent && (float) config('atendia.costs.fixed_monthly_usd') > 0
+                ? (float) config('atendia.costs.fixed_monthly_usd')
+                : null;
+
+            return (object) [
+                'revenue' => $revenue,
+                'cost' => $cost,
+                'margin' => $margin,
+                'share' => $margin !== null && $revenue > 0 ? $margin / $revenue : null,
+                'fixed' => $fixed,
+                'net' => $margin !== null && $fixed !== null ? $margin - $fixed : null,
+                'unpriced' => $this->bill->unpriced,
+            ];
+        }
+    }
+
+    /** Whether this is the month still running: the only one whose subscriptions are known as they were. */
+    private bool $isCurrent {
+        get => $this->month->isSameMonth(now());
     }
 
     /** Whether this row can be put a price on at all. */
@@ -119,8 +187,13 @@ final class AiSpend
         $ids = $this->businessIds->merge($volume->keys())->unique()->values();
         $businesses = Business::withPlansFor($ids);
 
+        // Only the running month: a plan's history is not kept, so an earlier
+        // month would be judged against what the business pays TODAY.
+        $payers = $this->isCurrent ? Subscription::monthlyValueByBusiness() : [];
+        $trials = $this->isCurrent ? Subscription::trialingBusinessIds() : [];
+
         return $ids
-            ->map(function (?int $id) use ($volume, $businesses): object {
+            ->map(function (?int $id) use ($volume, $businesses, $payers, $trials): object {
                 $traffic = $volume->get($id);
                 $threads = (int) ($traffic->threads ?? 0);
                 $seconds = (int) ($traffic->audio_seconds ?? 0);
@@ -150,6 +223,14 @@ final class AiSpend
                     'saved' => $this->savedBy($id),
                     'alertShare' => $limit,
                     'isOverAlert' => $share !== null && $limit > 0 && $share >= $limit,
+                    // paying: has revenue to compare with · trial: cost is
+                    // acquisition · none: platform, demos, an earlier month.
+                    'standing' => match (true) {
+                        $id !== null && isset($payers[$id]) => 'paying',
+                        $id !== null && in_array($id, $trials, true) => 'trial',
+                        default => 'none',
+                    },
+                    'margin' => $id !== null && isset($payers[$id]) && $totals->cost !== null ? $payers[$id] - $totals->cost : null,
                 ];
             })
             ->sortByDesc(fn (object $row): float => (float) ($row->totals->cost ?? 0) * 1000 + $row->totals->calls)

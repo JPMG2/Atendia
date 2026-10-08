@@ -4,26 +4,29 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AiCapability;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /** A model the platform may use, and what it cost from a given day on. */
-#[Fillable(['provider', 'code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'effective_from', 'source', 'is_active'])]
+#[Fillable(['provider', 'capability', 'code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'per_minute', 'effective_from', 'source', 'is_active'])]
 class AiModel extends Model
 {
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     protected function casts(): array
     {
         return [
+            'capability' => AiCapability::class,
             'effective_from' => 'date',
             'is_active' => 'boolean',
             'prompt_per_million' => 'decimal:4',
             'cached_per_million' => 'decimal:4',
             'completion_per_million' => 'decimal:4',
+            'per_minute' => 'decimal:4',
         ];
     }
 
@@ -98,35 +101,44 @@ class AiModel extends Model
     }
 
     /**
-     * The models a task can be sent to, labelled with their lab because the
-     * code alone does not say who answers it.
+     * What a task can be sent to: every model that can do the work, through
+     * every connection that reaches its lab. The value is "connection|code"
+     * because the same model through two keys is two different choices — they
+     * do not share a bill or a rate limit.
      *
-     * @param  string|null  $exceptProvider  Leaves out one lab: a fallback on
-     *                                       the failed lab is not a fallback.
+     * @param  string|null  $exceptConnection  Leaves out one connection: a
+     *                                         fallback behind the same key is
+     *                                         not a fallback.
      * @return array<string, string>
      */
-    public static function assignable(?string $exceptProvider = null): array
+    public static function assignable(AiCapability $needs, ?string $exceptConnection = null): array
     {
-        return self::query()
+        $models = self::query()
             ->where('is_active', true)
-            ->when($exceptProvider !== null, fn ($query) => $query->where('provider', '!=', $exceptProvider))
-            ->orderBy('provider')
-            ->orderBy('label')
+            ->orderByDesc('effective_from')
             ->get()
             ->unique('code')
-            ->mapWithKeys(fn (self $model): array => [$model->code => "{$model->label} · {$model->provider}"])
-            ->all();
+            ->filter(fn (self $model): bool => $model->capability->serves($needs))
+            ->sortBy('label');
+
+        $options = [];
+
+        foreach (AiConnection::usable() as $connection) {
+            if ($connection->key === $exceptConnection) {
+                continue;
+            }
+
+            foreach ($models->where('provider', AiConnection::driverOf($connection->key)) as $model) {
+                $options["{$connection->key}|{$model->code}"] = "{$model->label} · {$connection->label}";
+            }
+        }
+
+        return $options;
     }
 
     /** One price row to edit, by id. */
     public static function priceRow(int $id): ?self
     {
         return self::query()->whereKey($id)->first();
-    }
-
-    /** Which lab answers for a code, straight from the price rows. */
-    public static function providerOf(?string $code): ?string
-    {
-        return $code === null ? null : (self::providersByCode()[$code] ?? null);
     }
 }

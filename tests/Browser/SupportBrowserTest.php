@@ -97,8 +97,10 @@ test('the inbox names the screens that hurt most and opens a reply box', functio
         ->forceFill(['updated_at' => now()->subMonths(9)])->saveQuietly();
     SupportTicket::factory()->for($this->business)->create(['after_help' => true]);
 
+    // The queue is the screen; what the help is doing wrong is one tab over.
     visit('/admin/soporte')->resize(1280, 900)
         ->assertNoJavaScriptErrors()
+        ->click(__('support.admin.tabs.help'))
         ->assertSee(__('support.admin.deflection_title'))
         // The grammar has to agree: "1 terminaron" is what this pins.
         ->assertSee('1 terminó en un reporte igual')
@@ -106,6 +108,7 @@ test('the inbox names the screens that hurt most and opens a reply box', functio
         ->assertSee(__('support.admin.failing_title'))
         ->assertSee('Cómo conecto mi WhatsApp')
         ->assertSee(__('support.admin.pain_title'))
+        ->click(__('support.admin.tabs.queue'))
         ->click('[data-testid="sup-expand-'.$first->id.'"]')
         ->waitForText(__('support.admin.reply'))
         ->assertSee(__('support.admin.reply_hint'))

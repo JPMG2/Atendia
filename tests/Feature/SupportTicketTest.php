@@ -134,11 +134,11 @@ test('the admin inbox answers by arrival and the settled ones sink', function ()
     $new = SupportTicket::factory()->for($this->business)->create(['created_at' => now()->subHour()]);
     $done = SupportTicket::factory()->resolved()->for($this->business)->create(['created_at' => now()->subDays(9)]);
 
-    $order = SupportTicket::inbox(onlyOpen: false)->pluck('id');
+    $order = SupportTicket::inbox('all')->pluck('id');
 
     expect($order->all())->toBe([$old->id, $new->id, $done->id]);
 
-    expect(SupportTicket::inbox(onlyOpen: true)->pluck('id')->all())->toBe([$old->id, $new->id]);
+    expect(SupportTicket::inbox('open')->pluck('id')->all())->toBe([$old->id, $new->id]);
 });
 
 test('the admin moves a ticket along and the resolved one gets its date', function (): void {
@@ -230,7 +230,7 @@ test('one business never reads another business report', function (): void {
 
     $this->actingAs($this->user);
 
-    $bodies = SupportTicket::inbox(onlyOpen: false)->pluck('body');
+    $bodies = SupportTicket::inbox('all')->pluck('body');
 
     expect($bodies)->toContain('Reporte propio')
         ->and($bodies)->not->toContain('Reporte ajeno');

@@ -43,6 +43,12 @@ class PlatformSettingSeeder extends Seeder
             // keeps answering after the date went by.
             ['key' => 'billing.grace_days', 'group' => 'billing', 'type' => 'integer', 'default_value' => '5', 'min' => 0, 'max' => 30, 'sort_order' => 1],
 
+            // How long a report may wait for an answer before the queue paints it.
+            ['key' => 'support.overdue_hours', 'group' => 'support', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 720, 'sort_order' => 1],
+
+            // What the platform costs apart from the AI; read by the net result.
+            ['key' => 'costs.fixed_monthly_usd', 'group' => 'costs', 'type' => 'integer', 'default_value' => '0', 'min' => 0, 'max' => 100000, 'sort_order' => 1],
+
             // What an invited business gets, which the trial really honours.
             ['key' => 'referral.invited_trial_days', 'group' => 'referral', 'type' => 'integer', 'default_value' => '21', 'min' => 0, 'max' => 90, 'sort_order' => 1],
             ['key' => 'referral.founders', 'group' => 'referral', 'type' => 'integer', 'default_value' => '10', 'min' => 0, 'max' => 500, 'sort_order' => 2],

@@ -67,6 +67,55 @@ return [
         'empty_body' => 'Cuando un negocio reporte algo desde su panel, aparece aquí.',
         'filter_all' => 'Todos',
         'filter_open' => 'Sin resolver',
+        'filter_answer' => 'Por responder',
+        'filter_waiting' => 'Esperando al negocio',
+        'filter_resolved' => 'Resueltos',
+        'all_kinds' => 'Todos',
+        'all_businesses' => 'Todos los negocios',
+        'search' => 'Buscar',
+        'search_placeholder' => 'Código, texto o negocio',
+        'no_match_title' => 'Ningún reporte coincide',
+        'no_match_body' => 'Cambia o quita algún filtro: lo que buscas puede estar en otra cola.',
+        'oldest' => 'La más vieja sin responder espera :time',
+        'overdue' => 'Más de :hours h',
+        'waiting_business' => 'Espera al negocio',
+        'resolved_in' => 'Resuelto en :time',
+
+        'statuses' => [
+            'new' => 'Nuevo',
+            'open' => 'En curso',
+            'waiting' => 'Con el negocio',
+            'resolved' => 'Resuelto',
+            'closed' => 'Cerrado',
+        ],
+
+        'tabs' => [
+            'queue' => 'Cola',
+            'help' => 'La ayuda',
+        ],
+
+        'columns' => [
+            'wait' => 'Espera',
+            'report' => 'Reporte',
+            'about' => 'Tipo y pantalla',
+        ],
+
+        'evidence' => [
+            'url' => 'Dirección',
+            'window' => 'Ventana',
+            'browser' => 'Navegador',
+            'plan' => 'Plan',
+            'locale' => 'Idioma',
+            'errors' => '{1}El navegador registró 1 error|[2,*]El navegador registró :count errores',
+            'devices' => [
+                'phone' => 'teléfono',
+                'tablet' => 'tableta',
+                'desktop' => 'escritorio',
+            ],
+        ],
+
+        'help_empty_title' => 'Nada que revisar en la ayuda',
+        'help_empty_body' => 'Cuando un artículo no sirva, se quede viejo o una pantalla se reporte seguido, aparece aquí.',
         'business' => 'Negocio',
         'opened_by' => 'Abierto por :name',
         'screen' => 'Pantalla',

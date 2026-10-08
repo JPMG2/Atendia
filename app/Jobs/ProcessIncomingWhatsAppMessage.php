@@ -13,6 +13,7 @@ use App\Enums\GuardVerdict;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
+use App\Models\AiTask;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -717,7 +718,11 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         try {
             file_put_contents($path, base64_decode((string) $this->audioBase64, true) ?: '');
 
-            return (string) app(Tenant::class)->for((int) $business->id, fn () => Transcription::fromPath($path)->generate());
+            // The assigned ladder when the admin set one; null keeps the package default.
+            return (string) app(Tenant::class)->for(
+                (int) $business->id,
+                fn () => Transcription::fromPath($path)->generate(AiTask::ladderFor(AiTask::TRANSCRIPTION)),
+            );
         } catch (\Throwable $e) {
             report($e);
 

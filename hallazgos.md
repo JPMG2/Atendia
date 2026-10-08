@@ -9,6 +9,36 @@
 >
 > Formato: una línea por hallazgo, con la fecha y dónde está. Cuando se arregla, se borra.
 
+## 2026-10-08
+
+- **La suite de navegador del 08/10 dio 257 verdes y 3 rojos, en 1646 s (27 min).** Uno era mío
+  (`SupportBrowserTest` buscaba el análisis de la ayuda en la cola, que ahora vive en su pestaña:
+  corregido). Los otros dos pasan aislados: `ClientJourneyBrowserTest` (timeout de 5 s) y el barrido
+  de `PanelResponsiveBrowserTest` ("my-payments desborda 10px" una vez, 8 verdes la siguiente). La
+  suite de navegador pasó de 17,5 a 27 minutos; nadie la había vuelto a medir.
+- **La corrida completa de PHP dejó 7 rojos en 5 archivos que pasan aislados.** 2409 verdes y 7
+  rojos en 447 s; los mismos cinco archivos corridos solos dan 75 verdes. `TaxConditionSeederTest`
+  y `TracksUserActionsTest` ya estaban anotados (conteo absoluto sobre una base compartida);
+  `PanelAccessTest`, `SiteFooterCompanyTest` y `WelcomePageTest` no estaban en esa lista. Es la
+  misma enfermedad y no se persigue ahora, pero conviene mirar qué estado deja una prueba anterior.
+
+- **El audio que corre hoy no tiene precio verificado.** `gpt-4o-transcribe-diarize` no figura
+  en la página de precios de OpenAI, así que su costo se estima con `audio_per_minute` (0,003).
+  Para que la cifra sea verdad hay que asignar a Voz a texto un modelo del catálogo con su
+  precio (`gpt-4o-mini-transcribe` cuesta 0,003 por minuto, `gpt-4o-transcribe` 0,006). No se
+  cambió: la transcripción no está en la batería y la calidad se decide midiendo.
+- **Las 9 mecánicas pasaron a `gpt-6-luna`** (2026-10-08, con `gpt-6-astra` de respaldo): su batería
+  (`MechanicalEvalTest`, 25 casos objetivos, sin juez) dio Astra 25/25 y Luna 25/25. Son ~9% del
+  gasto de hoy; el cambio se deshace desde Modelos de IA.
+- **La conversación con `gpt-6-sol` dio 69 de 71** (97%), y NO se asignó: falló en un día futuro
+  ("¿cuántas conversaciones hubo pasado mañana?" contestó 0 en vez de decir que no pasó) y en dar el
+  horario completo. Falta el punto de comparación: la misma batería con Astra (~3 a 4 USD) dice si
+  esos dos fallos son de Sol o de la batería. Sol cuesta 2/10 contra 10/50 de Astra.
+
+- **Una columna llamada `connection` en un modelo Eloquent se lee siempre `null`.** Choca con
+  la propiedad que guarda el nombre de la conexión a la base: costó 9 rojos antes de verla.
+  Quedó como `connection_key`; vale para cualquier tabla futura.
+
 ## 2026-10-07
 
 - **La API de Mailpit responde 404 y no se puede leer un correo entregado.** `atendia-mailpit`
@@ -68,10 +98,6 @@
   anotados (`CatalogCurrencyEdit`, `PanelResponsive`, `DemoChat`), ahora con el error exacto:
   la única base de test es compartida y nadie serializa los archivos de browser.
 
-- **`Modelos de IA` (`admin/ai`) sigue armada con la pseudo-tabla inventada** (`aim-row`,
-  `aim-task`, `aim-prices`, `aim-side`: `<span>` en flex con los lados en `flex:none`). Es la
-  misma enfermedad que tenía `Consumo de IA`: cada fila calcula su ancho por su contenido, así
-  que nada se alinea en vertical entre filas. El proyecto ya tiene `.pay-table` para esto.
 - **Las dos familias de campos conviven** (`x-ui.input` y `x-inputsform.input`). Hoy NO se
   contradicen a la vista — comparten `.field`, `.field-label` y `.field-control` — y
   `x-ui.select` no se usa en ninguna vista. La deuda es tener dos puertas para lo mismo:
@@ -103,16 +129,6 @@
   `migrate:fresh` sobre `atendia_testing` (NUNCA sobre `atendia`) antes de la corrida que
   decide un commit, o la suite completa deja de servir para leer.
 
-- **`/admin/soporte` reparte mal el ancho a 900px**: la columna del ticket queda angosta y
-  parte el texto en 8 líneas, mientras el selector de estado al lado es ancho y va casi vacío.
-  Visto en `admin-tablet-light-admin-support.png`. Es anterior al movimiento de carpetas.
-
-
-- **`PanelResponsiveBrowserTest` mide el desborde de la PÁGINA, no el de un contenedor.**
-  Por eso da verde con la columna de arriba cortada. Ampliarlo a medir el `scrollWidth` de
-  cada `.card`/tabla es una decisión de ella: es tocar el candado, no la pantalla.
-
-
 ## 2026-10-02
 
 - **El panel izquierdo de las pantallas de acceso dice "Automatizá tu WhatsApp" también en
@@ -128,14 +144,10 @@
   alcanza a `resources/js`. Es deuda vieja, anterior a hoy.
 - **La suite de browser cuesta 1052 s** (17,5 min) y es la puerta de cada commit que toca pantallas.
   Nadie lo había medido.
-- **`demo@atendia.test` aparece en `/admin/adopcion`** como una cuenta más que nunca pasó del
-  wizard. Es el usuario de la demo local, no un negocio real; ensucia el embudo.
 - **Un toast rojo falso en los browser tests que guardan el perfil del negocio**: la cola corre
   `sync` en pruebas, el job de conocimiento llama a OpenAI sin clave, falla, y `tryAction` lo
   convierte en "Registro no actualizado" — aunque el guardado funcionó. En producción la cola es
   Redis y no pasa. Entrena a ignorar errores en pantalla, igual que el 404 de Reverb.
-- **No hay fila de Compañía en `atendia`** (`Company::current()` devuelve null): el pie de la
-  landing y cualquier correo que la use caen al fallback.
 - **26 procesos node huérfanos de VS Code Dev Containers** (`vscode-remote-containers-server-*.js`),
   uno con 65 días de vida, otros con 19, 16 y 10 días. Son sesiones de VS Code ya cerradas que
   nunca murieron. **Medido: suman solo 0,2 GB de RAM**, así que NO son el problema de memoria que

@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AiCapability;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Ai;
 
 /** Which model answers which task: a row, so trying a cheaper one is a decision. */
-#[Fillable(['key', 'label', 'model_code', 'fallback_model_code', 'is_mechanical'])]
+#[Fillable(['key', 'label', 'capability', 'connection_key', 'model_code', 'fallback_connection_key', 'fallback_model_code', 'is_mechanical'])]
 class AiTask extends Model
 {
+    /** The task that turns a customer's voice note into text; it is not an agent. */
+    public const string TRANSCRIPTION = 'Transcription';
+
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     protected function casts(): array
     {
-        return ['is_mechanical' => 'boolean'];
+        return ['is_mechanical' => 'boolean', 'capability' => AiCapability::class];
     }
 
     /** A row decides what the agents call, so a saved row drops the cache. */
@@ -33,7 +38,7 @@ class AiTask extends Model
     }
 
     /**
-     * The provider → model ladder of every assigned task, keyed by agent.
+     * The connection → model ladder of every assigned task, keyed by agent.
      * Cached: this is read on every single prompt.
      *
      * @return array<string, array<string, string>>
@@ -41,12 +46,12 @@ class AiTask extends Model
     public static function ladders(): array
     {
         return cache()->remember('ai.tasks', 300, function (): array {
-            $providers = AiModel::providersByCode();
+            $labs = AiModel::providersByCode();
 
             return self::query()
                 ->whereNotNull('model_code')
                 ->get()
-                ->mapWithKeys(fn (self $task): array => [$task->key => $task->ladder($providers)])
+                ->mapWithKeys(fn (self $task): array => [$task->key => $task->ladder($labs)])
                 ->reject(fn (array $ladder): bool => $ladder === [])
                 ->all();
         });
@@ -71,52 +76,85 @@ class AiTask extends Model
      * The ones that talk to a person come first: a model change there is felt
      * by a customer, and the mechanical ones are the cheap half of the list.
      *
-     * @return Collection<int, array{id: int, label: string, mechanical: bool, model: string|null, fallback: string|null, running: array<string, string|null>}>
+     * @return Collection<int, array{id: int, label: string, group: string, needs: AiCapability, mechanical: bool, model: string|null, fallback: string|null, running: array<string, string|null>}>
      */
     public static function board(): Collection
     {
         return self::query()->orderBy('is_mechanical')->orderBy('label')->get()->map(fn (self $task): array => [
             'id' => $task->id,
             'label' => $task->label,
+            'group' => $task->group(),
+            'needs' => $task->capability,
             'mechanical' => $task->is_mechanical,
-            'model' => $task->model_code,
-            'fallback' => $task->fallback_model_code,
-            'running' => self::ladderFor($task->key) ?? $task->declaredByAgent(),
+            'model' => self::pair($task->connection_key, $task->model_code),
+            'fallback' => self::pair($task->fallback_connection_key, $task->fallback_model_code),
+            'running' => self::ladderFor($task->key) ?? $task->declaredByCode(),
         ]);
     }
 
     /**
-     * The provider and model written in the agent's own attributes. Empty when
-     * the row names an agent that no longer exists: a renamed class leaves a
-     * row behind, and a screen that invents a model would be worse.
+     * The kind of work, which is how the screen orders the tasks: what a
+     * customer reads comes first, the mechanical half after, the audio apart.
+     */
+    public function group(): string
+    {
+        return match (true) {
+            $this->capability === AiCapability::Transcription => 'audio',
+            $this->is_mechanical => 'background',
+            default => 'conversation',
+        };
+    }
+
+    /** The "connection|code" value a select carries, or null while unassigned. */
+    private static function pair(?string $connection, ?string $code): ?string
+    {
+        return $connection !== null && $code !== null ? "{$connection}|{$code}" : null;
+    }
+
+    /**
+     * What this task runs on while nothing is assigned: the pair written in
+     * the agent's own attributes, or the package default for the one task
+     * that is not an agent. Empty when the row names an agent that no longer
+     * exists: a renamed class leaves a row behind, and a screen that invents
+     * a model would be worse.
      *
      * @return array<string, string|null>
      */
-    private function declaredByAgent(): array
+    private function declaredByCode(): array
     {
+        if ($this->key === self::TRANSCRIPTION) {
+            $lab = (string) config('ai.default_for_transcription');
+
+            return [$lab => rescue(fn (): string => Ai::transcriptionProvider($lab)->defaultTranscriptionModel(), null, false)];
+        }
+
         $agent = 'App\\Ai\\Agents\\'.$this->key;
 
         return class_exists($agent) && method_exists($agent, 'declaredPair') ? $agent::declaredPair() : [];
     }
 
     /**
-     * This task's attempts, in order. The fallback only joins from ANOTHER
-     * provider: the package keys the ladder by provider, so a second model of
-     * the same lab would simply overwrite the first one. A code with no price
-     * row is dropped — an unpriced call is a call nobody can account for.
+     * This task's attempts, in order. The fallback only joins through ANOTHER
+     * connection: the package keys the ladder by connection name, so the same
+     * key twice would overwrite the first attempt. A pair is dropped when its
+     * code has no price row (an unpriced call cannot be accounted for), when
+     * the connection no longer reaches the model's lab, or when its key is gone.
      *
-     * @param  array<string, string>  $providers
+     * @param  array<string, string>  $labs  Lab of every priced code.
      * @return array<string, string>
      */
-    private function ladder(array $providers): array
+    private function ladder(array $labs): array
     {
         $ladder = [];
 
-        foreach ([$this->model_code, $this->fallback_model_code] as $code) {
-            $provider = $code === null ? null : ($providers[$code] ?? null);
+        // `connection_key` and not `connection`: Eloquent owns that property name.
+        foreach ([[$this->connection_key, $this->model_code], [$this->fallback_connection_key, $this->fallback_model_code]] as [$connection, $code]) {
+            if ($connection === null || $code === null || isset($ladder[$connection])) {
+                continue;
+            }
 
-            if ($provider !== null && ! isset($ladder[$provider])) {
-                $ladder[$provider] = $code;
+            if (($labs[$code] ?? null) === AiConnection::driverOf($connection) && AiConnection::configured($connection)) {
+                $ladder[$connection] = $code;
             }
         }
 

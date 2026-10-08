@@ -42,3 +42,13 @@
 2026-10-07	check-plan-source-golden-rules	resources/views/components/admin/collections/⚡index.blade.php
 2026-10-07	check-plan-source-golden-rules	resources/views/components/admin/collections/⚡index.blade.php
 2026-10-07	check-comment-golden-rules	database/migrations/2026_08_12_184546_create_businesses_table.php
+2026-10-08	check-comment-golden-rules	database/seeders/AiModelSeeder.php
+2026-10-08	check-comment-golden-rules	database/seeders/AiModelSeeder.php
+2026-10-08	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-08	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-08	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-08	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡index.blade.php
+2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
+2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
+2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
+2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php

@@ -246,6 +246,18 @@ return [
     // (`plans.ai_alert_share`), because the same 40 USD of AI is a rounding
     // error on Premium and a loss on the floor plan. Read it by `Plan`.
 
+    // Hours a report may wait for our answer before the support queue paints it.
+    'support' => [
+        'overdue_hours' => 24,
+    ],
+
+    // What the platform costs a month apart from the AI (server, WhatsApp,
+    // domain), in USD. Zero means "not loaded", never "free": the net result
+    // is not shown until it is filled in from the platform settings.
+    'costs' => [
+        'fixed_monthly_usd' => 0,
+    ],
+
     'ai_rates' => [
         'prompt_per_million' => env('AI_RATE_PROMPT'),
         'cached_per_million' => env('AI_RATE_CACHED'),

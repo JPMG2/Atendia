@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Classes\Main;
 
 use App\Models\AiModel;
+use App\Models\AiTask;
 use App\Models\AiUsage;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -73,7 +74,20 @@ final class AiPrices
                 + $row->output_tokens * (float) $price->completion_per_million;
         });
 
-        return $tokens / 1_000_000 + ($audioSeconds / 60) * (float) $this->rates['audio_per_minute'];
+        return $tokens / 1_000_000 + ($audioSeconds / 60) * $this->audioRate($month);
+    }
+
+    /**
+     * USD per audio minute: the price of the model assigned to transcription
+     * that month, and the configured rate while nothing is assigned. Seconds
+     * come from the messages, not from a model, so one rate has to stand for
+     * the month.
+     */
+    public function audioRate(CarbonInterface $month): float
+    {
+        $code = AiTask::query()->where('key', AiTask::TRANSCRIPTION)->value('model_code');
+
+        return (float) ($this->priceOf($code, $month)?->per_minute ?? $this->rates['audio_per_minute']);
     }
 
     /**

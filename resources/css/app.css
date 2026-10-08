@@ -2200,26 +2200,33 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .help-vote { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:4px; }
   .help-vote-ask { font-size:var(--text-xs); color:var(--text-muted); }
 
-  .sup-row { display:flex; align-items:flex-start; gap:12px; padding:12px 10px; border-bottom:1px solid var(--border-subtle); }
-  .sup-row:last-child { border-bottom:none; }
-  .sup-row:hover { background:var(--surface-sunken); }
-  .sup-code { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-muted); }
-  .sup-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .sup-code { display:block; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-muted); margin-top:2px; }
   .sup-body { font-size:var(--text-sm); color:var(--text-strong); }
-  .sup-meta { font-size:var(--text-xs); color:var(--text-muted); display:flex; flex-wrap:wrap; gap:4px 10px; }
-  .sup-side { display:flex; align-items:center; gap:10px; flex:none; }
+  .sup-meta { font-size:var(--text-xs); color:var(--text-muted); display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:6px; }
   /* The oldest unanswered sits at the top, so age is the thing to read. */
   .sup-age { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-subtle); }
-  .sup-context { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-subtle); word-break:break-all; }
 
-  /* The status select is a control, not a column: bounded, or at 900px it eats
-  the width and the ticket text breaks into eight lines (found 2026-10-03). */
-  .sup-side .field { width:170px; margin:0; }
+  /* The queue is a table, and the wait is its first column: read down, it says
+  who to answer next. Bounded, so a long report never pushes the status off the card. */
+  .sup-table td.sup-wait { white-space:nowrap; width:1%; }
+  .sup-table td.sup-wait .aiu-note { display:block; white-space:normal; }
+  .sup-table td.sup-status { width:240px; min-width:220px; }
+  .sup-table td.is-name { max-width:46ch; }
+  .sup-table td.is-name .sup-body { display:block; }
+  /* What the widget captured, as a sheet of facts: label, then value. */
+  .sup-detail td { background:var(--surface-sunken); padding:14px 16px; }
+  .sup-evidence { display:grid; grid-template-columns:max-content minmax(0, 1fr); gap:4px 16px; margin:8px 0; font-size:var(--text-sm); }
+  .sup-evidence dt { color:var(--text-muted); }
+  .sup-evidence dd { color:var(--text-strong); font-weight:600; overflow-wrap:anywhere; }
+  .sup-errors { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:6px 0 10px; }
+  .sup-errors code { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--danger); overflow-wrap:anywhere; }
 
-  @media (max-width:900px) {
-    .sup-row { flex-direction:column; gap:8px; }
-    .sup-side { width:100%; justify-content:space-between; }
-    .sup-side .field { width:100%; }
+  @media (max-width:991px) {
+    .sup-table td.sup-wait, .sup-table td.sup-status { width:auto; }
+    .sup-table td.is-name { max-width:none; }
+    /* Stacked, every cell is a flex row of label and value; the open report is
+    one block of prose, not a cell, or its words ended up one letter per line. */
+    .pay-table .sup-detail td { display:block; }
   }
 
   /* Adoption: the funnel reads left to right, so the steps are chips in the
@@ -2324,7 +2331,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .role-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px 20px; margin-top:8px; }
   /* A field inside a cell cannot ask for its width with `span`: that only
   works inside a `.form-row`. The column declares it, once, in the header. */
-  .aim-assign th.is-pick, .aim-assign td.is-pick { width:220px; }
+  .aim-assign th.is-pick, .aim-assign td.is-pick { width:220px; min-width:190px; }
   .aim-assign td { vertical-align:middle; }
   /* The pair is one name, not two words: broken over two lines it doubled
   every row of the table and read as a different model on each line. */
@@ -2332,6 +2339,29 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* Here the hint IS the column: capped at 260px it wrapped to four lines
   beside an empty half-table. The settings screen lets it use the cell. */
   .aim-assign td.is-name .aiu-note { max-width:none; }
+  /* The embeddings row: a lock and a reason, not a select, because changing
+  that model is a migration and a loose field would invite doing it blind. */
+  .aim-lock { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:14px; align-items:center;
+    margin-top:10px; padding:14px 16px; border-radius:var(--radius-md); background:var(--warning-soft); }
+  .aim-lock-icon { width:36px; height:36px; border-radius:10px; background:var(--surface-card);
+    display:grid; place-items:center; color:var(--warning); }
+  .aim-steps { margin-top:10px; padding:14px 16px; border-radius:var(--radius-md); background:var(--surface-sunken); }
+  .aim-steps ol { margin:6px 0 0; padding-left:20px; }
+  .aim-group + .aim-group { margin-top:12px; }
+  /* The group-wide choice is a toolbar, not a form: its field keeps a readable
+  width and the button sits on the field's baseline instead of stretching. */
+  .form-row.aim-bulk { align-items:flex-end; margin-top:10px; }
+  .form-row.aim-bulk > .f-text { flex:0 1 380px; }
+
+  @media (max-width:600px) {
+    .aim-lock { grid-template-columns:minmax(0, 1fr); }
+  }
+
+  /* Stacked, the pair has the whole row: letting it wrap is what keeps a long
+  model name from widening the page. */
+  @media (max-width:991px) {
+    .aim-assign td.is-running { white-space:normal; overflow-wrap:anywhere; }
+  }
 
   @media (max-width:900px) {
     .aim-row { flex-direction:column; gap:10px; }

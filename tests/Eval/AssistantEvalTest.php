@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\AskAtendia;
+use App\Classes\Main\AiEvalResults;
 use App\Models\Conversation;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Carbon\CarbonImmutable;
+use Database\Seeders\AiModelSeeder;
 use Database\Seeders\AssistantSkillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -17,6 +19,7 @@ use Laravel\Ai\Responses\Data\ToolResult;
 use Tests\Support\AiEval\CachedEmbedder;
 use Tests\Support\AiEval\EvalBusinesses;
 use Tests\Support\AiEval\EvalJudge;
+use Tests\Support\AiEval\EvalRun;
 
 uses(RefreshDatabase::class);
 
@@ -27,16 +30,26 @@ uses(RefreshDatabase::class);
 | On demand only (it spends tokens): ./vendor/bin/pest tests/Eval
 | Each answer is graded by EvalJudge against what the tools returned; the
 | full report lands in storage/logs/ai-eval.md. Clock: Friday 2026-10-02.
+|
+| To measure a candidate before assigning it, name the key and the model:
+| EVAL_CONNECTION=openai-app EVAL_MODEL=<code> ./vendor/bin/pest tests/Eval
+| Its score is what the admin catalog shows; without them it measures what
+| the two agents run on today. The full run outlasts one command: run it in
+| slices with --filter (owner: · lab: · salon:|restaurant: · hardware:|photo)
+| and EVAL_CONTINUE=1 from the second slice on, so the score keeps adding up.
 */
 
 beforeEach(function (): void {
     config()->set('services.evolution.url', 'http://evolution.test');
     Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
-    Http::allowStrayRequests(['https://api.openai.com/*']);
+    Http::allowStrayRequests(['https://*']);
 
     $this->app->instance(KnowledgeEmbedder::class, new CachedEmbedder);
     $this->seed(AssistantSkillSeeder::class);
+    $this->seed(AiModelSeeder::class);
     $this->travelTo(CarbonImmutable::parse(EvalBusinesses::NOW_UTC, 'UTC'));
+
+    EvalRun::target(['AsistenteAtendia', 'AskAtendia'], env('EVAL_CONNECTION'), env('EVAL_MODEL'), AsistenteAtendia::class);
 });
 
 test('the assistant answers without inventing', function (string $businessKey, string $agent, string $question, string $expectation): void {
@@ -120,6 +133,9 @@ function evalReport(string $businessKey, string $agent, string $question, string
 {
     static $started = false;
     $path = storage_path('logs/ai-eval.md');
+
+    // The score the admin catalog reads, re-recorded after every answer.
+    EvalRun::finish(AiEvalResults::CONVERSATION, $pass, AsistenteAtendia::class);
 
     if (! $started) {
         File::put($path, '# AI battery — run '.date('Y-m-d H:i').' · clock frozen at '.EvalBusinesses::NOW_UTC." UTC\n\n");

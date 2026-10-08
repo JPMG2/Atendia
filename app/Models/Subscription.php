@@ -156,6 +156,39 @@ class Subscription extends Model
     }
 
     /**
+     * What each paying business is worth a month, under the same rule as the
+     * MRR total: its rows add up to that headline. A business on trial is not
+     * here, because nothing was paid for it.
+     *
+     * @return array<int, float> Monthly value by business id.
+     */
+    public static function monthlyValueByBusiness(): array
+    {
+        return self::query()
+            ->ofRealBusinesses()
+            ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
+            ->get(['business_id', 'plan', 'billing_cycle'])
+            ->mapWithKeys(fn (Subscription $subscription): array => [(int) $subscription->business_id => $subscription->monthlyValue()])
+            ->all();
+    }
+
+    /**
+     * The businesses still on their trial: they cost, and cost is the price of
+     * winning them, not a loss to book against revenue they never promised.
+     *
+     * @return list<int>
+     */
+    public static function trialingBusinessIds(): array
+    {
+        return self::query()
+            ->ofRealBusinesses()
+            ->where('status', SubscriptionStatus::Trialing)
+            ->pluck('business_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
      * Out with the landing's eight demo businesses. They carry a seeded
      * subscription each, and counted in they were 632 of the 790 the Inicio
      * showed as MRR: a figure 5 times its truth, read as the real one.

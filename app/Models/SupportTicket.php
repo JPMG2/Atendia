@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\TicketEvidence;
 use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Traits\BelongsToBusiness;
 use App\Traits\SearchesText;
+use Carbon\CarbonInterface;
 use Database\Factories\SupportTicketFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -84,24 +86,97 @@ class SupportTicket extends Model
 
     /**
      * The admin inbox, ready to paint: oldest unanswered first, with the
-     * business and the person already loaded.
+     * business and the person already loaded. The filters narrow the queue;
+     * none of them changes its order.
      *
+     * @param  string  $scope  A queue view: see SupportTicketStatus::inScope().
      * @return EloquentCollection<int, static>
      */
-    public static function inbox(bool $onlyOpen, int $limit = 100): EloquentCollection
+    public static function inbox(string $scope = 'open', ?string $kind = null, ?int $businessId = null, string $search = '', int $limit = 100): EloquentCollection
     {
+        $statuses = SupportTicketStatus::inScope($scope);
+        $term = trim($search);
+
         return static::query()
             ->with(['business:id,name', 'user:id,name'])
-            ->when($onlyOpen, fn (Builder $query): Builder => $query->whereIn(
-                'status',
-                collect(SupportTicketStatus::cases())
-                    ->filter(fn (SupportTicketStatus $case): bool => $case->isOpen())
-                    ->map(fn (SupportTicketStatus $case): string => $case->value)
-                    ->all(),
+            ->when($statuses !== null, fn (Builder $query): Builder => $query->whereIn('status', $statuses))
+            ->when(SupportTicketKind::tryFrom((string) $kind) !== null, fn (Builder $query): Builder => $query->where('kind', $kind))
+            ->when($businessId !== null, fn (Builder $query): Builder => $query->where('business_id', $businessId))
+            ->when($term !== '', fn (Builder $query): Builder => $query->where(
+                fn (Builder $match): Builder => $match
+                    ->whereTextMatches(['body', 'code'], $term)
+                    ->orWhereHas('business', fn (Builder $business): Builder => $business->whereTextMatches(['name'], $term)),
             ))
             ->byArrival()
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * The businesses that ever reported something, for the filter: asking for
+     * all of them would offer a choice that can only come back empty.
+     *
+     * @return array<int, string> Name by business id.
+     */
+    public static function reporters(): array
+    {
+        return Business::query()
+            ->whereIn('id', static::query()->select('business_id'))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    /** The one that has waited longest for us: the first call of the day. */
+    public static function oldestUnanswered(): ?static
+    {
+        return static::query()
+            ->whereIn('status', SupportTicketStatus::inScope('answer'))
+            ->orderBy('created_at')
+            ->first();
+    }
+
+    /**
+     * Since when somebody is waiting, on either side: for us while it is new
+     * or in progress, for the business once we asked it something. A settled
+     * report waits for nobody.
+     */
+    public function waitingSince(): ?CarbonInterface
+    {
+        return match ($this->status) {
+            SupportTicketStatus::New, SupportTicketStatus::Open => $this->created_at,
+            SupportTicketStatus::Waiting => $this->answered_at ?? $this->created_at,
+            default => null,
+        };
+    }
+
+    /** Waited on us for longer than she allows: the one the queue paints red. */
+    public function isOverdue(): bool
+    {
+        $since = $this->waitingSince();
+
+        return $this->status->isOurs()
+            && $since !== null
+            && $since->diffInHours(now()) >= (int) config('atendia.support.overdue_hours');
+    }
+
+    /**
+     * How long, in the two largest units: "3d 4h", never "3 days, 4 hours and
+     * 12 minutes", which nobody reads at a glance down a column.
+     */
+    public function waitLabel(): ?string
+    {
+        $since = $this->waitingSince();
+
+        return $since === null ? null : $since->diffForHumans(now(), ['syntax' => CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2, 'short' => true]);
+    }
+
+    /** What it took us, once settled: the figure that says how the queue is really doing. */
+    public function resolvedInLabel(): ?string
+    {
+        return $this->resolved_at === null
+            ? null
+            : $this->created_at->diffForHumans($this->resolved_at, ['syntax' => CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2, 'short' => true]);
     }
 
     /** One ticket by id, for the admin acting on a row it just listed. */
@@ -129,6 +204,12 @@ class SupportTicket extends Model
                 'screen' => $row->getAttribute('screen'),
                 'total' => (int) $row->getAttribute('total'),
             ]);
+    }
+
+    /** What the widget captured, in words: see TicketEvidence. */
+    public function evidence(): TicketEvidence
+    {
+        return new TicketEvidence($this->context);
     }
 
     /** The first line, for a list that shows one row per ticket. */

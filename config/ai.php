@@ -135,6 +135,15 @@ return [
             'store' => env('OPENAI_STORE', true),
         ],
 
+        // Same lab, second key: the customers' assistant gets its own bill and
+        // rate limit, apart from audio and embeddings on `openai`.
+        'openai-app' => [
+            'driver' => 'openai',
+            'key' => env('OPENAI_API_KEY_APP'),
+            'url' => env('OPENAI_URL', 'https://api.openai.com/v1'),
+            'store' => env('OPENAI_STORE', true),
+        ],
+
         'openai-compatible' => [
             'driver' => 'openai-compatible',
             'url' => env('OPENAI_COMPATIBLE_URL'),

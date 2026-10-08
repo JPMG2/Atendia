@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -72,6 +73,17 @@ class RevenueSnapshot extends Model
             ->get()
             ->sortBy('month')
             ->values();
+    }
+
+    /**
+     * What the month earned, as it was photographed then. Null when no photo
+     * exists: a month nobody measured is not a month that earned nothing.
+     */
+    public static function mrrOf(CarbonInterface $month): ?float
+    {
+        $mrr = self::query()->where('month', $month->copy()->startOfMonth()->toDateString())->value('mrr');
+
+        return $mrr === null ? null : (float) $mrr;
     }
 
     /**

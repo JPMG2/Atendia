@@ -53,6 +53,13 @@ test('a date before any published price has no rate instead of a wrong one', fun
 */
 function priced(string $provider, string $code): AiModel
 {
+    // Every connection used below has its key, or the ladder drops it.
+    config([
+        'ai.providers.openai-app.key' => 'test-key-a',
+        'ai.providers.openai.key' => 'test-key-b',
+        'ai.providers.anthropic.key' => 'test-key-c',
+    ]);
+
     return AiModel::create([
         'provider' => $provider, 'code' => $code, 'label' => $code, 'effective_from' => '2026-01-01',
         'prompt_per_million' => 1, 'cached_per_million' => 1, 'completion_per_million' => 1,
@@ -69,49 +76,91 @@ test('a task with no model assigned leaves the agent on the pair it declares', f
 test('assigning a model to a task is a row, not a deploy', function (): void {
     priced('openai', 'modelo-barato');
     AiTask::create([
-        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes', 'model_code' => 'modelo-barato',
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'openai', 'model_code' => 'modelo-barato',
     ]);
 
     expect((new FaqDrafter)->provider())->toBe(['openai' => 'modelo-barato']);
 });
 
-test('a model of another provider is called on that provider, not on OpenAI', function (): void {
+test('a model of another lab is called through that lab, not through OpenAI', function (): void {
     priced('anthropic', 'modelo-de-otro-lab');
     AiTask::create([
-        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes', 'model_code' => 'modelo-de-otro-lab',
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'anthropic', 'model_code' => 'modelo-de-otro-lab',
     ]);
 
     expect((new FaqDrafter)->provider())->toBe(['anthropic' => 'modelo-de-otro-lab']);
 });
 
-test('a fallback on another provider becomes the second attempt', function (): void {
+test('a model is never sent through a connection of another lab', function (): void {
+    priced('anthropic', 'modelo-de-otro-lab');
+    AiTask::create([
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'openai', 'model_code' => 'modelo-de-otro-lab',
+    ]);
+
+    // An Anthropic name behind an OpenAI key is a 400: the agent keeps its own pair.
+    expect(AiTask::ladderFor('FaqDrafter'))->toBeNull();
+});
+
+test('a fallback behind another connection becomes the second attempt', function (): void {
     priced('openai', 'modelo-primero');
     priced('anthropic', 'modelo-respaldo');
     AiTask::create([
         'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
-        'model_code' => 'modelo-primero', 'fallback_model_code' => 'modelo-respaldo',
+        'connection_key' => 'openai-app', 'model_code' => 'modelo-primero',
+        'fallback_connection_key' => 'anthropic', 'fallback_model_code' => 'modelo-respaldo',
     ]);
 
     expect((new FaqDrafter)->provider())->toBe([
-        'openai' => 'modelo-primero',
+        'openai-app' => 'modelo-primero',
         'anthropic' => 'modelo-respaldo',
     ]);
 });
 
-test('a fallback on the same provider is dropped instead of overwriting the first', function (): void {
+test('the other key of the same lab is a valid second attempt', function (): void {
+    priced('openai', 'modelo-primero');
+    AiTask::create([
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'openai-app', 'model_code' => 'modelo-primero',
+        'fallback_connection_key' => 'openai', 'fallback_model_code' => 'modelo-primero',
+    ]);
+
+    expect((new FaqDrafter)->provider())->toBe([
+        'openai-app' => 'modelo-primero',
+        'openai' => 'modelo-primero',
+    ]);
+});
+
+test('a fallback behind the same connection is dropped instead of overwriting the first', function (): void {
     priced('openai', 'modelo-primero');
     priced('openai', 'modelo-hermano');
     AiTask::create([
         'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
-        'model_code' => 'modelo-primero', 'fallback_model_code' => 'modelo-hermano',
+        'connection_key' => 'openai', 'model_code' => 'modelo-primero',
+        'fallback_connection_key' => 'openai', 'fallback_model_code' => 'modelo-hermano',
     ]);
 
     expect((new FaqDrafter)->provider())->toBe(['openai' => 'modelo-primero']);
 });
 
-test('a model with no published price is not called at all', function (): void {
+test('a connection whose key was removed falls back to the agent instead of failing every call', function (): void {
+    priced('openai', 'modelo-barato');
+    config(['ai.providers.openai.key' => null]);
     AiTask::create([
-        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes', 'model_code' => 'modelo-sin-precio',
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'openai', 'model_code' => 'modelo-barato',
+    ]);
+
+    expect(AiTask::ladderFor('FaqDrafter'))->toBeNull();
+});
+
+test('a model with no published price is not called at all', function (): void {
+    config(['ai.providers.openai.key' => 'test-key-b']);
+    AiTask::create([
+        'key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes',
+        'connection_key' => 'openai', 'model_code' => 'modelo-sin-precio',
     ]);
 
     expect(AiTask::ladderFor('FaqDrafter'))->toBeNull()

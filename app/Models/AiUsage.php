@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
  * One AI call, metered. The tenant stamp comes from the trait: whichever
  * business the call ran for is the one that pays for it.
  */
-#[Fillable(['business_id', 'kind', 'model', 'input_tokens', 'cached_tokens', 'output_tokens'])]
+#[Fillable(['business_id', 'kind', 'model', 'connection_key', 'input_tokens', 'cached_tokens', 'output_tokens'])]
 class AiUsage extends Model
 {
     use BelongsToBusiness;
@@ -61,16 +61,18 @@ class AiUsage extends Model
     public static function monthlyTotals(CarbonInterface $month): Collection
     {
         // Grouped by MODEL too: the price belongs to the model that answered,
-        // or a model change revalues every past call at the new rate.
+        // or a model change revalues every past call at the new rate. And by
+        // key, so the spend of each OpenAI key can be told apart.
         return self::query()
-            ->selectRaw('business_id, kind, model, count(*) as calls, sum(input_tokens) as input_tokens, sum(cached_tokens) as cached_tokens, sum(output_tokens) as output_tokens')
+            ->selectRaw('business_id, kind, model, connection_key, count(*) as calls, sum(input_tokens) as input_tokens, sum(cached_tokens) as cached_tokens, sum(output_tokens) as output_tokens')
             ->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->groupBy('business_id', 'kind', 'model')
+            ->groupBy('business_id', 'kind', 'model', 'connection_key')
             ->get()
             ->map(fn (self $row): object => (object) [
                 'business_id' => $row->business_id !== null ? (int) $row->business_id : null,
                 'kind' => (string) $row->kind,
                 'model' => $row->model,
+                'connection_key' => $row->connection_key,
                 'calls' => (int) $row->getAttribute('calls'),
                 'input_tokens' => (int) $row->input_tokens,
                 'cached_tokens' => (int) $row->cached_tokens,

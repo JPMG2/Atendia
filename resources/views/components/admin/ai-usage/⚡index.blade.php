@@ -2,6 +2,7 @@
 
 use App\Classes\Main\AiSpend;
 use App\Classes\Main\AiTrend;
+use App\Models\AiConnection;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
@@ -43,6 +44,13 @@ new class extends Component
         return AiSpend::of($this->selected());
     }
 
+    /** Whether the month on screen is the running one: the only one fixed costs can be netted against. */
+    #[Computed]
+    public function isCurrentMonth(): bool
+    {
+        return $this->selected()->isSameMonth(now());
+    }
+
     #[Computed]
     public function previous(): AiSpend
     {
@@ -75,6 +83,17 @@ new class extends Component
                 return [$month->format('Y-m') => ucfirst($month->translatedFormat('F Y'))];
             })
             ->all();
+    }
+
+    /**
+     * What each key is called in the AI screen; a key nobody named shows as itself.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function keyNames(): array
+    {
+        return AiConnection::labels();
     }
 
     /**
@@ -124,6 +143,11 @@ new class extends Component
             return '—';
         }
 
+        // The sign goes before the currency: "$-1,00" reads as a typo.
+        if ($usd < 0) {
+            return '-'.$this->money(abs($usd));
+        }
+
         if ($usd > 0 && $usd < 0.005) {
             return '< $0,01';
         }
@@ -168,6 +192,50 @@ new class extends Component
                 wire:model.live="month"
             />
         </x-catalog.form-row>
+
+        {{-- The month in three figures, before the rows that explain it: what
+        came in, what the AI took, what was left. Margin is over the AI only —
+        servers and the rest of the fixed costs are not metered here. --}}
+        @php($result = $this->spend->result)
+        @if ($result->revenue !== null || $result->cost !== null)
+            @php($before = $this->previous->result)
+            <div class="stat-grid stat-grid-fill my-3">
+                <x-ui.stat-card
+                    :label="__('admin.ai_usage.result.revenue')"
+                    :value="$this->money($result->revenue)"
+                    icon="credit-card"
+                    tint="info"
+                >{{ $result->revenue === null ? __('admin.ai_usage.result.revenue_missing') : __('admin.ai_usage.result.revenue_hint') }}</x-ui.stat-card>
+
+                <x-ui.stat-card
+                    :label="__('admin.ai_usage.result.cost')"
+                    :value="$this->money($result->cost)"
+                    icon="zap"
+                    tint="accent"
+                >{{ $result->unpriced > 0 ? trans_choice('admin.ai_usage.no_price', $result->unpriced) : __('admin.ai_usage.result.cost_hint') }}</x-ui.stat-card>
+
+                <x-ui.stat-card
+                    :label="__('admin.ai_usage.result.margin')"
+                    :value="$this->money($result->margin)"
+                    :delta="$result->share === null ? null : $this->percent(abs($result->share))"
+                    :trend="($result->margin ?? 0) < 0 ? 'down' : 'up'"
+                    icon="bar-chart-3"
+                    :tint="($result->margin ?? 0) < 0 ? 'warning' : 'brand'"
+                >{{ $before->margin === null ? __('admin.ai_usage.result.first_month') : __('admin.ai_usage.result.margin_before', ['amount' => $this->money($before->margin)]) }}</x-ui.stat-card>
+
+                {{-- The net, or the door to load what it is missing: a tile that
+                cannot be filled in yet is the way to the setting, not a zero. --}}
+                @if ($result->fixed !== null || $this->isCurrentMonth)
+                    <x-ui.stat-card
+                        :label="__('admin.ai_usage.result.net')"
+                        :value="$this->money($result->net)"
+                        icon="receipt"
+                        :tint="($result->net ?? 0) < 0 ? 'warning' : 'brand'"
+                        :href="$result->fixed === null ? route('admin.settings') : null"
+                    >{{ $result->fixed === null ? __('admin.ai_usage.result.net_missing') : __('admin.ai_usage.result.net_hint', ['amount' => $this->money($result->fixed)]) }}</x-ui.stat-card>
+                @endif
+            </div>
+        @endif
 
         @if ($this->spend->board->isEmpty())
             <x-ui.empty-state
@@ -245,6 +313,18 @@ new class extends Component
                                         cell it only has to say the figure is short. --}}
                                         <span class="aiu-note">{{ __('admin.ai_usage.unpriced') }}</span>
                                     @endif
+                                    {{-- What this business left after its AI: a loss is a tag
+                                    and not a note, because it is the line she acts on. A trial
+                                    has no revenue to subtract from: its cost is the price of winning it. --}}
+                                    @if ($row->standing === 'paying' && $row->margin !== null)
+                                        @if ($row->margin < 0)
+                                            <span class="status-tag is-danger">{{ __('admin.ai_usage.loses', ['amount' => $this->money(abs($row->margin))]) }}</span>
+                                        @else
+                                            <span class="aiu-note">{{ __('admin.ai_usage.leaves', ['amount' => $this->money($row->margin)]) }}</span>
+                                        @endif
+                                    @elseif ($row->standing === 'trial')
+                                        <span class="aiu-note">{{ __('admin.ai_usage.on_trial') }}</span>
+                                    @endif
                                 </td>
                                 <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.per_thread') }}">{{ $this->money($row->perThread) }}</td>
                             </tr>
@@ -275,6 +355,9 @@ new class extends Component
                 <span>{{ __('admin.ai_usage.trend_since', ['month' => $this->trend->span, 'count' => $this->trend->length]) }}</span>
                 @if ($this->spend->saved > 0)
                     <span>{{ __('admin.ai_usage.saved_hint') }}</span>
+                @endif
+                @if ($this->spend->board->contains('standing', 'trial'))
+                    <span>{{ __('admin.ai_usage.trial_hint') }}</span>
                 @endif
                 <span>{{ __('admin.ai_usage.previous_is', ['amount' => $this->money($this->previous->bill->cost)]) }}</span>
                 @if ($this->spend->bill->unpriced > 0)
@@ -328,4 +411,54 @@ new class extends Component
             </div>
         @endif
     </x-ui.card>
+
+    {{-- The same month cut by the key it went through: two OpenAI keys split the
+    spend and the rate limit, and this is where the split is read. --}}
+    @if ($this->spend->byConnection->isNotEmpty())
+        <x-ui.card class="mt-3 p-5">
+            <h2 class="aiu-section">{{ __('admin.ai_usage.by_connection') }}</h2>
+
+            <div class="pay-table-wrap">
+                <table class="pay-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('admin.ai_usage.connection') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.calls') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.tokens_in') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.tokens_cached') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.tokens_out') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.cost') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($this->spend->byConnection as $connection)
+                            <tr wire:key="connection-{{ $connection->kind ?: 'none' }}">
+                                <td class="is-name" data-label="{{ __('admin.ai_usage.connection') }}">
+                                    @if ($connection->kind === '')
+                                        <span class="aiu-name">{{ __('admin.ai_usage.no_connection') }}</span>
+                                        <span class="aiu-note">{{ __('admin.ai_usage.no_connection_hint') }}</span>
+                                    @else
+                                        <span class="aiu-name">{{ $this->keyNames[$connection->kind] ?? $connection->kind }}</span>
+                                        <span class="aiu-note font-mono">{{ $connection->kind }}</span>
+                                    @endif
+                                </td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.calls') }}">{{ $this->count($connection->calls) }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.tokens_in') }}">{{ $this->count($connection->input) }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.tokens_cached') }}">{{ $this->count($connection->cached) }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.tokens_out') }}">{{ $this->count($connection->output) }}</td>
+                                <td class="is-num font-mono aiu-cost-now" data-label="{{ __('admin.ai_usage.cost') }}">
+                                    {{ $this->money($connection->cost) }}
+                                    @if ($connection->unpriced > 0)
+                                        <span class="aiu-note">{{ trans_choice('admin.ai_usage.no_price_short', $connection->unpriced) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="aiu-foot"><span>{{ __('admin.ai_usage.by_connection_hint') }}</span></p>
+        </x-ui.card>
+    @endif
 </div>
