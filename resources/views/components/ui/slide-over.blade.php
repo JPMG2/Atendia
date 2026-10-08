@@ -1,6 +1,7 @@
 @props([
     'title' => null,
     'subtitle' => null,
+    'stackedFooter' => false, // the footer holds a form, not a row of buttons
 ])
 
 {{-- Edit panel for long lists: the list stays visible behind it. Escape, the
@@ -34,7 +35,7 @@ closing means (listen with x-on:slide-over-close). Closing never saves. --}}
         <div class="slide-over-body">{{ $slot }}</div>
 
         @isset($footer)
-            <footer class="slide-over-foot">{{ $footer }}</footer>
+            <footer class="slide-over-foot {{ $stackedFooter ? 'is-stacked' : '' }}">{{ $footer }}</footer>
         @endisset
     </aside>
 </div>

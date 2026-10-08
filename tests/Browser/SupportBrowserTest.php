@@ -108,7 +108,7 @@ test('the inbox names the screens that hurt most and opens a reply box', functio
         ->assertSee(__('support.admin.failing_title'))
         ->assertSee('Cómo conecto mi WhatsApp')
         ->assertSee(__('support.admin.pain_title'))
-        ->click(__('support.admin.tabs.queue'))
+        ->click(__('support.admin.tabs.answer'))
         ->click('[data-testid="sup-expand-'.$first->id.'"]')
         ->waitForText(__('support.admin.reply'))
         ->assertSee(__('support.admin.reply_hint'))

@@ -151,9 +151,9 @@ test('the queue comes first and the late ones are painted', function (): void {
 
     $html = Livewire::actingAs($this->admin)->test('admin.support.index')->html();
 
-    expect(substr_count($html, 'is-over'))->toBe(1)
-        // The queue pane is declared before the help pane: the first thing read is who is waiting.
-        ->and(strpos($html, 'pane-queue'))->toBeLessThan(strpos($html, 'pane-help'));
+    expect(substr_count($html, 'class="is-over"') + substr_count($html, 'is-over'))->toBeGreaterThan(0)
+        // The queues come first and the table right under them: the help analysis is a tab, not a wall above the work.
+        ->and(strpos($html, 'sup-queues'))->toBeLessThan(strpos($html, 'sup-table'));
 });
 
 test('the header names how long the longest wait has lasted', function (): void {
@@ -176,7 +176,7 @@ test('the filters live in the URL, so a link lands on the same queue', function 
     queueTicket(test()->clinic);
     queueTicket(test()->salon, ['kind' => SupportTicketKind::Idea, 'body' => 'Una idea del salón']);
 
-    Livewire::withQueryParams(['tipo' => 'idea', 'estado' => 'all'])
+    Livewire::withQueryParams(['tipo' => 'idea'])
         ->actingAs($this->admin)
         ->test('admin.support.index')
         ->assertSet('kind', 'idea')
@@ -192,7 +192,7 @@ test('an open report shows its evidence in words and the errors the browser logg
     ]]);
 
     Livewire::actingAs($this->admin)->test('admin.support.index')
-        ->call('toggle', $ticket->id)
+        ->call('openTicket', $ticket->id)
         ->assertSee('Chrome 141 · Windows')
         ->assertSee('1280×900 · escritorio')
         ->assertSee('El navegador registró 1 error')

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Support;
 
 use App\Enums\SupportTicketKind;
+use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Mail\SupportTicketOpened as SupportTicketOpenedMail;
 use App\Messaging\Channels\Email;
@@ -82,6 +83,7 @@ class CreateSupportTicket
                     'code' => SupportTicket::freshCode(),
                     'kind' => $kind,
                     'status' => SupportTicketStatus::New,
+                    'priority' => SupportTicketPriority::startingFor($kind),
                     'screen' => $screen,
                     'after_help' => $afterHelp,
                     'body' => $body,

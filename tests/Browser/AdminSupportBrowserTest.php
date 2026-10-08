@@ -6,6 +6,7 @@ use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Models\Business;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -61,41 +62,92 @@ beforeEach(function (): void {
         'resolved_at' => now()->subDays(8)->addHours(2),
     ]);
 
+    SupportTicket::factory()->for($clinic)->create([
+        'body' => 'Las respuestas del asistente tardan más de un minuto por la noche.',
+        'screen' => 'assistant',
+        'status' => SupportTicketStatus::Blocked,
+        'created_at' => now()->subDays(2),
+        'blocked_at' => now()->subDay(),
+        'blocked_tried' => 'Reproducido a las 23:10: el análisis ocupa la cola del asistente.',
+        'blocked_missing' => 'Que Desarrollo separe la cola del asistente de la del análisis.',
+        'blocked_owner' => 'Desarrollo',
+        'blocked_due' => today()->addDays(3),
+    ]);
+
     $admin = User::factory()->create(['name' => 'Administración de la plataforma']);
     $admin->assignRole('admin');
+
+    SupportTicketMessage::factory()->note()->create([
+        'support_ticket_id' => $this->late->id,
+        'user_id' => $admin->id,
+        'body' => 'Confirmado en logs: el job de análisis ocupa la cola.',
+    ]);
 
     $this->actingAs($admin->refresh());
 });
 
 test('the support queue holds at every width in both themes', function (string $label, int $width, int $height, bool $dark): void {
-    $page = visit(route('admin.support', ['estado' => 'all']))->resize($width, $height);
+    $page = visit(route('admin.support'))->resize($width, $height);
+    $shot = fn (string $step) => 'admin-support-'.$step.'-'.$label.'-'.($dark ? 'dark' : 'light');
+
+    // Nothing may widen the page, and nothing may be cut inside its own card:
+    // a column hidden behind a scrollbar nobody discovers passes the first check.
+    $assertFits = function () use (&$page): void {
+        expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+        expect((int) $page->script(
+            'Array.from(document.querySelectorAll(".pay-table-wrap, .slide-over-body"))
+                .filter(w => w.offsetParent !== null)
+                .map(w => w.scrollWidth - w.clientWidth)
+                .reduce((a, b) => Math.max(a, b), 0)'
+        ))->toBe(0);
+    };
 
     if ($dark) {
         $page->click('@theme-toggle');
     }
 
+    // 1. The queue: who has waited longest, with the late one painted.
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Soporte')
+        ->assertSee('Por responder')
         ->assertSee('Clínica Vida')
         ->assertSee('2d 3h')
-        ->click('@sup-expand-'.$this->late->id)
+        ->assertSee('Más de 24 h')
+        ->screenshot(filename: $shot('queue'));
+    $assertFits();
+
+    // 2. The report opens beside it: conversation, evidence in words, a composer.
+    $page->click('@sup-expand-'.$this->late->id)
+        ->assertSee('Conversación')
+        ->assertSee('Notas internas')
+        ->assertSee('Tu respuesta')
+        ->click('Lo que capturamos')
         ->assertSee('Safari 17 · iOS')
         ->assertSee('390×844 · teléfono')
         ->assertSee('El navegador registró 2 errores')
-        ->screenshot(filename: 'admin-support-'.$label.'-'.($dark ? 'dark' : 'light'));
+        ->screenshot(filename: $shot('panel'));
+    $assertFits();
 
-    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+    // 3. The customer: pays or not, WhatsApp, and where the answer lands.
+    $page->click('Cliente')
+        ->assertSee('Dónde le llega la respuesta')
+        ->assertSee('WhatsApp del negocio')
+        ->screenshot(filename: $shot('customer'));
+    $assertFits();
 
-    // The page not overflowing says nothing about the table: a column cut off
-    // inside its own card hides behind a scrollbar nobody discovers.
-    $cut = $page->script(
-        'Array.from(document.querySelectorAll(".pay-table-wrap"))
-            .filter(w => w.offsetParent !== null)
-            .map(w => w.scrollWidth - w.clientWidth)
-            .reduce((a, b) => Math.max(a, b), 0)'
-    );
+    // 4. What the team told itself.
+    $page->click('Notas internas')
+        ->assertSee('Solo las ve el equipo')
+        ->assertSee('Confirmado en logs')
+        ->screenshot(filename: $shot('notes'));
+    $assertFits();
 
-    expect((int) $cut)->toBe(0);
+    // 5. A report that could not be solved says what is missing.
+    $page->click('No se pudo resolver…')
+        ->assertSee('Qué probamos')
+        ->assertSee('Qué falta para resolverlo')
+        ->assertSee('Quién sigue')
+        ->screenshot(filename: $shot('block'));
+    $assertFits();
 })->with([
     'desktop light' => ['desktop', 1280, 900, false],
     'desktop dark' => ['desktop', 1280, 900, true],
@@ -103,3 +155,33 @@ test('the support queue holds at every width in both themes', function (string $
     'phone light' => ['phone', 390, 844, false],
     'phone dark' => ['phone', 390, 844, true],
 ]);
+
+test('an empty queue keeps its distance from the filters above it', function (): void {
+    SupportTicket::query()->delete();
+
+    $page = visit(route('admin.support'))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('No hay reportes')
+        ->screenshot(filename: 'admin-support-empty');
+
+    // The defect was a block glued to the inputs: the gap is measured, not eyeballed.
+    $gap = (float) $page->script(
+        '(() => {
+            const row = document.querySelector(".form-row").getBoundingClientRect();
+            const empty = document.querySelector(".empty-state").getBoundingClientRect();
+            return empty.top - row.bottom;
+        })()'
+    );
+
+    expect($gap)->toBeGreaterThanOrEqual(16.0);
+});
+
+test('the blocked queue says what is missing without opening anything', function (): void {
+    $page = visit(route('admin.support', ['cola' => 'blocked']))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Que Desarrollo separe la cola del asistente')
+        ->assertSee('Desarrollo')
+        ->screenshot(filename: 'admin-support-blocked');
+});

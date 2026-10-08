@@ -148,7 +148,8 @@ test('the admin moves a ticket along and the resolved one gets its date', functi
 
     Livewire::actingAs($admin)
         ->test('admin.support.index')
-        ->call('setStatus', $ticket->id, 'resolved')
+        ->call('openTicket', $ticket->id)
+        ->call('resolve')
         ->assertDispatched('notify');
 
     $ticket->refresh();
@@ -171,10 +172,10 @@ test('the admin answers from the inbox and the reply travels to her WhatsApp', f
 
     Livewire::actingAs($admin)
         ->test('admin.support.index')
-        ->call('toggle', $ticket->id)
-        ->set('reply', 'Lo miramos y ya está arreglado en tu panel')
-        ->call('answer', $ticket->id)
-        ->assertSet('reply', '');
+        ->call('openTicket', $ticket->id)
+        ->set('reply.body', 'Lo miramos y ya está arreglado en tu panel')
+        ->call('sendReply')
+        ->assertSet('reply.body', '');
 
     $ticket->refresh();
 
@@ -191,7 +192,8 @@ test('resolving it rings the bell of the business that reported it', function ()
 
     Livewire::actingAs($admin)
         ->test('admin.support.index')
-        ->call('setStatus', $ticket->id, 'resolved');
+        ->call('openTicket', $ticket->id)
+        ->call('resolve');
 
     $notification = PanelNotification::query()->withoutGlobalScopes()->first();
 

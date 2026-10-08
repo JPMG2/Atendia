@@ -544,6 +544,24 @@ class User extends Authenticatable
             ->all();
     }
 
+    /**
+     * Everybody who can work a support report: the owner, who passes every
+     * gate, and the people whose role carries the support key. A report can only
+     * be handed to someone who can open it.
+     *
+     * @return array<int, string> Name by user id.
+     */
+    public static function supportTeam(): array
+    {
+        return self::query()
+            ->whereHas('roles', fn (Builder $roles): Builder => $roles
+                ->where('name', 'admin')
+                ->orWhereHas('permissions', fn (Builder $permissions): Builder => $permissions->where('name', 'support.view')))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
     private static function momentOf(CarbonInterface|string|null $value): ?CarbonImmutable
     {
         return $value === null ? null : CarbonImmutable::parse($value);

@@ -812,4 +812,10 @@ lo único que falta, y casi todo es una decisión o un dato de ella, no construc
 - [ ] **Migración de embeddings** (re-indexar en paralelo y cambiar de golpe). No urge: hoy el
       modelo se fija en `config/rag.php` y la pantalla lo muestra bloqueado y explicado.
 - [ ] **Veredicto de ella sobre Modelos de IA** (E14), rehecha hoy con su maqueta aprobada.
-- [ ] **Veredicto de ella sobre Soporte** (E2), reconstruida hoy.
+- [ ] **Veredicto de ella sobre Soporte** (E2), reconstruida hoy y ampliada (v2): conversación con
+      resultado de entrega real (WhatsApp, si no correo, si no "sin forma de avisarle"), notas
+      internas, responsable y prioridad, ficha del cliente, traspaso "No se pudo resolver" con cola
+      Bloqueados, reloj por tipo y prioridad (las ideas no corren reloj). La clave `estado` de la URL
+      pasó a `cola`; el reporte abierto va en `reporte`.
+- [ ] **Ideas de Soporte ofrecidas, sin decidir:** atajo "Mis reportes"; respuestas guardadas
+      (maestro editable, como Catálogos); tiempo mediano de resolución por tipo en el encabezado.

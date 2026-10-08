@@ -429,9 +429,13 @@ return [
                 ],
             ],
             'support' => [
+                'overdue_hours_high' => [
+                    'label' => 'Atraso de un problema',
+                    'hint' => 'Horas que puede esperar un reporte de prioridad alta (por defecto, un problema) antes de pintarse de rojo en Soporte.',
+                ],
                 'overdue_hours' => [
-                    'label' => 'Reporte atrasado',
-                    'hint' => 'Horas que un negocio puede esperar tu respuesta antes de que su reporte se pinte de rojo en Soporte.',
+                    'label' => 'Atraso de una pregunta',
+                    'hint' => 'Horas que puede esperar un reporte de prioridad normal (por defecto, una pregunta). Una idea no corre reloj.',
                 ],
             ],
             'costs' => [

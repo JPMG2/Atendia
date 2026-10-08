@@ -23,6 +23,14 @@ return new class extends Migration
             $table->string('code', 12)->unique()->comment('What the person is told to quote back');
             $table->string('kind', 20)->default('problem');
             $table->string('status', 20)->default('new');
+            $table->string('priority', 10)->default('normal')->comment('Sets the clock: high waits less, low runs none');
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete()->comment('Who has it: two people never answer the same report');
+            // What a report that could not be solved leaves for whoever follows.
+            $table->text('blocked_tried')->nullable()->comment('What was tried and what happened');
+            $table->text('blocked_missing')->nullable()->comment('What somebody has to do or decide for it to be solved');
+            $table->string('blocked_owner', 80)->nullable()->comment('Who follows: a person, Desarrollo, the business');
+            $table->date('blocked_due')->nullable()->comment('By when that follow-up is expected');
+            $table->timestamp('blocked_at')->nullable();
             $table->string('screen', 80)->nullable()->comment('Route name it was opened from, null when opened with no screen in mind');
             $table->boolean('after_help')->default(false)->comment('She read an article first and it did not solve it: the deflection that failed');
             $table->text('body');
@@ -34,6 +42,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['status', 'created_at']);
+            $table->index('assigned_to');
             $table->index(['business_id', 'created_at']);
         });
 

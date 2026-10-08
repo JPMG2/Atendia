@@ -246,9 +246,11 @@ return [
     // (`plans.ai_alert_share`), because the same 40 USD of AI is a rounding
     // error on Premium and a loss on the floor plan. Read it by `Plan`.
 
-    // Hours a report may wait for our answer before the support queue paints it.
+    // Hours a report may wait for our answer before the support queue paints it:
+    // a problem (high) waits less than a question (normal); an idea runs no clock.
     'support' => [
         'overdue_hours' => 24,
+        'overdue_hours_high' => 8,
     ],
 
     // What the platform costs a month apart from the AI (server, WhatsApp,
