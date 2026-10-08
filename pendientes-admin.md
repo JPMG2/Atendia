@@ -3,8 +3,10 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-08, al cerrar el día (Modelos de IA, lo contable de Consumo de IA y
-> Soporte rehechos; el bloque G tiene lo que quedó abierto de esa jornada). Antes: 2026-10-07
+> Última revisión: 2026-10-08, al cerrar el día (Modelos de IA, lo contable de Consumo de IA,
+> Soporte v2 con sus 3 mejoras y la migración de embeddings, todo hecho y pusheado; el bloque G
+> tiene lo que quedó abierto de esa jornada, y casi todo es un dato o una decisión de ella).
+> Antes: 2026-10-07
 > (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
 
 ## Cómo se cierra un punto de esta lista
@@ -106,9 +108,9 @@ cada ajuste dice qué pasa si lo movés, con su default al lado y un botón para
 - Dos ajustes nuevos el 2026-10-07, del escritorio de incidencias (A7):
   `incidents.unanswered_minutes` (15 min, cuándo una charla sin respuesta cuenta como falla) y
   `incidents.digest_time` (20:00, cuándo le llega el correo del día).
-- Dos ajustes nuevos el 2026-10-08: `support.overdue_hours` (24 h, cuándo un reporte sin respuesta se
-  pinta de rojo en Soporte) y `costs.fixed_monthly_usd` (0 = "no cargado"; con valor, Consumo de IA
-  muestra el resultado neto).
+- Tres ajustes nuevos el 2026-10-08: `support.overdue_hours` (24 h, cuándo un reporte sin respuesta se
+  pinta de rojo en Soporte), `support.overdue_hours_high` (8 h, lo mismo para los de prioridad alta)
+  y `costs.fixed_monthly_usd` (0 = "no cargado"; con valor, Consumo de IA muestra el resultado neto).
 - **Fuera a propósito**: `referral.reward_percent`. Nada en `app/` lo paga (ver `hallazgos.md`):
   sería un control que no hace nada.
 
@@ -136,8 +138,9 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
       prueba dice "En prueba" (su costo es el de ganarlo, no una pérdida). Un mes anterior lee su
       ingreso de la foto de `revenue_snapshots`; sin foto no hay margen, nunca un ingreso cero.
       Es margen sobre la IA: servidor, WhatsApp y demás costos fijos no se miden en la app.
-- [ ] **Costos fijos del mes** (servidor, WhatsApp, dominio) como ajuste de plataforma, para que el
-      resultado sea el neto y no solo el margen sobre la IA. Idea ofrecida, sin decidir.
+- [x] ~~**Costos fijos del mes** como ajuste de plataforma~~ (2026-10-08): `costs.fixed_monthly_usd`,
+      en Ajustes → Costos fijos. Con valor, Consumo de IA muestra el resultado neto; en 0 dice
+      "no cargado". Lo que falta es el DATO de ella (ver G).
 - [x] ~~Rehecha entera el 2026-10-05~~ (ver E14 y E14-bis): era legible como dato y
       ilegible como pantalla.
 - [ ] **El minutaje de audio perdió su columna** al pasar a tabla: nueve columnas no entran a
@@ -697,11 +700,11 @@ datos y los candados están bien (son reales y están probados), lo que no sirve
       ideas para enamorar entraron el mismo día: asignar un modelo a todo un grupo de tareas,
       el gasto por clave en Consumo de IA y el puntaje de la batería en cada modelo.
       La transcripción dejó de estar clavada.
-      Embeddings aparece bloqueado y explica por qué (cambiarlo es una migración).
-      Lo que sigue abierto de esto: la migración de embeddings (re-indexar en paralelo y
-      cambiar de golpe) NO está construida, y el costo del audio usa UN precio por minuto para
-      todo el mes (el del modelo asignado), porque los segundos salen de los mensajes y no de
-      un modelo.
+      Embeddings dejó de estar bloqueado el mismo día: cambiar el modelo es ahora un proceso en
+      la tarjeta "Búsqueda del conocimiento" (convertir en paralelo, activar de golpe, volver
+      atrás hasta descartar). Lo que sigue abierto de esto: el costo del audio usa UN precio
+      por minuto para todo el mes (el del modelo asignado), porque los segundos salen de los
+      mensajes y no de un modelo.
 - [x] ~~Historia: veredicto de ella, 2026-10-07: *"muy lejos de ser aceptada"*.~~ Verificado el mismo día: el markup ya NO es el problema — la pantalla
       usa `.pay-table` y no queda nada de la pseudo-tabla `aim-*`, así que la reescritura del
       05/10 arregló la estructura y **no ganó su aprobación**. Es un rechazo de DISEÑO, y
