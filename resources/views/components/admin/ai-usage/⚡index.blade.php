@@ -267,7 +267,7 @@ new class extends Component
                             {{-- The row that is over its plan's threshold is painted,
                             not only tagged: a tag is read, a row is seen. --}}
                             <tr wire:key="spend-{{ $row->id ?? 'platform' }}" @class(['is-over' => $row->isOverAlert])>
-                                <td class="is-name" data-label="{{ __('admin.ai_usage.business') }}">
+                                <td class="is-name is-key" data-label="{{ __('admin.ai_usage.business') }}">
                                     <span class="aiu-name">
                                         @if ($row->id === null)
                                             {{ $row->name }}
@@ -433,7 +433,7 @@ new class extends Component
                     <tbody>
                         @foreach ($this->spend->byConnection as $connection)
                             <tr wire:key="connection-{{ $connection->kind ?: 'none' }}">
-                                <td class="is-name" data-label="{{ __('admin.ai_usage.connection') }}">
+                                <td class="is-name is-key" data-label="{{ __('admin.ai_usage.connection') }}">
                                     @if ($connection->kind === '')
                                         <span class="aiu-name">{{ __('admin.ai_usage.no_connection') }}</span>
                                         <span class="aiu-note">{{ __('admin.ai_usage.no_connection_hint') }}</span>

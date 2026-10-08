@@ -214,7 +214,7 @@ new class extends Component
                         @foreach ($this->queue as $payment)
                             <tr wire:key="queue-{{ $payment->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.home.queue.date') }}">{{ $payment->created_at?->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('admin.home.queue.business') }}">
+                                <td class="is-key" data-label="{{ __('admin.home.queue.business') }}">
                                     <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $payment->business_id]) }}">{{ $payment->business?->name }}</a>
                                 </td>
                                 <td data-label="{{ __('admin.home.queue.plan') }}">{{ __('plan.names.'.$payment->plan) }}</td>

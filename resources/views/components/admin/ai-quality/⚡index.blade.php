@@ -75,7 +75,7 @@ new class extends Component
                             <tr wire:key="quality-{{ $row->business_id }}">
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 and a cell without its name is a loose value. --}}
-                                <td data-label="{{ __('ai_quality.table.business') }}">{{ $row->name }}</td>
+                                <td class="is-key" data-label="{{ __('ai_quality.table.business') }}">{{ $row->name }}</td>
                                 <td data-label="{{ __('ai_quality.table.good') }}" class="font-mono">{{ $row->good }}</td>
                                 <td data-label="{{ __('ai_quality.table.bad') }}" class="font-mono">
                                     @if ($row->bad > 0)

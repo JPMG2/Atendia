@@ -115,7 +115,7 @@ new class extends Component
                     <tbody>
                         @foreach ($settings as $setting)
                             <tr wire:key="set-{{ $setting->id }}">
-                                <td class="is-name" data-label="{{ __('admin.settings.columns.name') }}">
+                                <td class="is-name is-key" data-label="{{ __('admin.settings.columns.name') }}">
                                     <span class="aiu-name">{{ __('admin.settings.keys.'.$setting->key.'.label') }}</span>
                                     {{-- The consequence, not the config path: a knob
                                     whose effect she has to guess gets left alone. --}}

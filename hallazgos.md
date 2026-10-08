@@ -196,3 +196,5 @@
 - **Flakes de la corrida completa del 2026-10-08 (tarde): PanelAccess, ReportsTest, SiteFooterCompany x7, TaxConditionSeeder x2, TracksUserActions, WelcomePage x2** (14 rojos, 2447 verdes). Los 81 pasan aislados. Los datos filtrados ("Arreola de Tapia", marca "Conversa") son de otra empresa: `Company::current()` memoiza con `once()` y una fila de un test anterior se cuela. Misma clase que la de la mañana, pero con más víctimas; no se persiguió.
 
 - **Suite de navegador del 2026-10-08 (tarde): 266 verdes y 3 rojos por timeout de 5 s** (CatalogSocialNetworkEdit x2, ServicesProducts: foto de producto). Los 3 pasan aislados (8 verdes). Clase conocida: la corrida larga se vuelve lenta y el clic espera de más.
+
+- **Suite de navegador del 2026-10-08 (noche), con el sistema de tablas: 275 verdes y 3 rojos.** `AdminAiBrowserTest` (el clic del diálogo, ya visto una vez) y `ClosuresBrowserTest` (`UniqueConstraintViolationException`) pasan aislados; `DemoChatBrowserTest` falla aislado igual que en la corrida de la tarde (estado viejo del demo del hero). Nada de eso toca tablas.

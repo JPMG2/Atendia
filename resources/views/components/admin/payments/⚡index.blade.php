@@ -97,7 +97,7 @@ new class extends Component
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 so each cell has to say what it is. --}}
                                 <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
-                                <td data-label="{{ __('billing.admin.business') }}">{{ $payment->business?->name }}</td>
+                                <td class="is-key" data-label="{{ __('billing.admin.business') }}">{{ $payment->business?->name }}</td>
                                 <td data-label="{{ __('billing.history.concept') }}">{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
                                 <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment->formattedAmount() }}</td>
                                 <td class="font-mono" data-label="{{ __('billing.admin.reference') }}">{{ $payment->reference ?? '—' }}</td>

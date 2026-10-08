@@ -211,7 +211,7 @@ new class extends Component
                     <tbody>
                         @foreach ($this->people as $person)
                             <tr wire:key="user-{{ $person->id }}">
-                                <td class="is-name" data-label="{{ __('admin.users.person') }}">
+                                <td class="is-name is-key" data-label="{{ __('admin.users.person') }}">
                                     <span class="aiu-name">{{ $person->name }}</span>
                                     <span class="aiu-note font-mono">{{ $person->email }}</span>
                                 </td>

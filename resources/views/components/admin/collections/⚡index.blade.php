@@ -135,7 +135,7 @@ new class extends Component
                             <tr wire:key="owing-{{ $row->id }}">
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 and a cell without its name is a loose value. --}}
-                                <td data-label="{{ __('collections.table.business') }}">{{ $row->business?->name }}</td>
+                                <td class="is-key" data-label="{{ __('collections.table.business') }}">{{ $row->business?->name }}</td>
                                 <td data-label="{{ __('collections.table.plan') }}">
                                     {{ __('plan.names.'.$row->plan) }}
                                     <span class="sup-age">{{ __('collections.cycle_'.$row->billing_cycle) }}</span>

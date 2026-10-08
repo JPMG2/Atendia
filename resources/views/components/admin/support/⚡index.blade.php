@@ -604,7 +604,7 @@ new class extends Component
                                         @endif
                                     </td>
 
-                                    <td class="is-name" data-label="{{ __('support.admin.columns.report') }}">
+                                    <td class="is-name is-key" data-label="{{ __('support.admin.columns.report') }}">
                                         <span class="sup-body" data-testid="sup-expand-{{ $ticket->id }}">{{ $ticket->excerpt() }}</span>
                                         <span class="sup-code">{{ $ticket->code }} · {{ __('support.kinds.'.$ticket->kind->value) }} · {{ $this->screenName($ticket->screen) }}</span>
                                     </td>

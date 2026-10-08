@@ -46,6 +46,11 @@
      `--ink-50` era el problema original (2% contra el card, invisible);
      `--ink-100` triplica ese salto y con la barra de marca alcanza y sobra. */
   --row-hover:var(--ink-100);
+  /* Band behind a table heading: a veil of the brand over the card. Opaque on
+     purpose (the catalog heading is sticky) and with its own text colour,
+     since the old muted grey has no contrast left on a tinted ground. */
+  --table-head-bg:color-mix(in srgb, var(--brand) 9%, var(--surface-card));
+  --table-head-fg:var(--brand-soft-text);
   --surface-raised:var(--ink-0); --surface-inverse:var(--ink-900); --surface-overlay:rgba(11,15,15,.45);
 
   --border-subtle:var(--ink-100); --border-default:var(--ink-200); --border-strong:var(--ink-300);
@@ -139,6 +144,7 @@
   /* En oscuro la fila apuntada SUBE (más clara que el card), no baja: bajar la
      acerca al fondo de la página y parece hundida en vez de señalada. */
   --row-hover:#212A29;
+  --table-head-bg:color-mix(in srgb, var(--brand) 13%, var(--surface-card));
   --surface-raised:#1B2322; --surface-inverse:var(--ink-50); --surface-overlay:rgba(0,0,0,.6);
 
   --border-subtle:rgba(255,255,255,.07); --border-default:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.18);
@@ -1711,6 +1717,16 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                   text-transform:uppercase; color:var(--text-subtle); border-bottom:1px solid var(--border-subtle); }
   .pay-table td { padding:10px; border-bottom:1px solid var(--border-subtle); color:var(--text-body); vertical-align:top; }
   .pay-table tr:hover td { background:var(--surface-sunken); }
+  .pay-table thead th { background:var(--table-head-bg); color:var(--table-head-fg); }
+  .pay-table thead th:first-child { border-top-left-radius:var(--radius-sm); }
+  .pay-table thead th:last-child { border-top-right-radius:var(--radius-sm); }
+  /* The row's key: what it IS, read first. One per table, marked by the view. */
+  .pay-table td.is-key { color:var(--text-strong); font-weight:600; }
+  .pay-table td.is-key .aiu-note, .pay-table td.is-key .sup-code { font-weight:400; }
+  /* A row action is the point of the row: brand-coloured, not a grey outline. */
+  .pay-table td .btn-secondary, .pay-table td .btn-ghost { color:var(--brand-soft-text); }
+  .pay-table td .btn-secondary { border-color:var(--brand-border); }
+  .pay-table td .btn-secondary:hover, .pay-table td .btn-ghost:hover { background:var(--brand-soft); }
   /* A column of figures is read down, not across: right-aligned so the digits
   line up by place value, and the heading follows its own data. */
   .pay-table th.is-num, .pay-table td.is-num { text-align:right; white-space:nowrap; }
@@ -2970,9 +2986,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      arriba y desaparece apenas scrolleás. El fondo opaco es obligatorio, si no
      las filas se ven pasar por debajo del texto de las columnas. */
   .catalog-table thead th { font-size:var(--table-head-text); font-weight:700; letter-spacing:.06em;
-                            text-transform:uppercase; color:var(--text-subtle); text-align:left;
+                            text-transform:uppercase; color:var(--table-head-fg); text-align:left;
                             height:var(--table-head-h); padding:0 var(--row-px);
-                            position:sticky; top:0; z-index:1; background:var(--surface-card);
+                            position:sticky; top:0; z-index:1; background:var(--table-head-bg);
                             box-shadow:inset 0 -1px 0 var(--border-subtle); white-space:nowrap; }
   .catalog-table thead th.is-num { text-align:right; }
   /* `height` en una celda = alto MÍNIMO: la fila que envuelve el nombre crece sola. */

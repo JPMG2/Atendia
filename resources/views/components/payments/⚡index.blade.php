@@ -261,7 +261,7 @@ new class extends Component
                                 cell carries its own heading, because a 7-column
                                 table there either scrolls sideways or gets cut. --}}
                                 <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment->created_at->inBusinessTime()->format('d/m/Y') }}</td>
-                                <td data-label="{{ __('billing.history.concept') }}">
+                                <td class="is-key" data-label="{{ __('billing.history.concept') }}">
                                     {{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}
                                 </td>
                                 <td class="font-mono" data-label="{{ __('billing.history.period') }}">

@@ -178,7 +178,11 @@ pregunta: *¿cuántos clicks hay entre abrirla y resolver lo que la trajo?*
 
 En un panel de operación la tabla es la superficie principal y el gráfico es la excepción
 (solo cuando una tendencia necesita forma). Chrome callado, densidad alta: la jerarquía
-sale del **peso tipográfico y el espaciado**, no de bordes, sombras ni color.
+sale del **peso tipográfico y el espaciado**, no de bordes ni sombras. El color se reduce a
+tres cosas, todas por token (decidido por ella el 2026-10-08, "un toque muy sutil"): el **velo
+de jade del encabezado** (`--table-head-bg` + `--table-head-fg`, opaco y con contraste ≥ 4,5),
+la **columna clave** (`.is-key`, UNA por tabla, la que dice qué ES la fila) y la **acción de
+fila** en el color de marca. `.is-name` NO es la clave: solo apila la celda en el teléfono.
 
 - Filas compactas (~8–10px de padding vertical), hover en toda la fila, cifras en `font-mono`
   para que la columna se compare de un barrido vertical.

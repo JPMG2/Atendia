@@ -332,7 +332,7 @@ new class extends Component
                         @foreach ($this->history as $past)
                             <tr wire:key="history-{{ $past->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.ai.embeddings.history.when') }}">{{ $past->created_at?->format('d/m/Y H:i') }}</td>
-                                <td class="font-mono" data-label="{{ __('admin.ai.embeddings.history.change') }}">{{ $past->from_model }} → {{ $past->model }} · {{ $past->dimensions }}</td>
+                                <td class="font-mono is-key" data-label="{{ __('admin.ai.embeddings.history.change') }}">{{ $past->from_model }} → {{ $past->model }} · {{ $past->dimensions }}</td>
                                 <td data-label="{{ __('admin.ai.embeddings.history.status') }}"><span class="status-tag {{ $past->status->tone() }}">{{ $past->status->label() }}</span></td>
                             </tr>
                         @endforeach

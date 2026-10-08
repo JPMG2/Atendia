@@ -192,7 +192,7 @@ new class extends Component
                         @foreach ($this->businesses as $business)
                             @php($state = $this->stateOf($business))
                             <tr wire:key="biz-{{ $business->id }}">
-                                <td data-label="{{ __('admin.businesses.name') }}">{{ $business->name }}</td>
+                                <td class="is-key" data-label="{{ __('admin.businesses.name') }}">{{ $business->name }}</td>
                                 <td data-label="{{ __('admin.businesses.plan') }}">
                                     {{ $business->subscription ? __('plan.names.'.$business->subscription->plan) : '—' }}
                                 </td>

@@ -91,7 +91,7 @@ new class extends Component
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 so each cell has to say what it is. --}}
                                 <td class="font-mono" data-label="{{ __('moderation.admin.date') }}">{{ $flag->created_at->format('d/m/Y H:i') }}</td>
-                                <td data-label="{{ __('moderation.admin.business') }}">
+                                <td class="is-key" data-label="{{ __('moderation.admin.business') }}">
                                     {{ $flag->business?->name }}
                                     @if ($flag->business?->isSuspended())
                                         <span class="status-tag is-danger">{{ __('moderation.admin.suspended') }}</span>

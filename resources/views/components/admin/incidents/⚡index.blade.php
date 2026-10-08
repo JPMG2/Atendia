@@ -142,7 +142,7 @@ new class extends Component
                                         <tr wire:key="row-{{ $kind->value }}-{{ $loop->index }}">
                                             {{-- data-label: stacked below 991px the header row is
                                             gone, and a cell without its name is a loose value. --}}
-                                            <td data-label="{{ __('incidents.table.what') }}">
+                                            <td class="is-key" data-label="{{ __('incidents.table.what') }}">
                                                 <span @class(['status-tag', 'is-danger' => $row->kind->tone() === 'danger', 'is-warning' => $row->kind->tone() === 'warning', 'is-neutral' => $row->kind->tone() === 'info'])>
                                                     {{ __('incidents.kinds.'.$row->kind->value.'.label') }}
                                                 </span>

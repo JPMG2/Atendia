@@ -84,7 +84,7 @@ new class extends Component
                             <tr wire:key="contact-{{ $person->id }}">
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 and a cell without its name is a loose value. --}}
-                                <td data-label="{{ __('contacts.table.phone') }}" class="font-mono">{{ $person->phone }}</td>
+                                <td data-label="{{ __('contacts.table.phone') }}" class="font-mono is-key">{{ $person->phone }}</td>
                                 <td data-label="{{ __('contacts.table.name') }}">
                                     {{ $person->name ?? __('contacts.unknown') }}
                                 </td>

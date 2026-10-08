@@ -284,7 +284,7 @@ new class extends Component
                                 <tbody>
                                     @foreach ($this->groups[$group] as $row)
                                         <tr wire:key="task-{{ $row['id'] }}">
-                                            <td class="is-name" data-label="{{ __('admin.ai.columns.task') }}">
+                                            <td class="is-name is-key" data-label="{{ __('admin.ai.columns.task') }}">
                                                 <span class="aiu-name">
                                                     {{ $row['label'] }}
                                                     @if ($row['needs'] !== AiCapability::Text)
@@ -543,7 +543,7 @@ new class extends Component
                             <tbody>
                                 @foreach ($this->models as $priced)
                                     <tr wire:key="model-{{ $priced->id }}">
-                                        <td class="is-name" data-label="{{ __('admin.ai.columns.model') }}">
+                                        <td class="is-name is-key" data-label="{{ __('admin.ai.columns.model') }}">
                                             <span class="aiu-name">{{ $priced->label }}</span>
                                             <span class="aiu-note font-mono">{{ $priced->provider }} · {{ $priced->code }}</span>
                                             @if ($priced->source !== null)
@@ -612,7 +612,7 @@ new class extends Component
                         <tbody>
                             @foreach ($this->connections as $connection)
                                 <tr wire:key="connection-{{ $connection['key'] }}">
-                                    <td class="is-name" data-label="{{ __('admin.ai.connections.title') }}">
+                                    <td class="is-name is-key" data-label="{{ __('admin.ai.connections.title') }}">
                                         <span class="aiu-name">{{ $connection['label'] }}</span>
                                         <span class="aiu-note font-mono">{{ $connection['key'] }}</span>
                                     </td>

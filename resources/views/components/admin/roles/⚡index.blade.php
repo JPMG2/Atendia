@@ -179,7 +179,7 @@ new class extends Component
                 <tbody>
                     @foreach ($this->roles as $role)
                         <tr wire:key="role-{{ $role->id }}">
-                            <td class="is-name" data-label="{{ __('admin.roles.columns.role') }}">
+                            <td class="is-name is-key" data-label="{{ __('admin.roles.columns.role') }}">
                                 <span class="aiu-name">
                                     {{ \App\Models\User::roleLabel($role->name) }}
                                     @if (App\Classes\Main\Access::isProtected($role->name))
