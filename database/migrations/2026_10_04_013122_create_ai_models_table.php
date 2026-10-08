@@ -21,7 +21,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('provider', 20)->comment("El laboratorio: el 'driver' de config('ai.providers'), ej. openai. Varias conexiones (claves) pueden compartirlo");
-            $table->string('capability', 20)->default('text')->comment('Qué sabe hacer: text, vision o transcription. Decide la unidad del precio y a qué tareas se puede asignar');
+            $table->string('capability', 20)->default('text')->comment('Qué sabe hacer: text, vision, transcription o embedding. Decide la unidad del precio y a qué tareas se puede asignar');
             $table->string('code', 80)->comment('El identificador del proveedor, ej. gpt-6-astra');
             $table->string('label', 60)->comment('Nombre legible para el panel');
 
@@ -31,6 +31,7 @@ return new class extends Migration
             $table->decimal('cached_per_million', 10, 4)->default(0)->comment('USD por millón de tokens de entrada cacheados');
             $table->decimal('completion_per_million', 10, 4)->default(0)->comment('USD por millón de tokens de salida');
             $table->decimal('per_minute', 10, 4)->nullable()->comment('USD por minuto de audio; solo los modelos de voz a texto');
+            $table->unsignedSmallInteger('dimensions')->nullable()->comment('Largo del vector que devuelve; solo los modelos de embeddings. pgvector indexa hasta 2000');
 
             $table->date('effective_from')->comment('Desde cuándo rige este precio: lo anterior conserva el suyo');
             $table->string('source')->nullable()->comment('De dónde salió el precio, para poder auditarlo');

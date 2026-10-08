@@ -47,6 +47,27 @@ class AiModelSeeder extends Seeder
             ],
         );
 
+        // The models the knowledge search could move to. The vector length is part
+        // of what each one is: 3-large natively returns 3072, past what pgvector
+        // can index, so it is listed at the 1536 the OpenAI parameter cuts it to.
+        foreach ([
+            ['text-embedding-3-small', 'Embedding 3 small', 1536, 0.02],
+            ['text-embedding-3-large', 'Embedding 3 large', 1536, 0.13],
+        ] as [$code, $label, $dimensions, $price]) {
+            AiModel::updateOrCreate(
+                ['code' => $code, 'effective_from' => '2026-10-08'],
+                [
+                    'provider' => 'openai',
+                    'capability' => AiCapability::Embedding,
+                    'label' => $label,
+                    'prompt_per_million' => $price,
+                    'dimensions' => $dimensions,
+                    'source' => 'Precio estándar publicado, verificado el 2026-10-08',
+                    'is_active' => true,
+                ],
+            );
+        }
+
         // Unassigned rows run on the agent's own pair; `is_mechanical` only marks
         // cheap-model candidates, chosen by MEASURING. The assistant reads the
         // photos customers send, so it needs a model that can see.

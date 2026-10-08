@@ -40,6 +40,8 @@ class AiModelForm extends BaseForm
 
     public string $per_minute = '';
 
+    public string $dimensions = '';
+
     public string $effective_from = '';
 
     public string $source = '';
@@ -65,6 +67,7 @@ class AiModelForm extends BaseForm
         $this->cached_per_million = (string) $model->cached_per_million;
         $this->completion_per_million = (string) $model->completion_per_million;
         $this->per_minute = (string) $model->per_minute;
+        $this->dimensions = (string) $model->dimensions;
         $this->effective_from = $model->effective_from->toDateString();
         $this->source = (string) $model->source;
         $this->is_active = $model->is_active;
@@ -104,6 +107,7 @@ class AiModelForm extends BaseForm
             'cached_per_million' => $billing->billsOutput() ? $this->cached_per_million : '0',
             'completion_per_million' => $billing->billsOutput() ? $this->completion_per_million : '0',
             'per_minute' => $billing->billsPerMinute() ? $this->per_minute : null,
+            'dimensions' => $billing === AiCapability::Embedding ? (int) $this->dimensions : null,
             'effective_from' => $this->effective_from,
             'source' => trim($this->source) === '' ? null : trim($this->source),
             'is_active' => $this->is_active,
@@ -136,6 +140,9 @@ class AiModelForm extends BaseForm
             'completion_per_million' => AttributeValidator::numericDecimal($billing->billsOutput()),
             'per_minute' => AttributeValidator::numericDecimal($billing->billsPerMinute()),
 
+            // pgvector cannot index a vector past 2000 values, and the search needs the index.
+            'dimensions' => $billing === AiCapability::Embedding ? ['required', 'integer', 'between:64,2000'] : ['nullable'],
+
             // ISO, because that is what the datepicker's hidden field carries.
             'effective_from' => ['required', 'date_format:Y-m-d'],
 
@@ -156,6 +163,7 @@ class AiModelForm extends BaseForm
             'cached_per_million' => __('admin.ai.fields.cached'),
             'completion_per_million' => __('admin.ai.fields.completion'),
             'per_minute' => __('admin.ai.fields.per_minute'),
+            'dimensions' => __('admin.ai.fields.dimensions'),
             'effective_from' => __('admin.ai.fields.effective_from'),
             'source' => __('admin.ai.fields.source'),
             'is_active' => __('admin.ai.fields.status'),

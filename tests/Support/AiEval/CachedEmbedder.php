@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\AiEval;
 
+use App\Classes\Main\EmbeddingSpace;
 use App\Services\Knowledge\KnowledgeEmbedder;
 
 /**
@@ -16,11 +17,11 @@ class CachedEmbedder extends KnowledgeEmbedder
     /** @var array<string, list<float>> */
     private static array $vectors = [];
 
-    public function embed(array $texts): array
+    public function embed(array $texts, ?EmbeddingSpace $space = null): array
     {
         $missing = array_values(array_unique(array_filter($texts, fn (string $text): bool => ! isset(self::$vectors[$text]))));
 
-        foreach (array_map(null, $missing, parent::embed($missing)) as [$text, $vector]) {
+        foreach (array_map(null, $missing, parent::embed($missing, $space)) as [$text, $vector]) {
             if ($text !== null) {
                 self::$vectors[$text] = $vector;
             }

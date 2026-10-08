@@ -169,6 +169,37 @@ return [
         ],
     ],
 
+    'support_reply' => [
+        'search_placeholder' => 'Buscar por nombre o texto',
+        'search_label' => 'Buscar respuesta',
+        'singular' => 'respuesta',
+        'plural' => 'respuestas',
+        'create' => 'Crear respuesta',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva respuesta',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay respuestas que coincidan con la búsqueda.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'body' => 'Texto',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Reconectar el WhatsApp',
+            'body' => 'Texto',
+            'body_hint' => 'Es lo que se pega en la respuesta; después se puede ajustar antes de enviar.',
+            'status' => 'Estado',
+        ],
+    ],
+
     'seasonal_window' => [
         'search_placeholder' => 'Buscar por nombre',
         'search_label' => 'Buscar temporada',

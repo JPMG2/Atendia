@@ -2206,7 +2206,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
 
   .sup-code { display:block; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-muted); margin-top:2px; }
   /* The queues: a row of tabs that is part of the page, with air before the work below it. */
-  .sup-queues { margin-bottom:12px; }
+  .sup-queue-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .sup-queues { margin-bottom:0; }
   .tab-badge.is-late { background:var(--danger-soft); color:var(--danger); }
   .sup-who { display:inline-flex; align-items:center; gap:8px; }
   .sup-table tbody tr { cursor:pointer; }
@@ -2380,6 +2381,10 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     display:grid; place-items:center; color:var(--warning); }
   .aim-steps { margin-top:10px; padding:14px 16px; border-radius:var(--radius-md); background:var(--surface-sunken); }
   .aim-steps ol { margin:6px 0 0; padding-left:20px; }
+  /* A change in progress: its status, its bars and its next step stack with air between them. */
+  .aim-lock .aiu-note { max-width:none; }
+  .aim-steps.is-open { display:flex; flex-direction:column; gap:12px; }
+  .aim-lock + .pay-table-wrap, .aim-steps + .pay-table-wrap, .aim-form + .pay-table-wrap { margin-top:16px; }
   .aim-group + .aim-group { margin-top:12px; }
   /* The group-wide choice is a toolbar, not a form: its field keeps a readable
   width and the button sits on the field's baseline instead of stretching. */

@@ -14,6 +14,7 @@ enum AiCapability: string
     case Text = 'text';
     case Vision = 'vision';
     case Transcription = 'transcription';
+    case Embedding = 'embedding';
 
     public function label(): string
     {
@@ -37,10 +38,13 @@ enum AiCapability: string
         return $this === self::Transcription;
     }
 
-    /** Text models split the input in cached and not, and bill the output apart. */
+    /**
+     * Text models split the input in cached and not, and bill the output apart.
+     * An embedding model reads and returns a vector: it bills the input only.
+     */
     public function billsOutput(): bool
     {
-        return ! $this->billsPerMinute();
+        return ! $this->billsPerMinute() && $this !== self::Embedding;
     }
 
     /**

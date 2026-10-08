@@ -64,7 +64,11 @@ final class AiPrices
             }
 
             if ($row->kind === AiUsage::EMBEDDINGS) {
-                return $row->input_tokens * (float) $this->rates['embedding_per_million'];
+                // The catalog price of the model that made them, so a change of model
+                // is billed at its own rate; the configured one covers a model not listed.
+                $price = $this->priceOf($row->model, $month);
+
+                return $row->input_tokens * (float) ($price?->prompt_per_million ?? $this->rates['embedding_per_million']);
             }
 
             $price = $this->priceOf($row->model, $month);

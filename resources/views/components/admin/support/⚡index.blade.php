@@ -11,6 +11,7 @@ use App\Livewire\Forms\Admin\SupportNoteForm;
 use App\Livewire\Forms\Admin\SupportReplyForm;
 use App\Models\HelpArticle;
 use App\Models\Menu;
+use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Traits\HasNotifications;
@@ -70,6 +71,9 @@ new class extends Component
 
     /** An help article picked to paste into the answer. */
     public string $article = '';
+
+    /** A saved reply picked to paste into the answer. */
+    public string $saved = '';
 
     public function mount(): void
     {
@@ -138,6 +142,19 @@ new class extends Component
     {
         $this->queue = in_array($queue, ['answer', 'waiting', 'blocked', 'resolved', 'help'], true) ? $queue : 'answer';
         unset($this->tickets);
+    }
+
+    /** One click for what is hers: the shortcut toggles the assignee filter on her own id. */
+    public function toggleMine(): void
+    {
+        $this->who = $this->isMine ? '' : (string) auth()->id();
+        unset($this->tickets, $this->isFiltered, $this->isMine);
+    }
+
+    #[Computed]
+    public function isMine(): bool
+    {
+        return $this->who === (string) auth()->id();
     }
 
     public function clearFilters(): void
@@ -218,6 +235,18 @@ new class extends Component
             'url' => route('help', ['buscar' => $title]),
         ]));
         $this->article = '';
+    }
+
+    /** Pastes a saved reply into the answer: written once in the admin, adjusted here before sending. */
+    public function updatedSaved(string $id): void
+    {
+        $body = ctype_digit($id) ? SupportReply::bodyOf((int) $id) : null;
+
+        if ($body !== null) {
+            $this->reply->body = trim($this->reply->body."\n".$body);
+        }
+
+        $this->saved = '';
     }
 
     public function sendReply(): void
@@ -369,6 +398,20 @@ new class extends Component
         return HelpArticle::shelf()->pluck('title', 'slug')->all();
     }
 
+    /** The saved replies she can paste into an answer. @return array<int, string> */
+    #[Computed]
+    public function replies(): array
+    {
+        return SupportReply::shelf();
+    }
+
+    /** How long a report typically takes to settle, by kind. @return array<string, string> */
+    #[Computed]
+    public function medians(): array
+    {
+        return SupportTicket::medianResolution();
+    }
+
     /** @return array<string, string> */
     #[Computed]
     public function kinds(): array
@@ -418,10 +461,22 @@ new class extends Component
             @endif
             {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i')]) }}
         </span>
+        {{-- A median with nothing behind it is not a zero: it says why it is missing. --}}
+        <span class="sup-age">
+            @if ($this->medians === [])
+                {{ __('support.admin.median_none') }}
+            @else
+                {{ __('support.admin.median', ['days' => 90]) }}
+                @foreach ($this->medians as $kindValue => $label)
+                    {{ __('support.kinds.'.$kindValue) }} {{ $label }}@unless ($loop->last) · @endunless
+                @endforeach
+            @endif
+        </span>
     </x-ui.page-head>
 
     {{-- The queues are server state, so they are not x-ui.tabs (which keeps its
     own in the browser): the one you are on is in the URL, and a link lands on it. --}}
+    <div class="sup-queue-bar">
     <div role="tablist" class="tabs sup-queues">
         @foreach (['answer', 'waiting', 'blocked', 'resolved'] as $name)
             <button type="button" role="tab" wire:click="selectQueue('{{ $name }}')" wire:key="queue-{{ $name }}"
@@ -437,6 +492,12 @@ new class extends Component
                 <span class="tab-badge">{{ $this->helpAttention }}</span>
             @endif
         </button>
+    </div>
+
+    {{-- Hers, one click away, at the end of the bar: a shortcut belongs with the queues, not among the filters. --}}
+    @if ($queue !== 'help')
+        <x-ui.button :variant="$this->isMine ? 'primary' : 'secondary'" size="sm" icon="user" wire:click="toggleMine" aria-pressed="{{ $this->isMine ? 'true' : 'false' }}">{{ __('support.admin.mine') }}</x-ui.button>
+    @endif
     </div>
 
     @if ($queue !== 'help')
@@ -907,6 +968,19 @@ new class extends Component
                                 :options="$this->articles"
                                 wire:model.live="article"
                             />
+
+                            @if ($this->replies !== [])
+                                <x-inputsform.combobox
+                                    span="text"
+                                    size="s"
+                                    name="saved"
+                                    :label="__('support.admin.saved_reply')"
+                                    :value="$saved"
+                                    :placeholder="__('support.admin.saved_reply_placeholder')"
+                                    :options="$this->replies"
+                                    wire:model.live="saved"
+                                />
+                            @endif
                         </x-catalog.form-row>
                         <span class="support-actions">
                             <x-ui.button size="sm" variant="secondary" wire:click="startBlock">{{ __('support.admin.block.open') }}</x-ui.button>

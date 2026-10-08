@@ -821,13 +821,23 @@ lo único que falta, y casi todo es una decisión o un dato de ella, no construc
 - [ ] **Modelo de voz.** El que corre (`gpt-4o-transcribe-diarize`) no tiene precio verificado: su
       costo se estima con 0,003 por minuto. Asignar uno del catálogo (`gpt-4o-mini-transcribe`,
       0,003) vuelve real la cifra, pero la calidad del audio no tiene batería.
-- [ ] **Migración de embeddings** (re-indexar en paralelo y cambiar de golpe). No urge: hoy el
-      modelo se fija en `config/rag.php` y la pantalla lo muestra bloqueado y explicado.
+- [x] ~~**Migración de embeddings**~~ (2026-10-08): en Modelos de IA → Búsqueda del conocimiento. Convierte
+      las 7 tablas con vectores en una columna paralela (`embedding_next`), activa de golpe renombrando
+      el par (ninguna consulta cambia), conserva el anterior (`embedding_prev`) para volver atrás hasta
+      que se descarta, y cancela antes de activar. Los modelos salen del catálogo (capacidad nueva
+      "Búsqueda por significado", con precio y dimensiones; seed: 3-small 0,02 y 3-large 0,13 USD por
+      millón, verificados). Probado con embeddings simulados (ciclo completo, índices, vuelta atrás) y
+      en navegador a 1280/900/390 claro y oscuro.
+- [ ] **Probar un cambio real de embeddings** contra OpenAI cuando ella quiera: no se hizo porque gasta
+      tokens (hoy son 36 fragmentos y 15 intenciones: centavos). Con 3-large hay que elegir ≤2000
+      dimensiones (pgvector no indexa más); el catálogo lo trae a 1536.
 - [ ] **Veredicto de ella sobre Modelos de IA** (E14), rehecha hoy con su maqueta aprobada.
 - [ ] **Veredicto de ella sobre Soporte** (E2), reconstruida hoy y ampliada (v2): conversación con
       resultado de entrega real (WhatsApp, si no correo, si no "sin forma de avisarle"), notas
       internas, responsable y prioridad, ficha del cliente, traspaso "No se pudo resolver" con cola
       Bloqueados, reloj por tipo y prioridad (las ideas no corren reloj). La clave `estado` de la URL
       pasó a `cola`; el reporte abierto va en `reporte`.
-- [ ] **Ideas de Soporte ofrecidas, sin decidir:** atajo "Mis reportes"; respuestas guardadas
-      (maestro editable, como Catálogos); tiempo mediano de resolución por tipo en el encabezado.
+- [x] ~~**Las 3 ideas de Soporte**~~ (2026-10-08): atajo "Mis reportes" en la barra de colas; respuestas
+      guardadas como maestro en Catálogos (grupo Soporte, 5 de arranque que ella puede reescribir) y
+      selector en el composer; mediana de resolución por tipo en el encabezado (90 días, "—" con motivo
+      si no hay resueltos).

@@ -344,32 +344,9 @@ new class extends Component
                 </div>
             @endif
 
-            {{-- Embeddings are read, not assigned: every vector in the base was
-            made by this model, so it is a migration and not a select. --}}
-            <x-ui.card class="p-5" x-data="{ how: false }">
-                <p class="sup-meta">{{ __('admin.ai.embeddings.title') }} · {{ __('admin.ai.embeddings.lab') }}</p>
-
-                <div class="aim-lock">
-                    <span class="aim-lock-icon"><x-icon name="lock" :size="18" /></span>
-                    <div>
-                        <span class="aiu-name font-mono">{{ config('rag.embedding.model') }} · {{ config('ai.default_for_embeddings') }}</span>
-                        <span class="aiu-note font-mono">{{ __('admin.ai.embeddings.dimensions', ['count' => config('rag.embedding.dimensions')]) }}</span>
-                        <span class="aiu-note">{{ __('admin.ai.embeddings.locked') }}</span>
-                    </div>
-                    <x-ui.button size="sm" variant="secondary" x-on:click="how = ! how">
-                        {{ __('admin.ai.embeddings.how') }}
-                    </x-ui.button>
-                </div>
-
-                <div class="aim-steps" x-show="how" x-cloak>
-                    <strong>{{ __('admin.ai.embeddings.steps_title') }}</strong>
-                    <ol>
-                        <li>{{ __('admin.ai.embeddings.step_1') }}</li>
-                        <li>{{ __('admin.ai.embeddings.step_2') }}</li>
-                        <li>{{ __('admin.ai.embeddings.step_3') }}</li>
-                    </ol>
-                </div>
-            </x-ui.card>
+            {{-- Embeddings are not assigned like the rest: every vector in the
+            base was made by this model, so changing it is a process. --}}
+            <livewire:ai.embedding-space />
         </div>
 
         {{-- Catalog: what the platform may call, and what it cost from a day on. --}}
@@ -462,6 +439,30 @@ new class extends Component
                                     min="0"
                                     wire:model="model.per_minute"
                                 />
+                            @elseif ($model->capability === AiCapability::Embedding->value)
+                                {{-- An embedding model reads text and returns a vector: it bills the input only, and its length is part of what it is. --}}
+                                <x-inputsform.input
+                                    span="short"
+                                    :label="__('admin.ai.fields.prompt')"
+                                    required
+                                    name="prompt_per_million"
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    wire:model="model.prompt_per_million"
+                                />
+
+                                <x-inputsform.input
+                                    span="short"
+                                    :label="__('admin.ai.fields.dimensions')"
+                                    required
+                                    name="dimensions"
+                                    type="number"
+                                    min="64"
+                                    max="2000"
+                                    :hint="__('admin.ai.fields.dimensions_hint')"
+                                    wire:model="model.dimensions"
+                                />
                             @else
                                 <x-inputsform.input
                                     span="short"
@@ -549,7 +550,7 @@ new class extends Component
                                                 <span class="aiu-note">{{ $priced->source }}</span>
                                             @endif
                                             {{-- The battery measures conversation, so a voice model has no score to show. --}}
-                                            @if (! $priced->capability->billsPerMinute() && in_array($priced->id, $this->newestRows, true))
+                                            @if ($priced->capability->serves(AiCapability::Text) && in_array($priced->id, $this->newestRows, true))
                                                 @php($scores = collect($this->evals)->map(fn (array $suite): ?object => $suite[$priced->code] ?? null)->filter())
                                                 @forelse ($scores as $suite => $score)
                                                     <span class="status-tag {{ $score->passed === $score->total ? 'is-brand' : 'is-warning' }}">
@@ -565,6 +566,9 @@ new class extends Component
                                         </td>
                                         @if ($priced->capability->billsPerMinute())
                                             <td class="is-num font-mono" colspan="3" data-label="{{ __('admin.ai.columns.per_minute') }}">{{ $priced->per_minute }} {{ __('admin.ai.fields.per_minute_unit') }}</td>
+                                        @elseif (! $priced->capability->billsOutput())
+                                            <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.prompt') }}">{{ $priced->prompt_per_million }}</td>
+                                            <td class="font-mono" colspan="2" data-label="{{ __('admin.ai.fields.dimensions') }}">{{ __('admin.ai.embeddings.dimensions', ['count' => $priced->dimensions]) }}</td>
                                         @else
                                             <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.prompt') }}">{{ $priced->prompt_per_million }}</td>
                                             <td class="is-num font-mono" data-label="{{ __('admin.ai.columns.cached') }}">{{ $priced->cached_per_million }}</td>

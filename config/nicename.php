@@ -21,6 +21,7 @@ return [
     'abbreviation' => 'abreviatura',
     'color' => 'color',
     'description' => 'descripción',
+    'body' => 'texto',
     'sort_order' => 'orden',
     'business_sector_id' => 'rubro',
     'data_type' => 'tipo de dato',

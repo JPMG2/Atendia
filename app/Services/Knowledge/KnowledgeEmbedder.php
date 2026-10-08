@@ -4,28 +4,31 @@ declare(strict_types=1);
 
 namespace App\Services\Knowledge;
 
+use App\Classes\Main\EmbeddingSpace;
 use Laravel\Ai\Embeddings;
-use Laravel\Ai\Enums\Lab;
 
 class KnowledgeEmbedder
 {
     /**
-     * Embeds text with the SAME model and dimensions as the `vector` column.
-     * Keeping it in one place is what guarantees indexing and querying share a
-     * vector space — otherwise similarity means nothing.
+     * Embeds text in the space in force: the SAME model and length as the
+     * `vector` column. Keeping it in one place is what guarantees indexing and
+     * querying share a vector space — otherwise similarity means nothing. A
+     * change of model passes its own space to make the vectors that will rule.
      *
      * @param  list<string>  $texts
      * @return list<list<float>>
      */
-    public function embed(array $texts): array
+    public function embed(array $texts, ?EmbeddingSpace $space = null): array
     {
         if ($texts === []) {
             return [];
         }
 
+        $space ??= EmbeddingSpace::active();
+
         return Embeddings::for(array_values($texts))
-            ->dimensions((int) config('rag.embedding.dimensions'))
-            ->generate(Lab::OpenAI, (string) config('rag.embedding.model'))
+            ->dimensions($space->dimensions)
+            ->generate($space->lab, $space->model)
             ->embeddings;
     }
 

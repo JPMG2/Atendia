@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Models\Business;
+use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
+use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -77,6 +79,9 @@ beforeEach(function (): void {
     $admin = User::factory()->create(['name' => 'Administración de la plataforma']);
     $admin->assignRole('admin');
 
+    SupportReply::factory()->create(['name' => 'Reconectar el WhatsApp', 'body' => 'Entra a Conexión de WhatsApp, toca Reconectar y escanea el código.']);
+    SupportReply::factory()->create(['name' => 'Ya lo arreglamos', 'body' => 'Ya lo arreglamos, prueba otra vez.']);
+
     SupportTicketMessage::factory()->note()->create([
         'support_ticket_id' => $this->late->id,
         'user_id' => $admin->id,
@@ -112,6 +117,9 @@ test('the support queue holds at every width in both themes', function (string $
         ->assertSee('Clínica Vida')
         ->assertSee('2d 3h')
         ->assertSee('Más de 24 h')
+        // The three conveniences: her own reports, and how long reports typically take.
+        ->assertSee('Mis reportes')
+        ->assertSee('Mediana en resolver, últimos 90 días')
         ->screenshot(filename: $shot('queue'));
     $assertFits();
 
@@ -120,6 +128,7 @@ test('the support queue holds at every width in both themes', function (string $
         ->assertSee('Conversación')
         ->assertSee('Notas internas')
         ->assertSee('Tu respuesta')
+        ->assertSee('Respuesta guardada')
         ->click('Lo que capturamos')
         ->assertSee('Safari 17 · iOS')
         ->assertSee('390×844 · teléfono')
@@ -175,6 +184,36 @@ test('an empty queue keeps its distance from the filters above it', function ():
     );
 
     expect($gap)->toBeGreaterThanOrEqual(16.0);
+});
+
+test('"my reports" narrows the queue to what is hers, with the button showing it is on', function (): void {
+    $admin = User::query()->where('name', 'Administración de la plataforma')->sole();
+    $this->late->update(['assigned_to' => $admin->id]);
+
+    $page = visit(route('admin.support'))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->click('Mis reportes')
+        ->assertSee('No me carga el catálogo de servicios')
+        ->assertAttribute('button[aria-pressed="true"]', 'aria-pressed', 'true')
+        ->screenshot(filename: 'admin-support-mine');
+});
+
+test('the saved replies are a master in the catalogs hub, and the composer pastes them', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+
+    $hub = visit(route('admin.catalogs'))->resize(1280, 900);
+
+    $hub->assertNoJavaScriptErrors()
+        ->click('Respuestas guardadas')
+        ->assertSee('Reconectar el WhatsApp')
+        ->assertSee('Crear respuesta')
+        ->screenshot(filename: 'admin-support-replies-master');
+
+    $page = visit(route('admin.support', ['reporte' => $this->late->id]))->resize(1280, 900);
+
+    $page->assertSee('Respuesta guardada')
+        ->screenshot(filename: 'admin-support-replies-composer');
 });
 
 test('the blocked queue says what is missing without opening anything', function (): void {

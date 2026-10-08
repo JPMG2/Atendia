@@ -192,3 +192,7 @@
 - **Soporte v2: el vacío pegado a los filtros era del componente, no de la pantalla** (2026-10-08, MEDIDO): `x-ui.empty-state` no tenía separación propia, así que en cualquier toolbar+resultado quedaba pegado. Ahora `.form-row + .empty-state` da 20px y `framed` lo enmarca; un browser test mide la distancia (>= 16px). Otras pantallas con un empty-state bajo una form-row cambian solas: revisar a ojo la próxima vez que se abran.
 
 - **DemoChatBrowserTest falla en la suite de navegador del 2026-10-08, y aislado** (el chat de la landing muestra mensajes repetidos de corridas anteriores, así que el contador "Te quedan 2" no sale): parece estado persistido del demo entre corridas (hero.js). Mi diff no toca landing. No se investigó; ver si el historial del demo vive en localStorage del perfil de Chromium.
+
+- **Flakes de la corrida completa del 2026-10-08 (tarde): PanelAccess, ReportsTest, SiteFooterCompany x7, TaxConditionSeeder x2, TracksUserActions, WelcomePage x2** (14 rojos, 2447 verdes). Los 81 pasan aislados. Los datos filtrados ("Arreola de Tapia", marca "Conversa") son de otra empresa: `Company::current()` memoiza con `once()` y una fila de un test anterior se cuela. Misma clase que la de la mañana, pero con más víctimas; no se persiguió.
+
+- **Suite de navegador del 2026-10-08 (tarde): 266 verdes y 3 rojos por timeout de 5 s** (CatalogSocialNetworkEdit x2, ServicesProducts: foto de producto). Los 3 pasan aislados (8 verdes). Clase conocida: la corrida larga se vuelve lenta y el clic espera de más.

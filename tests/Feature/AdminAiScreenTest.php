@@ -279,12 +279,13 @@ test('re-measuring a model replaces its score instead of stacking another', func
         ->and(AiEvalResults::measured()['modelo']->passed)->toBe(68);
 });
 
-test('the embeddings row is shown locked, with the model it really uses', function (): void {
+test('the embeddings card names the model in force and offers the change as a process, not a select', function (): void {
     aiAdmin();
 
     Livewire::test('admin.ai.index')
         ->assertSee((string) config('rag.embedding.model'))
-        ->assertSee('no se cambia suelto');
+        ->assertSee('es un proceso con pasos, no una asignación')
+        ->assertSee('Cambiar el modelo…');
 });
 
 test('the connections tab says which keys exist without showing them', function (): void {

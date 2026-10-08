@@ -9,11 +9,10 @@ return [
     | Embeddings
     |--------------------------------------------------------------------------
     |
-    | Modelo y dimensiones para embeddear el conocimiento. La dimensión queda
-    | FIJA en la columna `vector(dimensions)` de knowledge_chunks: cambiarla
-    | obliga a re-embeddear todo. Se centraliza acá para que el indexado y la
-    | consulta usen SIEMPRE el mismo modelo (si no, la similitud es basura).
-    | El proveedor de embeddings es OpenAI (config/ai.php default_for_embeddings).
+    | Baseline model and length of the knowledge vectors: it is what rules until a
+    | change of model is switched on from Admin > AI models, and what a fresh
+    | database is built with. Once switched, the model in force lives in the
+    | `embedding_migrations` table (App\Classes\Main\EmbeddingSpace), not here.
     |
     */
 

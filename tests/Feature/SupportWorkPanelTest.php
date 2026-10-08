@@ -13,6 +13,7 @@ use App\Enums\SupportTicketStatus;
 use App\Mail\SupportTicketAnswered;
 use App\Models\Business;
 use App\Models\Subscription;
+use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
@@ -335,6 +336,80 @@ test('a resolved report can be reopened, and says how long it took', function ()
 
     expect($ticket->refresh()->status)->toBe(SupportTicketStatus::Open)
         ->and($ticket->resolved_at)->toBeNull();
+});
+
+test('"my reports" narrows the queue to what is hers and toggles back off', function (): void {
+    $mine = workTicket(['assigned_to' => $this->admin->id, 'body' => 'Reporte que ya tomé']);
+    $other = User::factory()->create();
+    $other->assignRole('admin');
+    workTicket(['assigned_to' => $other->id, 'body' => 'Reporte de otra persona']);
+    workTicket(['body' => 'Reporte que nadie tiene']);
+
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->call('toggleMine')
+        ->assertSet('who', (string) $this->admin->id)
+        ->assertSee('Reporte que ya tomé')
+        ->assertDontSee('Reporte de otra persona')
+        ->assertDontSee('Reporte que nadie tiene')
+        ->call('toggleMine')
+        ->assertSet('who', '')
+        ->assertSee('Reporte que nadie tiene');
+
+    expect($mine->refresh()->assigned_to)->toBe($this->admin->id);
+});
+
+test('a saved reply is pasted into the answer, appended to what she already wrote', function (): void {
+    $reply = SupportReply::factory()->create(['name' => 'Ya lo arreglamos', 'body' => 'Ya lo arreglamos, prueba otra vez.']);
+    $off = SupportReply::factory()->create(['name' => 'Apagada', 'body' => 'No debería pegarse nunca.', 'is_active' => false]);
+    $ticket = workTicket();
+
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->call('openTicket', $ticket->id)
+        ->set('reply.body', 'Hola María,')
+        ->set('saved', (string) $reply->id)
+        ->assertSet('reply.body', "Hola María,\nYa lo arreglamos, prueba otra vez.")
+        // The selector goes back to empty so the same one can be picked again.
+        ->assertSet('saved', '')
+        ->set('reply.body', '')
+        ->set('saved', (string) $off->id)
+        ->assertSet('reply.body', '');
+});
+
+test('the composer offers no saved reply selector while the shelf is empty', function (): void {
+    $ticket = workTicket();
+
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->call('openTicket', $ticket->id)
+        ->assertDontSee('Respuesta guardada');
+
+    SupportReply::factory()->create();
+
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->call('openTicket', $ticket->id)
+        ->assertSee('Respuesta guardada');
+});
+
+test('the median resolution is by kind, ignores the old and the unsettled, and says so when empty', function (): void {
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->assertSee('todavía no hay reportes resueltos para calcularla');
+
+    // Problems: 1h, 3h and 5h settle to a median of 3h, which an average would not give with one outlier.
+    foreach ([1, 3, 5] as $hours) {
+        workTicket(['kind' => SupportTicketKind::Problem, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(2), 'resolved_at' => now()->subDays(2)->addHours($hours)]);
+    }
+    // An even count averages the two in the middle: 1d and 3d is 2d.
+    foreach ([1, 3] as $days) {
+        workTicket(['kind' => SupportTicketKind::Question, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(10), 'resolved_at' => now()->subDays(10)->addDays($days)]);
+    }
+    // Neither of these counts: one settled long ago, one not settled at all.
+    workTicket(['kind' => SupportTicketKind::Idea, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(200), 'resolved_at' => now()->subDays(199)]);
+    workTicket(['kind' => SupportTicketKind::Idea]);
+
+    expect(SupportTicket::medianResolution())->toBe(['problem' => '3h', 'question' => '2d']);
+
+    Livewire::actingAs($this->admin)->test('admin.support.index')
+        ->assertSee('Mediana en resolver, últimos 90 días')
+        ->assertDontSee('todavía no hay reportes resueltos');
 });
 
 test('a client never opens the support panel', function (): void {

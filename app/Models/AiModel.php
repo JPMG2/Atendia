@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /** A model the platform may use, and what it cost from a given day on. */
-#[Fillable(['provider', 'capability', 'code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'per_minute', 'effective_from', 'source', 'is_active'])]
+#[Fillable(['provider', 'capability', 'code', 'label', 'prompt_per_million', 'cached_per_million', 'completion_per_million', 'per_minute', 'dimensions', 'effective_from', 'source', 'is_active'])]
 class AiModel extends Model
 {
     /**
@@ -134,6 +134,29 @@ class AiModel extends Model
         }
 
         return $options;
+    }
+
+    /**
+     * The embedding models the platform could move to, newest price of each.
+     * The value carries the vector length because the same model at two lengths
+     * is two different spaces.
+     *
+     * @return array<string, string> "code|dimensions" => label
+     */
+    public static function embeddingChoices(): array
+    {
+        return self::query()
+            ->where('is_active', true)
+            ->where('capability', AiCapability::Embedding)
+            ->whereNotNull('dimensions')
+            ->orderByDesc('effective_from')
+            ->get()
+            ->unique(fn (self $model): string => $model->code.'|'.$model->dimensions)
+            ->sortBy('label')
+            ->mapWithKeys(fn (self $model): array => [
+                $model->code.'|'.$model->dimensions => __('admin.ai.embeddings.choice', ['label' => $model->label, 'count' => $model->dimensions]),
+            ])
+            ->all();
     }
 
     /** One price row to edit, by id. */

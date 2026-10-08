@@ -12,6 +12,7 @@ use App\Enums\SupportTicketStatus;
 use App\Traits\BelongsToBusiness;
 use App\Traits\SearchesText;
 use Carbon\CarbonInterface;
+use Carbon\CarbonInterval;
 use Database\Factories\SupportTicketFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -283,6 +284,33 @@ class SupportTicket extends Model
         return $this->resolved_at === null
             ? null
             : $this->created_at->diffForHumans($this->resolved_at, ['syntax' => CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2, 'short' => true]);
+    }
+
+    /**
+     * The typical time to settle a report, by kind: the figure that says whether
+     * the overdue clock is set where it should be. A median, not an average, so
+     * one report that sat for a month does not hide how the rest went.
+     *
+     * @return array<string, string> Label by kind value; a kind with nothing settled is absent, never "0".
+     */
+    public static function medianResolution(int $days = 90): array
+    {
+        return static::query()
+            ->whereNotNull('resolved_at')
+            ->where('resolved_at', '>=', now()->subDays($days))
+            ->get(['kind', 'created_at', 'resolved_at'])
+            ->groupBy(fn (self $ticket): string => $ticket->kind->value)
+            ->map(function (SupportCollection $tickets): string {
+                $seconds = $tickets
+                    ->map(fn (self $ticket): int => (int) $ticket->created_at->diffInSeconds($ticket->resolved_at, true))
+                    ->sort()
+                    ->values();
+                $middle = intdiv($seconds->count(), 2);
+                $median = $seconds->count() % 2 === 1 ? $seconds[$middle] : intdiv($seconds[$middle - 1] + $seconds[$middle], 2);
+
+                return CarbonInterval::seconds($median)->cascade()->forHumans(['parts' => 2, 'short' => true]);
+            })
+            ->all();
     }
 
     /**
