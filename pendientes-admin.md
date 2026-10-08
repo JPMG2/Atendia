@@ -472,7 +472,19 @@ Regla en `arquitectura-paneles.md`.
       otra tarea y hay que decidirla aparte.
 
 ### E2. Tickets de soporte en orden de llegada
-**RECONSTRUIDO el 2026-10-08.** La cola pasó a ser la pantalla: tabla con la **espera** de cada reporte
+**AMPLIADO el 2026-10-08 (v2, commit `ac780c3`).** Pantalla de trabajo: cada reporte abre en un panel
+lateral con conversación, notas internas (nunca salen al negocio) y ficha del cliente; responsable y
+prioridad; cola **Bloqueados** con "qué falta" y "quién sigue"; reloj por tipo y prioridad (ideas sin
+reloj). Una respuesta dice cómo salió (WhatsApp, si no correo, si no "sin forma de avisarle") y solo
+mueve el reporte si llegó. Las colas son: por responder, con el negocio, bloqueados, resueltos y la ayuda.
+- [x] ~~Panel lateral con conversación, notas y cliente~~ (2026-10-08, capturas 1280/900/390 claro y oscuro)
+- [x] ~~Entrega real de la respuesta~~ (2026-10-08, 5 casos con test)
+- [x] ~~Traspaso "No se pudo resolver" + cola Bloqueados~~ (2026-10-08)
+- [x] ~~Vacío con aire bajo los filtros, en el componente para todo el proyecto~~ (2026-10-08, medido)
+- [ ] **Sin probar a mano:** el botón del correo de aviso al equipo ahora enlaza a `?reporte=id`. El
+      test cubre que el panel abre con ese parámetro, pero no recibí un correo real y hice clic.
+
+**Detalle de la v1 (2026-10-08, base de lo anterior).** La cola pasó a ser la pantalla: tabla con la **espera** de cada reporte
 en la primera columna (en dos unidades, "3d 4h"), el atrasado pintado (más de `support.overdue_hours`,
 24 h por defecto, editable en Ajustes) y el más viejo sin responder nombrado en el encabezado. Filtros
 por cola (por responder, esperando al negocio, resueltos), tipo, negocio y búsqueda sin acentos (en la
