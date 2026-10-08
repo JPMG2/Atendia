@@ -844,3 +844,14 @@ lo único que falta, y casi todo es una decisión o un dato de ella, no construc
       guardadas como maestro en Catálogos (grupo Soporte, 5 de arranque que ella puede reescribir) y
       selector en el composer; mediana de resolución por tipo en el encabezado (90 días, "—" con motivo
       si no hay resueltos).
+
+---
+
+## H · Reclamos de diseño y de producto de ella, 2026-10-08 (anotados, sin construir)
+
+Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pide su pasada de diseño
+(maqueta primero, capturas a 1280/900/390 en claro y oscuro) antes de construirse.
+
+- [ ] **Auditoría está "horrible": la columna "Qué pasó" muestra tanto texto que hay que bajar mucho para llegar a la fila siguiente.** Es la tabla `audit` del admin (`components/admin/audit`). Hay que rediseñarla como pantalla de operación (`atendiadesign` §7.3): fila compacta con el resumen en UNA línea, el detalle (qué cambió, valores antes y después) plegado o en un panel lateral al abrir la fila, y la acción y el autor legibles de un barrido. Medir con filas reales largas, no con las de prueba.
+- [ ] **Usuarios y accesos → "Crear usuario": el campo Nombre está muy ancho y deja al último campo (Rol) demasiado angosto, así que se corta su contenido.** Es el formulario `AdminUserForm`. Repartir la fila por contenido (`span=`: el nombre baja de ancho, el rol gana) según `formularios.md`, y verificar a 390 y 900 px con el rol más largo.
+- [ ] **Doble factor: se ofrece, pero el admin no tiene dónde crearlo ni gestionarlo.** Hoy existe SOLO en Ajustes de cada cuenta (cada persona lo activa por WhatsApp, con códigos de recuperación) y la pantalla de Usuarios apenas lo MUESTRA como una columna de solo lectura ("Activo" o "—"). Falta decidir con ella qué debe poder hacer el admin: ver quién lo tiene, exigirlo a ciertos roles, y restablecérselo a alguien que perdió el teléfono. Sin esa decisión se dibujaría un control mudo (`controles-vivos.md`). Si lo exigimos, es una decisión de seguridad: va con su test de acceso.
