@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 use App\Actions\Account\ConfirmWhatsAppTwoFactor;
 use App\Actions\Account\SendWhatsAppSetupCode;
+use App\Actions\Admin\RemindStaffTwoFactor;
 use App\Classes\Main\StaffTwoFactor;
 use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Mail\AccountTwoFactorReset;
+use App\Mail\StaffTwoFactorDeadline;
 use App\Models\Business;
 use App\Models\PlatformSetting;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\PlatformSettingSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
@@ -259,6 +263,108 @@ test('the server has a way out: the plazo can be set to zero, and one person res
 
     $this->artisan('atendia:two-factor-reset', ['email' => 'nadie@atendia.test'])->assertFailed();
     $this->artisan('atendia:staff-two-factor', ['days' => 99])->assertFailed();
+});
+
+test('the day before the plazo ends, whoever still lacks the second step is mailed once', function (): void {
+    Mail::fake();
+    Cache::flush();
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-10-09']);
+    $this->travelTo('2026-10-15 09:05:00');
+
+    // Plazo ends on the 16th: tomorrow.
+    $due = staffAccount('support', ['email' => 'due@atendia.test', 'created_at' => '2026-01-05']);
+    $covered = withSecondStep(staffAccount('support', ['email' => 'covered@atendia.test']));
+    $client = staffAccount('client', ['email' => 'client@negocio.test']);
+    $unverified = staffAccount('support', ['email' => 'nuncaentro@atendia.test', 'email_verified_at' => null]);
+
+    $this->artisan('atendia:staff-two-factor-warning')->assertSuccessful();
+
+    Mail::assertQueued(StaffTwoFactorDeadline::class, 1);
+    Mail::assertQueued(StaffTwoFactorDeadline::class, fn (StaffTwoFactorDeadline $mail): bool => $mail->hasTo('due@atendia.test')
+        && $mail->deadline->toDateString() === '2026-10-16');
+
+    // The same day, a second run says nothing new.
+    $this->artisan('atendia:staff-two-factor-warning')->assertSuccessful();
+    Mail::assertQueued(StaffTwoFactorDeadline::class, 1);
+
+    expect($covered->email)->not->toBe($due->email)
+        ->and($client->email)->not->toBe($due->email)
+        ->and($unverified->email_verified_at)->toBeNull();
+});
+
+test('two days out or already past, nobody is mailed', function (): void {
+    Mail::fake();
+    Cache::flush();
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-10-09']);
+    staffAccount('support', ['created_at' => '2026-01-05']);
+
+    $this->travelTo('2026-10-14 09:05:00');
+    $this->artisan('atendia:staff-two-factor-warning')->assertSuccessful();
+
+    $this->travelTo('2026-10-17 09:05:00');
+    $this->artisan('atendia:staff-two-factor-warning')->assertSuccessful();
+
+    Mail::assertNothingQueued();
+});
+
+test('the warning mail says the date, where to act, and renders in both parts', function (): void {
+    $this->travelTo('2026-10-15 09:05:00');
+    $person = staffAccount('support', ['name' => 'Rocío Paz']);
+    $mail = new StaffTwoFactorDeadline($person, CarbonImmutable::parse('2026-10-16 10:00:00'));
+
+    $mail->assertSeeInHtml('Rocío Paz')
+        ->assertSeeInHtml('16/10/2026')
+        ->assertSeeInHtml(route('admin.security'))
+        ->assertSeeInText('16/10/2026');
+
+    expect($mail->envelope()->subject)->toBe('Mañana vence tu plazo para activar la verificación en dos pasos');
+});
+
+test('with days to spare the mail names the date and never says tomorrow', function (): void {
+    $this->travelTo('2026-10-12 09:05:00');
+    $mail = new StaffTwoFactorDeadline(staffAccount(), CarbonImmutable::parse('2026-10-16 10:00:00'));
+
+    $mail->assertSeeInHtml('Tu plazo vence el 16/10/2026')->assertDontSeeInHtml('Mañana');
+
+    expect($mail->envelope()->subject)->toBe('Tu plazo para activar la verificación en dos pasos vence el 16/10/2026');
+});
+
+test('the owner reminds a person whose plazo is running, once a day, and nobody else', function (): void {
+    Mail::fake();
+    Cache::flush();
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-10-09']);
+    $this->travelTo('2026-10-12 10:00:00');
+
+    $owner = staffAccount('admin');
+    $running = staffAccount('support', ['created_at' => '2026-01-05']);
+    $covered = withSecondStep(staffAccount('support'));
+    $remind = new RemindStaffTwoFactor;
+
+    expect($remind->handle($running, $owner))->toBe(RemindStaffTwoFactor::SENT)
+        ->and($remind->handle($running, $owner))->toBe(RemindStaffTwoFactor::ALREADY)
+        ->and($remind->handle($covered, $owner))->toBe(RemindStaffTwoFactor::NOT_DUE);
+
+    Mail::assertQueued(StaffTwoFactorDeadline::class, 1);
+
+    // The morning run does not repeat what the button already said today.
+    $this->travelTo('2026-10-15 09:05:00');
+    $remind->handle($running, $owner);
+    $this->artisan('atendia:staff-two-factor-warning')->assertSuccessful();
+    Mail::assertQueued(StaffTwoFactorDeadline::class, 2);
+
+    // Past the plazo the panel already says it: no mail.
+    $this->travelTo('2026-10-18 09:05:00');
+    expect($remind->handle($running, $owner))->toBe(RemindStaffTwoFactor::NOT_DUE);
+});
+
+test('reminding is a key of its own: support cannot press it', function (): void {
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-10-09']);
+    $this->travelTo('2026-10-12 10:00:00');
+
+    $target = staffAccount('support');
+
+    expect(fn () => (new RemindStaffTwoFactor)->handle($target, staffAccount('support')))
+        ->toThrow(AuthorizationException::class);
 });
 
 test('a role can be given the plazo-free permission only by the owner: the keys are seeded', function (): void {

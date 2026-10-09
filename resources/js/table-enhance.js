@@ -273,7 +273,19 @@ document.addEventListener('keydown', (event) => {
         return;
     }
 
-    if (event.key === 'j' || event.key === 'k') {
+    // A screen binds a key from its markup: `data-key-focus` on a field takes the
+    // focus to it (a combobox forwards its attributes to the hidden value, so the
+    // visible input is looked up in the field's own box), `data-key-click` clicks a control.
+    const focusBox = document.querySelector(`[data-key-focus="${event.key}"]`);
+    const clickBox = document.querySelector(`[data-key-click="${event.key}"]`);
+
+    if (focusBox) {
+        event.preventDefault();
+        (focusBox.closest('.field')?.querySelector('input[role="combobox"]') ?? focusBox).focus();
+    } else if (clickBox) {
+        event.preventDefault();
+        clickBox.click();
+    } else if (event.key === 'j' || event.key === 'k') {
         event.preventDefault();
         moveCursor(event.key === 'j' ? 1 : -1);
     } else if (event.key === 'Enter' && cursor?.isConnected && event.target === document.body) {

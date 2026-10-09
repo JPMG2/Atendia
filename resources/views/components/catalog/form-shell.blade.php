@@ -4,6 +4,7 @@
     'editTitle' => null,  // "Edit"; the row identifier goes right next to it
     'create' => null,     // label of the create button
     'titleKey' => 'name', // field of the current row, shown next to "Edit"
+    'deletable' => true,  // false = no delete button: an edit-only master has no such capability
 ])
 
 {{--
@@ -31,15 +32,12 @@
 <form class="catalog-form" x-on:submit.prevent="submit">{{ $slot }}</form>
 
 <div class="catalog-form-foot">
-    <template x-if="mode === 'edit'">
-        <x-ui.button
-            variant="ghost"
-            icon="trash-2"
-            class="catalog-btn-danger"
-            x-on:click="remove()"
-        >
-            {{ __('catalog.common.delete') }}</x-ui.button>
-    </template>
+    @if ($deletable)
+        <template x-if="mode === 'edit'">
+            <x-ui.button variant="ghost" icon="trash-2" class="catalog-btn-danger" x-on:click="remove()">
+                {{ __('catalog.common.delete') }}</x-ui.button>
+        </template>
+    @endif
     <span class="catalog-foot-grow"></span>
     {{-- Cancel wears the universal watch-out colour (owner's convention,
     2026-09-15) — never a ghost that reads as loose text. --}}

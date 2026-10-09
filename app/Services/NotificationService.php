@@ -26,6 +26,8 @@ class NotificationService
             'provinces' => ['entity' => __('notifications.entities.province'), 'gender' => 'female'],
             'regions' => ['entity' => __('notifications.entities.region'), 'gender' => 'female'],
             'tax_conditions' => ['entity' => __('notifications.entities.tax_condition'), 'gender' => 'female'],
+            'plans' => ['entity' => __('notifications.entities.plan'), 'gender' => 'male'],
+            'country_holidays' => ['entity' => __('notifications.entities.country_holiday'), 'gender' => 'male'],
             'social_networks' => ['entity' => __('notifications.entities.social_network'), 'gender' => 'female'],
             'social_links' => ['entity' => __('notifications.entities.social_link'), 'gender' => 'female'],
             'current_statuses' => ['entity' => __('notifications.entities.status'), 'gender' => 'male'],

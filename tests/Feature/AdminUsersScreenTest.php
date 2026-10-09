@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Livewire\Forms\Admin\AdminUserForm;
 use App\Mail\AccountEmailVerification;
+use App\Mail\StaffTwoFactorDeadline;
 use App\Models\Business;
 use App\Models\LoginActivity;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -65,6 +67,53 @@ test('the screen opens for the admin and closes for a client', function (): void
     $client = businessOwner('Laura', 'laura@negocio.test');
 
     $this->actingAs($client)->get(route('admin.users'))->assertForbidden();
+});
+
+test('each person links to everything they did in the audit, only for who may read it', function (): void {
+    usersAdmin();
+    $rocio = staffNamed('Rocío Paz', 'rocio@atendia.test');
+
+    Livewire::test('admin.users.index')
+        ->assertSee('Ver historial')
+        ->assertSeeHtml(e(route('admin.audit', ['quien' => $rocio->id, 'fuertes' => 0])));
+
+    Auth::logout();
+    $this->actingAs(staffNamed('Sin auditoría', 'sin@atendia.test', 'support'));
+
+    Livewire::test('admin.users.index')->assertDontSee('Ver historial');
+});
+
+test('the owner reminds somebody from their row, and a second press says it was already done', function (): void {
+    Mail::fake();
+    Cache::flush();
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-01-01']);
+
+    usersAdmin();
+    $rocio = staffNamed('Rocío Paz', 'rocio@atendia.test');
+    $rocio->forceFill(['created_at' => now()])->save();
+
+    Livewire::test('admin.users.index')
+        ->assertSeeHtml('data-testid="remind-'.$rocio->id.'"')
+        ->call('remind', $rocio->id)
+        ->assertDispatched('notify', type: 'success', message: 'Listo. Le avisamos a rocio@atendia.test que su plazo vence el '.now()->addDays(7)->format('d/m/Y').'.')
+        ->call('remind', $rocio->id)
+        ->assertDispatched('notify', type: 'info', message: 'rocio@atendia.test ya recibió el aviso hoy.');
+
+    Mail::assertQueued(StaffTwoFactorDeadline::class, 1);
+});
+
+test('nobody is offered a reminder once they have the second step or are past the plazo', function (): void {
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-01-01']);
+
+    usersAdmin();
+    $covered = staffNamed('Con factor', 'con@atendia.test');
+    $covered->forceFill(['two_factor_whatsapp_at' => now(), 'whatsapp' => '5492995550001'])->save();
+    $late = staffNamed('Vencida', 'vencida@atendia.test');
+    $late->forceFill(['created_at' => now()->subDays(30)])->save();
+
+    Livewire::test('admin.users.index')
+        ->assertDontSeeHtml('data-testid="remind-'.$covered->id.'"')
+        ->assertDontSeeHtml('data-testid="remind-'.$late->id.'"');
 });
 
 test('a business owner is a client and never shows up here', function (): void {

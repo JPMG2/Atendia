@@ -285,6 +285,16 @@ class User extends Authenticatable
             ->first();
     }
 
+    /** A member of the platform's team by id; null for a client or an id that is not one. */
+    public static function staffById(int $id): ?self
+    {
+        return self::query()
+            ->permission('access-admin-panel')
+            ->with('business')
+            ->whereKey($id)
+            ->first();
+    }
+
     /**
      * What the access screen filters by, with the keys its labels use.
      *

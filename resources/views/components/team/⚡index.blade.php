@@ -43,7 +43,7 @@ new class extends Component
         return Client::for(Auth::user())->team;
     }
 
-    /** @return list<array{code: string, flag: string}> */
+    /** @return list<array{code: string, flag: string, name: string}> */
     #[Computed]
     public function phoneCountries(): array
     {

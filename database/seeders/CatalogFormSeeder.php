@@ -21,9 +21,11 @@ class CatalogFormSeeder extends Seeder
             ['group' => 'Ubicaciones', 'title' => 'Países', 'description' => 'Cada país define su moneda y su código telefónico.', 'component' => 'catalog.country', 'permission_key' => 'catalog.country', 'icon' => 'globe', 'order' => 1],
             ['group' => 'Ubicaciones', 'title' => 'Provincias', 'description' => 'Se agrupan por país.', 'component' => 'catalog.province', 'permission_key' => 'catalog.province', 'icon' => 'globe', 'order' => 2],
             ['group' => 'Ubicaciones', 'title' => 'Regiones', 'description' => 'Cuelgan de cada provincia.', 'component' => 'catalog.region', 'permission_key' => 'catalog.region', 'icon' => 'globe', 'order' => 3],
+            ['group' => 'Ubicaciones', 'title' => 'Feriados', 'description' => 'Los días no laborables de cada país, y los que un decreto mueve en un año.', 'component' => 'catalog.country-holiday', 'permission_key' => 'catalog.country-holiday', 'icon' => 'calendar', 'order' => 18],
 
             // Invoicing.
             ['group' => 'Facturación', 'title' => 'Monedas', 'description' => 'Divisas ISO 4217 disponibles para precios y facturación.', 'component' => 'catalog.currency', 'permission_key' => 'catalog.currency', 'icon' => 'star', 'order' => 4],
+            ['group' => 'Facturación', 'title' => 'Planes', 'description' => 'Precio, cupos y banderas de cada plan: lo que leen la landing, "Mi plan" y cada tope del producto.', 'component' => 'catalog.plan', 'permission_key' => 'catalog.plan', 'icon' => 'layers', 'order' => 17],
             ['group' => 'Facturación', 'title' => 'Condiciones fiscales', 'description' => 'Definidas por país (responsable inscripto, monotributo…).', 'component' => 'catalog.tax-condition', 'permission_key' => 'catalog.tax-condition', 'icon' => 'shield-check', 'order' => 5],
 
             // Business: what it picks while setting itself up.

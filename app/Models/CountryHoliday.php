@@ -4,20 +4,41 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Interfaces\Catalog\DataTable;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * One national holiday of one country: a fixed date, or a day counted from
- * Easter Sunday. Shared by every business of that country, so it carries no
- * `business_id` — like {@see Country} itself.
+ * One national holiday of one country: a fixed date, a day counted from
+ * Easter Sunday, or the exact date of ONE year. Shared by every business of
+ * that country, so it carries no `business_id` — like {@see Country} itself.
  */
-#[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset'])]
-class CountryHoliday extends Model
+#[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'is_active'])]
+class CountryHoliday extends Model implements DataTable
 {
+    use LogsActivity;
+
+    public const string KIND_FIXED = 'fixed';
+
+    public const string KIND_EASTER = 'easter';
+
+    public const string KIND_ONCE = 'once';
+
+    /** Who added, moved or switched off a day, and from what: the audit screen reads it. */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'is_active'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('catalog');
+    }
+
     /**
      * @return array<string, string>
      */
@@ -27,7 +48,55 @@ class CountryHoliday extends Model
             'month' => 'integer',
             'day' => 'integer',
             'easter_offset' => 'integer',
+            'on_date' => 'date:Y-m-d',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /** Which of the three shapes this row is: the date it holds decides, never a stored label. */
+    public function kind(): string
+    {
+        return match (true) {
+            $this->on_date !== null => self::KIND_ONCE,
+            $this->easter_offset !== null => self::KIND_EASTER,
+            default => self::KIND_FIXED,
+        };
+    }
+
+    /**
+     * The holidays as the catalog list shows them, by country and then by calendar.
+     *
+     * @return Collection<int, array{id: int, country: string, name: string, kind: string, when: string, active: bool}>
+     */
+    public function catalogRows(): Collection
+    {
+        return $this->newQuery()
+            ->with('country:id,name')
+            ->get()
+            ->sortBy(fn (self $holiday): string => $holiday->country?->name.'|'.($holiday->on_date?->format('Y-m-d') ?? sprintf('0000-%02d-%02d', $holiday->month ?? 0, $holiday->day ?? 0)).'|'.($holiday->easter_offset ?? 0))
+            ->map(fn (self $holiday): array => [
+                'id' => $holiday->id,
+                'country' => (string) $holiday->country?->name,
+                'name' => $holiday->name,
+                'kind' => $holiday->kind(),
+                'when' => $holiday->describeWhen(),
+                'active' => $holiday->is_active,
+            ])
+            ->values();
+    }
+
+    /** "1 de mayo", "Viernes Santo: 2 días antes de Pascua", "17/08/2026" — the date in words. */
+    public function describeWhen(): string
+    {
+        return match ($this->kind()) {
+            self::KIND_ONCE => (string) $this->on_date?->format('d/m/Y'),
+            self::KIND_EASTER => match (true) {
+                $this->easter_offset === 0 => __('catalog.country_holiday.easter.sunday'),
+                $this->easter_offset < 0 => __('catalog.country_holiday.easter.before', ['days' => abs($this->easter_offset)]),
+                default => __('catalog.country_holiday.easter.after', ['days' => $this->easter_offset]),
+            },
+            default => $this->day.' '.__('catalog.country_holiday.of').' '.__('catalog.country_holiday.months.'.$this->month),
+        };
     }
 
     /**
@@ -49,13 +118,16 @@ class CountryHoliday extends Model
 
         return self::query()
             ->where('country_id', $countryId)
-            ->orderBy('month')
-            ->orderBy('day')
+            ->where('is_active', true)
             ->get()
+            // A one-year holiday belongs to its own year only: next January it is simply not there.
+            ->reject(fn (self $holiday): bool => $holiday->kind() === self::KIND_ONCE && $holiday->on_date->year !== $year)
             ->map(fn (self $holiday): array => [
-                'date' => $holiday->easter_offset !== null
-                    ? $easter->addDays($holiday->easter_offset)
-                    : CarbonImmutable::create($year, $holiday->month, $holiday->day),
+                'date' => match ($holiday->kind()) {
+                    self::KIND_ONCE => $holiday->on_date->toImmutable(),
+                    self::KIND_EASTER => $easter->addDays($holiday->easter_offset),
+                    default => CarbonImmutable::create($year, $holiday->month, $holiday->day),
+                },
                 'name' => $holiday->name,
             ])
             ->sortBy(fn (array $holiday): string => $holiday['date']->format('Y-m-d'))

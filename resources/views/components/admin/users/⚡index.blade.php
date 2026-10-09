@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Account\SendEmailVerificationLink;
+use App\Actions\Admin\RemindStaffTwoFactor;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Classes\Main\StaffTwoFactor;
@@ -173,6 +174,28 @@ new class extends Component
         $this->dispatchNotification(
             new NotificationDto(__('admin.users.verification_sent', ['email' => $user->email]), NotificationType::Success),
         );
+    }
+
+    public function remind(int $id): void
+    {
+        $this->authorize('manage-admin-users');
+
+        $person = User::staffById($id);
+
+        if ($person === null) {
+            return;
+        }
+
+        $result = app(RemindStaffTwoFactor::class)->handle($person, auth()->user());
+
+        $this->dispatchNotification(match ($result) {
+            RemindStaffTwoFactor::SENT => new NotificationDto(
+                __('admin.users.reminded', ['email' => $person->email, 'date' => (new StaffTwoFactor($person))->deadline?->format('d/m/Y')]),
+                NotificationType::Success,
+            ),
+            RemindStaffTwoFactor::ALREADY => new NotificationDto(__('admin.users.reminded_already', ['email' => $person->email]), NotificationType::Info),
+            default => new NotificationDto(__('admin.users.reminder_not_due'), NotificationType::Info),
+        });
     }
 
     /** The tab is copy: a PHP attribute cannot call __(). */
@@ -380,6 +403,25 @@ new class extends Component
                                 </td>
 
                                 <td data-label="">
+                                  <div class="flex flex-wrap items-center justify-end gap-2">
+                                    {{-- "fuertes=0": her question is what this person did, all of it,
+                                    not only what cannot be undone. The route holds the lock. --}}
+                                    @can('audit.view')
+                                        <x-ui.button size="sm" variant="ghost" icon="history" :href="route('admin.audit', ['quien' => $person->id, 'fuertes' => 0])" wire:navigate>
+                                            {{ __('admin.users.history') }}
+                                        </x-ui.button>
+                                    @endcan
+
+                                    {{-- Only while the plazo still runs: past it the panel itself says it. --}}
+                                    @php($running = $person->two_factor_whatsapp_at === null ? new StaffTwoFactor($person) : null)
+                                    @if ($person->accessState === 'active' && $running?->deadline !== null && ! $running->overdue && ! $person->is(auth()->user()))
+                                        @can('manage-admin-users')
+                                            <x-ui.button size="sm" variant="secondary" icon="bell" wire:click="remind({{ $person->id }})" data-testid="remind-{{ $person->id }}">
+                                                {{ __('admin.users.remind') }}
+                                            </x-ui.button>
+                                        @endcan
+                                    @endif
+
                                     @if ($person->accessState === 'unverified')
                                         @can('manage-admin-users')
                                             <x-ui.button size="sm" variant="secondary" icon="mail" wire:click="resendVerification({{ $person->id }})">
@@ -396,6 +438,7 @@ new class extends Component
                                             </x-ui.button>
                                         @endcan
                                     @endif
+                                  </div>
                                 </td>
                             </tr>
                         @endforeach

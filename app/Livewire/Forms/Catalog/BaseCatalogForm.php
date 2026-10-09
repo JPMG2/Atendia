@@ -58,6 +58,11 @@ abstract class BaseCatalogForm extends BaseForm
 
     public function store(): NotificationDto
     {
+        // An edit-only master has no create path: the button is not drawn, and this closes the call too.
+        if ($this->wiring()->create === null) {
+            return new NotificationDto(__('notifications.not_created'), NotificationType::Error);
+        }
+
         $validated = $this->validateServiceData();
 
         return $this->tryAction(function () use ($validated): NotificationDto {

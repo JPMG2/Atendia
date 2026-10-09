@@ -20,13 +20,13 @@ final readonly class CatalogWiring
     /**
      * @param  class-string<FormData>  $dto  The DTO travelling in the form.
      * @param  class-string<Model>  $model  The master's model, to read the record being edited.
-     * @param  class-string  $create  Create action: `handle(array $data): Model`.
+     * @param  class-string|null  $create  Create action: `handle(array $data): Model`. Null = an edit-only master.
      * @param  class-string  $update  Update action: `handle(int $id, array $data): Model`.
      */
     public function __construct(
         public string $dto,
         public string $model,
-        public string $create,
+        public ?string $create,
         public string $update,
     ) {}
 }

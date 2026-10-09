@@ -125,6 +125,12 @@ class Subscription extends Model
             ->get();
     }
 
+    /** Real businesses riding a plan, whatever the state of their subscription: they are who an edit reaches. */
+    public static function countOnPlan(string $code): int
+    {
+        return self::query()->ofRealBusinesses()->where('plan', $code)->count();
+    }
+
     /** How many subscriptions the recurring revenue is actually made of. */
     public static function payingCount(): int
     {

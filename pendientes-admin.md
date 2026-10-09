@@ -368,12 +368,19 @@ Pedido de ella 2026-10-07. Los feriados ya existen y el horario los respeta, per
 - No hay maestro en Catálogos ni ruta en el admin: `grep` de `country_holidays` en
   `routes/admin.php` y en `CatalogFormSeeder` no devuelve nada.
 
-- [ ] Maestro de feriados en Catálogos, con el patrón de siempre (tabla + seeder
-      `updateOrCreate`), para agregar los que faltan sin tocar código
-- [ ] Soportar el feriado de UN AÑO (columna de fecha concreta), que es justo el que hoy no
-      entra y el que más se anuncia tarde
-- [ ] Cargar los países que ya tienen negocio antes que el resto: hoy son Argentina (9) y
-      Venezuela (1), y el resto puede esperar a tener a alguien adentro
+- [x] **HECHO 2026-10-09.** Maestro "Feriados" en Catálogos (grupo Ubicaciones, permiso
+      `catalog.country-holiday`): lista de los 24 con cada fecha en palabras y su tipo; alta y
+      edición sin tocar código; apagar un día (`is_active`) en vez de borrarlo
+- [x] **HECHO 2026-10-09.** El feriado de UN AÑO: columna `on_date`, tercera forma junto a
+      "cada año" y "desde Pascua". Cae solo en su año y al siguiente ya no está.
+      `CountryHoliday::forYear()` lo respeta, así que la agenda y los horarios lo ven sin más
+- [x] `CountryHolidaySeeder` pasó a sembrar **solo el país que no tiene ningún feriado**: un
+      re-sembrado no devuelve lo que se renombró, se apagó o se reemplazó
+- [x] Argentina (12) y Venezuela (12), los países con negocio, ya estaban cargados
+- [ ] Los otros 20 países siguen sin feriados: cargarlos a mano desde la pantalla cuando haya
+      un negocio de ese país (no se inventan fechas de memoria). Lo que NO entra todavía son
+      los feriados "el primer lunes de febrero" (México, EE. UU.): hoy se cargan como fecha de
+      UN año, cada año; una cuarta forma ("enésimo día de la semana") lo resolvería
 
 ---
 
@@ -569,11 +576,22 @@ El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces**
 NUEVO (la pantalla) sobre cimiento YA HECHO
 La fuente única ya existe y está blindada: tabla `plans`, clase `Plan`, guardianes
 `GoldenRulesPlanSourceTest` y `GoldenRulesPlanPromiseTest`. Falta la cara para editarla.
-- [ ] CRUD de planes con el patrón de Catálogos: precio, cupos, consultas de IA, días de
-      prueba, "Más elegido", líneas de la ficha
-- [ ] Guardar invalida el caché de `Plan` (ya está previsto) y la landing cambia sola
-- [ ] Ojo: `GoldenRulesPlanPromiseTest` exige que toda cifra vendida tenga candado, soft con
-      razón escrita, o quede anotada como deuda. Editar un plan desde el admin no afloja eso
+- [x] **HECHO 2026-10-09 — la edición.** Maestro "Planes" en Catálogos (grupo Facturación,
+      permiso `catalog.plan`): lista con precio, conversaciones, consultas IA, **negocios que
+      lo usan** (dato real) y marcas; formulario con las 15 cifras y banderas. Las líneas de la
+      ficha salen solas de las cifras (`Plan::features`), así que editar la cifra cambia la ficha.
+      Guardarraíles, de lo que hacen Stripe/Flexprice/Stigg: **escalera** (un plan de arriba no
+      da menos que el de abajo, cifras y banderas), **"Más elegido" y prueba gratis en un solo
+      plan** (marcarlo se lo quita al otro), aviso "hay N negocios en este plan: lo que cambies
+      les rige", y cada cambio queda en **Auditoría** con el valor viejo y el nuevo.
+- [x] Guardar invalida el caché de `Plan` y la landing cambia sola (test: `CatalogPlanTest`)
+- [x] `PlanSeeder` pasó a **solo-crear** (`firstOrCreate`): un deploy ya no pisa lo editado
+- [x] `GoldenRulesPlanPromiseTest` y `PlanSourceTest` siguen verdes: editar no afloja el candado
+- [ ] **Aplazado a propósito: CREAR y ARCHIVAR un plan.** Crear exige su nombre y su ficha, que
+      hoy viven en el idioma (`plan.names.*`, `landing.pricing.*`) y se leen en ~15 pantallas:
+      moverlos a la base es un trabajo aparte. Borrar un plan con negocios encima no se hace
+      nunca; el camino es **archivar** (no se vende, los que lo tienen lo conservan), y eso toca
+      `Plan::ladder()`. Se decide con ella cuándo hace falta un cuarto plan.
 
 ### E8. Enum que puedan vivir en BD
 NUEVO · criterio en `arquitectura-paneles.md`
@@ -869,18 +887,19 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 ## I · Pendientes al cierre del 2026-10-09 (commit `704c438`)
 
 **Suyos (ella):**
-- [ ] **Antes del 16/10:** entrar a "Mi seguridad" (`/admin/seguridad`), guardar su WhatsApp y activar el doble factor. Pasado el plazo el panel solo le abre esa página. Salida si el WhatsApp falla: `docker exec atendia-app php artisan atendia:staff-two-factor 0`.
+- [x] **HECHO 2026-10-09 17:56 — doble factor de la dueña activo (verificado en la base).** Texto original: **Antes del 16/10:** entrar a "Mi seguridad" (`/admin/seguridad`), guardar su WhatsApp y activar el doble factor. Pasado el plazo el panel solo le abre esa página. Salida si el WhatsApp falla: `docker exec atendia-app php artisan atendia:staff-two-factor 0`.
 - [ ] **Revisar los permisos del rol Soporte** en `/admin/roles`: se volvió a correr `RolesAndPermissionsSeeder` sobre `atendia` (para el permiso `reset-two-factor`) y su `syncPermissions` puede haber deshecho ediciones a mano.
 - [ ] **Veredicto visual en su pantalla real** de Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (solo se miraron capturas con datos de prueba).
 - [ ] **Decidir si se sube el commit a GitHub** (`704c438` está solo en el servidor).
 
 **Mejoras ofrecidas el 2026-10-09, sin decidir (una línea cada una):**
-- [ ] **Aviso previo del plazo:** que "Mi seguridad" mande un correo el día antes de que venza el plazo si la persona no activó nada.
-- [ ] **Filtro de Auditoría:** poder filtrar solo "Restableció el doble factor".
+- [x] **HECHO 2026-10-09.** **Aviso previo del plazo:** `atendia:staff-two-factor-warning` (09:05 diario) manda `StaffTwoFactorDeadline` el día antes a cada persona del equipo verificada que aún no lo tiene; una vez por plazo (`Cache::add` con la fecha del vencimiento en la clave, así un restablecimiento gana un aviso nuevo).
+- [x] **HECHO 2026-10-09.** **Filtro de Auditoría:** combobox "Qué pasó" (`?accion=`), chips de filtros activos con ✕ y "Limpiar todo", y "Ver historial" en cada fila de Usuarios (`?quien=ID&fuertes=0`). De paso se corrigió `AuditTrail::causerOptions()`: el spread renumeraba los ids a 0 y el combobox "Quién" ofrecía valores equivocados.
+- [x] **HECHO 2026-10-09 — las tres ideas de Auditoría/Usuarios que ella pidió:** (1) atajos `/` (a "Quién") y `c` (limpiar filtros) por `data-key-focus` / `data-key-click` en `table-enhance.js`, con la línea de atajos oculta bajo 992px; (2) la vista guardada "Reinicios del doble factor" en la fila de filtros; (3) "Recordarle" en la fila de Usuarios (`RemindStaffTwoFactor`, una vez por persona y día, compartida con el comando diario; sin contraseña a propósito: es un recordatorio, no una acción sobre la cuenta). El correo dice "mañana" solo cuando es mañana.
 - [ ] **Guardián de la base de pruebas:** un control que falle si un test deja filas confirmadas en `atendia_testing` (la causa de los falsos "flakes" de PHP).
 
 **De construcción que siguen (sin dependencia de nadie):**
-- [ ] CRUD de planes (E7) · [ ] feriados cargables, incluido el de UN año (A12) · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
+- [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
 
 **Verificación que quedó incompleta:**
 - [ ] **Suite PHP completa** después de los arreglos de esta noche: se corrió entera una vez (con 43 rojos, de los que 26 eran mi bug y 17 el contaminador) y después solo por archivos (333 verdes); el hook frena la segunda corrida completa hasta el próximo commit.

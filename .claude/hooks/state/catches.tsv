@@ -52,3 +52,13 @@
 2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
 2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
 2026-10-08	check-comment-golden-rules	app/Classes/Main/AiSpend.php
+2026-10-08	check-comment-golden-rules	app/Services/Knowledge/VectorColumns.php
+2026-10-08	check-blade-query-golden-rules	resources/views/components/admin/ai/⚡embeddings.blade.php
+2026-10-08	check-panel-screen	resources/views/components/admin/ai/⚡embeddings.blade.php
+2026-10-09	check-comment-golden-rules	app/Classes/Main/TaskCosts.php
+2026-10-09	check-comment-golden-rules	database/seeders/PlatformSettingSeeder.php
+2026-10-09	check-comment-golden-rules	resources/js/phone-field.js
+2026-10-09	check-comment-golden-rules	database/seeders/PlanSeeder.php
+2026-10-09	check-comment-golden-rules	database/seeders/PlanSeeder.php
+2026-10-09	check-comment-golden-rules	database/migrations/2026_10_02_190608_create_country_holidays_table.php
+2026-10-09	check-comment-golden-rules	database/migrations/2026_10_02_190608_create_country_holidays_table.php

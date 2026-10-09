@@ -244,6 +244,15 @@ return [
         'when' => 'Cuándo',
         'on' => 'Sobre qué',
         'anybody' => 'Cualquiera',
+        'any_action' => 'Cualquiera',
+        'drop_filter' => 'Quitar el filtro :filter',
+        'clear' => 'Limpiar todo',
+        'view_two_factor_resets' => 'Reinicios del doble factor',
+        'keys' => [
+            'person' => 'elige a una persona',
+            'clear' => 'limpia los filtros',
+            'rows' => 'recorren las filas',
+        ],
         'names_count' => ':count cambio|:count cambios',
         'system' => 'El sistema',
         'strong_only' => 'Qué mostrar',
@@ -271,6 +280,8 @@ return [
             'ServiceType' => 'Tipo de servicio',
             'ServiceModality' => 'Modalidad de servicio',
             'ServiceAttribute' => 'Atributo de servicio',
+            'SubscriptionPlan' => 'Plan',
+            'CountryHoliday' => 'Feriado',
         ],
     ],
 
@@ -415,6 +426,11 @@ return [
         'no_password' => 'No se elige contraseña: la persona recibe un correo y la define ella.',
         'created' => 'Listo. Le mandamos el correo de acceso a :email.',
         'resend' => 'Reenviar acceso',
+        'history' => 'Ver historial',
+        'remind' => 'Recordarle',
+        'reminded' => 'Listo. Le avisamos a :email que su plazo vence el :date.',
+        'reminded_already' => ':email ya recibió el aviso hoy.',
+        'reminder_not_due' => 'A esa persona no hay nada que recordarle.',
         'verification_sent' => 'Correo reenviado a :email.',
 
         'fields' => [

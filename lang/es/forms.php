@@ -42,6 +42,7 @@ return [
 
     'phone' => [
         'country' => 'País del número',
+        'search' => 'Buscar país o prefijo',
     ],
 
     'avatar' => [

@@ -141,3 +141,82 @@ test('only the people who ever did something are offered as a filter', function 
 
     expect(AuditTrail::causerOptions())->not->toHaveKey((string) $never->id);
 });
+
+test('the action filter narrows the trail to one kind of movement', function (): void {
+    $admin = auditScreenAdmin();
+
+    $person = User::factory()->create(['name' => 'Rocío Paz', 'email_verified_at' => now()]);
+    activity('access')->performedOn($person)->causedBy($admin)->withProperties(['names' => []])->log('two_factor_reset');
+    Business::factory()->create(['name' => 'Panadería del Centro'])->delete();
+
+    Livewire::test('admin.audit.index')
+        ->assertSee('Panadería del Centro')
+        ->assertSee('Restableció el doble factor')
+        ->set('action', 'two_factor_reset')
+        ->assertSee('Rocío Paz')
+        ->assertDontSee('Panadería del Centro');
+});
+
+test('each active filter shows as a chip that drops just that filter', function (): void {
+    $admin = auditScreenAdmin();
+    Business::factory()->create()->delete();
+    activity('access')->performedOn($admin)->causedBy($admin)->withProperties(['names' => []])->log('two_factor_reset');
+
+    // The key is the user id: a spread once renumbered it to 0 and the combobox filtered nobody.
+    expect(AuditTrail::causerOptions())->toHaveKey($admin->id, 'Juan');
+
+    Livewire::test('admin.audit.index')
+        ->assertDontSeeHtml('class="filter-chip"')
+        ->assertDontSee('Limpiar todo')
+        ->set('causer', (string) $admin->id)
+        ->set('action', 'two_factor_reset')
+        ->assertSee('Quién: Juan')
+        ->assertSee('Qué pasó: Restableció el doble factor')
+        ->assertSee('Limpiar todo')
+        ->call('dropFilter', 'causer')
+        ->assertSet('causer', '')
+        ->assertSet('action', 'two_factor_reset')
+        ->assertSee('Limpiar todo')
+        ->call('dropFilter', 'action')
+        ->assertDontSee('Limpiar todo')
+        ->call('dropFilter', 'onlyStrong')
+        ->assertSet('onlyStrong', true);
+});
+
+test('the saved view shows every two-factor reset, strong or not, from anybody', function (): void {
+    $admin = auditScreenAdmin();
+    Business::factory()->create(['name' => 'Kiosco La Esquina']);
+    activity('access')->performedOn($admin)->causedBy($admin)->withProperties(['names' => []])->log('two_factor_reset');
+
+    Livewire::test('admin.audit.index')
+        ->set('causer', (string) $admin->id)
+        ->call('showTwoFactorResets')
+        ->assertSet('causer', '')
+        ->assertSet('action', 'two_factor_reset')
+        ->assertSet('onlyStrong', false)
+        ->assertSee('Restableció el doble factor')
+        ->assertDontSee('Kiosco La Esquina');
+});
+
+test('clearing all filters empties both at once', function (): void {
+    $admin = auditScreenAdmin();
+
+    Livewire::test('admin.audit.index')
+        ->set('causer', (string) $admin->id)
+        ->set('action', 'deleted')
+        ->call('clearFilters')
+        ->assertSet('causer', '')
+        ->assertSet('action', '');
+});
+
+test('only the actions that really happened are offered, in the screen\'s own words', function (): void {
+    auditScreenAdmin();
+
+    Business::factory()->create()->delete();
+
+    $options = AuditTrail::actionOptions();
+
+    expect($options)->toHaveKey('deleted', 'Eliminó')
+        ->and($options)->not->toHaveKey('two_factor_reset')
+        ->and($options)->not->toHaveKey('restored');
+});

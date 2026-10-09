@@ -7,6 +7,8 @@ return [
         'user' => 'Usuario',
         'company' => 'Empresa',
         'currency' => 'Moneda',
+        'plan' => 'Plan',
+        'country_holiday' => 'Feriado',
         'department' => 'Departamento',
         'sequence' => 'Secuencia',
         'country' => 'País',

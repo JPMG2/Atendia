@@ -34,7 +34,7 @@ new class extends Component
      * Dial options for the phone control, straight from the catalog. The
      * flag comes from iso2 as regional-indicator pairs — no image to load.
      *
-     * @return list<array{code: string, flag: string}>
+     * @return list<array{code: string, flag: string, name: string}>
      */
     #[Computed]
     public function phoneCountries(): array

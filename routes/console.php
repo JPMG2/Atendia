@@ -44,6 +44,9 @@ Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dai
 // and a daily copy of the same list stops being read by the second one.
 Schedule::command('atendia:adoption-alert')->dailyAt('09:00')->withoutOverlapping(60);
 
+// The day before a team member's plazo for the second step ends: one mail, with time to act.
+Schedule::command('atendia:staff-two-factor-warning')->dailyAt('09:05')->withoutOverlapping(30);
+
 // The month's revenue, kept so next month has something to be compared with.
 // Daily and before midnight: a server down on the 1st would otherwise lose
 // that month's photo for good.

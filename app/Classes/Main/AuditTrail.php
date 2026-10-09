@@ -7,6 +7,7 @@ namespace App\Classes\Main;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Lang;
 use Spatie\Activitylog\Models\Activity;
 
 /**
@@ -28,14 +29,16 @@ final class AuditTrail
      * The trail, newest first.
      *
      * @param  string  $causer  '' = anybody · 'system' = no person · an id
+     * @param  string  $action  '' = any · otherwise the entry's `description`
      * @return Collection<int, Activity>
      */
-    public static function rows(string $causer = '', bool $onlyStrong = false, int $limit = 200): Collection
+    public static function rows(string $causer = '', bool $onlyStrong = false, int $limit = 200, string $action = ''): Collection
     {
         return Activity::query()
             ->with(['causer:id,name,email', 'subject'])
             ->when($causer === 'system', fn (Builder $query) => $query->whereNull('causer_id'))
             ->when($causer !== '' && $causer !== 'system', fn (Builder $query) => $query->where('causer_id', (int) $causer))
+            ->when($action !== '', fn (Builder $query) => $query->where('description', $action))
             ->when($onlyStrong, fn (Builder $query) => $query->where(
                 fn (Builder $inner) => $inner->whereIn('description', self::STRONG)->orWhere('log_name', self::ACCESS),
             ))
@@ -69,7 +72,29 @@ final class AuditTrail
             ->mapWithKeys(fn (string $name, int $id): array => [(string) $id => $name])
             ->all();
 
-        return ['system' => __('admin.audit.system'), ...$people];
+        // `+`, not a spread: unpacking renumbers integer keys, and the key IS the user id.
+        return ['system' => __('admin.audit.system')] + $people;
+    }
+
+    /**
+     * The kinds of movement the trail holds, as the screen names them.
+     *
+     * Built from the trail, like the people: an action nobody ever took would
+     * be an option that always comes back empty. One the screen has no words
+     * for is left out rather than shown as a raw key.
+     *
+     * @return array<string, string>
+     */
+    public static function actionOptions(): array
+    {
+        return Activity::query()
+            ->whereNotNull('description')
+            ->distinct()
+            ->pluck('description')
+            ->filter(fn (string $description): bool => Lang::has('admin.audit.actions.'.$description))
+            ->mapWithKeys(fn (string $description): array => [$description => __('admin.audit.actions.'.$description)])
+            ->sort()
+            ->all();
     }
 
     /** Whether this entry is one she should not have to look for. */

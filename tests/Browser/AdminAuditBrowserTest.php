@@ -78,6 +78,54 @@ test('the audit screen holds at every width in both themes', function (string $l
     'phone light' => ['phone', 390, 844, false],
 ]);
 
+test('filtering by the two-factor reset leaves only those entries', function (): void {
+    $person = User::query()->where('name', 'Rocío Paz')->sole();
+    activity('access')->performedOn($person)->causedBy(auth()->user())->withProperties(['names' => []])->log('two_factor_reset');
+
+    $page = visit(route('admin.audit', ['accion' => 'two_factor_reset']))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Restableció el doble factor')
+        ->assertDontSee('Panadería del Centro')
+        ->screenshot(filename: 'admin-audit-action-filter');
+});
+
+test('the chips of the active filters show, and dropping one clears its field too', function (): void {
+    $person = User::query()->where('name', 'Rocío Paz')->sole();
+    activity('access')->performedOn($person)->causedBy(auth()->user())->withProperties(['names' => []])->log('two_factor_reset');
+
+    $page = visit(route('admin.audit', ['quien' => auth()->id(), 'accion' => 'two_factor_reset']))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Quién: Juan')
+        ->assertSee('Limpiar todo')
+        ->screenshot(filename: 'admin-audit-chips');
+
+    $page->click('.filter-chips-clear')->assertDontSee('Limpiar todo')->assertSee('Panadería del Centro')
+        ->screenshot(filename: 'admin-audit-chips-cleared');
+
+    // The field must say what the list says: no stale name left in the combobox.
+    expect($page->script('document.querySelector(".form-row").innerText'))->not->toContain('Restableció el doble factor');
+});
+
+test('the keys take her to the person field and clear the filters, never while typing', function (): void {
+    $page = visit(route('admin.audit', ['accion' => 'deleted']))->resize(1280, 900);
+
+    $press = fn (string $key) => $page->script("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key: '{$key}', bubbles: true}))");
+
+    $press('/');
+    expect($page->script('document.activeElement.getAttribute("role")'))->toBe('combobox');
+
+    // Inside a field the same key is just a character: nothing is cleared.
+    $press('c');
+    $page->assertSee('Qué pasó: Eliminó');
+
+    $page->script('document.activeElement.blur()');
+    $press('c');
+
+    $page->assertDontSee('Qué pasó: Eliminó')->screenshot(filename: 'admin-audit-keys');
+});
+
 test('an access change with dozens of names stays one line tall until it is opened', function (): void {
     $names = collect(range(1, 39))->map(fn (int $n): string => 'permission-number-'.$n)->all();
     Activity::query()->where('log_name', 'access')->latest('id')->firstOrFail()->update(['properties' => ['names' => $names]]);

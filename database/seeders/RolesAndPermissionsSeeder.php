@@ -31,6 +31,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.business-sector', 'catalog.business-activity',
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
             'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.support-reply', 'catalog.adoption-nudge',
+            'catalog.plan', 'catalog.country-holiday',
         ];
 
         // One key per door of the admin panel. Until 2026-10-05 every route

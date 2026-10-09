@@ -51,6 +51,132 @@ return [
         'off' => 'Inactivo',
     ],
 
+    'country_holiday' => [
+        'search_placeholder' => 'Buscar por país, feriado o fecha',
+        'search_label' => 'Buscar feriado',
+        'singular' => 'feriado',
+        'plural' => 'feriados',
+        'create' => 'Crear feriado',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo feriado',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay feriados que coincidan con la búsqueda.',
+        'of' => 'de',
+
+        'columns' => [
+            'country' => 'País',
+            'name' => 'Feriado',
+            'when' => 'Cuándo',
+            'kind' => 'Tipo',
+            'status' => 'Estado',
+        ],
+
+        'kinds' => [
+            'fixed' => 'Cada año',
+            'easter' => 'Desde Pascua',
+            'once' => 'Un solo año',
+        ],
+
+        'status' => ['active' => 'Vigente', 'inactive' => 'Apagado'],
+
+        'easter' => [
+            'sunday' => 'Domingo de Pascua',
+            'before' => ':days días antes de Pascua',
+            'after' => ':days días después de Pascua',
+        ],
+
+        'months' => [
+            1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio',
+            7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
+        ],
+
+        'fields' => [
+            'country_id' => 'País',
+            'country_placeholder' => 'Seleccionar país',
+            'name' => 'Nombre del feriado',
+            'name_placeholder' => 'Ej. Día de la Independencia',
+            'kind' => 'Cuándo cae',
+            'kind_hint' => 'Cada año el mismo día, contado desde Pascua, o solo en un año',
+            'month' => 'Mes',
+            'day' => 'Día',
+            'easter_offset' => 'Días desde Pascua',
+            'easter_offset_hint' => 'Negativo = antes: -2 es Viernes Santo, 0 el Domingo de Pascua',
+            'on_date' => 'Fecha de ese año',
+            'on_date_hint' => 'Para lo que un decreto mueve o un puente que se anuncia: no se repite',
+            'is_active' => 'Estado',
+        ],
+
+        'errors' => [
+            'no_such_day' => 'Ese mes no tiene ese día.',
+        ],
+    ],
+
+    'plan' => [
+        'search_placeholder' => 'Buscar por nombre o código',
+        'search_label' => 'Buscar plan',
+        'singular' => 'plan',
+        'plural' => 'planes',
+        'edit_title' => 'Editar el plan',
+        'empty' => 'No hay planes que coincidan con la búsqueda.',
+        'impact_one' => 'Hay 1 negocio en este plan: lo que cambies le rige desde que guardas.',
+        'impact_many' => 'Hay :count negocios en este plan: lo que cambies les rige desde que guardas.',
+
+        'columns' => [
+            'plan' => 'Plan',
+            'price' => 'Precio / mes',
+            'conversations' => 'Conversaciones',
+            'seats' => 'Equipo',
+            'ask' => 'Consultas IA',
+            'businesses' => 'Negocios',
+            'tags' => 'Marcas',
+        ],
+
+        'tags' => [
+            'featured' => 'Más elegido',
+            'trial' => 'Prueba :days días',
+        ],
+
+        'statistics' => [
+            'counts' => 'Conteos',
+            'patterns' => 'Patrones',
+            'trends' => 'Tendencias',
+        ],
+
+        'switch' => ['on' => 'Incluido', 'off' => 'No incluido'],
+
+        'fields' => [
+            'price' => 'Precio mensual (US$)',
+            'price_hint' => 'Lo que paga al mes; el anual son 10 meses',
+            'conversations_per_month' => 'Conversaciones al mes',
+            'team_seats' => 'Personas del equipo',
+            'team_seats_hint' => 'Con el titular',
+            'messages_per_hour' => 'Mensajes por hora',
+            'messages_per_hour_hint' => 'Ritmo máximo por contacto',
+            'audio_minutes_per_month' => 'Minutos de audio al mes',
+            'audio_hint' => '0 = sin notas de voz',
+            'ask_per_month' => 'Consultas a la IA al mes',
+            'ask_hint' => '0 = sin asistente de la dueña',
+            'catalog_photos' => 'Fotos del catálogo',
+            'photos_per_item' => 'Fotos por producto',
+            'statistics' => 'Estadísticas',
+            'ai_alert_share' => 'Aviso de gasto de IA (%)',
+            'ai_alert_share_hint' => 'Del precio, antes de avisarte',
+            'trial_days' => 'Días de prueba gratis',
+            'trial_days_hint' => 'Vacío = sin prueba. Un solo plan a la vez',
+            'is_featured' => 'Más elegido',
+            'reads_media' => 'La IA lee fotos y PDF',
+            'departments' => 'Departamentos',
+            'daily_digest' => 'Resumen diario',
+        ],
+
+        'ladder' => [
+            'min' => 'No puede ser menor que en :plan (:value).',
+            'max' => 'No puede superar lo de :plan (:value).',
+            'flag_below' => ':plan lo incluye: un plan de arriba no puede ofrecer menos.',
+            'flag_above' => ':plan no lo incluye: un plan de abajo no puede ofrecer más.',
+        ],
+    ],
+
     'currency' => [
         'search_placeholder' => 'Buscar por código o nombre',
         'search_label' => 'Buscar moneda',

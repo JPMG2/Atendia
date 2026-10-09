@@ -103,6 +103,20 @@ return [
         'reason' => 'Recibiste este correo porque tu cuenta de :brand intentó iniciar sesión en un dispositivo nuevo.',
     ],
 
+    'staff_two_factor_deadline' => [
+        'subject' => 'Mañana vence tu plazo para activar la verificación en dos pasos',
+        'preheader' => 'Actívala hoy: pasado el plazo, el panel solo abre "Mi seguridad".',
+        'title' => 'Mañana vence tu plazo',
+        'subject_soon' => 'Tu plazo para activar la verificación en dos pasos vence el :date',
+        'title_soon' => 'Tu plazo vence el :date',
+        'intro' => 'Hola :name, tienes hasta el :date para activar la verificación en dos pasos de tu cuenta.',
+        'body' => 'Toma un minuto: entra a "Mi seguridad", guarda tu WhatsApp y confirma el código que te llega.',
+        'alert' => 'Pasado el plazo, el panel solo te deja abrir "Mi seguridad" hasta que la actives.',
+        'cta' => 'Activarla ahora',
+        'closing' => 'Cuidar la cuenta de la plataforma es cuidar a todos los negocios.',
+        'reason' => 'Recibiste este correo porque tu cuenta del equipo de :brand todavía no tiene la verificación en dos pasos.',
+    ],
+
     'new_device' => [
         'subject' => 'Nuevo inicio de sesión en tu cuenta',
         'preheader' => 'Detectamos un acceso desde un dispositivo que no habías usado antes.',

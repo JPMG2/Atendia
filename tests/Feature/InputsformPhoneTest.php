@@ -8,13 +8,13 @@ declare(strict_types=1);
  * ("+58 4247673951") where wire:model lives — the server sees a single column.
  */
 
-const PHONE_COUNTRIES = "[['code' => '54', 'flag' => '🇦🇷'], ['code' => '58', 'flag' => '🇻🇪']]";
+const PHONE_COUNTRIES = "[['code' => '54', 'flag' => '🇦🇷', 'name' => 'Argentina'], ['code' => '58', 'flag' => '🇻🇪', 'name' => 'Venezuela']]";
 
-it('renders the dial options and keeps the real value on the hidden field', function () {
+it('hands the countries to the picker and keeps the real value on the hidden field', function () {
     $this->blade('<x-inputsform.phone label="WhatsApp" name="whatsapp_number" :countries="'.PHONE_COUNTRIES.'" value="+58 4247673951" wire:model="form.data.whatsapp_number" />')
         ->assertSee('phone-dial', false)
-        ->assertSee('+54', false)
-        ->assertSee('+58', false)
+        ->assertSee('Argentina', false)
+        ->assertSee('Venezuela', false)
         ->assertSee('type="hidden"', false)
         ->assertSee('value="+58 4247673951"', false)
         ->assertSee('wire:model="form.data.whatsapp_number"', false)
@@ -33,9 +33,21 @@ it('wires the Alpine error by key, border and message included', function () {
         ->assertSee('errors.whatsapp_number', false);
 });
 
-it('hands the default dial and the catalog dials to the Alpine component', function () {
+it('hands the default dial and the catalog countries to the Alpine component', function () {
     $this->blade('<x-inputsform.phone name="wa" :countries="'.PHONE_COUNTRIES.'" default-dial="58" />')
         ->assertSee('defaultDial', false)
-        ->assertSee('dials', false)
-        ->assertSee('+58', false);
+        ->assertSee('countries', false)
+        ->assertSee('Venezuela', false);
+});
+
+it('draws no native select: the list is ours, so the browser cannot pick for her', function () {
+    $this->blade('<x-inputsform.phone name="wa" :countries="'.PHONE_COUNTRIES.'" />')
+        ->assertDontSee('<select', false)
+        ->assertSee('phone-panel', false)
+        ->assertSee('role="listbox"', false);
+});
+
+it('tolerates a catalog without names', function () {
+    $this->blade('<x-inputsform.phone name="wa" :countries="[[\'code\' => \'58\', \'flag\' => \'VE\']]" />')
+        ->assertSee('phone-dial', false);
 });

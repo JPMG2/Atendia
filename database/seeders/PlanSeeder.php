@@ -10,8 +10,10 @@ use Illuminate\Database\Seeder;
 class PlanSeeder extends Seeder
 {
     /**
-     * The three real packages. Keyed by code, so a re-run updates the
-     * figures in place — and every screen follows on its own.
+     * The three real packages, as they START. Once a plan exists its figures
+     * belong to the Plans master of the catalog hub: a seed (or a deploy that
+     * runs one) must never put back what the owner edited there, so a row
+     * already in the table is left exactly as it is.
      */
     public function run(): void
     {
@@ -22,7 +24,7 @@ class PlanSeeder extends Seeder
         ];
 
         foreach ($plans as $order => $plan) {
-            SubscriptionPlan::query()->updateOrCreate(['code' => $plan['code']], [...$plan, 'sort_order' => $order + 1]);
+            SubscriptionPlan::query()->firstOrCreate(['code' => $plan['code']], [...$plan, 'sort_order' => $order + 1]);
         }
     }
 }

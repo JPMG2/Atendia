@@ -47,7 +47,7 @@ test('no catalog table overflows its panel on a laptop screen', function (string
     );
 
     expect($overflow)->toBe(0);
-})->with(['Tipos de servicio', 'Modalidades', 'Atributos', 'Países', 'Actividades']);
+})->with(['Tipos de servicio', 'Modalidades', 'Atributos', 'Países', 'Actividades', 'Planes', 'Feriados']);
 
 /**
  * The same rule where it was broken: on a tablet and a phone the table used to push the
@@ -73,8 +73,8 @@ test('no catalog table pushes the page sideways on a tablet or a phone', functio
 
     expect($unlabelled)->toBe(0);
 })->with([
-    ['Tipos de servicio', 390], ['Modalidades', 390], ['Atributos', 390], ['Países', 390], ['Actividades', 390],
-    ['Tipos de servicio', 900], ['Atributos', 900], ['Países', 900],
+    ['Tipos de servicio', 390], ['Modalidades', 390], ['Atributos', 390], ['Países', 390], ['Actividades', 390], ['Planes', 390], ['Feriados', 390],
+    ['Tipos de servicio', 900], ['Atributos', 900], ['Países', 900], ['Planes', 900], ['Feriados', 900],
 ]);
 
 test('the row hover is actually visible, not a 1% tint', function (): void {

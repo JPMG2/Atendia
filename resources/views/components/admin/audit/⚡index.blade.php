@@ -20,6 +20,9 @@ new class extends Component
     #[Url(as: 'quien', except: '')]
     public string $causer = '';
 
+    #[Url(as: 'accion', except: '')]
+    public string $action = '';
+
     #[Url(as: 'fuertes', except: true)]
     public bool $onlyStrong = true;
 
@@ -27,7 +30,7 @@ new class extends Component
     #[Computed]
     public function entries(): Collection
     {
-        return AuditTrail::rows($this->causer, $this->onlyStrong);
+        return AuditTrail::rows($this->causer, $this->onlyStrong, action: $this->action);
     }
 
     #[Computed]
@@ -41,6 +44,58 @@ new class extends Component
     public function causerOptions(): array
     {
         return AuditTrail::causerOptions();
+    }
+
+    /** @return array<string, string> */
+    #[Computed]
+    public function actionOptions(): array
+    {
+        return AuditTrail::actionOptions();
+    }
+
+    /**
+     * The narrowing filters in force, as chips she can drop one by one.
+     *
+     * "Solo lo fuerte" is not here: it is the state the screen opens on, not
+     * something she chose, and dropping it has its own switch.
+     *
+     * @return array<string, string> property => "Label: value"
+     */
+    #[Computed]
+    public function chips(): array
+    {
+        $chips = [];
+
+        if ($this->causer !== '') {
+            $chips['causer'] = __('admin.audit.who').': '.($this->causerOptions[$this->causer] ?? $this->causer);
+        }
+
+        if ($this->action !== '') {
+            $chips['action'] = __('admin.audit.what').': '.($this->actionOptions[$this->action] ?? $this->action);
+        }
+
+        return $chips;
+    }
+
+    public function dropFilter(string $filter): void
+    {
+        if (in_array($filter, ['causer', 'action'], true)) {
+            $this->{$filter} = '';
+        }
+    }
+
+    /** The question she asks most after a reset: who had theirs taken away, all of it, not only the strong. */
+    public function showTwoFactorResets(): void
+    {
+        $this->causer = '';
+        $this->action = 'two_factor_reset';
+        $this->onlyStrong = false;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->causer = '';
+        $this->action = '';
     }
 
     /** The tab is copy: a PHP attribute cannot call __(). */
@@ -63,10 +118,22 @@ new class extends Component
                 span="text"
                 :label="__('admin.audit.who')"
                 name="causer"
+                data-key-focus="/"
                 :options="$this->causerOptions"
                 :value="$causer"
                 :placeholder="__('admin.audit.anybody')"
                 wire:model.live="causer"
+            />
+
+            <x-inputsform.combobox
+                size="s"
+                span="text"
+                :label="__('admin.audit.what')"
+                name="action"
+                :options="$this->actionOptions"
+                :value="$action"
+                :placeholder="__('admin.audit.any_action')"
+                wire:model.live="action"
             />
 
             <x-inputsform.switch-field
@@ -78,6 +145,30 @@ new class extends Component
                 wire:model.live="onlyStrong"
             />
         </x-catalog.form-row>
+
+        <div class="filter-chips">
+            @if ($this->chips !== [])
+                @foreach ($this->chips as $filter => $text)
+                    <span class="filter-chip" wire:key="chip-{{ $filter }}">
+                        {{ $text }}
+                        <button type="button" wire:click="dropFilter('{{ $filter }}')" aria-label="{{ __('admin.audit.drop_filter', ['filter' => $text]) }}">
+                            <x-icon name="x" :size="14" />
+                        </button>
+                    </span>
+                @endforeach
+
+                <button type="button" class="filter-chips-clear" wire:click="clearFilters" data-key-click="c">
+                    {{ __('admin.audit.clear') }} <kbd class="cmdk-kbd">c</kbd>
+                </button>
+            @endif
+
+            {{-- A saved view: the question she asks most after a reset, one press away. --}}
+            <span class="filter-chips-view">
+                <x-ui.button variant="secondary" size="sm" icon="rotate-ccw" wire:click="showTwoFactorResets">
+                    {{ __('admin.audit.view_two_factor_resets') }}
+                </x-ui.button>
+            </span>
+        </div>
 
         @if ($this->entries->isEmpty())
             <p class="text-muted text-sm">{{ __('admin.audit.empty') }}</p>
@@ -147,4 +238,10 @@ new class extends Component
             </div>
         @endif
     </x-ui.card>
+
+    <p class="key-hints">
+        <kbd class="cmdk-kbd">/</kbd> {{ __('admin.audit.keys.person') }}
+        <kbd class="cmdk-kbd">c</kbd> {{ __('admin.audit.keys.clear') }}
+        <kbd class="cmdk-kbd">j</kbd> <kbd class="cmdk-kbd">k</kbd> {{ __('admin.audit.keys.rows') }}
+    </p>
 </div>

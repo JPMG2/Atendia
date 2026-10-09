@@ -11,7 +11,7 @@
  * Normalised for comparison: lowercase and WITHOUT accents, so a query typed
  * flat finds the accented option. Without it the search is useless in Spanish.
  */
-function fold(value) {
+export function fold(value) {
     return String(value ?? '')
         .toLowerCase()
         .normalize('NFD')

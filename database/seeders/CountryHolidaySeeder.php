@@ -60,7 +60,9 @@ class CountryHolidaySeeder extends Seeder
         foreach (self::HOLIDAYS as $code => $holidays) {
             $country = Country::query()->where('code', $code)->first();
 
-            if ($country === null) {
+            // A country with any holiday already belongs to the Holidays master: a re-run must not
+            // put back a day she renamed, switched off, or replaced.
+            if ($country === null || CountryHoliday::query()->where('country_id', $country->id)->exists()) {
                 continue;
             }
 

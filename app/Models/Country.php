@@ -165,7 +165,7 @@ class Country extends Model implements DataTable
 
     /**
      * @param  list<bool>  $states  `is_active` values to include; empty = all
-     * @return array<int, array{code: string, flag: string}>
+     * @return array<int, array{code: string, flag: string, name: string}>
      */
     public static function phoneFlags(array $states = []): array
     {
@@ -176,8 +176,9 @@ class Country extends Model implements DataTable
             $query->whereIn('is_active', $states);
         }
 
-        return $query->orderBy('name')->get(['iso2', 'phone_code'])
+        return $query->orderBy('name')->get(['iso2', 'phone_code', 'name'])
             ->map(fn (self $country): array => [
+                'name' => (string) $country->name,
                 'code' => (string) $country->phone_code,
                 'flag' => implode('', array_map(
                     fn (string $letter): string => mb_chr(0x1F1E6 - 65 + ord($letter)),
