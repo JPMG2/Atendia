@@ -890,7 +890,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [x] **HECHO 2026-10-09 17:56 — doble factor de la dueña activo (verificado en la base).** Texto original: **Antes del 16/10:** entrar a "Mi seguridad" (`/admin/seguridad`), guardar su WhatsApp y activar el doble factor. Pasado el plazo el panel solo le abre esa página. Salida si el WhatsApp falla: `docker exec atendia-app php artisan atendia:staff-two-factor 0`.
 - [ ] **Revisar los permisos del rol Soporte** en `/admin/roles`: se volvió a correr `RolesAndPermissionsSeeder` sobre `atendia` (para el permiso `reset-two-factor`) y su `syncPermissions` puede haber deshecho ediciones a mano.
 - [ ] **Veredicto visual en su pantalla real** de Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (solo se miraron capturas con datos de prueba).
-- [ ] **Decidir si se sube el commit a GitHub** (`704c438` está solo en el servidor).
+- [x] **HECHO 2026-10-09 — subido a GitHub** (`704c438`, `2525fe5`, `3d562d7` y la nota de ideas, hasta `1685aff`).
 
 **Mejoras ofrecidas el 2026-10-09, sin decidir (una línea cada una):**
 - [x] **HECHO 2026-10-09.** **Aviso previo del plazo:** `atendia:staff-two-factor-warning` (09:05 diario) manda `StaffTwoFactorDeadline` el día antes a cada persona del equipo verificada que aún no lo tiene; una vez por plazo (`Cache::add` con la fecha del vencimiento en la clave, así un restablecimiento gana un aviso nuevo).
@@ -912,7 +912,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
 
 **Verificación que quedó incompleta:**
-- [ ] **Suite PHP completa** después de los arreglos de esta noche: se corrió entera una vez (con 43 rojos, de los que 26 eran mi bug y 17 el contaminador) y después solo por archivos (333 verdes); el hook frena la segunda corrida completa hasta el próximo commit.
+- [x] **HECHO 2026-10-09 — suite PHP completa en verde: 2551 pruebas, 0 fallos (1 omitida), y la de browser: 333, 0 fallos.** Texto original: **Suite PHP completa** después de los arreglos de esta noche: se corrió entera una vez (con 43 rojos, de los que 26 eran mi bug y 17 el contaminador) y después solo por archivos (333 verdes); el hook frena la segunda corrida completa hasta el próximo commit.
 - [ ] El flake de timeout de `ServicesProductsBrowserTest` (foto de producto) sigue: pasa aislado.
 
 **En pausa por orden suya / esperando abogado y contador:** ver §A11 (tasa Bs/USD) y §B (medio de pago, términos, supresión de datos, cables de plata).
