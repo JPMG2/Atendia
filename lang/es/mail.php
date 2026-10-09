@@ -171,6 +171,14 @@ return [
             'body' => 'Los códigos para entrar desde un dispositivo nuevo vuelven a llegar a este correo.',
         ],
 
+        'two_factor_reset' => [
+            'subject' => 'Restablecieron tu verificación en dos pasos',
+            'preheader' => 'Vuelve a activarla para seguir entrando al panel.',
+            'title' => 'Restablecieron tu verificación en dos pasos',
+            'intro' => 'Hola :name, quien administra la plataforma restableció la verificación en dos pasos de tu cuenta.',
+            'body' => 'Para seguir usando el panel tienes que volver a activarla en "Mi seguridad". Si no esperabas este cambio, avisa de inmediato a quien administra la plataforma.',
+        ],
+
         'verify' => [
             'subject' => 'Verifica tu correo de :brand',
             'preheader' => 'Un clic y tu cuenta queda protegida.',

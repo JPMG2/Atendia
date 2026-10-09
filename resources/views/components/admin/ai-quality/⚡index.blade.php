@@ -60,7 +60,7 @@ new class extends Component
             <x-ui.empty-state icon="thumbs-up" :title="__('ai_quality.score.none')" :body="__('ai_quality.customer.empty')" compact />
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('ai_quality.table.business') }}</th>
@@ -92,6 +92,7 @@ new class extends Component
                                             size="sm"
                                             :href="route('admin.incidents')"
                                             wire:navigate
+                                            data-row-action
                                         >{{ __('ai_quality.open_incidents') }}</x-ui.button>
                                     @endif
                                 </td>
@@ -124,7 +125,7 @@ new class extends Component
 
             @if ($this->ownerRejected->isNotEmpty())
                 <div class="pay-table-wrap">
-                    <table class="pay-table">
+                    <table class="pay-table" data-sortable>
                         <thead>
                             <tr>
                                 <th>{{ __('ai_quality.table.question') }}</th>

@@ -4,37 +4,78 @@ declare(strict_types=1);
 
 return [
     'title' => 'Adopción',
-    'sub' => 'En qué paso se quedó cada negocio, y hace cuánto no entra.',
+    'sub' => 'En qué paso se trabó cada negocio y a quién escribirle hoy.',
     'count' => '{0} Sin cuentas|{1} :count cuenta|[2,*] :count cuentas',
 
-    'funnel_title' => 'Dónde se queda la gente',
-    'legs_title' => 'Cuánto tarda en llegar a cada paso',
-    'leg_days' => '{0} el mismo día|{1} :count día|[2,*] :count días',
-    'not_yet' => 'Todavía no',
-    'filter' => 'Mostrar',
-    'filter_stalled' => 'Quedaron en el camino',
-    'filter_all' => 'Todas las cuentas',
+    'flow_title' => 'Por dónde se va la gente',
+    'flow_hint' => 'Cuántas cuentas llegaron al menos hasta cada paso. En rojo, las que se quedaron ahí.',
+    'flow_loss' => '{1} −:count no siguió|[2,*] −:count no siguieron',
+    'flow_none' => 'sin pérdida',
 
-    'step' => 'Paso :position de :total',
+    'list_title' => 'A quién escribirle',
+    'list_hint' => 'La misma lista en tres vistas. Arriba, lo que más lleva esperando.',
+    'tabs' => [
+        'stalled' => 'Trabadas',
+        'starting' => 'Arrancando',
+        'active' => 'Activas',
+    ],
+    'legend' => [
+        'stalled' => 'Una cuenta está trabada cuando pasa más tiempo del plazo en un mismo paso. El plazo se cambia en Ajustes de la plataforma.',
+        'starting' => 'Cuentas que todavía están dentro del plazo de su paso: se miran, no se persiguen.',
+        'active' => 'Cuentas cuyo asistente ya contestó.',
+    ],
+
+    'columns' => [
+        'business' => 'Negocio',
+        'stage' => 'Dónde se quedó',
+        'idle' => 'Sin entrar',
+        'why' => 'Por qué está acá',
+    ],
+    'since' => 'Desde el :date',
     'no_business' => 'Sin negocio',
-    'registered' => 'Se registró :when',
-    'never_returned' => 'No volvió a entrar',
+    'never_returned' => 'Nunca volvió',
     'idle' => '{0} Entró hoy|{1} Hace :count día|[2,*] Hace :count días',
-    'conversations' => '{1} conversación|[2,*] conversaciones',
-    'tickets' => '{1} reporte|[2,*] reportes',
+    'conversations_count' => '{0} sin conversaciones|{1} :count conversación|[2,*] :count conversaciones',
+
+    'why' => [
+        'registered' => 'Nunca creó su negocio',
+        'business' => 'Creó el negocio y no cargó su catálogo',
+        'catalog' => 'Cargó el catálogo y no conectó WhatsApp',
+        'whatsapp' => 'Conectó WhatsApp y no recibió ningún mensaje',
+        'conversation' => 'Recibió mensajes y su asistente no contestó',
+        'answered' => 'Su asistente ya contesta: :conversations',
+    ],
+    'rule' => [
+        'stalled' => '{0} Lleva menos de un día en este paso|{1} Lleva :count día en este paso (plazo: :limit)|[2,*] Lleva :count días en este paso (plazo: :limit)',
+        'starting' => '{0} Lleva menos de un día en este paso|{1} Lleva :count día en este paso (aún dentro del plazo de :limit)|[2,*] Lleva :count días en este paso (aún dentro del plazo de :limit)',
+    ],
+
+    'actions' => [
+        'view_business' => 'Ver ficha',
+        'write' => 'Escribirle',
+    ],
+    'written' => [
+        'you' => 'Le escribiste :when',
+        'other' => 'Le escribió :name :when',
+        'now' => 'hace un momento',
+    ],
 
     'empty_title' => 'Todavía no hay cuentas',
     'empty_body' => 'Cuando un negocio se registre, acá aparece en qué paso se quedó.',
-    'done_title' => 'Nadie se quedó en el camino',
-    'done_body' => 'Todas las cuentas llegaron hasta la primera respuesta de su asistente.',
+    'empty_tab' => [
+        'stalled' => ['title' => 'Nadie trabado', 'body' => 'Todas las cuentas avanzan dentro del plazo.'],
+        'starting' => ['title' => 'Nadie arrancando', 'body' => 'No hay cuentas dentro del plazo de su paso.'],
+        'active' => ['title' => 'Todavía ninguna', 'body' => 'Cuando el asistente de un negocio conteste por primera vez, aparece acá.'],
+    ],
 
     'mail' => [
-        'subject' => '{1} Una cuenta se quedó en el camino|[2,*] :count cuentas se quedaron en el camino',
-        'preheader' => 'Negocios que no volvieron a entrar antes de que su asistente contestara.',
+        'subject' => '{1} Una cuenta se trabó|[2,*] :count cuentas se trabaron',
+        'preheader' => 'Cuentas que pasaron el plazo de su paso sin avanzar.',
         'eyebrow' => 'Adopción',
-        'intro' => 'Estos negocios dejaron de entrar antes de que su asistente contestara por primera vez.',
+        'intro' => 'Estas cuentas pasaron el plazo de su paso del alta y se quedaron trabadas.',
         'line' => ':business — :step · :days',
-        'cta' => 'Ver la adopción',
+        'in_step' => '{0} menos de un día en el paso|{1} :count día en el paso (plazo :limit)|[2,*] :count días en el paso (plazo :limit)',
+        'cta' => 'Ver las cuentas trabadas',
         'closing' => 'Una llamada a tiempo recupera más cuentas que cualquier pantalla.',
     ],
 

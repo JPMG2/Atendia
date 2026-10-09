@@ -6,6 +6,8 @@ use App\Actions\Embeddings\StartEmbeddingMigration;
 use App\Classes\Main\EmbeddingSpace;
 use App\Enums\AiCapability;
 use App\Models\AiModel;
+use App\Models\AiTask;
+use App\Models\AiUsage;
 use App\Models\KnowledgeChunk;
 use App\Models\User;
 use Database\Seeders\AiModelSeeder;
@@ -180,3 +182,75 @@ test('changing the embedding model walks every step on screen and holds at every
     'phone light' => ['phone', 390, 844, false],
     'phone dark' => ['phone', 390, 844, true],
 ]);
+
+test('no table leaves its card, whatever the data and the width', function (int $width): void {
+    $page = visit(route('admin.ai'))->resize($width, 900);
+
+    // The worst case, built by hand: three keys per task with absurdly long
+    // codes. The tests' own data is short, and a guard that is green on short
+    // data says nothing about the real screen.
+    $page->script('document.querySelectorAll(".aim-assign td.is-running").forEach(td => {
+        for (const code of ["gpt-6-astra-with-an-extremely-long-model-code-v2", "another-very-long-model-identifier-0123456789", "x".repeat(60)]) {
+            td.insertAdjacentHTML("beforeend", `<span class="aim-run"><span class="aim-run-code">${code}</span><span class="aim-run-key">OpenAI · a key with a very long name</span></span>`);
+        }
+    })');
+
+    $outside = <<<'JS'
+        Array.from(document.querySelectorAll(".pay-table")).filter(t => t.offsetParent !== null).map(t => {
+            const card = t.closest(".card, [class*=card]").getBoundingClientRect();
+            const box = t.getBoundingClientRect();
+            return Math.round(box.right - card.right);
+        }).reduce((a, b) => Math.max(a, b), -999)
+        JS;
+
+    foreach (['assign' => null, 'catalog' => 'Catálogo', 'connections' => 'Conexiones'] as $tab => $name) {
+        if ($name !== null) {
+            $page->click($name);
+        }
+
+        // The table's own right edge against its card's: not the wrap's scroll, which clips and says 0.
+        expect((int) $page->script($outside))->toBeLessThanOrEqual(0)
+            ->and((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+
+        $page->screenshot(filename: 'admin-ai-'.$tab.'-extreme-'.$width);
+    }
+})->with([1920, 1440, 1280, 1100, 992, 900, 390]);
+
+test('a task shows what it cost this month and what the model it is set to would have cost', function (int $width): void {
+    $cheaper = AiModel::create([
+        'provider' => 'openai', 'code' => 'modelo-barato', 'label' => 'Modelo barato', 'effective_from' => '2026-01-01',
+        'prompt_per_million' => 1, 'cached_per_million' => 0.1, 'completion_per_million' => 2,
+    ]);
+
+    AiUsage::create(['kind' => 'FaqDrafter', 'model' => 'gpt-6-astra', 'input_tokens' => 2_000_000, 'cached_tokens' => 0, 'output_tokens' => 500_000]);
+    AiTask::query()->where('key', 'FaqDrafter')->update(['connection_key' => 'openai', 'model_code' => $cheaper->code]);
+
+    $page = visit(route('admin.ai'))->resize($width, 900);
+
+    // The heading is hidden once the table stacks (it is a label per cell then), so only the cells are read.
+    $page->assertSee('1 llamada')->assertSee('Con este: USD')->screenshot(filename: 'admin-ai-cost-'.$width);
+
+    // Side by side the two selects of a task are one line: a note under the first one must not move either.
+    if ($width >= 992) {
+        $drift = $page->script('Array.from(document.querySelectorAll(".aim-assign tbody tr")).map(tr => {
+            const tops = Array.from(tr.querySelectorAll("td.is-pick .combo-control")).map(c => Math.round(c.getBoundingClientRect().top));
+            return tops.length < 2 ? 0 : Math.max(...tops) - Math.min(...tops);
+        }).reduce((a, b) => Math.max(a, b), 0)');
+
+        expect((int) $drift)->toBe(0);
+    }
+
+    // What a select shows is the value of its input: when it is wider than the box, the end of the word is cut.
+    if ($width >= 992) {
+        $choice = $page->script('(() => { const i = Array.from(document.querySelectorAll(".aim-assign .combo-control input[type=text]")).find(i => i.value !== ""); return JSON.stringify([getComputedStyle(i).textOverflow, i.title === i.value]); })()');
+
+        expect($choice)->toBe('["ellipsis",true]');
+    }
+
+    // A select's choice is the value of its input, which assertSee cannot read: a task set to a model must SHOW it.
+    expect((bool) $page->script('Array.from(document.querySelectorAll(".combo-control input")).some(i => i.value.includes("Modelo barato"))'))->toBeTrue();
+
+    $page->click('Catálogo')->screenshot(filename: 'admin-ai-catalog-actions-'.$width);
+
+    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+})->with([1280, 900, 390]);

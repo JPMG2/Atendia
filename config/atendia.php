@@ -253,6 +253,29 @@ return [
         'overdue_hours_high' => 8,
     ],
 
+    // Second step for the platform's own staff (admin and support). The grace
+    // runs from `since` or from the account's creation, whichever is later, so
+    // nobody is locked out on the day the rule is born. Zero days = not required.
+    'security' => [
+        'staff_two_factor' => [
+            'grace_days' => 7,
+            'since' => '2026-10-09',
+        ],
+    ],
+
+    // Days an account may sit on each step of the adoption ladder before it
+    // counts as stalled; before that it is still getting started. Per step:
+    // making the business is a few minutes, connecting WhatsApp takes a phone.
+    'adoption' => [
+        'stall_days' => [
+            'registered' => 3,
+            'business' => 7,
+            'catalog' => 7,
+            'whatsapp' => 10,
+            'conversation' => 7,
+        ],
+    ],
+
     // What the platform costs a month apart from the AI (server, WhatsApp,
     // domain), in USD. Zero means "not loaded", never "free": the net result
     // is not shown until it is filled in from the platform settings.

@@ -198,9 +198,10 @@ class User extends Authenticatable
      * permission, so a new staff role joins the list by being granted it.
      *
      * @param  string  $state  '' | active | unverified | closed
+     * @param  string  $factor  '' | on | off: whether the second step is turned on
      * @return Collection<int, self>
      */
-    public static function directory(string $search = '', string $state = ''): Collection
+    public static function directory(string $search = '', string $state = '', string $factor = ''): Collection
     {
         return self::withTrashed()
             ->permission('access-admin-panel')
@@ -209,8 +210,38 @@ class User extends Authenticatable
             ->when($state === 'active', fn (Builder $q) => $q->whereNull('deleted_at')->whereNotNull('email_verified_at'))
             ->when($state === 'unverified', fn (Builder $q) => $q->whereNull('deleted_at')->whereNull('email_verified_at'))
             ->when($state === 'closed', fn (Builder $q) => $q->whereNotNull('deleted_at'))
+            ->when($factor === 'on', fn (Builder $q) => $q->whereNotNull('two_factor_whatsapp_at'))
+            ->when($factor === 'off', fn (Builder $q) => $q->whereNull('two_factor_whatsapp_at'))
             ->orderBy('name')
             ->get();
+    }
+
+    /** How many people `directory()` holds with no search and no state. */
+    public static function directoryTotal(): int
+    {
+        return self::withTrashed()->permission('access-admin-panel')->count();
+    }
+
+    /** One person of the team (somebody who opens the admin panel), or null when the id is anyone else's. */
+    public static function staffMember(int $id): ?self
+    {
+        return self::query()->permission('access-admin-panel')->find($id);
+    }
+
+    /**
+     * How many of the people who open the panel have the second step on. Closed
+     * accounts do not count: they cannot sign in, so they say nothing about exposure.
+     *
+     * @return array{on: int, total: int}
+     */
+    public static function staffTwoFactorCoverage(): array
+    {
+        $staff = self::query()->permission('access-admin-panel');
+
+        return [
+            'on' => (clone $staff)->whereNotNull('two_factor_whatsapp_at')->count(),
+            'total' => $staff->count(),
+        ];
     }
 
     /**
@@ -317,11 +348,14 @@ class User extends Authenticatable
 
     /**
      * Where WhatsApp login codes go: the owner's own number from the business
-     * contact card. Null while there is none worth dialing.
+     * contact card, and for the platform's staff (who have no business) the
+     * number they saved for themselves. Null while there is none worth dialing.
      */
     public function secondFactorPhone(): ?string
     {
-        $digits = $this->business?->ownerWhatsAppDigits() ?? '';
+        $digits = $this->business !== null
+            ? $this->business->ownerWhatsAppDigits()
+            : (string) preg_replace('/\D/', '', (string) $this->rawAttribute('whatsapp'));
 
         return strlen($digits) >= 8 ? $digits : null;
     }
@@ -330,6 +364,14 @@ class User extends Authenticatable
     public function sendsLoginCodesByWhatsApp(): bool
     {
         return $this->rawAttribute('two_factor_whatsapp_at') !== null && $this->secondFactorPhone() !== null;
+    }
+
+    /** When the owner took this person's second step away; null when she never did. */
+    public function secondStepResetAt(): ?CarbonImmutable
+    {
+        $at = $this->rawAttribute('two_factor_reset_at');
+
+        return $at === null ? null : CarbonImmutable::parse($at);
     }
 
     /** Backup codes still unspent, for the card's "N left" line. */
@@ -369,6 +411,7 @@ class User extends Authenticatable
             'password_changed_at' => 'datetime',
             'two_factor_whatsapp_at' => 'datetime',
             'two_factor_recovery_codes' => 'array',
+            'two_factor_reset_at' => 'datetime',
             'is_available' => 'boolean',
             'bell_muted' => 'array',
         ];
@@ -492,6 +535,7 @@ class User extends Authenticatable
                         AdoptionStep::FirstConversation->value => self::momentOf($firstConversation[$id] ?? null),
                         AdoptionStep::AssistantAnswered->value => self::momentOf($firstAnswer[$id] ?? null),
                     ],
+                    businessId: $owner->business_id,
                 );
             })
             ->sortBy([

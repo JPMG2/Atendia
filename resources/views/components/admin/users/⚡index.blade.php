@@ -3,7 +3,9 @@
 use App\Actions\Account\SendEmailVerificationLink;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Classes\Main\StaffTwoFactor;
 use App\Livewire\Forms\Admin\AdminUserForm;
+use App\Livewire\Forms\Admin\TwoFactorResetForm;
 use App\Models\User;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
@@ -33,16 +35,81 @@ new class extends Component
     #[Url(as: 'estado', except: '')]
     public string $state = '';
 
+    /** Whether the second step is on: '' = everybody, on, off. */
+    #[Url(as: 'doble', except: '')]
+    public string $factor = '';
+
+    public TwoFactorResetForm $resetForm;
+
+    /** The person whose second step is about to be taken away; the panel asks for her password. */
+    public ?int $resetting = null;
+
     public function mount(): void
     {
         $this->form->setup();
+        $this->resetForm->setup();
     }
 
     /** @return Collection<int, User> */
     #[Computed]
     public function people(): Collection
     {
-        return User::directory($this->search, $this->state);
+        return User::directory($this->search, $this->state, $this->factor);
+    }
+
+    /** @return array{on: int, total: int} */
+    #[Computed]
+    public function coverage(): array
+    {
+        return User::staffTwoFactorCoverage();
+    }
+
+    /** @return array<string, string> */
+    #[Computed]
+    public function factorOptions(): array
+    {
+        return ['on' => __('admin.users.factor.on'), 'off' => __('admin.users.factor.off')];
+    }
+
+    #[Computed]
+    public function resettingPerson(): ?User
+    {
+        return $this->resetting === null ? null : User::staffMember($this->resetting);
+    }
+
+    public function startReset(int $id): void
+    {
+        // The lock is on the ACTION: the button is only drawn for who holds it.
+        $this->authorize('reset-two-factor');
+
+        $this->resetForm->setup();
+        $this->resetting = $id;
+    }
+
+    public function cancelReset(): void
+    {
+        $this->resetForm->setup();
+        $this->resetting = null;
+    }
+
+    public function confirmReset(): void
+    {
+        $this->authorize('reset-two-factor');
+
+        if ($this->resetting === null) {
+            return;
+        }
+
+        $this->dispatchNotification($this->resetForm->save($this->resetting));
+
+        $this->resetting = null;
+        unset($this->people, $this->coverage, $this->resettingPerson);
+    }
+
+    #[Computed]
+    public function total(): int
+    {
+        return User::directoryTotal();
     }
 
     /** @return array<string, string> */
@@ -118,11 +185,15 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.users.title')" :sub="__('admin.users.sub')">
-        @can('manage-admin-users')
-            <x-ui.button variant="primary" icon="plus" wire:click="create">
-                {{ __('admin.users.new') }}
-            </x-ui.button>
-        @endcan
+        <div class="flex items-center gap-4">
+            <x-ui.result-count :shown="$this->people->count()" :total="$this->total" noun="admin.users.count" />
+
+            @can('manage-admin-users')
+                <x-ui.button variant="primary" icon="plus" wire:click="create">
+                    {{ __('admin.users.new') }}
+                </x-ui.button>
+            @endcan
+        </div>
     </x-ui.page-head>
 
     <x-ui.card class="p-5">
@@ -150,7 +221,7 @@ new class extends Component
                     />
 
                     <x-inputsform.combobox
-                        span="short"
+                        span="text"
                         :label="__('admin.users.fields.role')"
                         required
                         name="role"
@@ -164,6 +235,38 @@ new class extends Component
                     <x-ui.button type="submit" variant="primary" icon="check">{{ __('admin.users.save') }}</x-ui.button>
                     <x-ui.button variant="danger" wire:click="cancel">{{ __('admin.users.cancel') }}</x-ui.button>
                     <span class="sup-age">{{ __('admin.users.no_password') }}</span>
+                </div>
+            </form>
+        @endif
+
+        {{-- Who holds the second step, and until when the rest owe it: said where she looks at the people. --}}
+        <p class="bp-card-sub" data-testid="two-factor-coverage">
+            {{ __('admin.users.coverage', ['on' => $this->coverage['on'], 'total' => $this->coverage['total']]) }}
+            {{ (int) config('atendia.security.staff_two_factor.grace_days') > 0
+                ? __('admin.users.coverage_grace', ['days' => (int) config('atendia.security.staff_two_factor.grace_days')])
+                : __('admin.users.coverage_off') }}
+        </p>
+
+        @if ($resetting !== null && $this->resettingPerson !== null)
+            <form wire:submit="confirmReset" class="aim-form" data-testid="two-factor-reset-form">
+                <p class="text-strong text-sm font-semibold">{{ __('admin.users.reset.title', ['name' => $this->resettingPerson->name]) }}</p>
+                <p class="bp-card-sub">{{ __('admin.users.reset.body') }}</p>
+
+                <x-catalog.form-row>
+                    <x-inputsform.input
+                        span="long"
+                        type="password"
+                        name="current_password"
+                        :label="__('admin.users.reset.password')"
+                        autocomplete="current-password"
+                        required
+                        wire:model="resetForm.current_password"
+                    />
+                </x-catalog.form-row>
+
+                <div class="aim-actions">
+                    <x-ui.button type="submit" variant="primary" icon="shield-check">{{ __('admin.users.reset.accept') }}</x-ui.button>
+                    <x-ui.button variant="danger" wire:click="cancelReset">{{ __('admin.users.cancel') }}</x-ui.button>
                 </div>
             </form>
         @endif
@@ -189,15 +292,26 @@ new class extends Component
                 :placeholder="__('admin.users.all_states')"
                 wire:model.live="state"
             />
+
+            <x-inputsform.combobox
+                size="s"
+                span="short"
+                :label="__('admin.users.two_factor')"
+                name="factor"
+                :options="$this->factorOptions"
+                :value="$factor"
+                :placeholder="__('admin.users.factor.all')"
+                wire:model.live="factor"
+            />
         </x-catalog.form-row>
 
         @if ($this->people->isEmpty())
             <p class="text-muted text-sm">
-                {{ $search === '' && $state === '' ? __('admin.users.empty') : __('admin.users.no_match') }}
+                {{ $search === '' && $state === '' && $factor === '' ? __('admin.users.empty') : __('admin.users.no_match') }}
             </p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.users.person') }}</th>
@@ -235,8 +349,20 @@ new class extends Component
                                     ])>{{ __('admin.users.states.'.$person->accessState) }}</span>
                                 </td>
 
-                                <td data-label="{{ __('admin.users.two_factor') }}">
-                                    {{ $person->two_factor_whatsapp_at !== null ? __('admin.users.two_factor_on') : '—' }}
+                                <td class="is-name" data-label="{{ __('admin.users.two_factor') }}">
+                                    @if ($person->two_factor_whatsapp_at !== null)
+                                        <span class="status-tag is-brand">{{ __('admin.users.two_factor_on') }}</span>
+                                    @else
+                                        @php($owed = new StaffTwoFactor($person))
+                                        {{-- Without it, what the platform asks of this person: a date, or the plazo already gone. --}}
+                                        @if ($owed->overdue)
+                                            <span class="status-tag is-danger">{{ __('admin.users.factor.overdue') }}</span>
+                                        @elseif ($owed->deadline !== null && $person->accessState !== 'closed')
+                                            <span class="status-tag is-warning">{{ __('admin.users.factor.until', ['date' => $owed->deadline->format('d/m')]) }}</span>
+                                        @else
+                                            —
+                                        @endif
+                                    @endif
                                 </td>
 
                                 <td class="is-name" data-label="{{ __('admin.users.last_login') }}">
@@ -258,6 +384,15 @@ new class extends Component
                                         @can('manage-admin-users')
                                             <x-ui.button size="sm" variant="secondary" icon="mail" wire:click="resendVerification({{ $person->id }})">
                                                 {{ __('admin.users.resend') }}
+                                            </x-ui.button>
+                                        @endcan
+                                    @endif
+
+                                    {{-- Only the owner, only on somebody else, only where there is something to take away. --}}
+                                    @if ($person->two_factor_whatsapp_at !== null && ! $person->is(auth()->user()))
+                                        @can('reset-two-factor')
+                                            <x-ui.button size="sm" variant="ghost" icon="rotate-ccw" wire:click="startReset({{ $person->id }})" data-testid="two-factor-reset-{{ $person->id }}">
+                                                {{ __('admin.users.reset.action') }}
                                             </x-ui.button>
                                         @endcan
                                     @endif

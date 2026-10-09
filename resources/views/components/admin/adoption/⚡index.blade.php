@@ -1,8 +1,13 @@
 <?php
 
 use App\Dto\AdoptionRowDto;
+use App\Enums\AdoptionMarkKind;
+use App\Enums\AdoptionSituation;
 use App\Enums\AdoptionStep;
+use App\Models\AdoptionMark;
+use App\Models\AdoptionNudge;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -11,20 +16,18 @@ use Livewire\Component;
 
 /**
  * Where each business stalled on the way to being answered by its own
- * assistant. Nothing is recorded for this screen: the trail already exists in
- * the logins, the catalog and the conversations, and nobody read it together.
+ * assistant, and who to write to today. Nothing is recorded for this screen:
+ * the trail already exists in the logins, the catalog and the conversations.
  */
 new class extends Component
 {
+    /** The tab, in the URL: a link from the weekly mail lands on it. */
     #[Url(as: 'ver', except: 'stalled')]
-    public string $filter = 'stalled';
+    public string $view = 'stalled';
 
-    /** The open row, by email: the one field every account has. */
-    public ?string $expanded = null;
-
-    public function toggle(string $email): void
+    public function show(string $view): void
     {
-        $this->expanded = $this->expanded === $email ? null : $email;
+        $this->view = AdoptionSituation::tryFrom($view)?->value ?? AdoptionSituation::Stalled->value;
     }
 
     /** @return Collection<int, AdoptionRowDto> */
@@ -34,79 +37,106 @@ new class extends Component
         return User::adoptionRows();
     }
 
+    /** The tab on screen; a value nobody knows falls back to the one that asks for action. */
+    #[Computed]
+    public function situation(): AdoptionSituation
+    {
+        return AdoptionSituation::tryFrom($this->view) ?? AdoptionSituation::Stalled;
+    }
+
     /**
-     * The same accounts the funnel counts, narrowed for reading. Filtering a
-     * loaded collection is presentation, so it stays here.
+     * The accounts of the open tab: the longest-waiting first, since that is
+     * who loses most to a day more; the active ones, newest first.
      *
      * @return Collection<int, AdoptionRowDto>
      */
     #[Computed]
     public function rows(): Collection
     {
-        if ($this->filter === 'all') {
-            return $this->accounts;
-        }
+        $rows = $this->accounts->filter(fn (AdoptionRowDto $row): bool => $row->situation === $this->situation);
 
-        return $this->accounts->filter(fn (AdoptionRowDto $row): bool => $row->isStalled)->values();
+        return ($this->situation === AdoptionSituation::Active
+            ? $rows->sortByDesc(fn (AdoptionRowDto $row) => $row->registeredAt)
+            : $rows->sortByDesc(fn (AdoptionRowDto $row): int => $row->daysInStep))->values();
+    }
+
+    /** @return array<string, int> How many accounts each tab holds. */
+    #[Computed]
+    public function counts(): array
+    {
+        return collect(AdoptionSituation::cases())
+            ->mapWithKeys(fn (AdoptionSituation $case): array => [
+                $case->value => $this->accounts->filter(fn (AdoptionRowDto $row): bool => $row->situation === $case)->count(),
+            ])
+            ->all();
     }
 
     /**
-     * How many accounts sit at each step. A list of rows never shows WHERE
-     * the product loses people; this line does.
+     * One bar per step: how many accounts got AT LEAST that far, and how many
+     * of them stopped right there. The last step stops nobody.
      *
-     * @return Collection<string, int>
+     * @return Collection<int, array{step: AdoptionStep, reached: int, stopped: int|null, share: float}>
      */
     #[Computed]
-    public function funnel(): Collection
+    public function flow(): Collection
     {
-        return collect(AdoptionStep::cases())->mapWithKeys(fn (AdoptionStep $step): array => [
-            $step->value => $this->accounts->where('step', $step)->count(),
+        $total = max(1, $this->accounts->count());
+        $reached = collect(AdoptionStep::cases())->map(
+            fn (AdoptionStep $step): int => $this->accounts->filter(fn (AdoptionRowDto $row): bool => $row->step->position() >= $step->position())->count(),
+        );
+
+        return collect(AdoptionStep::cases())->map(fn (AdoptionStep $step, int $index): array => [
+            'step' => $step,
+            'reached' => $reached[$index],
+            'stopped' => isset($reached[$index + 1]) ? $reached[$index] - $reached[$index + 1] : null,
+            'share' => round($reached[$index] / $total * 100, 1),
         ]);
     }
 
     /**
-     * How long each leg takes, averaged over the accounts that actually
-     * walked it. Where people stall says what is broken; how long they take
-     * says what is hard, and a stuck account looks the same in both.
+     * When, and who, last wrote to each account on the step it is on now.
      *
-     * @return Collection<int, array{step: string, days: int, accounts: int}>
+     * @return array<string, array{at: CarbonImmutable, by: int|null, name: string|null}> By "email|step".
      */
     #[Computed]
-    public function legs(): Collection
+    public function written(): array
     {
-        $steps = AdoptionStep::cases();
-
-        return collect($steps)
-            ->map(function (AdoptionStep $from, int $index) use ($steps): ?array {
-                $to = $steps[$index + 1] ?? null;
-
-                if ($to === null) {
-                    return null;
-                }
-
-                $walked = $this->accounts
-                    ->map(fn (AdoptionRowDto $row): ?int => $row->daysBetween($from, $to))
-                    ->filter(fn (?int $days): bool => $days !== null);
-
-                return $walked->isEmpty() ? null : [
-                    'step' => $to->label(),
-                    'days' => (int) round((float) $walked->avg()),
-                    'accounts' => $walked->count(),
-                ];
-            })
-            ->filter()
-            ->values();
+        return AdoptionMark::lastWritten();
     }
 
-    /** @return array<int, AdoptionStep> */
-    public function steps(): array
+    /**
+     * The line under the buttons. "Hace 0 segundos" reads as a bug, and with
+     * more than one person on the team "you wrote" is not always true.
+     *
+     * @param  array{at: CarbonImmutable, by: int|null, name: string|null}  $note
+     */
+    public function writtenNote(array $note): string
     {
-        return AdoptionStep::cases();
+        $when = $note['at']->diffInSeconds(now()) < 60 ? __('adoption.written.now') : $note['at']->diffForHumans();
+
+        return $note['by'] === auth()->id() || $note['name'] === null
+            ? __('adoption.written.you', ['when' => $when])
+            : __('adoption.written.other', ['name' => $note['name'], 'when' => $when]);
     }
 
-    public function totalSteps(): int
+    /** Notes that she wrote. Only an account on this screen can be noted: the email is not trusted. */
+    public function markWritten(string $email): void
     {
-        return AdoptionStep::total();
+        $row = $this->accounts->firstWhere('email', $email);
+
+        if ($row === null) {
+            return;
+        }
+
+        AdoptionMark::record($email, $row->step, AdoptionMarkKind::Written, auth()->id());
+        unset($this->written);
+    }
+
+    /** @return array<string, string> The mail to open for each account, by email. */
+    #[Computed]
+    public function mailtos(): array
+    {
+        return AdoptionNudge::mailtosFor($this->accounts);
     }
 
     public function render(): View
@@ -124,112 +154,135 @@ new class extends Component
         </x-slot:inline>
     </x-ui.page-head>
 
-    @if ($this->accounts->isNotEmpty())
+    @if ($this->accounts->isEmpty())
+        <x-ui.card class="p-5">
+            <x-ui.empty-state icon="signal" :title="__('adoption.empty_title')" :body="__('adoption.empty_body')" compact />
+        </x-ui.card>
+    @else
         <x-ui.card class="p-5 mb-3">
-            <p class="sup-meta">{{ __('adoption.funnel_title') }}</p>
-            <div class="adp-funnel">
-                @foreach ($this->funnel as $step => $total)
-                    <span class="adp-step" wire:key="funnel-{{ $step }}">
-                        <span class="adp-step-label">{{ __('adoption.steps.'.$step) }}</span>
-                        <strong class="adp-step-total font-mono">{{ $total }}</strong>
-                    </span>
+            <div class="bp-card-head"><h2>{{ __('adoption.flow_title') }}</h2></div>
+            <p class="bp-card-sub">{{ __('adoption.flow_hint') }}</p>
+
+            <div class="adp-flow">
+                @foreach ($this->flow as $point)
+                    <div class="adp-flow-step" wire:key="flow-{{ $point['step']->value }}">
+                        <div @class(['adp-bar', 'is-empty' => $point['reached'] === 0])>
+                            <span class="adp-bar-fill" style="width:{{ $point['share'] }}%"></span>
+                            <strong class="adp-bar-count font-mono">{{ $point['reached'] }}</strong>
+                        </div>
+                        <div class="adp-flow-name">{{ $point['step']->label() }}</div>
+                        @if ($point['stopped'] !== null && $point['stopped'] > 0)
+                            <div class="adp-flow-loss">{{ trans_choice('adoption.flow_loss', $point['stopped'], ['count' => $point['stopped']]) }}</div>
+                        @else
+                            <div class="adp-flow-loss is-none">{{ $point['stopped'] === null ? '' : __('adoption.flow_none') }}</div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </x-ui.card>
+
+        <x-ui.card class="p-5">
+            <div class="bp-card-head"><h2>{{ __('adoption.list_title') }}</h2></div>
+            <p class="bp-card-sub">{{ __('adoption.list_hint') }}</p>
+
+            {{-- The tab is server state, in the URL: not x-ui.tabs, which keeps its own in the browser. --}}
+            <div role="tablist" class="tabs mb-3">
+                @foreach (AdoptionSituation::cases() as $case)
+                    <button type="button" role="tab" wire:click="show('{{ $case->value }}')" wire:key="tab-{{ $case->value }}"
+                        class="tab {{ $this->situation === $case ? 'tab-active' : '' }}"
+                        aria-selected="{{ $this->situation === $case ? 'true' : 'false' }}">
+                        <span>{{ $case->label() }}</span>
+                        <span class="tab-badge">{{ $this->counts[$case->value] }}</span>
+                    </button>
                 @endforeach
             </div>
 
-            @if ($this->legs->isNotEmpty())
-                {{-- Where people stall says what is broken; how long each leg
-                takes says what is hard, and both read from the same dates. --}}
-                <p class="sup-meta adp-legs-title">{{ __('adoption.legs_title') }}</p>
-                <div class="adp-funnel">
-                    @foreach ($this->legs as $leg)
-                        <span class="adp-step" wire:key="leg-{{ $loop->index }}">
-                            <span class="adp-step-label">{{ $leg['step'] }}</span>
-                            <strong class="adp-step-total font-mono">{{ trans_choice('adoption.leg_days', $leg['days'], ['count' => $leg['days']]) }}</strong>
-                        </span>
-                    @endforeach
+            @if ($this->rows->isEmpty())
+                <x-ui.empty-state
+                    icon="check-check"
+                    :title="__('adoption.empty_tab.'.$this->situation->value.'.title')"
+                    :body="__('adoption.empty_tab.'.$this->situation->value.'.body')"
+                    compact
+                />
+            @else
+                <div class="pay-table-wrap">
+                    <table class="pay-table" data-sortable>
+                        <thead>
+                            <tr>
+                                <th>{{ __('adoption.columns.business') }}</th>
+                                <th>{{ __('adoption.columns.stage') }}</th>
+                                <th>{{ __('adoption.columns.idle') }}</th>
+                                <th>{{ __('adoption.columns.why') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($this->rows as $row)
+                                @php($mailto = $this->mailtos[$row->email] ?? null)
+                                <tr wire:key="row-{{ md5($row->email) }}">
+                                    <td class="is-name is-key" data-label="{{ __('adoption.columns.business') }}" data-sort-value="{{ $row->business ?? '' }}">
+                                        {{ $row->business ?? __('adoption.no_business') }}
+                                        <span class="aiu-note">{{ $row->owner }}</span>
+                                        <span class="aiu-note font-mono">{{ $row->email }}</span>
+                                    </td>
+
+                                    <td class="is-name adp-stage" data-label="{{ __('adoption.columns.stage') }}" data-sort-value="{{ $row->step->position() }}">
+                                        <span @class(['status-tag', 'is-brand' => $row->situation === AdoptionSituation::Active, 'is-neutral' => $row->situation !== AdoptionSituation::Active])>{{ $row->step->label() }}</span>
+                                        <small>{{ __('adoption.since', ['date' => ($row->reachedAt($row->step) ?? $row->registeredAt)->format('d/m/Y')]) }}</small>
+                                    </td>
+
+                                    <td class="adp-idle font-mono" data-label="{{ __('adoption.columns.idle') }}" data-sort-value="{{ $row->daysIdle ?? 99999 }}">
+                                        @if ($row->daysIdle === null)
+                                            {{ __('adoption.never_returned') }}
+                                        @else
+                                            {{ trans_choice('adoption.idle', $row->daysIdle, ['count' => $row->daysIdle]) }}
+                                        @endif
+                                    </td>
+
+                                    {{-- The rule that put it here, in words: a row that cannot say why it is listed is noise. --}}
+                                    <td class="is-name adp-why" data-label="{{ __('adoption.columns.why') }}" data-sort-value="{{ $row->daysInStep }}">
+                                        @if ($row->situation === AdoptionSituation::Active)
+                                            {{ __('adoption.why.answered', ['conversations' => trans_choice('adoption.conversations_count', $row->conversations, ['count' => $row->conversations])]) }}
+                                        @else
+                                            {{ __('adoption.why.'.$row->step->value) }}
+                                            <em>{{ trans_choice('adoption.rule.'.$row->situation->value, $row->daysInStep, ['count' => $row->daysInStep, 'limit' => $row->stallLimit]) }}</em>
+                                        @endif
+                                    </td>
+
+                                    <td data-label="">
+                                        <div class="adp-actions">
+                                            {{-- A business has a file to open; an account without one has only its mail. --}}
+                                            @if ($row->businessId !== null)
+                                                <x-ui.button size="sm" variant="secondary" :href="route('admin.businesses', ['negocio' => $row->businessId])" wire:navigate data-row-action>
+                                                    {{ __('adoption.actions.view_business') }}
+                                                </x-ui.button>
+                                            @endif
+                                            @if ($mailto !== null && $row->situation !== AdoptionSituation::Active)
+                                                {{-- The click both opens her mail program and notes that she wrote. --}}
+                                                @if ($row->businessId === null)
+                                                    <x-ui.button size="sm" variant="secondary" icon="mail" :href="$mailto" wire:click="markWritten({{ Illuminate\Support\Js::from($row->email) }})" data-row-action>
+                                                        {{ __('adoption.actions.write') }}
+                                                    </x-ui.button>
+                                                @else
+                                                    <x-ui.button size="sm" variant="ghost" icon="mail" :href="$mailto" wire:click="markWritten({{ Illuminate\Support\Js::from($row->email) }})">
+                                                        {{ __('adoption.actions.write') }}
+                                                    </x-ui.button>
+                                                @endif
+                                            @endif
+                                        </div>
+                                        {{-- So the same account is not written to twice by two people, or twice by her. --}}
+                                        @if ($note = $this->written[$row->email.'|'.$row->step->value] ?? null)
+                                            <small class="adp-written">{{ $this->writtenNote($note) }}</small>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             @endif
+
+            <p class="aiu-foot">{{ __('adoption.legend.'.$this->situation->value) }}</p>
         </x-ui.card>
     @endif
-
-    <x-ui.card class="p-5">
-        <x-catalog.form-row>
-            <x-inputsform.combobox
-                span="short"
-                name="filter"
-                wire:model.live="filter"
-                :value="$filter"
-                :placeholder="__('adoption.filter')"
-                :options="['stalled' => __('adoption.filter_stalled'), 'all' => __('adoption.filter_all')]"
-            />
-        </x-catalog.form-row>
-
-        @forelse ($this->rows as $row)
-            <div class="adp-row" wire:key="row-{{ md5($row->email) }}">
-                <span class="adp-main">
-                    <button type="button" class="adp-name text-left" wire:click="toggle('{{ $row->email }}')"
-                        data-testid="adp-expand-{{ md5($row->email) }}">
-                        {{ $row->business ?? __('adoption.no_business') }}
-                    </button>
-                    <span class="sup-meta">
-                        <span>{{ $row->owner }}</span>
-                        <span class="font-mono">{{ $row->email }}</span>
-                        <span class="sup-age">{{ __('adoption.registered', ['when' => $row->registeredAt->diffForHumans()]) }}</span>
-                    </span>
-
-                    @if ($expanded === $row->email)
-                        {{-- The dates behind the step, so a row that stalled
-                        says WHEN it stalled without opening anything else. --}}
-                        <span class="adp-detail">
-                            @foreach ($this->steps() as $step)
-                                <span class="adp-detail-line" wire:key="detail-{{ md5($row->email) }}-{{ $step->value }}">
-                                    <span>{{ $step->label() }}</span>
-                                    <span class="sup-age">
-                                        {{ $row->reachedAt($step)?->translatedFormat('d/m/Y') ?? __('adoption.not_yet') }}
-                                    </span>
-                                </span>
-                            @endforeach
-                        </span>
-                    @endif
-                </span>
-
-                <span class="adp-side">
-                    {{-- The step reached is the whole point of the row, so it
-                    reads as a tag and the finished ones wear the brand. --}}
-                    @if ($row->isStalled)
-                        <span class="status-tag is-neutral">{{ $row->step->label() }}</span>
-                    @else
-                        <span class="status-tag is-brand">{{ $row->step->label() }}</span>
-                    @endif
-                    <span class="sup-age">{{ __('adoption.step', ['position' => $row->step->position(), 'total' => $this->totalSteps()]) }}</span>
-                </span>
-
-                <span class="adp-side">
-                    <span class="adp-idle">
-                        @if ($row->daysIdle === null)
-                            {{ __('adoption.never_returned') }}
-                        @else
-                            {{ trans_choice('adoption.idle', $row->daysIdle, ['count' => $row->daysIdle]) }}
-                        @endif
-                    </span>
-                    {{-- A zero here is noise: the step already says it never
-                    got a message. Only what happened is printed. --}}
-                    <span class="sup-meta">
-                        @if ($row->conversations > 0)
-                            <span><strong class="font-mono">{{ $row->conversations }}</strong> {{ trans_choice('adoption.conversations', $row->conversations) }}</span>
-                        @endif
-                        @if ($row->tickets > 0)
-                            <span><strong class="font-mono">{{ $row->tickets }}</strong> {{ trans_choice('adoption.tickets', $row->tickets) }}</span>
-                        @endif
-                    </span>
-                </span>
-            </div>
-        @empty
-            @if ($this->accounts->isEmpty())
-                <x-ui.empty-state icon="signal" :title="__('adoption.empty_title')" :body="__('adoption.empty_body')" compact />
-            @else
-                <x-ui.empty-state icon="check-check" :title="__('adoption.done_title')" :body="__('adoption.done_body')" compact />
-            @endif
-        @endforelse
-    </x-ui.card>
 </div>

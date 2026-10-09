@@ -198,3 +198,17 @@
 - **Suite de navegador del 2026-10-08 (tarde): 266 verdes y 3 rojos por timeout de 5 s** (CatalogSocialNetworkEdit x2, ServicesProducts: foto de producto). Los 3 pasan aislados (8 verdes). Clase conocida: la corrida larga se vuelve lenta y el clic espera de más.
 
 - **Suite de navegador del 2026-10-08 (noche), con el sistema de tablas: 275 verdes y 3 rojos.** `AdminAiBrowserTest` (el clic del diálogo, ya visto una vez) y `ClosuresBrowserTest` (`UniqueConstraintViolationException`) pasan aislados; `DemoChatBrowserTest` falla aislado igual que en la corrida de la tarde (estado viejo del demo del hero). Nada de eso toca tablas.
+
+- **RESUELTO 2026-10-09 — dos pest colgados 21 h (pid 266515 y 272872) + un `playwright run-server` huérfano de 1 día.** Causa medida: ambos tenían `PPid 0` (los lanzó un `docker exec` cuyo cliente murió) y ningún `timeout` interno, así que nada los mató; cada uno dejó vivo su servidor de Playwright, sin ninguna sesión en la base. Se mataron (verificado: cero pest/playwright). Para que no vuelva: hook `block-untimed-pest.sh` (bloquea `docker exec … vendor/bin/pest` sin `timeout` ADENTRO, o con el `timeout` afuera; 12/12 casos probados) y `StartModelEval` ignora corridas de más de 60 min en vez de quedar "ocupado" para siempre.
+
+- **RESUELTO 2026-10-09 — el combobox recortaba el texto elegido.** No era la ✕: la opción se llama "Modelo barato · OpenAI · principal" (280px) y el campo mide ~134px. Ahora el input termina en "…" (`text-overflow:ellipsis`) y lleva el nombre completo en `title`; lo mide `AdminAiBrowserTest`.
+
+- **RESUELTO 2026-10-09 — la barra de pasos del alta**: a 390px ya no hay pasos fuera de pantalla (176px del 3º y 4º): los 4 comparten el ancho con su número encima (`BusinessWizardBrowserTest`).
+
+- **RESUELTO 2026-10-09 — la tabla de Catálogos a 390px/900px** (desbordaba hasta 477px): se apila por celda con su encabezado (`catalogMaster.labelCells` pone `data-label`), el hub apila con `align-items:stretch` y la barra de búsqueda/alta envuelve (`CatalogTableLayoutBrowserTest`, 8 casos).
+
+- **RESUELTO 2026-10-09 — las capturas `*-dark` en claro**: eran las 2 de `WhatsAppLinkBrowserTest` (usaban `inDarkMode()`); ahora ponen la clase a mano, y `BrowserShotsTest` impide volver a usar `inDarkMode()`.
+
+- **RESUELTO 2026-10-09 — el correo de Adopción y la pantalla dicen lo mismo de "trabada".** `atendia:adoption-alert` usa `AdoptionRowDto::situation` (la regla de la pestaña Trabadas), corre a diario y avisa una vez por cuenta y paso. (Lo había dejado como pregunta para ella: la regla ya estaba decidida.) `AdoptionRowDto::isStalled` ya no lo lee nadie fuera de los tests viejos.
+
+- **Zona horaria del negocio — CORREGIDO el 2026-10-09: el diseño está bien y el hallazgo original exageraba.** El país es obligatorio y ancla la zona con la lista nativa de PHP (`localTimezone()`); no hace falta pantalla para elegirla. Lo ÚNICO que queda: de los 22 países cargados, 7 tienen varias zonas (AR BR CA CL EC US MX) y el código toma la primera ignorando `province_id`, aunque el comentario de la columna dice que la provincia "ubica el timezone". Solo importa para BR, CA, US y MX (en AR, CL y EC las zonas extra tienen el mismo reloj). Se resuelve con un mapa provincia → zona cuando entre el primer negocio de esos países; no antes.

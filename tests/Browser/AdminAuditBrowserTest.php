@@ -77,3 +77,19 @@ test('the audit screen holds at every width in both themes', function (string $l
     'desktop dark' => ['desktop', 1280, 900, true],
     'phone light' => ['phone', 390, 844, false],
 ]);
+
+test('an access change with dozens of names stays one line tall until it is opened', function (): void {
+    $names = collect(range(1, 39))->map(fn (int $n): string => 'permission-number-'.$n)->all();
+    Activity::query()->where('log_name', 'access')->latest('id')->firstOrFail()->update(['properties' => ['names' => $names]]);
+
+    $page = visit(route('admin.audit'))->resize(1280, 900);
+
+    $page->assertSee('39 cambios')->assertDontSee('permission-number-39');
+
+    $rowHeight = (int) $page->script('Math.max(...Array.from(document.querySelectorAll(".pay-table tbody tr")).map(r => r.getBoundingClientRect().height))');
+
+    // Two text lines of the tallest cell (name plus email) is the ceiling; 39 names ran to ten.
+    expect($rowHeight)->toBeLessThanOrEqual(80);
+
+    $page->click('39 cambios')->assertSee('permission-number-39')->screenshot(filename: 'admin-audit-names-open');
+});

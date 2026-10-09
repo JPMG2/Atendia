@@ -57,8 +57,9 @@ test('the table body scrolls inside the card with a pinned header', function () 
         ->and($wrap['body'])->toContain('var(--table-scroll-h)')->toContain('overflow:auto')
         ->and($head['body'])->toContain('position:sticky')->toContain('top:0')
         // Without an opaque background the rows show through the column labels
-        // as they scroll under the pinned header.
-        ->and($head['body'])->toContain('background:var(--surface-card)');
+        // as they scroll under the pinned header. The ground is the heading's own jade
+        // veil (`--table-head-bg`), which is opaque on purpose.
+        ->and($head['body'])->toContain('background:var(--table-head-bg)');
 });
 
 test('the pinned header draws its hairline with a shadow, not a border', function () {

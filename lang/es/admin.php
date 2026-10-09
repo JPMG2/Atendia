@@ -128,6 +128,7 @@ return [
             'key' => 'Clave',
             'ready' => 'Con clave',
             'missing' => 'Sin clave',
+            'missing_list' => 'Sin clave (:count): :names.',
             'lab' => 'Laboratorio',
             'models' => 'Modelos',
         ],
@@ -136,6 +137,18 @@ return [
             'conversation' => 'Conversación: :passed de :total · :date',
             'mechanical' => 'Mecánicas: :passed de :total · :date',
             'unmeasured' => 'Sin medir con la batería',
+            'how_title' => 'Cómo medir un modelo con la batería',
+            'run' => 'Probar con las tareas de fondo',
+            'confirm_title' => '¿Probar :model?',
+            'confirm_body' => 'Corre las 9 tareas de fondo contra este modelo con tu clave real. Gasta tokens (unos centavos) y tarda un par de minutos; el resultado aparece en su fila.',
+            'confirm_accept' => 'Probar el modelo',
+            'started' => 'Probando :model. El resultado aparece en su fila cuando termine.',
+            'running' => 'Probando :model con las tareas de fondo desde las :since. La fila se actualiza sola al terminar.',
+            'errors' => [
+                'not_measurable' => 'La batería solo mide modelos que responden en texto.',
+                'no_key' => 'Ese laboratorio no tiene una conexión con clave: no hay con qué probarlo.',
+                'busy' => 'Ya hay una prueba corriendo. Espera a que termine: usan la misma base de prueba.',
+            ],
             'how' => 'Dos baterías, contra el modelo real: conversación (70 preguntas con un juez) y mecánicas (las 9 tareas de fondo, sin juez). Gastan tokens, por eso no corren desde un botón. Se corren así (la segunda con tests/Eval/MechanicalEvalTest.php):',
             'key' => 'clave',
             'model' => 'modelo',
@@ -155,7 +168,15 @@ return [
         'tasks_empty' => 'Las tareas se siembran con AiModelSeeder: una por agente.',
         'mechanical' => 'Mecánica',
         'running' => 'Hoy corre',
+        'running_many' => ':count conexiones',
         'provider_default' => 'el predeterminado del paquete',
+        'unpriced' => 'Sin precio',
+        'unpriced_hint' => 'Corre, pero no está en el catálogo: lo que gasta no se puede valuar. Agrégalo en Catálogo.',
+        'cost' => [
+            'column' => 'Este mes (USD)',
+            'calls' => ':count llamada|:count llamadas',
+            'with' => 'Con este: USD :cost (:delta %)',
+        ],
         'no_agent' => 'El agente de esta fila ya no existe en el código.',
         'model' => 'Modelo',
         'fallback' => 'Respaldo (otra conexión)',
@@ -215,6 +236,7 @@ return [
         'title' => 'Auditoría',
         'sub' => 'Quién hizo qué. Abre en lo que no se deshace, no en el ruido de todos los días.',
         'count' => ':count movimiento|:count movimientos',
+        'count_of' => ':shown de :total movimiento|:shown de :total movimientos',
         'empty' => 'No hay movimientos con ese filtro.',
 
         'who' => 'Quién',
@@ -222,6 +244,7 @@ return [
         'when' => 'Cuándo',
         'on' => 'Sobre qué',
         'anybody' => 'Cualquiera',
+        'names_count' => ':count cambio|:count cambios',
         'system' => 'El sistema',
         'strong_only' => 'Qué mostrar',
         'strong_on' => 'Solo lo fuerte',
@@ -234,6 +257,7 @@ return [
             'restored' => 'Restauró',
             'granted' => 'Dio acceso',
             'revoked' => 'Quitó acceso',
+            'two_factor_reset' => 'Restableció el doble factor',
         ],
 
         'subjects' => [
@@ -339,6 +363,7 @@ return [
             'settings' => ['manage' => 'Cambiar los ajustes de la plataforma'],
             'users' => ['view' => 'Ver quién puede entrar al panel'],
             'manage-admin-users' => 'Crear usuarios y darles acceso',
+            'reset-two-factor' => 'Restablecer el doble factor de otra persona',
             'roles' => ['manage' => 'Crear y editar roles'],
             'logs' => ['view' => 'Leer los logs del sistema'],
         ],
@@ -348,6 +373,7 @@ return [
         'title' => 'Usuarios y accesos',
         'sub' => 'Quién puede entrar a la plataforma, y quién entra de verdad.',
         'count' => ':count persona|:count personas',
+        'count_of' => ':shown de :total persona|:shown de :total personas',
         'empty' => 'Todavía no hay ninguna cuenta.',
         'no_match' => 'Ninguna persona coincide con lo que buscaste.',
 
@@ -360,6 +386,26 @@ return [
         'state' => 'Estado',
         'two_factor' => 'Doble factor',
         'two_factor_on' => 'Activo',
+        'coverage' => 'Doble factor: :on de :total personas del equipo.',
+        'coverage_grace' => 'Plazo para activarlo: :days días desde que se crea la cuenta (se cambia en Ajustes de la plataforma).',
+        'coverage_off' => 'Hoy no se exige.',
+        'factor' => [
+            'all' => 'Todas',
+            'on' => 'Con doble factor',
+            'off' => 'Sin doble factor',
+            'until' => 'Vence el :date',
+            'overdue' => 'Plazo vencido',
+        ],
+        'reset' => [
+            'action' => 'Restablecer',
+            'title' => 'Restablecer el doble factor de :name',
+            'body' => 'Queda sin doble factor y sin códigos de recuperación, tiene que activarlo de nuevo para volver a usar el panel, y se le avisa por correo. Queda anotado en Auditoría. Confirma con tu contraseña.',
+            'password' => 'Tu contraseña',
+            'accept' => 'Restablecer el doble factor',
+            'done' => 'Listo. :name tiene que activar el doble factor de nuevo.',
+            'self' => 'No puedes restablecer el tuyo desde acá: apágalo en Mi seguridad.',
+            'gone' => 'Esa persona ya no está en el equipo.',
+        ],
         'last_login' => 'Último acceso',
         'never' => 'Nunca entró',
 
@@ -419,7 +465,7 @@ return [
         'groups' => [
             'sends' => [
                 'title' => 'Cuándo salen los mensajes automáticos',
-                'sub' => 'Cada hora es la del negocio, no la del servidor: las 09:15 en Caracas son las 09:15 en Caracas.',
+                'sub' => 'Cada mensaje sale a la hora local de cada negocio: las 09:15 son las 09:15 en Caracas para un negocio venezolano y las 09:15 en Ciudad de México para uno mexicano.',
             ],
             'analysis' => [
                 'title' => 'Cuándo se da una charla por terminada',
@@ -436,6 +482,14 @@ return [
             'support' => [
                 'title' => 'Soporte',
                 'sub' => 'Cuánto puede esperar un reporte antes de que la cola lo marque como atrasado.',
+            ],
+            'security' => [
+                'title' => 'Seguridad del equipo',
+                'sub' => 'El doble factor de quienes entran al panel de administración: admin y soporte.',
+            ],
+            'adoption' => [
+                'title' => 'Adopción',
+                'sub' => 'Cuánto tiempo puede una cuenta quedarse en un paso antes de que la pantalla de Adopción la marque como trabada.',
             ],
             'costs' => [
                 'title' => 'Costos fijos',
@@ -508,6 +562,38 @@ return [
                 'overdue_hours' => [
                     'label' => 'Atraso de una pregunta',
                     'hint' => 'Horas que puede esperar un reporte de prioridad normal (por defecto, una pregunta). Una idea no corre reloj.',
+                ],
+            ],
+            'security' => [
+                'staff_two_factor' => [
+                    'grace_days' => [
+                        'label' => 'Plazo para activar el doble factor',
+                        'hint' => 'Días que tiene cada persona del equipo para activarlo, contados desde que se creó su cuenta (o desde hoy, si es anterior). Pasado el plazo solo puede entrar a "Mi seguridad" hasta activarlo. En 0 no se exige. Si el WhatsApp no anda y nadie del equipo entra, se pone en 0 desde la consola: php artisan atendia:staff-two-factor 0.',
+                    ],
+                ],
+            ],
+            'adoption' => [
+                'stall_days' => [
+                    'registered' => [
+                        'label' => 'Trabada sin crear el negocio',
+                        'hint' => 'Días desde el registro sin que cree su negocio. Son unos minutos de trabajo: se espera poco.',
+                    ],
+                    'business' => [
+                        'label' => 'Trabada sin cargar el catálogo',
+                        'hint' => 'Días con el negocio creado y ningún servicio ni producto.',
+                    ],
+                    'catalog' => [
+                        'label' => 'Trabada sin conectar WhatsApp',
+                        'hint' => 'Días con el catálogo cargado y el WhatsApp sin conectar.',
+                    ],
+                    'whatsapp' => [
+                        'label' => 'Trabada sin recibir mensajes',
+                        'hint' => 'Días con WhatsApp conectado y ninguna conversación. Más aire: depende de que el negocio lo difunda.',
+                    ],
+                    'conversation' => [
+                        'label' => 'Trabada sin que el asistente conteste',
+                        'hint' => 'Días con mensajes recibidos y ninguna respuesta del asistente.',
+                    ],
                 ],
             ],
             'costs' => [
@@ -604,6 +690,7 @@ return [
         'sub' => 'Todos los que atiende la plataforma, con su plan y su plata.',
         'empty' => 'Todavía no hay ningún negocio dado de alta.',
         'count' => ':count negocio|:count negocios',
+        'count_of' => ':shown de :total negocio|:shown de :total negocios',
 
         'name' => 'Negocio',
         'plan' => 'Plan',

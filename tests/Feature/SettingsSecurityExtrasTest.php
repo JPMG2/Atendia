@@ -203,11 +203,22 @@ test('a verification link for an older address or without signature changes noth
 });
 
 test('two-step verification needs a phone to send to', function (): void {
-    $this->actingAs(User::factory()->create()->refresh());
+    // An owner's number comes from the business card, so the way to it is "Mi negocio".
+    $owner = User::factory()->create();
+    $owner->business()->associate(Business::factory()->create(['fallback_whatsapp_number' => null]))->save();
+    $this->actingAs($owner->refresh());
 
     Livewire::test('settings.section-two-factor')
         ->assertSee(__('settings.two_factor.no_phone'))
         ->assertSee(__('settings.two_factor.go_contact'));
+});
+
+test('a person of the team, who has no business, is told to save their own number instead', function (): void {
+    $this->actingAs(User::factory()->create(['whatsapp' => null])->refresh());
+
+    Livewire::test('settings.section-two-factor')
+        ->assertSee(__('settings.two_factor.no_phone_staff'))
+        ->assertDontSee(__('settings.two_factor.go_contact'));
 });
 
 test('two-step verification turns on only after the number proves itself', function (): void {

@@ -111,7 +111,7 @@ final class Access
         }
 
         return match (true) {
-            $permission === 'manage-admin-users' => 'users',
+            in_array($permission, ['manage-admin-users', 'reset-two-factor'], true) => 'users',
             // The hub and its twelve masters are one area on screen: splitting
             // `catalogs` from `catalog` read as two unrelated things.
             str_starts_with($permission, 'catalog') => 'catalog',

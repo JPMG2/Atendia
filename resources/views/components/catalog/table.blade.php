@@ -19,7 +19,13 @@
                 <th class="catalog-gocell" aria-hidden="true"></th>
             </tr>
         </thead>
-        <tbody>
+        {{-- Re-runs whenever the list changes (search, create, edit): `filtered()` is read to subscribe. --}}
+        <tbody
+            x-effect="
+                filtered();
+                labelCells($el);
+            "
+        >
             <template x-for="row in filtered()" :key="row.id">
                 <tr x-on:click="openEdit(row)">
                     {{ $slot }}

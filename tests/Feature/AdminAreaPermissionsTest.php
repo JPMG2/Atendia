@@ -92,7 +92,9 @@ test('the menu offers only the doors that open for whoever is looking', function
 | and a URL typed by hand has to be refused all the same.
 */
 test('every admin screen declares a permission of its own', function (): void {
-    $exempt = ['admin.dashboard', 'admin.ws-demo'];
+    // `admin.security` is each person's own page: it asks for nothing beyond the area
+    // key, and it is the one screen left open once the plazo of the second step ran out.
+    $exempt = ['admin.dashboard', 'admin.ws-demo', 'admin.security'];
 
     $naked = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route): bool => str_starts_with((string) $route->getName(), 'admin.'))

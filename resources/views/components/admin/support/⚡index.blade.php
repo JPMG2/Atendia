@@ -567,7 +567,7 @@ new class extends Component
                 @endif
             @else
                 <div class="pay-table-wrap">
-                    <table class="pay-table sup-table">
+                    <table class="pay-table sup-table" data-sortable>
                         <thead>
                             <tr>
                                 <th>{{ __('support.admin.columns.wait') }}</th>

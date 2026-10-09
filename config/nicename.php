@@ -22,6 +22,8 @@ return [
     'color' => 'color',
     'description' => 'descripción',
     'body' => 'texto',
+    'step' => 'paso',
+    'subject' => 'asunto',
     'sort_order' => 'orden',
     'business_sector_id' => 'rubro',
     'data_type' => 'tipo de dato',

@@ -14,6 +14,27 @@ declare(strict_types=1);
 
 return [
 
+    // The platform's own staff: the page where they turn the second step on.
+    'staff' => [
+        'title' => 'Mi seguridad',
+        'sub' => 'El doble factor de tu cuenta del equipo: el código de cada ingreso desde un dispositivo nuevo te llega por WhatsApp.',
+        'required' => 'Venció el plazo para activar el doble factor. Actívalo para volver a usar el panel.',
+        'banner' => '{0} Hoy vence el plazo para activar el doble factor.|{1} Queda :count día para activar el doble factor.|[2,*] Quedan :count días para activar el doble factor.',
+        'banner_cta' => 'Activarlo',
+        'overdue_title' => 'El plazo venció',
+        'overdue_body' => 'Hasta que lo actives, esta es la única pantalla del panel que puedes abrir.',
+        'reset_title' => 'Te restablecieron el doble factor',
+        'reset_body' => 'Quien administra la plataforma lo restableció: vuelve a activarlo para seguir usando el panel.',
+        'phone' => [
+            'title' => 'Tu WhatsApp',
+            'hint' => 'A este número te llega el código. Solo dígitos, con el código del país.',
+            'field' => 'Número de WhatsApp',
+            'save' => 'Guardar el número',
+            'saved' => 'Número guardado.',
+            'invalid' => 'Escribe un número con código de país, solo dígitos (de 8 a 15).',
+        ],
+    ],
+
     'challenge' => [
         'title' => 'Revisa tu correo',
         'sub' => 'Este dispositivo es nuevo para tu cuenta: te enviamos un código de 6 dígitos para confirmar que eres tú.',

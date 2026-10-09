@@ -76,12 +76,13 @@ class AiTask extends Model
      * The ones that talk to a person come first: a model change there is felt
      * by a customer, and the mechanical ones are the cheap half of the list.
      *
-     * @return Collection<int, array{id: int, label: string, group: string, needs: AiCapability, mechanical: bool, model: string|null, fallback: string|null, running: array<string, string|null>}>
+     * @return Collection<int, array{id: int, key: string, label: string, group: string, needs: AiCapability, mechanical: bool, model: string|null, fallback: string|null, running: array<string, string|null>}>
      */
     public static function board(): Collection
     {
         return self::query()->orderBy('is_mechanical')->orderBy('label')->get()->map(fn (self $task): array => [
             'id' => $task->id,
+            'key' => $task->key,
             'label' => $task->label,
             'group' => $task->group(),
             'needs' => $task->capability,

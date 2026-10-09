@@ -53,9 +53,7 @@ class StalledAdoptionReport extends Mailable implements ShouldQueue
         return array_map(fn (AdoptionRowDto $row): string => __('adoption.mail.line', [
             'business' => $row->business ?? $row->email,
             'step' => $row->step->label(),
-            'days' => $row->daysIdle === null
-                ? __('adoption.never_returned')
-                : trans_choice('adoption.idle', $row->daysIdle, ['count' => $row->daysIdle]),
+            'days' => trans_choice('adoption.mail.in_step', $row->daysInStep, ['count' => $row->daysInStep, 'limit' => $row->stallLimit]),
         ]), $this->rows);
     }
 }

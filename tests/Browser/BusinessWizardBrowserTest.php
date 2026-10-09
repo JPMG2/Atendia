@@ -38,6 +38,27 @@ test('typing the business name animates the assistant into the phone', function 
         ->assertSee('Clínica Vida');
 });
 
+test('the step bar fits a phone: the page does not widen and every step stays reachable', function (): void {
+    $page = visit('/alta')->resize(390, 844);
+
+    // The layout settles after the resize; under the load of a full run it was measured mid-reflow (164px).
+    $page->wait(1);
+
+    $overflow = (int) $page->script('document.documentElement.scrollWidth - window.innerWidth');
+    $nav = (int) $page->script('Math.round(document.querySelector(".wizard-steps").getBoundingClientRect().right - window.innerWidth)');
+
+    $page->screenshot(filename: 'wizard-steps-phone');
+
+    expect($overflow)->toBeLessThanOrEqual(0)
+        ->and($nav)->toBeLessThanOrEqual(0);
+
+    // All four steps are on screen at once: a step that needs a swipe to be found is a step nobody finds.
+    $outside = (int) $page->script('Array.from(document.querySelectorAll(".wizard-tab")).map(t => { const r = t.getBoundingClientRect(); return Math.max(0, Math.round(r.right - window.innerWidth), Math.round(-r.left)); }).reduce((a, b) => Math.max(a, b), 0)');
+    $scrolls = (int) $page->script('document.querySelector(".wizard-steps").scrollWidth - document.querySelector(".wizard-steps").clientWidth');
+
+    expect($outside)->toBe(0)->and($scrolls)->toBeLessThanOrEqual(0);
+});
+
 test('fast typing never duplicates the assistant reply', function (): void {
     $page = visit('/alta');
 

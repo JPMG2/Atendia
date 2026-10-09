@@ -30,7 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.status', 'catalog.social-network',
             'catalog.business-sector', 'catalog.business-activity',
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
-            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.support-reply',
+            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.support-reply', 'catalog.adoption-nudge',
         ];
 
         // One key per door of the admin panel. Until 2026-10-05 every route
@@ -60,6 +60,10 @@ class RolesAndPermissionsSeeder extends Seeder
         // without handing over the ability to create more of them.
         Permission::findOrCreate('manage-admin-users');
 
+        // Taking somebody's second step away is the way to take over their account,
+        // so it is the owner's alone and is not in any other role by default.
+        Permission::findOrCreate('reset-two-factor');
+
         $admin = Role::findOrCreate('admin');
         $client = Role::findOrCreate('client');
         $agent = Role::findOrCreate('agent');
@@ -75,7 +79,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // lets it through without leaning on super-admin alone.
         $client->givePermissionTo(['access-client-app', 'manage-business']);
         $agent->givePermissionTo('access-client-app');
-        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', 'manage-business', 'manage-admin-users', ...$catalogPermissions, ...$adminPermissions]);
+        $admin->givePermissionTo(['access-admin-panel', 'access-client-app', 'manage-business', 'manage-admin-users', 'reset-two-factor', ...$catalogPermissions, ...$adminPermissions]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

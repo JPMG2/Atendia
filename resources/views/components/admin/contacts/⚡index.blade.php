@@ -68,7 +68,7 @@ new class extends Component
 
         <x-ui.card class="p-5">
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('contacts.table.phone') }}</th>

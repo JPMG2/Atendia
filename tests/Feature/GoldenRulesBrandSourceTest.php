@@ -7,6 +7,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Once;
 
+// For the whole file, never on one test: attached to the last one alone it left
+// the company and its country, province and currency committed in the test base
+// every time it ran, and every later test read them as its own.
+uses(RefreshDatabase::class);
+
 /*
 |--------------------------------------------------------------------------
 | Golden rule: the brand name has ONE source
@@ -42,7 +47,8 @@ function brandOffendersIn(string $path, string $brand): array
             // and this guard never saw it. Standing alone and in any case, so
             // `AskAtendia` or `config('atendia.x')` stay out of it.
             $printed = strip_tags($line);
-            $alone = '/(?<![\w\-.\/])'.preg_quote($brand, '/').'(?![\w\-.\/])/iu';
+            // `atendia:staff-two-factor` is an artisan command, not the brand.
+            $alone = '/(?<![\w\-.\/])'.preg_quote($brand, '/').'(?![\w\-.\/])(?!:[a-z])/iu';
 
             if (preg_match($alone, $printed) !== 1) {
                 continue;
@@ -102,4 +108,4 @@ test('renaming the company renames the product everywhere', function (): void {
 
     expect(Company::brand())->toBe('Conversa')
         ->and(__('probe.brand'))->toBe('Gana con Conversa');
-})->uses(RefreshDatabase::class);
+});

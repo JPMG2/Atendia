@@ -94,3 +94,8 @@ Route::livewire('/calidad-ia', 'admin.ai-quality.index')->name('ai-quality')->mi
 // The collection queue, worth first: who to ring today, how much is hanging
 // off it and since when.
 Route::livewire('/cobranza', 'admin.collections.index')->name('collections')->middleware('permission:payments.view');
+
+// My security: each person on the team turns on their own second step here. It
+// asks for nothing beyond the area key, and it is the one page left open to a
+// person whose plazo ran out (see RequireStaffTwoFactor).
+Route::livewire('/seguridad', 'admin.security.index')->name('security');

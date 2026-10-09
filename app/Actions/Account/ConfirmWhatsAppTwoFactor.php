@@ -34,6 +34,8 @@ class ConfirmWhatsAppTwoFactor
 
         Cache::forget($key);
         $user->two_factor_whatsapp_at = now();
+        // Turning it on again is what a reset asked for: the obligation ends here.
+        $user->two_factor_reset_at = null;
         $user->save();
 
         (new Email($user, [$user->email], AccountTwoFactorChanged::class, [true]))->send();

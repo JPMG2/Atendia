@@ -6,6 +6,6 @@
 {{ $line }}
 @endforeach
 
-{{ __('adoption.mail.cta') }}: {{ route('admin.adoption') }}
+{{ __('adoption.mail.cta') }}: {{ route('admin.adoption', ['ver' => 'stalled']) }}
 
 {{ __('mail.layout.rights', ['year' => now()->year]) }}

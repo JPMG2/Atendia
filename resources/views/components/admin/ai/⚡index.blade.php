@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\Admin\StartModelEval;
 use App\Classes\Main\AiEvalResults;
+use App\Classes\Main\TaskCosts;
 use App\Dto\NotificationDto;
 use App\Enums\AiCapability;
 use App\Enums\NotificationType;
@@ -83,6 +85,48 @@ new class extends Component
     public function newestRows(): array
     {
         return $this->models->unique('code')->pluck('id')->all();
+    }
+
+    /** This month's spend by task, read once per render. */
+    #[Computed]
+    public function costs(): TaskCosts
+    {
+        return new TaskCosts(now());
+    }
+
+    /**
+     * The codes that have a price in the catalog. A model running without one
+     * is spending money nobody can value.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function priced(): array
+    {
+        return AiModel::providersByCode();
+    }
+
+    /** The battery run in progress, if any: the banner and the poll hang from it. */
+    #[Computed]
+    public function probing(): ?object
+    {
+        return AiEvalResults::running();
+    }
+
+    /** Measures a catalog model against the nine background jobs; the screen confirmed the cost first. */
+    public function probe(string $code, StartModelEval $start): void
+    {
+        try {
+            $start->handle($code);
+            $message = __('admin.ai.eval.started', ['model' => $code]);
+            $type = NotificationType::Info;
+        } catch (\DomainException $e) {
+            $message = __('admin.ai.eval.errors.'.$e->getMessage());
+            $type = NotificationType::Warning;
+        }
+
+        unset($this->probing);
+        $this->dispatchNotification(new NotificationDto($message, $type));
     }
 
     /** @return Collection<int, array<string, mixed>> */
@@ -246,7 +290,8 @@ new class extends Component
                     @continue (! $this->groups->has($group))
 
                     <x-ui.card class="aim-group mb-3 p-5" wire:key="group-{{ $group }}">
-                        <p class="sup-meta">{{ __("admin.ai.groups.{$group}.title") }} · {{ __("admin.ai.groups.{$group}.sub") }}</p>
+                        <div class="bp-card-head"><h2>{{ __("admin.ai.groups.{$group}.title") }}</h2></div>
+                        <p class="bp-card-sub">{{ __("admin.ai.groups.{$group}.sub") }}</p>
 
                         {{-- Nine mechanical tasks are one decision most days: one choice
                         for the whole group, which the Guardar below still confirms. --}}
@@ -277,6 +322,7 @@ new class extends Component
                                     <tr>
                                         <th>{{ __('admin.ai.columns.task') }}</th>
                                         <th>{{ __('admin.ai.running') }}</th>
+                                        <th class="is-num">{{ __('admin.ai.cost.column') }}</th>
                                         <th class="is-pick">{{ __('admin.ai.model') }}</th>
                                         <th class="is-pick">{{ __('admin.ai.fallback') }}</th>
                                     </tr>
@@ -292,12 +338,35 @@ new class extends Component
                                                     @endif
                                                 </span>
                                             </td>
-                                            <td class="is-running font-mono" data-label="{{ __('admin.ai.running') }}">
-                                                @forelse ($row['running'] as $connection => $code)
-                                                    {{ $this->labels[$connection] ?? $connection }} · {{ $code ?? __('admin.ai.provider_default') }}
+                                            <td class="is-running" data-label="{{ __('admin.ai.running') }}">
+                                                {{-- One line per model, not per key: two keys on the same model
+                                                are said once, with the count and the names on hover. --}}
+                                                @forelse (collect($row['running'])->groupBy(fn ($code) => $code ?? '', true) as $code => $connections)
+                                                    @php($keys = $connections->keys()->map(fn ($key) => $this->labels[$key] ?? $key))
+                                                    <span class="aim-run" wire:key="run-{{ $row['id'] }}-{{ $code }}">
+                                                        <span class="aim-run-code">{{ $code !== '' ? $code : __('admin.ai.provider_default') }}</span>
+                                                        <span class="aim-run-key" title="{{ $keys->implode(', ') }}">{{ $keys->count() > 1 ? __('admin.ai.running_many', ['count' => $keys->count()]) : $keys->first() }}</span>
+                                                        {{-- It runs, so it spends; with no catalog price nobody can say how much. --}}
+                                                        @unless (array_key_exists($code, $this->priced))
+                                                            <span class="status-tag is-warning" title="{{ __('admin.ai.unpriced_hint') }}">{{ __('admin.ai.unpriced') }}</span>
+                                                        @endunless
+                                                    </span>
                                                 @empty
                                                     <span class="text-muted">{{ __('admin.ai.no_agent') }}</span>
                                                 @endforelse
+                                            </td>
+                                            @php($spent = $row['needs'] === AiCapability::Transcription ? null : $this->costs->actual($row['key']))
+                                            <td class="is-num font-mono" data-label="{{ __('admin.ai.cost.column') }}">
+                                                @if ($spent === null)
+                                                    <span class="text-muted">—</span>
+                                                @elseif ($spent->cost === null)
+                                                    <span class="status-tag is-warning">{{ __('admin.ai.unpriced') }}</span>
+                                                @else
+                                                    {{ number_format($spent->cost, 4, ',', '.') }}
+                                                @endif
+                                                @if ($spent !== null)
+                                                    <span class="aiu-note">{{ trans_choice('admin.ai.cost.calls', $spent->calls, ['count' => $spent->calls]) }}</span>
+                                                @endif
                                             </td>
                                             <td class="is-pick" data-label="{{ __('admin.ai.model') }}">
                                                 @if ($this->choices[$row['needs']->value] === [])
@@ -307,10 +376,24 @@ new class extends Component
                                                         size="s"
                                                         :name="'model-'.$row['id']"
                                                         :options="$this->choices[$row['needs']->value]"
+                                                        :value="$this->tasks->model[$row['id']] ?? ''"
                                                         :placeholder="__('admin.ai.unassigned')"
                                                         :aria-label="__('admin.ai.model')"
-                                                        wire:model="tasks.model.{{ $row['id'] }}"
+                                                        wire:model.live="tasks.model.{{ $row['id'] }}"
                                                     />
+
+                                                    {{-- The same tokens of this month at the picked model's price:
+                                                    a reading of what happened, not a forecast. --}}
+                                                    @php($candidate = explode('|', (string) ($this->tasks->model[$row['id']] ?? ''))[1] ?? '')
+                                                    @if ($spent?->cost !== null && $candidate !== '')
+                                                        @php($alt = $this->costs->with($row['key'], $candidate))
+                                                        @if ($alt !== null)
+                                                            @php($delta = $spent->cost > 0 ? round(($alt - $spent->cost) / $spent->cost * 100) : 0)
+                                                            <span class="aim-est {{ $delta < 0 ? 'is-less' : ($delta > 0 ? 'is-more' : '') }}">
+                                                                {{ __('admin.ai.cost.with', ['cost' => number_format($alt, 4, ',', '.'), 'delta' => ($delta > 0 ? '+' : '').$delta]) }}
+                                                            </span>
+                                                        @endif
+                                                    @endif
                                                 @endif
                                             </td>
                                             <td class="is-pick" data-label="{{ __('admin.ai.fallback') }}">
@@ -322,6 +405,7 @@ new class extends Component
                                                         size="s"
                                                         :name="'fallback-'.$row['id']"
                                                         :options="$fallbacks"
+                                                        :value="$this->tasks->fallback[$row['id']] ?? ''"
                                                         :placeholder="__('admin.ai.no_fallback')"
                                                         :aria-label="__('admin.ai.fallback')"
                                                         wire:model="tasks.fallback.{{ $row['id'] }}"
@@ -359,11 +443,23 @@ new class extends Component
                     </x-ui.button>
                 </div>
 
+                {{-- The poll lives only while a run does: a page that polls forever is a bill. --}}
+                @if ($this->probing !== null)
+                    <div wire:poll.5s class="mb-3">
+                        <x-ui.alert variant="info" icon="play">
+                            {{ __('admin.ai.eval.running', ['model' => $this->probing->code, 'since' => $this->probing->since->format('H:i')]) }}
+                        </x-ui.alert>
+                    </div>
+                @endif
+
                 {{-- How a model earns its score: said where the score is read. --}}
-                <p class="aiu-foot">
-                    <span>{{ __('admin.ai.eval.how') }}</span>
-                    <span class="font-mono">EVAL_CONNECTION=&lt;{{ __('admin.ai.eval.key') }}&gt; EVAL_MODEL=&lt;{{ __('admin.ai.eval.model') }}&gt; ./vendor/bin/pest tests/Eval</span>
-                </p>
+                <details class="aim-how">
+                    <summary>{{ __('admin.ai.eval.how_title') }}</summary>
+                    <p class="aiu-foot">
+                        <span>{{ __('admin.ai.eval.how') }}</span>
+                        <span class="font-mono">EVAL_CONNECTION=&lt;{{ __('admin.ai.eval.key') }}&gt; EVAL_MODEL=&lt;{{ __('admin.ai.eval.model') }}&gt; ./vendor/bin/pest tests/Eval</span>
+                    </p>
+                </details>
 
                 @if ($editing)
                     <form wire:submit="store" class="aim-form">
@@ -527,7 +623,7 @@ new class extends Component
                     task can move to a cheaper model. Stacked inside each row they
                     could not be compared, so they are columns read top to bottom. --}}
                     <div class="pay-table-wrap">
-                        <table class="pay-table">
+                        <table class="pay-table aim-models">
                             <thead>
                                 <tr>
                                     <th>{{ __('admin.ai.columns.model') }}</th>
@@ -544,11 +640,10 @@ new class extends Component
                                 @foreach ($this->models as $priced)
                                     <tr wire:key="model-{{ $priced->id }}">
                                         <td class="is-name is-key" data-label="{{ __('admin.ai.columns.model') }}">
-                                            <span class="aiu-name">{{ $priced->label }}</span>
+                                            {{-- Where the price was read is the audit trail of the row:
+                                            on hover here, in full in the edit form. --}}
+                                            <span class="aiu-name" @if ($priced->source !== null) title="{{ $priced->source }}" @endif>{{ $priced->label }}</span>
                                             <span class="aiu-note font-mono">{{ $priced->provider }} · {{ $priced->code }}</span>
-                                            @if ($priced->source !== null)
-                                                <span class="aiu-note">{{ $priced->source }}</span>
-                                            @endif
                                             {{-- The battery measures conversation, so a voice model has no score to show. --}}
                                             @if ($priced->capability->serves(AiCapability::Text) && in_array($priced->id, $this->newestRows, true))
                                                 @php($scores = collect($this->evals)->map(fn (array $suite): ?object => $suite[$priced->code] ?? null)->filter())
@@ -581,9 +676,26 @@ new class extends Component
                                             </span>
                                         </td>
                                         <td data-label="">
-                                            <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $priced->id }})">
-                                                {{ __('admin.ai.edit') }}
-                                            </x-ui.button>
+                                            <div class="aim-row-actions">
+                                                {{-- Only what answers in text is measured by the battery, and the
+                                                dialog says what it costs before anything is spent. --}}
+                                                @if ($priced->capability->serves(AiCapability::Text) && in_array($priced->id, $this->newestRows, true))
+                                                    <x-ui.icon-button
+                                                        icon="play"
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        :label="__('admin.ai.eval.run')"
+                                                        :disabled="$this->probing !== null"
+                                                        x-on:click="dialog.confirm({
+                                                            title: {{ Illuminate\Support\Js::from(__('admin.ai.eval.confirm_title', ['model' => $priced->code])) }},
+                                                            message: {{ Illuminate\Support\Js::from(__('admin.ai.eval.confirm_body')) }},
+                                                            accept: {{ Illuminate\Support\Js::from(__('admin.ai.eval.confirm_accept')) }},
+                                                            type: 'warning',
+                                                        }).then(ok => ok && $wire.probe({{ Illuminate\Support\Js::from($priced->code) }}))"
+                                                    />
+                                                @endif
+                                                <x-ui.icon-button icon="pencil" size="sm" variant="secondary" :label="__('admin.ai.edit')" wire:click="edit({{ $priced->id }})" />
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -597,10 +709,16 @@ new class extends Component
         {{-- Connections: read-only, because the key itself never travels through a screen. --}}
         <div x-show="tab === 'connections'" x-cloak wire:key="pane-connections">
             <x-ui.card class="p-5">
-                <p class="sup-meta">{{ __('admin.ai.connections.title') }} · {{ __('admin.ai.connections.sub') }}</p>
+                <div class="bp-card-head"><h2>{{ __('admin.ai.connections.title') }}</h2></div>
+                <p class="bp-card-sub">{{ __('admin.ai.connections.sub') }}</p>
+
+                {{-- Only the keys that exist are rows: fifteen "Sin clave" lines
+                were most of the tab and told her one thing, once. --}}
+                @php($withKey = $this->connections->where('configured', true))
+                @php($withoutKey = $this->connections->where('configured', false))
 
                 <div class="pay-table-wrap">
-                    <table class="pay-table">
+                    <table class="pay-table aim-conns">
                         <thead>
                             <tr>
                                 <th>{{ __('admin.ai.connections.title') }}</th>
@@ -610,7 +728,7 @@ new class extends Component
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($this->connections as $connection)
+                            @foreach ($withKey as $connection)
                                 <tr wire:key="connection-{{ $connection['key'] }}">
                                     <td class="is-name is-key" data-label="{{ __('admin.ai.connections.title') }}">
                                         <span class="aiu-name">{{ $connection['label'] }}</span>
@@ -628,6 +746,10 @@ new class extends Component
                         </tbody>
                     </table>
                 </div>
+
+                @if ($withoutKey->isNotEmpty())
+                    <p class="aiu-foot">{{ __('admin.ai.connections.missing_list', ['count' => $withoutKey->count(), 'names' => $withoutKey->pluck('label')->implode(', ')]) }}</p>
+                @endif
             </x-ui.card>
         </div>
     </x-ui.tabs>

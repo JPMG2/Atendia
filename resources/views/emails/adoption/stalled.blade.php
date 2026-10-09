@@ -4,7 +4,7 @@
         :title="trans_choice('adoption.mail.subject', count($rows), ['count' => count($rows)])"
         :intro="__('adoption.mail.intro')"
         :body="implode(PHP_EOL, $lines)"
-        :primary-url="route('admin.adoption')"
+        :primary-url="route('admin.adoption', ['ver' => 'stalled'])"
         :primary-label="__('adoption.mail.cta')"
         :closing="__('adoption.mail.closing')"
         :team="__('mail.account.team')"

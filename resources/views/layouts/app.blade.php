@@ -73,7 +73,7 @@
 
     {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
     own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/avatar-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/photo-viewer.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/livewire-failures.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/avatar-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/photo-viewer.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/table-enhance.js', 'resources/js/livewire-failures.js'])
     @livewireStyles
 </head>
 {{-- data-*: config for livewire-failures.js — JS can resolve neither routes
@@ -225,9 +225,16 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                                 @endif
                             @endcan
 
-                            <a href="{{ route('settings') }}" wire:navigate class="dropdown-item">
-                                <x-icon name="settings" :size="16" /> {{ __('menu.settings') }}
-                            </a>
+                            {{-- The team has no client settings (support cannot even open them): its own account page is the security one. --}}
+                            @if ($onAdminPanel)
+                                <a href="{{ route('admin.security') }}" wire:navigate class="dropdown-item">
+                                    <x-icon name="lock" :size="16" /> {{ __('menu.admin_security') }}
+                                </a>
+                            @else
+                                <a href="{{ route('settings') }}" wire:navigate class="dropdown-item">
+                                    <x-icon name="settings" :size="16" /> {{ __('menu.settings') }}
+                                </a>
+                            @endif
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item dropdown-item-danger">
@@ -250,6 +257,9 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     <x-moderation.banner />
                     <x-billing.banner />
                 @endunless
+                @if ($onAdminPanel)
+                    <x-security.staff-banner />
+                @endif
                 {{ $slot }}
             </main>
         </div>

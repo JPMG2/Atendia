@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
         // examples at all, so a fresh database has to start with them.
         $this->call(DemoTagSeeder::class);
         $this->call(SupportReplySeeder::class);
+        $this->call(AdoptionNudgeSeeder::class);
         $this->call(AdminUserSeeder::class);
     }
 }

@@ -200,6 +200,40 @@ return [
         ],
     ],
 
+    'adoption_nudge' => [
+        'search_placeholder' => 'Buscar por paso, asunto o texto',
+        'search_label' => 'Buscar mensaje',
+        'singular' => 'mensaje',
+        'plural' => 'mensajes',
+        'create' => 'Crear mensaje',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo mensaje',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay mensajes que coincidan con la búsqueda.',
+
+        'columns' => [
+            'step' => 'Paso',
+            'subject' => 'Asunto',
+            'body' => 'Texto',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        'fields' => [
+            'step' => 'Paso en el que se quedó',
+            'step_placeholder' => 'Elige el paso',
+            'subject' => 'Asunto',
+            'subject_placeholder' => 'Ej. ¿Te ayudamos a crear tu negocio?',
+            'body' => 'Texto',
+            'body_hint' => 'Se abre como correo a la persona. Puedes usar {nombre} y {negocio}: se reemplazan por los de la cuenta.',
+            'status' => 'Estado',
+        ],
+    ],
+
     'seasonal_window' => [
         'search_placeholder' => 'Buscar por nombre',
         'search_label' => 'Buscar temporada',

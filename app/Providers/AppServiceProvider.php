@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\BrandAwareTranslator;
@@ -155,6 +156,8 @@ class AppServiceProvider extends ServiceProvider
             PermissionMiddleware::class,
             RoleMiddleware::class,
             RoleOrPermissionMiddleware::class,
+            // The second step too: a tab left open past the plazo must not keep working.
+            RequireStaffTwoFactor::class,
         ]);
     }
 

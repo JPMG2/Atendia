@@ -49,6 +49,34 @@ test('no catalog table overflows its panel on a laptop screen', function (string
     expect($overflow)->toBe(0);
 })->with(['Tipos de servicio', 'Modalidades', 'Atributos', 'Países', 'Actividades']);
 
+/**
+ * The same rule where it was broken: on a tablet and a phone the table used to push the
+ * page 260px wide. Below 992px a row stacks, each cell under its own heading.
+ */
+test('no catalog table pushes the page sideways on a tablet or a phone', function (string $master, int $width): void {
+    $page = visit('/admin/catalogs')->resize($width, 900);
+
+    $page->click($master)->assertNoJavaScriptErrors();
+
+    // The panel fades in: shot after it settled and scrolled to the list, not on the way.
+    $page->script('document.querySelector(".catalog-view").scrollIntoView()');
+    $page->wait(1)->screenshot(filename: 'catalog-table-'.$width.'-'.str($master)->slug());
+
+    // Name the guilty one in the failure: "the page widened" alone sends the search to the whole screen.
+    $culprit = (string) $page->script('(() => { const w = window.innerWidth; const bad = Array.from(document.querySelectorAll("body *")).filter(e => e.getBoundingClientRect().right > w + 1).sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right).slice(0, 4).map(e => e.tagName + "." + String(e.className).slice(0, 50) + ":" + Math.round(e.getBoundingClientRect().right)); return bad.join(" | "); })()');
+
+    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0, "{$master} @ {$width}px: the page widened by {$culprit}")
+        ->and((int) $page->script('const w = document.querySelector(".catalog-table-wrap"); w.scrollWidth - w.clientWidth'))->toBeLessThanOrEqual(0, "{$master} @ {$width}px: the table scrolls");
+
+    // Stacked, a cell without its heading is a number with no name.
+    $unlabelled = (int) $page->script('Array.from(document.querySelectorAll(".catalog-table tbody tr:not(:last-child) td:not(.catalog-gocell)")).filter(td => !td.dataset.label).length');
+
+    expect($unlabelled)->toBe(0);
+})->with([
+    ['Tipos de servicio', 390], ['Modalidades', 390], ['Atributos', 390], ['Países', 390], ['Actividades', 390],
+    ['Tipos de servicio', 900], ['Atributos', 900], ['Países', 900],
+]);
+
 test('the row hover is actually visible, not a 1% tint', function (): void {
     // It used to paint `--surface-sunken`: #F6F8F8 over a #FFFFFF card. With 200
     // rows, not knowing which one you are about to open is the worst bug a table

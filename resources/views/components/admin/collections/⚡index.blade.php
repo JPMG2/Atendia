@@ -119,7 +119,7 @@ new class extends Component
 
         <x-ui.card class="p-5">
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('collections.table.business') }}</th>
@@ -168,6 +168,7 @@ new class extends Component
                                         size="sm"
                                         :href="route('admin.businesses', ['negocio' => $row->business_id])"
                                         wire:navigate
+                                        data-row-action
                                     >{{ __('collections.open_business') }}</x-ui.button>
                                 </td>
                             </tr>

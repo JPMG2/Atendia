@@ -28,6 +28,9 @@ return new class extends Migration
             $table->timestamp('two_factor_whatsapp_at')->nullable();
             // Hashes only: the one-time backup codes are shown once and never stored in clear.
             $table->json('two_factor_recovery_codes')->nullable();
+            // Set when the owner resets somebody's second step: until it is turned on again
+            // the grace period does not apply, because the person was cut off on purpose.
+            $table->timestamp('two_factor_reset_at')->nullable();
             $table->string('avatar_path')->nullable();
             $table->string('whatsapp', 30)->nullable()->comment('Solo dígitos: dónde le llegan los avisos de derivación a esta persona del equipo');
             $table->boolean('is_available')->default(true)->comment('Disponible/ausente: los avisos solo van a quien está disponible');

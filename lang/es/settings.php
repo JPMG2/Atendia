@@ -90,6 +90,7 @@ return [
         'active_detail' => 'Los códigos llegan a tu WhatsApp :phone.',
         'target' => 'Te vamos a mandar el código a tu WhatsApp :phone.',
         'no_phone' => 'Para activarla, carga tu WhatsApp personal en Mi negocio → Contacto.',
+        'no_phone_staff' => 'Para activarlo, guarda arriba tu número de WhatsApp: ahí te llega el código.',
         'go_contact' => 'Cargar mi WhatsApp',
         'send' => 'Enviarme un código',
         'code' => 'Código de 6 dígitos',

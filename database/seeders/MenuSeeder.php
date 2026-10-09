@@ -119,6 +119,8 @@ class MenuSeeder extends Seeder
         Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_users', 'icon' => 'users', 'route_name' => 'admin.users', 'permission' => 'users.view', 'sort_order' => 5]);
         Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_roles', 'icon' => 'shield-check', 'route_name' => 'admin.roles', 'permission' => 'roles.manage', 'sort_order' => 6]);
         Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_audit', 'icon' => 'history', 'route_name' => 'admin.audit', 'permission' => 'audit.view', 'sort_order' => 7]);
+        // Personal, not platform: every person on the team has it, so it carries no permission.
+        Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_security', 'icon' => 'lock', 'route_name' => 'admin.security', 'sort_order' => 7]);
         Menu::create(['parent_id' => $platform->id, 'panel' => 'admin', 'label_key' => 'menu.admin_logs', 'icon' => 'scroll-text', 'route_name' => 'admin.logs', 'permission' => 'logs.view', 'sort_order' => 8]);
     }
 }

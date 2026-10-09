@@ -78,6 +78,7 @@ return [
     'admin_company' => 'Compañía',
     'admin_integrations' => 'Integraciones',
     'admin_logs' => 'Logs del sistema',
+    'admin_security' => 'Mi seguridad',
     'admin_settings' => 'Ajustes',
     'admin_roles' => 'Roles y permisos',
     'admin_audit' => 'Auditoría',

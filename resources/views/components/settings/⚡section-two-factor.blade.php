@@ -4,6 +4,7 @@ use App\Livewire\Forms\Settings\TwoFactorForm;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -34,6 +35,16 @@ new class extends Component
         $this->dispatchNotification($this->form->activate());
         $this->codeSent = false;
         unset($this->isEnabled);
+
+        // The team's own page above this card shows a notice that this just ended.
+        $this->dispatch('two-factor-changed');
+    }
+
+    /** The number was saved by the page that holds this card, and the card reads it. */
+    #[On('staff-phone-saved')]
+    public function refreshPhone(): void
+    {
+        unset($this->phone);
     }
 
     public function regenerateCodes(): void
@@ -51,6 +62,7 @@ new class extends Component
     {
         $this->dispatchNotification($this->form->disable());
         unset($this->isEnabled);
+        $this->dispatch('two-factor-changed');
     }
 
     #[Computed]
@@ -82,12 +94,17 @@ new class extends Component
         <div class="st-pending" role="status">
             <x-icon name="message-circle" :size="18" />
             <div>
-                <p>{{ __('settings.two_factor.no_phone') }}</p>
-                <div class="st-pending-links">
-                    <a href="{{ route('my-business.contacto') }}" wire:navigate class="st-link">
-                        {{ __('settings.two_factor.go_contact') }}
-                    </a>
-                </div>
+                {{-- A person of the team has no business card to read the number from. --}}
+                @if (Auth::user()->business_id === null)
+                    <p>{{ __('settings.two_factor.no_phone_staff') }}</p>
+                @else
+                    <p>{{ __('settings.two_factor.no_phone') }}</p>
+                    <div class="st-pending-links">
+                        <a href="{{ route('my-business.contacto') }}" wire:navigate class="st-link">
+                            {{ __('settings.two_factor.go_contact') }}
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     @elseif ($form->recovery_codes !== [])

@@ -5,32 +5,37 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Dto\AdoptionRowDto;
+use App\Enums\AdoptionMarkKind;
+use App\Enums\AdoptionSituation;
 use App\Mail\StalledAdoptionReport;
 use App\Messaging\Channels\Email;
+use App\Models\AdoptionMark;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
- * An account that goes quiet halfway is the thing nobody notices: the screen
- * says it, but only to whoever opens it. Weekly, so it stays a nudge.
+ * An account that stalls is the thing nobody notices: the screen says it, but
+ * only to whoever opens it. Daily, and only for what BECAME stalled since the
+ * last run: the same account on the same step is told once, not every morning.
  */
-#[Signature('atendia:adoption-alert {--days=7 : Days away before an account is reported}')]
-#[Description('Mails the team the accounts that went quiet before their assistant answered')]
+#[Signature('atendia:adoption-alert')]
+#[Description('Mails the team the accounts that have just passed the plazo of their step')]
 class ReportStalledAdoption extends Command
 {
     public function handle(): int
     {
-        $days = max(1, (int) $this->option('days'));
+        $told = AdoptionMark::lastBy(AdoptionMarkKind::Alerted);
 
-        // Never signing in again is the worst case, not the absent one.
+        // The same rule as the screen's Trabadas tab: one definition of "stalled".
         $stalled = User::adoptionRows()
-            ->filter(fn (AdoptionRowDto $row): bool => $row->isStalled && ($row->daysIdle ?? PHP_INT_MAX) >= $days)
+            ->filter(fn (AdoptionRowDto $row): bool => $row->situation === AdoptionSituation::Stalled
+                && ! isset($told[$row->email.'|'.$row->step->value]))
             ->values();
 
         if ($stalled->isEmpty()) {
-            $this->info('No stalled accounts.');
+            $this->info('No newly stalled accounts.');
 
             return self::SUCCESS;
         }
@@ -46,6 +51,9 @@ class ReportStalledAdoption extends Command
         }
 
         new Email($admin, [(string) $admin->email], StalledAdoptionReport::class, [$stalled->all()])->send();
+
+        // Marked only after handing the mail over: a run that dies before it would otherwise stay silent forever.
+        $stalled->each(fn (AdoptionRowDto $row): bool => AdoptionMark::record($row->email, $row->step, AdoptionMarkKind::Alerted));
 
         $this->info($stalled->count().' stalled account(s) reported.');
 

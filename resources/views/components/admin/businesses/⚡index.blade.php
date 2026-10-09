@@ -35,6 +35,12 @@ new class extends Component
     #[Url(as: 'buscar')]
     public string $search = '';
 
+    #[Computed]
+    public function total(): int
+    {
+        return Business::directoryTotal();
+    }
+
     /** @return Collection<int, Business> */
     #[Computed]
     public function businesses(): Collection
@@ -141,9 +147,7 @@ new class extends Component
             <h1 class="page-head-title">{{ __('admin.businesses.title') }}</h1>
             <p class="page-head-sub">{{ __('admin.businesses.sub') }}</p>
         </div>
-        <span class="text-subtle font-mono text-sm">
-            {{ trans_choice('admin.businesses.count', $this->businesses->count(), ['count' => $this->businesses->count()]) }}
-        </span>
+        <x-ui.result-count :shown="$this->businesses->count()" :total="$this->total" noun="admin.businesses.count" />
     </div>
 
     <x-ui.card class="bp-card">
@@ -177,7 +181,7 @@ new class extends Component
             </p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.businesses.name') }}</th>
@@ -216,6 +220,7 @@ new class extends Component
                                         size="sm"
                                         wire:click="toggle({{ $business->id }})"
                                         data-testid="biz-open-{{ $business->id }}"
+                                        data-row-action
                                     >{{ $this->open === $business->id
                                         ? __('admin.businesses.close')
                                         : __('admin.businesses.open') }}</x-ui.button>

@@ -30,6 +30,12 @@ new class extends Component
         return AuditTrail::rows($this->causer, $this->onlyStrong);
     }
 
+    #[Computed]
+    public function total(): int
+    {
+        return AuditTrail::total();
+    }
+
     /** @return array<string, string> */
     #[Computed]
     public function causerOptions(): array
@@ -47,9 +53,7 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.audit.title')" :sub="__('admin.audit.sub')">
-        <span class="text-subtle font-mono text-sm">
-            {{ trans_choice('admin.audit.count', $this->entries->count(), ['count' => $this->entries->count()]) }}
-        </span>
+        <x-ui.result-count :shown="$this->entries->count()" :total="$this->total" noun="admin.audit.count" />
     </x-ui.page-head>
 
     <x-ui.card class="p-5">
@@ -79,7 +83,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('admin.audit.empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.audit.when') }}</th>
@@ -112,16 +116,25 @@ new class extends Component
                                     @endif
                                 </td>
 
-                                <td class="is-name" data-label="{{ __('admin.audit.what') }}">
-                                    <span @class(['status-tag', 'is-danger' => $strong, 'is-neutral' => ! $strong])>
-                                        {{ __('admin.audit.actions.'.$entry->description) }}
-                                    </span>
+                                <td class="is-name is-key" data-label="{{ __('admin.audit.what') }}">
+                                    <div class="audit-what">
+                                        <span @class(['status-tag', 'is-danger' => $strong, 'is-neutral' => ! $strong])>
+                                            {{ __('admin.audit.actions.'.$entry->description) }}
+                                        </span>
 
-                                    @if ($entry->log_name === App\Classes\Main\AuditTrail::ACCESS)
-                                        {{-- The names, because an audit read a year from now
-                                        has to say WHICH key changed hands. --}}
-                                        <span class="aiu-note font-mono">{{ implode(', ', (array) ($entry->properties['names'] ?? [])) }}</span>
-                                    @endif
+                                        @if ($entry->log_name === App\Classes\Main\AuditTrail::ACCESS)
+                                            @php($names = (array) ($entry->properties['names'] ?? []))
+                                            {{-- An audit read a year from now has to say WHICH key
+                                            changed hands, but 39 names in the row buried the next
+                                            one: the count leads, the names open on demand. --}}
+                                            @if (count($names) > 0)
+                                                <details class="audit-names">
+                                                    <summary>{{ trans_choice('admin.audit.names_count', count($names), ['count' => count($names)]) }}</summary>
+                                                    <span class="aiu-note font-mono">{{ implode(', ', $names) }}</span>
+                                                </details>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </td>
 
                                 <td class="is-name" data-label="{{ __('admin.audit.on') }}">

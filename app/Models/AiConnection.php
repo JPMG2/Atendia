@@ -59,6 +59,12 @@ class AiConnection extends Model
             ->values();
     }
 
+    /** The first usable connection that reaches a lab, or null when none has a key. */
+    public static function firstUsableFor(string $driver): ?string
+    {
+        return self::usable()->first(fn (self $connection): bool => self::driverOf($connection->key) === $driver)?->key;
+    }
+
     /**
      * The labs a new model can be published under: those with at least one
      * usable connection. Offering one with no key would be a model nobody can call.

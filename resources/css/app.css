@@ -606,6 +606,8 @@
      abriría más abajo (el field incluye el hint y el error debajo del input). */
   .combo-shell { position:relative; }
   .combo-control { cursor:text; }
+  /* A choice longer than the box ends in an ellipsis, not in half a letter. */
+  .combo-control .field-input { text-overflow:ellipsis; }
   .combo-control.is-open { border-color:var(--brand); }
   .combo-toggle { flex:none; display:inline-flex; align-items:center; justify-content:center;
                   width:28px; height:28px; margin-right:-4px; border:0; background:transparent;
@@ -1736,6 +1738,13 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .pay-table td.is-num .aiu-note { white-space:nowrap; }
   /* A field sitting straight on the table heading reads as part of it. */
   .form-row + .pay-table-wrap { margin-top:18px; }
+  /* The audit's "what": tag and change count share the first line; the names
+  of an access change open under them, so one row stays one line tall. */
+  .audit-what { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
+  .audit-names { flex:1 1 auto; min-width:0; }
+  .audit-names summary { cursor:pointer; font-size:var(--text-xs); font-weight:600; color:var(--brand-soft-text); }
+  .audit-names summary:hover { text-decoration:underline; }
+  .audit-names .aiu-note { display:block; margin-top:4px; }
   /* A quote from a conversation, not a data field: it is the evidence of what
   went wrong, so it keeps two lines at most. Left free, one customer writing a
   paragraph owns the whole row and the severity tag scrolls out of sight. */
@@ -1754,6 +1763,50 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .pay-table tbody tr.is-over td { background:var(--danger-soft); }
   .pay-table tbody tr.is-over td:first-child { box-shadow:inset 3px 0 0 var(--danger); }
   .pay-table tbody tr.is-over:hover td { background:var(--danger-soft); filter:brightness(.98); }
+  /* A row that does something on click says so: pointer, a brand-coloured key
+  and an arrow that appears under the cursor (same cue as the catalog masters). */
+  .pay-table tbody tr:has([data-row-action]), .pay-table tbody tr[wire\:click] { cursor:pointer; }
+  .pay-table tbody tr:has([data-row-action]):hover td.is-key,
+  .pay-table tbody tr[wire\:click]:hover td.is-key { color:var(--brand-soft-text); }
+  .pay-table tbody tr:has([data-row-action]) td.is-key,
+  .pay-table tbody tr[wire\:click] td.is-key { position:relative; }
+  .pay-table tbody tr:has([data-row-action]) td.is-key::after,
+  .pay-table tbody tr[wire\:click] td.is-key::after { content:''; position:absolute; right:-2px; top:50%;
+    width:14px; height:14px; margin-top:-7px; background:var(--brand); opacity:0; transform:translateX(-4px);
+    transition:opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .pay-table tbody tr:has([data-row-action]):hover td.is-key::after,
+  .pay-table tbody tr[wire\:click]:hover td.is-key::after { opacity:1; transform:none; }
+  /* The keyboard row (j / k): the same wash and arrow as the pointer's hover. */
+  .pay-table tbody tr[data-kb] { scroll-margin-block:calc(var(--topbar-h) + 48px) 24px; }
+  .pay-table tbody tr[data-kb] td { background:var(--brand-soft); }
+  .pay-table tbody tr[data-kb] td.is-key { color:var(--brand-soft-text); }
+  .pay-table tbody tr[data-kb]:has([data-row-action]) td.is-key::after { opacity:1; transform:none; }
+  /* A sortable heading: the arrow hides until the cursor is near, and the
+  active column keeps it in full. Same mask trick as the row arrow. */
+  .pay-table th[data-sortable] { cursor:pointer; user-select:none; }
+  .pay-table th.is-num[data-sortable]::after { right:auto; left:0; }
+  .pay-table th[data-sortable]::after { content:''; position:absolute; right:0; top:50%; width:10px; height:10px;
+    margin-top:-5px; background:currentColor; opacity:0; transition:opacity var(--dur-fast) var(--ease-out);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14m-6-6 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14m-6-6 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .pay-table th[data-sortable]:hover::after, .pay-table th[data-sortable]:focus-visible::after { opacity:.45; }
+  .pay-table th[aria-sort]::after, .pay-table th[aria-sort]:hover::after { opacity:1; color:var(--brand); }
+  .pay-table th[aria-sort="ascending"]::after { transform:rotate(180deg); }
+  .pay-table th[data-sortable]:focus-visible { outline:2px solid var(--focus-ring); outline-offset:-2px; }
+  /* Desktop only: the wrap must not clip, or the heading would stick to the
+  wrap instead of the page. Below 992px the table is stacked and has no heading. */
+  @media (max-width:991px) {
+    .pay-table tbody tr:has([data-row-action]) td.is-key::after,
+    .pay-table tbody tr[wire\:click] td.is-key::after { display:none; }
+  }
+  @media (min-width:992px) {
+    .pay-table-wrap { overflow:visible; }
+    .pay-table thead th { position:sticky; top:var(--topbar-h); z-index:2; box-shadow:inset 0 -1px 0 var(--border-subtle); }
+    .slide-over .pay-table-wrap { overflow-x:auto; }
+    .slide-over .pay-table thead th { position:relative; top:auto; }
+  }
   .pay-kv { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:8px 0 12px; font-size:var(--text-sm); }
   .pay-kv dt { color:var(--text-muted); }
   .pay-kv dd { color:var(--text-strong); font-weight:600; }
@@ -2279,21 +2332,27 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     .pay-table .sup-detail td { display:block; }
   }
 
-  /* Adoption: the funnel reads left to right, so the steps are chips in the
-  order they happen and the count is the number that carries the news. */
-  .adp-funnel { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  .adp-step { display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:var(--radius-pill);
-    border:1px solid var(--border-subtle); background:var(--surface-card); }
-  .adp-step-label { font-size:var(--text-xs); color:var(--text-muted); }
-  .adp-step-total { font-size:var(--text-sm); color:var(--text-strong); }
+  /* Adoption: the funnel is a bar per step, as long as the accounts that got
+  that far, with what was lost on the way in red: the loss is the news. */
+  .adp-flow { display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:10px; }
+  .adp-flow-step { min-width:0; }
+  .adp-bar { position:relative; height:44px; border-radius:var(--radius-md); background:var(--surface-sunken); overflow:hidden; }
+  .adp-bar-fill { position:absolute; inset:0 auto 0 0; background:var(--brand); border-radius:var(--radius-md); }
+  .adp-bar-count { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:var(--text-base);
+    color:var(--text-on-brand); }
+  .adp-bar.is-empty .adp-bar-count { color:var(--text-strong); }
+  .adp-flow-name { margin-top:8px; font-size:var(--text-xs); font-weight:600; line-height:1.3; color:var(--text-strong); }
+  .adp-flow-loss { margin-top:2px; min-height:18px; font-size:var(--text-xs); font-weight:600; color:var(--danger); }
+  .adp-flow-loss.is-none { font-weight:400; color:var(--text-subtle); }
+  @media (max-width:760px) { .adp-flow { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
 
-  .adp-row { display:flex; align-items:flex-start; gap:24px; padding:10px; border-bottom:1px solid var(--border-subtle); }
-  .adp-row:last-child { border-bottom:none; }
-  .adp-row:hover { background:var(--surface-sunken); }
-  .adp-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
-  .adp-name { font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
-  .adp-side { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none; }
-  .adp-idle { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-body); }
+  /* The step an account is on: the chip says which, the line under it since when. */
+  .adp-stage small { display:block; margin-top:3px; font-size:var(--text-xs); color:var(--text-subtle); white-space:nowrap; }
+  .adp-why em { display:block; margin-top:2px; font-style:normal; font-size:var(--text-xs); color:var(--text-muted); }
+  .adp-idle { white-space:nowrap; }
+  .adp-actions { display:flex; flex-wrap:nowrap; justify-content:flex-end; gap:6px; white-space:nowrap; }
+  .adp-written { display:block; margin-top:4px; text-align:right; font-size:var(--text-xs); color:var(--text-subtle); }
+  @media (max-width:991px) { .adp-actions { flex-wrap:wrap; justify-content:flex-start; } .adp-written { text-align:left; } }
   /* The days she does NOT open, under the weekly grid of the same card. */
   .bp-closures { margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); }
   .bp-closures-title { font-family:var(--font-display); font-size:var(--text-base); font-weight:600;
@@ -2305,19 +2364,6 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bp-closure:hover { background:var(--surface-sunken); }
   .bp-closure-days { font-size:var(--text-sm); color:var(--text-strong); flex:none; }
   .bp-closure-reason { font-size:var(--text-sm); color:var(--text-muted); flex:1; min-width:0; }
-
-  .adp-legs-title { margin-top:16px; }
-  /* The row washes on hover, so the open detail needs an edge of its own or
-  it dissolves into the row exactly when it is being read. */
-  .adp-detail { display:flex; flex-direction:column; gap:2px; margin-top:6px; padding:8px 10px;
-    border:1px solid var(--border-subtle); border-radius:var(--radius-md);
-    background:var(--surface-card); max-width:420px; }
-  .adp-detail-line { display:flex; justify-content:space-between; gap:16px; font-size:var(--text-xs); color:var(--text-muted); }
-
-  @media (max-width:700px) {
-    .adp-row { flex-direction:column; gap:8px; }
-    .adp-side { width:100%; align-items:flex-start; }
-  }
 
   /* Both AI screens share this row: name on the left, figures in the middle,
   the action or the cost on the right. On the models one the two selects are
@@ -2381,11 +2427,57 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .role-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px 20px; margin-top:8px; }
   /* A field inside a cell cannot ask for its width with `span`: that only
   works inside a `.form-row`. The column declares it, once, in the header. */
-  .aim-assign th.is-pick, .aim-assign td.is-pick { width:220px; min-width:190px; }
   .aim-assign td { vertical-align:middle; }
-  /* The pair is one name, not two words: broken over two lines it doubled
-  every row of the table and read as a different model on each line. */
-  .aim-assign td.is-running { white-space:nowrap; }
+  /* What runs today: the model's code, with the key it runs through under it
+  in muted text. `nowrap` here made two keys one line 400px long, which pushed
+  the whole table out of its card. */
+  .aim-run { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 8px; }
+  .aim-run + .aim-run { margin-top:4px; }
+  .aim-run-code { font-family:var(--font-mono); font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
+  .aim-run-key { font-size:var(--text-xs); color:var(--text-muted); }
+  /* The three tables of this screen are shared out by column, not by what the
+  cells hold: a long code or key wraps inside its column, so the table is
+  always exactly as wide as its card, at any width and with any data. */
+  .aim-assign, .aim-models, .aim-conns { overflow-wrap:anywhere; }
+  .aim-models th.is-num, .aim-models td.is-num { white-space:nowrap; }
+  @media (min-width:992px) {
+    .aim-assign, .aim-models, .aim-conns { table-layout:fixed; min-width:0; }
+    /* Every cell starts at the top, with its first line level with the text
+    inside a 38px select. Centred, a note under ONE select (what the month
+    would cost) made that cell taller and lifted its select above its neighbour's. */
+    .aim-assign td { vertical-align:top; }
+    .aim-assign td:not(.is-pick) { padding-top:18px; }
+    .aim-assign th:nth-child(1) { width:19%; }
+    .aim-assign th:nth-child(2) { width:16%; }
+    .aim-assign th:nth-child(3) { width:11%; }
+    .aim-assign th:nth-child(4), .aim-assign th:nth-child(5) { width:27%; }
+    .aim-assign th.is-num { white-space:normal; }
+    .aim-models th:nth-child(1) { width:28%; }
+    .aim-models th:nth-child(2) { width:14%; }
+    .aim-models th:nth-child(3), .aim-models th:nth-child(4), .aim-models th:nth-child(5) { width:10%; }
+    .aim-models th:nth-child(6) { width:11%; }
+    .aim-models th:nth-child(7) { width:8%; }
+    .aim-models th:nth-child(8) { width:9%; }
+    .aim-conns th:nth-child(1) { width:34%; }
+    .aim-conns th:nth-child(2) { width:24%; }
+    .aim-conns th:nth-child(3) { width:22%; }
+    .aim-conns th:nth-child(4) { width:20%; }
+  }
+  /* What this task's month would have cost on the picked model: green when it
+  saves, amber when it costs more, plain when it is the same. */
+  .aim-est { display:block; margin-top:4px; font-size:var(--text-xs); color:var(--text-muted); }
+  .aim-est.is-less { color:var(--success); font-weight:600; }
+  .aim-est.is-more { color:var(--warning); font-weight:600; }
+  .aim-row-actions { display:flex; gap:6px; justify-content:flex-end; }
+  .aim-how { margin:10px 0 14px; }
+  .aim-how summary { cursor:pointer; font-size:var(--text-xs); font-weight:600; color:var(--brand-soft-text); }
+  .aim-how .aiu-foot { margin-top:8px; }
+  /* The tags under a model's name wrap as a group, not one per line. */
+  .aim-models td.is-name .status-tag { margin-top:4px; margin-right:4px; }
+  /* "Búsqueda por significado" in one line was wider than its column and ran
+  into the price beside it: a tag wraps inside its cell instead. */
+  .aim-models td:nth-child(2) .status-tag { white-space:normal; max-width:100%; }
+  .aim-models td:nth-child(7) .status-tag { white-space:nowrap; }
   /* Here the hint IS the column: capped at 260px it wrapped to four lines
   beside an empty half-table. The settings screen lets it use the cell. */
   .aim-assign td.is-name .aiu-note { max-width:none; }
@@ -2409,12 +2501,6 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
 
   @media (max-width:600px) {
     .aim-lock { grid-template-columns:minmax(0, 1fr); }
-  }
-
-  /* Stacked, the pair has the whole row: letting it wrap is what keeps a long
-  model name from widening the page. */
-  @media (max-width:991px) {
-    .aim-assign td.is-running { white-space:normal; overflow-wrap:anywhere; }
   }
 
   @media (max-width:900px) {
@@ -2945,7 +3031,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                         line-height:var(--leading-normal); max-width:56ch; }
 
   @media (max-width: 900px) {
-    .catalog-hub { flex-direction:column; }
+    /* Stacked, the panel takes the width it is given: left at `flex-start` it
+       was as wide as its widest cell, up to 80px past the screen. */
+    .catalog-hub { flex-direction:column; align-items:stretch; }
     .catalog-rail-slot,
     .catalog-hub.is-collapsed .catalog-rail-slot { position:static; flex-basis:auto; width:100%; height:auto; }
     .catalog-rail-body { max-height:var(--rail-h-sm); }
@@ -3130,6 +3218,36 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .catalog-table tbody td.catalog-table-empty { height:auto; padding:28px var(--row-px);
                                                 text-align:center; color:var(--text-muted); }
   .catalog-table tbody tr:has(.catalog-table-empty) { cursor:default; background:none; }
+
+  /* Below 992px a row stacks, each cell under its own heading (set by
+     `catalogMaster.labelCells`): a table of five columns pushed the page up to
+     477px wide on a phone, and a scroll inside it hides the last columns. */
+  /* The search, the count and the create button no longer fit on one line. */
+  @media (max-width:560px) {
+    .catalog-toolbar { flex-wrap:wrap; }
+    .catalog-toolbar .field { flex:1 1 100%; max-width:none; }
+    .catalog-count { margin-left:0; }
+  }
+  @media (max-width:991px) {
+    .catalog-table-wrap { max-height:none; overflow:visible; }
+    .catalog-table { min-width:0; table-layout:fixed; }
+    .catalog-table thead { display:none; }
+    /* The divider is a shadow: this table never draws a border (TableDensityTest). */
+    .catalog-table tbody tr { display:block; padding:10px 14px; box-shadow:inset 0 -1px 0 var(--border-subtle); }
+    .catalog-table tbody td { display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+                              height:auto; padding:3px 0; white-space:normal; overflow-wrap:anywhere; }
+    .catalog-table tbody td::before { content:attr(data-label); flex:none; color:var(--text-subtle);
+                                      font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em;
+                                      text-transform:uppercase; }
+    /* A flex item refuses to shrink under its own text: a long code or a
+       150px primary cell pushed the whole page past the screen. */
+    .catalog-table tbody td > * { min-width:0; max-width:100%; overflow-wrap:anywhere; }
+    .catalog-table .catalog-cell-primary { min-width:0; padding:0; }
+    .catalog-table tbody td.catalog-gocell { display:none; }
+    .catalog-table tbody td.catalog-table-empty { display:block; padding:24px 0; }
+    .catalog-table tbody td.catalog-table-empty::before { content:none; }
+    .catalog-table .catalog-cell-fill { width:auto; }
+  }
 
   .catalog-formbar { display:flex; align-items:center; gap:12px; padding:14px 20px;
                      border-bottom:1px solid var(--border-subtle); }
@@ -3466,6 +3584,11 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   @media (max-width:560px) {
     .wizard-crumb { display:none; }
     .wizard-panel .card { padding:20px; }
+    /* Four steps share the width, each with its number over its name: a bar
+    that scrolls sideways hid the third and the fourth behind a swipe. */
+    .wizard-steps { gap:6px; overflow-x:visible; }
+    .wizard-tab { min-width:0; white-space:normal; font-size:var(--text-xs); line-height:1.25; }
+    .wizard-tab .n { display:block; margin:0 0 2px; }
   }
   @media (prefers-reduced-motion:reduce) {
     .wizard-tab, .wizard-todo .box, .wizard-chip { transition:none; }

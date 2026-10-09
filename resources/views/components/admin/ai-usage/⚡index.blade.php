@@ -249,7 +249,7 @@ new class extends Component
             only means something read down the column of all of them, so every
             number is right-aligned and monospaced. --}}
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.ai_usage.business') }}</th>
@@ -272,7 +272,7 @@ new class extends Component
                                         @if ($row->id === null)
                                             {{ $row->name }}
                                         @else
-                                            <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $row->id]) }}">{{ $row->name }}</a>
+                                            <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $row->id]) }}">{{ $row->name }}</a>
                                         @endif
                                         @if ($row->isOverAlert)
                                             <span class="status-tag is-danger">
@@ -379,7 +379,7 @@ new class extends Component
             />
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.ai_usage.kind') }}</th>
@@ -419,7 +419,7 @@ new class extends Component
             <h2 class="aiu-section">{{ __('admin.ai_usage.by_connection') }}</h2>
 
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.ai_usage.connection') }}</th>

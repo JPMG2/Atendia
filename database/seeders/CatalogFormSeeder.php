@@ -42,6 +42,8 @@ class CatalogFormSeeder extends Seeder
             // Support
             ['group' => 'Soporte', 'title' => 'Respuestas guardadas', 'description' => 'Las respuestas que soporte repite: se escriben una vez y se pegan en el reporte.', 'component' => 'catalog.support-reply', 'permission_key' => 'catalog.support-reply', 'icon' => 'message-circle', 'order' => 15],
 
+            ['group' => 'Soporte', 'title' => 'Mensajes de adopción', 'description' => 'El correo que se abre a quien se quedó trabado en un paso del alta: uno por paso, se reescribe acá.', 'component' => 'catalog.adoption-nudge', 'permission_key' => 'catalog.adoption-nudge', 'icon' => 'mail', 'order' => 16],
+
             ['group' => 'Landing', 'title' => 'Ejemplos del hero', 'description' => 'Los negocios de ejemplo que prueba el visitante, con su versión de temporada.', 'component' => 'catalog.demo-tag', 'permission_key' => 'catalog.demo-tag', 'icon' => 'message-circle', 'order' => 14],
         ];
 

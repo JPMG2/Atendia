@@ -100,6 +100,8 @@
                 @if ($listId) aria-controls="{{ $listId }}" @endif
                 aria-autocomplete="list"
                 x-ref="search"
+                {{-- The box may be narrower than the choice: the full label is one hover away. --}}
+                x-bind:title="selected ? selected.label : null"
                 x-bind:aria-expanded="open"
                 x-model="query"
                 x-on:input="onInput()"

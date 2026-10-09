@@ -42,7 +42,7 @@ Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dai
 
 // Weekly on purpose: an account that went quiet is a call to make this week,
 // and a daily copy of the same list stops being read by the second one.
-Schedule::command('atendia:adoption-alert')->weeklyOn(1, '09:00')->withoutOverlapping(60);
+Schedule::command('atendia:adoption-alert')->dailyAt('09:00')->withoutOverlapping(60);
 
 // The month's revenue, kept so next month has something to be compared with.
 // Daily and before midnight: a server down on the 1st would otherwise lose

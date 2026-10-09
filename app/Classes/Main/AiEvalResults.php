@@ -59,6 +59,45 @@ final class AiEvalResults
             ->all();
     }
 
+    /** A run that outlives this is a run that died: the marker stops counting. */
+    private const int RUN_MINUTES = 20;
+
+    /** Says a run has started, so the screen can show it and a second one is refused. */
+    public static function markRunning(string $code, string $connection): void
+    {
+        File::ensureDirectoryExists(self::directory());
+
+        File::put(self::runningPath(), json_encode(['code' => $code, 'connection' => $connection, 'since' => date(DATE_ATOM)], JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * The run in progress, if any.
+     *
+     * @return object{code: string, connection: string, since: CarbonImmutable}|null
+     */
+    public static function running(): ?object
+    {
+        $data = File::exists(self::runningPath()) ? json_decode((string) File::get(self::runningPath()), true) : null;
+
+        if (! is_array($data) || ! isset($data['code'], $data['since'])) {
+            return null;
+        }
+
+        $since = CarbonImmutable::parse($data['since']);
+
+        return $since->addMinutes(self::RUN_MINUTES)->isPast() ? null : (object) [
+            'code' => (string) $data['code'],
+            'connection' => (string) ($data['connection'] ?? ''),
+            'since' => $since,
+        ];
+    }
+
+    /** The path the run's own shell removes when it ends, however it ended. */
+    public static function runningPath(): string
+    {
+        return self::directory().'/running.marker';
+    }
+
     private static function directory(): string
     {
         return storage_path('app/ai-eval');

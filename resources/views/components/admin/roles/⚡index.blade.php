@@ -167,7 +167,7 @@ new class extends Component
 
     <x-ui.card class="p-5">
         <div class="pay-table-wrap">
-            <table class="pay-table">
+            <table class="pay-table" data-sortable>
                 <thead>
                     <tr>
                         <th>{{ __('admin.roles.columns.role') }}</th>
@@ -207,7 +207,7 @@ new class extends Component
                             <td data-label="">
                                 @unless (App\Classes\Main\Access::isProtected($role->name))
                                     <div class="flex flex-wrap gap-2">
-                                        <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $role->id }})">
+                                        <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $role->id }})" data-row-action>
                                             {{ __('admin.roles.edit') }}
                                         </x-ui.button>
 

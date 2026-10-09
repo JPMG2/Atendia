@@ -26,6 +26,25 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
         // DTO, which is the form's only state.
         current: null,
 
+        /**
+         * Gives each cell of the table its heading as `data-label`, which is what
+         * the stacked phone layout prints beside it. The slot only brings the
+         * cells, so the headings are read from the table itself.
+         */
+        labelCells(body) {
+            this.$nextTick(() => {
+                const heads = Array.from(body.closest('table').querySelectorAll('thead th')).map((th) => th.textContent.trim());
+
+                body.querySelectorAll('tr').forEach((row) => {
+                    Array.from(row.children).forEach((cell, index) => {
+                        if (heads[index] && !cell.classList.contains('catalog-gocell') && !cell.hasAttribute('colspan')) {
+                            cell.dataset.label = heads[index];
+                        }
+                    });
+                });
+            });
+        },
+
         filtered() {
             const q = this.q.trim().toLowerCase();
             if (!q) return this.items;

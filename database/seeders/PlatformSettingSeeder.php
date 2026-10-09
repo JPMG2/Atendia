@@ -47,6 +47,16 @@ class PlatformSettingSeeder extends Seeder
             ['key' => 'support.overdue_hours_high', 'group' => 'support', 'type' => 'integer', 'default_value' => '8', 'min' => 1, 'max' => 720, 'sort_order' => 1],
             ['key' => 'support.overdue_hours', 'group' => 'support', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 720, 'sort_order' => 2],
 
+            // The plazo for admin and support to turn on the second step; 0 stops asking.
+            ['key' => 'security.staff_two_factor.grace_days', 'group' => 'security', 'type' => 'integer', 'default_value' => '7', 'min' => 0, 'max' => 60, 'sort_order' => 1],
+
+            // How long an account may sit on each step before the adoption screen calls it stalled.
+            ['key' => 'adoption.stall_days.registered', 'group' => 'adoption', 'type' => 'integer', 'default_value' => '3', 'min' => 1, 'max' => 60, 'sort_order' => 1],
+            ['key' => 'adoption.stall_days.business', 'group' => 'adoption', 'type' => 'integer', 'default_value' => '7', 'min' => 1, 'max' => 60, 'sort_order' => 2],
+            ['key' => 'adoption.stall_days.catalog', 'group' => 'adoption', 'type' => 'integer', 'default_value' => '7', 'min' => 1, 'max' => 60, 'sort_order' => 3],
+            ['key' => 'adoption.stall_days.whatsapp', 'group' => 'adoption', 'type' => 'integer', 'default_value' => '10', 'min' => 1, 'max' => 60, 'sort_order' => 4],
+            ['key' => 'adoption.stall_days.conversation', 'group' => 'adoption', 'type' => 'integer', 'default_value' => '7', 'min' => 1, 'max' => 60, 'sort_order' => 5],
+
             // What the platform costs apart from the AI; read by the net result.
             ['key' => 'costs.fixed_monthly_usd', 'group' => 'costs', 'type' => 'integer', 'default_value' => '0', 'min' => 0, 'max' => 100000, 'sort_order' => 1],
 

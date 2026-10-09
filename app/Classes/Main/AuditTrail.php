@@ -44,6 +44,12 @@ final class AuditTrail
             ->get();
     }
 
+    /** Every entry in the trail: `rows()` caps at 200 and filters, this is the whole. */
+    public static function total(): int
+    {
+        return Activity::query()->count();
+    }
+
     /**
      * The people who ever left a mark, plus the system.
      *

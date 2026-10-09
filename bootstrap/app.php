@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\LogoutRevokedDevice;
+use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantDatabaseContext;
 use Illuminate\Foundation\Application;
@@ -23,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function (): void {
             // Panel admin: área propia, protegida por permiso de área.
-            Route::middleware(['web', 'auth', 'verified', 'permission:access-admin-panel'])
+            Route::middleware(['web', 'auth', 'verified', 'permission:access-admin-panel', 'staff.two-factor'])
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'staff.two-factor' => RequireStaffTwoFactor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

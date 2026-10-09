@@ -73,7 +73,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('moderation.admin.queue_empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('moderation.admin.date') }}</th>
@@ -138,7 +138,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('moderation.admin.recent_empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <tbody>
                         @foreach ($this->recent as $flag)
                             <tr wire:key="reviewed-{{ $flag->id }}">

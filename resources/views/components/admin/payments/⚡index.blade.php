@@ -79,7 +79,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('billing.admin.empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('billing.history.date') }}</th>
@@ -153,7 +153,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('billing.admin.recent_empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <tbody>
                         @foreach ($this->recent as $payment)
                             <tr wire:key="recent-{{ $payment->id }}">

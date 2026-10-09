@@ -851,6 +851,12 @@ class Business extends Model
         return $this->hasMany(Payment::class);
     }
 
+    /** How many businesses `directory()` holds with no search: the "of" in "4 of 34". */
+    public static function directoryTotal(): int
+    {
+        return self::query()->count();
+    }
+
     /**
      * Every business the platform serves, with the plan row that judges it.
      * The one screen that administers them, as opposed to `/admin/adopcion`,

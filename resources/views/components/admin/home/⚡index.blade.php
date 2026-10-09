@@ -200,7 +200,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('admin.home.queue.empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.home.queue.date') }}</th>
@@ -215,7 +215,7 @@ new class extends Component
                             <tr wire:key="queue-{{ $payment->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.home.queue.date') }}">{{ $payment->created_at?->format('d/m/Y') }}</td>
                                 <td class="is-key" data-label="{{ __('admin.home.queue.business') }}">
-                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $payment->business_id]) }}">{{ $payment->business?->name }}</a>
+                                    <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $payment->business_id]) }}">{{ $payment->business?->name }}</a>
                                 </td>
                                 <td data-label="{{ __('admin.home.queue.plan') }}">{{ __('plan.names.'.$payment->plan) }}</td>
                                 <td class="font-mono" data-label="{{ __('admin.home.queue.amount') }}">{{ $payment->currency }} {{ number_format((float) $payment->amount, 2, ',', '.') }}</td>
@@ -278,7 +278,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('admin.home.renewals.empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.home.renewals.due') }}</th>
@@ -295,7 +295,7 @@ new class extends Component
                             <tr>
                                 <td class="font-mono" data-label="{{ __('admin.home.renewals.due') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
                                 <td data-label="{{ __('admin.home.renewals.business') }}">
-                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                    <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
                                 </td>
                                 <td data-label="{{ __('admin.home.renewals.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td data-label="{{ __('admin.home.renewals.cycle') }}">
@@ -324,7 +324,7 @@ new class extends Component
                 <p class="text-muted text-sm">{{ __('admin.home.leaving.empty') }}</p>
             @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.home.leaving.ends') }}</th>
@@ -339,7 +339,7 @@ new class extends Component
                             <tr wire:key="leaving-{{ $subscription->id }}">
                                 <td class="font-mono" data-label="{{ __('admin.home.leaving.ends') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
                                 <td data-label="{{ __('admin.home.leaving.business') }}">
-                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                    <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
                                 </td>
                                 <td data-label="{{ __('admin.home.leaving.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td class="font-mono" data-label="{{ __('admin.home.leaving.amount') }}">USD {{ number_format($subscription->nextAmount(), 2, ',', '.') }}</td>
@@ -360,7 +360,7 @@ new class extends Component
             <p class="text-muted text-sm">{{ __('admin.home.struggling.empty') }}</p>
         @else
             <div class="pay-table-wrap">
-                <table class="pay-table">
+                <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
                             <th>{{ __('admin.home.struggling.since') }}</th>
@@ -374,7 +374,7 @@ new class extends Component
                             <tr>
                                 <td class="font-mono" data-label="{{ __('admin.home.struggling.since') }}">{{ $subscription->periodEndsAt()?->format('d/m/Y') }}</td>
                                 <td data-label="{{ __('admin.home.struggling.business') }}">
-                                    <a class="row-link" wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
+                                    <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $subscription->business_id]) }}">{{ $subscription->business?->name }}</a>
                                 </td>
                                 <td data-label="{{ __('admin.home.struggling.plan') }}">{{ __('plan.names.'.$subscription->plan) }}</td>
                                 <td data-label="{{ __('admin.home.struggling.state') }}">

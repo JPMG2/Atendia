@@ -57,7 +57,9 @@ test('the panel screen invites an unlinked number to connect', function (): void
         ->assertSee(__('whatsapp.topbar_disconnected'))
         ->screenshot(filename: 'whatsapp-panel-disconnected');
 
-    $page->inDarkMode()->screenshot(filename: 'whatsapp-panel-disconnected-dark');
+    // inDarkMode() leaves the page in light: the shot would carry a "dark" name and a light page.
+    $page->script('document.documentElement.classList.add("dark")');
+    $page->screenshot(filename: 'whatsapp-panel-disconnected-dark');
 });
 
 test('the panel screen holds together on a phone', function (): void {
@@ -120,7 +122,8 @@ test('a linked number reads as connected on both the card and the pill', functio
         ->assertSee(__('whatsapp.history.device_removed'))
         ->screenshot(filename: 'whatsapp-panel-connected');
 
-    $page->inDarkMode()->screenshot(filename: 'whatsapp-panel-connected-dark');
+    $page->script('document.documentElement.classList.add("dark")');
+    $page->screenshot(filename: 'whatsapp-panel-connected-dark');
 });
 
 test('a clean week says so instead of showing an empty figure', function (): void {
