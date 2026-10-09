@@ -898,6 +898,16 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [x] **HECHO 2026-10-09 — las tres ideas de Auditoría/Usuarios que ella pidió:** (1) atajos `/` (a "Quién") y `c` (limpiar filtros) por `data-key-focus` / `data-key-click` en `table-enhance.js`, con la línea de atajos oculta bajo 992px; (2) la vista guardada "Reinicios del doble factor" en la fila de filtros; (3) "Recordarle" en la fila de Usuarios (`RemindStaffTwoFactor`, una vez por persona y día, compartida con el comando diario; sin contraseña a propósito: es un recordatorio, no una acción sobre la cuenta). El correo dice "mañana" solo cuando es mañana.
 - [ ] **Guardián de la base de pruebas:** un control que falle si un test deja filas confirmadas en `atendia_testing` (la causa de los falsos "flakes" de PHP).
 
+**Para enamorar, ofrecidas el 2026-10-09 al cerrar Planes y Feriados (sin decidir, una línea cada una):**
+- [ ] **Vista previa de la ficha:** en el formulario de Planes, la tarjeta de precios de la landing actualizándose en vivo mientras se teclea (como el constructor de tablas de precios de Stripe).
+- [ ] **Calendario anual por país:** en Feriados, una vista de 12 meses que marque cada día para ver de un vistazo qué cae en puente.
+- [ ] **Copiar feriados de otro país:** duplicar los de Argentina a un país nuevo y ajustar las diferencias, en vez de cargarlos uno a uno.
+
+**Para enamorar, ofrecidas antes en la jornada de Auditoría y Usuarios (sin decidir):**
+- [ ] **Aviso en el Inicio del admin:** "2 personas vencen esta semana", que lleve a Usuarios ya filtrado por "Doble factor: sin activar".
+- [ ] **Historial en panel lateral:** que "Ver historial" abra la línea de tiempo de la persona sin salir de Usuarios.
+- [ ] **Atajo `?`:** un diálogo que liste las teclas de la pantalla (`/`, `c`, `j`, `k`).
+
 **De construcción que siguen (sin dependencia de nadie):**
 - [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
 
