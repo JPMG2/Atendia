@@ -34,6 +34,38 @@ beforeEach(function (): void {
     Subscription::query()->whereIn('business_id', $businesses->modelKeys())->update(['plan' => 'premium']);
 });
 
+test('the card on the landing follows what is typed before saving', function (string $label, int $width, bool $dark): void {
+    $page = visit('/admin/catalogs')->resize($width, 900);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->click('Planes')->wait(0.8);
+    $page->script('Array.from(document.querySelectorAll(".catalog-table tbody tr")).find(r => r.innerText.includes("Negocio")).click()');
+    $page->wait(1.5);
+
+    $page->assertSee('Cómo se ve en la landing')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-plans-preview-'.$label);
+
+    $before = (string) $page->script('document.querySelector("[data-testid=plan-preview] .pricing-tier")?.innerText ?? ""');
+    expect($before)->toContain('$79');
+
+    // Typing the price moves the card, a moment later and without saving.
+    $page->script('$wire = Livewire.all()[Livewire.all().length - 1].$wire; $wire.form.data.price = 91;');
+    $page->wait(1.2);
+
+    expect((string) $page->script('document.querySelector("[data-testid=plan-preview] .pricing-tier").innerText'))->toContain('$91');
+    expect(SubscriptionPlan::query()->where('code', 'negocio')->value('price'))->toBe(79);
+
+    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+})->with([
+    'desktop' => ['desktop', 1280, false],
+    'dark' => ['dark', 1280, true],
+    'phone' => ['phone', 390, false],
+]);
+
 test('the list names each plan, its price and who is on it, with no way to create one', function (): void {
     $page = visit('/admin/catalogs')->resize(1280, 800);
 

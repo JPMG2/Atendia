@@ -166,6 +166,29 @@ test('a seed never puts back what was edited in the master', function (): void {
     expect(Plan::named('negocio')->price)->toBe(85);
 });
 
+test('the preview is the landing card with what is typed over the saved figures, and writes nothing', function (): void {
+    $card = Livewire::test('catalog.plan')
+        ->instance()
+        ->previewCard('negocio', ['price' => '85', 'conversations_per_month' => '1234', 'ask_per_month' => '']);
+
+    expect($card)->toContain('pricing-tier')
+        // The typed figures lead the card; the emptied box keeps the saved cap.
+        ->and($card)->toContain('$85')
+        ->and($card)->toContain('1.234')
+        ->and(Plan::named('negocio')->price)->toBe(79)
+        ->and(SubscriptionPlan::query()->where('code', 'negocio')->value('conversations_per_month'))->not->toBe(1234);
+});
+
+test('the preview never paints a negative or unreadable figure, and an unknown plan draws nothing', function (): void {
+    $component = Livewire::test('catalog.plan')->instance();
+
+    $saved = Plan::named('negocio')->price;
+
+    expect($component->previewCard('negocio', ['price' => '-40']))->toContain('$0')
+        ->and($component->previewCard('negocio', ['price' => 'abc']))->toContain('$'.$saved)
+        ->and($component->previewCard('nope', ['price' => '10']))->toBe('');
+});
+
 test('who changed a price, and from what, stays in the audit trail', function (): void {
     $admin = User::factory()->create(['email_verified_at' => now()]);
     $this->actingAs($admin);

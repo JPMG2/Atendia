@@ -126,6 +126,20 @@ test('the keys take her to the person field and clear the filters, never while t
     $page->assertDontSee('Qué pasó: Eliminó')->screenshot(filename: 'admin-audit-keys');
 });
 
+test('the question mark lists the keys of the screen in the system dialog', function (): void {
+    $page = visit(route('admin.audit'))->resize(1280, 900);
+
+    $page->script("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: '?', bubbles: true}))");
+
+    $page->assertSee('Teclas de esta pantalla')
+        ->assertSee('elige a una persona')
+        ->assertSee('recorren las filas')
+        ->screenshot(filename: 'admin-audit-help');
+
+    // One line per key group, so the dialog reads as a list and not a paragraph.
+    expect($page->script('document.querySelector(".dialog-message").innerText.split("\n").length'))->toBe(4);
+});
+
 test('an access change with dozens of names stays one line tall until it is opened', function (): void {
     $names = collect(range(1, 39))->map(fn (int $n): string => 'permission-number-'.$n)->all();
     Activity::query()->where('log_name', 'access')->latest('id')->firstOrFail()->update(['properties' => ['names' => $names]]);

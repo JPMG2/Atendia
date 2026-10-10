@@ -73,7 +73,7 @@ class CountryHoliday extends Model implements DataTable
         return $this->newQuery()
             ->with('country:id,name')
             ->get()
-            ->sortBy(fn (self $holiday): string => $holiday->country?->name.'|'.($holiday->on_date?->format('Y-m-d') ?? sprintf('0000-%02d-%02d', $holiday->month ?? 0, $holiday->day ?? 0)).'|'.($holiday->easter_offset ?? 0))
+            ->sortBy(fn (self $holiday): string => $holiday->country?->name.'|'.$holiday->calendarOrder())
             ->map(fn (self $holiday): array => [
                 'id' => $holiday->id,
                 'country' => (string) $holiday->country?->name,
@@ -83,6 +83,53 @@ class CountryHoliday extends Model implements DataTable
                 'active' => $holiday->is_active,
             ])
             ->values();
+    }
+
+    /** Where this row sits among its country's: by calendar day, Easter-relative ones after the fixed. */
+    private function calendarOrder(): string
+    {
+        return ($this->on_date?->format('Y-m-d') ?? sprintf('0000-%02d-%02d', $this->month ?? 0, $this->day ?? 0)).'|'.($this->easter_offset ?? 0);
+    }
+
+    /** What makes two recurring rows "the same day" across countries; null for a one-year row, which never repeats. */
+    private function recurrenceKey(): ?string
+    {
+        return match ($this->kind()) {
+            self::KIND_FIXED => 'fixed:'.$this->month.'-'.$this->day,
+            self::KIND_EASTER => 'easter:'.$this->easter_offset,
+            default => null,
+        };
+    }
+
+    /**
+     * The holidays of `$sourceId` worth copying to `$targetId`: the ones that
+     * repeat every year (a one-year decree of one country says nothing about
+     * another) and that the target does not already have on that day.
+     *
+     * @return Collection<int, self>
+     */
+    public static function copyableFrom(int $sourceId, int $targetId): Collection
+    {
+        $taken = self::query()->where('country_id', $targetId)->get()
+            ->map(fn (self $holiday): ?string => $holiday->recurrenceKey())
+            ->filter()
+            ->all();
+
+        return self::query()
+            ->where('country_id', $sourceId)
+            ->where('is_active', true)
+            ->get()
+            ->reject(fn (self $holiday): bool => $holiday->recurrenceKey() === null || in_array($holiday->recurrenceKey(), $taken, true))
+            ->sortBy(fn (self $holiday): string => $holiday->calendarOrder())
+            ->values();
+    }
+
+    /** The country that has holidays loaded, to open a calendar on something; null when none has. */
+    public static function firstCountryId(): ?int
+    {
+        $id = self::query()->where('is_active', true)->orderBy('country_id')->value('country_id');
+
+        return $id === null ? null : (int) $id;
     }
 
     /** "1 de mayo", "Viernes Santo: 2 días antes de Pascua", "17/08/2026" — the date in words. */
@@ -110,7 +157,7 @@ class CountryHoliday extends Model implements DataTable
     /**
      * The country's holidays landed on a year, soonest first.
      *
-     * @return Collection<int, array{date: CarbonImmutable, name: string}>
+     * @return Collection<int, array{date: CarbonImmutable, name: string, kind: string}>
      */
     public static function forYear(int $countryId, int $year): Collection
     {
@@ -129,9 +176,16 @@ class CountryHoliday extends Model implements DataTable
                     default => CarbonImmutable::create($year, $holiday->month, $holiday->day),
                 },
                 'name' => $holiday->name,
+                'kind' => $holiday->kind(),
             ])
             ->sortBy(fn (array $holiday): string => $holiday['date']->format('Y-m-d'))
             ->values();
+    }
+
+    /** The one-year holiday a country has on an exact date, switched on or off; null when there is none. */
+    public static function onceOn(int $countryId, string $date): ?self
+    {
+        return self::query()->where('country_id', $countryId)->whereDate('on_date', $date)->first();
     }
 
     /**

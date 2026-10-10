@@ -151,4 +151,6 @@ new class extends Component
             @endif
         @endif
     </x-ui.card>
+
+    <x-ui.key-hints />
 </div>

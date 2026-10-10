@@ -117,6 +117,36 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
     };
 }
 
+/**
+ * The plans master's live card: asks the server for the landing's own markup
+ * with what is typed laid over the saved plan, a moment after the last key.
+ * The words and the lines come from PHP, so there is one place that says them.
+ */
+export function planPreview() {
+    return {
+        html: '',
+        yearly: false,
+        timer: null,
+
+        init() {
+            this.$watch(() => JSON.stringify(this.$wire.form.data ?? {}), () => this.schedule());
+            this.schedule();
+        },
+
+        schedule() {
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => this.refresh(), 250);
+        },
+
+        async refresh() {
+            const data = JSON.parse(JSON.stringify(this.$wire.form.data ?? {}));
+
+            this.html = data.code ? await this.$wire.previewCard(data.code, data) : '';
+        },
+    };
+}
+
 document.addEventListener('alpine:init', () => {
+    window.Alpine.data('planPreview', planPreview);
     window.Alpine.data('catalogMaster', catalogMaster);
 });

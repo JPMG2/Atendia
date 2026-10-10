@@ -461,4 +461,6 @@ new class extends Component
             <p class="aiu-foot"><span>{{ __('admin.ai_usage.by_connection_hint') }}</span></p>
         </x-ui.card>
     @endif
+
+    <x-ui.key-hints />
 </div>

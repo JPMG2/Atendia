@@ -233,4 +233,6 @@ new class extends Component
             </table>
         </div>
     </x-ui.card>
+
+    <x-ui.key-hints />
 </div>

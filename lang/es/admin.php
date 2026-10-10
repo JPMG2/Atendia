@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 return [
 
+    // The key line every table screen of the panel shares (`<x-ui.key-hints>`).
+    'keys' => [
+        'title' => 'Teclas de esta pantalla',
+        'rows' => 'recorren las filas',
+        'help' => 'muestra estas teclas',
+        'search' => 'va al buscador',
+        'clear' => 'limpia los filtros',
+        'clear_filters' => 'Limpiar filtros',
+    ],
+
     'ai' => [
         'title' => 'Modelos de IA',
         'sub' => 'Qué modelo responde cada tipo de trabajo, con qué clave y a qué precio. Los modelos salen del catálogo y el catálogo solo acepta laboratorios que tengan clave.',
@@ -251,7 +261,6 @@ return [
         'keys' => [
             'person' => 'elige a una persona',
             'clear' => 'limpia los filtros',
-            'rows' => 'recorren las filas',
         ],
         'names_count' => ':count cambio|:count cambios',
         'system' => 'El sistema',
@@ -427,6 +436,13 @@ return [
         'created' => 'Listo. Le mandamos el correo de acceso a :email.',
         'resend' => 'Reenviar acceso',
         'history' => 'Ver historial',
+        'timeline' => [
+            'title' => 'Historial de :name',
+            'empty_title' => 'Sin movimientos',
+            'empty_body' => 'Esta persona todavía no hizo nada que quede registrado.',
+            'capped' => 'Se muestran los últimos :count movimientos; en Auditoría está el resto.',
+            'open_audit' => 'Abrir en Auditoría',
+        ],
         'remind' => 'Recordarle',
         'reminded' => 'Listo. Le avisamos a :email que su plazo vence el :date.',
         'reminded_already' => ':email ya recibió el aviso hoy.',
@@ -771,6 +787,11 @@ return [
         'title' => 'Inicio',
         'sub' => 'Lo que está esperando una decisión tuya, ahora mismo.',
         'as_of' => 'Al :date',
+
+        'two_factor_due' => [
+            'text' => '{1} Vence esta semana el plazo del doble factor de :names.|[2,*] Vencen esta semana los plazos del doble factor de :count personas: :names.',
+            'see' => 'Ver quién falta',
+        ],
 
         'tiles' => [
             'receipts' => 'Comprobantes por verificar',

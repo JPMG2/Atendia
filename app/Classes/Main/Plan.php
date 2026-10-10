@@ -138,6 +138,42 @@ final class Plan
         return new self($code, $plans[$code]);
     }
 
+    /**
+     * A saved plan with what is being typed laid over it, for the owner's
+     * preview of the card before she saves. Nothing is written: an empty or
+     * unreadable box keeps the saved figure, so a half-typed number never
+     * paints a card with a zero where a price was.
+     *
+     * @param  array<string, mixed>  $typed  The form's fields, as the browser holds them.
+     */
+    public static function preview(string $code, array $typed): ?self
+    {
+        $plans = self::catalog();
+
+        if (! array_key_exists($code, $plans)) {
+            return null;
+        }
+
+        $limits = $plans[$code];
+
+        foreach ($limits as $field => $saved) {
+            if (! array_key_exists($field, $typed)) {
+                continue;
+            }
+
+            $value = $typed[$field];
+
+            $limits[$field] = match (true) {
+                is_bool($saved) => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+                $field === 'statistics' => in_array($value, ['counts', 'patterns', 'trends'], true) ? $value : $saved,
+                is_numeric($value) => max(0, (int) $value),
+                default => $saved,
+            };
+        }
+
+        return new self($code, $limits);
+    }
+
     /** The plan a new business trials; the floor if no row offers a trial. */
     public static function trial(): self
     {

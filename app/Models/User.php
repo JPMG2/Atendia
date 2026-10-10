@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Actions\Account\SendEmailVerificationLink;
 use App\Actions\Account\SendPasswordResetLink;
+use App\Classes\Main\StaffTwoFactor;
 use App\Dto\AdoptionRowDto;
 use App\Enums\AdoptionStep;
 use App\Enums\MessageAuthor;
@@ -242,6 +243,28 @@ class User extends Authenticatable
             'on' => (clone $staff)->whereNotNull('two_factor_whatsapp_at')->count(),
             'total' => $staff->count(),
         ];
+    }
+
+    /**
+     * The team members whose second-step plazo ends within `$days` and who
+     * still have it off. A plazo already past is not here: that person is
+     * locked to the security page, which is a different sentence.
+     *
+     * @return Collection<int, self>
+     */
+    public static function staffTwoFactorDueWithin(int $days): Collection
+    {
+        return self::query()
+            ->permission('access-admin-panel')
+            ->whereNull('two_factor_whatsapp_at')
+            ->orderBy('name')
+            ->get()
+            ->filter(function (self $person) use ($days): bool {
+                $rule = new StaffTwoFactor($person);
+
+                return $rule->deadline !== null && ! $rule->overdue && $rule->daysLeft <= $days;
+            })
+            ->values();
     }
 
     /**

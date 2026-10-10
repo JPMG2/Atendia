@@ -175,6 +175,8 @@ new class extends Component
             </div>
         @endif
     </x-ui.card>
+
+    <x-ui.key-hints />
 </div>
 
 @script

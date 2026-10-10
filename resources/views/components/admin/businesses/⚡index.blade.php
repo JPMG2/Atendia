@@ -35,6 +35,11 @@ new class extends Component
     #[Url(as: 'buscar')]
     public string $search = '';
 
+    public function clearFilters(): void
+    {
+        $this->reset('search', 'state');
+    }
+
     #[Computed]
     public function total(): int
     {
@@ -158,6 +163,7 @@ new class extends Component
                 :label="__('admin.businesses.search')"
                 name="search"
                 icon="search"
+                data-key-focus="/"
                 :placeholder="__('admin.businesses.search_placeholder')"
                 wire:model.live.debounce.400ms="search"
             />
@@ -172,6 +178,12 @@ new class extends Component
                 :placeholder="__('admin.businesses.all_states')"
                 wire:model.live="state"
             />
+
+            @if ($search !== '' || $state !== '')
+                <x-ui.button variant="ghost" size="sm" wire:click="clearFilters" data-key-click="c">
+                    {{ __('admin.keys.clear_filters') }}
+                </x-ui.button>
+            @endif
         </x-catalog.form-row>
 
         @if ($this->businesses->isEmpty())
@@ -334,6 +346,10 @@ new class extends Component
         </x-ui.card>
     @endif
 
+    <x-ui.key-hints>
+        <kbd class="cmdk-kbd">/</kbd> {{ __('admin.keys.search') }}
+        <kbd class="cmdk-kbd">c</kbd> {{ __('admin.keys.clear') }}
+    </x-ui.key-hints>
 </div>
 
 @script

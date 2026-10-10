@@ -259,6 +259,25 @@ class Business extends Model
     }
 
     /**
+     * The real, active businesses of a country that have someone to write to:
+     * the ones a platform notice about that country's calendar can reach.
+     *
+     * @return Collection<int, self> Each with its `users` loaded.
+     */
+    public static function reachableInCountry(int $countryId): Collection
+    {
+        return self::query()
+            ->where('country_id', $countryId)
+            ->where('is_demo', false)
+            ->where('is_active', true)
+            ->with('users:id,business_id,email')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (self $business): bool => $business->users->contains(fn (User $user): bool => filled($user->email)))
+            ->values();
+    }
+
+    /**
      * The ids of the landing's own businesses, as a subquery to exclude.
      *
      * The ONE place that answers "is this ours": asking the column instead of

@@ -1,11 +1,14 @@
 <?php
 
+use App\Classes\Main\Plan;
 use App\Interfaces\Catalog\DataTable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\PlanForm;
 use App\Models\SubscriptionPlan;
 use App\Traits\InteractsWithCatalogEditor;
+use Illuminate\Support\Facades\Blade;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
 /**
@@ -26,6 +29,33 @@ new class extends Component
     protected function catalogModel(): DataTable
     {
         return new SubscriptionPlan;
+    }
+
+    /**
+     * The landing's own card for the plan being edited, with what is typed laid
+     * over the saved figures. It comes back as the real markup, so the preview
+     * can never be a drawing that differs from what a visitor will see.
+     *
+     * @param  array<string, mixed>  $typed
+     */
+    #[Renderless]
+    public function previewCard(string $code, array $typed): string
+    {
+        $plan = Plan::preview($code, $typed);
+
+        if ($plan === null) {
+            return '';
+        }
+
+        $ladder = Plan::ladder();
+        $index = (int) collect($ladder)->search(fn (Plan $tier): bool => $tier->code === $code);
+
+        return Blade::render('<x-site.plan-card :plan="$plan" :previous="$previous" :first="$first" :last="$last" />', [
+            'plan' => $plan,
+            'previous' => $ladder[max(0, $index - 1)],
+            'first' => $index === 0,
+            'last' => $index === count($ladder) - 1,
+        ]);
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -137,6 +167,28 @@ new class extends Component
                 <x-inputsform.switch-field span="short" :label="__('catalog.plan.fields.departments')" name="departments" :on="__('catalog.plan.switch.on')" :off="__('catalog.plan.switch.off')" wire:model="form.data.departments" />
                 <x-inputsform.switch-field span="short" :label="__('catalog.plan.fields.daily_digest')" name="daily_digest" :on="__('catalog.plan.switch.on')" :off="__('catalog.plan.switch.off')" wire:model="form.data.daily_digest" />
             </x-catalog.form-row>
+
+            {{-- The card as the landing draws it, following what is typed: the
+            figures are judged on the page that sells them, not on a form. --}}
+            <section class="plan-preview" x-data="planPreview" data-testid="plan-preview">
+                <div class="plan-preview-head">
+                    <div>
+                        <h3 class="plan-preview-title">{{ __('catalog.plan.preview.title') }}</h3>
+                        <p class="bp-card-sub">{{ __('catalog.plan.preview.note') }}</p>
+                    </div>
+
+                    <div class="pricing-period" role="group" aria-label="{{ __('catalog.plan.preview.title') }}">
+                        <button type="button" class="pricing-period-btn" x-bind:class="! yearly && 'is-active'" x-on:click="yearly = false">
+                            {{ __('landing.pricing.billing_monthly') }}
+                        </button>
+                        <button type="button" class="pricing-period-btn" x-bind:class="yearly && 'is-active'" x-on:click="yearly = true">
+                            {{ __('landing.pricing.billing_yearly') }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="plan-preview-card" x-html="html"></div>
+            </section>
         </x-catalog.form-shell>
     </x-slot:form>
 </x-catalog.master>

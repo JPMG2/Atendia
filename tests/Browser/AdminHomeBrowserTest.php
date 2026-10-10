@@ -137,6 +137,30 @@ test('a scheduled baja lights the home tile with its plan, amount and date', fun
     expect(Subscription::scheduledCancellations())->toHaveCount(1);
 });
 
+test('the home warns who owes the second step this week and the link lands filtered', function (): void {
+    config()->set('atendia.security.staff_two_factor', ['grace_days' => 7, 'since' => '2026-01-01']);
+
+    $due = User::factory()->create(['name' => 'Rocío Paz', 'email' => 'rocio@atendia.test', 'email_verified_at' => now()]);
+    $due->assignRole('support');
+    $due->forceFill(['created_at' => now()->subDays(2)])->save();
+
+    $protected = User::factory()->create(['name' => 'Marcos Gil', 'email' => 'marcos@atendia.test', 'email_verified_at' => now(), 'two_factor_whatsapp_at' => now()]);
+    $protected->assignRole('support');
+
+    $page = visit(route('admin.dashboard'))->resize(1280, 900);
+
+    // The admin of the scenario is in the same plazo, so the notice counts two.
+    $page->assertSee('Vencen esta semana los plazos del doble factor de 2 personas')
+        ->assertSee('Rocío Paz')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-home-two-factor-due')
+        ->click('Ver quién falta')
+        ->assertPathIs('/admin/usuarios')
+        // Landed already filtered: who has the step on is out of the list.
+        ->assertSee('Rocío Paz')
+        ->assertDontSee('Marcos Gil');
+});
+
 test('the admin home holds in the dark theme', function (): void {
     $page = visit(route('admin.dashboard'))->resize(1280, 1100);
 

@@ -69,18 +69,41 @@ test('the screen opens for the admin and closes for a client', function (): void
     $this->actingAs($client)->get(route('admin.users'))->assertForbidden();
 });
 
-test('each person links to everything they did in the audit, only for who may read it', function (): void {
+test('each person opens their trail in a side panel, only for who may read the audit', function (): void {
     usersAdmin();
     $rocio = staffNamed('Rocío Paz', 'rocio@atendia.test');
+    $other = staffNamed('Marcos Gil', 'marcos@atendia.test');
+
+    activity()->causedBy($rocio)->performedOn(Business::factory()->create(['name' => 'Kiosco La Esquina']))->log('deleted');
+    activity()->causedBy($other)->log('restored');
 
     Livewire::test('admin.users.index')
         ->assertSee('Ver historial')
-        ->assertSeeHtml(e(route('admin.audit', ['quien' => $rocio->id, 'fuertes' => 0])));
+        ->assertDontSee('Historial de Rocío Paz')
+        ->call('openHistory', $rocio->id)
+        ->assertSet('historyOf', $rocio->id)
+        ->assertSee('Historial de Rocío Paz')
+        ->assertSee('Kiosco La Esquina')
+        ->assertSeeHtml(e(route('admin.audit', ['quien' => $rocio->id, 'fuertes' => 0])))
+        ->call('closeHistory')
+        ->assertSet('historyOf', null);
 
     Auth::logout();
     $this->actingAs(staffNamed('Sin auditoría', 'sin@atendia.test', 'support'));
 
-    Livewire::test('admin.users.index')->assertDontSee('Ver historial');
+    Livewire::test('admin.users.index')
+        ->assertDontSee('Ver historial')
+        ->call('openHistory', $rocio->id)
+        ->assertForbidden();
+});
+
+test('a client id never opens a trail in the side panel', function (): void {
+    usersAdmin();
+    $owner = businessOwner('Laura', 'laura@negocio.test');
+
+    Livewire::test('admin.users.index')
+        ->call('openHistory', $owner->id)
+        ->assertSet('historyOf', null);
 });
 
 test('the owner reminds somebody from their row, and a second press says it was already done', function (): void {

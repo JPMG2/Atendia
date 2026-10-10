@@ -107,4 +107,6 @@ new class extends Component
             </div>
         </x-ui.card>
     @endif
+
+    <x-ui.key-hints />
 </div>

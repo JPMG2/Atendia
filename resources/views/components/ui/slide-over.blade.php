@@ -6,11 +6,12 @@
 
 {{-- Edit panel for long lists: the list stays visible behind it. Escape, the
 backdrop and the X all dispatch `slide-over-close`; the CALLER decides what
-closing means (listen with x-on:slide-over-close). Closing never saves. --}}
+closing means (listen with x-on:slide-over-close). Closing never saves. An open
+dialog takes Escape first, so it never closes the panel under it as well. --}}
 <div
     {{ $attributes->merge(['class' => 'slide-over-backdrop']) }}
     x-data
-    x-on:keydown.escape.window="$dispatch('slide-over-close')"
+    x-on:keydown.escape.window="document.body.classList.contains('has-dialog') || $dispatch('slide-over-close')"
     x-on:click.self="$dispatch('slide-over-close')"
 >
     <aside class="slide-over" role="dialog" aria-modal="true" @if ($title !== null) aria-label="{{ $title }}" @endif>

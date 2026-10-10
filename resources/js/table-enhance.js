@@ -279,7 +279,14 @@ document.addEventListener('keydown', (event) => {
     const focusBox = document.querySelector(`[data-key-focus="${event.key}"]`);
     const clickBox = document.querySelector(`[data-key-click="${event.key}"]`);
 
-    if (focusBox) {
+    if (event.key === '?') {
+        const help = keyHelp();
+
+        if (help) {
+            event.preventDefault();
+            window.dialog.notify({ type: 'info', title: help.title, message: help.message });
+        }
+    } else if (focusBox) {
         event.preventDefault();
         (focusBox.closest('.field')?.querySelector('input[role="combobox"]') ?? focusBox).focus();
     } else if (clickBox) {
@@ -299,6 +306,38 @@ document.addEventListener('keydown', (event) => {
         cursor = null;
     }
 });
+
+/**
+ * The screen's own key line, read back as a list: the hint line stays the one
+ * place a key is written down, so the dialog can never disagree with it.
+ */
+function keyHelp() {
+    const hints = document.querySelector('.key-hints');
+
+    if (!hints) {
+        return null;
+    }
+
+    const lines = [];
+    let keys = [];
+
+    hints.childNodes.forEach((node) => {
+        if (node.nodeName === 'KBD') {
+            keys.push(node.textContent.trim());
+
+            return;
+        }
+
+        const text = node.textContent.trim();
+
+        if (text !== '' && keys.length > 0) {
+            lines.push(`${keys.join('  ')}   ${text}`);
+            keys = [];
+        }
+    });
+
+    return { title: hints.dataset.helpTitle ?? '', message: lines.join('\n') };
+}
 
 let pending = false;
 

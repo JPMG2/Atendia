@@ -1,40 +1,12 @@
 @php
     $registerHref = Route::has('register') ? route('register') : '#';
 
-    // The best demo of the product is the product: Premium's CTA opens a real
-    // WhatsApp chat with sales. Unset number = quiet fallback to register.
-    $salesWhatsapp = \App\Models\Company::whatsapp();
-
     // Every figure comes from the plans table through Plan — prices, the
-    // yearly deal, the featured card and the lines — so this card can never
+    // yearly deal, the featured card and the lines — so a card can never
     // disagree with "Mi plan" or billing. Only the words live in lang.
     $trial = \App\Classes\Main\Plan::trial();
-    $featured = collect(\App\Classes\Main\Plan::ladder())->first(fn (\App\Classes\Main\Plan $tier): bool => $tier->isFeatured) ?? $trial;
-    $symbol = config('atendia.billing.currency_symbol');
     $ladder = \App\Classes\Main\Plan::ladder();
-    $plans = collect($ladder)->map(fn (\App\Classes\Main\Plan $tier, int $index): array => [
-        'name' => __('plan.names.'.$tier->code),
-        'price' => $symbol.$tier->price,
-        'price_year' => $symbol.$tier->annualMonthlyPrice,
-        'save_year' => $symbol.$tier->annualSavings,
-        'per' => __('landing.pricing.per_month'),
-        'per_year' => __('landing.pricing.per_month_yearly'),
-        'desc' => __("landing.pricing.{$tier->code}.desc"),
-        'includes' => Lang::has("landing.pricing.{$tier->code}.includes") ? __("landing.pricing.{$tier->code}.includes", ['plan' => __('plan.names.'.$ladder[max(0, $index - 1)]->code)]) : null,
-        'feats' => [
-            ...collect($tier->features)->reject(fn (array $line): bool => $line['key'] === 'ask')->pluck('label')->all(),
-            ...(array) __("landing.pricing.{$tier->code}.extras"),
-        ],
-        'ask' => $tier->askPerMonth,
-        'cta' => __("landing.pricing.{$tier->code}.cta"),
-        'variant' => $tier->isFeatured ? 'primary' : 'secondary',
-        'featured' => $tier->isFeatured,
-        // A plan with a sales pitch talks to a person; the rest sign up.
-        'href' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && $salesWhatsapp
-            ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__("landing.pricing.{$tier->code}.whatsapp_text", ['plan' => __('plan.names.'.$tier->code)]))
-            : $registerHref,
-        'external' => Lang::has("landing.pricing.{$tier->code}.whatsapp_text") && (bool) $salesWhatsapp,
-    ])->all();
+    $featured = collect($ladder)->first(fn (\App\Classes\Main\Plan $tier): bool => $tier->isFeatured) ?? $trial;
 @endphp
 
 <section id="precios" class="flex w-full justify-center pb-20 pt-16" x-data="{ yearly: false }">
@@ -66,130 +38,13 @@
         </div>
 
         <div class="pricing-grid">
-            @foreach ($plans as $p)
-                <div @class([
-                    'pricing-tier',
-                    'pricing-tier-featured' => $p['featured'],
-                    'pricing-tier-left' => $loop->first,
-                    'pricing-tier-right' => $loop->last,
-                ])>
-                    <div class="flex items-center justify-between gap-3">
-                        <h3 @class(['font-display', 'text-brand' => $p['featured']]) style="font-size: var(--text-xl)">
-                            {{ $p['name'] }}
-                        </h3>
-                        @if ($p['featured'])
-                            <x-ui.badge variant="brand">{{ __('landing.pricing.featured_badge') }}</x-ui.badge>
-                        @endif
-                    </div>
-
-                    <p class="text-muted" style="font-size: var(--text-sm)">{{ $p['desc'] }}</p>
-
-                    @if ($p['price_year'] === $p['price'])
-                        <div class="flex items-baseline gap-1.5">
-                            <span
-                                class="text-strong font-display"
-                                style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-                            >{{ $p['price'] }}</span>
-                            <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
-                        </div>
-                    @else
-                        {{-- Leave is instant on purpose: two prices overlapping shift the row. --}}
-                        <div
-                            class="flex items-baseline gap-1.5"
-                            x-show="! yearly"
-                            x-transition:enter="transition duration-200"
-                            x-transition:enter-start="opacity-0 translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                        >
-                            <span
-                                class="text-strong font-display"
-                                style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-                            >{{ $p['price'] }}</span>
-                            <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
-                        </div>
-                        <div
-                            x-show="yearly"
-                            x-cloak
-                            x-transition:enter="transition duration-200"
-                            x-transition:enter-start="opacity-0 translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                        >
-                            <div class="flex items-baseline gap-1.5">
-                                {{-- The old monthly price, struck through: the discount reads at a glance. --}}
-                                <span
-                                    class="text-subtle line-through"
-                                    style="font-size: var(--text-xl); font-weight: 600"
-                                >{{ $p['price'] }}</span>
-                                <span
-                                    class="text-strong font-display"
-                                    style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-                                >{{ $p['price_year'] }}</span>
-                                <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per_year'] }}</span>
-                            </div>
-                            <p class="text-brand mt-1 font-semibold" style="font-size: var(--text-xs)">
-                                {{ __('landing.pricing.save_yearly', ['amount' => $p['save_year']]) }}
-                            </p>
-                        </div>
-                    @endif
-
-                    {{-- The owner's AI is THE product (her call): its own block in the house jade and
-                    display type — never a line lost among the bullets. --}}
-                    @if ($p['ask'] > 0)
-                        <div class="pricing-ai">
-                            <div class="pricing-ai-head">
-                                <span class="pricing-ai-icon"><x-icon name="sparkles" :size="18" /></span>
-                                <span class="pricing-ai-eyebrow">{{ __('landing.pricing.ask_eyebrow') }}</span>
-                            </div>
-                            <p class="pricing-ai-title">{{ __('landing.pricing.ask_title') }}</p>
-                            <p class="pricing-ai-text">{{ __('landing.pricing.ask') }}</p>
-                            <p class="pricing-ai-cap">
-                                <span class="pricing-ai-number">{{ $p['ask'] }}</span>
-                                <span class="pricing-ai-unit">{{ __('landing.pricing.ask_unit') }}</span>
-                            </p>
-                        </div>
-                    @endif
-
-                    <div class="flex flex-col gap-2.5">
-                        @if ($p['includes'])
-                            <p class="text-muted font-semibold" style="font-size: var(--text-sm)">
-                                {{ $p['includes'] }}
-                            </p>
-                        @endif
-                        @foreach ($p['feats'] as $f)
-                            <div class="text-body flex items-start gap-2.5" style="font-size: var(--text-sm)">
-                                <x-icon
-                                    name="check"
-                                    :size="16"
-                                    class="mt-0.5 shrink-0"
-                                    style="color: var(--brand)"
-                                />{{ $f }}
-                            </div>
-                        @endforeach
-                        {{-- In every tier by the owner's call: the languages
-                        plus is the pitch, nobody should have to infer it. --}}
-                        <div
-                            class="text-body flex items-center gap-2.5 font-semibold"
-                            style="font-size: var(--text-sm)"
-                        >
-                            <x-icon
-                                name="languages"
-                                :size="16"
-                                style="color: var(--brand)"
-                            />{{ __('landing.pricing.multilang') }}
-                        </div>
-                    </div>
-
-                    <x-ui.button
-                        :variant="$p['variant']"
-                        size="md"
-                        fullWidth
-                        class="mt-2"
-                        :href="$p['href']"
-                        :target="$p['external'] ? '_blank' : null"
-                        :rel="$p['external'] ? 'noopener' : null"
-                    >
-                        {{ $p['cta'] }}</x-ui.button>
-                </div>
+            @foreach ($ladder as $tier)
+                <x-site.plan-card
+                    :plan="$tier"
+                    :previous="$ladder[max(0, $loop->index - 1)]"
+                    :first="$loop->first"
+                    :last="$loop->last"
+                />
             @endforeach
         </div>
 

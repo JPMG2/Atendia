@@ -239,9 +239,8 @@ new class extends Component
         @endif
     </x-ui.card>
 
-    <p class="key-hints">
+    <x-ui.key-hints>
         <kbd class="cmdk-kbd">/</kbd> {{ __('admin.audit.keys.person') }}
         <kbd class="cmdk-kbd">c</kbd> {{ __('admin.audit.keys.clear') }}
-        <kbd class="cmdk-kbd">j</kbd> <kbd class="cmdk-kbd">k</kbd> {{ __('admin.audit.keys.rows') }}
-    </p>
+    </x-ui.key-hints>
 </div>

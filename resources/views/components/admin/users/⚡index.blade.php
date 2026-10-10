@@ -4,6 +4,7 @@ use App\Actions\Account\SendEmailVerificationLink;
 use App\Actions\Admin\RemindStaffTwoFactor;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
+use App\Classes\Main\AuditTrail;
 use App\Classes\Main\StaffTwoFactor;
 use App\Livewire\Forms\Admin\AdminUserForm;
 use App\Livewire\Forms\Admin\TwoFactorResetForm;
@@ -12,6 +13,7 @@ use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -45,10 +47,22 @@ new class extends Component
     /** The person whose second step is about to be taken away; the panel asks for her password. */
     public ?int $resetting = null;
 
+    /** The person whose trail is open in the side panel; locked, so only `openHistory()` (which authorizes) sets it. */
+    #[Locked]
+    public ?int $historyOf = null;
+
+    /** How many entries the panel shows; the audit screen holds the rest. */
+    private const int HISTORY_LIMIT = 30;
+
     public function mount(): void
     {
         $this->form->setup();
         $this->resetForm->setup();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset('search', 'state', 'factor');
     }
 
     /** @return Collection<int, User> */
@@ -132,6 +146,31 @@ new class extends Component
     public function panelRoles(): array
     {
         return User::panelRoleNames();
+    }
+
+    public function openHistory(int $id): void
+    {
+        $this->authorize('audit.view');
+
+        $this->historyOf = User::staffById($id)?->id;
+    }
+
+    public function closeHistory(): void
+    {
+        $this->historyOf = null;
+    }
+
+    #[Computed]
+    public function historyPerson(): ?User
+    {
+        return $this->historyOf === null ? null : User::staffById($this->historyOf);
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Collection<int, \Spatie\Activitylog\Models\Activity> */
+    #[Computed]
+    public function history(): \Illuminate\Database\Eloquent\Collection
+    {
+        return AuditTrail::rows((string) $this->historyOf, limit: self::HISTORY_LIMIT);
     }
 
     public function create(): void
@@ -301,6 +340,7 @@ new class extends Component
                 :label="__('admin.users.search')"
                 name="search"
                 icon="search"
+                data-key-focus="/"
                 :placeholder="__('admin.users.search_placeholder')"
                 wire:model.live.debounce.400ms="search"
             />
@@ -326,6 +366,12 @@ new class extends Component
                 :placeholder="__('admin.users.factor.all')"
                 wire:model.live="factor"
             />
+
+            @if ($search !== '' || $state !== '' || $factor !== '')
+                <x-ui.button variant="ghost" size="sm" wire:click="clearFilters" data-key-click="c">
+                    {{ __('admin.keys.clear_filters') }}
+                </x-ui.button>
+            @endif
         </x-catalog.form-row>
 
         @if ($this->people->isEmpty())
@@ -404,10 +450,10 @@ new class extends Component
 
                                 <td data-label="">
                                   <div class="flex flex-wrap items-center justify-end gap-2">
-                                    {{-- "fuertes=0": her question is what this person did, all of it,
-                                    not only what cannot be undone. The route holds the lock. --}}
+                                    {{-- Opens beside the list: her question is what this person did,
+                                    and asking it must not cost her the place she was in. --}}
                                     @can('audit.view')
-                                        <x-ui.button size="sm" variant="ghost" icon="history" :href="route('admin.audit', ['quien' => $person->id, 'fuertes' => 0])" wire:navigate>
+                                        <x-ui.button size="sm" variant="ghost" icon="history" wire:click="openHistory({{ $person->id }})" data-testid="history-{{ $person->id }}">
                                             {{ __('admin.users.history') }}
                                         </x-ui.button>
                                     @endcan
@@ -447,4 +493,43 @@ new class extends Component
             </div>
         @endif
     </x-ui.card>
+
+    <x-ui.key-hints>
+        <kbd class="cmdk-kbd">/</kbd> {{ __('admin.keys.search') }}
+        <kbd class="cmdk-kbd">c</kbd> {{ __('admin.keys.clear') }}
+    </x-ui.key-hints>
+
+    @if ($historyOf !== null && $this->historyPerson !== null)
+        <x-ui.slide-over
+            x-on:slide-over-close="$wire.closeHistory()"
+            :title="__('admin.users.timeline.title', ['name' => $this->historyPerson->name])"
+            :subtitle="$this->historyPerson->email"
+        >
+            @if ($this->history->isEmpty())
+                <x-ui.empty-state icon="history" :title="__('admin.users.timeline.empty_title')" :body="__('admin.users.timeline.empty_body')" :compact="true" />
+            @else
+                <ol class="hist-list" data-testid="history-list">
+                    @foreach ($this->history as $entry)
+                        <li class="hist-item" wire:key="hist-{{ $entry->id }}">
+                            <span class="hist-when font-mono">{{ $entry->created_at?->format('d/m/Y H:i') }}</span>
+                            <span @class(['status-tag', 'is-danger' => AuditTrail::isStrong($entry), 'is-neutral' => ! AuditTrail::isStrong($entry)])>
+                                {{ __('admin.audit.actions.'.$entry->description) }}
+                            </span>
+                            <span class="hist-on">{{ AuditTrail::subjectOf($entry) }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+
+                @if ($this->history->count() >= 30)
+                    <p class="bp-card-sub">{{ __('admin.users.timeline.capped', ['count' => 30]) }}</p>
+                @endif
+            @endif
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" icon="scroll-text" :href="route('admin.audit', ['quien' => $historyOf, 'fuertes' => 0])" wire:navigate>
+                    {{ __('admin.users.timeline.open_audit') }}
+                </x-ui.button>
+            </x-slot:footer>
+        </x-ui.slide-over>
+    @endif
 </div>

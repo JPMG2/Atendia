@@ -3,9 +3,9 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-08, al cerrar el día (Modelos de IA, lo contable de Consumo de IA,
-> Soporte v2 con sus 3 mejoras y la migración de embeddings, todo hecho y pusheado; el bloque G
-> tiene lo que quedó abierto de esa jornada, y casi todo es un dato o una decisión de ella).
+> Última revisión: 2026-10-10, en una pausa (el bloque I tiene lo hecho el 10/10 —las seis
+> mejoras, el puente de un clic y el `?` en todas las tablas—, **todo sin commitear y sin la
+> suite completa**, y las tres ideas que siguen). Antes: 2026-10-08, al cerrar el día (bloque G).
 > Antes: 2026-10-07
 > (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
 
@@ -899,20 +899,31 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [ ] **Guardián de la base de pruebas:** un control que falle si un test deja filas confirmadas en `atendia_testing` (la causa de los falsos "flakes" de PHP).
 
 **Para enamorar, ofrecidas el 2026-10-09 al cerrar Planes y Feriados (sin decidir, una línea cada una):**
-- [ ] **Vista previa de la ficha:** en el formulario de Planes, la tarjeta de precios de la landing actualizándose en vivo mientras se teclea (como el constructor de tablas de precios de Stripe).
-- [ ] **Calendario anual por país:** en Feriados, una vista de 12 meses que marque cada día para ver de un vistazo qué cae en puente.
-- [ ] **Copiar feriados de otro país:** duplicar los de Argentina a un país nuevo y ajustar las diferencias, en vez de cargarlos uno a uno.
+- [x] **HECHO 2026-10-10 — Vista previa de la ficha:** en Planes, bajo los campos, la tarjeta de la landing sigue lo que se teclea (250 ms, sin guardar). Es el MISMO markup: `<x-site.plan-card>` (extraído de `pricing.blade.php`, que ahora lo usa) + `Plan::preview()` + `previewCard()` renderless; toggle mensual/anual.
+- [x] **HECHO 2026-10-10 — Calendario anual por país:** en Feriados, "Ver el año" (panel lateral): 12 meses, feriado relleno, "puente posible" con anillo (cae martes o jueves), resumen y lista con día de la semana; país y año cambiables. Arreglo de paso: `.catalog-view` retenía un `transform` (`animation both`) que atrapaba cualquier panel fijo dentro de la tarjeta.
+- [x] **HECHO 2026-10-10 — Copiar feriados de otro país:** "Copiar de otro país" (panel lateral): origen y destino, vista previa de lo que se crearía (solo los que se repiten cada año y que el destino no tiene ese día; los de un solo año no), botón con la cantidad. `CopyCountryHolidays` + `CopyHolidaysForm`.
+
+**Para enamorar, elegidas por ella el 2026-10-10 (HECHAS):**
+- [x] **Feriado puente de un clic:** en el calendario anual, un día hábil vacío o un feriado de un solo año es botón; pregunta antes (`dialog.confirm`) y crea "Día puente" de ese año, o lo apaga/reactiva si ya existe (nunca se borra). `ToggleBridgeHoliday` + `BridgeHolidayForm`, fecha leída estricta. De paso: Escape ya no cierra el slide-over con un diálogo abierto encima (arreglo global en `<x-ui.slide-over>`).
+- [x] **`?` en todas las tablas:** `<x-ui.key-hints>` (j/k + `?` + las teclas propias en el slot) en las 13 pantallas del admin con tabla ordenable; Auditoría pasa a usarlo.
 
 **Para enamorar, ofrecidas antes en la jornada de Auditoría y Usuarios (sin decidir):**
-- [ ] **Aviso en el Inicio del admin:** "2 personas vencen esta semana", que lleve a Usuarios ya filtrado por "Doble factor: sin activar".
-- [ ] **Historial en panel lateral:** que "Ver historial" abra la línea de tiempo de la persona sin salir de Usuarios.
-- [ ] **Atajo `?`:** un diálogo que liste las teclas de la pantalla (`/`, `c`, `j`, `k`).
+- [x] **HECHO 2026-10-10 — Aviso en el Inicio del admin:** "Vencen esta semana los plazos del doble factor de N personas: nombres" con "Ver quién falta" → Usuarios filtrado `?doble=off`. Solo aparece si hay alguien y si ella puede abrir Usuarios (`User::staffTwoFactorDueWithin`); un plazo ya vencido no cuenta.
+- [x] **HECHO 2026-10-10 — Historial en panel lateral:** "Ver historial" abre la línea de tiempo (últimos 30, con "Abrir en Auditoría" para el resto) sin salir de Usuarios; la acción autoriza `audit.view` y `historyOf` es `#[Locked]`.
+- [x] **HECHO 2026-10-10 — Atajo `?`:** `table-enhance.js` lee la línea `.key-hints` de la pantalla y la muestra con `dialog.notify`; sin línea `?` no hace nada. La línea ya está en las 13 pantallas con tabla (ver arriba).
+
+**Para enamorar, ofrecidas el 2026-10-10 al cerrar el puente y el `?` (sin decidir, una línea cada una):**
+- [x] **HECHO 2026-10-10 — Puente largo de una vez:** arrastrar con el mouse sobre el calendario anual pinta la franja y pide UNA confirmación ("Marcar 6 días como feriado puente"). Marca solo los días hábiles libres; fines de semana y feriados existentes no cambian, y un puente apagado dentro del rango vuelve a contar. Tope de 31 días. `MarkBridgeRange` + `BridgeRangeForm`. **Con el dedo no arrastra** (el gesto es el scroll del panel): en el teléfono sigue el clic de a un día.
+- [x] **HECHO 2026-10-10 — Avisar a los negocios del puente:** tras marcar (un día o varios) pregunta "¿Avisar a N negocios de <país>?"; solo aparece si hay a quién (negocios reales y activos del país, con algún usuario con correo; los demo no). El correo `HolidayBridgeNotice` sale por `App\Messaging\Channels\Email`, uno por negocio con las fechas; el servidor revalida cada fecha contra la tabla (solo un puente activo de ese país). Apagar un puente no ofrece aviso. **No hay "aviso de que se apagó".**
+- [x] **HECHO 2026-10-10 — `/` y `c` en las tablas con filtros:** Negocios, Usuarios y Soporte (las que tienen buscador); Auditoría ya los tenía. `c` limpia con un botón "Limpiar filtros" que aparece cuando hay algo filtrado (`clearFilters()` nuevo en Negocios y Usuarios). Las otras 9 pantallas no tienen buscador ni filtros: ahí no se dibuja la tecla.
+- **Defecto de paso, corregido:** la vista del año pasaba un ARRAY como nombre del país (`countryOptions` es una lista de valor/etiqueta, no un mapa por id) y daba 500 al abrir con el país en cierto orden; ahora sale de `countryName`.
 
 **De construcción que siguen (sin dependencia de nadie):**
 - [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
 
 **Verificación que quedó incompleta:**
 - [x] **HECHO 2026-10-09 — suite PHP completa en verde: 2551 pruebas, 0 fallos (1 omitida), y la de browser: 333, 0 fallos.** Texto original: **Suite PHP completa** después de los arreglos de esta noche: se corrió entera una vez (con 43 rojos, de los que 26 eran mi bug y 17 el contaminador) y después solo por archivos (333 verdes); el hook frena la segunda corrida completa hasta el próximo commit.
+- [x] **HECHO 2026-10-10 — suite PHP completa en verde: 2567 pruebas, 0 fallos (1 omitida); browser: 350, 0 fallos tras corregir uno.** La corrida de browser atrapó una regresión mía: la barra de Feriados (con sus dos botones nuevos) ensanchaba la página 69px a 900px; `.catalog-toolbar` ahora envuelve a cualquier ancho. Commiteado y subido el mismo día. Texto original: **Lo del 2026-10-10 NO está commiteado ni corrió en la suite completa.** Verde solo por archivos: 310 de Feature (GoldenRules, Admin, Catálogos, menú) y 61 de browser (Feriados, Usuarios, Auditoría, Planes, Inicio, Landing, `PanelResponsive`, `TableStyle`). Falta la suite PHP y la de browser enteras, y el commit con el push. Ojo con el cambio global del Escape en `<x-ui.slide-over>`: toca todos los paneles laterales (Usuarios, Soporte, Catálogos).
 - [ ] El flake de timeout de `ServicesProductsBrowserTest` (foto de producto) sigue: pasa aislado.
 
 **En pausa por orden suya / esperando abogado y contador:** ver §A11 (tasa Bs/USD) y §B (medio de pago, términos, supresión de datos, cables de plata).

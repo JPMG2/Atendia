@@ -285,4 +285,6 @@ new class extends Component
             <p class="aiu-foot">{{ __('adoption.legend.'.$this->situation->value) }}</p>
         </x-ui.card>
     @endif
+
+    <x-ui.key-hints />
 </div>

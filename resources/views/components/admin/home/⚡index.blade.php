@@ -4,6 +4,7 @@ use App\Enums\SubscriptionStatus;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\User;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -104,6 +105,13 @@ new class extends Component
         return (float) $this->leaving->sum(fn (Subscription $subscription): float => $subscription->nextAmount());
     }
 
+    /** @return Collection<int, \App\Models\User> */
+    #[Computed]
+    public function twoFactorDue(): Collection
+    {
+        return auth()->user()->can('users.view') ? User::staffTwoFactorDueWithin(7) : new Collection;
+    }
+
     #[Computed]
     public function monthlyRevenue(): float
     {
@@ -143,6 +151,18 @@ new class extends Component
             {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i')]) }}
         </span>
     </div>
+
+    {{-- Only when somebody's plazo is about to end: with nobody due there is
+    nothing to say, and an empty warning would train her to skip it. --}}
+    @if ($this->twoFactorDue->isNotEmpty())
+        <x-ui.alert variant="warning" icon="shield-check" class="mb-3" data-testid="two-factor-due">
+            {{ trans_choice('admin.home.two_factor_due.text', $this->twoFactorDue->count(), [
+                'count' => $this->twoFactorDue->count(),
+                'names' => $this->twoFactorDue->pluck('name')->join(', ', ' y '),
+            ]) }}
+            <a class="row-link" href="{{ route('admin.users', ['doble' => 'off']) }}" wire:navigate>{{ __('admin.home.two_factor_due.see') }}</a>
+        </x-ui.alert>
+    @endif
 
     <div class="stat-grid stat-grid-fill">
         <x-ui.stat-card
@@ -401,4 +421,6 @@ new class extends Component
         </div>
         </x-ui.tabs>
     </x-ui.card>
+
+    <x-ui.key-hints />
 </div>

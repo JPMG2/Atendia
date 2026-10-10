@@ -25,6 +25,9 @@
         <span x-text="filtered().length === 1 ? {{ \Illuminate\Support\Js::from($singular) }} : {{ \Illuminate\Support\Js::from($plural) }}"></span>
     </span>
 
+    {{-- What only this master offers (copy, a year view): buttons the editor brings with their own wiring. --}}
+    {{ $slot }}
+
     {{-- An edit-only master passes no label: the capability does not exist, so the button is not drawn. --}}
     @if ($create)
         <x-ui.button variant="primary" icon="plus" x-on:click="openCreate()">{{ $create }}</x-ui.button>

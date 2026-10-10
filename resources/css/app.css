@@ -856,7 +856,7 @@
   .dialog-title { font-family:var(--font-display); font-size:var(--text-lg); font-weight:700;
                   letter-spacing:-0.01em; color:var(--text-strong); }
   .dialog-message { margin-top:6px; font-size:var(--text-sm); line-height:var(--leading-normal);
-                    color:var(--text-muted); word-break:break-word; }
+                    color:var(--text-muted); word-break:break-word; white-space:pre-line; }
 
   /* El pie arranca en la columna del texto, no bajo el ícono: así la acción cae
      alineada con el título y el bloque se lee como una sola cosa. */
@@ -1761,6 +1761,48 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* The audit's "what": tag and change count share the first line; the names
   of an access change open under them, so one row stays one line tall. */
   .audit-what { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
+  /* One person's trail in the side panel: a line per entry, date first, the
+     object last; the list is a column so it reads at the panel's 460px. */
+  .hist-list { display:flex; flex-direction:column; }
+  .hist-item { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; padding:9px 4px;
+               border-bottom:1px solid var(--border-subtle); transition:background var(--dur-fast); }
+  .hist-item:hover { background:var(--surface-sunken); }
+  .hist-when { flex:none; font-size:var(--text-sm); color:var(--text-muted); }
+  /* The plans master's preview: the landing's card at its natural width, under the fields. */
+  .plan-preview { margin-top:20px; padding-top:18px; border-top:1px solid var(--border-subtle); }
+  .plan-preview-head { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:10px 16px; }
+  .plan-preview-title { font-family:var(--font-display); font-size:var(--text-base); font-weight:700; color:var(--text-strong); }
+  .plan-preview-card { max-width:380px; margin-top:14px; }
+  /* A country's year: twelve small months, the holiday as a filled day and the
+     possible bridge (Tuesday/Thursday) with a ring, so it reads without a hover. */
+  .ycal-months { display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:14px 16px; margin-top:18px; }
+  .ycal-title { font-size:var(--text-sm); font-weight:700; color:var(--text-strong); text-transform:capitalize; margin-bottom:4px; }
+  .ycal-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:2px; }
+  .ycal-dow { font-size:var(--text-xs); color:var(--text-subtle); text-align:center; }
+  .ycal-day { font-family:var(--font-mono); font-size:var(--text-xs); line-height:24px; text-align:center;
+              border-radius:6px; color:var(--text-body); }
+  .ycal-day.is-weekend { color:var(--text-subtle); }
+  /* A day that answers a click: a weekday with nothing (to mark it) or a one-year holiday (to switch it off). */
+  button.ycal-day { border:0; background:transparent; padding:0; width:100%; cursor:pointer;
+                    transition:background var(--dur-fast), box-shadow var(--dur-fast); }
+  button.ycal-day:hover { background:var(--brand-soft); color:var(--brand-soft-text); }
+  button.ycal-day.is-holiday:hover { background:var(--brand); color:var(--text-on-brand); filter:brightness(.92); }
+  button.ycal-day:focus-visible { outline:2px solid var(--brand); outline-offset:1px; }
+  /* A drag over the days must not select the digits, and the picked run reads as one band. */
+  .ycal-grid { user-select:none; }
+  .ycal-day.is-pick { background:var(--brand-soft); color:var(--brand-soft-text); font-weight:700; }
+  .ycal-day.is-holiday { background:var(--brand); color:var(--text-on-brand); font-weight:700; }
+  .ycal-day.is-bridge { box-shadow:0 0 0 2px var(--warning); }
+  .ycal-legend { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin:14px 0 6px;
+                 font-size:var(--text-sm); color:var(--text-muted); }
+  .ycal-key { display:inline-block; width:16px; height:16px; border-radius:5px; vertical-align:middle; }
+  .ycal-key.is-holiday { background:var(--brand); }
+  .ycal-key.is-bridge { box-shadow:0 0 0 2px var(--warning); }
+  .ycal-summary { margin:12px 0 4px; font-size:var(--text-sm); color:var(--text-strong); font-weight:600; }
+  .ycal-weekday { font-size:var(--text-sm); color:var(--text-muted); }
+  .ycal-year { display:flex; align-items:center; gap:8px; align-self:flex-end; }
+  .ycal-year-value { min-width:4ch; text-align:center; font-weight:700; color:var(--text-strong); }
+  .hist-on { flex:1 1 100%; min-width:0; font-size:var(--text-sm); color:var(--text-strong); word-break:break-word; }
   .audit-names { flex:1 1 auto; min-width:0; }
   .audit-names summary { cursor:pointer; font-size:var(--text-xs); font-weight:600; color:var(--brand-soft-text); }
   .audit-names summary:hover { text-decoration:underline; }
@@ -2996,7 +3038,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   @keyframes catalog-panel-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
   .catalog-panel-head,
   .catalog-form,
-  .catalog-empty { animation:catalog-panel-in var(--dur-base) var(--ease-out) both; }
+  /* `backwards`: held forwards, the finished transform keeps each of these a containing
+     block, and a fixed panel inside it (a slide-over) would be trapped in the card. */
+  .catalog-empty { animation:catalog-panel-in var(--dur-base) var(--ease-out) backwards; }
 
   /* ---- Formulario de maestro: filas DECLARADAS, no adivinadas ----
      Las filas las arma el autor con `.form-row`, no el wrap del navegador. Con
@@ -3065,9 +3109,12 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                                                      border-bottom-width:1px; pointer-events:auto; }
   }
   /* ---- Maestro: tabla (mostrar) ⇄ formulario (crear/editar) ---- */
-  .catalog-view { animation:catalog-panel-in var(--dur-base) var(--ease-out) both; }
+  /* `backwards`, not `both`: held forwards, the finished transform keeps the view a
+     containing block and any fixed panel inside it (a slide-over) is trapped in the card. */
+  .catalog-view { animation:catalog-panel-in var(--dur-base) var(--ease-out) backwards; }
 
-  .catalog-toolbar { display:flex; align-items:center; gap:12px; padding:16px 20px;
+  /* Wraps at any width: a master that brings its own buttons (Holidays has two) overflowed at 900px. */
+  .catalog-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:16px 20px;
                      border-bottom:1px solid var(--border-subtle); }
   .catalog-toolbar .field { flex:1 1 auto; max-width:360px; }
   .catalog-count { flex:none; margin-left:auto; font-size:var(--text-xs); color:var(--text-subtle);

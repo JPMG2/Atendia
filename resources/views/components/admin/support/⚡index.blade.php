@@ -510,6 +510,7 @@ new class extends Component
                     size="s"
                     type="search"
                     name="search"
+                    data-key-focus="/"
                     :label="__('support.admin.search')"
                     :placeholder="__('support.admin.search_placeholder')"
                     wire:model.live.debounce.300ms="search"
@@ -549,7 +550,7 @@ new class extends Component
                 />
 
                 @if ($this->isFiltered)
-                    <x-ui.button variant="ghost" size="sm" wire:click="clearFilters">{{ __('support.admin.clear_filters') }}</x-ui.button>
+                    <x-ui.button variant="ghost" size="sm" wire:click="clearFilters" data-key-click="c">{{ __('support.admin.clear_filters') }}</x-ui.button>
                 @endif
             </x-catalog.form-row>
 
@@ -992,4 +993,9 @@ new class extends Component
             </x-slot:footer>
         </x-ui.slide-over>
     @endif
+
+    <x-ui.key-hints>
+        <kbd class="cmdk-kbd">/</kbd> {{ __('admin.keys.search') }}
+        <kbd class="cmdk-kbd">c</kbd> {{ __('admin.keys.clear') }}
+    </x-ui.key-hints>
 </div>
