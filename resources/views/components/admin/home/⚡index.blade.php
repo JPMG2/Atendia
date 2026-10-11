@@ -2,7 +2,9 @@
 
 use App\Enums\SubscriptionStatus;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
+use App\Actions\Admin\RankBusinessActivity;
 use App\Models\Payment;
+use App\Models\PlatformFigure;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Traits\HasNotifications;
@@ -135,6 +137,62 @@ new class extends Component
         return Subscription::trialingCount();
     }
 
+    /**
+     * The ranking a job worked out ahead of time, or null when it never ran.
+     * Not counted here on purpose: grouping every message on each open is the
+     * cost that does not scale with the number of businesses.
+     */
+    #[Computed]
+    public function activity(): ?PlatformFigure
+    {
+        return PlatformFigure::read(PlatformFigure::ACTIVITY);
+    }
+
+    #[Computed]
+    public function activityIsStale(): bool
+    {
+        return $this->activity?->isOlderThan(RankBusinessActivity::STALE_AFTER_MINUTES) ?? false;
+    }
+
+    /**
+     * How the stored ranking is aging: it turns amber before it turns red, so
+     * a late job is seen while there is still time to look at it.
+     *
+     * @return 'fresh'|'late'|'stale'|null Null when the job never ran.
+     */
+    #[Computed]
+    public function activityBeat(): ?string
+    {
+        return match (true) {
+            $this->activity === null => null,
+            $this->activityIsStale => 'stale',
+            $this->activity->isOlderThan(RankBusinessActivity::LATE_AFTER_MINUTES) => 'late',
+            default => 'fresh',
+        };
+    }
+
+    /**
+     * Where a ranked business went against the period before. Rows stored
+     * before the comparison existed carry no `previous_rank` and say nothing:
+     * absent is not the same as new.
+     *
+     * @param  array{rank: int, previous_rank?: int|null}  $row
+     * @return 'up'|'down'|'same'|'new'|null
+     */
+    public function trendOf(array $row): ?string
+    {
+        if (! array_key_exists('previous_rank', $row)) {
+            return null;
+        }
+
+        return match (true) {
+            $row['previous_rank'] === null => 'new',
+            $row['previous_rank'] > $row['rank'] => 'up',
+            $row['previous_rank'] < $row['rank'] => 'down',
+            default => 'same',
+        };
+    }
+
     public function render(): View
     {
         return $this->view()->title(__('admin.home.title'));
@@ -147,9 +205,6 @@ new class extends Component
             <h1 class="page-head-title">{{ __('admin.home.title') }}</h1>
             <p class="page-head-sub">{{ __('admin.home.sub') }}</p>
         </div>
-        <span class="text-subtle font-mono text-sm">
-            {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i')]) }}
-        </span>
     </div>
 
     {{-- Only when somebody's plazo is about to end: with nobody due there is
@@ -163,6 +218,20 @@ new class extends Component
             <a class="row-link" href="{{ route('admin.users', ['doble' => 'off']) }}" wire:navigate>{{ __('admin.home.two_factor_due.see') }}</a>
         </x-ui.alert>
     @endif
+
+    {{-- One island for everything a payment can move: the tiles, the queue and
+    the subscription tabs. Polling only the queue would leave a tile counting
+    a receipt the table no longer shows (atendiadesign §7.1). Crediting from a
+    row inside re-renders the same region, so it stays one truth. The 30 s of
+    the poll and of the copy below are the same number. --}}
+    @island(name: 'board')
+    <div wire:poll.30s.visible>
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-subtle text-sm">{{ __('admin.home.live', ['seconds' => 30]) }}</span>
+        <span class="text-subtle font-mono text-sm">
+            {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i:s')]) }}
+        </span>
+    </div>
 
     <div class="stat-grid stat-grid-fill">
         <x-ui.stat-card
@@ -420,6 +489,104 @@ new class extends Component
         @endif
         </div>
         </x-ui.tabs>
+    </x-ui.card>
+    </div>
+    @endisland
+
+    {{-- Worked out by `atendia:business-activity`, so it carries its own age:
+    a stored ranking that hid how old it is would read as live (§7.1). --}}
+    <x-ui.card class="bp-card mt-3" data-testid="activity-card">
+        <div class="bp-card-head">
+            <h2>{{ __('admin.home.activity.title') }}</h2>
+            @if ($this->activity !== null)
+                {{-- The dot is the job's pulse: green on time, amber once it is
+                late, red when it is overdue. The words say the same, so colour
+                is never the only signal. --}}
+                <span
+                    @class([
+                        'status-tag font-mono',
+                        'is-success' => $this->activityBeat === 'fresh',
+                        'is-warning' => $this->activityBeat === 'late',
+                        'is-danger' => $this->activityBeat === 'stale',
+                    ])
+                    title="{{ __('admin.home.activity.beat.'.$this->activityBeat) }}"
+                    data-testid="activity-beat"
+                    data-beat="{{ $this->activityBeat }}"
+                >
+                    <span class="dot"></span>
+                    {{ __('admin.home.activity.computed', ['date' => $this->activity->computed_at->format('d/m/Y H:i')]) }}
+                </span>
+            @endif
+        </div>
+
+        @if ($this->activity === null)
+            <p class="text-muted text-sm">{{ __('admin.home.activity.never') }}</p>
+        @else
+            <p class="bp-card-sub">{{ __('admin.home.activity.sub', ['days' => $this->activity->payload['days']]) }}</p>
+
+            @if ($this->activityIsStale)
+                <x-ui.alert variant="warning" icon="clock" class="mb-3" data-testid="activity-stale">
+                    {{ __('admin.home.activity.stale', ['date' => $this->activity->computed_at->format('d/m/Y H:i')]) }}
+                </x-ui.alert>
+            @endif
+
+            {{-- Two rankings, one table at a time: side by side each half is
+            narrower than a table's own minimum and would scroll sideways. --}}
+            <x-ui.tabs
+                :tabs="[
+                    ['value' => 'whatsapp', 'label' => __('admin.home.activity.tab_whatsapp'), 'icon' => 'message-circle'],
+                    ['value' => 'ai', 'label' => __('admin.home.activity.tab_ai'), 'icon' => 'bot'],
+                ]"
+            >
+                @foreach (['whatsapp' => 'unit', 'ai' => 'unit_ai'] as $board => $unit)
+                    <div x-show="tab === '{{ $board }}'" x-cloak>
+                        <p class="text-muted mb-1 text-sm">{{ __('admin.home.activity.'.$board) }}</p>
+
+                        @if ($this->activity->payload[$board] === [])
+                            <p class="text-muted text-sm">{{ __('admin.home.activity.empty') }}</p>
+                        @else
+                            <div class="pay-table-wrap">
+                                <table class="pay-table">
+                                    <tbody>
+                                        @foreach ($this->activity->payload[$board] as $row)
+                                            <tr wire:key="activity-{{ $board }}-{{ $row['business_id'] }}">
+                                                <td class="is-key" data-label="{{ __('admin.home.queue.business') }}">
+                                                    <a class="row-link" data-row-action wire:navigate href="{{ route('admin.businesses', ['negocio' => $row['business_id']]) }}">{{ $row['name'] }}</a>
+                                                    @php($trend = $this->trendOf($row))
+                                                    @if ($trend !== null)
+                                                        @php($moved = abs(($row['previous_rank'] ?? $row['rank']) - $row['rank']))
+                                                        <span
+                                                            @class([
+                                                                'status-tag ml-2',
+                                                                'is-success' => $trend === 'up',
+                                                                'is-danger' => $trend === 'down',
+                                                                'is-info' => $trend === 'new',
+                                                            ])
+                                                            title="{{ trans_choice('admin.home.activity.trend.'.$trend, $moved, ['count' => $moved]) }}"
+                                                            data-testid="activity-trend-{{ $trend }}"
+                                                        >
+                                                            <x-icon :name="match ($trend) { 'up' => 'chevron-up', 'down' => 'chevron-down', 'new' => 'sparkles', default => 'minus' }" :size="12" />
+                                                            {{ match ($trend) {
+                                                                'new' => __('admin.home.activity.trend.new_short'),
+                                                                'same' => '',
+                                                                default => $moved,
+                                                            } }}
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="font-mono" data-label="{{ __('admin.home.activity.col_total') }}">
+                                                    {{ trans_choice('admin.home.activity.'.$unit, $row['total'], ['count' => number_format($row['total'], 0, ',', '.')]) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </x-ui.tabs>
+        @endif
     </x-ui.card>
 
     <x-ui.key-hints />

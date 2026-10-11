@@ -34,10 +34,21 @@ new class extends Component
         return Subscription::amountAtRisk();
     }
 
+    /**
+     * The businesses behind on a payment, split by how far behind: a bare "2"
+     * leaves her asking two of what.
+     *
+     * @return array{grace: int, paused: int}
+     */
     #[Computed]
-    public function owing(): int
+    public function owing(): array
     {
-        return $this->queue->filter(fn (Subscription $row): bool => $row->isBehind())->count();
+        $behind = $this->queue->filter(fn (Subscription $row): bool => $row->isBehind());
+
+        return [
+            'grace' => $behind->where('status', SubscriptionStatus::PastDue)->count(),
+            'paused' => $behind->where('status', SubscriptionStatus::Paused)->count(),
+        ];
     }
 
     #[Computed]
@@ -98,7 +109,15 @@ new class extends Component
                 icon="alert-triangle"
                 tint="accent"
             >{{ __('collections.risk.at_risk_hint') }}</x-ui.stat-card>
-            <x-ui.stat-card :label="__('collections.risk.owing')" :value="$this->owing" icon="receipt" tint="warning" />
+            {{-- A count of businesses: it says which kind, how far behind, and
+            lands on exactly those rows (atendiadesign §7.2). --}}
+            <x-ui.stat-card
+                :label="trans_choice('collections.risk.owing', $this->owing['grace'] + $this->owing['paused'])"
+                :value="(string) ($this->owing['grace'] + $this->owing['paused'])"
+                icon="receipt"
+                tint="warning"
+                :href="route('admin.businesses', ['estado' => 'problem'])"
+            >{{ __('collections.risk.owing_split', $this->owing) }}</x-ui.stat-card>
             {{-- The comparison only exists once a month was photographed. With
             none, it says so: a first month measured against zero would read as
             growth that never happened. --}}

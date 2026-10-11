@@ -19,6 +19,12 @@
 - Lo que se configura, se configura DESDE el admin, con el patrón de `Catálogos` (maestro en
   BD + seeder `updateOrCreate`). Un Enum de `app/Enums` se queda en código si el código lo
   ramifica; si es una lista que ella podría renombrar, reordenar o ampliar, va a BD.
+- **Tiempo real y escala en el admin** (patrón de TODA pantalla, no pantalla por pantalla):
+  lo que se mueve solo es UN `@island` con `wire:poll.30s.visible` que cubre todo lo que un
+  mismo evento mueve (tiles + cola + pestañas) y lleva su hora adentro; una lista que crece
+  pagina en SQL (`limit` + `<x-ui.load-more>`, jamás un `->get()` de todo); un número que
+  agrupa muchas filas lo calcula un job a `platform_figures` y la pantalla muestra su hora y
+  lo marca vencido si el job se atrasó; `lazy`/`defer` solo con una medición que lo pida.
 - Los datos de la plataforma (nombre de marca, dirección, contacto, redes, logo, tagline,
   copyright) salen de la fila de `companies` vía `Company::current()`. Ni `config()`, ni una
   constante, ni texto escrito en una vista: la marca va a cambiar de nombre y tiene que ser

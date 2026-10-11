@@ -3,9 +3,10 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-10, en una pausa (el bloque I tiene lo hecho el 10/10 —las seis
-> mejoras, el puente de un clic y el `?` en todas las tablas—, **todo sin commitear y sin la
-> suite completa**, y las tres ideas que siguen). Antes: 2026-10-08, al cerrar el día (bloque G).
+> Última revisión: 2026-10-11, en una pausa (el bloque J tiene lo hecho el 11/10 —tiempo real
+> y escala del Inicio, el KPI de Cobranza y las tres ideas para enamorar—, **sin commitear y
+> sin la suite completa**; lo del 10/10 ya está en `99b2eac`). Antes: 2026-10-10 (bloque I).
+> Antes: 2026-10-08, al cerrar el día (bloque G).
 > Antes: 2026-10-07
 > (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
 
@@ -646,17 +647,24 @@ Lo investigado en los docs de Livewire 4 (`@island(name:)`, `wire:island=`, `laz
 - **Island en Acreditar: NO, y hay que decir por qué.** Al acreditar cambian el contador del
   tile Y el MRR. Si la acción solo refresca la isla de la cola, los tiles quedan viejos y la
   pantalla miente (`atendiadesign` §7.1). Hoy re-renderiza todo a propósito.
-- [ ] **Island + `wire:poll` en la cola de comprobantes**: ahí SÍ sirve — un comprobante que
-      llega mientras ella mira la pantalla aparece solo, sin recargar. Es el "tiempo real"
-      que pidió, y el único que no ensucia otro número.
-- [ ] **`lazy` / `defer` en lo caro**: decidir MIDIENDO, no por si acaso. Hoy las consultas
-      del Inicio son `count()` y sumas chicas; diferirlas sin medir es complejidad gratis.
-      Cuando entre Consumo de IA (A3) o el Radar (A10), ahí sí.
-- [ ] **Lo que de verdad aguanta MUCHOS negocios no son los islands** (pregunta de ella,
-      2026-10-03): es paginar `Business::directory()`, que hoy los trae todos, y precalcular
-      los números del Inicio con jobs (§F). El island sirve para el tiempo real; la escala
-      se resuelve con paginación y precálculo.
-- [ ] Al definirlo, anotarlo como patrón para TODO el panel, no pantalla por pantalla.
+- [x] ~~**Island + `wire:poll` en la cola de comprobantes**~~ HECHO 2026-10-11, con un matiz
+      que cambia la letra de arriba: el island NO es solo la cola. Es UNO (`board`) con los
+      tiles, la cola y las pestañas, porque un poll que refrescara solo la cola dejaría un
+      tile contando un comprobante que la tabla ya no muestra. `wire:poll.30s.visible`
+      (pausa con la pestaña oculta) y la hora con segundos adentro del island. Acreditar
+      desde una fila re-renderiza esa misma región: sigue siendo una sola verdad.
+- [x] ~~**`lazy` / `defer` en lo caro**~~ MEDIDO 2026-10-11, **no se aplica**. Con 1.500
+      suscripciones (factory, `atendia_testing`): MRR 33 ms · renovaciones 21 · en problemas
+      36 · cola de cobranza 60 · en riesgo 22 · el resto ≤ 2 ms; el Inicio entero rinde en
+      ~400 ms con Livewire y vista. Diferirlo agrega complejidad por ~100 ms de consultas.
+      **Umbral para revisar:** cuando MRR o en-problemas pasen de ~150 ms (≈ 5-6 mil
+      suscripciones: hidratan filas con `get()`), el arreglo es agregar en SQL, no `lazy`.
+- [x] ~~**Lo que de verdad aguanta MUCHOS negocios**~~ HECHO 2026-10-11: `Business::directory()`
+      ya no trae todos. El estado se filtra en SQL (`scopeInSituation`, escrito junto a
+      `situation()` y probado contra él para los 9 estados), la lista pide 25 y `load-more`
+      sigue. Medido: 1ª página 8 ms contra 132 ms de traer los 1.500. El precálculo está en §F.
+- [x] ~~Anotarlo como patrón para TODO el panel~~ HECHO 2026-10-11 en
+      `.ai/guidelines/arquitectura-paneles.md` (un punto, sin candado nuevo: no se mide por patrón).
 
 ### E12. Orquestador de IA — HECHO 2026-10-03 (la mitad que importaba)
 - [x] ~~**DEFECTO arreglado**~~: el costo se calcula con la tarifa del modelo que respondió,
@@ -807,8 +815,11 @@ El worker ya existe (supervisor: queue, reverb, schedule), así que el riel est�
       estado ANTES de pisarlo con `Active` — después, una renovación y un primer pago son
       idénticos y sólo uno es noticia. **Las renovaciones NO le llegan**: eso es lo que
       convierte un correo en ruido y un buzón en algo que se archiva sin leer.
-- [ ] **Jobs que alimenten el dashboard**: los negocios con más movimiento, de WhatsApp, de IA
-      — precalculados, no contados al abrir la pantalla
+- [x] ~~**Jobs que alimenten el dashboard**: los negocios con más movimiento, de WhatsApp, de IA~~
+      HECHO 2026-10-11: `atendia:business-activity` (horario) → `RankBusinessActivity` guarda
+      en `platform_figures` (clave, JSON, `computed_at`; re-correr CORRIGE) el top 5 de los
+      últimos 30 días por mensajes de clientes y por consultas a la IA, sin demos. El Inicio
+      lo muestra en la tarjeta "Más movimiento" y cada negocio abre su ficha.
 - [x] ~~**Snapshot mensual de MRR**~~ (2026-10-07): tabla `revenue_snapshots` (una fila por
       mes, re-tomarla CORRIGE en vez de duplicar) + `atendia:revenue-snapshot` diario a las
       23:40 — diario y no mensual para que un servidor caído el día 1 no pierda la foto del
@@ -816,9 +827,11 @@ El worker ya existe (supervisor: queue, reverb, schedule), así que el riel est�
       (lo que entró y lo que se fue), porque un total solo no explica nada: ganar 200 y perder
       180 se lee "+20" y esconde que cambió media cartera. La comparación se VE en Cobranza; sin
       mes anterior dice "primer mes medido" en vez de inventar un crecimiento contra cero.
-- [ ] **Decisión de diseño pendiente**: un número del dashboard que lo calcula un job lleva
-      sello de frescura (`atendiadesign` §7.1). Antes de construirlos hay que fijar cada cuánto
-      corren, o la pantalla miente con cara de verdad
+- [x] ~~**Decisión de diseño**: un número que calcula un job lleva sello de frescura~~
+      DECIDIDO 2026-10-11: corre cada hora (un ranking a 30 días casi no se mueve en una).
+      La tarjeta muestra "Calculado al …"; pasados 150 min (dos corridas perdidas y un
+      poco más: una lenta no es alarma) pinta la hora en rojo y agrega el aviso "Desactualizado".
+      Si el job nunca corrió dice "Todavía no se calculó", no un cero ni una lista vacía.
 
 > Lo que se le pide a un job acá no es "que corra": es que su resultado se pueda MOSTRAR con
 > su frescura dicha, y que si falla se note. Un job que alimenta un tile y muere en silencio
@@ -919,7 +932,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - **Defecto de paso, corregido:** la vista del año pasaba un ARRAY como nombre del país (`countryOptions` es una lista de valor/etiqueta, no un mapa por id) y daba 500 al abrir con el país en cierto orden; ahora sale de `countryName`.
 
 **De construcción que siguen (sin dependencia de nadie):**
-- [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [ ] paginar Negocios y precalcular el Inicio con jobs (E11/F) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
+- [x] ~~CRUD de planes (E7)~~ edición HECHA 2026-10-09 (crear/archivar aplazado, ver E7) · [x] ~~feriados cargables, incluido el de UN año (A12)~~ HECHO 2026-10-09 · [ ] pantalla de incumplimientos / legajo por negocio (E4, con investigación previa) · [x] ~~paginar Negocios y precalcular el Inicio con jobs (E11/F)~~ HECHO 2026-10-11 (bloque J) · [ ] enums a la base (E8) · [ ] correos y errores leyendo Compañía (E6) · [ ] minutaje de audio en Consumo de IA (A3) · [ ] el WhatsApp de la landing por fechas especiales (E5, falta decidir el horario de atención).
 
 **Verificación que quedó incompleta:**
 - [x] **HECHO 2026-10-09 — suite PHP completa en verde: 2551 pruebas, 0 fallos (1 omitida), y la de browser: 333, 0 fallos.** Texto original: **Suite PHP completa** después de los arreglos de esta noche: se corrió entera una vez (con 43 rojos, de los que 26 eran mi bug y 17 el contaminador) y después solo por archivos (333 verdes); el hook frena la segunda corrida completa hasta el próximo commit.
@@ -927,3 +940,45 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [ ] El flake de timeout de `ServicesProductsBrowserTest` (foto de producto) sigue: pasa aislado.
 
 **En pausa por orden suya / esperando abogado y contador:** ver §A11 (tasa Bs/USD) y §B (medio de pago, términos, supresión de datos, cables de plata).
+
+---
+
+## J · Lo hecho el 2026-10-11 (sin commitear) y lo que queda
+
+**Hecho, con su prueba:**
+- [x] **Tiempo real y escala del Inicio** (E11 + F, las seis casillas): island `board` con
+      `wire:poll.30s.visible`, `Business::directory()` paginado en SQL, ranking de movimiento
+      precalculado por job con su sello de frescura, medición de `lazy`/`defer` (no se aplica) y
+      el patrón anotado en `arquitectura-paneles.md`. Detalle y cifras en E11 y §F.
+- [x] **KPI "Deben" de Cobranza**: ahora "Negocios con pago atrasado · N en gracia · N en pausa" y
+      lleva a Negocios filtrado (`?estado=problem`).
+- [x] **Latido del cálculo** (idea 1): punto verde/ámbar/rojo junto a "Calculado al"; ámbar a los
+      90 min, rojo a los 150 (`RankBusinessActivity::LATE_AFTER_MINUTES` / `STALE_AFTER_MINUTES`).
+- [x] **Tendencia del ranking** (idea 2): flecha por negocio contra los 30 días ANTERIORES —sube,
+      baja, "Nuevo"—, con el puesto previo guardado por el job (`previous_rank`, null = no estaba
+      entre los 50 primeros). Se comparó contra el período anterior y no contra "la semana
+      anterior" porque la ventana de la tarjeta es de 30 días: comparar semanas contra meses
+      habría sido otra cifra. Una fila guardada antes de esto no dibuja flecha (ausente ≠ nuevo).
+- [x] **Aviso por correo cuando el job se cae** (idea 3): `atendia:business-activity-watch`
+      (cada 30 min) manda UN correo por corte por el canal `Email`; la clave lleva el sello del
+      ranking vencido, así que una recuperación que vuelve a caerse avisa de nuevo. Un ranking
+      que nunca corrió NO es un corte (una instalación nueva no lo tiene hasta su primera hora).
+      **Límite dicho:** si el programador entero está caído, el vigilante tampoco corre; ese caso
+      lo cubre el sello rojo en pantalla, no el correo.
+
+**Verificación:** guardianes `GoldenRules*` 95/95; tests nuevos (`BusinessDirectoryTest`,
+`AdminActivityRankingTest`, el del KPI en `AdminCollectionsTest`) y los de browser del Inicio,
+Cobranza y Negocios en verde; capturas miradas a 1280 / 900 / 390 en claro y oscuro. El poll se
+probó en un navegador real (un comprobante que llega aparece solo a los ~30 s).
+
+**Falta:**
+- [ ] **Commit y push** de todo lo del 11/10 (esperando su orden).
+- [ ] **Suite completa** (`php artisan test --compact`, sin `--parallel`): no se corrió; solo
+      los archivos tocados y los guardianes.
+- [ ] **Veredicto visual de ella** sobre el Inicio (tarjeta "Más movimiento", el latido, las
+      flechas) y Cobranza en su pantalla real.
+- [ ] **Escala del Inicio, a revisar con datos reales:** `Subscription::monthlyRecurringRevenue()`
+      y `struggling()` hidratan filas con `get()`; pasados ~5-6 mil suscripciones (≈150 ms) hay
+      que sumar en SQL. No hace falta hoy.
+- [ ] Las que ya estaban abiertas y no se tocaron: permisos del rol Soporte, guardián de la base
+      de pruebas, costos fijos del mes, modelo de voz, decisión de `gpt-6-sol`, tasa Bs/USD.

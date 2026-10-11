@@ -27,6 +27,33 @@ class AiUsage extends Model
     public const string ASK_ATENDIA = 'AskAtendia';
 
     /**
+     * The real businesses that asked the AI the most between two moments (up
+     * to now when `$until` is null), most first. Calls with no business (the
+     * platform's own) and demos never rank.
+     *
+     * @return Collection<int, object{business_id: int, total: int}>
+     */
+    public static function callsByBusiness(CarbonInterface $since, int $limit, ?CarbonInterface $until = null): Collection
+    {
+        return self::query()
+            ->selectRaw('business_id, count(*) as total')
+            ->whereNotNull('business_id')
+            ->where('created_at', '>=', $since)
+            ->when($until !== null, fn ($query) => $query->where('created_at', '<', $until))
+            ->whereNotIn('business_id', Business::demoIds())
+            ->groupBy('business_id')
+            ->orderByDesc('total')
+            ->orderBy('business_id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (self $row): object => (object) [
+                'business_id' => (int) $row->business_id,
+                'total' => (int) $row->getAttribute('total'),
+            ])
+            ->toBase();
+    }
+
+    /**
      * The same totals as `monthlyTotals`, but for a run of months and with the
      * month each row belongs to. One query: a trend of twelve months read one
      * month at a time is twelve round trips on every page load.

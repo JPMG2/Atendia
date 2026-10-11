@@ -883,15 +883,86 @@ class Business extends Model
      *
      * @return Collection<int, Business>
      */
-    public static function directory(string $search = ''): Collection
+    public static function directory(string $search = '', string $situation = '', ?int $limit = null): Collection
+    {
+        return self::directoryQuery($search, $situation)
+            ->with('subscription')
+            ->orderBy('name')
+            ->when($limit !== null, fn (Builder $query) => $query->limit($limit))
+            ->get();
+    }
+
+    /** How many businesses a search and a situation match, whatever the page shows. */
+    public static function directoryMatching(string $search = '', string $situation = ''): int
+    {
+        return self::directoryQuery($search, $situation)->count();
+    }
+
+    /**
+     * The one filter both the page and its count read, so "4 of 34" can never
+     * count a different set than the rows it sits above.
+     *
+     * @return Builder<self>
+     */
+    private static function directoryQuery(string $search, string $situation): Builder
     {
         return self::query()
-            ->with('subscription')
             // The term goes to the database, not to a filter in memory: that is
             // what makes "Odontologico" find "Odontológico".
             ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name'], trim($search)))
-            ->orderBy('name')
-            ->get();
+            ->when($situation !== '', fn (Builder $query) => $query->inSituation($situation));
+    }
+
+    /**
+     * The one word that names where a business stands, worst news first.
+     * `scopeInSituation` is the same decision written as SQL: change one and
+     * the other, or the list and its filter disagree.
+     */
+    public function situation(): string
+    {
+        $subscription = $this->subscription;
+
+        return match (true) {
+            $this->isSuspended() => 'suspended',
+            $subscription === null => 'none',
+            $subscription->hasEnded() => 'ended',
+            $subscription->isCanceling() => 'canceling',
+            default => $subscription->status->value,
+        };
+    }
+
+    /**
+     * Cuts the list by `situation()`. "problem" is the pair the Inicio shows
+     * together under "les está costando pagar".
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeInSituation(Builder $query, string $situation): void
+    {
+        if ($situation === 'suspended') {
+            $query->whereNotNull('businesses.suspended_at');
+
+            return;
+        }
+
+        $query->whereNull('businesses.suspended_at');
+
+        // The end of the period the business is read against: the paid period,
+        // or the trial's end while it has not paid yet.
+        $end = 'coalesce(subscriptions.current_period_ends_at, subscriptions.trial_ends_at)';
+
+        match ($situation) {
+            'none' => $query->whereDoesntHave('subscription'),
+            'ended' => $query->whereHas('subscription', fn (Builder $subscription) => $subscription
+                ->whereNotNull('subscriptions.canceled_at')
+                ->whereRaw("{$end} < ?", [now()])),
+            'canceling' => $query->whereHas('subscription', fn (Builder $subscription) => $subscription
+                ->whereNotNull('subscriptions.canceled_at')
+                ->whereRaw("({$end} is null or {$end} >= ?)", [now()])),
+            default => $query->whereHas('subscription', fn (Builder $subscription) => $subscription
+                ->whereNull('subscriptions.canceled_at')
+                ->whereIn('subscriptions.status', $situation === 'problem' ? ['past_due', 'paused'] : [$situation])),
+        };
     }
 
     /**

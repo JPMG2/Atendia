@@ -56,6 +56,33 @@ class ConversationMessage extends Model
     }
 
     /**
+     * The real businesses whose customers wrote the most between two moments
+     * (up to now when `$until` is null), most first. Demo businesses are ours
+     * and never rank.
+     *
+     * @return Collection<int, object{business_id: int, total: int}>
+     */
+    public static function inboundByBusiness(CarbonInterface $since, int $limit, ?CarbonInterface $until = null): Collection
+    {
+        return self::query()
+            ->selectRaw('business_id, count(*) as total')
+            ->where('direction', MessageDirection::In)
+            ->where('created_at', '>=', $since)
+            ->when($until !== null, fn ($query) => $query->where('created_at', '<', $until))
+            ->whereNotIn('business_id', Business::demoIds())
+            ->groupBy('business_id')
+            ->orderByDesc('total')
+            ->orderBy('business_id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (self $row): object => (object) [
+                'business_id' => (int) $row->business_id,
+                'total' => (int) $row->getAttribute('total'),
+            ])
+            ->toBase();
+    }
+
+    /**
      * What the customer asked right before a given reply. That is what the
      * assistant will be asked again, so it is what has to be taught when its
      * answer was wrong.

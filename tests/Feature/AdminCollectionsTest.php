@@ -106,6 +106,20 @@ test('the screen names the amount at risk and the state of each row', function (
         ->assertSee(trans_choice('collections.overdue', 4, ['count' => 4]));
 });
 
+test('the owing tile says what it counts, splits it by how far behind and lands on those businesses', function (): void {
+    owing('Uno', 'negocio', SubscriptionStatus::PastDue);
+    owing('Dos', 'negocio', SubscriptionStatus::Paused);
+    owing('Tres', 'negocio', SubscriptionStatus::Paused);
+    // Renewing soon is in the queue but is not behind, so it is not "owing".
+    owing('Vence', 'negocio', SubscriptionStatus::Active, daysAgo: -3);
+
+    $this->actingAs(collectionsAdmin())->get(route('admin.collections'))
+        ->assertOk()
+        ->assertSee(trans_choice('collections.risk.owing', 3))
+        ->assertSee(__('collections.risk.owing_split', ['grace' => 1, 'paused' => 2]))
+        ->assertSee(e(route('admin.businesses', ['estado' => 'problem'])), false);
+});
+
 test('with nobody owing the screen says so instead of drawing an empty table', function (): void {
     $this->actingAs(collectionsAdmin())->get(route('admin.collections'))
         ->assertOk()

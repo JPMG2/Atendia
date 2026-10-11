@@ -52,6 +52,12 @@ Schedule::command('atendia:staff-two-factor-warning')->dailyAt('09:05')->without
 // that month's photo for good.
 Schedule::command('atendia:revenue-snapshot')->dailyAt('23:40')->withoutOverlapping(30);
 
+// The home's "most movement" card, worked out ahead of time. Hourly: a 30-day
+// ranking barely moves inside an hour, and the card shows its own age anyway.
+Schedule::command('atendia:business-activity')->hourly()->withoutOverlapping(30);
+// Its watcher is a different command: a job cannot report its own death.
+Schedule::command('atendia:business-activity-watch')->everyThirtyMinutes()->withoutOverlapping(30);
+
 // What went wrong today, brought to her. Daily and in the evening, and quiet
 // on a clean day: a nightly "nothing happened" teaches her to archive unread.
 Schedule::command('atendia:incidents-digest')

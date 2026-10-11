@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Enums\SubscriptionStatus;
 use App\Models\Business;
+use App\Models\ConversationMessage;
 use App\Models\Payment;
+use App\Models\PlatformFigure;
 use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -87,6 +89,106 @@ test('the admin home shows figures that come from the rows below them', function
         ->and(Subscription::renewingWithin(7))->toHaveCount(3)
         ->and(Subscription::struggling())->toHaveCount(2);
 });
+
+/*
+| Real time: a receipt that lands while she is looking shows up by itself,
+| through the poll of the one island, and the tile counts it too.
+*/
+test('a receipt that arrives while the home is open appears without reloading', function (): void {
+    $page = visit(route('admin.dashboard'))->resize(1280, 1100);
+
+    $page->assertSee('Comprobantes esperando')->assertDontSee('Peluquería Recién Llegada');
+
+    $late = Business::factory()->create(['name' => 'Peluquería Recién Llegada']);
+    Payment::factory()->for($late)->create([
+        'status' => 'pending',
+        'plan' => 'negocio',
+        'subscription_id' => $late->subscription?->id,
+    ]);
+
+    // The poll is 30 s; `assertSee` only retries ~5 s, so the page is given the
+    // interval first.
+    $page->wait(34)
+        ->assertSee('Peluquería Recién Llegada')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-home-poll-arrived');
+
+    expect(Payment::pendingReviewCount())->toBe(3);
+});
+
+/*
+| The ranking is read from the stored figure and has to hold at every width:
+| the page not overflowing says nothing about a table cut inside its card.
+*/
+test('the most-movement card reads the stored ranking and fits at every width', function (string $label, int $width, int $height, bool $dark): void {
+    $busy = Business::factory()->create(['name' => 'Gimnasio Movimiento Total']);
+    ConversationMessage::factory()->count(4)->create(['business_id' => $busy->id, 'created_at' => now()->subDay()]);
+    $this->artisan('atendia:business-activity')->assertSuccessful();
+
+    $page = visit(route('admin.dashboard'))->resize($width, $height);
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    $page->assertSee('Más movimiento')
+        ->assertSee('Gimnasio Movimiento Total')
+        ->assertSee('Calculado al')
+        ->assertSee('Se actualiza solo')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-home-activity-'.$label.($dark ? '-dark' : '-light'));
+
+    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0)
+        ->and((int) $page->script(
+            'Array.from(document.querySelectorAll(".pay-table-wrap"))
+                .filter(w => w.offsetParent !== null)
+                .map(w => w.scrollWidth - w.clientWidth)
+                .reduce((a, b) => Math.max(a, b), 0)'
+        ))->toBe(0);
+})->with([
+    'desktop light' => ['desktop', 1280, 1100, false],
+    'desktop dark' => ['desktop', 1280, 1100, true],
+    'tablet light' => ['tablet', 900, 1100, false],
+    'phone light' => ['phone', 390, 900, false],
+    'phone dark' => ['phone', 390, 900, true],
+]);
+
+/*
+| The pulse and the arrows are read at a glance, so they are looked at: the
+| dot has to read as amber (late job) and each arrow beside its own name.
+*/
+test('the ranking shows each business arrow and the amber pulse of a late job', function (string $label, int $width, bool $dark): void {
+    $climbs = Business::factory()->create(['name' => 'Gimnasio Sube']);
+    $falls = Business::factory()->create(['name' => 'Peluquería Baja']);
+    $arrives = Business::factory()->create(['name' => 'Taller Llegó Ahora']);
+
+    ConversationMessage::factory()->count(9)->create(['business_id' => $falls->id, 'created_at' => now()->subDays(40)]);
+    ConversationMessage::factory()->count(5)->create(['business_id' => $climbs->id, 'created_at' => now()->subDays(40)]);
+    ConversationMessage::factory()->count(8)->create(['business_id' => $climbs->id, 'created_at' => now()->subDay()]);
+    ConversationMessage::factory()->count(3)->create(['business_id' => $falls->id, 'created_at' => now()->subDay()]);
+    ConversationMessage::factory()->count(1)->create(['business_id' => $arrives->id, 'created_at' => now()->subDay()]);
+
+    $this->artisan('atendia:business-activity')->assertSuccessful();
+    PlatformFigure::query()->update(['computed_at' => now()->subMinutes(100)]);
+
+    $page = visit(route('admin.dashboard'))->resize($width, 1100);
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    $page->assertSee('Gimnasio Sube')
+        ->assertSee('Taller Llegó Ahora')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-home-trend-'.$label);
+
+    expect($page->script('document.querySelector("[data-testid=activity-beat]").dataset.beat'))->toBe('late')
+        ->and((int) $page->script('document.querySelectorAll("[data-testid^=activity-trend-]").length'))->toBe(3)
+        ->and((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+})->with([
+    'desktop-light' => ['desktop-light', 1280, false],
+    'phone-dark' => ['phone-dark', 390, true],
+]);
 
 /*
 | Crediting without leaving: the row is resolved where it is, and the tile

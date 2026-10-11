@@ -40,29 +40,45 @@ new class extends Component
         $this->reset('search', 'state');
     }
 
+    /** The list walks in tranches: a platform with thousands of businesses is never loaded whole. */
+    private const int PAGE = 25;
+
+    public int $visible = self::PAGE;
+
+    public function loadMore(): void
+    {
+        $this->visible += self::PAGE;
+    }
+
+    /** A new cut starts from the top again, not from wherever she had scrolled to. */
+    public function updatedSearch(): void
+    {
+        $this->visible = self::PAGE;
+    }
+
+    public function updatedState(): void
+    {
+        $this->visible = self::PAGE;
+    }
+
     #[Computed]
     public function total(): int
     {
         return Business::directoryTotal();
     }
 
+    /** How many match the search and the state, of which the page shows `visible`. */
+    #[Computed]
+    public function matching(): int
+    {
+        return Business::directoryMatching($this->search, $this->state);
+    }
+
     /** @return Collection<int, Business> */
     #[Computed]
     public function businesses(): Collection
     {
-        $all = Business::directory($this->search);
-
-        if ($this->state === '') {
-            return $all;
-        }
-
-        // Filtering an already-loaded Collection is presentation, not a query
-        // (`queries-en-el-modelo.md`): the state is read per row, not stored.
-        return $all->filter(fn (Business $business): bool => in_array(
-            $this->stateOf($business),
-            $this->state === 'problem' ? ['past_due', 'paused'] : [$this->state],
-            true,
-        ))->values();
+        return Business::directory($this->search, $this->state, $this->visible);
     }
 
     /**
@@ -129,15 +145,7 @@ new class extends Component
     /** The one word that names a business's situation, worst news first. */
     public function stateOf(Business $business): string
     {
-        $subscription = $business->subscription;
-
-        return match (true) {
-            $business->isSuspended() => 'suspended',
-            $subscription === null => 'none',
-            $subscription->hasEnded() => 'ended',
-            $subscription->isCanceling() => 'canceling',
-            default => $subscription->status->value,
-        };
+        return $business->situation();
     }
 
     public function render(): View
@@ -152,7 +160,7 @@ new class extends Component
             <h1 class="page-head-title">{{ __('admin.businesses.title') }}</h1>
             <p class="page-head-sub">{{ __('admin.businesses.sub') }}</p>
         </div>
-        <x-ui.result-count :shown="$this->businesses->count()" :total="$this->total" noun="admin.businesses.count" />
+        <x-ui.result-count :shown="$this->matching" :total="$this->total" noun="admin.businesses.count" />
     </div>
 
     <x-ui.card class="bp-card">
@@ -242,6 +250,8 @@ new class extends Component
                     </tbody>
                 </table>
             </div>
+
+            <x-ui.load-more :shown="$this->businesses->count()" :total="$this->matching" />
         @endif
     </x-ui.card>
 
