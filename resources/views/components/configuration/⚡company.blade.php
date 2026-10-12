@@ -523,6 +523,32 @@ field in red from an attempt you had stopped looking at. --}}
                             wire:model="form.data.web"
                         />
                     </x-catalog.form-row>
+                    {{-- What the landing's WhatsApp says all year; a season overrides it from the catalog. --}}
+                    <x-catalog.form-row>
+                        <x-inputsform.week-hours
+                            span="full"
+                            name="opening_schedule"
+                            model="form.data.opening_schedule"
+                            :value="$form->data->opening_schedule"
+                            :label="__('company.fields.opening_schedule')"
+                            :hint="__('company.fields.opening_schedule_hint')"
+                        />
+                    </x-catalog.form-row>
+
+                    <x-catalog.form-row>
+                        <x-inputsform.input
+                            span="full"
+                            name="whatsapp_greeting"
+                            alpine-error="whatsapp_greeting"
+                            icon="message-circle"
+                            :label="__('company.fields.whatsapp_greeting')"
+                            :placeholder="__('company.fields.whatsapp_greeting_placeholder')"
+                            :hint="__('company.fields.whatsapp_greeting_hint')"
+                            maxlength="300"
+                            wire:model="form.data.whatsapp_greeting"
+                        />
+                    </x-catalog.form-row>
+
                     {{-- How clients pay Atendia: shown as-is in their "Mis pagos". --}}
                     <x-catalog.form-row>
                         <x-inputsform.textarea

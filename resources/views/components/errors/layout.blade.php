@@ -109,10 +109,42 @@ compiled CSS tokens and static assets. --}}
         </div>
     </main>
 
-    <footer class="px-5 pb-8 text-center">
+    @php($contact = \App\Models\Company::contact())
+    <footer class="flex flex-col items-center gap-2 px-5 pb-8 text-center">
         <p class="text-subtle" style="font-size: var(--text-sm)">
-            © {{ date('Y') }} {{ \App\Models\Company::brand() }} · {{ __('landing.tagline') }}
+            © {{ date('Y') }} {{ $contact['legal_name'] }} · {{ __('landing.tagline') }}
         </p>
+
+        @if ($contact['address'] || $contact['email'])
+            <p class="text-subtle" style="font-size: var(--text-sm)">
+                {{ collect([$contact['address'], $contact['place']])->filter()->implode(', ') }}
+                @if ($contact['address'] && $contact['email'])
+                    ·
+                @endif
+                @if ($contact['email'])
+                    <a
+                        href="mailto:{{ $contact['email'] }}"
+                        class="hover:text-brand transition"
+                    >{{ $contact['email'] }}</a>
+                @endif
+            </p>
+        @endif
+
+        @if ($contact['links']->isNotEmpty())
+            <div class="flex items-center gap-3">
+                @foreach ($contact['links'] as $link)
+                    <a
+                        href="{{ $link->url }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-subtle hover:text-brand transition"
+                        aria-label="{{ $link->socialNetwork?->name }}"
+                    >
+                        <x-icon :name="$link->socialNetwork?->icon ?: 'link'" :size="18" />
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </footer>
 </body>
 </html>

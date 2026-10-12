@@ -43,8 +43,14 @@ class SeasonalWindow extends Model implements DataTable
         // Moving, switching off or deleting a season changes what the landing
         // shows right now. Here and not in the Actions: a row flipped from a
         // list is still a season changing, and two places would drift.
-        static::saved(fn () => DemoTag::forgetResolved());
-        static::deleted(fn () => DemoTag::forgetResolved());
+        static::saved(function (): void {
+            DemoTag::forgetResolved();
+            Company::forgetReach();
+        });
+        static::deleted(function (): void {
+            DemoTag::forgetResolved();
+            Company::forgetReach();
+        });
     }
 
     /** @return HasMany<DemoTag, $this> */

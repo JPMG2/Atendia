@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Enums\PanelNotificationType;
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Mail\SupportTicketOpened;
 use App\Models\Business;
@@ -13,6 +12,7 @@ use App\Models\User;
 use App\Services\EvolutionApi;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SupportTicketKindSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -35,6 +35,7 @@ beforeEach(function (): void {
     config()->set('atendia.sales_whatsapp', '+58 414 000 11 22');
 
     $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(SupportTicketKindSeeder::class);
     $this->business = Business::factory()->create(['name' => 'Clínica Vida']);
     $this->user = User::factory()->create(['name' => 'María González']);
     $this->user->business()->associate($this->business)->save();
@@ -59,7 +60,7 @@ test('one field is enough, and the screen comes captured', function (): void {
     $ticket = SupportTicket::query()->firstOrFail();
 
     expect($ticket->screen)->toBe('my-products')
-        ->and($ticket->kind)->toBe(SupportTicketKind::Problem)
+        ->and($ticket->kind->code)->toBe('problem')
         ->and($ticket->status)->toBe(SupportTicketStatus::New)
         ->and($ticket->context['url'])->toBe('https://atendia.test/productos')
         ->and($ticket->context['viewport'])->toBe('1280x900')

@@ -29,19 +29,6 @@ enum SupportTicketPriority: string
     }
 
     /**
-     * What a report starts with, from what the person said it was: a problem
-     * stops somebody working, a question blocks a decision, an idea waits.
-     */
-    public static function startingFor(SupportTicketKind $kind): self
-    {
-        return match ($kind) {
-            SupportTicketKind::Problem => self::High,
-            SupportTicketKind::Question => self::Normal,
-            SupportTicketKind::Idea => self::Low,
-        };
-    }
-
-    /**
      * Hours a report of this priority may wait for our answer, or null when it
      * runs no clock. The two limits are platform settings, so she moves them
      * from the admin without a deploy.

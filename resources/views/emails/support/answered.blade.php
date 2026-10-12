@@ -3,7 +3,7 @@
         :eyebrow="__('support.mail.eyebrow')"
         :title="__('support.mail.answered_title', ['code' => $model->code])"
         :intro="$reply"
-        :chip="__('support.kinds.'.$model->kind->value)"
+        :chip="$model->kind?->name"
         :closing="__('support.mail.answered_closing')"
         :team="__('mail.account.team')"
     />

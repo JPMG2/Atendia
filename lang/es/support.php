@@ -22,12 +22,6 @@ return [
     'screen_placeholder' => 'No es de una pantalla en particular',
     'attachment_hint' => 'Si una imagen lo explica mejor, súbela tú. Nosotros no tomamos fotos de tu pantalla.',
 
-    'kinds' => [
-        'problem' => 'Algo no funciona',
-        'idea' => 'Una idea',
-        'question' => 'Una pregunta',
-    ],
-
     'statuses' => [
         'new' => 'Nuevo',
         'open' => 'En curso',

@@ -84,6 +84,26 @@ class AttributeValidator
     }
 
     /**
+     * Rules for a weekly schedule stored as day => [opens, closes].
+     *
+     * The shift is validated as typed, so a box left half-written names
+     * itself instead of its day silently reading as closed.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function weekSchedule(string $field): array
+    {
+        $time = ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'];
+
+        return [
+            $field => ['nullable', 'array'],
+            "{$field}.*" => ['array', 'size:2'],
+            "{$field}.*.0" => $time,
+            "{$field}.*.1" => $time,
+        ];
+    }
+
+    /**
      * Build an optional unique email rule (RFC only).
      *
      * @return array<int, string>

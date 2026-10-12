@@ -534,6 +534,122 @@ return [
         ],
     ],
 
+    'support_ticket_kind' => [
+        'search_placeholder' => 'Buscar por clave o nombre',
+        'search_label' => 'Buscar tipo de reporte',
+        'singular' => 'tipo',
+        'plural' => 'tipos',
+        'create' => 'Crear tipo',
+        'new' => 'Nuevo',
+        'new_title' => 'Nuevo tipo de reporte',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay tipos de reporte que coincidan con la búsqueda.',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'priority' => 'Empieza en',
+            'clock' => 'Reloj',
+            'sort_order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'clock' => [
+            'runs' => 'Corre',
+            'none' => 'Sin reloj',
+        ],
+
+        'status' => [
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'No se cambia después',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Una pregunta',
+            'icon' => 'Ícono',
+            'starting_priority' => 'Empieza con prioridad',
+            'starting_priority_hint' => 'La que tiene el reporte al llegar',
+            'runs_clock' => 'Reloj de espera',
+            'runs_clock_hint' => 'Sin reloj, nunca se pinta de atrasado',
+            'sort_order' => 'Orden',
+            'status' => 'Estado',
+        ],
+    ],
+
+    'whatsapp_variant' => [
+        'search_placeholder' => 'Buscar por temporada o número',
+        'search_label' => 'Buscar variante',
+        'singular' => 'variante',
+        'plural' => 'variantes',
+        'create' => 'Crear variante',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva variante',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay variantes que coincidan con la búsqueda.',
+        'toggled_on' => 'La variante de :name quedó encendida.',
+        'toggled_off' => 'La variante de :name quedó apagada.',
+
+        'columns' => [
+            'season' => 'Temporada',
+            'starts_at' => 'Desde',
+            'ends_at' => 'Hasta',
+            'phone' => 'Número',
+            'opening_hours' => 'Horario',
+            'running' => 'Ahora',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Apagada',
+            'running' => 'En curso',
+            'waiting' => 'Fuera de fechas',
+            'inherits' => 'Hereda',
+            'own_week' => 'Propio',
+        ],
+
+        'fields' => [
+            'season' => 'Temporada',
+            'season_placeholder' => 'Elige la temporada',
+            'season_hint' => 'Las fechas salen de Temporadas. Una temporada tiene una sola variante',
+            'phone' => 'Número de WhatsApp',
+            'phone_hint' => 'En blanco usa el de Compañía',
+            'phone_placeholder' => '+54 9 11 5555-1234',
+            'override_schedule' => 'Horario propio',
+            'override_schedule_hint' => 'Apagado usa la semana de Compañía. Encendido y sin ningún día abierto, la temporada queda cerrada.',
+            'opening_schedule' => 'Horario de atención',
+            'opening_schedule_hint' => 'Los días y horas en que atiendes durante esta temporada.',
+            'whatsapp_greeting' => 'Mensaje de apertura',
+            'whatsapp_greeting_hint' => 'En blanco usa el de Compañía',
+            'whatsapp_greeting_placeholder' => 'Hola, ¿están atendiendo en las fiestas?',
+            'status' => 'Estado',
+        ],
+
+        'reminder' => [
+            'title' => 'Falta el mensaje de apertura',
+            'line' => ':season empieza :when y su variante no tiene mensaje de apertura: saldrá el de Compañía.',
+            'today' => 'hoy',
+            'tomorrow' => 'mañana',
+            'in_days' => 'en :days días',
+            'action' => 'Completar',
+        ],
+
+        'preview' => [
+            'title' => 'Ver como si fuera',
+            'hint' => 'Elige un día y mira qué número, horario y mensaje tendría el WhatsApp de la landing. No cambia nada.',
+            'date' => 'Día',
+            'none' => 'Ese día no hay ninguna variante: sale lo de Compañía.',
+            'season' => 'Temporada en curso: :name',
+            'phone' => 'Número',
+            'hours' => 'Horario',
+            'greeting' => 'Mensaje de apertura',
+            'missing' => 'Sin cargar',
+        ],
+    ],
+
     'province' => [
         'search_placeholder' => 'Buscar por nombre o país',
         'search_label' => 'Buscar provincia',

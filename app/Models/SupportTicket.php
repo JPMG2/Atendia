@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Classes\Main\SupportCustomer;
 use App\Classes\Main\TicketEvidence;
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Traits\BelongsToBusiness;
@@ -16,6 +15,7 @@ use Carbon\CarbonInterval;
 use Database\Factories\SupportTicketFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,7 +48,6 @@ class SupportTicket extends Model
     protected function casts(): array
     {
         return [
-            'kind' => SupportTicketKind::class,
             'status' => SupportTicketStatus::class,
             'priority' => SupportTicketPriority::class,
             'context' => 'array',
@@ -58,6 +57,22 @@ class SupportTicket extends Model
             'blocked_due' => 'date',
             'blocked_at' => 'datetime',
         ];
+    }
+
+    /**
+     * What the report was filed as. The column holds the kind's `code`; this
+     * reads it back as the master's row so call sites keep asking
+     * `$ticket->kind->label()`, and a kind she later renames renames the old
+     * tickets too.
+     *
+     * @return Attribute<SupportTicketKind|null, SupportTicketKind|string|null>
+     */
+    protected function kind(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $code): ?SupportTicketKind => SupportTicketKind::byCode($code),
+            set: fn (SupportTicketKind|string|null $kind): ?string => $kind instanceof SupportTicketKind ? $kind->code : $kind,
+        );
     }
 
     /**
@@ -156,7 +171,7 @@ class SupportTicket extends Model
             // The whole business, not two columns: each row also says who pays and how.
             ->with(['business.subscription', 'user:id,name', 'assignee:id,name'])
             ->when($statuses !== null, fn (Builder $query): Builder => $query->whereIn('status', $statuses))
-            ->when(SupportTicketKind::tryFrom((string) $kind) !== null, fn (Builder $query): Builder => $query->where('kind', $kind))
+            ->when(SupportTicketKind::byCode($kind) !== null, fn (Builder $query): Builder => $query->where('kind', $kind))
             ->when($businessId !== null, fn (Builder $query): Builder => $query->where('business_id', $businessId))
             ->when($assignee === 'none', fn (Builder $query): Builder => $query->whereNull('assigned_to'))
             ->when(ctype_digit((string) $assignee), fn (Builder $query): Builder => $query->where('assigned_to', (int) $assignee))
@@ -210,8 +225,8 @@ class SupportTicket extends Model
     }
 
     /**
-     * Waited on us for longer than its priority allows. An idea runs no clock,
-     * whatever its priority says: nobody is stuck while it waits.
+     * Waited on us for longer than its priority allows. A kind that runs no
+     * clock (an idea) never turns overdue, whatever its priority says.
      */
     public function isOverdue(): bool
     {
@@ -219,7 +234,7 @@ class SupportTicket extends Model
         $hours = $this->priority->overdueHours();
 
         return $this->status->isOurs()
-            && $this->kind !== SupportTicketKind::Idea
+            && ($this->kind?->runs_clock ?? true)
             && $hours !== null
             && $since !== null
             && $since->diffInHours(now()) >= $hours;
@@ -299,7 +314,7 @@ class SupportTicket extends Model
             ->whereNotNull('resolved_at')
             ->where('resolved_at', '>=', now()->subDays($days))
             ->get(['kind', 'created_at', 'resolved_at'])
-            ->groupBy(fn (self $ticket): string => $ticket->kind->value)
+            ->groupBy(fn (self $ticket): string => (string) $ticket->getRawOriginal('kind'))
             ->map(function (SupportCollection $tickets): string {
                 $seconds = $tickets
                     ->map(fn (self $ticket): int => (int) $ticket->created_at->diffInSeconds($ticket->resolved_at, true))

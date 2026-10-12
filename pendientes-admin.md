@@ -527,8 +527,27 @@ mal, en un solo lugar y en orden.
 
 ### E5. Datos del WhatsApp del landing configurables en días especiales
 NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
-- [ ] Número, horario de atención y mensaje de apertura del WhatsApp de la landing, con
-      variantes por fecha (feriados, vacaciones, fin de año)
+- [x] ~~Número, horario de atención y mensaje de apertura del WhatsApp de la landing, con
+      variantes por fecha (feriados, vacaciones, fin de año)~~ (2026-10-12). Lo de todo el año
+      vive en `companies` (`phone`, `opening_hours`, `whatsapp_greeting`, en la pantalla de
+      Compañía); la variante es una fila de `whatsapp_variants` por temporada, que pisa campo
+      a campo y hereda lo que deja vacío. Maestro **WhatsApp por temporada** en Catálogos →
+      Landing, con "ver como si fuera" por día. UNA sola puerta: `Company::reach($día)`;
+      `Company::whatsapp()` la usa, así que la landing, los precios, las preguntas y el ticket
+      de soporte siguen al número de la temporada sin tocarlos. El pie suma el horario.
+      **Las dos ideas, hechas el mismo día:** (1) el horario dejó de ser texto y es una SEMANA
+      estructurada (un turno por día, `opening_schedule` jsonb en `companies` y en cada
+      variante; `App\Classes\Main\OpeningHours` la resume en palabras y dice si están
+      atendiendo, en la hora del país de la compañía y con la madrugada resuelta). El pie dice
+      "Atendemos ahora" / "Fuera de horario" y NO dibuja el punto si nunca se declaró una
+      semana: faltar no es estar cerrado. En una variante, "Horario propio" apagado hereda y
+      encendido sin ningún día abierto cierra la temporada entera. (2) El hub avisa, arriba de
+      la lista, de la variante activa cuya temporada empieza en 7 días o menos y no tiene
+      mensaje de apertura, con un botón que abre su edición. Control nuevo y reusable:
+      `<x-inputsform.week-hours>`.
+      - [ ] **Sin zona horaria propia en Compañía:** hoy se toma la del país de su región (la
+            primera de PHP). Un país con varias zonas usa la principal; si la compañía necesita
+            otra, es una columna `timezone` y no un cambio de código.
 - [x] ~~Se resuelve con el mismo patrón de A8~~: el riel ya está puesto y probado
       (2026-10-06). `seasonal_windows` es compartida y no sabe nada de tags: E5 monta
       encima con una fila evergreen y sus variantes, sin tabla de fechas propia.
@@ -547,10 +566,10 @@ El nombre NO salía de `config('app.name')`: estaba escrito a mano **140 veces**
       que renombrar la fila renombra el producto entero.
 - [x] ~~Falta que cargues la fila de Compañía~~ (2026-10-07): cargada, `Company::count()` = 1.
       El fallback ya no manda. Quedan vacíos `web` y los dos logos: carga tuya.
-- [ ] Correos y errores leyendo dirección y redes de Compañía. **El pie de la landing YA lo
-      hace** (`site/footer.blade.php`: redes, dirección, razón social y copyright); los dos
-      layouts que faltan leen sólo `Company::brand()` (`email/layout.blade.php:13` y
-      `errors/layout.blade.php:12,114`).
+- [x] ~~Correos y errores leyendo dirección y redes de Compañía~~ (2026-10-12): una sola puerta,
+      `Company::contact()`, que lee el pie, el correo y las páginas de error y **no lanza** si la
+      base está caída. El correo pone las redes por NOMBRE (un cliente que bloquea imágenes
+      mostraría agujeros); el error las pone como íconos. Test: `CompanyContactSurfacesTest`.
 
 ### E6-bis. Lo que quedó del pedido original de Compañía — CERRADO 2026-10-05
 - [x] ~~Crear la fila de Compañía en `atendia`~~ — la cargó ella el 2026-10-05.
@@ -599,9 +618,23 @@ NUEVO · criterio en `arquitectura-paneles.md`
 Hoy hay **25** Enum en `app/Enums/` (eran 23 cuando se escribió; contados el 2026-10-07).
 La mayoría son estados que el código ramifica y **se quedan**
 (`PaymentStatus`, `MessageDirection`, `SubscriptionStatus`, `ModerationSeverity`…).
-- [ ] Revisar uno por uno con ese criterio y pasar a BD solo los que son LISTA
-      (candidatos a mirar primero: `SupportTicketKind`, `NotificationType`, `HandoffLevel`)
-- [ ] Lo que pase a BD va con el patrón Catálogos: maestro + seeder `updateOrCreate`
+- [x] ~~Revisar uno por uno con ese criterio y pasar a BD solo los que son LISTA~~ (2026-10-12,
+      31 Enum revisados contra el código que los ramifica). **Pasó UNO: `SupportTicketKind`**
+      (nombre, ícono, prioridad con la que llega y si corre reloj eran datos: nada en el código
+      ramificaba por cuál era). Los otros 30 se quedan, por la misma prueba: los estados
+      (`*Status`, `*State`, `SubscriptionStatus`, `PaymentStatus`…) los mueve una máquina de
+      estados; `IncidentKind`, `PanelNotificationType`, `AdoptionStep` y `AiCapability` los
+      produce código escrito a mano por caso (sumar uno exige código, no una fila);
+      `HandoffLevel` es la política que el agente lee por nivel (texto en `AsistenteAtendia`);
+      `NotificationType` es la severidad de un aviso (112 archivos la usan); `CustomerSentiment`
+      es el esquema que se le exige al modelo; `AppointmentSource`, `MessageAuthor`,
+      `MessageDirection`, `MessageKind` y `ReportFormat` son discriminantes del sistema.
+- [x] ~~Lo que pase a BD va con el patrón Catálogos: maestro + seeder~~: maestro **Tipos de
+      reporte** (Catálogos → Soporte), `SupportTicketKindSeeder` que solo CREA (no pisa lo que
+      ella renombre). `support_tickets.kind` sigue guardando el `code`: ningún reporte se
+      reescribió, y `$ticket->kind` ahora devuelve la fila del maestro.
+- [ ] `SupportTicketPriority` quedó como Enum a propósito (el código ordena y compara por
+      nivel y las horas salen de Ajustes). Si ella quiere un cuarto nivel, es otra decisión.
 
 ### E9. Visibilidad total: clientes, pagos, deudas, próximos pagos
 **AMPLÍA A6** (que decía solo "pantalla de negocios")

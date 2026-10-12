@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\HelpArticleSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SupportTicketKindSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -25,6 +26,7 @@ beforeEach(function (): void {
     app()->setLocale('es');
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(MenuSeeder::class);
+    $this->seed(SupportTicketKindSeeder::class);
 
     $this->business = Business::factory()->create(['name' => 'Clínica Vida']);
     $user = User::factory()->create(['name' => 'María González']);
@@ -40,7 +42,7 @@ test('the panel opens from the topbar with one field and the screen already pick
         ->click('[data-testid="support-open"]')
         ->waitForText(__('support.fields.body'))
         ->assertSee(__('support.kind_legend'))
-        ->assertSee(__('support.kinds.problem'))
+        ->assertSee('Algo no funciona')
         ->screenshot(filename: 'support-open-desktop');
 });
 

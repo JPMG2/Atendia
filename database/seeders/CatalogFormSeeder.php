@@ -47,6 +47,10 @@ class CatalogFormSeeder extends Seeder
             ['group' => 'Soporte', 'title' => 'Mensajes de adopción', 'description' => 'El correo que se abre a quien se quedó trabado en un paso del alta: uno por paso, se reescribe acá.', 'component' => 'catalog.adoption-nudge', 'permission_key' => 'catalog.adoption-nudge', 'icon' => 'mail', 'order' => 16],
 
             ['group' => 'Landing', 'title' => 'Ejemplos del hero', 'description' => 'Los negocios de ejemplo que prueba el visitante, con su versión de temporada.', 'component' => 'catalog.demo-tag', 'permission_key' => 'catalog.demo-tag', 'icon' => 'message-circle', 'order' => 14],
+
+            ['group' => 'Landing', 'title' => 'WhatsApp por temporada', 'description' => 'El número, el horario y el mensaje de apertura del WhatsApp de la landing en feriados, vacaciones y fin de año.', 'component' => 'catalog.whatsapp-variant', 'permission_key' => 'catalog.whatsapp-variant', 'icon' => 'clock', 'order' => 19],
+
+            ['group' => 'Soporte', 'title' => 'Tipos de reporte', 'description' => 'Lo que un negocio puede enviar a soporte: nombre, ícono, prioridad con la que llega y si corre reloj.', 'component' => 'catalog.support-ticket-kind', 'permission_key' => 'catalog.support-ticket-kind', 'icon' => 'life-buoy', 'order' => 20],
         ];
 
         foreach ($catalogs as $catalog) {

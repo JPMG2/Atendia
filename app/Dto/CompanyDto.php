@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Classes\Main\OpeningHours;
 use App\Interfaces\Catalog\FormData;
 
 /**
@@ -36,6 +37,9 @@ class CompanyDto implements FormData
         public ?string $phone = null,
         public ?string $web = null,
         public ?string $payment_instructions = null,
+        /** @var array<int, array{open: bool, opens_at: string, closes_at: string}> */
+        public array $opening_schedule = [],
+        public ?string $whatsapp_greeting = null,
     ) {}
 
     /**
@@ -73,6 +77,8 @@ class CompanyDto implements FormData
             'phone' => $this->phone,
             'web' => $this->web,
             'payment_instructions' => $this->payment_instructions,
+            'opening_schedule' => $this->opening_schedule,
+            'whatsapp_greeting' => $this->whatsapp_greeting,
         ];
     }
 
@@ -95,6 +101,8 @@ class CompanyDto implements FormData
             phone: DtoCast::toNullableString($data['phone'] ?? null),
             web: DtoCast::toNullableString($data['web'] ?? null),
             payment_instructions: DtoCast::toNullableString($data['payment_instructions'] ?? null),
+            opening_schedule: OpeningHours::formState(is_array($data['opening_schedule'] ?? null) ? $data['opening_schedule'] : null),
+            whatsapp_greeting: DtoCast::toNullableString($data['whatsapp_greeting'] ?? null),
         );
     }
 
@@ -122,6 +130,9 @@ class CompanyDto implements FormData
             'web' => DtoCast::squish($this->web),
             // Not squished: the line breaks ARE the format (bank, alias, CBU...).
             'payment_instructions' => DtoCast::toNullableString(trim((string) $this->payment_instructions)),
+            // Nothing open is nothing declared: a company is not "closed" by omission.
+            'opening_schedule' => OpeningHours::toStored($this->opening_schedule) ?: null,
+            'whatsapp_greeting' => DtoCast::squish($this->whatsapp_greeting),
         ];
     }
 }

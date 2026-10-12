@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Classes\Main\TicketEvidence;
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Models\Business;
 use App\Models\SupportTicket;
@@ -56,7 +55,7 @@ test('each queue view stands for the statuses it names, and none changes the ord
 
 test('the queue narrows by kind, by business and by what she types', function (): void {
     $problem = queueTicket(test()->clinic, ['body' => 'No carga el catálogo de servicios', 'code' => 'ATN-AAAAA']);
-    $idea = queueTicket(test()->salon, ['kind' => SupportTicketKind::Idea, 'body' => 'Quisiera ver un calendario', 'code' => 'ATN-BBBBB']);
+    $idea = queueTicket(test()->salon, ['kind' => 'idea', 'body' => 'Quisiera ver un calendario', 'code' => 'ATN-BBBBB']);
 
     expect(SupportTicket::inbox('all', kind: 'idea')->pluck('id')->all())->toBe([$idea->id])
         ->and(SupportTicket::inbox('all', businessId: $test = test()->clinic->id)->pluck('id')->all())->toBe([$problem->id])
@@ -174,7 +173,7 @@ test('a filter that matches nothing says so instead of claiming there are no rep
 
 test('the filters live in the URL, so a link lands on the same queue', function (): void {
     queueTicket(test()->clinic);
-    queueTicket(test()->salon, ['kind' => SupportTicketKind::Idea, 'body' => 'Una idea del salón']);
+    queueTicket(test()->salon, ['kind' => 'idea', 'body' => 'Una idea del salón']);
 
     Livewire::withQueryParams(['tipo' => 'idea'])
         ->actingAs($this->admin)

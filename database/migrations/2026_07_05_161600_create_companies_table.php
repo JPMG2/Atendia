@@ -31,6 +31,8 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('email')->nullable();
             $table->string('phone', 30)->nullable();
+            $table->jsonb('opening_schedule')->nullable()->comment('Semana de atención del WhatsApp de la landing: {"1":["09:00","18:00"],...}, un turno por día; el día que falta está cerrado');
+            $table->string('whatsapp_greeting', 300)->nullable()->comment('Mensaje con el que se abre el chat desde la landing');
             $table->string('web')->nullable();
             $table->string('logo_path_light')->nullable()->comment('Versión del logo para fondo claro');
             $table->string('logo_path_dark')->nullable()->comment('Versión del logo para fondo oscuro');

@@ -83,7 +83,7 @@ class CompanyForm extends BaseForm
      *
      * @var list<string>
      */
-    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web', 'payment_instructions'];
+    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web', 'payment_instructions', 'opening_schedule', 'whatsapp_greeting'];
 
     /**
      * The loaded record; `null` means nothing has been loaded yet.
@@ -535,6 +535,10 @@ class CompanyForm extends BaseForm
             'phone' => config('nicename.phone'),
             'web' => config('nicename.web'),
             'payment_instructions' => __('company.fields.payment_instructions'),
+            'opening_schedule' => __('company.fields.opening_schedule'),
+            'opening_schedule.*.0' => __('company.hours.opens'),
+            'opening_schedule.*.1' => __('company.hours.closes'),
+            'whatsapp_greeting' => __('company.fields.whatsapp_greeting'),
             'social.*.social_network_id' => config('nicename.social_network_id'),
             'social.*.url' => config('nicename.url'),
         ];
@@ -674,6 +678,10 @@ class CompanyForm extends BaseForm
                 'web' => ['nullable', 'url:http,https', 'max:255'],
 
                 'payment_instructions' => ['nullable', 'string', 'max:2000', AttributeValidator::xssFree()],
+
+                ...AttributeValidator::weekSchedule('opening_schedule'),
+
+                'whatsapp_greeting' => ['nullable', ...AttributeValidator::stringValid(false, '3'), 'max:300'],
 
                 'social' => ['array', 'max:20'],
 

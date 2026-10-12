@@ -18,6 +18,19 @@ return [
 
     'discard' => 'Descartar',
 
+    // The weekly schedule, in words and in the form.
+    'hours' => [
+        'closed' => 'Cerrado',
+        'span' => ':first a :last',
+        'pair' => ':first y :last',
+        'shift' => ':days de :opens a :closes h',
+        'opens' => 'Abre',
+        'closes' => 'Cierra',
+        'time_placeholder' => '09:00',
+        'overnight_hint' => 'Si cierra de madrugada, escribe la hora del día siguiente: 22:00 a 02:00.',
+        'invalid' => 'Escribe la hora como 09:00 y completa abre y cierra.',
+    ],
+
     // Descartar avisa antes: lo tipeado sin guardar no se puede recuperar.
     'discard_confirm' => [
         'title' => '¿Descartar los cambios?',
@@ -145,6 +158,11 @@ return [
         'phone_placeholder' => '+54 9 11 5555-1234',
 
         'web' => 'Sitio web',
+        'opening_schedule' => 'Horario de atención',
+        'opening_schedule_hint' => 'El visitante lo lee junto al WhatsApp de la landing, y el pie dice si estás atendiendo ahora. En feriados y vacaciones se cambia desde Catálogos → WhatsApp por temporada.',
+        'whatsapp_greeting' => 'Mensaje de apertura',
+        'whatsapp_greeting_hint' => 'Lo que ya viene escrito cuando alguien toca el WhatsApp de la landing. Si lo dejás vacío, sale el de siempre.',
+        'whatsapp_greeting_placeholder' => 'Hola, quiero saber más sobre :brand.',
         'payment_instructions' => 'Instrucciones de pago',
         'payment_instructions_hint' => 'Cómo te pagan los clientes (banco, titular, alias, número de cuenta). Lo ven tal cual en "Mis pagos".',
         'web_placeholder' => 'https://atendia.app',

@@ -3,7 +3,7 @@
         :eyebrow="__('support.mail.eyebrow')"
         :title="__('support.mail.title', ['code' => $model->code, 'business' => $model->business?->name])"
         :intro="$model->body"
-        :chip="__('support.kinds.'.$model->kind->value)"
+        :chip="$model->kind?->name"
         :primary-url="route('admin.support', ['reporte' => $model->id])"
         :primary-label="__('support.mail.cta')"
         :closing="__('support.mail.where', [

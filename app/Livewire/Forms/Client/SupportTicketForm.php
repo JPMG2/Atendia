@@ -7,9 +7,9 @@ namespace App\Livewire\Forms\Client;
 use App\Actions\Support\CreateSupportTicket;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Enums\SupportTicketKind;
 use App\Livewire\Forms\BaseForm;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketKind;
 use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -61,7 +61,7 @@ class SupportTicketForm extends BaseForm
             $this->ticket = app(CreateSupportTicket::class)->handle(
                 user: Auth::user(),
                 body: $validated['body'],
-                kind: SupportTicketKind::from($validated['kind']),
+                kind: SupportTicketKind::byCode($validated['kind']),
                 screen: $validated['screen'],
                 context: $context,
                 attachment: $validated['attachment'],
@@ -79,7 +79,7 @@ class SupportTicketForm extends BaseForm
     {
         parent::reset(...$properties);
 
-        $this->kind = 'problem';
+        $this->kind = SupportTicketKind::defaultCode();
     }
 
     protected function transformServiceData(): array
@@ -96,7 +96,8 @@ class SupportTicketForm extends BaseForm
     {
         return [
             'body' => ['required', 'string', 'min:10', 'max:'.self::MAX_BODY],
-            'kind' => ['required', Rule::enum(SupportTicketKind::class)],
+            // Only a kind she still offers: an old one is a label, not a choice.
+            'kind' => ['required', Rule::exists('support_ticket_kinds', 'code')->where('is_active', true)->whereNull('deleted_at')],
             'screen' => ['nullable', 'string', 'max:80'],
             // Nothing is captured on its own: this is only what she chose to
             // attach, and it goes through the same gate as every other upload.

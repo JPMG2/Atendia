@@ -13,6 +13,7 @@ use App\Services\Search\GlobalSearch;
 use Database\Seeders\HelpArticleSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SupportTicketKindSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -31,6 +32,7 @@ beforeEach(function (): void {
     app()->setLocale('es');
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(HelpArticleSeeder::class);
+    $this->seed(SupportTicketKindSeeder::class);
 
     $this->business = Business::factory()->create();
     $this->user = User::factory()->create();

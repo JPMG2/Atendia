@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\DemoTag;
 use App\Models\SeasonalWindow;
 use App\Models\User;
+use App\Models\WhatsappVariant;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\DemoTagSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -44,6 +45,70 @@ test('the hero examples master lists what the landing is showing', function (): 
     // The class is set by hand because inDarkMode() leaves the page in light.
     $page->script('document.documentElement.classList.add("dark")');
     $page->screenshot(filename: 'catalog-demo-tags-dark');
+});
+
+test('the landing WhatsApp master lists a season and previews its day', function (): void {
+    $window = SeasonalWindow::factory()->create(['name' => 'Fin de año 2026']);
+
+    WhatsappVariant::factory()->create([
+        'seasonal_window_id' => $window->id,
+        'opening_schedule' => [1 => ['10:00', '14:00'], 2 => ['10:00', '14:00']],
+        'whatsapp_greeting' => 'Hola, ¿atienden en las fiestas?',
+    ]);
+
+    $page = visit('/admin/catalogs');
+
+    $page->click('WhatsApp por temporada')
+        ->assertSee('Fin de año 2026')
+        ->assertSee('Lunes y martes de 10:00 a 14:00 h')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-whatsapp-variants');
+
+    $page->script('document.documentElement.classList.add("dark")');
+    $page->screenshot(filename: 'catalog-whatsapp-variants-dark');
+});
+
+test('the reminder opens the variant that still has no opening message', function (): void {
+    $window = SeasonalWindow::factory()->create([
+        'name' => 'Fin de año 2026',
+        'starts_at' => SeasonalWindow::today()->addDays(3),
+        'ends_at' => SeasonalWindow::today()->addDays(10),
+    ]);
+
+    WhatsappVariant::factory()->create([
+        'seasonal_window_id' => $window->id,
+        'opening_schedule' => [1 => ['10:00', '14:00'], 2 => ['10:00', '14:00']],
+    ]);
+
+    $page = visit('/admin/catalogs');
+
+    $page->click('WhatsApp por temporada')
+        ->assertSee('Falta el mensaje de apertura')
+        ->assertSee('Fin de año 2026 empieza en 3 días')
+        ->screenshot(filename: 'catalog-whatsapp-reminder')
+        ->click('Completar')
+        ->assertSee('Horario propio')
+        ->assertSee('Lunes')
+        ->assertSee('Domingo')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-whatsapp-variant-week');
+});
+
+test('the landing WhatsApp master fits a phone', function (): void {
+    SeasonalWindow::factory()->create(['name' => 'Vacaciones de invierno']);
+
+    $page = visit('/admin/catalogs')->resize(390, 844);
+
+    $page->click('WhatsApp por temporada')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-whatsapp-variants-mobile');
+
+    expect((int) $page->script(<<<'JS'
+        (() => {
+            const card = document.querySelector('.demo-preview');
+            return card.scrollWidth - card.clientWidth;
+        })()
+    JS))->toBe(0);
 });
 
 test('the preview block fits a phone, whatever the table does', function (): void {

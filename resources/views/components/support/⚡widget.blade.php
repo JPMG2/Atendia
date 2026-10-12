@@ -1,9 +1,9 @@
 <?php
 
-use App\Enums\SupportTicketKind;
 use App\Livewire\Forms\Client\SupportTicketForm;
 use App\Models\HelpArticle;
 use App\Models\Menu;
+use App\Models\SupportTicketKind;
 use App\Services\Help\HelpFinder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use App\Traits\HasNotifications;
@@ -105,11 +105,13 @@ new class extends Component
     #[Computed]
     public function kinds(): array
     {
-        return array_map(fn (SupportTicketKind $kind): array => [
-            'value' => $kind->value,
-            'label' => $kind->label(),
-            'icon' => $kind->icon(),
-        ], SupportTicketKind::cases());
+        return SupportTicketKind::offered()
+            ->map(fn (SupportTicketKind $kind): array => [
+                'value' => $kind->code,
+                'label' => $kind->name,
+                'icon' => $kind->icon,
+            ])
+            ->all();
     }
 
     public function send(): void

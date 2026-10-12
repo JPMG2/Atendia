@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketStatus;
 use App\Models\Business;
 use App\Models\SupportReply;
@@ -50,7 +49,7 @@ beforeEach(function (): void {
     ]);
 
     SupportTicket::factory()->for($salon)->create([
-        'kind' => SupportTicketKind::Idea,
+        'kind' => 'idea',
         'body' => 'Sería útil poder ver el calendario por semana.',
         'screen' => 'agenda',
         'status' => SupportTicketStatus::Waiting,
@@ -214,6 +213,23 @@ test('the saved replies are a master in the catalogs hub, and the composer paste
 
     $page->assertSee('Respuesta guardada')
         ->screenshot(filename: 'admin-support-replies-composer');
+});
+
+test('the report kinds are a master in the hub, edited without touching code', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+
+    $hub = visit(route('admin.catalogs'))->resize(1280, 900);
+
+    $hub->assertNoJavaScriptErrors()
+        ->click('Tipos de reporte')
+        ->assertSee('Algo no funciona')
+        ->assertSee('Una idea')
+        ->assertSee('Sin reloj')
+        ->screenshot(filename: 'admin-support-kinds-master')
+        ->click('Una idea')
+        ->assertSee('Reloj de espera')
+        ->assertSee('Empieza con prioridad')
+        ->screenshot(filename: 'admin-support-kinds-form');
 });
 
 test('the blocked queue says what is missing without opening anything', function (): void {

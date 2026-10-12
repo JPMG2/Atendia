@@ -30,7 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.status', 'catalog.social-network',
             'catalog.business-sector', 'catalog.business-activity',
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
-            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.support-reply', 'catalog.adoption-nudge',
+            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.whatsapp-variant', 'catalog.support-ticket-kind', 'catalog.support-reply', 'catalog.adoption-nudge',
             'catalog.plan', 'catalog.country-holiday',
         ];
 

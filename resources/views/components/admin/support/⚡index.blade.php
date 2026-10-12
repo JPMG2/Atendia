@@ -3,7 +3,6 @@
 use App\Actions\Support\AnswerSupportTicket;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Livewire\Forms\Admin\SupportBlockForm;
@@ -13,6 +12,7 @@ use App\Models\HelpArticle;
 use App\Models\Menu;
 use App\Models\SupportReply;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketKind;
 use App\Models\User;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
@@ -416,9 +416,8 @@ new class extends Component
     #[Computed]
     public function kinds(): array
     {
-        return collect(SupportTicketKind::cases())
-            ->mapWithKeys(fn (SupportTicketKind $case): array => [$case->value => __('support.kinds.'.$case->value)])
-            ->all();
+        // Every kind, switched off ones too: an old report still has to be found by it.
+        return collect(SupportTicketKind::options())->pluck('label', 'value')->all();
     }
 
     /** @return array<string, string> */
@@ -468,7 +467,7 @@ new class extends Component
             @else
                 {{ __('support.admin.median', ['days' => 90]) }}
                 @foreach ($this->medians as $kindValue => $label)
-                    {{ __('support.kinds.'.$kindValue) }} {{ $label }}@unless ($loop->last) · @endunless
+                    {{ $this->kinds[$kindValue] ?? $kindValue }} {{ $label }}@unless ($loop->last) · @endunless
                 @endforeach
             @endif
         </span>
@@ -607,7 +606,7 @@ new class extends Component
 
                                     <td class="is-name is-key" data-label="{{ __('support.admin.columns.report') }}">
                                         <span class="sup-body" data-testid="sup-expand-{{ $ticket->id }}">{{ $ticket->excerpt() }}</span>
-                                        <span class="sup-code">{{ $ticket->code }} · {{ __('support.kinds.'.$ticket->kind->value) }} · {{ $this->screenName($ticket->screen) }}</span>
+                                        <span class="sup-code">{{ $ticket->code }} · {{ $ticket->kind?->name }} · {{ $this->screenName($ticket->screen) }}</span>
                                     </td>
 
                                     <td data-label="{{ __('support.admin.business') }}">
@@ -727,7 +726,7 @@ new class extends Component
             class="is-wide"
             x-on:slide-over-close="$wire.closeTicket()"
             :title="$ticket->business?->name"
-            :subtitle="$ticket->code.' · '.__('support.kinds.'.$ticket->kind->value).' · '.$this->screenName($ticket->screen)"
+            :subtitle="$ticket->code.' · '.$ticket->kind?->name.' · '.$this->screenName($ticket->screen)"
             :stacked-footer="true"
         >
             <div class="sup-panel">

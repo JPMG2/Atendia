@@ -23,7 +23,7 @@ class SupportTicketOpened extends WhatsAppMessage
         return __('support.whatsapp', [
             'code' => $this->model->code,
             'business' => $this->model->business?->name,
-            'kind' => __('support.kinds.'.$this->model->kind->value),
+            'kind' => $this->model->kind?->name,
             'screen' => $screen,
             'body' => Str::limit($this->model->body, 280),
         ]);

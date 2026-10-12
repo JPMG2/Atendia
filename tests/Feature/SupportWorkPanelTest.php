@@ -7,7 +7,6 @@ use App\Actions\Support\AnswerSupportTicket;
 use App\Classes\Main\SupportCustomer;
 use App\Enums\SubscriptionStatus;
 use App\Enums\SupportDelivery;
-use App\Enums\SupportTicketKind;
 use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Mail\SupportTicketAnswered;
@@ -15,6 +14,7 @@ use App\Models\Business;
 use App\Models\Subscription;
 use App\Models\SupportReply;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketKind;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
 use App\Services\EvolutionApi;
@@ -260,17 +260,30 @@ test('the priority moves from the panel and sets the clock', function (): void {
 });
 
 test('the clock follows what the report is: a problem waits less, a question more, an idea never', function (): void {
-    $problem = workTicket(['kind' => SupportTicketKind::Problem, 'priority' => SupportTicketPriority::High, 'created_at' => now()->subHours(9)]);
-    $question = workTicket(['kind' => SupportTicketKind::Question, 'priority' => SupportTicketPriority::Normal, 'created_at' => now()->subHours(9)]);
-    $idea = workTicket(['kind' => SupportTicketKind::Idea, 'priority' => SupportTicketPriority::High, 'created_at' => now()->subDays(20)]);
+    $problem = workTicket(['kind' => 'problem', 'priority' => SupportTicketPriority::High, 'created_at' => now()->subHours(9)]);
+    $question = workTicket(['kind' => 'question', 'priority' => SupportTicketPriority::Normal, 'created_at' => now()->subHours(9)]);
+    $idea = workTicket(['kind' => 'idea', 'priority' => SupportTicketPriority::High, 'created_at' => now()->subDays(20)]);
 
     expect($problem->isOverdue())->toBeTrue()
         ->and($question->isOverdue())->toBeFalse()
         // Even a high-priority idea runs no clock: nobody is stuck while it waits.
         ->and($idea->isOverdue())->toBeFalse()
-        ->and(SupportTicketPriority::startingFor(SupportTicketKind::Problem))->toBe(SupportTicketPriority::High)
-        ->and(SupportTicketPriority::startingFor(SupportTicketKind::Question))->toBe(SupportTicketPriority::Normal)
-        ->and(SupportTicketPriority::startingFor(SupportTicketKind::Idea))->toBe(SupportTicketPriority::Low);
+        ->and(SupportTicketKind::byCode('problem')->starting_priority)->toBe(SupportTicketPriority::High)
+        ->and(SupportTicketKind::byCode('question')->starting_priority)->toBe(SupportTicketPriority::Normal)
+        ->and(SupportTicketKind::byCode('idea')->starting_priority)->toBe(SupportTicketPriority::Low);
+});
+
+test('a kind she renames or stops the clock on changes every report filed under it', function (): void {
+    $idea = workTicket(['kind' => 'idea', 'priority' => SupportTicketPriority::High, 'created_at' => now()->subDays(20)]);
+
+    expect($idea->isOverdue())->toBeFalse();
+
+    SupportTicketKind::byCode('idea')->update(['name' => 'Sugerencia', 'runs_clock' => true]);
+
+    $idea = $idea->fresh();
+
+    expect($idea->kind->name)->toBe('Sugerencia')
+        ->and($idea->isOverdue())->toBeTrue();
 });
 
 test('each queue counts its own, and the red dot counts only the late ones', function (): void {
@@ -395,15 +408,15 @@ test('the median resolution is by kind, ignores the old and the unsettled, and s
 
     // Problems: 1h, 3h and 5h settle to a median of 3h, which an average would not give with one outlier.
     foreach ([1, 3, 5] as $hours) {
-        workTicket(['kind' => SupportTicketKind::Problem, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(2), 'resolved_at' => now()->subDays(2)->addHours($hours)]);
+        workTicket(['kind' => 'problem', 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(2), 'resolved_at' => now()->subDays(2)->addHours($hours)]);
     }
     // An even count averages the two in the middle: 1d and 3d is 2d.
     foreach ([1, 3] as $days) {
-        workTicket(['kind' => SupportTicketKind::Question, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(10), 'resolved_at' => now()->subDays(10)->addDays($days)]);
+        workTicket(['kind' => 'question', 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(10), 'resolved_at' => now()->subDays(10)->addDays($days)]);
     }
     // Neither of these counts: one settled long ago, one not settled at all.
-    workTicket(['kind' => SupportTicketKind::Idea, 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(200), 'resolved_at' => now()->subDays(199)]);
-    workTicket(['kind' => SupportTicketKind::Idea]);
+    workTicket(['kind' => 'idea', 'status' => SupportTicketStatus::Resolved, 'created_at' => now()->subDays(200), 'resolved_at' => now()->subDays(199)]);
+    workTicket(['kind' => 'idea']);
 
     expect(SupportTicket::medianResolution())->toBe(['problem' => '3h', 'question' => '2d']);
 

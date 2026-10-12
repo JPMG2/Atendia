@@ -81,6 +81,54 @@ load app.css — the one place the brand lives outside the tokens. --}}
                                 {{ __('mail.layout.rights', ['year' => now()->year]) }}
                             </p>
 
+                            @php($contact = \App\Models\Company::contact())
+                            @if ($contact['address'] || $contact['email'])
+                                <p
+                                    style="
+                                        margin: 6px 0 0;
+                                        font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+                                        font-size: 12px;
+                                        line-height: 1.6;
+                                        color: #7a8a84;
+                                    "
+                                >
+                                    {{ collect([$contact['address'], $contact['place']])->filter()->implode(', ') }}
+                                    @if ($contact['address'] && $contact['email'])
+                                        ·
+                                    @endif
+                                    @if ($contact['email'])
+                                        <a
+                                            href="mailto:{{ $contact['email'] }}"
+                                            style="color: #7a8a84"
+                                        >{{ $contact['email'] }}</a>
+                                    @endif
+                                </p>
+                            @endif
+
+                            {{-- Names, not icons: a mail client that blocks images
+                            would show a row of holes. --}}
+                            @if ($contact['links']->isNotEmpty())
+                                <p
+                                    style="
+                                        margin: 6px 0 0;
+                                        font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+                                        font-size: 12px;
+                                        line-height: 1.6;
+                                        color: #7a8a84;
+                                    "
+                                >
+                                    @foreach ($contact['links'] as $link)
+                                        <a
+                                            href="{{ $link->url }}"
+                                            style="color: #7a8a84"
+                                        >{{ $link->socialNetwork?->name }}</a>
+                                        @if (! $loop->last)
+                                            ·
+                                        @endif
+                                    @endforeach
+                                </p>
+                            @endif
+
                             @isset($footnote)
                                 <p
                                     style="

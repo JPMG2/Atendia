@@ -1,6 +1,6 @@
 {{ __('support.mail.title', ['code' => $model->code, 'business' => $model->business?->name]) }}
 
-{{ __('support.kinds.'.$model->kind->value) }}
+{{ $model->kind?->name }}
 
 {{ $model->body }}
 

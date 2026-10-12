@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Support;
 
-use App\Enums\SupportTicketKind;
-use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Mail\SupportTicketOpened as SupportTicketOpenedMail;
 use App\Messaging\Channels\Email;
@@ -13,6 +11,7 @@ use App\Messaging\Channels\WhatsApp;
 use App\Messaging\WhatsApp\SupportTicketOpened as SupportTicketOpenedMessage;
 use App\Models\Company;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketKind;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
@@ -83,7 +82,7 @@ class CreateSupportTicket
                     'code' => SupportTicket::freshCode(),
                     'kind' => $kind,
                     'status' => SupportTicketStatus::New,
-                    'priority' => SupportTicketPriority::startingFor($kind),
+                    'priority' => $kind->starting_priority,
                     'screen' => $screen,
                     'after_help' => $afterHelp,
                     'body' => $body,

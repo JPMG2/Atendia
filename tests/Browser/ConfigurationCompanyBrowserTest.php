@@ -71,8 +71,12 @@ test('with the company already saved the second step swaps the panel', function 
     $page->click('Datos comerciales')
         ->assertSee('Email de soporte')
         ->assertSee('Redes sociales')
+        // What the landing's WhatsApp says all year sits next to the number.
+        ->assertSee('Horario de atención')
+        ->assertSee('Mensaje de apertura')
         // The main panel is the one that hides now.
-        ->assertDontSee('Razón social');
+        ->assertDontSee('Razón social')
+        ->screenshot(filename: 'company-commercial-step');
 });
 
 test('deleting a network asks first, through the system dialog', function (): void {

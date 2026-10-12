@@ -42,6 +42,8 @@ test('the footer carries a real way to reach the company', function (): void {
         'email' => 'soporte@atendia.com',
         'phone' => '5492995529100',
         'address' => 'Calle 24 - 2 - 4',
+        // Every day, around the clock: "open now" cannot depend on when this runs.
+        'opening_schedule' => array_fill_keys([1, 2, 3, 4, 5, 6, 0], ['00:00', '23:59']),
     ]);
 
     $page = visit('/');
@@ -51,6 +53,8 @@ test('the footer carries a real way to reach the company', function (): void {
         ->assertSee($company->email)
         ->assertSee($company->address)
         ->assertSee(__('landing.footer.whatsapp'))
+        ->assertSee('Lunes a domingo de 00:00 a 23:59 h')
+        ->assertSee(__('landing.footer.open_now'))
         ->screenshotElement('footer', 'landing-footer-contact');
 
     // The human line opens a chat, it does not merely print a number.

@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\OpeningHours;
+use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
+use DateTimeZone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 /**
  * AtendIa itself, the one issuing the invoice. A SINGLE row, forever.
@@ -39,7 +45,17 @@ class Company extends Model
         'text_copyright',
         'tagline',
         'payment_instructions',
+        'opening_schedule',
+        'whatsapp_greeting',
     ];
+
+    /** Short, because a season turns at midnight and the landing is public. */
+    private const int REACH_CACHE_MINUTES = 10;
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => self::forgetReach());
+    }
 
     /**
      * The single company row, with what the public pages need.
@@ -76,10 +92,123 @@ class Company extends Model
      */
     public static function whatsapp(): ?string
     {
-        $number = self::current()?->phone ?: config('atendia.sales_whatsapp');
-        $digits = preg_replace('/\D+/', '', (string) $number) ?? '';
+        return self::reach()['phone'];
+    }
 
-        return $digits === '' ? null : $digits;
+    /**
+     * How the landing's WhatsApp reads on a day: the company's own number,
+     * hours and opening message, with what the strongest season in force
+     * writes over them. `open` is null with no schedule declared (a missing
+     * week is not a closed one) and for any day but today.
+     *
+     * @return array{phone: ?string, hours: ?string, open: ?bool, greeting: ?string, season: ?string}
+     */
+    public static function reach(?CarbonImmutable $on = null): array
+    {
+        $today = SeasonalWindow::today();
+        $day = ($on ?? $today)->startOfDay();
+        $isToday = $day->equalTo($today);
+
+        // Only today is cached: a preview is one person looking once. The
+        // clock is NOT in the cache: "open now" changes by the minute.
+        $resolved = $isToday
+            ? Cache::remember('company-reach:'.$day->toDateString(), now()->addMinutes(self::REACH_CACHE_MINUTES), fn (): array => self::reachFor($day))
+            : self::reachFor($day);
+
+        $hours = $resolved['schedule'] === null
+            ? null
+            : new OpeningHours(OpeningHours::normalize($resolved['schedule']), self::localTimezone());
+
+        $digits = preg_replace('/\D+/', '', (string) ($resolved['phone'] ?: config('atendia.sales_whatsapp'))) ?? '';
+
+        return [
+            'phone' => $digits === '' ? null : $digits,
+            'hours' => $hours?->summary,
+            'open' => $isToday ? $hours?->isOpenAt(CarbonImmutable::now()) : null,
+            'greeting' => $resolved['greeting'],
+            'season' => $resolved['season'],
+        ];
+    }
+
+    /**
+     * The clock the schedule is read against: the country's own, the way a
+     * business finds its. The first zone of a country is its main one.
+     */
+    public static function localTimezone(): string
+    {
+        $iso2 = self::current()?->region?->province?->country?->iso2;
+        $zones = $iso2 === null ? [] : DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, strtoupper($iso2));
+
+        return $zones[0] ?? (string) config('app.timezone');
+    }
+
+    public static function forgetReach(): void
+    {
+        Cache::forget('company-reach:'.SeasonalWindow::today()->toDateString());
+    }
+
+    /**
+     * @return array{phone: ?string, schedule: ?array<array-key, mixed>, greeting: ?string, season: ?string}
+     */
+    private static function reachFor(CarbonImmutable $day): array
+    {
+        $company = self::current();
+        $windows = SeasonalWindow::inForce($day);
+
+        $variants = $windows->isEmpty()
+            ? collect()
+            : WhatsappVariant::query()
+                ->where('is_active', true)
+                ->whereIn('seasonal_window_id', $windows->pluck('id'))
+                ->get();
+
+        // Windows come strongest first, so the first one with a row wins.
+        $variant = $windows
+            ->map(fn (SeasonalWindow $window): ?WhatsappVariant => $variants->firstWhere('seasonal_window_id', $window->id))
+            ->first(fn (?WhatsappVariant $row): bool => $row !== null);
+
+        return [
+            // Raw: the env fallback is applied outside the cache, where a changed value shows at once.
+            'phone' => $variant?->phone ?: $company?->phone,
+            // [] on a variant is "closed all week", so only null inherits.
+            'schedule' => $variant?->opening_schedule ?? $company?->opening_schedule,
+            'greeting' => $variant?->whatsapp_greeting ?: $company?->whatsapp_greeting,
+            'season' => $variant === null ? null : $windows->firstWhere('id', $variant->seasonal_window_id)?->name,
+        ];
+    }
+
+    /**
+     * What the footer, the mail chrome and the error pages print about the
+     * company. Never throws: those surfaces must render while the database
+     * is the thing that is down, so a failed read is an empty row.
+     *
+     * @return array{legal_name: string, email: ?string, address: ?string, place: string, links: Collection<int, SocialLink>}
+     */
+    public static function contact(): array
+    {
+        try {
+            $company = self::current();
+            $region = $company?->region;
+            $contact = [
+                'legal_name' => filled($company?->legal_name) ? $company->legal_name : self::brand(),
+                'email' => filled($company?->email) ? $company->email : null,
+                'address' => filled($company?->address) ? $company->address : null,
+                'place' => collect([$region?->name, $region?->province?->name, $region?->province?->country?->name])
+                    ->filter()
+                    ->implode(', '),
+                'links' => $company?->socialLinks ?? collect(),
+            ];
+        } catch (Throwable) {
+            $contact = [
+                'legal_name' => (string) config('app.name', 'AtendIa'),
+                'email' => null,
+                'address' => null,
+                'place' => '',
+                'links' => collect(),
+            ];
+        }
+
+        return $contact;
     }
 
     /**
@@ -90,6 +219,7 @@ class Company extends Model
         return [
             'region_id' => 'integer',
             'tax_condition_id' => 'integer',
+            'opening_schedule' => 'array',
         ];
     }
 

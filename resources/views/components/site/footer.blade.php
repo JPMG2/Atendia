@@ -19,11 +19,9 @@
     // Nobody pays a brand they cannot reach: a human line, an address and a
     // monitored mailbox are what say "this is a real company" on a page that
     // is asking a stranger for a subscription. Each one hides if it is empty.
-    $whatsapp = \App\Models\Company::whatsapp();
-    $region = $company?->region;
-    $place = collect([$region?->name, $region?->province?->name, $region?->province?->country?->name])
-        ->filter()
-        ->implode(', ');
+    $reach = \App\Models\Company::reach();
+    $whatsapp = $reach['phone'];
+    $place = \App\Models\Company::contact()['place'];
 
     $locales = config('locales.supported');
     $labels = config('locales.labels');
@@ -80,7 +78,7 @@
 
                 @if ($whatsapp)
                     <a
-                        href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode(__('landing.footer.whatsapp_text')) }}"
+                        href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode($reach['greeting'] ?: __('landing.footer.whatsapp_text')) }}"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-muted hover:text-brand inline-flex items-center gap-2 transition"
@@ -89,6 +87,31 @@
                         <x-icon name="message-circle" :size="15" />
                         {{ __('landing.footer.whatsapp') }}
                     </a>
+
+                    {{-- The hours belong to the number: both change with the season. --}}
+                    @if ($reach['hours'])
+                        <span class="text-muted inline-flex items-start gap-2" style="font-size: var(--text-sm)">
+                            <x-icon name="clock" :size="15" class="mt-0.5 flex-none" />
+                            {{ $reach['hours'] }}
+                        </span>
+                    @endif
+
+                    {{-- Said only when a week was declared: a missing schedule is not
+                    a closed one, and a dot that always says "closed" is noise. --}}
+                    @if ($reach['open'] !== null)
+                        <span
+                            class="text-muted inline-flex items-center gap-2"
+                            style="font-size: var(--text-sm)"
+                            role="status"
+                        >
+                            <span
+                                aria-hidden="true"
+                                class="inline-block rounded-full"
+                                style="width: 8px; height: 8px; background: {{ $reach['open'] ? 'var(--success)' : 'var(--text-subtle)' }}"
+                            ></span>
+                            {{ $reach['open'] ? __('landing.footer.open_now') : __('landing.footer.closed_now') }}
+                        </span>
+                    @endif
                 @endif
 
                 @if ($company?->email)
