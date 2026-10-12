@@ -3,9 +3,8 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-11, en una pausa (el bloque J tiene lo hecho el 11/10 —tiempo real
-> y escala del Inicio, el KPI de Cobranza y las tres ideas para enamorar—, **sin commitear y
-> sin la suite completa**; lo del 10/10 ya está en `99b2eac`). Antes: 2026-10-10 (bloque I).
+> Última revisión: 2026-10-12, al cerrar el día (bloque K: E6, E5 con sus dos ideas y E8, en
+> `47949f2`; lo del 11/10 en `dee9de2`). Antes: 2026-10-11 (bloque J). Antes: 2026-10-10 (bloque I).
 > Antes: 2026-10-08, al cerrar el día (bloque G).
 > Antes: 2026-10-07
 > (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
@@ -976,7 +975,40 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 
 ---
 
-## J · Lo hecho el 2026-10-11 (sin commitear) y lo que queda
+## K · Lo hecho el 2026-10-12 (commit `47949f2`) y lo que queda
+
+**Hecho, con su prueba** (detalle en E5, E6 y E8):
+- [x] **E6** Correos y errores leen la fila de Compañía por `Company::contact()`.
+- [x] **E5** WhatsApp de la landing por temporada: `Company::reach()`, maestro "WhatsApp por
+      temporada", semana estructurada (`OpeningHours`), "Atendemos ahora" en el pie y aviso en
+      el hub de la variante sin mensaje de apertura (control nuevo `<x-inputsform.week-hours>`).
+- [x] **E8** `SupportTicketKind` pasó a maestro ("Tipos de reporte"); los otros 30 Enum se
+      quedan, cada uno con su razón escrita en E8.
+- [x] Arreglado de paso: el hub tenía órdenes duplicados (17 y 18) y un test se caía por azar
+      cuando la factory sorteaba el mismo `iso2`.
+
+**Verificación:** suite PHP completa 2622 verdes y 4 rojos, los cuatro corregidos y vueltos a
+correr por archivo (74 verdes); suite de navegador de los 61 archivos, con 3 rojos que pasaron
+aislados (`Atributos`, `Planes` del layout de catálogos y la red social de Compañía): flake bajo
+carga, como ya estaba anotado. **No hubo una segunda corrida completa de PHP después de los
+arreglos.** Capturas miradas en 1280 y 390.
+
+**Falta (de lo que ella pidió el 12/10):**
+- [ ] **A3** Minutaje de audio sin lugar en Consumo de IA (propuesto: reemplaza "mensajes").
+- [ ] **E7** Archivar planes desde el admin (propuesto: archivar, no crear).
+- [ ] **E1** Mover `catalog.manager` y `configuration.*` a `components/admin/` (hay que decidir).
+- [ ] **A12** Feriados de los otros 20 países y la forma "primer lunes de febrero".
+- [ ] **E4** Legajo de incumplimientos por negocio: primero la pasada de investigación y que ella
+      defina qué cuenta como incumplimiento (propuesto: moderación, impago y reclamos).
+- [ ] **Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte" y los
+      campos nuevos de Compañía.
+- [ ] **Cargar en Compañía** el horario de atención y el mensaje de apertura (están vacíos en
+      `atendia`; sin horario el pie no dibuja el punto).
+- [ ] Zona horaria propia de Compañía (hoy la del país de su región), si hace falta.
+
+---
+
+## J · Lo hecho el 2026-10-11 (commit `dee9de2`) y lo que queda
 
 **Hecho, con su prueba:**
 - [x] **Tiempo real y escala del Inicio** (E11 + F, las seis casillas): island `board` con
@@ -1005,9 +1037,8 @@ Cobranza y Negocios en verde; capturas miradas a 1280 / 900 / 390 en claro y osc
 probó en un navegador real (un comprobante que llega aparece solo a los ~30 s).
 
 **Falta:**
-- [ ] **Commit y push** de todo lo del 11/10 (esperando su orden).
-- [ ] **Suite completa** (`php artisan test --compact`, sin `--parallel`): no se corrió; solo
-      los archivos tocados y los guardianes.
+- [x] ~~Commit y push de todo lo del 11/10~~ (`dee9de2`, ya en `origin/main`).
+- [x] ~~Suite completa~~ (2026-10-12: 2596 verdes, 1 saltado, sobre `dee9de2`).
 - [ ] **Veredicto visual de ella** sobre el Inicio (tarjeta "Más movimiento", el latido, las
       flechas) y Cobranza en su pantalla real.
 - [ ] **Escala del Inicio, a revisar con datos reales:** `Subscription::monthlyRecurringRevenue()`
