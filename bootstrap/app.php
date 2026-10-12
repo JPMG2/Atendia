@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\ExpireIdleStaffSession;
 use App\Http\Middleware\LogoutRevokedDevice;
 use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Http\Middleware\SetLocale;
@@ -36,6 +37,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // (evita "contenido mixto" que rompia los estilos al entrar por https).
         $middleware->trustProxies(at: '*');
 
+        // A signed-in user bounced off /login lands on their own panel, not
+        // on the client dashboard every guest redirect pointed at.
+        $middleware->redirectUsersTo(fn (Request $request): string => $request->user()?->panelHome() ?? route('dashboard', absolute: false));
+
         // The referral cookie is a public share code, nothing sensitive:
         // plain text keeps it readable across the signup flow and in tests.
         $middleware->encryptCookies(except: ['atendia_ref']);
@@ -45,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
             SetTenantDatabaseContext::class,
             LogoutRevokedDevice::class,
+            ExpireIdleStaffSession::class,
         ]);
 
         // Aliases de spatie/laravel-permission para usar en rutas.

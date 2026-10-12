@@ -15,7 +15,8 @@ class UpdateBusinessActivity
      *     name: string,
      *     description: ?string,
      *     sort_order: int,
-     *     is_active: bool
+     *     is_active: bool,
+     *     catalog_eligible: bool
      * }  $data  Already validated by BusinessActivityForm::transformServiceData().
      */
     public function handle(int $id, array $data): BusinessActivity

@@ -34,6 +34,15 @@ construcción del Admin está terminada**: lo que queda es decisión, dato o esp
 - [x] ~~Lo del 12/10~~: WhatsApp por temporada, Tipos de reporte, archivar un plan, Cumplimiento
       y el aviso de temporada en el pie.
 
+**2-bis. Seguridad de la sesión del equipo — HECHO el 2026-10-12** (ella lo notó)
+- [x] Quien administra o da soporte cierra sesión tras **20 min sin tocar nada**, y "recordarme"
+      no la revive. Editable en Ajustes → Seguridad (`security.staff_idle_minutes`, 5 a 240).
+      Lo que la pantalla refresca sola (`wire:poll`) no cuenta como actividad. Los clientes
+      siguen con sus 12 h. Middleware `ExpireIdleStaffSession`, probado con control.
+- [x] Un admin con sesión que abre `/login` caía en el panel del cliente: ahora va al suyo.
+- [ ] **Prueba suya con reloj real:** dejar el admin quieto 20 min y ver que pide la clave (los
+      tests viajan en el tiempo, no esperan). Sin subir aún: falta la corrida completa y el commit.
+
 **3. Datos y decisiones suyas**
 - [ ] **Cargar los costos fijos del mes** (hoy en 0: Consumo de IA no muestra el resultado neto).
 - [x] **Modelo de voz:** asignado `gpt-4o-transcribe` (US$ 0,006 por minuto, precio verificado).
@@ -156,8 +165,10 @@ cada ajuste dice qué pasa si lo movés, con su default al lado y un botón para
       pantalla que muestre el efecto de moverlos, no un campo suelto.
 - [ ] Cómo elige el sistema a qué cliente va la respuesta de la dueña desde su WhatsApp
       (todavía no hay un valor configurable: primero hay que decidir la regla).
-- [ ] Cumpleaños solo con opt-in del cliente (hoy fijo en sí) — es una COLUMNA de negocio,
-      no un ajuste de plataforma.
+- [x] ~~Cumpleaños solo con opt-in del cliente~~ (2026-10-12) Ya se cumple y es fijo A
+      PROPÓSITO: `SendBirthdayGreetings` exige `marketing_opt_in_at` y el test "birthday greetings
+      reach only today's consenting celebrants" lo blinda. No se hace columna: un interruptor
+      para saludar sin permiso es lo que hace reportar un número de WhatsApp.
 - [x] ~~Al sumar un ajuste nuevo: anotarlo acá~~ — hoy se suma una fila al `PlatformSettingSeeder`
       y aparece sola en la pantalla, agrupada y validada por su tipo.
 - Dos ajustes nuevos el 2026-10-07, del escritorio de incidencias (A7):
@@ -954,18 +965,14 @@ El worker ya existe (supervisor: queue, reverb, schedule), así que el riel est�
 Modelos de IA, lo contable de Consumo de IA y Soporte quedaron construidos y verificados; esto es
 lo único que falta, y casi todo es una decisión o un dato de ella, no construcción.
 
-- [ ] **Decidir la conversación en `gpt-6-sol`.** Dio 69/71 y no se asignó (falló un día futuro y un
-      horario incompleto). Para saber si son fallas de Sol o de la prueba falta la misma batería con
-      Astra (~3 a 4 USD, en tandas: ver `AssistantEvalTest`). Si Astra falla lo mismo, Sol puede
-      tomar la conversación a una quinta parte del costo.
+- [x] ~~**Decidir la conversación en `gpt-6-sol`.**~~ (2026-10-12) Astra 72/72, Sol 70/72: la
+      conversación se queda en Astra. Sol falla horario sin cierre y "Tenemos…" sin stock.
 - [ ] **Cargar los costos fijos del mes** en Ajustes → Costos fijos (dato de ella). Hasta entonces
       el resultado neto de Consumo de IA no se muestra.
-- [ ] **Revisar en platform.openai.com** que la clave APP esté en un Project distinto del de la
-      clave principal, con su presupuesto y su alerta (dato de ella).
-- [ ] **Modelo de voz.** El que corre (`gpt-4o-transcribe-diarize`) no tiene precio verificado (desde el
-      2026-10-09 la pantalla de Asignación lo marca "Sin precio"): su
-      costo se estima con 0,003 por minuto. Asignar uno del catálogo (`gpt-4o-mini-transcribe`,
-      0,003) vuelve real la cifra, pero la calidad del audio no tiene batería.
+- [x] ~~**Revisar en platform.openai.com** que la clave APP esté en un Project distinto~~
+      (2026-10-12) Comprobado: caen en el mismo Project. Decidido seguir con las dos claves.
+- [x] ~~**Modelo de voz.**~~ (2026-10-12) Asignado `gpt-4o-transcribe`, 0,006 por minuto con precio
+      verificado. La calidad del audio sigue sin batería.
 - [x] ~~**Migración de embeddings**~~ (2026-10-08): en Modelos de IA → Búsqueda del conocimiento. Convierte
       las 7 tablas con vectores en una columna paralela (`embedding_next`), activa de golpe renombrando
       el par (ninguna consulta cambia), conserva el anterior (`embedding_prev`) para volver atrás hasta
@@ -973,11 +980,10 @@ lo único que falta, y casi todo es una decisión o un dato de ella, no construc
       "Búsqueda por significado", con precio y dimensiones; seed: 3-small 0,02 y 3-large 0,13 USD por
       millón, verificados). Probado con embeddings simulados (ciclo completo, índices, vuelta atrás) y
       en navegador a 1280/900/390 claro y oscuro.
-- [ ] **Probar un cambio real de embeddings** contra OpenAI cuando ella quiera: no se hizo porque gasta
-      tokens (hoy son 36 fragmentos y 15 intenciones: centavos). Con 3-large hay que elegir ≤2000
-      dimensiones (pgvector no indexa más); el catálogo lo trae a 1536.
+- [x] ~~**Probar un cambio real de embeddings**~~ (2026-10-12) Decidido no cambiar: se queda en
+      `3-small` hasta que haya varios negocios con catálogos grandes. Con 3-large irían a 1536.
 - [x] ~~**Veredicto de ella sobre Modelos de IA** (E14)~~ — aceptada el 2026-10-09.
-- [ ] **Veredicto de ella sobre Soporte** (E2), reconstruida hoy y ampliada (v2): conversación con
+- [x] ~~**Veredicto de ella sobre Soporte** (E2)~~ (dado el 2026-10-12), reconstruida hoy y ampliada (v2): conversación con
       resultado de entrega real (WhatsApp, si no correo, si no "sin forma de avisarle"), notas
       internas, responsable y prioridad, ficha del cliente, traspaso "No se pudo resolver" con cola
       Bloqueados, reloj por tipo y prioridad (las ideas no corren reloj). La clave `estado` de la URL
@@ -1012,7 +1018,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 **Suyos (ella):**
 - [x] **HECHO 2026-10-09 17:56 — doble factor de la dueña activo (verificado en la base).** Texto original: **Antes del 16/10:** entrar a "Mi seguridad" (`/admin/seguridad`), guardar su WhatsApp y activar el doble factor. Pasado el plazo el panel solo le abre esa página. Salida si el WhatsApp falla: `docker exec atendia-app php artisan atendia:staff-two-factor 0`.
 - [x] ~~**Revisar los permisos del rol Soporte**~~ VERIFICADO 2026-10-12 contra la base: tiene exactamente `access-admin-panel`, `businesses.view` y `support.view`, que es lo mínimo que se diseñó (A5). Nada se deshizo.
-- [ ] **Veredicto visual en su pantalla real** de Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (solo se miraron capturas con datos de prueba).
+- [x] ~~**Veredicto visual en su pantalla real** de Adopción~~ (dado el 2026-10-12), Mi seguridad y la tabla de Catálogos en el teléfono (solo se miraron capturas con datos de prueba).
 - [x] **HECHO 2026-10-09 — subido a GitHub** (`704c438`, `2525fe5`, `3d562d7` y la nota de ideas, hasta `1685aff`).
 
 **Mejoras ofrecidas el 2026-10-09, sin decidir (una línea cada una):**
@@ -1103,8 +1109,8 @@ suite de navegador de los 62 archivos, 365 verdes y 1 rojo (`PanelResponsiveBrow
 carga. Capturas miradas en 1280 y 390 para Planes, Cumplimiento y Consumo de IA.
 
 **Falta (de lo que ella pidió el 12/10):**
-- [ ] **Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte", el
-      archivar de Planes, Cumplimiento y los campos nuevos de Compañía.
+- [x] ~~**Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte", el
+      archivar de Planes, Cumplimiento y los campos nuevos de Compañía.~~ (dado el 2026-10-12)
 - [x] ~~**Cargar en Compañía el horario de atención**~~ (verificado 2026-10-12: lunes a sábado,
       09:00 a 18:00; el pie ya dibuja "Atendemos ahora"). Queda **opcional** el "mensaje que
       escribe el visitante" (vacío = el de siempre) y `web`, que sigue vacío.
@@ -1144,10 +1150,10 @@ probó en un navegador real (un comprobante que llega aparece solo a los ~30 s).
 **Falta:**
 - [x] ~~Commit y push de todo lo del 11/10~~ (`dee9de2`, ya en `origin/main`).
 - [x] ~~Suite completa~~ (2026-10-12: 2596 verdes, 1 saltado, sobre `dee9de2`).
-- [ ] **Veredicto visual de ella** sobre el Inicio (tarjeta "Más movimiento", el latido, las
-      flechas) y Cobranza en su pantalla real.
+- [x] ~~**Veredicto visual de ella** sobre el Inicio (tarjeta "Más movimiento", el latido, las
+      flechas) y Cobranza en su pantalla real.~~ (dado el 2026-10-12; el latido se rehízo)
 - [ ] **Escala del Inicio, a revisar con datos reales:** `Subscription::monthlyRecurringRevenue()`
       y `struggling()` hidratan filas con `get()`; pasados ~5-6 mil suscripciones (≈150 ms) hay
       que sumar en SQL. No hace falta hoy.
-- [ ] Las que ya estaban abiertas y no se tocaron: permisos del rol Soporte, guardián de la base
-      de pruebas, costos fijos del mes, modelo de voz, decisión de `gpt-6-sol`, tasa Bs/USD.
+- [ ] Las que siguen abiertas (el guardián de la base, el modelo de voz y `gpt-6-sol` se cerraron
+      el 2026-10-12): permisos del rol Soporte, costos fijos del mes, tasa Bs/USD.

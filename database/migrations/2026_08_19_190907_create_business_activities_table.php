@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
+            $table->boolean('catalog_eligible')->default(true)->comment('Si el oficio puede publicar en el catálogo de WhatsApp; Meta prohíbe los productos y servicios de salud');
             $table->timestamp('intents_generated_at')->nullable()->comment('Cuándo la IA armó las intenciones propias del oficio; null = todavía no');
             $table->timestamps();
 

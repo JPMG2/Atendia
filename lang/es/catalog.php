@@ -1044,7 +1044,14 @@ return [
             'inactive' => 'Inactiva',
         ],
 
+        'catalog' => [
+            'on' => 'Puede publicar',
+            'off' => 'No publica',
+        ],
+
         'fields' => [
+            'catalog' => 'Catálogo de WhatsApp',
+            'catalog_hint' => 'Meta prohíbe listar productos o servicios de salud en su catálogo',
             'code' => 'Clave',
             'code_hint' => 'Sin espacios ni acentos: farmacia, panaderia',
             'name' => 'Nombre',

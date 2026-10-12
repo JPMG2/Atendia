@@ -54,6 +54,22 @@ test('keeping its own code and name while editing does not trip the unique rules
     expect($activity->fresh()->is_active)->toBeFalse();
 });
 
+test('the WhatsApp catalog switch is saved from the master', function (): void {
+    $activity = BusinessActivity::factory()->create(['code' => 'farmacia', 'name' => 'Farmacia']);
+
+    // Born eligible: the column default is on, the seeder turns health off.
+    expect($activity->fresh()->catalog_eligible)->toBeTrue();
+
+    Livewire::test('catalog.business-activity')
+        ->call('openEdit', $activity->id)
+        ->assertSet('form.data.catalog_eligible', true)
+        ->set('form.data.catalog_eligible', false)
+        ->call('update')
+        ->assertHasNoErrors();
+
+    expect($activity->fresh()->catalog_eligible)->toBeFalse();
+});
+
 test('taking a name that already belongs to another activity of the same sector is rejected', function (): void {
     $sector = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
     BusinessActivity::factory()->for($sector, 'sector')->create(['code' => 'panaderia', 'name' => 'Panadería']);

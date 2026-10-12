@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
  *
  * It is what the business picks, and what then shapes how the assistant works.
  */
-#[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active'])]
+#[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active', 'catalog_eligible'])]
 class BusinessActivity extends Model implements DataTable
 {
     /** @use HasFactory<BusinessActivityFactory> */
@@ -136,6 +136,7 @@ class BusinessActivity extends Model implements DataTable
             'business_sector_id' => 'integer',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
+            'catalog_eligible' => 'boolean',
         ];
     }
 

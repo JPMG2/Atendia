@@ -597,6 +597,10 @@ return [
                 ],
             ],
             'security' => [
+                'staff_idle_minutes' => [
+                    'label' => 'Cierre por inactividad del equipo',
+                    'hint' => 'Minutos sin tocar nada antes de cerrar la sesión de quien administra o da soporte. Lo que la pantalla refresca sola no cuenta, y "recordarme" no la revive. Los clientes no se ven afectados.',
+                ],
                 'staff_two_factor' => [
                     'grace_days' => [
                         'label' => 'Plazo para activar el doble factor',

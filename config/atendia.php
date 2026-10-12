@@ -257,6 +257,9 @@ return [
     // runs from `since` or from the account's creation, whichever is later, so
     // nobody is locked out on the day the rule is born. Zero days = not required.
     'security' => [
+        // Minutes without a real action before an admin or support session
+        // ends; remember-me never revives it. Zero = no limit.
+        'staff_idle_minutes' => 20,
         'staff_two_factor' => [
             'grace_days' => 7,
             'since' => '2026-10-09',

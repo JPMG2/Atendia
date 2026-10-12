@@ -2,6 +2,7 @@
 
 use App\Actions\Business\StartWhatsAppLink;
 use App\Actions\Business\VerifyWhatsAppLink;
+use App\Classes\Main\MetaDisplayName;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Enums\WhatsAppLinkState;
@@ -45,6 +46,17 @@ new class extends Component
     public function business(): ?Business
     {
         return Auth::user()?->business;
+    }
+
+    /**
+     * Which of Meta's name rules the business name breaks, for the warning.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function nameProblems(): array
+    {
+        return (new MetaDisplayName((string) $this->business?->name))->problems;
     }
 
     #[Computed]
@@ -283,6 +295,28 @@ new class extends Component
                     <p class="text-body mt-0.5 text-sm">{{ __('whatsapp.connect.dedicated_body') }}</p>
                 </div>
             </div>
+
+            {{-- Advice, not a lock: Meta may ask for another name later. --}}
+            @if ($this->nameProblems)
+                <x-ui.alert
+                    variant="warning"
+                    icon="triangle-alert"
+                    :title="__('whatsapp.name_rules.title')"
+                    data-testid="meta-name-warning"
+                    style="background: var(--warning-soft); border-color: var(--warning)"
+                >
+                    <p>{{ __('whatsapp.name_rules.intro') }}</p>
+                    <ul class="mt-1 list-disc ps-5">
+                        @foreach ($this->nameProblems as $rule)
+                            <li>{{ __('whatsapp.name_rules.'.$rule) }}</li>
+                        @endforeach
+                    </ul>
+                    <p class="mt-1">{{ __('whatsapp.name_rules.same_brand') }}</p>
+                    <x-ui.button variant="secondary" size="sm" class="mt-2" :href="route('my-business')" wire:navigate>
+                        {{ __('whatsapp.name_rules.edit') }}
+                    </x-ui.button>
+                </x-ui.alert>
+            @endif
 
             <div class="grid items-center gap-6 lg:grid-cols-[1.6fr_1fr]">
                 <div class="space-y-3">

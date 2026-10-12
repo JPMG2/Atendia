@@ -53,6 +53,26 @@ test('every seeded activity belongs to a sector and is active', function (): voi
         ->and(BusinessSector::doesntHave('activities')->count())->toBe(0);
 });
 
+test('health activities are born out of the WhatsApp catalog and a re-run keeps her choice', function (): void {
+    $this->seed(BusinessSectorSeeder::class);
+    $this->seed(BusinessActivitySeeder::class);
+
+    $health = BusinessActivity::query()->whereHas('sector', fn ($q) => $q->where('code', 'salud'));
+
+    expect($health->count())->toBeGreaterThan(0)
+        ->and($health->where('catalog_eligible', true)->count())->toBe(0)
+        ->and(BusinessActivity::where('code', 'panaderia')->sole()->catalog_eligible)->toBeTrue();
+
+    // She enables one and disables another; the seeder never takes it back.
+    BusinessActivity::where('code', 'farmacia')->update(['catalog_eligible' => true]);
+    BusinessActivity::where('code', 'panaderia')->update(['catalog_eligible' => false]);
+
+    $this->seed(BusinessActivitySeeder::class);
+
+    expect(BusinessActivity::where('code', 'farmacia')->sole()->catalog_eligible)->toBeTrue()
+        ->and(BusinessActivity::where('code', 'panaderia')->sole()->catalog_eligible)->toBeFalse();
+});
+
 test('the hub offers the Negocio group with both masters', function (): void {
     $this->seed(CatalogFormSeeder::class);
 

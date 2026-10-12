@@ -82,3 +82,4 @@
 2026-10-12	check-comment-golden-rules	tests/TestCase.php
 2026-10-12	check-comment-golden-rules	tests/TestCase.php
 2026-10-12	check-comment-golden-rules	tests/TestCase.php
+2026-10-12	check-php-getter-golden-rules	app/Classes/Main/LlmsTxt.php

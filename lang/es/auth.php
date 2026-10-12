@@ -12,6 +12,7 @@ return [
     'failed' => 'Estas credenciales no coinciden con nuestros registros.',
     'password' => 'La contraseña es incorrecta.',
     'throttle' => 'Demasiados intentos de acceso. Vuelve a intentar en :seconds segundos.',
+    'staff_idle' => 'Cerramos tu sesión por inactividad. Ingresa de nuevo para seguir.',
 
     /*
     |----------------------------------------------------------------------

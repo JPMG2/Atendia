@@ -56,6 +56,8 @@ class BusinessActivityForm extends BaseCatalogForm
             ],
 
             'is_active' => AttributeValidator::booleanValue(true),
+
+            'catalog_eligible' => AttributeValidator::booleanValue(true),
         ];
     }
 
@@ -68,6 +70,7 @@ class BusinessActivityForm extends BaseCatalogForm
             'description' => config('nicename.description'),
             'sort_order' => config('nicename.sort_order'),
             'is_active' => config('nicename.is_active'),
+            'catalog_eligible' => __('catalog.business_activity.fields.catalog'),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\LlmsTxt;
 use App\Http\Controllers\Billing\PaymentReceiptController;
 use App\Http\Controllers\Conversations\MessageMediaController;
 use App\Http\Controllers\DemoChatController;
@@ -12,10 +13,22 @@ use App\Http\Controllers\Settings\ConfirmEmailChangeController;
 use App\Http\Controllers\Settings\RestoreAccountController;
 use App\Http\Controllers\Settings\VerifyAccountEmailController;
 use App\Models\Business;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'));
+
+// For AI assistants: one neutral-Spanish text for everyone, whatever the
+// visitor's locale, built from the plans table and the company row.
+Route::get('/llms.txt', function (): Response {
+    app()->setLocale('es');
+
+    return response((new LlmsTxt)->text, 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+})->name('llms');
 
 // The hero's interactive demo: throttled hard — every reply costs tokens.
 Route::post('/demo/mensaje', DemoChatController::class)

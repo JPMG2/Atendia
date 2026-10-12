@@ -47,6 +47,9 @@ class PlatformSettingSeeder extends Seeder
             ['key' => 'support.overdue_hours_high', 'group' => 'support', 'type' => 'integer', 'default_value' => '8', 'min' => 1, 'max' => 720, 'sort_order' => 1],
             ['key' => 'support.overdue_hours', 'group' => 'support', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 720, 'sort_order' => 2],
 
+            // How long an admin or support session may sit untouched before it ends.
+            ['key' => 'security.staff_idle_minutes', 'group' => 'security', 'type' => 'integer', 'default_value' => '20', 'min' => 5, 'max' => 240, 'sort_order' => 0],
+
             // The plazo for admin and support to turn on the second step; 0 stops asking.
             ['key' => 'security.staff_two_factor.grace_days', 'group' => 'security', 'type' => 'integer', 'default_value' => '7', 'min' => 0, 'max' => 60, 'sort_order' => 1],
 

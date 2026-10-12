@@ -62,4 +62,17 @@ return [
         'tip' => '¿Tu número es nuevo? WhatsApp confía más en los números con historia: úsalo unos días de forma normal antes de conectarlo y arrancas con la mejor reputación.',
         'privacy' => 'Tus conversaciones son privadas: solo tu negocio las ve. Las usamos únicamente para que el asistente responda a tus clientes; nunca las vendemos ni las usamos para publicidad.',
     ],
+
+    // Meta reviews the name a business shows. It is a warning, never a block.
+    'name_rules' => [
+        'title' => 'El nombre de tu negocio puede ser rechazado por Meta',
+        'intro' => 'Cuando Meta revise el nombre que verán tus clientes, podría pedirte cambiarlo. Puedes conectar igual; esto es para que lo sepas antes:',
+        'edit' => 'Cambiar el nombre',
+        'same_brand' => 'Meta también pide que el nombre coincida con la marca real de tu negocio.',
+        'too_short' => 'Tiene menos de 3 caracteres.',
+        'all_caps' => 'Está todo en mayúsculas; Meta solo lo acepta en siglas.',
+        'emoji' => 'Lleva emojis.',
+        'url' => 'Parece una dirección web.',
+        'whatsapp' => 'Incluye la palabra "WhatsApp", que Meta reserva para sí.',
+    ],
 ];

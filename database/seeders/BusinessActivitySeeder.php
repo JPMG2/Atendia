@@ -131,15 +131,21 @@ class BusinessActivitySeeder extends Seeder
             foreach ($names as $code => $name) {
                 $order++;
 
-                BusinessActivity::query()->updateOrCreate(
-                    ['code' => $code],
-                    [
-                        'business_sector_id' => $sector->id,
-                        'code' => $code,
-                        'name' => $name,
-                        'sort_order' => $order,
-                    ],
-                );
+                $activity = BusinessActivity::query()->firstOrNew(['code' => $code]);
+                $activity->fill([
+                    'business_sector_id' => $sector->id,
+                    'code' => $code,
+                    'name' => $name,
+                    'sort_order' => $order,
+                ]);
+
+                // Only on birth: a re-run must not undo what she set in the master.
+                // Meta bans health products and services from the catalog.
+                if (! $activity->exists) {
+                    $activity->catalog_eligible = $sectorCode !== 'salud';
+                }
+
+                $activity->save();
             }
         }
     }

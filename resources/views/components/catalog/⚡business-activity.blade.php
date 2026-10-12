@@ -173,6 +173,16 @@ new class extends Component
                     :off="__('catalog.business_activity.status.inactive')"
                     wire:model="form.data.is_active"
                 />
+
+                <x-inputsform.switch-field
+                    span="short"
+                    :label="__('catalog.business_activity.fields.catalog')"
+                    name="catalog_eligible"
+                    :on="__('catalog.business_activity.catalog.on')"
+                    :off="__('catalog.business_activity.catalog.off')"
+                    :hint="__('catalog.business_activity.fields.catalog_hint')"
+                    wire:model="form.data.catalog_eligible"
+                />
             </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>
