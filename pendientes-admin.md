@@ -527,7 +527,7 @@ mal, en un solo lugar y en orden.
 - [x] ~~Pasada de investigación~~ (2026-10-12). Lo que se pudo sostener con fuentes: Meta decide
       con la gravedad, **el historial de cumplimiento** y el impacto, y escala en pasos (aviso,
       restricción, baja) con una ventana de recuperación; WhatsApp Business muestra un estado
-      vigente más lo que lo causó. De ahí: el legajo es una línea de tiempo con la falta Y su
+      vigente más lo que lo causó. De ahí: el historial (ella no quiso "legajo": 2026-10-12) es una línea de tiempo con la falta Y su
       respuesta, y arriba un estado vigente derivado, no una lista de retos.
 - [x] ~~Qué entra~~: moderación de contenido (rechazado y grave), suspensión (con apelación y
       levantamiento) y pagos (comprobante rechazado, atraso, pausa y regularización). **No
@@ -535,13 +535,13 @@ mal, en un solo lugar y en orden.
       tampoco el gasto de IA contra el plan: es un costo nuestro, no una falta de ellos.
 - [x] ~~La pantalla~~ (2026-10-12): **Cumplimiento** (`/admin/cumplimiento`, bajo Negocios,
       permiso `compliance.view`). Lista por situación vigente (suspendido, pago atrasado, con
-      observaciones, en regla) y, por negocio, su legajo en un panel lateral.
+      observaciones, en regla) y, por negocio, su historial en un panel lateral.
       **Hallazgo que cambió el diseño:** suspender y levantar solo pisaban `suspended_at` y el
       mensaje de apelación se blanqueaba, así que un negocio suspendido dos veces no dejaba
       historia. Hoy cada hecho se escribe cuando pasa (`compliance_events`, tabla de tenant con
       RLS) y se rellenó lo que ya existía con `BackfillComplianceEvents` (10 líneas en
       `atendia`). Lo que se levantó antes de esto no dejó rastro y no se inventó.
-- [ ] El legajo todavía no se ve desde la ficha del negocio: hoy se entra por Cumplimiento.
+- [ ] El historial todavía no se ve desde la ficha del negocio: hoy se entra por Cumplimiento.
 
 ### E5. Datos del WhatsApp del landing configurables en días especiales
 NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
@@ -1021,7 +1021,26 @@ arreglos.** Capturas miradas en 1280 y 390.
 - [x] **E7** Archivar planes (crear sigue aplazado).
 - [x] **E1** Las cuatro pantallas a `components/admin/`.
 - [x] **A12** La cuarta forma de feriado. Los datos de los otros 20 países: decisión de ella.
-- [x] **E4** El legajo: pantalla **Cumplimiento** y `compliance_events`.
+- [x] **E4** El historial de cumplimiento: pantalla **Cumplimiento** y `compliance_events`.
+
+**Ajustes de su revisión (2026-10-12, después del commit `1ffb2c0`, sin commitear):**
+- [x] "Legajo" no le gustó: ahora se llama **historial** en pantallas, textos y tracker.
+- [x] El horario de Compañía y el de cada variante tienen **"Aplicar de lunes a viernes"**, igual
+      que el del negocio (`OpeningHours::applyWeekdays`, una sola función).
+- [x] Una temporada sin contenido parecía rota: en la landing no cambia nada hasta que tenga un
+      ejemplo del hero o una variante de WhatsApp **y** sus fechas cubran el día. La lista de
+      Temporadas ahora dice bajo cada nombre qué cambia, o "Sin contenido: todavía no cambia
+      nada en la landing".
+
+- [x] **El aviso de temporada se simplificó** (2026-10-12, a pedido de ella: "debe ser mucho más
+      fácil"). Había confusión de fondo: el "mensaje de apertura" es lo que ESCRIBE EL VISITANTE
+      en su chat, no algo que se lea en la página, y por eso lo que ella escribió ("Y en
+      navidad también trabajamos...") no se veía en ningún lado. Ahora el **Aviso** es un campo
+      de la propia temporada (`seasonal_windows.notice`), con sus fechas, en una sola pantalla; el
+      pie de la landing lo muestra bajo "Atención de {temporada}" mientras corre. La variante de
+      "WhatsApp por temporada" quedó solo con número y horario; se fueron su mensaje y el
+      recordatorio de "falta el mensaje". El texto que ya había escrito pasó a su temporada.
+      El campo de Compañía se renombró "Mensaje que escribe el visitante" y lo dice en su pista.
 
 **Verificación de ese segundo commit:** suite PHP completa 2652 verdes, 1 saltado, 0 rojos (576 s);
 suite de navegador de los 62 archivos, 365 verdes y 1 rojo (`PanelResponsiveBrowserTest`,

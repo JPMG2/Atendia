@@ -101,7 +101,7 @@ class Company extends Model
      * writes over them. `open` is null with no schedule declared (a missing
      * week is not a closed one) and for any day but today.
      *
-     * @return array{phone: ?string, hours: ?string, open: ?bool, greeting: ?string, season: ?string}
+     * @return array{phone: ?string, hours: ?string, open: ?bool, greeting: ?string, notice: ?string, season: ?string}
      */
     public static function reach(?CarbonImmutable $on = null): array
     {
@@ -126,6 +126,8 @@ class Company extends Model
             'hours' => $hours?->summary,
             'open' => $isToday ? $hours?->isOpenAt(CarbonImmutable::now()) : null,
             'greeting' => $resolved['greeting'],
+            // `??`: an answer cached by the previous deploy has no such key.
+            'notice' => $resolved['notice'] ?? null,
             'season' => $resolved['season'],
         ];
     }
@@ -148,7 +150,7 @@ class Company extends Model
     }
 
     /**
-     * @return array{phone: ?string, schedule: ?array<array-key, mixed>, greeting: ?string, season: ?string}
+     * @return array{phone: ?string, schedule: ?array<array-key, mixed>, greeting: ?string, notice: ?string, season: ?string}
      */
     private static function reachFor(CarbonImmutable $day): array
     {
@@ -167,13 +169,19 @@ class Company extends Model
             ->map(fn (SeasonalWindow $window): ?WhatsappVariant => $variants->firstWhere('seasonal_window_id', $window->id))
             ->first(fn (?WhatsappVariant $row): bool => $row !== null);
 
+        // The strongest season that wrote a notice; its name is the one the footer shows,
+        // since the visible text belongs to it. With no notice, the one whose variant speaks.
+        $noticed = $windows->first(fn (SeasonalWindow $window): bool => filled($window->notice));
+        $speaking = $variant === null ? null : $windows->firstWhere('id', $variant->seasonal_window_id);
+
         return [
             // Raw: the env fallback is applied outside the cache, where a changed value shows at once.
             'phone' => $variant?->phone ?: $company?->phone,
             // [] on a variant is "closed all week", so only null inherits.
             'schedule' => $variant?->opening_schedule ?? $company?->opening_schedule,
-            'greeting' => $variant?->whatsapp_greeting ?: $company?->whatsapp_greeting,
-            'season' => $variant === null ? null : $windows->firstWhere('id', $variant->seasonal_window_id)?->name,
+            'greeting' => $company?->whatsapp_greeting,
+            'notice' => $noticed?->notice,
+            'season' => ($noticed ?? $speaking)?->name,
         ];
     }
 

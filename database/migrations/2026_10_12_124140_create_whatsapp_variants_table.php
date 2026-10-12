@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * What the landing's WhatsApp says inside a season (holidays, vacations, year end).
+ * The number and the hours of the landing's WhatsApp inside a season.
  *
- * The evergreen lives on `companies` (phone, opening_schedule, whatsapp_greeting);
- * a row here only OVERRIDES it for the days of its window. What it leaves null
- * is inherited, and when the window closes the evergreen comes back whole.
+ * The evergreen lives on `companies` (phone, opening_schedule); a row here only
+ * OVERRIDES it for the days of its window. What it leaves null is inherited.
+ * The notice for the visitor is on the season itself, not here.
  */
 return new class extends Migration
 {
@@ -24,7 +24,6 @@ return new class extends Migration
                 ->comment('The season this row speaks in; one row per season');
             $table->string('phone', 30)->nullable()->comment('Another number for these days; null = the company one');
             $table->jsonb('opening_schedule')->nullable()->comment('Week for these days; null = the company one, [] = closed all week');
-            $table->string('whatsapp_greeting', 300)->nullable()->comment('Opening message for these days; null = the company one');
             $table->boolean('is_active')->default(true);
 
             // Deleting the user leaves the row: only the author is lost.

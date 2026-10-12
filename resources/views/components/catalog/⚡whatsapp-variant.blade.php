@@ -1,5 +1,6 @@
 <?php
 
+use App\Classes\Main\OpeningHours;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Interfaces\Catalog\DataTable;
@@ -39,6 +40,12 @@ new class extends Component
         return new WhatsappVariant;
     }
 
+    /** Monday's hours onto Tuesday to Friday, the button the business's own screen has. */
+    public function applyWeekdays(): void
+    {
+        $this->form->data->opening_schedule = OpeningHours::applyWeekdays($this->form->data->opening_schedule);
+    }
+
     /** Switch a variant on or off from its row, with no trip to the editor. */
     public function toggleActive(int $id): void
     {
@@ -70,20 +77,9 @@ new class extends Component
     }
 
     /**
-     * The seasons about to start whose variant has no opening message yet.
-     *
-     * @return \Illuminate\Support\Collection<int, array{id: int, season: string, starts_at: string, in_days: int}>
-     */
-    #[Computed]
-    public function awaitingGreeting(): \Illuminate\Support\Collection
-    {
-        return WhatsappVariant::awaitingGreeting();
-    }
-
-    /**
      * What the landing's WhatsApp would say on the chosen day.
      *
-     * @return array{phone: ?string, hours: ?string, greeting: ?string, season: ?string}
+     * @return array{phone: ?string, hours: ?string, open: ?bool, greeting: ?string, notice: ?string, season: ?string}
      */
     #[Computed]
     public function preview(): array
@@ -104,36 +100,6 @@ new class extends Component
 >
     {{-- Table view: the list. --}}
     <x-slot:list>
-        {{-- Before the list, because it is what needs doing: a season that is
-        about to run greeting with the all-year message. --}}
-        @if ($this->awaitingGreeting->isNotEmpty())
-            <x-ui.alert variant="warning" icon="message-circle" :title="__('catalog.whatsapp_variant.reminder.title')">
-                <ul class="flex flex-col gap-2">
-                    @foreach ($this->awaitingGreeting as $pending)
-                        <li class="flex flex-wrap items-center gap-x-3 gap-y-1" wire:key="awaiting-{{ $pending['id'] }}">
-                            <span>
-                                {{ __('catalog.whatsapp_variant.reminder.line', [
-                                    'season' => $pending['season'],
-                                    'when' => match ($pending['in_days']) {
-                                        0 => __('catalog.whatsapp_variant.reminder.today'),
-                                        1 => __('catalog.whatsapp_variant.reminder.tomorrow'),
-                                        default => __('catalog.whatsapp_variant.reminder.in_days', ['days' => $pending['in_days']]),
-                                    },
-                                ]) }}
-                            </span>
-                            <x-ui.button
-                                variant="secondary"
-                                size="sm"
-                                x-on:click="openEdit(items.find((row) => row.id === {{ $pending['id'] }}))"
-                            >
-                                {{ __('catalog.whatsapp_variant.reminder.action') }}
-                            </x-ui.button>
-                        </li>
-                    @endforeach
-                </ul>
-            </x-ui.alert>
-        @endif
-
         <x-catalog.toolbar
             :search-placeholder="__('catalog.whatsapp_variant.search_placeholder')"
             :search-label="__('catalog.whatsapp_variant.search_label')"
@@ -221,7 +187,7 @@ new class extends Component
             </p>
 
             <dl class="flex flex-col gap-3 text-sm">
-                @foreach (['phone', 'hours', 'greeting'] as $key)
+                @foreach (['phone', 'hours', 'notice'] as $key)
                     <div class="flex flex-col gap-0.5" wire:key="reach-{{ $key }}">
                         <dt class="text-muted">{{ __('catalog.whatsapp_variant.preview.'.$key) }}</dt>
                         <dd @class(['text-strong', 'font-mono' => $key === 'phone', 'text-muted' => blank($this->preview[$key])])>
@@ -297,6 +263,7 @@ new class extends Component
                 <x-catalog.form-row>
                     <x-inputsform.week-hours
                         span="full"
+                        apply="applyWeekdays"
                         name="opening_schedule"
                         model="form.data.opening_schedule"
                         :value="$form->data->opening_schedule"
@@ -305,19 +272,6 @@ new class extends Component
                     />
                 </x-catalog.form-row>
             @endif
-
-            <x-catalog.form-row>
-                <x-inputsform.input
-                    span="full"
-                    name="whatsapp_greeting"
-                    icon="message-circle"
-                    :label="__('catalog.whatsapp_variant.fields.whatsapp_greeting')"
-                    :placeholder="__('catalog.whatsapp_variant.fields.whatsapp_greeting_placeholder')"
-                    :hint="__('catalog.whatsapp_variant.fields.whatsapp_greeting_hint')"
-                    maxlength="300"
-                    wire:model="form.data.whatsapp_greeting"
-                />
-            </x-catalog.form-row>
         </x-catalog.form-shell>
     </x-slot:form>
 </x-catalog.master>

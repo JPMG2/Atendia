@@ -5,6 +5,7 @@
     'model' => null,               // Livewire path of the week, e.g. form.data.opening_schedule
     'value' => [],                 // the week as the form holds it; any shape formState reads
     'span' => 'full',              // width BY CONTENT: a week of seven rows wants the whole row
+    'apply' => null,               // host method that copies Monday to Tuesday–Friday; no method, no button
 ])
 
 @php
@@ -21,8 +22,19 @@ time input: that picker clips the minutes at this width. Each box reports its
 own error, keyed on the stored shape: `name.day.0` opens, `name.day.1` closes.
 --}}
 <div class="field {{ $spanClass }}">
-    @if ($label)
-        <span class="field-label">{{ $label }}</span>
+    @if ($label || $apply)
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            @if ($label)
+                <span class="field-label">{{ $label }}</span>
+            @endif
+
+            {{-- A control only when the host has the capability behind it. --}}
+            @if ($apply)
+                <x-ui.button variant="secondary" size="sm" icon="copy" wire:click="{{ $apply }}">
+                    {{ __('company.hours.apply_weekdays') }}
+                </x-ui.button>
+            @endif
+        </div>
     @endif
 
     <div class="bp-hours" data-week-hours>

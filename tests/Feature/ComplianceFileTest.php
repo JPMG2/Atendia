@@ -175,7 +175,7 @@ test('the board puts the worst standing first and filters by it', function (): v
     $suspended = Business::factory()->create(['name' => 'Suspendida SA']);
     $suspended->forceFill(['suspended_at' => now()])->save();
     $observed = Business::factory()->create(['name' => 'Observada SA']);
-    $quiet = Business::factory()->create(['name' => 'Sin legajo SA']);
+    $quiet = Business::factory()->create(['name' => 'Sin historial SA']);
 
     ComplianceEvent::factory()->create(['business_id' => $observed->id, 'occurred_at' => now()]);
     ComplianceEvent::factory()->create(['business_id' => $suspended->id, 'occurred_at' => now()->subDay()]);

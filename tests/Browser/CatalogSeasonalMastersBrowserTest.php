@@ -53,7 +53,6 @@ test('the landing WhatsApp master lists a season and previews its day', function
     WhatsappVariant::factory()->create([
         'seasonal_window_id' => $window->id,
         'opening_schedule' => [1 => ['10:00', '14:00'], 2 => ['10:00', '14:00']],
-        'whatsapp_greeting' => 'Hola, ¿atienden en las fiestas?',
     ]);
 
     $page = visit('/admin/catalogs');
@@ -68,30 +67,31 @@ test('the landing WhatsApp master lists a season and previews its day', function
     $page->screenshot(filename: 'catalog-whatsapp-variants-dark');
 });
 
-test('the reminder opens the variant that still has no opening message', function (): void {
-    $window = SeasonalWindow::factory()->create([
-        'name' => 'Fin de año 2026',
-        'starts_at' => SeasonalWindow::today()->addDays(3),
-        'ends_at' => SeasonalWindow::today()->addDays(10),
-    ]);
+test('a season is created with its dates and its notice in one form', function (): void {
+    $page = visit('/admin/catalogs');
 
-    WhatsappVariant::factory()->create([
-        'seasonal_window_id' => $window->id,
-        'opening_schedule' => [1 => ['10:00', '14:00'], 2 => ['10:00', '14:00']],
-    ]);
+    $page->click('Temporadas')
+        ->click('Crear temporada')
+        ->wait(0.6)
+        ->assertSee('Aviso en la landing')
+        ->assertSee('Lo lee el visitante en el pie de la landing')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-season-notice-form');
+});
+
+test('a season with nothing hanging off it says so, and one with content says what', function (): void {
+    SeasonalWindow::factory()->create(['name' => 'Navidad vacía']);
+    $filled = SeasonalWindow::factory()->create(['name' => 'Fin de año con cosas']);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $filled->id]);
 
     $page = visit('/admin/catalogs');
 
-    $page->click('WhatsApp por temporada')
-        ->assertSee('Falta el mensaje de apertura')
-        ->assertSee('Fin de año 2026 empieza en 3 días')
-        ->screenshot(filename: 'catalog-whatsapp-reminder')
-        ->click('Completar')
-        ->assertSee('Horario propio')
-        ->assertSee('Lunes')
-        ->assertSee('Domingo')
+    $page->click('Temporadas')
+        ->assertSee('Navidad vacía')
+        ->assertSee('Sin aviso ni contenido: todavía no cambia nada en la landing')
+        ->assertSee('Cambia: 1 variante de WhatsApp')
         ->assertNoJavaScriptErrors()
-        ->screenshot(filename: 'catalog-whatsapp-variant-week');
+        ->screenshot(filename: 'catalog-seasons-content');
 });
 
 test('the landing WhatsApp master fits a phone', function (): void {

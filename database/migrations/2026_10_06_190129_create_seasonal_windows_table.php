@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Schema;
 /**
  * The WHEN of every seasonal change, in one place.
  *
- * A window is a date range that something else hangs off: today the hero demo
- * tags, tomorrow the landing's WhatsApp. It holds no content of its own, or
- * "turn this on in December" would end up built twice. Both ends are stored
- * because the rollback is the window expiring, never a deploy.
+ * A window is a date range that something else hangs off: the hero demo tags
+ * and the landing's WhatsApp hours. The one thing it carries itself is the
+ * `notice`, a line for the visitor: a second screen for it was the complaint.
+ * Both ends are stored because the rollback is the window expiring.
  */
 return new class extends Migration
 {
@@ -28,6 +28,7 @@ return new class extends Migration
             $table->date('ends_at');
             $table->unsignedSmallInteger('priority')->default(0)->comment('Highest wins when two windows overlap');
             $table->boolean('is_active')->default(true);
+            $table->string('notice', 200)->nullable()->comment('Aviso que ve el visitante en la landing mientras corre: "Atendemos el 24 hasta las 14 h"');
 
             // Deleting the user leaves the window: only the author is lost.
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

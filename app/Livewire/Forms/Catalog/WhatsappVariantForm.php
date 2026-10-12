@@ -40,7 +40,6 @@ class WhatsappVariantForm extends BaseCatalogForm
             // inherits the rest from the company row.
             'phone' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
             ...AttributeValidator::weekSchedule('opening_schedule'),
-            'whatsapp_greeting' => ['nullable', ...AttributeValidator::stringValid(false, '3'), 'max:300'],
 
             'is_active' => AttributeValidator::booleanValue(true),
         ];
@@ -54,7 +53,6 @@ class WhatsappVariantForm extends BaseCatalogForm
             'opening_schedule' => __('catalog.whatsapp_variant.fields.opening_schedule'),
             'opening_schedule.*.0' => __('company.hours.opens'),
             'opening_schedule.*.1' => __('company.hours.closes'),
-            'whatsapp_greeting' => __('catalog.whatsapp_variant.fields.whatsapp_greeting'),
             'is_active' => config('nicename.is_active'),
         ];
     }

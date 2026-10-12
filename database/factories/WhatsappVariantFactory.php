@@ -24,7 +24,6 @@ class WhatsappVariantFactory extends Factory
             'seasonal_window_id' => SeasonalWindow::factory(),
             'phone' => null,
             'opening_schedule' => null,
-            'whatsapp_greeting' => null,
             'is_active' => true,
         ];
     }

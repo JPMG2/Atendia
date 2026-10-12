@@ -16,7 +16,6 @@ class WhatsappVariantDto implements FormData
         public bool $override_schedule = false,
         /** @var array<int, array{open: bool, opens_at: string, closes_at: string}> */
         public array $opening_schedule = [],
-        public ?string $whatsapp_greeting = null,
         public bool $is_active = true
     ) {}
 
@@ -43,7 +42,6 @@ class WhatsappVariantDto implements FormData
             'phone' => $this->phone,
             'override_schedule' => $this->override_schedule,
             'opening_schedule' => $this->opening_schedule,
-            'whatsapp_greeting' => $this->whatsapp_greeting,
             'is_active' => $this->is_active,
         ];
     }
@@ -61,7 +59,6 @@ class WhatsappVariantDto implements FormData
             phone: DtoCast::squish($data['phone'] ?? null),
             override_schedule: array_key_exists('override_schedule', $data) ? (bool) $data['override_schedule'] : $stored !== null,
             opening_schedule: OpeningHours::formState($stored),
-            whatsapp_greeting: DtoCast::squish($data['whatsapp_greeting'] ?? null),
             is_active: $data['is_active'] ?? true,
         );
     }
@@ -73,7 +70,6 @@ class WhatsappVariantDto implements FormData
             'phone' => DtoCast::squish($this->phone),
             // Overriding with nothing open is a statement: closed all week.
             'opening_schedule' => $this->override_schedule ? OpeningHours::toStored($this->opening_schedule) : null,
-            'whatsapp_greeting' => DtoCast::squish($this->whatsapp_greeting),
             'is_active' => $this->is_active,
         ];
     }

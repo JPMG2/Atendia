@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The legajo of a business: what happened to it and what was done about it.
+ * The compliance history of a business: what happened and what was done about it.
  *
  * Suspending and lifting only overwrote `suspended_at`, so a business suspended
  * twice kept no history. Events are written when they happen and never edited.

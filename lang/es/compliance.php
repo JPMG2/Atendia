@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Cumplimiento (panel admin): el legajo de cada negocio
+| Cumplimiento (panel admin): el historial de cada negocio
 |--------------------------------------------------------------------------
 |
 | Lo que le pasó a un negocio y lo que se hizo al respecto, en orden. La
 | respuesta (una suspensión levantada, un pago regularizado) vive en el mismo
-| legajo que la falta.
+| historial que la falta.
 */
 
 return [
     'title' => 'Cumplimiento',
-    'sub' => 'El legajo de cada negocio: lo que pasó y lo que se hizo al respecto, en orden.',
+    'sub' => 'El historial de cada negocio: lo que pasó y lo que se hizo al respecto, en orden.',
     'read_at' => 'Al :time',
-    'count' => '{1} 1 negocio con legajo|[0,*] :count negocios con legajo',
+    'count' => '{1} 1 negocio con historial|[0,*] :count negocios con historial',
 
     'search' => 'Buscar negocio',
     'search_placeholder' => 'Nombre del negocio',
     'filter' => 'Situación',
     'no_match' => 'Ningún negocio coincide con eso.',
-    'empty_title' => 'Todavía no hay nada en ningún legajo',
-    'empty_body' => 'Cuando un negocio tenga un archivo rechazado, una suspensión o un pago atrasado, su legajo aparece acá.',
-    'open' => 'Ver legajo',
+    'empty_title' => 'Todavía no hay nada en ningún historial',
+    'empty_body' => 'Cuando un negocio tenga un archivo rechazado, una suspensión o un pago atrasado, su historial aparece acá.',
+    'open' => 'Ver historial',
     'close' => 'Cerrar',
     'by' => 'por :name',
 
@@ -58,8 +58,8 @@ return [
     ],
 
     'panel' => [
-        'subtitle' => '{1} 1 hecho en el legajo|[0,*] :count hechos en el legajo',
-        'empty' => 'Este negocio no tiene nada en su legajo.',
+        'subtitle' => '{1} 1 hecho en el historial|[0,*] :count hechos en el historial',
+        'empty' => 'Este negocio no tiene nada en su historial.',
     ],
 
     // Where a catch came from and what it was: the file stores the codes, this is how they read.

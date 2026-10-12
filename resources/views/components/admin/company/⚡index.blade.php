@@ -1,5 +1,6 @@
 <?php
 
+use App\Classes\Main\OpeningHours;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Configuration\CompanyForm;
 use App\Models\Country;
@@ -92,6 +93,12 @@ new class extends Component
         $this->dispatchNotification($notification);
 
         return $notification->type !== NotificationType::Error;
+    }
+
+    /** Monday's hours onto Tuesday to Friday, the button the business's own screen has. */
+    public function applyWeekdays(): void
+    {
+        $this->form->data->opening_schedule = OpeningHours::applyWeekdays($this->form->data->opening_schedule);
     }
 
     /**
@@ -527,6 +534,7 @@ field in red from an attempt you had stopped looking at. --}}
                     <x-catalog.form-row>
                         <x-inputsform.week-hours
                             span="full"
+                            apply="applyWeekdays"
                             name="opening_schedule"
                             model="form.data.opening_schedule"
                             :value="$form->data->opening_schedule"

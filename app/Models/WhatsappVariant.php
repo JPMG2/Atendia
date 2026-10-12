@@ -7,7 +7,6 @@ namespace App\Models;
 use App\Classes\Main\OpeningHours;
 use App\Interfaces\Catalog\DataTable;
 use App\Traits\TracksUserActions;
-use Carbon\CarbonImmutable;
 use Database\Factories\WhatsappVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,10 +16,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 /**
- * What the landing's WhatsApp says inside one season. Overrides
- * {@see Company::reach()} field by field; a field left null inherits.
+ * The number and the hours of the landing's WhatsApp inside one season.
+ * Overrides {@see Company::reach()} field by field; a field left null inherits.
  */
-#[Fillable(['seasonal_window_id', 'phone', 'opening_schedule', 'whatsapp_greeting', 'is_active'])]
+#[Fillable(['seasonal_window_id', 'phone', 'opening_schedule', 'is_active'])]
 class WhatsappVariant extends Model implements DataTable
 {
     /** @use HasFactory<WhatsappVariantFactory> */
@@ -66,38 +65,6 @@ class WhatsappVariant extends Model implements DataTable
         $variant?->update(['is_active' => ! $variant->is_active]);
 
         return $variant;
-    }
-
-    /**
-     * Switched-on variants whose season opens within `$days` and that still
-     * have no opening message of their own: they would greet with the
-     * company's, which was written for a normal week.
-     *
-     * @return Collection<int, array{id: int, season: string, starts_at: string, in_days: int}>
-     */
-    public static function awaitingGreeting(int $days = 7): Collection
-    {
-        $today = SeasonalWindow::today();
-
-        return self::query()
-            ->with('seasonalWindow')
-            ->where('is_active', true)
-            ->where(fn ($query) => $query->whereNull('whatsapp_greeting')->orWhere('whatsapp_greeting', ''))
-            ->whereHas('seasonalWindow', fn ($query) => $query
-                ->where('is_active', true)
-                ->whereDate('starts_at', '>=', $today)
-                ->whereDate('starts_at', '<=', $today->addDays($days)))
-            ->get()
-            ->sortBy(fn (self $variant) => $variant->seasonalWindow?->starts_at)
-            ->map(fn (self $variant): array => [
-                'id' => $variant->id,
-                'season' => (string) $variant->seasonalWindow?->name,
-                'starts_at' => $variant->seasonalWindow?->starts_at?->format('d/m/Y') ?? '',
-                // Calendar days: the date column and "today" live in different zones.
-                'in_days' => (int) CarbonImmutable::parse($today->toDateString())
-                    ->diffInDays(CarbonImmutable::parse($variant->seasonalWindow?->starts_at?->toDateString())),
-            ])
-            ->values();
     }
 
     /**

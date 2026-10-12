@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'starts_at', 'ends_at', 'priority', 'is_active'])]
+#[Fillable(['name', 'starts_at', 'ends_at', 'priority', 'notice', 'is_active'])]
 class SeasonalWindow extends Model implements DataTable
 {
     /** @use HasFactory<SeasonalWindowFactory> */
@@ -57,6 +57,12 @@ class SeasonalWindow extends Model implements DataTable
     public function demoTags(): HasMany
     {
         return $this->hasMany(DemoTag::class);
+    }
+
+    /** @return HasMany<WhatsappVariant, $this> */
+    public function whatsappVariants(): HasMany
+    {
+        return $this->hasMany(WhatsappVariant::class);
     }
 
     /**
@@ -114,6 +120,12 @@ class SeasonalWindow extends Model implements DataTable
     public function catalogRows(): Collection
     {
         return $this->newQuery()
+            // A season is only dates: what it CHANGES hangs off it, and a season
+            // with nothing hanging changes nothing. The list has to say so.
+            ->withCount([
+                'demoTags as hero_count' => fn ($query) => $query->where('is_active', true),
+                'whatsappVariants as whatsapp_count' => fn ($query) => $query->where('is_active', true),
+            ])
             ->orderByDesc('starts_at')
             ->get()
             ->map(fn (self $window): array => [
@@ -124,6 +136,9 @@ class SeasonalWindow extends Model implements DataTable
                 'priority' => $window->priority,
                 'running' => $window->is_active && $window->coversToday(),
                 'active' => $window->is_active,
+                'hero' => (int) $window->hero_count,
+                'whatsapp' => (int) $window->whatsapp_count,
+                'has_notice' => filled($window->notice),
             ])
             ->values();
     }

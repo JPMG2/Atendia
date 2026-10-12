@@ -97,7 +97,22 @@ new class extends Component
                 ['label' => __('catalog.seasonal_window.columns.repeat')],
             ]"
         >
-            <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
+            <td class="catalog-cell-name catalog-cell-fill">
+                <span x-text="row.name"></span>
+                {{-- What the season changes, said under its name: a season with no
+                content is dates and nothing else, and it should not look like it works. --}}
+                <span
+                    class="text-sm text-muted block"
+                    x-bind:style="row.hero + row.whatsapp === 0 && ! row.has_notice ? 'color: var(--warning)' : ''"
+                    x-text="row.hero + row.whatsapp === 0 && ! row.has_notice
+                        ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.none')) }}
+                        : {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.some', ['parts' => ':parts'])) }}.replace(':parts', [
+                            row.has_notice ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.notice')) }} : '',
+                            row.hero === 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.hero_one')) }} : (row.hero > 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.hero_many')) }}.replace(':count', row.hero) : ''),
+                            row.whatsapp === 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.whatsapp_one')) }} : (row.whatsapp > 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.whatsapp_many')) }}.replace(':count', row.whatsapp) : ''),
+                        ].filter(Boolean).join(' · '))"
+                ></span>
+            </td>
             <td class="font-mono" x-text="row.starts_at"></td>
             <td class="font-mono" x-text="row.ends_at"></td>
             <td class="font-mono" x-text="row.priority"></td>
@@ -160,6 +175,22 @@ new class extends Component
                     maxlength="255"
                     alpine-error="name"
                     wire:model="form.data.name"
+                />
+            </x-catalog.form-row>
+
+            {{-- The line the visitor reads while the season runs: here, with the dates,
+            and not on a second screen. --}}
+            <x-catalog.form-row>
+                <x-inputsform.input
+                    span="full"
+                    icon="megaphone"
+                    :label="__('catalog.seasonal_window.fields.notice')"
+                    name="notice"
+                    :placeholder="__('catalog.seasonal_window.fields.notice_placeholder')"
+                    :hint="__('catalog.seasonal_window.fields.notice_hint')"
+                    maxlength="200"
+                    alpine-error="notice"
+                    wire:model="form.data.notice"
                 />
             </x-catalog.form-row>
 

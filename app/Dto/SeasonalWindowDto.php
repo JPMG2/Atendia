@@ -18,6 +18,7 @@ class SeasonalWindowDto implements FormData
         public string $name = '',
         public ?string $range = null,
         public int $priority = 0,
+        public ?string $notice = null,
         public bool $is_active = true
     ) {}
 
@@ -43,6 +44,7 @@ class SeasonalWindowDto implements FormData
             'name' => $this->name,
             'range' => $this->range,
             'priority' => $this->priority,
+            'notice' => $this->notice,
             'is_active' => $this->is_active,
         ];
     }
@@ -56,6 +58,7 @@ class SeasonalWindowDto implements FormData
             name: $data['name'] ?? '',
             range: $data['range'] ?? ($from === null ? null : $from.'..'.($to ?? $from)),
             priority: (int) ($data['priority'] ?? 0),
+            notice: DtoCast::squish($data['notice'] ?? null),
             is_active: $data['is_active'] ?? true,
         );
     }
@@ -69,6 +72,7 @@ class SeasonalWindowDto implements FormData
             'starts_at' => $from,
             'ends_at' => $to,
             'priority' => $this->priority,
+            'notice' => DtoCast::squish($this->notice),
             'is_active' => $this->is_active,
         ];
     }

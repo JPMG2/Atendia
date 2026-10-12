@@ -13,7 +13,6 @@ class CreateWhatsappVariant
      *     seasonal_window_id: int|null,
      *     phone: string|null,
      *     opening_schedule: array<int, array{0: string, 1: string}>|null,
-     *     whatsapp_greeting: string|null,
      *     is_active: bool
      * }  $data  Already validated by WhatsappVariantForm::transformServiceData().
      */

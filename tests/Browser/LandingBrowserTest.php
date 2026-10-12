@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Company;
+use App\Models\SeasonalWindow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -46,6 +47,9 @@ test('the footer carries a real way to reach the company', function (): void {
         'opening_schedule' => array_fill_keys([1, 2, 3, 4, 5, 6, 0], ['00:00', '23:59']),
     ]);
 
+    // A season speaking: the footer names it and READS its notice, on the page.
+    SeasonalWindow::factory()->create(['name' => 'Navidad 2026', 'notice' => 'Atendemos el 24 hasta las 14 h']);
+
     $page = visit('/');
 
     $page->assertNoJavaScriptErrors()
@@ -53,6 +57,8 @@ test('the footer carries a real way to reach the company', function (): void {
         ->assertSee($company->email)
         ->assertSee($company->address)
         ->assertSee(__('landing.footer.whatsapp'))
+        ->assertSee('Atención de Navidad 2026')
+        ->assertSee('Atendemos el 24 hasta las 14 h')
         ->assertSee('Lunes a domingo de 00:00 a 23:59 h')
         ->assertSee(__('landing.footer.open_now'))
         ->screenshotElement('footer', 'landing-footer-contact');

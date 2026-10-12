@@ -425,6 +425,7 @@ return [
         'col_contact' => 'Contacto',
         'whatsapp' => 'Escríbenos por WhatsApp',
         'whatsapp_text' => 'Hola, quiero saber más sobre :brand.',
+        'season' => 'Atención de :name',
         'open_now' => 'Atendemos ahora',
         'closed_now' => 'Fuera de horario',
     ],

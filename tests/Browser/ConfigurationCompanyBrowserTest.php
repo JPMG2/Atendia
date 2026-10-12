@@ -73,7 +73,8 @@ test('with the company already saved the second step swaps the panel', function 
         ->assertSee('Redes sociales')
         // What the landing's WhatsApp says all year sits next to the number.
         ->assertSee('Horario de atención')
-        ->assertSee('Mensaje de apertura')
+        ->assertSee('Aplicar de lunes a viernes')
+        ->assertSee('Mensaje que escribe el visitante')
         // The main panel is the one that hides now.
         ->assertDontSee('Razón social')
         ->screenshot(filename: 'company-commercial-step');

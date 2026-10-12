@@ -36,6 +36,9 @@ class SeasonalWindowForm extends BaseCatalogForm
 
             'priority' => AttributeValidator::numericInteger(true, 0),
 
+            // What the visitor reads on the landing: it is optional, and short on purpose.
+            'notice' => ['nullable', ...AttributeValidator::stringValid(false, '3'), 'max:200'],
+
             'is_active' => AttributeValidator::booleanValue(true),
         ];
     }
@@ -47,6 +50,7 @@ class SeasonalWindowForm extends BaseCatalogForm
             'starts_at' => __('catalog.seasonal_window.fields.starts_at'),
             'ends_at' => __('catalog.seasonal_window.fields.ends_at'),
             'priority' => __('catalog.seasonal_window.fields.priority'),
+            'notice' => __('catalog.seasonal_window.fields.notice'),
             'is_active' => config('nicename.is_active'),
         ];
     }

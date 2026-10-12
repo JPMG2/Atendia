@@ -88,6 +88,24 @@
                         {{ __('landing.footer.whatsapp') }}
                     </a>
 
+                    {{-- The season that is speaking, and the line she wrote for the visitor:
+                    they are read here, by the WhatsApp they are about, not inside a chat. --}}
+                    {{-- Same line pattern as the rest of the column (icon, then text that wraps
+                    under itself): a notice in its own style read as something pasted in. --}}
+                    @if ($reach['season'])
+                        <span class="text-muted inline-flex items-start gap-2" style="font-size: var(--text-sm)">
+                            <x-icon name="calendar" :size="15" class="mt-0.5 flex-none" />
+                            {{ __('landing.footer.season', ['name' => $reach['season']]) }}
+                        </span>
+                    @endif
+
+                    @if ($reach['notice'])
+                        <span class="text-muted inline-flex items-start gap-2" style="font-size: var(--text-sm)">
+                            <x-icon name="megaphone" :size="15" class="mt-0.5 flex-none" />
+                            {{ $reach['notice'] }}
+                        </span>
+                    @endif
+
                     {{-- The hours belong to the number: both change with the season. --}}
                     @if ($reach['hours'])
                         <span class="text-muted inline-flex items-start gap-2" style="font-size: var(--text-sm)">

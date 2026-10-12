@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 /**
- * What a business's file (legajo) can say happened. Code writes each one when
+ * What a business's compliance history can say happened. Code writes each one when
  * it happens, so this is an Enum: a new kind is a new line that records it.
  * The same rows carry the fault (a refused file) and its answer (a lifted
  * suspension): a file is a history of what was done, not of reprimands.

@@ -6,6 +6,7 @@ use App\Classes\Main\OpeningHours;
 use App\Models\CatalogForm;
 use App\Models\Company;
 use App\Models\Country;
+use App\Models\DemoTag;
 use App\Models\Province;
 use App\Models\Region;
 use App\Models\SeasonalWindow;
@@ -77,6 +78,7 @@ test('with no season running the landing reads the company row', function (): vo
         'hours' => 'Lunes a viernes de 09:00 a 18:00 h',
         'open' => true,
         'greeting' => 'Hola, quiero saber más.',
+        'notice' => null,
         'season' => null,
     ]);
 });
@@ -226,16 +228,48 @@ test('the footer draws no dot when no week was ever declared', function (): void
         ->assertDontSee(__('landing.footer.closed_now'));
 });
 
-test('the footer opens the chat with the season message', function (): void {
+test('the notice of a running season is READ in the footer, with the season that wrote it', function (): void {
     companyReach();
-    $window = SeasonalWindow::factory()->create();
+    SeasonalWindow::factory()->create(['name' => 'Navidad 2026', 'notice' => 'Atendemos el 24 hasta las 14 h']);
 
-    WhatsappVariant::factory()->create([
-        'seasonal_window_id' => $window->id,
-        'whatsapp_greeting' => 'Hola, ¿atienden en las fiestas?',
-    ]);
+    $this->get('/')
+        ->assertOk()
+        ->assertSee(__('landing.footer.season', ['name' => 'Navidad 2026']))
+        // On the page, not inside a chat: that was the whole complaint.
+        ->assertSee('Atendemos el 24 hasta las 14 h')
+        // The chat still opens with the company's own message, never with the notice.
+        ->assertDontSee(rawurlencode('Atendemos el 24 hasta las 14 h'), false);
+});
 
-    $this->get('/')->assertSee(rawurlencode('Hola, ¿atienden en las fiestas?'), false);
+test('a season with no notice and no variant is not named, and a switched-off one does not speak', function (): void {
+    companyReach();
+    SeasonalWindow::factory()->create(['name' => 'Vacía']);
+    SeasonalWindow::factory()->create(['name' => 'Apagada', 'notice' => 'No debería verse', 'is_active' => false]);
+
+    $this->get('/')->assertOk()
+        ->assertDontSee('Atención de Vacía')
+        ->assertDontSee('Atención de Apagada')
+        ->assertDontSee('No debería verse');
+});
+
+test('the strongest season with a notice wins, and the day it ends the notice is gone', function (): void {
+    companyReach();
+    SeasonalWindow::factory()->create(['name' => 'Débil', 'priority' => 1, 'notice' => 'Aviso débil']);
+    SeasonalWindow::factory()->create(['name' => 'Fuerte', 'priority' => 9, 'notice' => 'Aviso fuerte', 'ends_at' => SeasonalWindow::today()->addDay()]);
+
+    expect(Company::reach())->notice->toBe('Aviso fuerte')->season->toBe('Fuerte');
+
+    // Two days on, Fuerte has ended and the weaker one is the only one talking.
+    expect(Company::reach(SeasonalWindow::today()->addDays(2)))->notice->toBe('Aviso débil');
+    expect(Company::reach(SeasonalWindow::today()->addDays(30))['notice'])->toBeNull();
+});
+
+test('a variant with hours but no notice still names its season', function (): void {
+    companyReach();
+    $window = SeasonalWindow::factory()->create(['name' => 'Vacaciones']);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $window->id, 'opening_schedule' => []]);
+
+    expect(Company::reach())->season->toBe('Vacaciones')->notice->toBeNull();
 });
 
 test('a season holds one variant only', function (): void {
@@ -306,56 +340,87 @@ test('a half-typed hour names the box instead of closing the day', function (): 
     expect(WhatsappVariant::query()->count())->toBe(0);
 });
 
-test('a variant with no opening message is flagged only when its season is about to start', function (): void {
-    $soon = SeasonalWindow::factory()->create([
-        'name' => 'Fin de año',
-        'starts_at' => SeasonalWindow::today()->addDays(3),
-        'ends_at' => SeasonalWindow::today()->addDays(10),
-    ]);
-    $far = SeasonalWindow::factory()->create([
-        'starts_at' => SeasonalWindow::today()->addDays(20),
-        'ends_at' => SeasonalWindow::today()->addDays(25),
-    ]);
-    $greeted = SeasonalWindow::factory()->create([
-        'starts_at' => SeasonalWindow::today()->addDays(2),
-        'ends_at' => SeasonalWindow::today()->addDays(5),
-    ]);
-    $running = SeasonalWindow::factory()->create(['starts_at' => SeasonalWindow::today()->subDay()]);
-
-    WhatsappVariant::factory()->create(['seasonal_window_id' => $soon->id]);
-    WhatsappVariant::factory()->create(['seasonal_window_id' => $far->id]);
-    WhatsappVariant::factory()->create(['seasonal_window_id' => $greeted->id, 'whatsapp_greeting' => 'Hola']);
-    WhatsappVariant::factory()->create(['seasonal_window_id' => $running->id]);
-
-    $pending = WhatsappVariant::awaitingGreeting();
-
-    expect($pending)->toHaveCount(1)
-        ->and($pending->first()['season'])->toBe('Fin de año')
-        ->and($pending->first()['in_days'])->toBe(3);
-});
-
-test('the hub shows the reminder and drops it once the message is written', function (): void {
+test('the notice is written in the season form itself, with its dates, in one place', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(CatalogFormSeeder::class);
     $admin = User::factory()->create(['email_verified_at' => now()]);
     $admin->assignRole('admin');
     $this->actingAs($admin);
 
-    $window = SeasonalWindow::factory()->create([
-        'name' => 'Fin de año',
-        'starts_at' => SeasonalWindow::today()->addDays(3),
-        'ends_at' => SeasonalWindow::today()->addDays(10),
+    Livewire::test('catalog.seasonal-window')
+        ->call('openCreate')
+        ->set('form.data.name', 'Navidad 2026')
+        ->set('form.data.range', SeasonalWindow::today()->toDateString().'..'.SeasonalWindow::today()->addDays(10)->toDateString())
+        ->set('form.data.notice', 'Atendemos el 24 hasta las 14 h')
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect(SeasonalWindow::query()->where('name', 'Navidad 2026')->value('notice'))->toBe('Atendemos el 24 hasta las 14 h')
+        // And it is the landing that reads it, with nothing else configured.
+        ->and(Company::reach()['notice'])->toBe('Atendemos el 24 hasta las 14 h');
+});
+
+test('the season list says what each season changes, and a season with nothing says so', function (): void {
+    $empty = SeasonalWindow::factory()->create(['name' => 'Vacía']);
+    $full = SeasonalWindow::factory()->create(['name' => 'Con cosas']);
+
+    $tag = DemoTag::factory()->create(['slug' => 'kiosco']);
+    DemoTag::factory()->variantOf($tag, $full)->create();
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $full->id]);
+    // A variant switched off changes nothing, so it does not count as content.
+    WhatsappVariant::factory()->create(['is_active' => false]);
+
+    $noticed = SeasonalWindow::factory()->create(['name' => 'Con aviso', 'notice' => 'Cerramos el 25']);
+
+    $rows = (new SeasonalWindow)->catalogRows()->keyBy('name');
+
+    expect($rows['Con aviso']['has_notice'])->toBeTrue()->and($rows['Vacía']['has_notice'])->toBeFalse()
+        ->and($noticed->id)->not->toBe($empty->id)
+        ->and($rows['Vacía']['hero'])->toBe(0)->and($rows['Vacía']['whatsapp'])->toBe(0)
+        ->and($rows['Con cosas']['hero'])->toBe(1)->and($rows['Con cosas']['whatsapp'])->toBe(1)
+        ->and($empty->id)->not->toBe($full->id);
+});
+
+test('Monday is written onto Tuesday to Friday and the weekend is left alone', function (): void {
+    $week = OpeningHours::applyWeekdays([
+        1 => ['open' => true, 'opens_at' => '10:00', 'closes_at' => '14:00'],
+        3 => ['open' => false, 'opens_at' => '09:00', 'closes_at' => '18:00'],
+        6 => ['open' => true, 'opens_at' => '09:00', 'closes_at' => '12:00'],
     ]);
-    $variant = WhatsappVariant::factory()->create(['seasonal_window_id' => $window->id]);
+
+    expect(OpeningHours::toStored($week))->toBe([
+        1 => ['10:00', '14:00'],
+        2 => ['10:00', '14:00'],
+        3 => ['10:00', '14:00'],
+        4 => ['10:00', '14:00'],
+        5 => ['10:00', '14:00'],
+        6 => ['09:00', '12:00'],
+    ]);
+});
+
+test('the company screen and the season form both copy Monday with the button', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(CatalogFormSeeder::class);
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+    $this->actingAs($admin);
+
+    companyReach(['opening_schedule' => [1 => ['09:00', '13:00']]]);
+
+    Livewire::test('admin.company.index')
+        ->call('applyWeekdays')
+        ->assertSet('form.data.opening_schedule.4.open', true)
+        ->assertSet('form.data.opening_schedule.4.closes_at', '13:00')
+        ->assertSet('form.data.opening_schedule.6.open', false);
 
     Livewire::test('catalog.whatsapp-variant')
-        ->assertSee(__('catalog.whatsapp_variant.reminder.title'))
-        ->assertSee('Fin de año');
-
-    $variant->update(['whatsapp_greeting' => 'Hola, estamos de fiesta.']);
-
-    Livewire::test('catalog.whatsapp-variant')
-        ->assertDontSee(__('catalog.whatsapp_variant.reminder.title'));
+        ->call('openCreate')
+        ->set('form.data.override_schedule', true)
+        ->set('form.data.opening_schedule.1.open', true)
+        ->set('form.data.opening_schedule.1.opens_at', '11:00')
+        ->set('form.data.opening_schedule.1.closes_at', '15:00')
+        ->call('applyWeekdays')
+        ->assertSet('form.data.opening_schedule.5.opens_at', '11:00');
 });
 
 test('the week control draws Monday first and keeps a closed day closed', function (): void {
