@@ -3,11 +3,52 @@
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
-> Última revisión: 2026-10-12, al cerrar el día (bloque K: E6, E5 con sus dos ideas y E8, en
-> `47949f2`; lo del 11/10 en `dee9de2`). Antes: 2026-10-11 (bloque J). Antes: 2026-10-10 (bloque I).
+> Última revisión: 2026-10-12, noche: **lo que falta de verdad está en el bloque ★ de abajo**
+> (verificado contra el código y la base). Bloque K: E6, E5, E8 y los cinco puntos siguientes,
+> en `47949f2`, `1ffb2c0` y `9688193`. Antes: 2026-10-11 (bloque J). Antes: 2026-10-10 (bloque I).
 > Antes: 2026-10-08, al cerrar el día (bloque G).
 > Antes: 2026-10-07
 > (bloque A y bloque E verificados contra el código: 25 casillas estaban hechas y seguían abiertas).
+
+## ★ Lo que falta DE VERDAD para cerrar el Admin — verificado el 2026-10-12
+
+Revisado casilla por casilla contra el código y la base (no contra lo que decía el archivo). De
+todo lo abierto, **solo hay DOS cosas de construcción**; el resto es decisión, dato o visto bueno
+de ella, o espera la reunión.
+
+**1. Construcción mía, sin depender de nadie**
+- [ ] **El historial desde la ficha del negocio** (E4): un enlace "Ver historial (N)" en la ficha
+      que abre Cumplimiento ya posicionado en ese negocio (`?negocio=ID` ya funciona).
+- [ ] **Guardián de la base de pruebas** (I): un control que falle si un test deja filas
+      confirmadas en `atendia_testing`. Es deuda de la suite, no una pantalla del Admin.
+
+**2. Visto bueno suyo, en su pantalla real** (hecho y verificado con capturas; falta su ojo)
+- [ ] Inicio: tarjeta "Más movimiento", el latido, las flechas · Cobranza (J).
+- [ ] Soporte v2 (G/E2) · Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (I).
+- [ ] Lo del 12/10: WhatsApp por temporada, Tipos de reporte, archivar un plan, Cumplimiento y
+      el aviso de temporada en el pie.
+
+**3. Datos y decisiones suyas**
+- [ ] **Cargar los costos fijos del mes** (hoy en 0: Consumo de IA no muestra el resultado neto).
+- [ ] **IA:** la conversación en `gpt-6-sol` o se queda en Astra (falta la batería de Astra, ~3 a
+      4 USD) · **modelo de voz** (hoy corre uno sin precio; el catálogo trae 3 con precio) ·
+      que la clave APP esté en su propio Project de OpenAI · probar un cambio real de embeddings ·
+      el umbral de gasto de IA (35% en los tres planes).
+- [ ] **Producto:** tasa Bs/USD (en pausa, con su decisión) · crear un cuarto plan · paquete de
+      feriados para los otros 20 países · umbrales de similitud · a quién va la respuesta citada.
+
+**4. Espera la reunión con abogado y contador** (§B): medio de pago definitivo, instrucciones de
+pago (`payment_instructions` está vacío), cambio mensual↔anual, evidencia ante menores, términos
+de uso, supresión de datos. De ahí depende también la baja por autogestión del negocio (A1).
+
+**5. Se mira con datos reales, no antes**
+- [ ] El umbral de "sin responder" (15 min) con tráfico real · la escala del Inicio pasadas ~5 mil
+      suscripciones (`monthlyRecurringRevenue()` hidrata con `get()`).
+
+**No es del Admin** y vive en `hallazgos.md`: fragilidad de la suite por base compartida, la
+API de Mailpit que da 404, la fuente de emoji del contenedor y dos hooks que cuentan de más.
+
+---
 
 ## Cómo se cierra un punto de esta lista
 
@@ -956,7 +997,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 
 **Suyos (ella):**
 - [x] **HECHO 2026-10-09 17:56 — doble factor de la dueña activo (verificado en la base).** Texto original: **Antes del 16/10:** entrar a "Mi seguridad" (`/admin/seguridad`), guardar su WhatsApp y activar el doble factor. Pasado el plazo el panel solo le abre esa página. Salida si el WhatsApp falla: `docker exec atendia-app php artisan atendia:staff-two-factor 0`.
-- [ ] **Revisar los permisos del rol Soporte** en `/admin/roles`: se volvió a correr `RolesAndPermissionsSeeder` sobre `atendia` (para el permiso `reset-two-factor`) y su `syncPermissions` puede haber deshecho ediciones a mano.
+- [x] ~~**Revisar los permisos del rol Soporte**~~ VERIFICADO 2026-10-12 contra la base: tiene exactamente `access-admin-panel`, `businesses.view` y `support.view`, que es lo mínimo que se diseñó (A5). Nada se deshizo.
 - [ ] **Veredicto visual en su pantalla real** de Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (solo se miraron capturas con datos de prueba).
 - [x] **HECHO 2026-10-09 — subido a GitHub** (`704c438`, `2525fe5`, `3d562d7` y la nota de ideas, hasta `1685aff`).
 
@@ -1050,9 +1091,11 @@ carga. Capturas miradas en 1280 y 390 para Planes, Cumplimiento y Consumo de IA.
 **Falta (de lo que ella pidió el 12/10):**
 - [ ] **Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte", el
       archivar de Planes, Cumplimiento y los campos nuevos de Compañía.
-- [ ] **Cargar en Compañía** el horario de atención y el mensaje de apertura (están vacíos en
-      `atendia`; sin horario el pie no dibuja el punto).
-- [ ] Zona horaria propia de Compañía (hoy la del país de su región), si hace falta.
+- [x] ~~**Cargar en Compañía el horario de atención**~~ (verificado 2026-10-12: lunes a sábado,
+      09:00 a 18:00; el pie ya dibuja "Atendemos ahora"). Queda **opcional** el "mensaje que
+      escribe el visitante" (vacío = el de siempre) y `web`, que sigue vacío.
+- [ ] Zona horaria propia de Compañía (hoy la del país de su región), si hace falta: **no hace
+      falta** mientras sea un país de una sola zona (decidido como "no ahora", 2026-10-12).
 
 ---
 
