@@ -47,6 +47,7 @@ return new class extends Migration
         'panel_notifications',
         'whatsapp_link_events',
         'assistant_ratings',
+        'compliance_events',
     ];
 
     /**

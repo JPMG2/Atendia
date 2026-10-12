@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Actions\Compliance\RecordComplianceEvent;
+use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\BillingReminder;
@@ -64,11 +66,18 @@ class RunBillingCycle extends Command
         $graceLeft = (int) config('atendia.billing.grace_days') + $days;
 
         if ($graceLeft > 0) {
+            // Each day inside the grace period runs this again: the file gets the day it turned late, once.
+            if ($subscription->status !== SubscriptionStatus::PastDue) {
+                app(RecordComplianceEvent::class)->handle($subscription->business_id, ComplianceEventKind::PaymentLate);
+            }
+
             $subscription->forceFill(['status' => SubscriptionStatus::PastDue])->save();
             $this->remindOnce($subscription, 'overdue', $graceLeft);
 
             return;
         }
+
+        app(RecordComplianceEvent::class)->handle($subscription->business_id, ComplianceEventKind::PaymentPaused);
 
         $subscription->forceFill(['status' => SubscriptionStatus::Paused, 'paused_at' => now()])->save();
         $this->remindOnce($subscription, 'paused', 0);

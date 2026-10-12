@@ -89,6 +89,38 @@ test('the one a decree moves is typed in for ONE year and is gone the next', fun
         ->and($row->kind())->toBe('once');
 });
 
+test('"the first Monday of February" is a shape of its own and lands on the right day each year', function (): void {
+    createHoliday(['country_id' => holidayCountry()->id, 'name' => 'Día de la Constitución', 'kind' => 'nth', 'month' => 2, 'weekday' => 1, 'nth' => 1])
+        ->assertHasNoErrors()
+        ->assertReturned(true);
+
+    $row = CountryHoliday::query()->sole();
+
+    // It carries a month, a weekday and which one — and no day, Easter offset or date to disagree with.
+    expect($row->kind())->toBe('nth')
+        ->and($row->day)->toBeNull()->and($row->easter_offset)->toBeNull()->and($row->on_date)->toBeNull()
+        ->and($row->describeWhen())->toBe('primer lunes de febrero')
+        // February 2026 starts on a Sunday, so its first Monday is the 2nd; in 2027 it is the 1st.
+        ->and(CountryHoliday::forYear(holidayCountry()->id, 2026)->first()['date']->format('Y-m-d'))->toBe('2026-02-02')
+        ->and(CountryHoliday::forYear(holidayCountry()->id, 2027)->first()['date']->format('Y-m-d'))->toBe('2027-02-01');
+});
+
+test('the last weekday of a month is found even when the month has five of them', function (): void {
+    createHoliday(['country_id' => holidayCountry()->id, 'name' => 'Último viernes', 'kind' => 'nth', 'month' => 10, 'weekday' => 5, 'nth' => -1])
+        ->assertHasNoErrors();
+
+    // October 2026 has five Fridays: the last is the 30th, not the fourth.
+    expect(CountryHoliday::forYear(holidayCountry()->id, 2026)->first()['date']->format('Y-m-d'))->toBe('2026-10-30')
+        ->and(CountryHoliday::query()->sole()->describeWhen())->toBe('último viernes de octubre');
+});
+
+test('a fifth Monday is refused: not every month has one', function (): void {
+    createHoliday(['country_id' => holidayCountry()->id, 'name' => 'Imposible', 'kind' => 'nth', 'month' => 2, 'weekday' => 1, 'nth' => 5])
+        ->assertHasErrors(['nth']);
+
+    expect(CountryHoliday::query()->count())->toBe(0);
+});
+
 test('a day counted from Easter is added from the number of days', function (): void {
     createHoliday(['country_id' => holidayCountry()->id, 'name' => 'Viernes Santo', 'kind' => 'easter', 'easter_offset' => -2])
         ->assertHasNoErrors();

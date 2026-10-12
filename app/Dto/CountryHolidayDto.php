@@ -8,9 +8,9 @@ use App\Interfaces\Catalog\FormData;
 use App\Models\CountryHoliday;
 
 /**
- * A holiday as the catalog form carries it. `kind` picks which of the three
- * date fields counts; the payload nulls the other two so a row never holds
- * two dates that disagree.
+ * A holiday as the catalog form carries it. `kind` picks which date fields
+ * count; the payload nulls the rest so a row never holds two dates that
+ * disagree.
  */
 class CountryHolidayDto implements FormData
 {
@@ -22,6 +22,8 @@ class CountryHolidayDto implements FormData
         public ?int $day = null,
         public ?int $easter_offset = null,
         public ?string $on_date = null,
+        public ?int $weekday = null,
+        public ?int $nth = null,
         public bool $is_active = true,
     ) {}
 
@@ -48,6 +50,7 @@ class CountryHolidayDto implements FormData
         // Opening a saved row gives no `kind`: the date it holds says which shape it is.
         $kind = $data['kind'] ?? match (true) {
             $onDate !== null => CountryHoliday::KIND_ONCE,
+            $number('weekday') !== null => CountryHoliday::KIND_NTH,
             $number('easter_offset') !== null => CountryHoliday::KIND_EASTER,
             default => CountryHoliday::KIND_FIXED,
         };
@@ -60,6 +63,8 @@ class CountryHolidayDto implements FormData
             day: $number('day'),
             easter_offset: $number('easter_offset'),
             on_date: $onDate,
+            weekday: $number('weekday'),
+            nth: $number('nth'),
             is_active: (bool) ($data['is_active'] ?? true),
         );
     }
@@ -69,10 +74,13 @@ class CountryHolidayDto implements FormData
         return [
             'country_id' => $this->country_id,
             'name' => trim((string) preg_replace('/\s+/u', ' ', $this->name)),
-            'month' => $this->kind === CountryHoliday::KIND_FIXED ? $this->month : null,
+            // The month belongs to two shapes: a fixed date and "the nth weekday of".
+            'month' => in_array($this->kind, [CountryHoliday::KIND_FIXED, CountryHoliday::KIND_NTH], true) ? $this->month : null,
             'day' => $this->kind === CountryHoliday::KIND_FIXED ? $this->day : null,
             'easter_offset' => $this->kind === CountryHoliday::KIND_EASTER ? $this->easter_offset : null,
             'on_date' => $this->kind === CountryHoliday::KIND_ONCE ? $this->on_date : null,
+            'weekday' => $this->kind === CountryHoliday::KIND_NTH ? $this->weekday : null,
+            'nth' => $this->kind === CountryHoliday::KIND_NTH ? $this->nth : null,
             'is_active' => $this->is_active,
         ];
     }

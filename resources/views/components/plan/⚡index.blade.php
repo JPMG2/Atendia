@@ -45,7 +45,9 @@ new class extends Component
     #[Computed]
     public function ladder(): array
     {
-        return Plan::ladder();
+        // What is for sale, plus the plan this business already holds: one on an
+        // archived plan still sees where it stands.
+        return Plan::ladderFor($this->plan);
     }
 
     #[Computed]

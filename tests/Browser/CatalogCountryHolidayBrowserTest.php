@@ -181,6 +181,15 @@ test('the form asks only for the date of the chosen shape', function (string $la
 
     $page->assertNoJavaScriptErrors()->screenshot(filename: 'catalog-holidays-form-once-'.$label);
 
+    // "The first Monday of February": which one, which weekday, which month — and nothing else.
+    $page->script('$wire.form.data.kind = "nth";');
+    $page->wait(0.5);
+
+    expect((bool) $page->script('document.querySelector("[name=nth]").closest(".form-row").offsetParent !== null'))->toBeTrue()
+        ->and((bool) $page->script('document.querySelector("#if-on_date").closest(".form-row").offsetParent === null'))->toBeTrue();
+
+    $page->assertNoJavaScriptErrors()->screenshot(filename: 'catalog-holidays-form-nth-'.$label);
+
     expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
 })->with([
     'desktop' => ['desktop', 1280, false],

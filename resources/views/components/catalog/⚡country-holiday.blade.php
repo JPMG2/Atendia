@@ -212,8 +212,26 @@ new class extends Component
     #[Computed]
     public function kindOptions(): array
     {
-        return collect([CountryHoliday::KIND_FIXED, CountryHoliday::KIND_EASTER, CountryHoliday::KIND_ONCE])
+        return collect([CountryHoliday::KIND_FIXED, CountryHoliday::KIND_NTH, CountryHoliday::KIND_EASTER, CountryHoliday::KIND_ONCE])
             ->map(fn (string $kind): array => ['value' => $kind, 'label' => __('catalog.country_holiday.kinds.'.$kind)])
+            ->all();
+    }
+
+    /** "First", "second"… "last": a fifth Monday is not there every month, so it is not offered. */
+    #[Computed]
+    public function nthOptions(): array
+    {
+        return collect([1, 2, 3, 4, CountryHoliday::LAST])
+            ->map(fn (int $nth): array => ['value' => $nth, 'label' => ucfirst(__('catalog.country_holiday.nth.'.$nth))])
+            ->all();
+    }
+
+    /** Monday first, the way the week is read. */
+    #[Computed]
+    public function weekdayOptions(): array
+    {
+        return collect([1, 2, 3, 4, 5, 6, 0])
+            ->map(fn (int $day): array => ['value' => $day, 'label' => __('catalog.country_holiday.weekdays.'.$day)])
             ->all();
     }
 
@@ -269,6 +287,7 @@ new class extends Component
             <td>
                 <span class="status-tag is-neutral" x-show="row.kind === 'fixed'">{{ __('catalog.country_holiday.kinds.fixed') }}</span>
                 <span class="status-tag is-info" x-show="row.kind === 'easter'">{{ __('catalog.country_holiday.kinds.easter') }}</span>
+                <span class="status-tag is-neutral" x-show="row.kind === 'nth'">{{ __('catalog.country_holiday.kinds.nth') }}</span>
                 <span class="status-tag is-brand" x-show="row.kind === 'once'">{{ __('catalog.country_holiday.kinds.once') }}</span>
             </td>
             <td>
@@ -447,6 +466,40 @@ new class extends Component
                     max="31"
                     alpine-error="day"
                     wire:model="form.data.day"
+                />
+            </x-catalog.form-row>
+
+            {{-- "The first Monday of February": which one, which day of the week, which month. --}}
+            <x-catalog.form-row x-show="$wire.form.data.kind === 'nth'" x-cloak>
+                <x-inputsform.combobox
+                    span="short"
+                    :label="__('catalog.country_holiday.fields.nth')"
+                    name="nth"
+                    :options="$this->nthOptions"
+                    :value="$form->data?->nth"
+                    alpine-error="nth"
+                    wire:model="form.data.nth"
+                />
+
+                <x-inputsform.combobox
+                    span="short"
+                    :label="__('catalog.country_holiday.fields.weekday')"
+                    name="weekday"
+                    :options="$this->weekdayOptions"
+                    :value="$form->data?->weekday"
+                    alpine-error="weekday"
+                    wire:model="form.data.weekday"
+                />
+
+                <x-inputsform.combobox
+                    span="text"
+                    :label="__('catalog.country_holiday.fields.month')"
+                    name="month"
+                    :hint="__('catalog.country_holiday.fields.nth_hint')"
+                    :options="$this->monthOptions"
+                    :value="$form->data?->month"
+                    alpine-error="month"
+                    wire:model="form.data.month"
                 />
             </x-catalog.form-row>
 

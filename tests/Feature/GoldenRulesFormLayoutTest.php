@@ -76,7 +76,7 @@ function declaredRowsRatchet(): array
         'components/⚡ws-demo.blade.php',
         // The shared chrome's lone `q` search box, sanctioned since day one.
         'components/catalog/toolbar.blade.php',
-        'components/catalog/⚡manager.blade.php',
+        'components/admin/catalogs/⚡index.blade.php',
     ];
 }
 

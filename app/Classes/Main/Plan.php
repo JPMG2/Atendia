@@ -19,7 +19,7 @@ final class Plan
     /** Yearly billing pays ten months: two free, the same promise everywhere. */
     private const int PAID_MONTHS_PER_YEAR = 10;
 
-    /** @param array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int} $limits */
+    /** @param array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int, archived: bool} $limits */
     private function __construct(
         public readonly string $code,
         private readonly array $limits,
@@ -129,13 +129,26 @@ final class Plan
             ?? self::named(array_key_last(self::catalog()));
     }
 
-    /** An unknown or missing code falls to the FLOOR plan: a typo must never gift Premium. */
+    /**
+     * An unknown or missing code falls to the FLOOR plan: a typo must never
+     * gift Premium. The floor is the cheapest one still SOLD; an archived plan
+     * is still found by its own code, so whoever holds it keeps it.
+     */
     public static function named(?string $code): self
     {
         $plans = self::catalog();
-        $code = array_key_exists((string) $code, $plans) ? (string) $code : (string) array_key_first($plans);
 
-        return new self($code, $plans[$code]);
+        if (! array_key_exists((string) $code, $plans)) {
+            $sold = array_filter($plans, fn (array $limits): bool => ! ($limits['archived'] ?? false));
+            $code = (string) array_key_first($sold ?: $plans);
+        }
+
+        return new self((string) $code, $plans[(string) $code]);
+    }
+
+    /** Archived: no longer sold or offered, but the businesses on it keep it. */
+    public bool $isArchived {
+        get => (bool) ($this->limits['archived'] ?? false);
     }
 
     /**
@@ -177,13 +190,15 @@ final class Plan
     /** The plan a new business trials; the floor if no row offers a trial. */
     public static function trial(): self
     {
-        $code = collect(self::catalog())->search(fn (array $limits): bool => ($limits['trial_days'] ?? 0) > 0);
+        $code = collect(self::catalog())->search(
+            fn (array $limits): bool => ($limits['trial_days'] ?? 0) > 0 && ! ($limits['archived'] ?? false),
+        );
 
         return self::named($code === false ? null : $code);
     }
 
     /**
-     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int}>
+     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int, archived: bool}>
      *
      * @throws RuntimeException
      */
@@ -216,10 +231,42 @@ final class Plan
         return self::named($subscription->plan);
     }
 
-    /** @return list<self> Every plan in config order, for the plan screen. */
+    /**
+     * What is for sale, floor first: the landing, the upgrade offers and every
+     * "the lowest plan that has X" read this. Archived plans are not in it.
+     *
+     * @return list<self>
+     */
     public static function ladder(): array
     {
+        $sold = array_values(array_filter(self::everyPlan(), fn (self $plan): bool => ! $plan->isArchived));
+
+        return $sold ?: self::everyPlan();
+    }
+
+    /**
+     * Every plan, archived ones included: the admin screen and the places that
+     * must still name a plan somebody holds.
+     *
+     * @return list<self>
+     */
+    public static function everyPlan(): array
+    {
         return array_map(self::named(...), array_keys(self::catalog()));
+    }
+
+    /**
+     * What is for sale plus the plan this business already holds, wherever it
+     * sits: a business on an archived plan still sees where it stands.
+     *
+     * @return list<self>
+     */
+    public static function ladderFor(self $current): array
+    {
+        return array_values(array_filter(
+            self::everyPlan(),
+            fn (self $plan): bool => ! $plan->isArchived || $plan->code === $current->code,
+        ));
     }
 
     /** What a whole year costs: ten months (two free). */

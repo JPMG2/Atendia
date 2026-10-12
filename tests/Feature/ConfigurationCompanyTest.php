@@ -75,7 +75,7 @@ test('with no company saved the second step comes locked', function (): void {
     // the other one instead of just greying it out.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('isRegistered', false)
         ->assertSeeHtml('unlocked: false')
         ->assertSee(__('company.steps.locked_hint'));
@@ -88,7 +88,7 @@ test('with the company already saved both steps are open', function (): void {
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('isRegistered', true)
         ->assertSeeHtml('unlocked: true');
 });
@@ -99,7 +99,7 @@ test('the step the user is standing on survives a re-render', function (): void 
     // the stepper and throw the person back to step one mid-typing.
     $this->actingAs(companyAdmin());
 
-    $html = Livewire::test('configuration.company')
+    $html = Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->html();
 
@@ -124,7 +124,7 @@ test('the company screen uses no raw form control', function (): void {
     // Golden rule: fields come from <x-ui.*>/<x-inputsform.*>, which is what
     // guarantees the single focus ring, the theming and the error wiring.
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->not->toMatch('/<(input|select|textarea)\b/');
@@ -155,7 +155,7 @@ test('mount initializes the DTO so wire:model can bind into the nested form obje
     // property", because Livewire cannot recurse into null.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('form.data.legal_name', '')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->assertSet('form.data.legal_name', 'AtendIa SRL')
@@ -168,7 +168,7 @@ test('the form loads the single company record', function (): void {
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('form.recordId', $company->id)
         ->assertSet('form.data.legal_name', 'AtendIa SRL')
         ->assertSet('form.data.tax_id', $company->tax_id)
@@ -186,7 +186,7 @@ test('country and province are derived from the region, since the table only sto
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('form.data.province_id', $region->province_id)
         ->assertSet('form.data.country_id', $region->province->country_id);
 
@@ -251,7 +251,7 @@ test('the province combobox only offers provinces of the chosen country', functi
 
     // The computed reads form.data.country_id, so the list narrows on the next
     // render without any hook reloading it.
-    $html = Livewire::test('configuration.company')
+    $html = Livewire::test('admin.company.index')
         ->set('form.data.country_id', $argentina->id)
         ->html();
 
@@ -280,7 +280,7 @@ test('the region combobox only offers regions of the chosen province', function 
 
     $this->actingAs(companyAdmin());
 
-    $html = Livewire::test('configuration.company')
+    $html = Livewire::test('admin.company.index')
         ->set('form.data.province_id', $mendoza->id)
         ->html();
 
@@ -308,7 +308,7 @@ test('editing an existing company opens the cascade already filled in', function
 
     $this->actingAs(companyAdmin());
 
-    $html = Livewire::test('configuration.company')
+    $html = Livewire::test('admin.company.index')
         ->assertSet('form.data.province_id', $region->province_id)
         ->assertSet('form.data.country_id', $region->province->country_id)
         ->html();
@@ -344,7 +344,7 @@ test('changing the country clears the province and the region', function (): voi
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.country_id', $region->province->country_id)
         ->set('form.data.province_id', $region->province_id)
         ->set('form.data.region_id', $region->id)
@@ -362,7 +362,7 @@ test('changing the province clears the region but keeps the country', function (
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.country_id', $region->province->country_id)
         ->set('form.data.province_id', $region->province_id)
         ->set('form.data.region_id', $region->id)
@@ -381,7 +381,7 @@ test('loading a saved company does not clear its own cascade', function (): void
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSet('form.data.country_id', $region->province->country_id)
         ->assertSet('form.data.province_id', $region->province_id)
         ->assertSet('form.data.region_id', $region->id);
@@ -395,7 +395,7 @@ test('the reset itself does not cascade twice', function (): void {
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.country_id', $region->province->country_id)
         ->set('form.data.province_id', $region->province_id)
         ->set('form.data.province_id', $region->province_id)
@@ -424,7 +424,7 @@ test('every field the company screen marks as required is covered by the front v
     // The asterisk and the rule have to say the same thing: a required field with
     // no rule does nothing when the user hits save, and shows no error either.
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     // Read the tags whole, so the check does not depend on the order the
@@ -462,7 +462,7 @@ test('the social rows live on the server, with a blank one to start from', funct
     // shown empty: there would be nowhere to type the first network.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertCount('form.social', 1)
         ->assertSet('form.social.0.social_network_id', null);
 });
@@ -481,7 +481,7 @@ test('an existing company opens with its saved networks in order', function (): 
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertCount('form.social', 2)
         ->assertSet('form.social.0.social_network_id', $instagram->id)
         ->assertSet('form.social.1.social_network_id', $linkedin->id);
@@ -490,7 +490,7 @@ test('an existing company opens with its saved networks in order', function (): 
 test('rows are added and removed on the fly, and the last one always stays', function (): void {
     $this->actingAs(companyAdmin());
 
-    $component = Livewire::test('configuration.company')
+    $component = Livewire::test('admin.company.index')
         ->call('addSocialRow', 0)
         ->assertCount('form.social', 2)
         ->call('removeSocialRow', 1)
@@ -506,7 +506,7 @@ test('removing a saved network deletes it right away, without waiting for save',
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->call('removeSocialRow', 0)
         ->assertDispatched('notify')
         // The last row never disappears: it comes back blank to start again.
@@ -525,7 +525,7 @@ test('deleting a network leaves a trail in the activity log', function (): void 
 
     $this->actingAs($admin);
 
-    Livewire::test('configuration.company')->call('removeSocialRow', 0);
+    Livewire::test('admin.company.index')->call('removeSocialRow', 0);
 
     $activity = Activity::query()->where('subject_type', SocialLink::class)->latest('id')->first();
 
@@ -543,7 +543,7 @@ test('removing an unsaved row touches nothing in the database', function (): voi
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->call('addSocialRow', 0)
         ->call('removeSocialRow', 1)
         ->assertNotDispatched('notify');
@@ -560,7 +560,7 @@ test('a link of another owner cannot be deleted through the form state', functio
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.social.0.id', $foreign->id)
         ->call('removeSocialRow', 0);
 
@@ -571,7 +571,7 @@ test('the screen warns before deleting, through the system dialog', function ():
     // Golden rule: no native confirm anywhere. The warning is the only chance to
     // change your mind, since the delete does not wait for the save button.
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->toContain('async removeSocial(index, saved) {')
@@ -586,7 +586,7 @@ test('the screen warns before deleting, through the system dialog', function ():
 test('every row keeps its own key, so removing one from the middle moves the right node', function (): void {
     $this->actingAs(companyAdmin());
 
-    $component = Livewire::test('configuration.company')
+    $component = Livewire::test('admin.company.index')
         ->call('addSocialRow', 0)
         ->call('addSocialRow', 1);
 
@@ -601,7 +601,7 @@ test('saving the commercial step stores the contact and the networks', function 
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'hola@atendia.app')
         ->set('form.data.phone', '+54 9 11 5555-1234')
         ->set('form.data.web', 'https://atendia.app')
@@ -632,7 +632,7 @@ test('saving the commercial step leaves the main columns alone', function (): vo
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'Pisado desde el paso 2')
         ->set('form.data.email', 'hola@atendia.app')
         ->call('saveCommercial')
@@ -649,7 +649,7 @@ test('a network removed from the screen is removed from the database', function 
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertCount('form.social', 1)
         ->set('form.social.0.social_network_id', null)
         ->set('form.social.0.url', null)
@@ -666,7 +666,7 @@ test('editing a network edits its row instead of duplicating it', function (): v
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.social.0.url', 'https://instagram.com/atendia')
         ->call('saveCommercial')
         ->assertReturned(true);
@@ -681,7 +681,7 @@ test('the same network twice is a field error, not a database crash', function (
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.social.0.social_network_id', $instagram->id)
         ->set('form.social.0.url', 'https://instagram.com/uno')
         ->call('addSocialRow', 0)
@@ -699,13 +699,13 @@ test('the blank starter row is not an error, but a half filled one is', function
     $this->actingAs(companyAdmin());
 
     // Untouched: it is simply not a network.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->call('saveCommercial')
         ->assertHasNoErrors()
         ->assertReturned(true);
 
     // A link with no network picked has to say so, not be dropped in silence.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.social.0.url', 'https://instagram.com/atendia')
         ->call('saveCommercial')
         ->assertHasErrors(['social.0.social_network_id']);
@@ -716,7 +716,7 @@ test('a malformed email or website bounces on the server', function (): void {
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'no-es-un-email')
         ->set('form.data.web', 'atendia')
         ->call('saveCommercial')
@@ -728,7 +728,7 @@ test('the commercial step never creates the company', function (): void {
     // instead of inventing a half filled row.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'hola@atendia.app')
         ->call('saveCommercial')
         ->assertReturned(false)
@@ -743,7 +743,7 @@ test('discarding the commercial step brings back the contact and the networks', 
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'escrito@y.arrepentido')
         ->set('form.social.0.url', 'https://instagram.com/otro')
         ->call('addSocialRow', 0)
@@ -759,7 +759,7 @@ test('discarding the commercial step does not touch the main one', function (): 
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'Escrito en el paso 1')
         ->set('form.data.email', 'escrito@y.arrepentido')
         ->call('discardCommercial')
@@ -772,7 +772,7 @@ test('the commercial panel is rebuilt on discard, same as the main one', functio
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSeeHtml('wire:key="step-commercial-0"')
         ->call('discardCommercial')
         ->assertSeeHtml('wire:key="step-commercial-1"');
@@ -780,7 +780,7 @@ test('the commercial panel is rebuilt on discard, same as the main one', functio
 
 test('the front routes save and discard to the action of the step it is on', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->toContain('await this.$wire.saveCommercial()')
@@ -804,7 +804,7 @@ test('discarding the main step brings back what was saved', function (): void {
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'Escrito y arrepentido')
         ->set('form.data.tagline', 'Otra frase')
         ->call('discardMain')
@@ -822,7 +822,7 @@ test('discarding brings back the cascade too, not just the region', function ():
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.country_id', $otherCountry->id)   // this also clears province and region
         ->assertSet('form.data.region_id', null)
         ->call('discardMain')
@@ -834,7 +834,7 @@ test('discarding brings back the cascade too, not just the region', function ():
 test('with no company saved, discarding leaves the main step blank', function (): void {
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->set('form.data.tax_id', '30123456789')
         ->call('discardMain')
@@ -850,7 +850,7 @@ test('discarding the main step does not touch what was typed in the second one',
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'Escrito y arrepentido')
         ->set('form.data.email', 'nuevo@atendia.app')
         ->call('discardMain')
@@ -863,7 +863,7 @@ test('discarding clears the errors of the rejected attempt', function (): void {
     // of what is on screen now.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->call('saveMain')
         ->assertHasErrors(['legal_name'])
         ->call('discardMain')
@@ -878,7 +878,7 @@ test('discarding rebuilds the panel instead of trusting the diff', function (): 
 
     $this->actingAs(companyAdmin());
 
-    $component = Livewire::test('configuration.company')
+    $component = Livewire::test('admin.company.index')
         ->assertSeeHtml('wire:key="step-main-0"')
         ->call('discardMain');
 
@@ -887,7 +887,7 @@ test('discarding rebuilds the panel instead of trusting the diff', function (): 
 
 test('the front discards the step it is standing on and drops its own error bag', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->toContain('x-on:click="discard(step)"')
@@ -910,7 +910,7 @@ function fillMainStep(?Region $region = null, ?TaxCondition $taxCondition = null
     $region ??= Region::factory()->create();
     $taxCondition ??= TaxCondition::factory()->create();
 
-    return Livewire::test('configuration.company')
+    return Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->set('form.data.tagline', 'Tu negocio, atendido por IA')
         ->set('form.data.region_id', $region->id)
@@ -990,7 +990,7 @@ test('saving the main step leaves the commercial columns alone', function (): vo
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->set('form.data.email', 'pisado@atendia.app')
         ->call('saveMain')
@@ -1005,7 +1005,7 @@ test('an empty main step bounces on the server and saves nothing', function (): 
     // rejected, and every required field has to name itself.
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->call('saveMain')
         ->assertHasErrors(['legal_name', 'region_id', 'address', 'tax_condition_id', 'tax_id'])
         ->assertReturned(null);
@@ -1037,7 +1037,7 @@ test('a tax id longer than its column bounces instead of crashing Postgres', fun
 
 test('the front saves the step it is standing on and only unlocks after the server said yes', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->toContain('await this.$wire.saveMain()')
@@ -1059,7 +1059,7 @@ test('the actions close the screen at the bottom, with the same foot as the cata
     // They used to sit above the steps: on a form this long the save button was
     // already off screen by the time the user finished filling it in.
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     expect($blade)->toContain('class="catalog-form-foot config-foot"')
@@ -1075,7 +1075,7 @@ test('the actions close the screen at the bottom, with the same foot as the cata
 
 test('the save button hits the step the user is standing on, not the whole screen', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     // The step travels as an argument because it lives in the stepper's scope,
@@ -1090,7 +1090,7 @@ test('the front rules are split per step so an error can never land on a hidden 
     // one the button would look dead while the error was painted on a panel
     // nobody can see.
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     preg_match('/rules: \{(.*?)\n            \},/s', $blade, $bag);
@@ -1107,7 +1107,7 @@ test('with no company saved the button says that saving is what opens the next s
 
     // The server already renders the right label, so there is no flash of the
     // wrong one before Alpine boots.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSeeHtml('>'.__('company.save_continue').'</span>');
 });
 
@@ -1118,14 +1118,14 @@ test('with the company already saved the button goes back to plain save', functi
 
     // Both labels live in the x-text expression, so what is asserted is the text
     // the server actually painted inside the span.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSeeHtml('>'.__('company.save').'</span>')
         ->assertDontSeeHtml('>'.__('company.save_continue').'</span>');
 });
 
 test('changing step clears the errors of the step being left behind', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/configuration/⚡company.blade.php')
+        resource_path('views/components/admin/company/⚡index.blade.php')
     );
 
     $stepper = file_get_contents(resource_path('views/components/ui/stepper.blade.php'));
@@ -1145,7 +1145,7 @@ test('the company is welcomed the first time it saves an email', function (): vo
 
     $this->actingAs(companyAdmin());
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'hola@atendia.app')
         ->call('saveCommercial')
         ->assertReturned(true);
@@ -1167,7 +1167,7 @@ test('the welcome is not sent again on later saves', function (): void {
 
     // A company that already had an address is not being welcomed, it is being
     // edited — and a change of address is not a welcome.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.email', 'otro@atendia.app')
         ->call('saveCommercial')
         ->assertReturned(true);
@@ -1185,7 +1185,7 @@ test('the main step never sends the welcome', function (): void {
 
     // The company is born here, but its address is not: there is nobody to
     // write to yet.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.data.legal_name', 'AtendIa SRL')
         ->set('form.data.region_id', $region->id)
         ->set('form.data.address', 'Calle Falsa 123')
@@ -1347,12 +1347,12 @@ test('the screen shows the stored logo, built as a request-aware URL', function 
 
     // Not Storage::url(): the disk's URL is pinned to APP_URL and behind the
     // proxy that comes out http on an https page, where the browser blocks it.
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->assertSee(str_replace('/', '\\/', asset('storage/logos/stored.svg')), escape: false);
 });
 
 test('the logo field is the real control, not the mock-up it used to be', function (): void {
-    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+    $blade = file_get_contents(resource_path('views/components/admin/company/⚡index.blade.php'));
 
     expect($blade)->toContain('<x-inputsform.file')
         ->toContain('wire:model="form.logo_light_file"')
@@ -1404,7 +1404,7 @@ test('removing a logo drops a pick that was never saved, quietly', function (): 
     // Nothing stored is lost, so there is no toast to show either.
     fillMainStep()->call('saveMain');
 
-    Livewire::test('configuration.company')
+    Livewire::test('admin.company.index')
         ->set('form.logo_light_file', fakeLogo())
         ->call('removeLogo', 'logo_path_light')
         ->assertSet('form.logo_light_file', null)
@@ -1428,7 +1428,7 @@ test('only a logo column can be emptied through remove', function (): void {
 test('a stored logo warns before going, through the system dialog', function (): void {
     // Whitespace is collapsed because Pint's Blade rule puts one attribute per
     // line; what the test pins is the pairing, not the line layout.
-    $blade = preg_replace('/\s+/', ' ', file_get_contents(resource_path('views/components/configuration/⚡company.blade.php')));
+    $blade = preg_replace('/\s+/', ' ', file_get_contents(resource_path('views/components/admin/company/⚡index.blade.php')));
 
     expect($blade)->toContain('x-on:file-remove="removeLogo($event.detail.name)"')
         ->toContain('async removeLogo(field) {')
@@ -1437,7 +1437,7 @@ test('a stored logo warns before going, through the system dialog', function ():
 });
 
 test('discarding a step asks first, through the system dialog', function (): void {
-    $blade = file_get_contents(resource_path('views/components/configuration/⚡company.blade.php'));
+    $blade = file_get_contents(resource_path('views/components/admin/company/⚡index.blade.php'));
 
     // What was typed and not saved cannot be brought back: the dialog is the
     // only chance to keep it.

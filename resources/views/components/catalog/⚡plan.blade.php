@@ -1,6 +1,10 @@
 <?php
 
+use App\Actions\Catalog\ArchivePlan;
+use App\Actions\Catalog\RestorePlan;
 use App\Classes\Main\Plan;
+use App\Dto\NotificationDto;
+use App\Enums\NotificationType;
 use App\Interfaces\Catalog\DataTable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\PlanForm;
@@ -31,6 +35,32 @@ new class extends Component
         return new SubscriptionPlan;
     }
 
+    /** Takes the plan off sale; whoever holds it keeps it. The reason is said, never a silent no. */
+    public function archive(int $id): void
+    {
+        $result = app(ArchivePlan::class)->handle($id);
+
+        $this->dispatchNotification(match ($result) {
+            ArchivePlan::ARCHIVED => new NotificationDto(__('catalog.plan.archive.done'), NotificationType::Success),
+            ArchivePlan::HAS_TRIAL => new NotificationDto(__('catalog.plan.archive.has_trial'), NotificationType::Warning),
+            ArchivePlan::LAST_SOLD => new NotificationDto(__('catalog.plan.archive.last_sold'), NotificationType::Warning),
+            default => new NotificationDto(__('notifications.not_found'), NotificationType::Error),
+        });
+
+        $this->reloadTable();
+    }
+
+    public function restore(int $id): void
+    {
+        $plan = app(RestorePlan::class)->handle($id);
+
+        $this->dispatchNotification($plan === null
+            ? new NotificationDto(__('notifications.not_found'), NotificationType::Error)
+            : new NotificationDto(__('catalog.plan.archive.restored'), NotificationType::Success));
+
+        $this->reloadTable();
+    }
+
     /**
      * The landing's own card for the plan being edited, with what is typed laid
      * over the saved figures. It comes back as the real markup, so the preview
@@ -47,7 +77,8 @@ new class extends Component
             return '';
         }
 
-        $ladder = Plan::ladder();
+        // The plan being edited may be archived: its card is still previewed, in its place.
+        $ladder = Plan::ladderFor($plan);
         $index = (int) collect($ladder)->search(fn (Plan $tier): bool => $tier->code === $code);
 
         return Blade::render('<x-site.plan-card :plan="$plan" :previous="$previous" :first="$first" :last="$last" />', [
@@ -115,6 +146,7 @@ new class extends Component
             <td>
                 <span class="status-tag is-brand" x-show="row.featured">{{ __('catalog.plan.tags.featured') }}</span>
                 <span class="status-tag is-info" x-show="row.trial" x-text="{{ \Illuminate\Support\Js::from(__('catalog.plan.tags.trial', ['days' => ':days'])) }}.replace(':days', row.trial)"></span>
+                <span class="status-tag is-neutral" x-show="row.archived">{{ __('catalog.plan.tags.archived') }}</span>
             </td>
         </x-catalog.table>
     </x-slot:list>
@@ -125,6 +157,35 @@ new class extends Component
             :deletable="false"
             title-key="name"
         >
+            {{-- Archiving lives in the form, not on the row: a seventh column made the
+            table overflow at 1280, and taking a plan off sale is a decision, not a click. --}}
+            <x-slot:actions>
+                <template x-if="mode === 'edit' && current && ! current.archived">
+                    <x-ui.button
+                        variant="ghost"
+                        icon="archive"
+                        class="catalog-btn-danger"
+                        x-on:click="dialog.confirm({
+                            title: {{ \Illuminate\Support\Js::from(__('catalog.plan.archive.title')) }},
+                            message: {{ \Illuminate\Support\Js::from(__('catalog.plan.archive.message')) }},
+                            accept: {{ \Illuminate\Support\Js::from(__('catalog.plan.archive.accept')) }},
+                            type: 'warning',
+                        }).then(async (ok) => { if (ok) { await $wire.archive(current.id); backToList(); } })"
+                    >
+                        {{ __('catalog.plan.archive.action') }}
+                    </x-ui.button>
+                </template>
+                <template x-if="mode === 'edit' && current && current.archived">
+                    <x-ui.button
+                        variant="ghost"
+                        icon="rotate-ccw"
+                        x-on:click="$wire.restore(current.id).then(() => backToList())"
+                    >
+                        {{ __('catalog.plan.archive.restore') }}
+                    </x-ui.button>
+                </template>
+            </x-slot:actions>
+
             {{-- An edit reaches whoever is on the plan the moment it is saved: said before, not after. --}}
             <template x-if="current && current.businesses > 0">
                 <x-ui.alert variant="warning" icon="triangle-alert" class="mb-3">

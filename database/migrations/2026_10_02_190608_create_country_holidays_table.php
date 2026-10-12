@@ -24,6 +24,8 @@ return new class extends Migration
             $table->unsignedTinyInteger('day')->nullable();
             $table->smallInteger('easter_offset')->nullable()->comment('Days from Easter Sunday: -2 is Good Friday');
             $table->date('on_date')->nullable()->comment('A holiday of ONE year: that exact date, and it does not repeat');
+            $table->unsignedTinyInteger('weekday')->nullable()->comment('With `month` and `nth`, "the first Monday of February": 0 = Sunday ... 6 = Saturday');
+            $table->smallInteger('nth')->nullable()->comment('Which one of that weekday in the month: 1 to 4, or -1 for the last');
             $table->boolean('is_active')->default(true)->comment('Off = ignored everywhere, without deleting the row');
             $table->timestamps();
 

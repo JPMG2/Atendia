@@ -83,7 +83,7 @@ test('an admin sees the latest entries, newest first', function (): void {
 
     $this->actingAs(logsAdmin());
 
-    $component = Livewire::test('configuration.logs');
+    $component = Livewire::test('admin.logs.index');
 
     $entries = $component->get('entries');
 
@@ -110,7 +110,7 @@ test('the copy control feeds the clipboard from the raw block', function (): voi
 
     $this->actingAs(logsAdmin());
 
-    $html = Livewire::test('configuration.logs')->html();
+    $html = Livewire::test('admin.logs.index')->html();
 
     // Verbatim from the raw block, with the environment in front of it: an
     // entry pasted alone starts a round of questions about PHP and install.
@@ -168,7 +168,7 @@ test('the whole file travels in one paste, context first', function (): void {
 
     $this->actingAs(logsAdmin());
 
-    $html = Livewire::test('configuration.logs')->html();
+    $html = Livewire::test('admin.logs.index')->html();
 
     expect($html)->toContain('x-ref="bundle"')
         ->toContain('Undefined variable')
@@ -217,7 +217,7 @@ test('the screen refuses to switch to a file outside the known list', function (
 
     $this->actingAs(logsAdmin());
 
-    Livewire::test('configuration.logs')
+    Livewire::test('admin.logs.index')
         ->call('selectFile', '../../.env')
         ->assertSet('file', 'laravel.log');
 });
@@ -228,7 +228,7 @@ test('with several log files the screen offers them and switches', function (): 
 
     $this->actingAs(logsAdmin());
 
-    $component = Livewire::test('configuration.logs')
+    $component = Livewire::test('admin.logs.index')
         ->call('selectFile', 'worker.log')
         ->assertSet('file', 'worker.log');
 
@@ -241,7 +241,7 @@ test('an empty log says so instead of showing a blank page', function (): void {
 
     $this->actingAs(logsAdmin());
 
-    Livewire::test('configuration.logs')->assertSee(__('logs.empty'));
+    Livewire::test('admin.logs.index')->assertSee(__('logs.empty'));
 });
 
 test('the logs option hangs from the settings item of the admin menu', function (): void {

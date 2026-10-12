@@ -73,11 +73,17 @@ return [
 
         'kinds' => [
             'fixed' => 'Cada año',
+            'nth' => 'Día de la semana',
             'easter' => 'Desde Pascua',
             'once' => 'Un solo año',
         ],
 
         'status' => ['active' => 'Vigente', 'inactive' => 'Apagado'],
+
+        // "El primer lunes de febrero": the weekday names are all masculine, so the ordinals agree.
+        'nth_when' => ':nth :weekday de :month',
+        'nth' => [1 => 'primer', 2 => 'segundo', 3 => 'tercer', 4 => 'cuarto', -1 => 'último'],
+        'weekdays' => [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'],
 
         'easter' => [
             'sunday' => 'Domingo de Pascua',
@@ -96,7 +102,10 @@ return [
             'name' => 'Nombre del feriado',
             'name_placeholder' => 'Ej. Día de la Independencia',
             'kind' => 'Cuándo cae',
-            'kind_hint' => 'Cada año el mismo día, contado desde Pascua, o solo en un año',
+            'kind_hint' => 'Cada año el mismo día, un día de la semana del mes, contado desde Pascua, o solo en un año',
+            'nth' => 'Cuál del mes',
+            'weekday' => 'Día de la semana',
+            'nth_hint' => 'Ej. el primer lunes de febrero',
             'month' => 'Mes',
             'day' => 'Día',
             'easter_offset' => 'Días desde Pascua',
@@ -202,6 +211,19 @@ return [
         'tags' => [
             'featured' => 'Más elegido',
             'trial' => 'Prueba :days días',
+            'archived' => 'Archivado',
+        ],
+
+        'archive' => [
+            'action' => 'Archivar el plan',
+            'restore' => 'Volver a vender',
+            'title' => 'Archivar este plan',
+            'message' => 'Deja de ofrecerse en la landing y en los cambios de plan. Los negocios que ya lo tienen lo conservan, con su precio y sus cupos.',
+            'accept' => 'Archivar el plan',
+            'done' => 'El plan se archivó: ya no se vende.',
+            'restored' => 'El plan volvió a la venta.',
+            'has_trial' => 'Este plan lleva la prueba gratis: pásala a otro plan antes de archivarlo.',
+            'last_sold' => 'Es el único plan que se vende: deja otro a la venta antes de archivarlo.',
         ],
 
         'statistics' => [

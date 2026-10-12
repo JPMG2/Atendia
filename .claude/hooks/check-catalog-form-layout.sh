@@ -83,7 +83,7 @@ case "$file" in
             *components/client/⚡section-hours.blade.php) skip=1 ;;
             *components/⚡ws-demo.blade.php) skip=1 ;;
             *components/catalog/toolbar.blade.php) skip=1 ;;
-            *components/catalog/⚡manager.blade.php) skip=1 ;;
+            *components/admin/catalogs/⚡index.blade.php) skip=1 ;;
         esac
 
         if [ "$skip" -eq 0 ]; then

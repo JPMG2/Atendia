@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Moderation;
 
+use App\Actions\Compliance\RecordComplianceEvent;
 use App\Dto\ModerationVerdictDto;
+use App\Enums\ComplianceEventKind;
 use App\Enums\ModerationSeverity;
 use App\Mail\ModerationAlert;
 use App\Messaging\Channels\Email;
@@ -30,6 +32,14 @@ class RecordModerationFlag
             ['business_id' => $business->id, 'fingerprint' => $fingerprint, 'source' => $source],
             ['kind' => $kind, 'severity' => $verdict->severity, 'category' => $verdict->category, 'score' => $verdict->score],
         );
+
+        if ($flag->wasRecentlyCreated) {
+            app(RecordComplianceEvent::class)->handle(
+                $business->id,
+                $verdict->severity === ModerationSeverity::Severe ? ComplianceEventKind::ContentSevere : ComplianceEventKind::ContentRejected,
+                $source.' · '.$verdict->category,
+            );
+        }
 
         if ($verdict->severity === ModerationSeverity::Severe) {
             $this->suspend->handle($business, $verdict->category);

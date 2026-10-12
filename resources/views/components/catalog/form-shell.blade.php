@@ -38,6 +38,10 @@
                 {{ __('catalog.common.delete') }}</x-ui.button>
         </template>
     @endif
+    {{-- What only this master can do to a record besides delete it (archive a plan). --}}
+    @isset($actions)
+        {{ $actions }}
+    @endisset
     <span class="catalog-foot-grow"></span>
     {{-- Cancel wears the universal watch-out colour (owner's convention,
     2026-09-15) — never a ghost that reads as loose text. --}}

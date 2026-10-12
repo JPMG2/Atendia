@@ -31,7 +31,7 @@ class CountryHolidayForm extends BaseCatalogForm
             'country_id' => ['required', 'integer', Rule::exists('countries', 'id')],
             'name' => ['required', 'string', 'min:3', 'max:80'],
             // The payload nulls what the kind does not use, so only the date of its own shape is demanded.
-            'month' => [Rule::requiredIf($kind === CountryHoliday::KIND_FIXED), 'nullable', 'integer', 'between:1,12'],
+            'month' => [Rule::requiredIf(in_array($kind, [CountryHoliday::KIND_FIXED, CountryHoliday::KIND_NTH], true)), 'nullable', 'integer', 'between:1,12'],
             'day' => [
                 Rule::requiredIf($kind === CountryHoliday::KIND_FIXED),
                 'nullable',
@@ -44,13 +44,16 @@ class CountryHolidayForm extends BaseCatalogForm
             ],
             'easter_offset' => [Rule::requiredIf($kind === CountryHoliday::KIND_EASTER), 'nullable', 'integer', 'between:-60,70'],
             'on_date' => [Rule::requiredIf($kind === CountryHoliday::KIND_ONCE), 'nullable', 'date_format:Y-m-d'],
+            // A fifth Monday does not exist every month: only 1 to 4, or the last one, which always does.
+            'weekday' => [Rule::requiredIf($kind === CountryHoliday::KIND_NTH), 'nullable', 'integer', 'between:0,6'],
+            'nth' => [Rule::requiredIf($kind === CountryHoliday::KIND_NTH), 'nullable', 'integer', Rule::in([1, 2, 3, 4, CountryHoliday::LAST])],
             'is_active' => ['boolean'],
         ];
     }
 
     protected function getValidationAttributes(): array
     {
-        return collect(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'is_active'])
+        return collect(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'weekday', 'nth', 'is_active'])
             ->mapWithKeys(fn (string $field): array => [$field => __('catalog.country_holiday.fields.'.$field)])
             ->all();
     }

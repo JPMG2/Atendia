@@ -255,6 +255,28 @@ test('the month bill includes the audio minutes, like each row above it does', f
         ->and($spend->board->first()->totals->cost)->toEqualWithDelta($spend->bill->cost, 0.0001);
 });
 
+test('the voice minutes are a column of the screen and of the export, and the messages stay under the threads', function (): void {
+    $admin = spendAdmin();
+    astraPriced();
+    $business = Business::factory()->create(['name' => 'Peluquería Lola']);
+    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
+
+    // 150 seconds is 2,5 minutes: a figure that shows a decimal is not rounded away.
+    ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $conversation->id, 'audio_seconds' => 150]);
+    AiUsage::query()->create(['business_id' => $business->id, 'kind' => 'AsistenteAtendia', 'model' => 'gpt-6-astra', 'input_tokens' => 1000]);
+
+    Livewire::test('admin.ai-usage.index')
+        ->assertSee(__('admin.ai_usage.audio'))
+        ->assertSee('2,5')
+        ->assertSee(__('admin.ai_usage.messages_note', ['count' => 1]));
+
+    $csv = $this->actingAs($admin)
+        ->get(route('reports.show', ['report' => 'ai-spend', 'format' => 'csv']))
+        ->assertOk();
+
+    expect((string) $csv->getContent())->toContain(__('admin.ai_usage.audio'))->toContain('2,5');
+});
+
 test('a call with no business is charged to the platform, not to a client', function (): void {
     spendAdmin();
     astraPriced();

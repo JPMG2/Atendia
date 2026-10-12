@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Compliance\RecordComplianceEvent;
+use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\BillingPaymentReviewed;
@@ -24,6 +26,7 @@ class ApprovePayment
         // Read BEFORE the transaction writes Active over it: a renewal and a
         // first payment look identical afterwards, and only one is news.
         $wasTrialing = $payment->subscription?->status === SubscriptionStatus::Trialing;
+        $wasLapsed = in_array($payment->subscription?->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Paused], true);
 
         DB::transaction(function () use ($payment, $reviewer): void {
             $subscription = $payment->subscription;
@@ -53,6 +56,11 @@ class ApprovePayment
                 'paused_at' => null,
             ])->save();
         });
+
+        // The answer to a late or paused payment goes in the same file as the fault.
+        if ($wasLapsed) {
+            app(RecordComplianceEvent::class)->handle($payment->business_id, ComplianceEventKind::PaymentRegularized, null, $reviewer->id);
+        }
 
         $this->mailVerdict($payment);
 

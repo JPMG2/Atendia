@@ -2346,6 +2346,16 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* The work panel: what the business wrote, what we said, and what we told ourselves. */
   .sup-panel { display:flex; flex-direction:column; gap:14px; }
   .sup-meta-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  /* A business's file: one line per thing that happened, the answer drawn like the fault. */
+  .cmp-event { display:flex; gap:12px; align-items:flex-start; padding:10px 0;
+               border-top:1px solid var(--border-subtle); }
+  .cmp-event:first-of-type { border-top:0; }
+  .cmp-event-icon { flex:none; width:32px; height:32px; border-radius:999px; display:grid; place-items:center;
+                    background:var(--info-soft); color:var(--info); }
+  .cmp-event-icon[data-tone="danger"]  { background:var(--danger-soft);  color:var(--danger); }
+  .cmp-event-icon[data-tone="warning"] { background:var(--warning-soft); color:var(--warning); }
+  .cmp-event-icon[data-tone="success"] { background:var(--success-soft); color:var(--success); }
+  .cmp-event-body { min-width:0; display:flex; flex-direction:column; gap:2px; }
   .sup-msg { display:flex; flex-direction:column; gap:4px; max-width:92%; }
   .sup-msg.is-ours { align-self:flex-end; align-items:flex-end; }
   .sup-bubble { margin:0; padding:10px 12px; border-radius:var(--radius-md); background:var(--surface-sunken);
@@ -3336,7 +3346,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
 
   /* Redondea sus esquinas inferiores para acompañar el radio del card: antes eso
      lo resolvía el `overflow:hidden` del panel, que además recortaba el combobox. */
-  .catalog-form-foot { display:flex; align-items:center; gap:10px; padding:16px 20px;
+  /* `flex-wrap`: a master with an extra action (archive a plan) has more buttons
+     than a phone is wide; they drop to a second line instead of pushing the page. */
+  .catalog-form-foot { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:16px 20px;
                        border-top:1px solid var(--border-subtle); background:var(--surface-sunken);
                        border-bottom-left-radius:var(--radius-card);
                        border-bottom-right-radius:var(--radius-card); }

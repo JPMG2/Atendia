@@ -90,7 +90,7 @@ test('the hub renders the Negocio group and opens its own editor', function (): 
     $sectors = CatalogForm::where('component', 'catalog.business-sector')->sole();
 
     Livewire::actingAs($admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->assertSee('Negocio')
         ->assertSee('Rubros')
         ->assertSee('Actividades')

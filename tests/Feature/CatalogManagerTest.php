@@ -27,7 +27,7 @@ test('the hub page carries its translated tab title', function (): void {
 
 test('the hub lists the seeded masters grouped from catalog_forms', function (): void {
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->assertSee('Ubicaciones')
         ->assertSee('Facturación')
         ->assertSee('Países')
@@ -37,7 +37,7 @@ test('the hub lists the seeded masters grouped from catalog_forms', function ():
 
 test('the rail has a search box and its own scrollable body', function (): void {
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->assertSeeHtml('catalogRail(')          // the Alpine rail is mounted
         ->assertSeeHtml('catalog-rail-search')   // fixed head, does not scroll away
         ->assertSeeHtml('catalog-rail-body')     // bounded height + own scroll
@@ -47,7 +47,7 @@ test('the rail has a search box and its own scrollable body', function (): void 
 
 test('the hub shows the empty state with no master open by default', function (): void {
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->assertSet('selectedId', null)
         ->assertSee(__('catalog.hub.empty_title'))
         // The empty state explains WHAT a catalog is instead of repeating the
@@ -60,7 +60,7 @@ test('selecting a master shows its panel in the second div', function (): void {
     $currency = CatalogForm::where('component', 'catalog.currency')->first();
 
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->call('select', $currency->id)
         ->assertSet('selectedId', $currency->id)
         ->assertSee('Divisas ISO 4217 disponibles para precios y facturación.');
@@ -70,7 +70,7 @@ test('opening a master compacts the rail and closing it expands again', function
     $currency = CatalogForm::where('component', 'catalog.currency')->first();
 
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->call('select', $currency->id)
         ->assertSeeHtml('is-collapsed')          // rail compacts while a master is open
         ->assertSeeHtml('catalog-panel-close')   // the master can be closed
@@ -83,7 +83,7 @@ test('every rail item carries its title as a tooltip for the icon-only state', f
     $currency = CatalogForm::where('component', 'catalog.currency')->first();
 
     Livewire::actingAs($this->admin)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->call('select', $currency->id)
         ->assertSeeHtml('title="Monedas"')
         ->assertSeeHtml('title="Países"');
@@ -93,14 +93,14 @@ test('masters are hidden from a user without their permission', function (): voi
     $client = User::factory()->create(); // rol client: sin permisos catalog.*
 
     Livewire::actingAs($client)
-        ->test('catalog.manager')
+        ->test('admin.catalogs.index')
         ->assertSee(__('catalog.hub.none'))
         ->assertDontSee('Monedas');
 });
 
 test('the rail marks what matched the search, without building HTML from data', function (): void {
     $blade = file_get_contents(
-        resource_path('views/components/catalog/⚡manager.blade.php')
+        resource_path('views/components/admin/catalogs/⚡index.blade.php')
     );
 
     // The hits are painted as separate spans and never through x-html: a title

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Moderation;
 
+use App\Actions\Compliance\RecordComplianceEvent;
+use App\Enums\ComplianceEventKind;
 use App\Mail\BusinessSuspended;
 use App\Messaging\Channels\Email;
 use App\Messaging\Channels\WhatsApp;
@@ -23,6 +25,8 @@ class SuspendBusiness
         }
 
         $business->forceFill(['suspended_at' => now(), 'suspension_reason' => $reason])->save();
+
+        app(RecordComplianceEvent::class)->handle($business->id, ComplianceEventKind::Suspended, $reason);
 
         $emails = $business->users()->pluck('email')->filter()->values()->all();
 

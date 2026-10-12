@@ -74,3 +74,7 @@
 2026-10-12	check-comment-golden-rules	app/Models/Company.php
 2026-10-12	check-comment-golden-rules	app/Models/Company.php
 2026-10-12	check-comment-golden-rules	app/Models/Company.php
+2026-10-12	check-comment-golden-rules	app/Enums/ComplianceEventKind.php
+2026-10-12	check-comment-golden-rules	database/migrations/2026_09_09_185964_create_compliance_events_table.php
+2026-10-12	check-comment-golden-rules	app/Actions/Compliance/BackfillComplianceEvents.php
+2026-10-12	check-blade-query-golden-rules	resources/views/components/admin/compliance/⚡index.blade.php

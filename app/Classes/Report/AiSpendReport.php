@@ -8,7 +8,8 @@ use App\Classes\Main\AiSpend;
 use App\Dto\ReportDto;
 use App\Interfaces\Main\Report;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Date;
 
 /** What each business consumed and cost in a month (admin), for the accountant. */
 class AiSpendReport implements Report
@@ -29,6 +30,7 @@ class AiSpendReport implements Report
                     $row->totals->calls,
                     $row->threads,
                     $row->messages,
+                    number_format($row->audio, 1, ',', ''),
                     $row->totals->input,
                     $row->totals->cached,
                     $row->totals->output,
@@ -47,6 +49,7 @@ class AiSpendReport implements Report
                     __('admin.ai_usage.calls'),
                     __('admin.ai_usage.threads'),
                     __('admin.ai_usage.messages'),
+                    __('admin.ai_usage.audio'),
                     __('admin.ai_usage.tokens_in'),
                     __('admin.ai_usage.tokens_cached'),
                     __('admin.ai_usage.tokens_out'),
@@ -61,13 +64,15 @@ class AiSpendReport implements Report
     }
 
     /** The month on screen when the button was pressed, or this one. */
-    private function month(): Carbon
+    private function month(): CarbonInterface
     {
         $asked = (string) request()->query('mes', '');
 
+        // The interface and not a class: the app hands out immutable dates, and a
+        // concrete return type turned every export into a 500.
         return rescue(
-            fn (): Carbon => Carbon::createFromFormat('Y-m', $asked)->startOfMonth(),
-            fn (): Carbon => now()->startOfMonth(),
+            fn (): CarbonInterface => Date::createFromFormat('Y-m', $asked)->startOfMonth(),
+            fn (): CarbonInterface => now()->startOfMonth(),
             report: false,
         );
     }

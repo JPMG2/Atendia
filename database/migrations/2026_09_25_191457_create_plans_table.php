@@ -35,6 +35,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('ai_alert_share')->default(35)->comment('Umbral de aviso: % del precio que puede comerse la IA antes de avisar');
             $table->unsignedSmallInteger('trial_days')->nullable()->comment('Solo el plan de la prueba gratis');
             $table->boolean('is_featured')->default(false)->comment('El "Más elegido" de las fichas');
+            $table->timestamp('archived_at')->nullable()->comment('Archivado: ya no se vende, pero quien lo tiene lo conserva');
 
             $table->timestamps();
         });

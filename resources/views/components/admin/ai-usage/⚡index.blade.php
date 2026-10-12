@@ -136,6 +136,12 @@ new class extends Component
         return number_format($amount, 0, ',', '.');
     }
 
+    /** Minutes of audio, one decimal: a voice note is seconds, not hours. */
+    public function minutes(float $minutes): string
+    {
+        return number_format($minutes, 1, ',', '.');
+    }
+
     /** An amount nobody can read as something it is not. */
     public function money(?float $usd): string
     {
@@ -254,7 +260,7 @@ new class extends Component
                         <tr>
                             <th>{{ __('admin.ai_usage.business') }}</th>
                             <th class="is-num">{{ __('admin.ai_usage.threads') }}</th>
-                            <th class="is-num">{{ __('admin.ai_usage.messages') }}</th>
+                            <th class="is-num">{{ __('admin.ai_usage.audio') }}</th>
                             <th class="is-num">{{ __('admin.ai_usage.calls') }}</th>
                             <th class="is-num">{{ __('admin.ai_usage.tokens') }}</th>
                             <th class="is-num">{{ __('admin.ai_usage.cached') }}</th>
@@ -292,8 +298,12 @@ new class extends Component
                                         />
                                     </span>
                                 </td>
-                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.threads') }}">{{ $this->count($row->threads) }}</td>
-                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.messages') }}">{{ $this->count($row->messages) }}</td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.threads') }}">
+                                    {{ $this->count($row->threads) }}
+                                    {{-- The messages stayed on the screen, under the threads they belong to. --}}
+                                    <span class="aiu-note">{{ __('admin.ai_usage.messages_note', ['count' => $this->count($row->messages)]) }}</span>
+                                </td>
+                                <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.audio') }}">{{ $this->minutes($row->audio) }}</td>
                                 <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.calls') }}">{{ $this->count($row->totals->calls) }}</td>
                                 <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.tokens') }}">
                                     {{ $this->count($row->totals->input + $row->totals->cached + $row->totals->output) }}
@@ -333,8 +343,11 @@ new class extends Component
                     <tfoot>
                         <tr>
                             <th scope="row">{{ __('admin.ai_usage.month_total') }}</th>
-                            <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.threads') }}">{{ $this->count($this->totals->threads) }}</td>
-                            <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.messages') }}">{{ $this->count($this->totals->messages) }}</td>
+                            <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.threads') }}">
+                                {{ $this->count($this->totals->threads) }}
+                                <span class="aiu-note">{{ __('admin.ai_usage.messages_note', ['count' => $this->count($this->totals->messages)]) }}</span>
+                            </td>
+                            <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.audio') }}">{{ $this->minutes($this->spend->audioSeconds / 60) }}</td>
                             <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.calls') }}">{{ $this->count($this->totals->calls) }}</td>
                             <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.tokens') }}">{{ $this->count($this->totals->tokens) }}</td>
                             <td class="is-num font-mono" data-label="{{ __('admin.ai_usage.cached') }}">

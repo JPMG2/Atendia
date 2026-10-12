@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Compliance\RecordComplianceEvent;
+use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
 use App\Mail\BillingPaymentReviewed;
 use App\Messaging\Channels\Email;
@@ -20,6 +22,8 @@ class RejectPayment
             'rejection_reason' => $reason,
             'reviewed_by' => $reviewer->id,
         ])->save();
+
+        app(RecordComplianceEvent::class)->handle($payment->business_id, ComplianceEventKind::PaymentRejected, $reason, $reviewer->id);
 
         $email = $payment->business?->billing_email;
 

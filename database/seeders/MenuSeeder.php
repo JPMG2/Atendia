@@ -92,6 +92,7 @@ class MenuSeeder extends Seeder
         Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_adoption', 'icon' => 'signal', 'route_name' => 'admin.adoption', 'permission' => 'adoption.view', 'sort_order' => 2]);
         Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_incidents', 'icon' => 'frown', 'route_name' => 'admin.incidents', 'permission' => 'incidents.view', 'sort_order' => 3]);
         Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_contacts', 'icon' => 'users', 'route_name' => 'admin.contacts', 'permission' => 'contacts.view', 'sort_order' => 4]);
+        Menu::create(['parent_id' => $businesses->id, 'panel' => 'admin', 'label_key' => 'menu.admin_compliance', 'icon' => 'shield-alert', 'route_name' => 'admin.compliance', 'permission' => 'compliance.view', 'sort_order' => 5]);
 
         // Cobros: the money. Planes (E7) and Consumo de IA (A3) land here.
         $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 3]);

@@ -79,7 +79,7 @@ test('loading probes every integration and reports state, latency and detail', f
 
     $this->actingAs(integrationsAdmin());
 
-    $component = Livewire::test('configuration.integrations')->call('load');
+    $component = Livewire::test('admin.integrations.index')->call('load');
 
     $statuses = $component->get('statuses');
 
@@ -142,7 +142,7 @@ test('one integration can be re-probed alone after a fix', function (): void {
 
     $this->actingAs(integrationsAdmin());
 
-    $component = Livewire::test('configuration.integrations')->call('recheck', 'whatsapp');
+    $component = Livewire::test('admin.integrations.index')->call('recheck', 'whatsapp');
 
     expect($component->get('statuses'))->toHaveKey('whatsapp')
         ->and($component->get('statuses'))->toHaveCount(1);
@@ -153,7 +153,7 @@ test('a key that is not an integration is ignored instead of probed', function (
 
     // `recheck` is reachable from the browser console: an arbitrary string
     // must die quietly, never reach a probe.
-    Livewire::test('configuration.integrations')
+    Livewire::test('admin.integrations.index')
         ->call('recheck', 'anything-else')
         ->assertSet('statuses', []);
 });

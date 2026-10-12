@@ -15,10 +15,11 @@ use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * One national holiday of one country: a fixed date, a day counted from
- * Easter Sunday, or the exact date of ONE year. Shared by every business of
- * that country, so it carries no `business_id` — like {@see Country} itself.
+ * Easter Sunday, the nth weekday of a month ("first Monday of February"), or
+ * the exact date of ONE year. Shared by every business of that country, so it
+ * carries no `business_id` — like {@see Country} itself.
  */
-#[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'is_active'])]
+#[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'weekday', 'nth', 'is_active'])]
 class CountryHoliday extends Model implements DataTable
 {
     use LogsActivity;
@@ -29,11 +30,16 @@ class CountryHoliday extends Model implements DataTable
 
     public const string KIND_ONCE = 'once';
 
+    public const string KIND_NTH = 'nth';
+
+    /** The "last" of the month: the only value of `nth` that counts from the end. */
+    public const int LAST = -1;
+
     /** Who added, moved or switched off a day, and from what: the audit screen reads it. */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'is_active'])
+            ->logOnly(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'weekday', 'nth', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('catalog');
@@ -49,15 +55,18 @@ class CountryHoliday extends Model implements DataTable
             'day' => 'integer',
             'easter_offset' => 'integer',
             'on_date' => 'date:Y-m-d',
+            'weekday' => 'integer',
+            'nth' => 'integer',
             'is_active' => 'boolean',
         ];
     }
 
-    /** Which of the three shapes this row is: the date it holds decides, never a stored label. */
+    /** Which of the four shapes this row is: the date it holds decides, never a stored label. */
     public function kind(): string
     {
         return match (true) {
             $this->on_date !== null => self::KIND_ONCE,
+            $this->weekday !== null => self::KIND_NTH,
             $this->easter_offset !== null => self::KIND_EASTER,
             default => self::KIND_FIXED,
         };
@@ -97,6 +106,7 @@ class CountryHoliday extends Model implements DataTable
         return match ($this->kind()) {
             self::KIND_FIXED => 'fixed:'.$this->month.'-'.$this->day,
             self::KIND_EASTER => 'easter:'.$this->easter_offset,
+            self::KIND_NTH => 'nth:'.$this->month.'-'.$this->weekday.'-'.$this->nth,
             default => null,
         };
     }
@@ -142,6 +152,11 @@ class CountryHoliday extends Model implements DataTable
                 $this->easter_offset < 0 => __('catalog.country_holiday.easter.before', ['days' => abs($this->easter_offset)]),
                 default => __('catalog.country_holiday.easter.after', ['days' => $this->easter_offset]),
             },
+            self::KIND_NTH => __('catalog.country_holiday.nth_when', [
+                'nth' => __('catalog.country_holiday.nth.'.$this->nth),
+                'weekday' => mb_strtolower(__('catalog.country_holiday.weekdays.'.$this->weekday)),
+                'month' => __('catalog.country_holiday.months.'.$this->month),
+            ]),
             default => $this->day.' '.__('catalog.country_holiday.of').' '.__('catalog.country_holiday.months.'.$this->month),
         };
     }
@@ -173,6 +188,7 @@ class CountryHoliday extends Model implements DataTable
                 'date' => match ($holiday->kind()) {
                     self::KIND_ONCE => $holiday->on_date->toImmutable(),
                     self::KIND_EASTER => $easter->addDays($holiday->easter_offset),
+                    self::KIND_NTH => self::nthWeekday($year, $holiday->month, $holiday->weekday, $holiday->nth),
                     default => CarbonImmutable::create($year, $holiday->month, $holiday->day),
                 },
                 'name' => $holiday->name,
@@ -180,6 +196,20 @@ class CountryHoliday extends Model implements DataTable
             ])
             ->sortBy(fn (array $holiday): string => $holiday['date']->format('Y-m-d'))
             ->values();
+    }
+
+    /**
+     * "The first Monday of February" of a year. Counted from the start of the
+     * month, or from its end when `$nth` is {@see self::LAST}: both are always
+     * there, which a fifth Monday is not.
+     */
+    public static function nthWeekday(int $year, int $month, int $weekday, int $nth): CarbonImmutable
+    {
+        $first = CarbonImmutable::create($year, $month, 1);
+
+        return $nth === self::LAST
+            ? $first->lastOfMonth($weekday)
+            : $first->nthOfMonth($nth, $weekday);
     }
 
     /** The one-year holiday a country has on an exact date, switched on or off; null when there is none. */

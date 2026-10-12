@@ -56,7 +56,7 @@ class SubscriptionPlan extends Model implements DataTable
     /**
      * The plans as the catalog list shows them, floor first.
      *
-     * @return Collection<int, array{id: int, code: string, name: string, price: int, conversations: int, seats: int, ask: int, businesses: int, featured: bool, trial: ?int}>
+     * @return Collection<int, array{id: int, code: string, name: string, price: int, conversations: int, seats: int, ask: int, businesses: int, featured: bool, trial: ?int, archived: bool}>
      */
     public function catalogRows(): Collection
     {
@@ -74,6 +74,7 @@ class SubscriptionPlan extends Model implements DataTable
                 'businesses' => Subscription::countOnPlan($plan->code),
                 'featured' => (bool) $plan->is_featured,
                 'trial' => $plan->trial_days === null ? null : (int) $plan->trial_days,
+                'archived' => $plan->archived_at !== null,
             ])
             ->values();
     }
@@ -86,7 +87,8 @@ class SubscriptionPlan extends Model implements DataTable
     public static function ladderRule(?int $id, string $field): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) use ($id, $field): void {
-            $plans = self::query()->orderBy('sort_order')->get();
+            // Only what is sold is a ladder: an archived plan sits outside it.
+            $plans = self::query()->whereNull('archived_at')->orderBy('sort_order')->get();
             $at = $plans->search(fn (self $plan): bool => $plan->id === $id);
 
             if ($at === false) {
@@ -122,7 +124,7 @@ class SubscriptionPlan extends Model implements DataTable
     /**
      * Every plan by code, floor first. Cached until a row changes.
      *
-     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool}>
+     * @return array<string, array{price: int, conversations_per_month: int, team_seats: int, messages_per_hour: int, audio_minutes_per_month: int, statistics: string, ask_per_month: int, catalog_photos: int, photos_per_item: int, reads_media: bool, departments: bool, daily_digest: bool, trial_days: ?int, is_featured: bool, ai_alert_share: int, archived: bool}>
      */
     public static function catalog(): array
     {
@@ -145,6 +147,7 @@ class SubscriptionPlan extends Model implements DataTable
                 'trial_days' => $plan->trial_days === null ? null : (int) $plan->trial_days,
                 'is_featured' => (bool) $plan->is_featured,
                 'ai_alert_share' => (int) $plan->ai_alert_share,
+                'archived' => $plan->archived_at !== null,
             ]])
             ->all());
     }
@@ -152,6 +155,6 @@ class SubscriptionPlan extends Model implements DataTable
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['is_featured' => 'boolean', 'reads_media' => 'boolean', 'departments' => 'boolean', 'daily_digest' => 'boolean'];
+        return ['is_featured' => 'boolean', 'reads_media' => 'boolean', 'departments' => 'boolean', 'daily_digest' => 'boolean', 'archived_at' => 'datetime'];
     }
 }

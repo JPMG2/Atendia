@@ -863,6 +863,17 @@ class Business extends Model
         return $this->hasOne(Subscription::class)->latestOfMany();
     }
 
+    /**
+     * Its file: what happened to it and what was done about it, newest last
+     * in the table, read newest first by {@see ComplianceEvent::timelineOf()}.
+     *
+     * @return HasMany<ComplianceEvent, $this>
+     */
+    public function complianceEvents(): HasMany
+    {
+        return $this->hasMany(ComplianceEvent::class);
+    }
+
     /** The effective entitlements, trial and floor already resolved. */
     /** @return HasMany<Payment, $this> */
     public function payments(): HasMany

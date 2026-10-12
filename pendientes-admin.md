@@ -143,12 +143,12 @@ Backend hecho (`ai_usages` + listener `RecordAiUsage` + `atendia:ai-costs`).
       "no cargado". Lo que falta es el DATO de ella (ver G).
 - [x] ~~Rehecha entera el 2026-10-05~~ (ver E14 y E14-bis): era legible como dato y
       ilegible como pantalla.
-- [ ] **El minutaje de audio perdió su columna** al pasar a tabla: nueve columnas no entran a
-      1280px sin cortar. Sigue dentro del costo (`AiSpend` lo valoriza) pero **NO está en los
-      tres exportables**: `AiSpendReport` tiene 10 columnas y ninguna es audio (corregido el
-      2026-10-07; antes esta línea afirmaba que sí salía). Hoy el dato no se ve en ninguna
-      parte: si lo querés en pantalla hay que sacarle el lugar a otra columna, y en los
-      exportables entra sin pelear por ancho.
+- [x] ~~**El minutaje de audio perdió su columna**~~ (2026-10-12): vuelve como "Audio (min)" en la
+      tabla y en los tres exportables. Para que entrara a 1280px, los mensajes pasaron a una
+      nota bajo las conversaciones (el dato no se perdió, solo dejó de pelear por columna).
+      Esto destapó un 500 que ya existía: `AiSpendReport::month()` declaraba
+      `Illuminate\Support\Carbon` y la app entrega `CarbonImmutable`, así que **ningún
+      exportable de Consumo de IA funcionaba**; hoy hay un test que lo descarga.
 
 ### A4. Usuarios y accesos — HECHO 2026-10-05
 `/admin/usuarios`, bajo Plataforma.
@@ -377,10 +377,12 @@ Pedido de ella 2026-10-07. Los feriados ya existen y el horario los respeta, per
 - [x] `CountryHolidaySeeder` pasó a sembrar **solo el país que no tiene ningún feriado**: un
       re-sembrado no devuelve lo que se renombró, se apagó o se reemplazó
 - [x] Argentina (12) y Venezuela (12), los países con negocio, ya estaban cargados
-- [ ] Los otros 20 países siguen sin feriados: cargarlos a mano desde la pantalla cuando haya
-      un negocio de ese país (no se inventan fechas de memoria). Lo que NO entra todavía son
-      los feriados "el primer lunes de febrero" (México, EE. UU.): hoy se cargan como fecha de
-      UN año, cada año; una cuarta forma ("enésimo día de la semana") lo resolvería
+- [x] ~~La cuarta forma, "el enésimo día de la semana de un mes"~~ (2026-10-12): el primer
+      lunes de febrero, el último viernes de octubre. `weekday` + `nth` (1 a 4, o -1 = el
+      último; un quinto lunes no existe todos los meses y no se ofrece). Cae sola cada año.
+- [ ] Los otros 20 países siguen sin feriados, **a propósito**: solo Argentina y Venezuela tienen
+      negocios, y la regla es no inventar fechas de memoria. No hay paquete de feriados en el
+      proyecto; sumar uno (p. ej. `spatie/holidays`) es una dependencia nueva y la decide ella.
 
 ---
 
@@ -477,9 +479,12 @@ Regla en `arquitectura-paneles.md`.
 - [x] Ojo con la trampa: `admin.payments` era a la vez nombre de RUTA y de COMPONENTE. Solo
       cambió el del componente (`admin.payments.index`); la ruta, el menú y los `route()`
       siguen igual. El primer reemplazo los pisó a los dos y 4 tests se cayeron.
-- [ ] **Sin mover a propósito**: `catalog.manager` y los tres de `configuration.*` sirven al
-      admin pero viven en sus propias carpetas. `catalog/` arrastra 14 maestros; moverlos es
-      otra tarea y hay que decidirla aparte.
+- [x] ~~`catalog.manager` y los tres de `configuration.*`~~ (2026-10-12): hoy son
+      `admin.catalogs.index`, `admin.company.index`, `admin.integrations.index` y
+      `admin.logs.index`, con rutas, tests y el hook de layout apuntando a las nuevas.
+- [ ] **Sin mover a propósito**: los 14+ maestros de `catalog/` siguen ahí. Sus nombres de
+      componente están guardados en la tabla `catalog_forms`; moverlos es una migración de
+      datos y otra decisión.
 
 ### E2. Tickets de soporte en orden de llegada
 **AMPLIADO el 2026-10-08 (v2, commit `ac780c3`).** Pantalla de trabajo: cada reporte abre en un panel
@@ -519,10 +524,24 @@ Hoy los incumplimientos viven desparramados en tres lugares que no se hablan: mo
 contenido (`moderation_flags` + suspensión), pagos vencidos o pausados, y los reclamos de
 soporte. La pantalla que ella pide es el **legajo por negocio**: todo lo que un negocio hizo
 mal, en un solo lugar y en orden.
-- [ ] **Antes de construir, una pasada de investigación** (pedido de ella, 2026-10-03):
-      cómo arman los grandes el expediente de confianza de una cuenta, no una lista de retos.
-- [ ] Definir qué entra: ¿solo moderación? ¿también impago? ¿también abuso de la IA?
-- [ ] La pantalla (legajo por negocio, con el historial y qué se hizo)
+- [x] ~~Pasada de investigación~~ (2026-10-12). Lo que se pudo sostener con fuentes: Meta decide
+      con la gravedad, **el historial de cumplimiento** y el impacto, y escala en pasos (aviso,
+      restricción, baja) con una ventana de recuperación; WhatsApp Business muestra un estado
+      vigente más lo que lo causó. De ahí: el legajo es una línea de tiempo con la falta Y su
+      respuesta, y arriba un estado vigente derivado, no una lista de retos.
+- [x] ~~Qué entra~~: moderación de contenido (rechazado y grave), suspensión (con apelación y
+      levantamiento) y pagos (comprobante rechazado, atraso, pausa y regularización). **No
+      entran los reclamos de soporte**: es el negocio pidiendo ayuda, no un incumplimiento. Y
+      tampoco el gasto de IA contra el plan: es un costo nuestro, no una falta de ellos.
+- [x] ~~La pantalla~~ (2026-10-12): **Cumplimiento** (`/admin/cumplimiento`, bajo Negocios,
+      permiso `compliance.view`). Lista por situación vigente (suspendido, pago atrasado, con
+      observaciones, en regla) y, por negocio, su legajo en un panel lateral.
+      **Hallazgo que cambió el diseño:** suspender y levantar solo pisaban `suspended_at` y el
+      mensaje de apelación se blanqueaba, así que un negocio suspendido dos veces no dejaba
+      historia. Hoy cada hecho se escribe cuando pasa (`compliance_events`, tabla de tenant con
+      RLS) y se rellenó lo que ya existía con `BackfillComplianceEvents` (10 líneas en
+      `atendia`). Lo que se levantó antes de esto no dejó rastro y no se inventó.
+- [ ] El legajo todavía no se ve desde la ficha del negocio: hoy se entra por Cumplimiento.
 
 ### E5. Datos del WhatsApp del landing configurables en días especiales
 NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
@@ -606,11 +625,15 @@ La fuente única ya existe y está blindada: tabla `plans`, clase `Plan`, guardi
 - [x] Guardar invalida el caché de `Plan` y la landing cambia sola (test: `CatalogPlanTest`)
 - [x] `PlanSeeder` pasó a **solo-crear** (`firstOrCreate`): un deploy ya no pisa lo editado
 - [x] `GoldenRulesPlanPromiseTest` y `PlanSourceTest` siguen verdes: editar no afloja el candado
-- [ ] **Aplazado a propósito: CREAR y ARCHIVAR un plan.** Crear exige su nombre y su ficha, que
-      hoy viven en el idioma (`plan.names.*`, `landing.pricing.*`) y se leen en ~15 pantallas:
-      moverlos a la base es un trabajo aparte. Borrar un plan con negocios encima no se hace
-      nunca; el camino es **archivar** (no se vende, los que lo tienen lo conservan), y eso toca
-      `Plan::ladder()`. Se decide con ella cuándo hace falta un cuarto plan.
+- [x] ~~**ARCHIVAR un plan**~~ (2026-10-12): `plans.archived_at`. Un plan archivado no sale en
+      `Plan::ladder()` (landing, cambios de plan, "el plan más bajo que tiene X") pero
+      `Plan::named()` lo sigue encontrando por su código, así que quien lo tiene lo conserva con
+      su precio y sus cupos; `Plan::ladderFor($actual)` lo mantiene en la escalera de ese negocio.
+      Dos no se pueden archivar, y la pantalla dice por qué: el que lleva la prueba gratis y el
+      último que se vende. Se hace desde el formulario del plan, con el diálogo del sistema.
+- [ ] **CREAR un plan** sigue aplazado a propósito: exige su nombre y su ficha, que hoy viven
+      en el idioma (`plan.names.*`, `landing.pricing.*`) y se leen en ~15 pantallas. Se decide
+      con ella cuándo hace falta un cuarto plan.
 
 ### E8. Enum que puedan vivir en BD
 NUEVO · criterio en `arquitectura-paneles.md`
@@ -993,15 +1016,21 @@ aislados (`Atributos`, `Planes` del layout de catálogos y la red social de Comp
 carga, como ya estaba anotado. **No hubo una segunda corrida completa de PHP después de los
 arreglos.** Capturas miradas en 1280 y 390.
 
+**Lo que siguió el mismo día** (segundo commit del 12/10; detalle en cada sección):
+- [x] **A3** Audio en Consumo de IA, y el 500 del exportable que destapó.
+- [x] **E7** Archivar planes (crear sigue aplazado).
+- [x] **E1** Las cuatro pantallas a `components/admin/`.
+- [x] **A12** La cuarta forma de feriado. Los datos de los otros 20 países: decisión de ella.
+- [x] **E4** El legajo: pantalla **Cumplimiento** y `compliance_events`.
+
+**Verificación de ese segundo commit:** suite PHP completa 2652 verdes, 1 saltado, 0 rojos (576 s);
+suite de navegador de los 62 archivos, 365 verdes y 1 rojo (`PanelResponsiveBrowserTest`,
+"my-payments se desborda 2 px") que pasa aislado en sus 8 recorridos: el flake de siempre bajo
+carga. Capturas miradas en 1280 y 390 para Planes, Cumplimiento y Consumo de IA.
+
 **Falta (de lo que ella pidió el 12/10):**
-- [ ] **A3** Minutaje de audio sin lugar en Consumo de IA (propuesto: reemplaza "mensajes").
-- [ ] **E7** Archivar planes desde el admin (propuesto: archivar, no crear).
-- [ ] **E1** Mover `catalog.manager` y `configuration.*` a `components/admin/` (hay que decidir).
-- [ ] **A12** Feriados de los otros 20 países y la forma "primer lunes de febrero".
-- [ ] **E4** Legajo de incumplimientos por negocio: primero la pasada de investigación y que ella
-      defina qué cuenta como incumplimiento (propuesto: moderación, impago y reclamos).
-- [ ] **Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte" y los
-      campos nuevos de Compañía.
+- [ ] **Veredicto visual de ella** sobre "WhatsApp por temporada", "Tipos de reporte", el
+      archivar de Planes, Cumplimiento y los campos nuevos de Compañía.
 - [ ] **Cargar en Compañía** el horario de atención y el mensaje de apertura (están vacíos en
       `atendia`; sin horario el pie no dibuja el punto).
 - [ ] Zona horaria propia de Compañía (hoy la del país de su región), si hace falta.

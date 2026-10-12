@@ -124,3 +124,27 @@ test('saving a changed price from the form reaches the plan and goes back to the
 
     expect(SubscriptionPlan::query()->where('code', 'negocio')->value('price'))->toBe(85);
 });
+
+test('a plan is archived from its row, through the system dialog, and shows as archived', function (): void {
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+
+    $page->click('Planes')->wait(0.8);
+
+    // Premium is neither the trial plan nor the last one sold: its form offers the action.
+    $page->script('Array.from(document.querySelectorAll(".catalog-table tbody tr")).find(r => r.innerText.includes("Premium")).click()');
+    $page->wait(1)
+        ->assertSee('Archivar el plan')
+        ->click('Archivar el plan')
+        ->wait(0.6)
+        ->assertSee('Archivar este plan')
+        ->screenshot(filename: 'catalog-plans-archive-dialog');
+
+    // The dialog's own accept carries the same words as the button behind it.
+    $page->script('Array.from(document.querySelectorAll("[x-ref=accept]")).pop().click()');
+    $page->wait(1.5)
+        ->assertSee('Archivado')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'catalog-plans-archived');
+
+    expect(SubscriptionPlan::query()->where('code', 'premium')->value('archived_at'))->not->toBeNull();
+});

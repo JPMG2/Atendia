@@ -25,13 +25,13 @@ Route::livewire('/negocios', 'admin.businesses.index')->name('businesses')->midd
 
 // Catalogs, the system masters: a master-detail hub. Each master's CRUD is
 // wired when its turn comes.
-Route::livewire('/catalogs', 'catalog.manager')->name('catalogs')->middleware('permission:catalogs.manage');
+Route::livewire('/catalogs', 'admin.catalogs.index')->name('catalogs')->middleware('permission:catalogs.manage');
 
 // Company: AtendIa's own data, a single row.
-Route::livewire('/company', 'configuration.company')->name('company')->middleware('permission:company.manage');
+Route::livewire('/company', 'admin.company.index')->name('company')->middleware('permission:company.manage');
 
 // Integrations: the health of everything the platform consumes.
-Route::livewire('/integrations', 'configuration.integrations')->name('integrations')->middleware('permission:integrations.view');
+Route::livewire('/integrations', 'admin.integrations.index')->name('integrations')->middleware('permission:integrations.view');
 
 // Testimonials: the moderation desk before an owner's word hits the landing.
 Route::livewire('/testimonios', 'admin.testimonials.index')->name('testimonials')->middleware('permission:testimonials.moderate');
@@ -70,7 +70,7 @@ Route::livewire('/auditoria', 'admin.audit.index')->name('audit')->middleware('p
 Route::livewire('/ajustes', 'admin.settings.index')->name('settings')->middleware('permission:settings.manage');
 
 // System logs: the latest entries, built to be copied into a help chat.
-Route::livewire('/logs', 'configuration.logs')->name('logs')->middleware('permission:logs.view');
+Route::livewire('/logs', 'admin.logs.index')->name('logs')->middleware('permission:logs.view');
 
 // Proof of life for the WebSocket. It goes when the real chat exists.
 Route::livewire('/ws-demo', 'ws-demo')->name('ws-demo');
@@ -82,6 +82,10 @@ Route::livewire('/adopcion', 'admin.adoption.index')->name('adoption')->middlewa
 // The desk of what went wrong: threads left unanswered, handoffs nobody took,
 // customers who left annoyed and jobs that died. Sorted by severity.
 Route::livewire('/incidencias', 'admin.incidents.index')->name('incidents')->middleware('permission:incidents.view');
+
+// The file of each business: what happened to it (a refused file, a suspension,
+// a late payment) and what was done about it, in order.
+Route::livewire('/cumplimiento', 'admin.compliance.index')->name('compliance')->middleware('permission:compliance.view');
 
 // The radar: the people who reach the platform, and the ones who talk to more
 // than one business — the only view no single business can have.
