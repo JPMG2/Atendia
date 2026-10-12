@@ -503,18 +503,14 @@ new class extends Component
                 late, red when it is overdue. The words say the same, so colour
                 is never the only signal. --}}
                 <span
-                    @class([
-                        'status-tag font-mono',
-                        'is-success' => $this->activityBeat === 'fresh',
-                        'is-warning' => $this->activityBeat === 'late',
-                        'is-danger' => $this->activityBeat === 'stale',
-                    ])
+                    class="beat-chip"
                     title="{{ __('admin.home.activity.beat.'.$this->activityBeat) }}"
                     data-testid="activity-beat"
                     data-beat="{{ $this->activityBeat }}"
                 >
-                    <span class="dot"></span>
-                    {{ __('admin.home.activity.computed', ['date' => $this->activity->computed_at->format('d/m/Y H:i')]) }}
+                    <span class="beat-dot" aria-hidden="true"></span>
+                    <span class="beat-word">{{ __('admin.home.activity.beat_word.'.$this->activityBeat) }}</span>
+                    <span class="beat-date font-mono">{{ __('admin.home.activity.computed', ['date' => $this->activity->computed_at->format('d/m/Y H:i')]) }}</span>
                 </span>
             @endif
         </div>

@@ -765,6 +765,7 @@ return [
             'status' => 'Estado',
         ],
 
+        'history' => '{0} Ver historial|[1,*] Ver historial (:count)',
         'cancel' => [
             'title' => 'Baja',
             'hint' => 'Sigue andando hasta el :date, que es lo que ya pagó.',
@@ -802,6 +803,12 @@ return [
                 'body' => 'Pasaron más de :hours h y debería correr cada hora. Mientras tanto el Inicio muestra ese ranking con su fecha y marcado como vencido. Revisa que el programador de tareas esté funcionando.',
                 'cta' => 'Abrir el Inicio',
                 'closing' => 'Este aviso llega una sola vez por corte; si vuelve a calcularse y se corta de nuevo, te escribimos otra vez.',
+            ],
+            // The word is the signal; the colour and the pulse only back it up.
+            'beat_word' => [
+                'fresh' => 'Al día',
+                'late' => 'Atrasado',
+                'stale' => 'Sin actualizar',
             ],
             'beat' => [
                 'fresh' => 'Al día: el cálculo corrió hace poco',

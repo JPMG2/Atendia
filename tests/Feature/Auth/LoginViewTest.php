@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+// It logs a user in: without this the user, its device and its login stayed in the test database.
+uses(RefreshDatabase::class);
 
 test('the login screen renders with the Atendia design system', function (): void {
     $response = $this->get('/login');

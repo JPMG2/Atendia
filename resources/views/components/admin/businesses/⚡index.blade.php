@@ -4,6 +4,7 @@ use App\Actions\Billing\CancelSubscription;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Models\Business;
+use App\Models\ComplianceEvent;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -99,6 +100,13 @@ new class extends Component
     public function ficha(): ?Business
     {
         return $this->open === null ? null : Business::ledger($this->open);
+    }
+
+    /** How many lines its compliance history holds: what the link to it says. */
+    #[Computed]
+    public function historyCount(): int
+    {
+        return $this->open === null ? 0 : ComplianceEvent::countOf($this->open);
     }
 
     public function toggle(int $id): void
@@ -259,7 +267,24 @@ new class extends Component
         @php($subscription = $this->ficha->subscription)
 
         <x-ui.card class="bp-card mt-3">
-            <div class="bp-card-head"><h2>{{ $this->ficha->name }}</h2></div>
+            <div class="bp-card-head">
+                <h2>{{ $this->ficha->name }}</h2>
+
+                {{-- Where a decision about THIS business is taken, so its history is one
+                click from here and not a search on another screen. --}}
+                @can('compliance.view')
+                    <span class="bp-head-action">
+                        <x-ui.button
+                            variant="secondary"
+                            size="sm"
+                            icon="shield-alert"
+                            :href="route('admin.compliance', ['negocio' => $this->ficha->id])"
+                            wire:navigate
+                            data-testid="biz-history-{{ $this->ficha->id }}"
+                        >{{ trans_choice('admin.businesses.history', $this->historyCount, ['count' => $this->historyCount]) }}</x-ui.button>
+                    </span>
+                @endcan
+            </div>
 
             <div class="stat-grid stat-grid-fill">
                 <x-ui.stat-card

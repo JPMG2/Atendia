@@ -214,6 +214,27 @@ test('moderation codes read in words and what somebody wrote is shown as they wr
         ->and($unknown->readableDetail())->toBe('una-categoria-nueva');
 });
 
+test('the business sheet links to its history, with how many lines it holds, for who may read it', function (): void {
+    $business = Business::factory()->create(['name' => 'Peluquería Lola']);
+    ComplianceEvent::factory()->count(2)->create(['business_id' => $business->id]);
+
+    $this->actingAs($this->admin);
+
+    Livewire::test('admin.businesses.index')
+        ->set('open', $business->id)
+        ->assertSee('Ver historial (2)')
+        ->assertSeeHtml(route('admin.compliance', ['negocio' => $business->id]));
+
+    // Support reads businesses but not their compliance history: no link, not a link that 403s.
+    $support = User::factory()->create(['email_verified_at' => now()]);
+    $support->assignRole('support');
+    $this->actingAs($support);
+
+    Livewire::test('admin.businesses.index')
+        ->set('open', $business->id)
+        ->assertDontSee('Ver historial');
+});
+
 test('the screen opens for staff with the permission and closes for a client', function (): void {
     $client = User::factory()->create(['email_verified_at' => now()]);
     $client->syncRoles(['client']);

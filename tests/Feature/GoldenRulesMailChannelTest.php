@@ -5,8 +5,12 @@ declare(strict_types=1);
 use App\Mail\AccountEmailVerification;
 use App\Mail\AccountPasswordReset;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
+
+// It creates a user: without this the row stayed in the test database for the whole run.
+uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------

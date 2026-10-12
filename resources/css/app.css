@@ -388,6 +388,22 @@
                 font-weight:700; letter-spacing:.02em; padding:3px 9px;
                 border-radius:var(--radius-pill); white-space:nowrap; }
   .status-tag .dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex:none; }
+  /* The pulse of a job that feeds a screen: a chip that says "Al día / Atrasado / Sin actualizar"
+     in words, with a dot that beats while it is alive. A 6px dot inside a tag was not seen. */
+  .beat-chip { display:inline-flex; align-items:center; gap:10px; padding:6px 14px 6px 12px;
+               border-radius:999px; font-size:var(--text-sm); font-weight:700;
+               color:var(--success); background:var(--success-soft);
+               border:1px solid color-mix(in srgb, currentColor 28%, transparent); }
+  .beat-chip[data-beat="late"]  { color:var(--warning); background:var(--warning-soft); }
+  .beat-chip[data-beat="stale"] { color:var(--danger);  background:var(--danger-soft); }
+  .beat-dot { position:relative; width:12px; height:12px; border-radius:50%; background:currentColor; flex:none; }
+  .beat-dot::after { content:""; position:absolute; inset:0; border-radius:50%; background:currentColor;
+                     animation:beat-ping 1.8s var(--ease-out) infinite; }
+  /* Only the live one breathes: a stalled job has nothing to say by moving. */
+  .beat-chip:not([data-beat="fresh"]) .beat-dot::after { animation:none; }
+  .beat-date { font-weight:500; color:var(--text-muted); }
+  @keyframes beat-ping { 0% { transform:scale(1); opacity:.55; } 70%, 100% { transform:scale(2.6); opacity:0; } }
+  @media (prefers-reduced-motion:reduce) { .beat-dot::after { animation:none; } }
   .status-tag.is-success { color:var(--success); background:var(--success-soft); }
   .status-tag.is-info    { color:var(--info);    background:var(--info-soft); }
   .status-tag.is-warning { color:var(--warning); background:var(--warning-soft); }

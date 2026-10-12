@@ -8,9 +8,12 @@ use App\Dto\ModerationVerdictDto;
 use App\Services\ContentModeration;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Once;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
@@ -21,6 +24,20 @@ abstract class TestCase extends BaseTestCase
      * is touched.
      */
     private const string TESTING_DATABASE = 'atendia_testing';
+
+    /** @var array<class-string, true> */
+    private static array $checkedClasses = [];
+
+    /**
+     * Rows per table when the run began, taken after the rebuild and its seeds.
+     *
+     * @var array<string, int>|null
+     */
+    private static ?array $baseline = null;
+
+    private static bool $leakReported = false;
+
+    private static ?string $lastTest = null;
 
     /**
      * Plans are catalog data every screen and gate reads: RefreshDatabase
@@ -42,6 +59,60 @@ abstract class TestCase extends BaseTestCase
         $this->guardAgainstProductionDatabase();
         $this->fakeLeakedPasswordCheck();
         $this->fakeContentModeration();
+
+        // Once per class, and before its own setup: a row already here was
+        // committed by something that ran earlier in this same run.
+        if (! isset(self::$checkedClasses[static::class]) && in_array(RefreshDatabase::class, class_uses_recursive($this), true)) {
+            self::$checkedClasses[static::class] = true;
+            $this->assertNoCommittedRowsLeft();
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        self::$lastTest = static::class.'::'.$this->name();
+
+        parent::tearDown();
+    }
+
+    /**
+     * Fails, once per run, when a table holds more rows than when the run began.
+     *
+     * Those rows make a test pass alone and fail in the full suite. The baseline
+     * is the first look, just after the rebuild, so what the rebuild seeds is
+     * never a leak. The message names the last test that finished before it.
+     */
+    protected function assertNoCommittedRowsLeft(): void
+    {
+        if (self::$leakReported) {
+            return;
+        }
+
+        $counts = $this->tableRowCounts();
+
+        if (self::$baseline === null) {
+            self::$baseline = $counts;
+
+            return;
+        }
+
+        $leaked = collect($counts)
+            ->filter(fn (int $rows, string $table): bool => $rows > (self::$baseline[$table] ?? 0))
+            ->keys()
+            ->map(fn (string $table): string => Str::afterLast($table, '.'))
+            ->all();
+
+        if ($leaked === []) {
+            return;
+        }
+
+        self::$leakReported = true;
+
+        throw new RuntimeException(
+            'Committed rows are left in "'.self::TESTING_DATABASE.'" ('.implode(', ', $leaked).') before '.static::class.'. '
+            .'A test that ran earlier in this run did not roll back; the last one to finish was '
+            .(self::$lastTest ?? 'none').'. Look for DB::commit(), a second connection, or a process that writes on its own.'
+        );
     }
 
     /**
@@ -79,6 +150,27 @@ abstract class TestCase extends BaseTestCase
                 return true;
             }
         });
+    }
+
+    /**
+     * Rows per table, in one query: the guard looks once per class and the suite has hundreds.
+     *
+     * @return array<string, int>
+     */
+    private function tableRowCounts(): array
+    {
+        $grammar = DB::connection()->getQueryGrammar();
+
+        $probes = collect(Schema::getTableListing())
+            ->map(fn (string $table): string => 'select '.$grammar->quoteString($table).' as t, count(*) as n from '.$grammar->wrapTable($table));
+
+        if ($probes->isEmpty()) {
+            return [];
+        }
+
+        return collect(DB::select($probes->implode(' union all ')))
+            ->mapWithKeys(fn (object $row): array => [$row->t => (int) $row->n])
+            ->all();
     }
 
     private function guardAgainstProductionDatabase(): void

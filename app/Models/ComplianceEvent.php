@@ -172,6 +172,11 @@ class ComplianceEvent extends Model
         };
     }
 
+    public static function countOf(int $businessId): int
+    {
+        return self::query()->where('business_id', $businessId)->count();
+    }
+
     /** The business a file belongs to, with the subscription its standing is read from. */
     public static function businessOf(int $businessId): ?Business
     {

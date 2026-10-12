@@ -12,28 +12,42 @@
 
 ## ★ Lo que falta DE VERDAD para cerrar el Admin — verificado el 2026-10-12
 
-Revisado casilla por casilla contra el código y la base (no contra lo que decía el archivo). De
-todo lo abierto, **solo hay DOS cosas de construcción**; el resto es decisión, dato o visto bueno
-de ella, o espera la reunión.
+Revisado casilla por casilla contra el código y la base (no contra lo que decía el archivo). **La
+construcción del Admin está terminada**: lo que queda es decisión, dato o espera de la reunión.
 
-**1. Construcción mía, sin depender de nadie**
-- [ ] **El historial desde la ficha del negocio** (E4): un enlace "Ver historial (N)" en la ficha
-      que abre Cumplimiento ya posicionado en ese negocio (`?negocio=ID` ya funciona).
-- [ ] **Guardián de la base de pruebas** (I): un control que falle si un test deja filas
-      confirmadas en `atendia_testing`. Es deuda de la suite, no una pantalla del Admin.
+**1. Construcción mía — TERMINADA el 2026-10-12**
+- [x] ~~**El historial desde la ficha del negocio**~~ (E4): "Ver historial (N)" en la ficha, que
+      abre Cumplimiento ya posicionado en ese negocio. Solo lo ve quien tiene `compliance.view`:
+      Soporte lee negocios pero no historiales, y un enlace que da 403 no se dibuja.
+- [x] ~~**Guardián de la base de pruebas**~~ (I): `TestCase` mide filas por tabla contra la línea
+      de base de la corrida y falla UNA vez, nombrando las tablas y el último test que terminó.
+      **Atrapó una fuga real el mismo día:** `GoldenRulesMailChannelTest` creaba un usuario sin
+      `RefreshDatabase` y lo dejaba confirmado en cada corrida. Probado por `TestDatabaseGuardTest`.
+- [x] ~~**El latido del Inicio casi no se notaba**~~ (2026-10-12, ella): era un punto de 6 px dentro
+      de una etiqueta. Hoy es una pastilla con la palabra ("Al día", "Atrasado", "Sin actualizar"),
+      un punto de 12 px que late mientras el cálculo está al día (quieto si no, y sin movimiento
+      con "reducir movimiento"), y la fecha al lado.
 
-**2. Visto bueno suyo, en su pantalla real** (hecho y verificado con capturas; falta su ojo)
-- [ ] Inicio: tarjeta "Más movimiento", el latido, las flechas · Cobranza (J).
-- [ ] Soporte v2 (G/E2) · Adopción, Mi seguridad y la tabla de Catálogos en el teléfono (I).
-- [ ] Lo del 12/10: WhatsApp por temporada, Tipos de reporte, archivar un plan, Cumplimiento y
-      el aviso de temporada en el pie.
+**2. Visto bueno suyo — DADO el 2026-10-12** ("lo demás lo puedes poner como culminado")
+- [x] ~~Inicio y Cobranza~~ (J), salvo el latido, que se rehízo arriba.
+- [x] ~~Soporte v2~~ (G/E2) · ~~Adopción, Mi seguridad y la tabla de Catálogos en el teléfono~~ (I).
+- [x] ~~Lo del 12/10~~: WhatsApp por temporada, Tipos de reporte, archivar un plan, Cumplimiento
+      y el aviso de temporada en el pie.
 
 **3. Datos y decisiones suyas**
 - [ ] **Cargar los costos fijos del mes** (hoy en 0: Consumo de IA no muestra el resultado neto).
-- [ ] **IA:** la conversación en `gpt-6-sol` o se queda en Astra (falta la batería de Astra, ~3 a
-      4 USD) · **modelo de voz** (hoy corre uno sin precio; el catálogo trae 3 con precio) ·
-      que la clave APP esté en su propio Project de OpenAI · probar un cambio real de embeddings ·
-      el umbral de gasto de IA (35% en los tres planes).
+- [x] **Modelo de voz:** asignado `gpt-4o-transcribe` (US$ 0,006 por minuto, precio verificado).
+- [x] **Clave APP:** decidido el 2026-10-12 seguir con las dos claves en el mismo Project de
+      OpenAI. Se pierde el tope y los límites separados; el consumo por clave se ve igual en
+      nuestro Consumo de IA (`openai` / `openai-app`).
+- [x] **Embeddings:** se queda en `3-small`; cambiar a `3-large` se decide cuando haya varios
+      negocios con catálogos grandes (hoy son 36 fragmentos y no se notaría).
+- [x] **La conversación se queda en Astra** (decidido el 2026-10-12): Astra 72/72, Sol 70/72.
+      Sol falla dos veces de la misma clase que un cliente nota: da el horario sin el cierre
+      y arranca "Tenemos…" aunque no hay stock. Se reabre con gasto real, y antes se prueba
+      reforzar esas dos reglas en las instrucciones y medir de nuevo.
+- [ ] **Umbral de gasto de IA** (35% en los tres planes): revisarlo con un mes real de 3 negocios
+      pagando; hoy hay 12 centavos medidos.
 - [ ] **Producto:** tasa Bs/USD (en pausa, con su decisión) · crear un cuarto plan · paquete de
       feriados para los otros 20 países · umbrales de similitud · a quién va la respuesta citada.
 
@@ -582,7 +596,7 @@ mal, en un solo lugar y en orden.
       historia. Hoy cada hecho se escribe cuando pasa (`compliance_events`, tabla de tenant con
       RLS) y se rellenó lo que ya existía con `BackfillComplianceEvents` (10 líneas en
       `atendia`). Lo que se levantó antes de esto no dejó rastro y no se inventó.
-- [ ] El historial todavía no se ve desde la ficha del negocio: hoy se entra por Cumplimiento.
+- [x] ~~El historial desde la ficha del negocio~~ (2026-10-12): "Ver historial (N)" en la ficha.
 
 ### E5. Datos del WhatsApp del landing configurables en días especiales
 NUEVO · hermano de A8 (tags estacionales), misma mecánica de ventana de fechas
@@ -1005,7 +1019,7 @@ Los tres salieron de usar el admin de verdad. Nada de esto se tocó: cada uno pi
 - [x] **HECHO 2026-10-09.** **Aviso previo del plazo:** `atendia:staff-two-factor-warning` (09:05 diario) manda `StaffTwoFactorDeadline` el día antes a cada persona del equipo verificada que aún no lo tiene; una vez por plazo (`Cache::add` con la fecha del vencimiento en la clave, así un restablecimiento gana un aviso nuevo).
 - [x] **HECHO 2026-10-09.** **Filtro de Auditoría:** combobox "Qué pasó" (`?accion=`), chips de filtros activos con ✕ y "Limpiar todo", y "Ver historial" en cada fila de Usuarios (`?quien=ID&fuertes=0`). De paso se corrigió `AuditTrail::causerOptions()`: el spread renumeraba los ids a 0 y el combobox "Quién" ofrecía valores equivocados.
 - [x] **HECHO 2026-10-09 — las tres ideas de Auditoría/Usuarios que ella pidió:** (1) atajos `/` (a "Quién") y `c` (limpiar filtros) por `data-key-focus` / `data-key-click` en `table-enhance.js`, con la línea de atajos oculta bajo 992px; (2) la vista guardada "Reinicios del doble factor" en la fila de filtros; (3) "Recordarle" en la fila de Usuarios (`RemindStaffTwoFactor`, una vez por persona y día, compartida con el comando diario; sin contraseña a propósito: es un recordatorio, no una acción sobre la cuenta). El correo dice "mañana" solo cuando es mañana.
-- [ ] **Guardián de la base de pruebas:** un control que falle si un test deja filas confirmadas en `atendia_testing` (la causa de los falsos "flakes" de PHP).
+- [x] ~~**Guardián de la base de pruebas**~~ HECHO 2026-10-12 (ver el bloque ★): falla una vez, con las tablas y el último test; atrapó una fuga real.
 
 **Para enamorar, ofrecidas el 2026-10-09 al cerrar Planes y Feriados (sin decidir, una línea cada una):**
 - [x] **HECHO 2026-10-10 — Vista previa de la ficha:** en Planes, bajo los campos, la tarjeta de la landing sigue lo que se teclea (250 ms, sin guardar). Es el MISMO markup: `<x-site.plan-card>` (extraído de `pricing.blade.php`, que ahora lo usa) + `Plan::preview()` + `previewCard()` renderless; toggle mensual/anual.

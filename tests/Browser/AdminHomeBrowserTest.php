@@ -182,7 +182,10 @@ test('the ranking shows each business arrow and the amber pulse of a late job', 
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'admin-home-trend-'.$label);
 
+    // The pulse is read in words, and its dot is big enough to be seen (it was 6px and nobody did).
     expect($page->script('document.querySelector("[data-testid=activity-beat]").dataset.beat'))->toBe('late')
+        ->and($page->script('document.querySelector("[data-testid=activity-beat] .beat-word").textContent.trim()'))->toBe('Atrasado')
+        ->and((int) $page->script('document.querySelector("[data-testid=activity-beat] .beat-dot").getBoundingClientRect().width'))->toBeGreaterThanOrEqual(12)
         ->and((int) $page->script('document.querySelectorAll("[data-testid^=activity-trend-]").length'))->toBe(3)
         ->and((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
 })->with([
