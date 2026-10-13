@@ -30,11 +30,11 @@ test('the rubro selector answers with that rubro\'s demo business', function ():
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
 
-    AsistenteAtendia::fake(['Buscando…', 'El corte de dama cuesta $18.000.']);
+    AsistenteAtendia::fake(['Buscando…', 'Sí, hacemos el corte de dama.']);
 
-    $this->postJson(route('demo.message'), ['message' => '¿Cuánto sale el corte?', 'rubro' => 'peluqueria'])
+    $this->postJson(route('demo.message'), ['message' => '¿Hacen corte de dama?', 'rubro' => 'peluqueria'])
         ->assertOk()
-        ->assertJsonPath('reply', 'El corte de dama cuesta $18.000.');
+        ->assertJsonPath('reply', 'Sí, hacemos el corte de dama.');
 
     expect(Business::demo('peluqueria')->name)->toBe('Peluquería Lumen')
         ->and(Business::demo('kiosco')->name)->toBe('Kiosco El Faro');
@@ -44,11 +44,11 @@ test('a carousel rubro answers with its own demo business', function (): void {
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
 
-    AsistenteAtendia::fake(['Buscando…', 'Las tortas por encargo salen desde $28.000 el kilo.']);
+    AsistenteAtendia::fake(['Buscando…', 'Sí, hacemos tortas por encargo.']);
 
     $this->postJson(route('demo.message'), ['message' => '¿Hacen tortas por encargo?', 'rubro' => 'panaderia'])
         ->assertOk()
-        ->assertJsonPath('reply', 'Las tortas por encargo salen desde $28.000 el kilo.');
+        ->assertJsonPath('reply', 'Sí, hacemos tortas por encargo.');
 
     expect(Business::demo('dr-juan')->name)->toBe('Dr. Juan Herrera')
         ->and(Business::demo('veterinaria')->name)->toBe('Veterinaria Patitas');
