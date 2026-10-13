@@ -17,6 +17,7 @@ return [
 
     'reset' => 'Tu constraseña ha sido restaurada!',
     'sent' => 'Te hemos enviado un e-mail con tu token de restauración de contraseña!',
+    'requested' => 'Si ese correo está registrado, en unos minutos te llega el enlace para restablecer tu clave.',
     'token' => 'Este token no es valido.',
     'user' => 'No encontramos ningun usuario con esta dirección e-mail.',
 
