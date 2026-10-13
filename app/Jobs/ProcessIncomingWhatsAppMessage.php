@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Business\RaiseHandoff;
 use App\Actions\Business\SendHumanReply;
 use App\Actions\Business\TranslateForCustomer;
 use App\Ai\Agents\AsistenteAtendia;
+use App\Classes\Main\HandoffSignals;
 use App\Classes\Main\Plan;
 use App\Enums\ConversationStatus;
 use App\Enums\GuardVerdict;
+use App\Enums\HandoffLevel;
+use App\Enums\HandoffSignal;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
@@ -167,6 +171,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 return;
             }
 
+            $typed = (string) $text;
             $media = $this->fileMedia($conversation, $media);
             $mediaText = $this->pdfText($media);
             $body = $this->bodyFor((string) $text, $media);
@@ -199,6 +204,14 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             if ($verdict !== GuardVerdict::Ok) {
                 $evolution->sendText($this->instance, $this->from, app(TranslateForCustomer::class)->handle($conversation, __('assistant.guard.'.$verdict->value)), 1500);
+
+                return;
+            }
+
+            $signal = $this->safetySignal($business, $typed);
+
+            if ($signal !== null) {
+                $this->handOffBySignal($business, $conversation, $signal, $body, $media, $mediaText, $evolution);
 
                 return;
             }
@@ -480,6 +493,45 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         ])->save();
 
         return $inbound;
+    }
+
+    /**
+     * An emergency never waits for the model. A plain request for a person
+     * does not either, unless the owner's dial or her departments need the
+     * model's judgment (how insistent, which room).
+     */
+    private function safetySignal(Business $business, string $typed): ?HandoffSignal
+    {
+        $signal = HandoffSignals::detect($typed);
+
+        if ($signal !== HandoffSignal::HumanRequested) {
+            return $signal;
+        }
+
+        $modelDecides = $business->handoff_level === HandoffLevel::Minimal
+            || ($business->plan()->hasDepartments && $business->departments->isNotEmpty());
+
+        return $modelDecides ? null : $signal;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $media
+     */
+    private function handOffBySignal(Business $business, Conversation $conversation, HandoffSignal $signal, string $body, array $media, ?string $mediaText, EvolutionApi $evolution): void
+    {
+        $this->rememberInbound($conversation, $body, $media, $mediaText);
+
+        app(RaiseHandoff::class)->handle($business, $conversation, __("assistant.handoff.reason_{$signal->value}"));
+
+        $reply = app(TranslateForCustomer::class)->handle($conversation, __("assistant.handoff.customer_{$signal->value}"));
+
+        foreach ($this->bubbles($reply) as $bubble) {
+            $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
+        }
+
+        $this->rememberReply($conversation, $reply);
+
+        WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
     }
 
     /** @param  list<array{id: int, title: string}>  $sources */

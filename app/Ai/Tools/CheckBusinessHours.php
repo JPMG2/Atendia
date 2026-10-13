@@ -72,7 +72,9 @@ class CheckBusinessHours implements AssistantSkillTool
                     .'. Ningún cierre especial cargado para esa fecha: es el horario habitual.';
         }
 
-        $answer .= "\nHorarios de atención:\n".implode("\n", $lines);
+        // A small model answered "¿están abiertos?" with a bare "sí" and "¿a qué
+        // hora abren?" with the opening alone: the range is always both ends.
+        $answer .= "\nHorarios de atención. Cada vez que respondas sobre un día o sobre si están abiertos, incluí SIEMPRE el horario completo de ese día, de HH:MM a HH:MM:\n".implode("\n", $lines);
 
         // What is still ahead, so a customer asking "¿abren esta semana?" is
         // told about the holiday instead of finding it closed.

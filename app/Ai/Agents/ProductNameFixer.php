@@ -22,7 +22,7 @@ use Stringable;
  * nothing is rewritten without the person's confirmation ({@see NameReviewer}).
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class ProductNameFixer implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

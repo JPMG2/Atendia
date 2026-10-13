@@ -51,6 +51,10 @@ return [
         'knowledge_footer' => 'Enséñale las respuestas desde tu panel y no vuelve a pasar: :url',
     ],
 
+    'grounding' => [
+        'unconfirmed_price' => 'Ese precio no lo tengo confirmado ahora mismo. ¿Quieres que le pida a una persona del equipo que te lo confirme?',
+    ],
+
     'handoff' => [
         'pick_thread' => "❓ Tienes más de una conversación esperando. ¿Para quién es tu mensaje? Respóndeme solo con el número:\n:list\n\nConsejo: si respondes citando mi aviso (mantén presionado → Responder), te lo reenvío directo.",
         'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespóndeme por aquí y le reenvío tu mensaje, o atiéndelo desde tu panel: :url\nTu asistente quedó en pausa solo en ese chat.",
@@ -58,6 +62,10 @@ return [
         'relay_done' => "✅ Le envié tu respuesta a *:name*.\nCuando el tema esté cerrado, escríbeme *#resuelto* y tu asistente retoma ese chat. También lo ves en tu panel: :url",
         'resolved_done' => '✔️ Listo: el hilo con *:name* quedó resuelto. Tu asistente lo atiende de nuevo si vuelve a escribir.',
         'no_reason' => 'el cliente pidió hablar con una persona',
+        'reason_human_requested' => 'el cliente pidió hablar con una persona',
+        'reason_emergency' => 'posible emergencia: el cliente describe un riesgo para su salud o su vida; atiéndelo ya',
+        'customer_human_requested' => 'Listo, ya avisé a una persona del equipo: te escribe a la brevedad.',
+        'customer_emergency' => 'Si es una emergencia, llama ya a tu servicio de emergencias local: yo no puedo atenderla. Ya avisé al equipo para que te escriba.',
         'department_alert' => "🔔 *:name* (:phone) necesita a *:department*.\nMotivo: :reason\nRespóndeme por aquí y le reenvío tu mensaje, o atiéndelo desde tu panel: :url",
         'reminder_owner' => '⏰ *:name* sigue esperando a tu equipo hace :minutes minutos. Le avisé que estás en camino.',
         'hold_customer' => '🤖 Seguimos con tu consulta: una persona del equipo de :business está algo demorada, apenas se libere te escribe. ¡Gracias por la paciencia!',

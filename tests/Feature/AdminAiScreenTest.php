@@ -93,7 +93,7 @@ test('an unassigned task says what it runs on today', function (): void {
     AiTask::create(['key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes']);
 
     Livewire::test('admin.ai.index')
-        ->assertSee('gpt-6-astra')
+        ->assertSee('gpt-6-luna')
         ->assertSee('openai');
 });
 

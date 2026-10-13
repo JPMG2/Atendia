@@ -70,7 +70,7 @@ test('a task with no model assigned leaves the agent on the pair it declares', f
     AiTask::create(['key' => 'FaqDrafter', 'label' => 'Redacta preguntas frecuentes']);
 
     expect(AiTask::ladderFor('FaqDrafter'))->toBeNull()
-        ->and((new FaqDrafter)->provider())->toBe(['openai' => 'gpt-6-astra']);
+        ->and((new FaqDrafter)->provider())->toBe(['openai' => 'gpt-6-luna']);
 });
 
 test('assigning a model to a task is a row, not a deploy', function (): void {
@@ -164,5 +164,5 @@ test('a model with no published price is not called at all', function (): void {
     ]);
 
     expect(AiTask::ladderFor('FaqDrafter'))->toBeNull()
-        ->and((new FaqDrafter)->provider())->toBe(['openai' => 'gpt-6-astra']);
+        ->and((new FaqDrafter)->provider())->toBe(['openai' => 'gpt-6-luna']);
 });

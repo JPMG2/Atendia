@@ -25,7 +25,7 @@ use Stringable;
  * web tool on purpose, so it cannot look anything up even if asked.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class AskAtendia implements Agent, Conversational, HasTools
 {
     use Promptable, RunsAssignedModel;

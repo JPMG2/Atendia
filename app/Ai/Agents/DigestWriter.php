@@ -17,7 +17,7 @@ use Stringable;
  * agent (not an anonymous one) so tests can fake it like any other.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class DigestWriter implements Agent
 {
     use Promptable, RunsAssignedModel;

@@ -17,14 +17,14 @@ use Laravel\Ai\Enums\Lab;
 // after this one — caught live when an unrelated count assertion broke.
 uses(RefreshDatabase::class);
 
-test('the assistant is pinned to the OpenAI provider and gpt-6-astra model', function (): void {
+test('the assistant is pinned to the OpenAI provider and gpt-6-luna model', function (): void {
     $reflection = new ReflectionClass(AsistenteAtendia::class);
 
     $provider = $reflection->getAttributes(Provider::class)[0]->newInstance();
     $model = $reflection->getAttributes(Model::class)[0]->newInstance();
 
     expect($provider->value)->toBe(Lab::OpenAI)
-        ->and($model->value)->toBe('gpt-6-astra');
+        ->and($model->value)->toBe('gpt-6-luna');
 });
 
 test('el asistente responde un prompt del usuario', function (): void {

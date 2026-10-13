@@ -20,7 +20,7 @@ use Stringable;
  * (the owner's decision, 2026-09-10).
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class ReplyTranslator implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

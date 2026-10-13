@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Actions\Business\RaiseHandoff;
 use App\Ai\Agents\AsistenteAtendia;
-use App\Enums\ConversationStatus;
 use App\Interfaces\Main\AssistantSkillTool;
-use App\Messaging\Channels\Panel;
-use App\Messaging\Panel\HandedToTeam;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\Department;
-use App\Services\EvolutionApi;
-use App\Services\OwnerPings;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -51,19 +47,7 @@ class EscalateToHuman implements AssistantSkillTool
         $reason = trim((string) $request['reason']);
         $department = $this->matchDepartment((string) ($request['department'] ?? ''));
 
-        $this->conversation->update([
-            'status' => ConversationStatus::Team,
-            'escalated_at' => now(),
-            'handoff_reminded_at' => null,
-            'department_id' => $department?->id,
-        ]);
-
-        // The panel reads the same news as the pings, and keeps it: a WhatsApp
-        // alert sent at 3am is gone by morning, the bell row is still there.
-        (new Panel($this->conversation, [], HandedToTeam::class))->send();
-
-        // Best effort: a failed ping must never break the escalation itself.
-        rescue(fn () => $this->alertTeam($reason, $department));
+        app(RaiseHandoff::class)->handle($this->business, $this->conversation, $reason, $department);
 
         $answer = 'Equipo avisado. Ahora despedite con cortesía en el idioma del cliente: '
             .'una persona del equipo le escribe a la brevedad. No sigas resolviendo esta consulta.';
@@ -102,45 +86,5 @@ class EscalateToHuman implements AssistantSkillTool
         return $wanted === '' ? null : $this->departments()->first(
             fn (Department $department): bool => Str::lower(Str::ascii($department->name)) === $wanted,
         );
-    }
-
-    private function alertTeam(string $reason, ?Department $department): void
-    {
-        if ($this->business->whatsapp_instance === null
-            || $this->business->isOwnerWhatsApp((string) $this->conversation->contact_phone)) {
-            return;
-        }
-
-        $members = $department?->reachableMembers() ?? new Collection;
-        $details = [
-            'name' => $this->conversation->contact_name ?? $this->conversation->contact_phone,
-            'phone' => $this->conversation->contact_phone,
-            'reason' => $reason !== '' ? $reason : __('assistant.handoff.no_reason'),
-            // The alert names ONE customer and says "atiéndelo": the link opens
-            // that thread, not an inbox where the name has to be found again.
-            'url' => route('conversations', ['hilo' => $this->conversation->id]),
-        ];
-
-        // Nobody available in the room: the owner, as before departments existed.
-        if ($members->isEmpty()) {
-            $this->ping($this->business->ownerWhatsAppDigits(), __('assistant.handoff.owner_alert', $details));
-
-            return;
-        }
-
-        foreach ($members as $member) {
-            $this->ping($member->whatsappDigits(), __('assistant.handoff.department_alert', [...$details, 'department' => $department->name]));
-        }
-    }
-
-    private function ping(string $number, string $text): void
-    {
-        if ($number === '') {
-            return;
-        }
-
-        $pingId = app(EvolutionApi::class)->sendText($this->business->whatsapp_instance, $number, $text);
-
-        app(OwnerPings::class)->remember($this->business->whatsapp_instance, $pingId, (int) $this->conversation->id);
     }
 }

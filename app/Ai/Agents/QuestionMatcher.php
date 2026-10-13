@@ -20,7 +20,7 @@ use Stringable;
  * closer (0.85) than two real paraphrases (0.73), measured 2026-09-24.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class QuestionMatcher implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

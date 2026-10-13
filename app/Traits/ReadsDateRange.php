@@ -54,6 +54,19 @@ trait ReadsDateRange
         return [$from->startOfDay(), $to->endOfDay()];
     }
 
+    /**
+     * For a tool that counts what already happened: a period that has not
+     * begun has no data, and a bare "0" would read as a fact about it.
+     */
+    private function periodNotStarted(CarbonImmutable $from, Business $business): ?string
+    {
+        $now = CarbonImmutable::now($business->localTimezone());
+
+        return $from->greaterThan($now)
+            ? 'El '.$from->format('d/m/Y').' todavía no pasó (hoy es '.$now->format('d/m/Y').'): no hay datos de un día futuro. No lo cuentes como cero: decile que esa fecha aún no llegó.'
+            : null;
+    }
+
     private function periodLabel(CarbonImmutable $from, CarbonImmutable $to): string
     {
         return $from->isSameDay($to)

@@ -20,7 +20,7 @@ use Stringable;
  * because that line is what a customer reads over WhatsApp.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class BusinessBioWriter implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

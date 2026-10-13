@@ -57,6 +57,11 @@ class OwnerConversations implements OwnerSkillTool
         }
 
         [$from, $to] = $range;
+
+        if (($notStarted = $this->periodNotStarted($from, $this->business)) !== null) {
+            return $notStarted;
+        }
+
         $window = [$from->utc(), $to->utc()];
 
         $inbound = ConversationMessage::query()

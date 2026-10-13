@@ -91,6 +91,16 @@ test('hours answer with today, the time and whether it is open now, in the busin
         ->toContain('08:00 a 12:00');
 });
 
+test('hours tell the assistant to give both ends of the day', function (): void {
+    $business = Business::factory()->create();
+    BusinessHour::factory()->create(['business_id' => $business->id, 'day_of_week' => 6, 'opens_at' => '07:00', 'closes_at' => '11:00']);
+
+    $answer = (string) (new CheckBusinessHours($business))->handle(new Request([]));
+
+    // Asked "¿están abiertos?" or only "a qué hora abren", a small model left out the close.
+    expect($answer)->toContain('SIEMPRE el horario completo')->toContain('07:00 a 11:00');
+});
+
 test('hours name every closed day instead of leaving it out', function (): void {
     // Left out, a plain Sunday was answered with "no pude confirmar" (ai-eval).
     $business = Business::factory()->create();

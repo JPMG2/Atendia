@@ -20,7 +20,7 @@ use Stringable;
  * description is answered with its bare name.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class CatalogCopywriter implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

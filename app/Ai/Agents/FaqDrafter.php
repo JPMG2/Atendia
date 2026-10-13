@@ -22,7 +22,7 @@ use Stringable;
  * answer — because a made-up FAQ would poison the knowledge base.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class FaqDrafter implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

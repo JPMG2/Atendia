@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Actions\Business\TranslateForCustomer;
+use App\Ai\Tools\CheckBusinessHours;
+use App\Ai\Tools\CheckFreeSlots;
+use App\Ai\Tools\GetBusinessContact;
 use App\Ai\Tools\SearchBusinessKnowledge;
+use App\Ai\Tools\SearchCatalog;
 use App\Classes\Main\AssistantContract;
+use App\Classes\Main\GroundedFigures;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
@@ -17,6 +23,7 @@ use App\Models\Customer;
 use App\Models\Department;
 use App\Services\AssistantSkills;
 use App\Traits\RunsAssignedModel;
+use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Contracts\Agent;
@@ -29,13 +36,15 @@ use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Providers\Tools\ToolSearch;
 use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\ToolCall;
+use Laravel\Ai\Responses\Data\ToolResult;
 use Stringable;
 
 // No Temperature attribute on purpose: the reasoning family behind this
 // model rejects the parameter (400 in production, 2026-09-17). Factual
 // grounding is enforced by the instructions instead.
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class AsistenteAtendia implements Agent, Conversational, HasTools
 {
     use Promptable, RunsAssignedModel;
@@ -87,7 +96,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
 
         // Small talk ("hola", "gracias") never needs grounding: re-asking it doubled the bill.
         if ($this->business === null || $response->toolCalls->isNotEmpty() || ! ConversationMessage::looksLikeEnquiry($question)) {
-            return $response;
+            return $this->withGroundedFigures($response, $question);
         }
 
         $second = $this->prompt(
@@ -99,7 +108,48 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             $attachments,
         );
 
-        return $second;
+        return $this->withGroundedFigures($second, $question);
+    }
+
+    /**
+     * A price the assistant was never given is the one lie a business
+     * cannot afford, so the reply is judged in PHP, not by the model.
+     * Only a turn that ran nothing but lookups is replaced: swapping the
+     * words of one that booked or sent photos would hide what it did.
+     */
+    private function withGroundedFigures(AgentResponse $response, string $question): AgentResponse
+    {
+        if ($this->business === null) {
+            return $response;
+        }
+
+        $given = [
+            $question,
+            ...array_map(fn (Message $turn): string => (string) $turn->content, [...$this->messages()]),
+            ...$response->toolResults->map(fn (ToolResult $result): string => is_string($result->result) ? $result->result : (string) json_encode($result->result))->all(),
+        ];
+
+        $missing = GroundedFigures::missing($response->text, $given);
+
+        if ($missing === []) {
+            return $response;
+        }
+
+        Log::warning('Assistant reply carried a figure no source backs.', [
+            'business_id' => $this->business->id,
+            'figures' => $missing,
+        ]);
+
+        $lookups = array_map(class_basename(...), [SearchCatalog::class, SearchBusinessKnowledge::class, CheckBusinessHours::class, GetBusinessContact::class, CheckFreeSlots::class]);
+
+        if ($response->toolCalls->contains(fn (ToolCall $call): bool => ! in_array($call->name, $lookups, true))) {
+            return $response;
+        }
+
+        $safe = __('assistant.grounding.unconfirmed_price');
+        $response->text = $this->conversation === null ? $safe : app(TranslateForCustomer::class)->handle($this->conversation, $safe);
+
+        return $response;
     }
 
     /**

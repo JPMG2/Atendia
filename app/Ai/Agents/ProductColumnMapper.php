@@ -24,7 +24,7 @@ use Stringable;
  * knowledge the assistant can answer from.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class ProductColumnMapper implements Agent, HasStructuredOutput
 {
     public const array TARGETS = ['name', 'code', 'price', 'stock', 'description', 'extra'];

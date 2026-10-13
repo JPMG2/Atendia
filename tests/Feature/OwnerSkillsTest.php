@@ -58,6 +58,19 @@ test('conversations counts only this business and links each thread', function (
         ->not->toContain('De otro negocio');
 });
 
+test('conversations does not count a day that has not happened as zero', function (): void {
+    $business = Business::factory()->create();
+    $tomorrow = now($business->localTimezone())->addDays(2)->format('Y-m-d');
+
+    $answer = (string) (new OwnerConversations($business))->handle(new Request([
+        'from' => $tomorrow, 'to' => $tomorrow, 'only_waiting' => false,
+    ]));
+
+    // A bare "0 conversaciones" reads as a fact about a day that is still ahead.
+    expect($answer)->toContain('todavía no pasó')
+        ->not->toContain('conversaciones con mensajes de clientes');
+});
+
 test('conversations says what customers actually asked and who answered', function (): void {
     $business = Business::factory()->create();
     $thread = inboundThread($business, 'María López');

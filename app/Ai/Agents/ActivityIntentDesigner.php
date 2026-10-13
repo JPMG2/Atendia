@@ -20,7 +20,7 @@ use Stringable;
  * new trade needs no one to write its topics.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class ActivityIntentDesigner implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

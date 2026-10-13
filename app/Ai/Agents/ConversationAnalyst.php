@@ -23,7 +23,7 @@ use Stringable;
  * stretch can.
  */
 #[Provider(Lab::OpenAI)]
-#[Model('gpt-6-astra')]
+#[Model('gpt-6-luna')]
 class ConversationAnalyst implements Agent, HasStructuredOutput
 {
     use Promptable, RunsAssignedModel;

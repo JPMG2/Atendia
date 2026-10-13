@@ -47,6 +47,33 @@ class AiModelSeeder extends Seeder
             ],
         );
 
+        // The models the agents run on and the ones measured against them. They were
+        // only ever rows in `atendia`: a server born from the seeder had none of them,
+        // and the agents' declared default (Luna) had no price to be charged at.
+        foreach ([
+            ['gpt-6-sol', 'GPT-6 Sol', AiCapability::Vision, 2, 0.2, 10, null],
+            ['gpt-6.1-sol', 'GPT-6.1 Sol', AiCapability::Vision, 2, 0.1, 10, null],
+            ['gpt-6-luna', 'GPT-6 Luna', AiCapability::Vision, 0.1, 0.01, 0.5, null],
+            ['gpt-4o-mini-transcribe', 'GPT-4o mini Transcribe', AiCapability::Transcription, 0, 0, 0, 0.003],
+            ['gpt-4o-transcribe', 'GPT-4o Transcribe', AiCapability::Transcription, 0, 0, 0, 0.006],
+            ['gpt-transcribe', 'GPT Transcribe', AiCapability::Transcription, 0, 0, 0, 0.0045],
+        ] as [$code, $label, $capability, $prompt, $cached, $completion, $perMinute]) {
+            AiModel::updateOrCreate(
+                ['code' => $code, 'effective_from' => '2026-09-03'],
+                [
+                    'provider' => 'openai',
+                    'capability' => $capability,
+                    'label' => $label,
+                    'prompt_per_million' => $prompt,
+                    'cached_per_million' => $cached,
+                    'completion_per_million' => $completion,
+                    'per_minute' => $perMinute,
+                    'source' => 'Precio estándar de developers.openai.com/api/docs/pricing, verificado el 2026-10-08',
+                    'is_active' => true,
+                ],
+            );
+        }
+
         // The models the knowledge search could move to. The vector length is part
         // of what each one is: 3-large natively returns 3072, past what pgvector
         // can index, so it is listed at the 1536 the OpenAI parameter cuts it to.
