@@ -110,20 +110,22 @@ class SyncOfferKnowledge
     {
         $parts = ['Producto: '.$product->name];
 
+        // Right after the name and before the price: a model that reads the
+        // price first answers "tenemos" and only then remembers there is none.
+        if (! $product->in_stock) {
+            $parts[] = 'Disponibilidad: sin stock por ahora (no hay unidades: no digas que lo tienen)';
+        }
+
         if ($product->code !== null) {
             $parts[] = 'Código: '.$product->code;
         }
 
         if ($product->price !== null) {
-            $parts[] = 'Precio: $ '.$product->priceAmount();
+            $parts[] = ($product->in_stock ? 'Precio: $ ' : 'Precio de referencia: $ ').$product->priceAmount();
         }
 
         if ($product->stock !== null) {
             $parts[] = 'Cantidad disponible: '.$this->amount($product->stock);
-        }
-
-        if (! $product->in_stock) {
-            $parts[] = 'Disponibilidad: sin stock por ahora';
         }
 
         if ($product->description !== null) {

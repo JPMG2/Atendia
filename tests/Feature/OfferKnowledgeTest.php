@@ -91,6 +91,20 @@ test('the products document keeps out-of-stock rows listed and says so', functio
         ->toContain('Disponibilidad: sin stock por ahora');
 });
 
+test('an out-of-stock product says so before its price', function (): void {
+    $business = Business::factory()->create();
+    Product::factory()->create(['business_id' => $business->id, 'name' => 'Martillo', 'price' => 12000, 'in_stock' => false]);
+
+    app(SyncOfferKnowledge::class)->handle($business, 'products');
+
+    $content = KnowledgeDocument::query()->where('source_type', 'products')->sole()->content;
+
+    // Read price-first, a small model answered "tienen martillo" and only then the missing stock.
+    expect($content)->toContain('no digas que lo tienen')
+        ->toContain('Precio de referencia')
+        ->and(strpos($content, 'sin stock'))->toBeLessThan(strpos($content, 'Precio de referencia'));
+});
+
 test('an emptied offer leaves the assistant memory too', function (): void {
     $business = Business::factory()->create();
     $service = Service::factory()->create(['business_id' => $business->id, 'name' => 'Corte', 'service_type_id' => null]);
