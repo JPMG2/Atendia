@@ -1,5 +1,8 @@
 # 🛠️ Panel Admin — pendientes
 
+> **A partir del 2026-10-12 lo que falta vive en `pendientes.md`** (un solo registro, con estado
+> y cómo se comprueba cada punto). Este archivo queda como historia: no se tilda más acá.
+
 > Guía CORTA y propia del panel admin, aparte de `aproduccion.md` (go-live) y de
 > `hallazgos.md` (defectos encontrados de paso). Se tacha a medida que se cierra.
 > Un punto cerrado NO se borra: queda tachado con la fecha, para no re-discutirlo.
