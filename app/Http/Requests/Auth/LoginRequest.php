@@ -17,6 +17,9 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    /** How long the wider nets remember a failure: a quarter of an hour. */
+    private const int WIDER_DECAY_SECONDS = 900;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -51,12 +54,36 @@ class LoginRequest extends FormRequest
             && ! $this->restoreClosedAccount()) {
             RateLimiter::hit($this->throttleKey());
 
+            foreach (array_keys($this->widerLimits()) as $key) {
+                RateLimiter::hit($key, self::WIDER_DECAY_SECONDS);
+            }
+
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->emailKey());
+    }
+
+    /**
+     * The slower, wider nets behind the per-minute one: a botnet that spreads
+     * one account over many addresses, and one address that walks many accounts.
+     *
+     * @return array<string, int> key => failed attempts allowed per window
+     */
+    private function widerLimits(): array
+    {
+        return [
+            $this->emailKey() => 25,
+            'login-ip:'.$this->ip() => 30,
+        ];
+    }
+
+    private function emailKey(): string
+    {
+        return 'login-email:'.Str::transliterate(Str::lower($this->string('email')));
     }
 
     /**
@@ -82,13 +109,25 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $blockedKey = null;
+
+        if (RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+            $blockedKey = $this->throttleKey();
+        }
+
+        foreach ($this->widerLimits() as $key => $max) {
+            if ($blockedKey === null && RateLimiter::tooManyAttempts($key, $max)) {
+                $blockedKey = $key;
+            }
+        }
+
+        if ($blockedKey === null) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($blockedKey);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
