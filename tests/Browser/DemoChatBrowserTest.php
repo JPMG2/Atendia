@@ -24,7 +24,7 @@ test('the visitor chats with the demo hardware store inside the hero phone', fun
 
     // Two entries per exchange: the grounding re-ask may consume a second.
     AsistenteAtendia::fake([
-        'Buscando…', 'Sí, en el momento: la llave común cuesta $4.000 y la de auto $9.000.',
+        'Buscando…', 'Sí, en el momento: hacemos la llave común y la de auto.',
         'Buscando…', 'Sí, hacemos envíos en el barrio hasta las 23.',
     ]);
 
@@ -34,7 +34,7 @@ test('the visitor chats with the demo hardware store inside the hero phone', fun
     // and the remaining-questions nudge appears under the box.
     $page->assertSee(__('landing.demo.try_label'))
         ->click('¿Hacen copias de llaves?')
-        ->assertSee('la llave común cuesta $4.000')
+        ->assertSee('hacemos la llave común y la de auto')
         ->assertSee(trans_choice('landing.demo.left', 3, ['count' => 3]))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-chat')
         ->assertNoJavaScriptErrors();
@@ -43,7 +43,7 @@ test('the visitor chats with the demo hardware store inside the hero phone', fun
     // fresh chat — and the budget keeps counting down across rubros.
     $page->click('Kiosco')
         ->assertSee('Kiosco El Faro · Asistente')
-        ->assertDontSee('la llave común cuesta $4.000')
+        ->assertDontSee('hacemos la llave común y la de auto')
         ->click('¿Hacen envíos?')
         ->assertSee('hacemos envíos en el barrio')
         ->assertSee(trans_choice('landing.demo.left', 2, ['count' => 2]))
@@ -56,14 +56,14 @@ test('the spent budget turns into the register invite and the share door', funct
     $this->seed(DemoBusinessSeeder::class);
     config()->set('atendia.demo.session_cap', 1);
 
-    AsistenteAtendia::fake(['Buscando…', 'Sí, en el momento: la llave común cuesta $4.000.']);
+    AsistenteAtendia::fake(['Buscando…', 'Sí, en el momento: hacemos la llave común.']);
 
     $page = visit('/');
 
     // One budgeted reply: the goodbye, the rubro-named register CTA and the
     // WhatsApp share link take over the composer.
     $page->click('¿Hacen copias de llaves?')
-        ->assertSee('la llave común cuesta $4.000')
+        ->assertSee('hacemos la llave común')
         ->assertSee(__('landing.demo.cta_rubro', ['rubro' => 'ferretería']))
         ->assertSee(__('landing.demo.share'))
         ->screenshotElement('.hero-phone-enter', 'hero-demo-finished')
