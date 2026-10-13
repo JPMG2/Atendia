@@ -9,9 +9,12 @@
         <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('auth.login.sub') }}</p>
     </div>
 
-    {{-- Landing spot of session-expired.js: a Livewire 419 redirects here
-    with ?expired=1 (the full-page 419 already explained itself). --}}
-    @if (request()->boolean('expired'))
+    {{-- Landing spots of livewire-failures.js and the idle-session middleware:
+    ?idle=1 is the staff's 20 minutes, ?expired=1 any other dead session.
+    A warning, because nothing here is a success. --}}
+    @if (request()->boolean('idle'))
+        <x-ui.alert variant="warning" icon="clock" class="mb-6"> {{ __('auth.staff_idle') }} </x-ui.alert>
+    @elseif (request()->boolean('expired'))
         <x-ui.alert variant="info" icon="clock" class="mb-6"> {{ __('errors.expired_alert') }} </x-ui.alert>
     @endif
 

@@ -23,7 +23,8 @@ test('an admin session ends after the idle limit and sends them to the login', f
 
     $this->travel(21)->minutes();
 
-    $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
+    // The reason rides the URL, not a flash: a flash reads as a success.
+    $this->get(route('admin.dashboard'))->assertRedirect(route('login', ['idle' => 1]));
     $this->assertGuest();
 });
 
@@ -71,7 +72,7 @@ test('remember me revives a session only when the staff limit is off', function 
         $response->assertOk();
         $this->assertAuthenticated();
     } else {
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('login', ['idle' => 1]));
         $this->assertGuest();
     }
 })->with([
@@ -127,5 +128,9 @@ test('a tab that only polls still idles out when its session had no mark yet', f
     $this->travel(21)->minutes();
 
     // Without the clock being started by that first poll this would answer 200.
-    expect($poll()->getStatusCode())->toBe(419);
+    $closed = $poll();
+
+    // The front reads this header to say WHY, since no flash can survive a 419.
+    expect($closed->getStatusCode())->toBe(419)
+        ->and($closed->headers->get('X-Staff-Idle'))->toBe('1');
 });

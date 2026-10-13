@@ -11,6 +11,8 @@ declare(strict_types=1);
 */
 
 return [
+    'staff_idle' => 'Cerramos tu sesión por inactividad. Ingresá de nuevo para seguir.',
+
     'register' => [
         'heading' => 'Creá tu cuenta',
         'email_placeholder' => 'vos@tunegocio.com',

@@ -58,13 +58,14 @@ class ExpireIdleStaffSession
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // A Livewire request cannot follow a redirect: its 419 is what the
-        // front already turns into the login screen.
+        // A Livewire request cannot follow a redirect, and the session that
+        // would carry a flash is gone: the reason travels in the header (and
+        // then the URL) so the login can say it as a notice, not as a success.
         if ($request->hasHeader('X-Livewire')) {
-            return response('', 419);
+            return response('', 419, ['X-Staff-Idle' => '1']);
         }
 
-        return redirect()->route('login')->with('status', __('auth.staff_idle'));
+        return redirect()->route('login', ['idle' => 1]);
     }
 
     /**

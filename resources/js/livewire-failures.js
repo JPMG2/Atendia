@@ -12,7 +12,13 @@ document.addEventListener('livewire:init', () => {
 
             if (status === 419) {
                 preventDefault();
-                window.location.assign(document.body.dataset.loginUrl ?? '/login');
+
+                // Say why: the staff's idle close names its reason in a header,
+                // anything else is a session that simply died.
+                const reason = response.headers.get('X-Staff-Idle') ? 'idle' : 'expired';
+                const login = new URL(document.body.dataset.loginUrl ?? '/login', window.location.origin);
+                login.searchParams.set(reason, '1');
+                window.location.assign(login.toString());
 
                 return;
             }

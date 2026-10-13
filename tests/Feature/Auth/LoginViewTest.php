@@ -45,6 +45,25 @@ test('the login screen ships the theme toggle for light and dark', function (): 
         ->toContain('x-show="dark"');
 });
 
+test('an idle close lands as a warning, never as a success', function (): void {
+    $html = $this->get('/login?idle=1')->getContent();
+
+    expect($html)
+        ->toContain('Cerramos tu sesión por inactividad')
+        ->toContain('alert-warning')
+        ->not->toContain('alert-success');
+
+    // Without the flag the login carries no notice at all.
+    expect($this->get('/login')->getContent())->not->toContain('Cerramos tu sesión por inactividad');
+});
+
+test('a dead session that is not the idle close says it expired', function (): void {
+    $this->get('/login?expired=1')
+        ->assertOk()
+        ->assertSee(__('errors.expired_alert'))
+        ->assertDontSee(__('auth.staff_idle'));
+});
+
 test('a user can still authenticate from the redesigned login', function (): void {
     $user = User::factory()->create();
 
