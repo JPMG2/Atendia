@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Actions\Admin\RaisePlatformEvent;
+use App\Actions\Admin\ResolvePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Traits\BelongsToBusiness;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -102,5 +105,15 @@ class WhatsAppLinkEvent extends Model
             'reason' => $reason,
             'occurred_at' => now(),
         ]);
+
+        // The one door every fall and every recovery passes through, so the
+        // platform's feed hears both without touching the four places that call.
+        if ($connected) {
+            app(ResolvePlatformEvent::class)->ofKind(PlatformEventKind::WhatsAppDisconnected, $business->id);
+
+            return;
+        }
+
+        app(RaisePlatformEvent::class)->handle(PlatformEventKind::WhatsAppDisconnected, $business->id, $reason);
     }
 }

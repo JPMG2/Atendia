@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Admin\ResolvePlatformEvent;
 use App\Actions\Compliance\RecordComplianceEvent;
 use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
@@ -56,6 +57,9 @@ class ApprovePayment
                 'paused_at' => null,
             ])->save();
         });
+
+        // Somebody did what the feed was asking for.
+        app(ResolvePlatformEvent::class)->byKey('receipt_received:'.$payment->id);
 
         // The answer to a late or paused payment goes in the same file as the fault.
         if ($wasLapsed) {

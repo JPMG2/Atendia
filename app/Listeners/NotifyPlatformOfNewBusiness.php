@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Actions\Admin\RaisePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Events\BusinessCreated;
 use App\Mail\NewBusinessJoined;
 use App\Messaging\Channels\Email;
@@ -20,6 +22,9 @@ class NotifyPlatformOfNewBusiness
 {
     public function handle(BusinessCreated $event): void
     {
+        // On the feed first: it needs nobody's mailbox to be there.
+        app(RaisePlatformEvent::class)->handle(PlatformEventKind::BusinessJoined, $event->business->id, $event->business->name);
+
         // Her own account carries the mail: it is the one row always there,
         // and the Company screen may never have been saved.
         $admin = User::where('email', (string) config('atendia.admin_email'))->first();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Compliance;
 
+use App\Actions\Admin\MirrorComplianceEvent;
 use App\Enums\ComplianceEventKind;
 use App\Models\ComplianceEvent;
 use Carbon\CarbonInterface;
@@ -27,7 +28,7 @@ class RecordComplianceEvent
         ?CarbonInterface $at = null,
     ): ?ComplianceEvent {
         try {
-            return ComplianceEvent::query()->create([
+            $line = ComplianceEvent::query()->create([
                 'business_id' => $businessId,
                 'kind' => $kind,
                 // An appeal is the business's own words: an excerpt, never the whole text.
@@ -35,6 +36,12 @@ class RecordComplianceEvent
                 'actor_id' => $actorId,
                 'occurred_at' => $at ?? now(),
             ]);
+
+            // The admin hears every penalty from this one door; its own failure
+            // must not take the line just written down with it.
+            rescue(fn () => app(MirrorComplianceEvent::class)->handle($line));
+
+            return $line;
         } catch (Throwable $e) {
             report($e);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Admin\ResolvePlatformEvent;
 use App\Actions\Compliance\RecordComplianceEvent;
 use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
@@ -24,6 +25,7 @@ class RejectPayment
         ])->save();
 
         app(RecordComplianceEvent::class)->handle($payment->business_id, ComplianceEventKind::PaymentRejected, $reason, $reviewer->id);
+        app(ResolvePlatformEvent::class)->byKey('receipt_received:'.$payment->id);
 
         $email = $payment->business?->billing_email;
 
