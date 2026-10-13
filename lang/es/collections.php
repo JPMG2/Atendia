@@ -9,7 +9,7 @@ return [
 
     'risk' => [
         'at_risk' => 'En riesgo por mes',
-        'at_risk_hint' => 'Lo que dejás de cobrar si no vuelven',
+        'at_risk_hint' => 'Lo que dejas de cobrar si no vuelven',
         'owing' => '{1}Negocio con pago atrasado|[0,*]Negocios con pago atrasado',
         'owing_split' => ':grace en gracia · :paused en pausa',
         'renewing' => 'Vencen en 7 días',

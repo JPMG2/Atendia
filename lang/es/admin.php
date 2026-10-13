@@ -166,7 +166,7 @@ return [
 
         'bulk' => [
             'label' => 'El mismo modelo para todo el grupo',
-            'placeholder' => 'Elegí un modelo',
+            'placeholder' => 'Elige un modelo',
             'apply' => 'Aplicar a la tarea|Aplicar a las :count tareas',
             'applied' => ':count tarea quedó con ese modelo. Falta guardar.|:count tareas quedaron con ese modelo. Falta guardar.',
             'kept' => 'Una no lo admite y quedó como estaba.|:count no lo admiten y quedaron como estaban.',
@@ -202,7 +202,7 @@ return [
         'models' => 'Modelos y precios',
         'models_sub' => 'Un precio nuevo es una fila nueva: lo ya consumido conserva el suyo.',
         'models_empty_title' => 'Todavía no hay modelos',
-        'models_empty' => 'Cargá el primero con su precio y desde qué día rige.',
+        'models_empty' => 'Carga el primero con su precio y desde qué día rige.',
         'new' => 'Agregar modelo',
         'edit' => 'Editar',
         'save_model' => 'Guardar el modelo',
@@ -307,7 +307,7 @@ return [
         'in_use' => 'No se puede eliminar: lo tienen :count persona(s). Primero cambiales el rol.',
         'protected' => 'Ese rol no se edita desde una pantalla.',
         'protected_tag' => 'No se edita',
-        'panel_implicit' => 'Entrar al panel va incluido en todo rol: lo que elegís es qué ve adentro.',
+        'panel_implicit' => 'Entrar al panel va incluido en todo rol: lo que eliges es qué ve adentro.',
         'opens_everything' => 'Abre todo, incluso lo que se agregue mañana.',
         'opens_count' => 'Abre :count área|Abre :count áreas',
 
@@ -635,7 +635,7 @@ return [
             'costs' => [
                 'fixed_monthly_usd' => [
                     'label' => 'Costos fijos del mes',
-                    'hint' => 'Servidor, WhatsApp, dominio y lo demás que pagás por mes, en dólares y sin contar la IA. En cero, el resultado neto no se muestra.',
+                    'hint' => 'Servidor, WhatsApp, dominio y lo demás que pagas por mes, en dólares y sin contar la IA. En cero, el resultado neto no se muestra.',
                 ],
             ],
             'referral' => [
@@ -702,7 +702,7 @@ return [
             'first_month' => 'Primer mes medido. No incluye servidor ni otros costos fijos.',
             'net' => 'Resultado neto',
             'net_hint' => 'El margen menos :amount de costos fijos.',
-            'net_missing' => 'Cargá los costos fijos del mes en Ajustes para ver el neto.',
+            'net_missing' => 'Carga los costos fijos del mes en Ajustes para ver el neto.',
         ],
 
         'by_connection' => 'Desglose por clave',
@@ -776,13 +776,13 @@ return [
             'hint_no_date' => 'No tiene un período pagado en curso.',
             'action' => 'Registrar la baja',
             'accept' => 'Registrar la baja',
-            'confirm' => '¿Registrás la baja de :name? Su asistente sigue respondiendo hasta el :date.',
-            'confirm_no_date' => '¿Registrás la baja de :name?',
+            'confirm' => '¿Registras la baja de :name? Su asistente sigue respondiendo hasta el :date.',
+            'confirm_no_date' => '¿Registras la baja de :name?',
             'asked_on' => 'Pidió la baja el :date.',
             'ends_on' => 'Termina el :date.',
             'ended_on' => 'Terminó el :date.',
             'undo' => 'Deshacer la baja',
-            'undo_confirm' => '¿Deshacés la baja de :name? Vuelve a ser un cliente normal.',
+            'undo_confirm' => '¿Deshaces la baja de :name? Vuelve a ser un cliente normal.',
             'done' => 'Baja registrada.',
             'undone' => 'Baja deshecha.',
             'no_subscription' => 'Este negocio no tiene plan: no hay baja que registrar.',
@@ -862,7 +862,7 @@ return [
 
         'queue' => [
             'title' => 'Comprobantes esperando',
-            'sub' => 'Acreditá acá mismo. Rechazar pide un motivo y se hace en Pagos.',
+            'sub' => 'Acredita aquí mismo. Rechazar pide un motivo y se hace en Pagos.',
             'empty' => 'No hay comprobantes esperando.',
             'date' => 'Llegó',
             'business' => 'Negocio',

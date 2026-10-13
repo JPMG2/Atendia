@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'title' => 'Calidad de la IA',
-    'sub' => 'Qué respuestas se marcaron mal. Las dos IA por separado: la que atiende a los clientes y la que te contesta a vos.',
+    'sub' => 'Qué respuestas se marcaron mal. Las dos IA por separado: la que atiende a los clientes y la que te contesta a ti.',
     'read_at' => 'Al :time',
 
     'customer' => [

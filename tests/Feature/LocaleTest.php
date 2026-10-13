@@ -24,6 +24,40 @@ function fakePosition(string $countryCode): Position
     return $position;
 }
 
+test('the neutral base has no voseo: it lives in the es_AR overrides', function (): void {
+    // Accented words that end in a stress mark and are plain Spanish for everyone.
+    $neutral = ['está', 'esté', 'aquí', 'allá', 'allí', 'así', 'sí', 'ahí', 'estás', 'además', 'después', 'atrás', 'demás', 'detrás',
+        'inglés', 'portugués', 'francés', 'caché', 'verás', 'tendrás', 'sabrá', 'responderá', 'aparecerá', 'avisé', 'guardé',
+        'envié', 'dejé', 'enséñale', 'enséñasela', 'más', 'país', 'también', 'través', 'mí', 'té', 'café', 'bebé', 'sofá',
+        'qué', 'acá', 'sé', 'leí'];
+
+    $voseo = [];
+
+    foreach (glob(base_path('lang/es/*.php')) as $file) {
+        $values = new RecursiveIteratorIterator(new RecursiveArrayIterator(require $file));
+
+        foreach ($values as $value) {
+            if (! is_string($value)) {
+                continue;
+            }
+
+            preg_match_all('/\b[\p{L}]+(?:á|é|í|ás|és|ís)\b/u', $value, $found);
+
+            foreach ($found[0] as $word) {
+                if (! in_array(mb_strtolower($word), $neutral, true)) {
+                    $voseo[] = basename($file).': '.$word;
+                }
+            }
+
+            if (preg_match('/\b(?:vos|sos|tenés|querés|podés)\b/u', $value) === 1) {
+                $voseo[] = basename($file).': '.$value;
+            }
+        }
+    }
+
+    expect($voseo)->toBe([]);
+});
+
 it('prioriza la elección guardada en sesión por sobre la geolocalización', function (): void {
     // Once someone has chosen, no lookup happens at all.
     Location::shouldReceive('get')->never();

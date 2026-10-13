@@ -164,7 +164,7 @@ test('the net result needs the fixed costs: unloaded it points to the setting, l
 
     // Zero is "not loaded", never "free": no net, and the tile is the way to the setting.
     expect(AiSpend::of(now())->result->net)->toBeNull();
-    Livewire::test('admin.ai-usage.index')->assertSee('Cargá los costos fijos del mes');
+    Livewire::test('admin.ai-usage.index')->assertSee('Carga los costos fijos del mes');
 
     config(['atendia.costs.fixed_monthly_usd' => 5]);
     $margin = Subscription::monthlyRecurringRevenue() - 2.0;
