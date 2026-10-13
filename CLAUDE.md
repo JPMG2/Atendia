@@ -43,7 +43,9 @@
 - PHP, Composer, Artisan y npm corren DENTRO del contenedor:
   `docker exec -w /var/www/html atendia-app <comando>`. Un `timeout` va DESPUÉS del `docker exec`.
 - Laravel 13 / PHP 8.5 · Breeze (Blade) · Livewire 4 · Postgres + Redis.
-- `trustProxies(at: '*')` no se quita: detrás de Traefik, sin eso los assets salen en http.
+- `trustProxies` confía solo en la red privada (Traefik), no en `'*'`: con `'*'` la IP la elige
+  quien escribe `X-Forwarded-For` y todo límite por IP se esquiva. Y no se quita: sin proxy
+  confiable los assets salen en http.
 - Tras tocar Blade o CSS: `view:clear` + `npm run build`, dentro del contenedor.
 
 ## Código

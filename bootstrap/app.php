@@ -35,7 +35,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Confiar en el proxy de EasyPanel/Traefik: respeta X-Forwarded-Proto
         // para que asset()/url() generen http o https segun como entre el usuario
         // (evita "contenido mixto" que rompia los estilos al entrar por https).
-        $middleware->trustProxies(at: '*');
+        // Only the internal network is a proxy. With '*' Laravel believed the
+        // FIRST address of X-Forwarded-For, which the visitor writes: Traefik
+        // appends the real one at the end, so every per-IP limit was bypassable
+        // by sending a made-up header. Traefik sits on a private address, which
+        // is why the proto and host headers (https assets) keep being honoured.
+        $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.1']);
 
         // A signed-in user bounced off /login lands on their own panel, not
         // on the client dashboard every guest redirect pointed at.
