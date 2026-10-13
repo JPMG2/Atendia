@@ -25,6 +25,15 @@ export default {
         'dialog-icon-success',
         'dialog-icon-warning',
         'dialog-icon-danger',
+
+        // Y otra vez: `<x-ui.alert>` arma `'alert-' . $variant` en PHP, así que
+        // el nombre completo nunca aparece en el fuente. Sin esto las cinco
+        // salían sin fondo ni borde (hallazgo del 2026-10-12).
+        'alert-info',
+        'alert-success',
+        'alert-warning',
+        'alert-danger',
+        'alert-brand',
     ],
 
     content: [

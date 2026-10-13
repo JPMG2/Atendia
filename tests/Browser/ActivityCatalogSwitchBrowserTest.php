@@ -56,4 +56,12 @@ test('a risky business name is warned about on the connect card and still connec
         ->assertSee('Conectar mi WhatsApp')
         ->assertNoJavaScriptErrors();
     $page->wait(1)->screenshot(filename: 'meta-name-warning');
+
+    // The alert component builds its class name in PHP, so Tailwind used to
+    // purge every `.alert-*` and the box came out transparent: measure the paint.
+    $background = (string) $page->script(
+        'getComputedStyle(document.querySelector("[data-testid=meta-name-warning]")).backgroundColor'
+    );
+
+    expect($background)->not->toBe('rgba(0, 0, 0, 0)')->and($background)->not->toBe('transparent');
 });

@@ -303,7 +303,6 @@ new class extends Component
                     icon="triangle-alert"
                     :title="__('whatsapp.name_rules.title')"
                     data-testid="meta-name-warning"
-                    style="background: var(--warning-soft); border-color: var(--warning)"
                 >
                     <p>{{ __('whatsapp.name_rules.intro') }}</p>
                     <ul class="mt-1 list-disc ps-5">
