@@ -16,7 +16,7 @@ const port = Number(import.meta.env.VITE_REVERB_PORT || window.location.port || 
 
 // Private channel: pusher-js hits /broadcasting/auth with its own XHR, which
 // goes through neither Livewire nor axios. Without the CSRF token by hand
-// Laravel responde 419 y no se entra a ningun canal.
+// Laravel answers 419 and no channel can be joined.
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
 // The page says whether there is a socket to dial. With broadcasting off the
