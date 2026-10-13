@@ -3466,7 +3466,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
 
 /* ============================================================
    ALTA DE CLIENTE — shell del wizard de onboarding
-   (contrato visual: public/maqueta-registro.html)
+   (contrato visual: storage/mockups/maqueta-registro.html, local y no servido)
    ============================================================ */
 @layer components {
   /* Barra superior propia: el wizard vive fuera del shell del dashboard. */
