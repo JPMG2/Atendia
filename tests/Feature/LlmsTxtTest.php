@@ -33,6 +33,14 @@ test('llms.txt is plain text built from the real plans and the brand', function 
     }
 });
 
+test('llms.txt is never marked as cacheable by a shared cache', function (): void {
+    // It rides the web group, so it carries session cookies: public would let
+    // a CDN serve one visitor's cookie to the next.
+    $cache = (string) $this->get('/llms.txt')->headers->get('Cache-Control');
+
+    expect($cache)->toContain('private')->and($cache)->not->toContain('public');
+});
+
 test('a plan taken off sale stops appearing in llms.txt', function (): void {
     $archived = collect(Plan::everyPlan())->last();
     SubscriptionPlan::query()->where('code', $archived->code)->update(['archived_at' => now()]);

@@ -26,7 +26,9 @@ Route::get('/llms.txt', function (): Response {
 
     return response((new LlmsTxt)->text, 200, [
         'Content-Type' => 'text/plain; charset=UTF-8',
-        'Cache-Control' => 'public, max-age=3600',
+        // Private: the web group sets session cookies on it, and a shared
+        // cache must never hand one visitor another's.
+        'Cache-Control' => 'no-cache, private',
     ]);
 })->name('llms');
 
