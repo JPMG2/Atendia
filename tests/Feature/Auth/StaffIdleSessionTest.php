@@ -105,3 +105,27 @@ test('what the screen refreshes on its own does not count as activity', function
 
     expect($session->get('staff_last_seen_at'))->toBe(now()->getTimestamp());
 });
+
+test('a tab that only polls still idles out when its session had no mark yet', function (): void {
+    $admin = signInOnPanel('admin');
+    $session = app('session.store');
+
+    $poll = function () use ($admin, $session): Response {
+        $request = Request::create('/livewire-x/update', 'POST', [
+            'components' => [['updates' => [], 'calls' => [['method' => '$refresh', 'params' => []]]]],
+        ], server: ['HTTP_X_LIVEWIRE' => '1']);
+        $request->setUserResolver(fn (): User => $admin);
+        $request->setLaravelSession($session);
+
+        return (new ExpireIdleStaffSession)->handle($request, fn (): Response => new Response);
+    };
+
+    // A session opened before the deploy: no mark, then nothing but polls.
+    $session->forget('staff_last_seen_at');
+    expect($poll()->getStatusCode())->toBe(200);
+
+    $this->travel(21)->minutes();
+
+    // Without the clock being started by that first poll this would answer 200.
+    expect($poll()->getStatusCode())->toBe(419);
+});

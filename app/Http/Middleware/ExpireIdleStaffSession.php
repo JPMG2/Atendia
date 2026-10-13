@@ -43,7 +43,9 @@ class ExpireIdleStaffSession
             return $this->end($request);
         }
 
-        if (! $this->isPassiveLivewirePoll($request)) {
+        // A session that predates the mark (or whose first request is a poll)
+        // starts its clock now: without it a forgotten tab would never expire.
+        if ($lastSeen === 0 || ! $this->isPassiveLivewirePoll($request)) {
             $request->session()->put(self::LAST_SEEN, $now);
         }
 
