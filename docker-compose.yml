@@ -6,6 +6,10 @@ services:
     image: atendia-app:latest
     container_name: atendia-app
     restart: unless-stopped
+    # Tope: una fuga aca no puede dejar sin memoria a Postgres ni a Redis.
+    # Hoy usa ~1,8 GB (php-fpm + colas + Reverb + herramientas de desarrollo).
+    mem_limit: 4g
+    memswap_limit: 5g
     working_dir: /var/www/html
 
     # Codigo montado en vivo -> editas con VS Code y se refleja al instante
