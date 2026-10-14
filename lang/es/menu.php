@@ -58,6 +58,7 @@ return [
     'admin_moderation' => 'Moderación',
     'admin_support' => 'Soporte',
     'admin_adoption' => 'Adopción',
+    'admin_alerts' => 'Tablero de avisos',
     'admin_incidents' => 'Qué salió mal',
     'admin_contacts' => 'Radar de personas',
     'admin_compliance' => 'Cumplimiento',

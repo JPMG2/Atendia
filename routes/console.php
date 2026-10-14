@@ -33,6 +33,12 @@ Schedule::command('atendia:retry-ai-backlog')->everyThirtyMinutes()->withoutOver
 // would otherwise leave the panel green over a number that answers nobody.
 Schedule::command('atendia:whatsapp-reconcile')->everyFiveMinutes()->withoutOverlapping(5);
 
+// The admin board's pulse: every sensor read, the feed told what changed.
+Schedule::command('atendia:platform-sweep')->everyTwoMinutes()->withoutOverlapping(5);
+
+// The evening summary of what is still unseen; silent when nothing is.
+Schedule::command('atendia:platform-digest')->dailyAt('20:00')->withoutOverlapping(10);
+
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverlapping(15);
 

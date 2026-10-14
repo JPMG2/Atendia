@@ -459,4 +459,35 @@ return [
         'founders' => 10,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Platform health (the admin's board)
+    |--------------------------------------------------------------------------
+    |
+    | What the sweep tolerates before a sensor changes colour. The numbers are
+    | launch defaults; they move from here until the admin settings screen
+    | takes them, the way the incident thresholds did.
+    |
+    */
+
+    'health' => [
+        // A look older than this is shown as stale, not as green.
+        'stale_minutes' => 6,
+        // Consecutive bad looks before the feed hears about a system sensor:
+        // a blip is not an outage (Datadog's recovery threshold, PRTG's scans).
+        'failures_to_raise' => 2,
+        'disk_warn_percent' => 80,
+        'disk_crit_percent' => 90,
+        'queue_warn_minutes' => 5,
+        'queue_crit_minutes' => 15,
+        'backup_warn_hours' => 26,
+        'backup_crit_hours' => 50,
+        // Re-tell her a critical nobody has seen after this long (Opsgenie's escalation).
+        'escalate_after_minutes' => 30,
+        'escalate_max' => 3,
+        // An outside service that raises the alarm when THIS server stops
+        // pinging it: a dead server cannot report its own death.
+        'heartbeat_url' => env('HEALTH_HEARTBEAT_URL'),
+    ],
+
 ];

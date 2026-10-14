@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 // Home: what is waiting for her right now, with the rows behind each number.
 Route::livewire('/', 'admin.home.index')->name('dashboard');
 
+// The glance board: sensors with their state now and the open alarms, worst
+// first. What the platform tells its admin lives here.
+Route::livewire('/avisos', 'admin.alerts.index')->name('alerts')->middleware('permission:alerts.view');
+
 // Businesses: the ledger of everyone the platform serves. /admin/adopcion
 // measures the funnel; this one administers.
 Route::livewire('/negocios', 'admin.businesses.index')->name('businesses')->middleware('permission:businesses.view');

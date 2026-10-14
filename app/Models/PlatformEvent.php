@@ -77,11 +77,12 @@ class PlatformEvent extends Model
      * @param  list<PlatformEventKind>|null  $kinds  null = every kind
      * @return Collection<int, self>
      */
-    public static function board(int $limit, ?PlatformEventSeverity $severity = null, ?array $kinds = null, ?int $businessId = null, bool $withResolved = false): Collection
+    public static function board(int $limit, ?PlatformEventSeverity $severity = null, ?array $kinds = null, ?int $businessId = null, bool $withResolved = false, bool $unseenOnly = false): Collection
     {
         return self::query()
-            ->with('aboutBusiness:id,name')
+            ->with(['aboutBusiness:id,name', 'acknowledgedBy:id,name'])
             ->when(! $withResolved, fn (Builder $query) => $query->active())
+            ->when($unseenOnly, fn (Builder $query) => $query->where('state', PlatformEventState::Open->value))
             ->when($severity !== null, fn (Builder $query) => $query->where('severity', $severity->value))
             ->when($kinds !== null, fn (Builder $query) => $query->whereIn('kind', array_map(fn (PlatformEventKind $kind): string => $kind->value, $kinds)))
             ->when($businessId !== null, fn (Builder $query) => $query->where('about_business_id', $businessId))
@@ -112,6 +113,12 @@ class PlatformEvent extends Model
             'info' => $count(PlatformEventSeverity::Info),
             'unseen' => (int) $rows->sum('unseen'),
         ];
+    }
+
+    /** Marks one line seen by id; a line that was resolved meanwhile is ignored. */
+    public static function acknowledgeById(int $id, User $by): void
+    {
+        self::query()->whereKey($id)->first()?->acknowledge($by);
     }
 
     /** Somebody saw it. A second look changes nothing: the first one is the one that counts. */

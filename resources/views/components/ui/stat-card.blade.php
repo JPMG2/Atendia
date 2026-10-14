@@ -4,7 +4,7 @@
     'delta' => null,        // a short figure like "+12%", never a sentence
     'trend' => 'up',        // up | down | flat
     'icon' => null,
-    'tint' => 'brand',      // brand | accent | info | warning
+    'tint' => 'brand',      // brand | accent | info | warning | danger
     'href' => null,         // with one, the tile IS the link to its queue
 ])
 
@@ -14,6 +14,7 @@
         'accent' => ['var(--accent-soft)', 'var(--accent-soft-text)'],
         'info' => ['var(--info-soft)', 'var(--info)'],
         'warning' => ['var(--warning-soft)', 'var(--warning)'],
+        'danger' => ['var(--danger-soft)', 'var(--danger)'],
     ];
     [$bg, $fg] = $tints[$tint] ?? $tints['brand'];
 

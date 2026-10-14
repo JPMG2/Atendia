@@ -28,12 +28,17 @@ enum PlatformEventKind: string
     case AppealReceived = 'appeal_received';
     case ContentToReview = 'content_to_review';
 
+    // The platform itself: a sensor turned red, or turned yellow. Two kinds
+    // and not one with a loose severity, so a writer still cannot pick it.
+    case SystemDown = 'system_down';
+    case SystemDegraded = 'system_degraded';
+
     public function severity(): PlatformEventSeverity
     {
         return match ($this) {
-            self::BusinessSuspended, self::PaymentPaused => PlatformEventSeverity::Critical,
+            self::BusinessSuspended, self::PaymentPaused, self::SystemDown => PlatformEventSeverity::Critical,
             self::BusinessJoined, self::ReceiptReceived, self::PaymentLate, self::AppealReceived,
-            self::ContentToReview, self::WhatsAppDisconnected => PlatformEventSeverity::Important,
+            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded => PlatformEventSeverity::Important,
         };
     }
 
@@ -44,6 +49,38 @@ enum PlatformEventKind: string
             self::BusinessJoined, self::WhatsAppDisconnected => 'customers',
             self::ReceiptReceived, self::PaymentLate, self::PaymentPaused => 'money',
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => 'compliance',
+            self::SystemDown, self::SystemDegraded => 'system',
+        };
+    }
+
+    /**
+     * The kinds of one area, for the board's filter.
+     *
+     * @return list<self>
+     */
+    public static function inArea(string $area): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $kind): bool => $kind->area() === $area));
+    }
+
+    /**
+     * Where the person acts on it: the named route and its query, so a line on
+     * the board is a door and not just a sentence. Null when there is none.
+     *
+     * @return array{route: string, query: array<string, int>}|null
+     */
+    public function target(?int $businessId): ?array
+    {
+        return match ($this) {
+            self::ReceiptReceived => ['route' => 'admin.payments', 'query' => []],
+            self::PaymentLate, self::PaymentPaused => ['route' => 'admin.collections', 'query' => []],
+            self::BusinessSuspended, self::AppealReceived, self::ContentToReview => $businessId === null
+                ? ['route' => 'admin.compliance', 'query' => []]
+                : ['route' => 'admin.compliance', 'query' => ['negocio' => $businessId]],
+            self::BusinessJoined, self::WhatsAppDisconnected => $businessId === null
+                ? null
+                : ['route' => 'admin.businesses', 'query' => ['negocio' => $businessId]],
+            self::SystemDown, self::SystemDegraded => null,
         };
     }
 
@@ -57,6 +94,7 @@ enum PlatformEventKind: string
             self::BusinessSuspended => 'ban',
             self::AppealReceived => 'message-circle',
             self::ContentToReview => 'shield-alert',
+            self::SystemDown, self::SystemDegraded => 'triangle-alert',
         };
     }
 
@@ -67,7 +105,8 @@ enum PlatformEventKind: string
     public function resolvesItself(): bool
     {
         return match ($this) {
-            self::WhatsAppDisconnected, self::PaymentLate, self::PaymentPaused, self::BusinessSuspended => true,
+            self::WhatsAppDisconnected, self::PaymentLate, self::PaymentPaused, self::BusinessSuspended,
+            self::SystemDown, self::SystemDegraded => true,
             default => false,
         };
     }
