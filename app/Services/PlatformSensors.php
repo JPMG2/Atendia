@@ -296,6 +296,10 @@ class PlatformSensors
             return new SensorReadingDto('heartbeat', 'external', Status::Unknown, null, __('platform_events.detail.heartbeat_unset'));
         }
 
+        // The ping is a dead-man's switch: it must stop when the database does,
+        // or the outside monitor keeps seeing a pulse from a platform that is down.
+        DB::select('select 1');
+
         if (! Http::timeout(5)->get($url)->successful()) {
             return new SensorReadingDto('heartbeat', 'external', Status::Crit, null, __('platform_events.detail.heartbeat_failed'));
         }
