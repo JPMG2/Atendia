@@ -83,3 +83,11 @@
 2026-10-12	check-comment-golden-rules	tests/TestCase.php
 2026-10-12	check-comment-golden-rules	tests/TestCase.php
 2026-10-12	check-php-getter-golden-rules	app/Classes/Main/LlmsTxt.php
+2026-10-13	check-comment-golden-rules	app/Actions/Admin/RaisePlatformEvent.php
+2026-10-13	check-php-getter-golden-rules	app/Classes/Main/PlatformSensors.php
+2026-10-13	check-blade-query-golden-rules	resources/views/components/admin/alerts/⚡index.blade.php
+2026-10-13	check-blade-query-golden-rules	resources/views/components/admin/alerts/⚡index.blade.php
+2026-10-13	check-comment-golden-rules	app/Actions/Admin/ReconcilePlatformEvents.php
+2026-10-14	check-blade-golden-rules	resources/views/components/admin/alerts/⚡index.blade.php
+2026-10-14	check-blade-golden-rules	resources/views/components/admin/alerts/⚡index.blade.php
+2026-10-14	guardian:BusinessIsolationTest	app/Actions/Admin/SendPlatformDigest.php
