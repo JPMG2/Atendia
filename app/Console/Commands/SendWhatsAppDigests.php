@@ -31,6 +31,7 @@ class SendWhatsAppDigests extends Command
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
             ->whereNotNull('fallback_whatsapp_number')
+            ->with('subscription')
             ->get()
             // The card sells the digest from the middle plan up: without this
             // the entry plan got it too and the promise meant nothing.
