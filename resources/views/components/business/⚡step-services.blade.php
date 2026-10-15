@@ -107,6 +107,9 @@ new class extends Component
     public function finish(bool $skipped = false): void
     {
         if (! $skipped) {
+            // Same trap as the products step: a typed name never confirmed with Enter.
+            $this->add();
+
             $notification = $this->form->saveServices($this->services);
 
             $this->dispatchChangeNotification($notification);

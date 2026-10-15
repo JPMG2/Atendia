@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\BusinessActivity;
 use App\Models\Product;
+use App\Models\ServiceModality;
+use App\Models\ServiceType;
+use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -53,6 +57,40 @@ test('finishing writes the on-screen list to the tenant', function (): void {
         ->assertDispatched('wizard:step-completed', step: 4, skipped: false);
 
     expect($business->products()->pluck('name')->all())->toBe(['Pan de campo', 'Alfajor triple']);
+});
+
+test('a name typed but never added with Enter is not lost when she continues', function (): void {
+    $business = actingAsShopOwner();
+
+    Livewire::test('business.step-products')
+        ->set('draft', 'Pizza de jamón')
+        ->call('finish')
+        ->assertDispatched('wizard:step-completed', step: 4, skipped: false);
+
+    expect($business->products()->pluck('name')->all())->toBe(['Pizza de jamón']);
+});
+
+test('goods suggestions are offered here, not on the services step, and save to products', function (): void {
+    $business = actingAsShopOwner();
+
+    $activity = BusinessActivity::factory()->create(['code' => 'pizzeria']);
+    $goods = ServiceType::factory()->create(['service_modality_id' => ServiceModality::factory()->create(['code' => 'producto'])->id]);
+    $booking = ServiceType::factory()->create(['service_modality_id' => ServiceModality::factory()->create(['code' => 'reserva'])->id]);
+
+    SuggestedService::factory()->create(['business_activity_id' => $activity->id, 'service_type_id' => $goods->id, 'name' => 'Calzones']);
+    SuggestedService::factory()->create(['business_activity_id' => $activity->id, 'service_type_id' => $booking->id, 'name' => 'Reserva de mesa']);
+
+    expect(BusinessActivity::suggestionsName('pizzeria'))->toBe(['Reserva de mesa'])
+        ->and(BusinessActivity::suggestionsName('pizzeria', goods: true))->toBe(['Calzones']);
+
+    Livewire::test('business.step-products', ['sector' => '', 'activity' => 'pizzeria'])
+        ->assertSee('Calzones')
+        ->assertDontSee('Reserva de mesa')
+        ->call('toggle', 'Calzones')
+        ->call('finish');
+
+    expect($business->products()->pluck('name')->all())->toBe(['Calzones'])
+        ->and($business->services()->count())->toBe(0);
 });
 
 test('a product dropped from the list leaves softly on finish', function (): void {

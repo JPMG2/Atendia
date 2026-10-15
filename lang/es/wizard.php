@@ -98,6 +98,8 @@ return [
         'drop_text' => 'Tu lista de precios o inventario, tal cual la tienes. Nosotros la entendemos.',
         'drop_formats' => '.xlsx · .csv · hasta 10 MB',
         'manual' => 'O carga tus productos aquí, uno por uno.',
+        'add' => 'Agregar',
+        'suggest' => 'Sugerencias para tu rubro:',
         'skip' => 'Saltar este paso',
         'unreadable' => 'No pudimos leer la planilla. Revisa que tenga una fila de títulos y vuelve a intentar.',
         'review_title' => 'Esto entendimos de tu planilla',

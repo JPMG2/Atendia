@@ -60,6 +60,17 @@ test('picking services reports success even though the business row is untouched
         );
 });
 
+test('a name typed but never added with Enter is not lost when she continues', function (): void {
+    $business = actingAsOwner();
+
+    Livewire::test('business.step-services')
+        ->set('draft', 'Ecodoppler')
+        ->call('finish')
+        ->assertDispatched('wizard:step-completed', step: 3, skipped: false);
+
+    expect($business->services()->pluck('name')->all())->toBe(['Ecodoppler']);
+});
+
 test('re-saving the same list advances in silence: Continuar is navigation', function (): void {
     $business = actingAsOwner();
     $business->services()->create(['name' => 'Ecodoppler']);

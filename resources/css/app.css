@@ -3528,6 +3528,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .wizard-chip:hover { border-color:var(--brand); }
   .wizard-chip.is-on { border-color:var(--brand); background:var(--brand-soft); color:var(--brand-soft-text); font-weight:var(--weight-bold); }
   .wizard-suggest { margin:2px 0 10px; font-size:var(--text-sm); color:var(--text-subtle); }
+  .wizard-add { margin-top:10px; }
   .wizard-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; min-height:34px; }
   .wizard-pill { display:inline-flex; align-items:center; gap:8px; background:var(--brand-soft);
                  color:var(--brand-soft-text); border:1px solid var(--brand-border);

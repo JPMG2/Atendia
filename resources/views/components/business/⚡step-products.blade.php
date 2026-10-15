@@ -2,11 +2,15 @@
 
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
+use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Models\ProductImport;
 use App\Traits\HasNotifications;
 use App\Traits\ImportsProducts;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Reactive;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -23,6 +27,12 @@ new class extends Component
     use WithFileUploads;
 
     public BusinessForm $form;
+
+    #[Reactive]
+    public string $sector = '';
+
+    #[Reactive]
+    public string $activity = '';
 
     /** @var list<string> */
     public array $products = [];
@@ -84,6 +94,36 @@ new class extends Component
         $this->dispatch('wizard:products-updated', products: $this->products);
     }
 
+    /**
+     * The trade's suggested names that are goods: the services step leaves
+     * them out, so a pizza is offered once and saved where /productos reads.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function suggestions(): array
+    {
+        if ($this->activity !== '') {
+            return BusinessActivity::suggestionsName(code: $this->activity, goods: true);
+        }
+
+        return $this->sector === '' ? [] : BusinessSector::suggestionsName(code: $this->sector, goods: true);
+    }
+
+    /** Chips behave like checkboxes: a second tap on a picked one un-picks it. */
+    public function toggle(string $name): void
+    {
+        $index = array_search($name, $this->products, true);
+
+        if ($index === false) {
+            $this->add($name);
+
+            return;
+        }
+
+        $this->remove($index);
+    }
+
     public function remove(int $index): void
     {
         unset($this->products[$index]);
@@ -97,6 +137,9 @@ new class extends Component
     public function finish(bool $skipped = false): void
     {
         if (! $skipped) {
+            // The box has no add button: a name typed and never confirmed with Enter would vanish.
+            $this->add();
+
             $notification = $this->form->saveProducts($this->products, $this->knownProducts);
 
             $this->dispatchChangeNotification($notification);
@@ -162,6 +205,37 @@ new class extends Component
             :label="__('wizard.fields.product')"
             :placeholder="__('wizard.fields.product_placeholder')"
         />
+
+        <div class="wizard-add">
+            <x-ui.button variant="secondary" size="sm" icon="plus" wire:click="add">{{ __('wizard.products.add') }}</x-ui.button>
+        </div>
+
+        @if ($this->suggestions !== [])
+            <p class="wizard-suggest">{{ __('wizard.products.suggest') }}</p>
+            <div class="wizard-chips">
+                @foreach ($this->suggestions as $suggestion)
+                    @php
+                        // Same exact comparison add() dedupes with.
+                        $picked = in_array($suggestion, $products, true);
+                    @endphp
+
+                    <button
+                        type="button"
+                        wire:key="suggest-{{ $suggestion }}"
+                        wire:click="toggle(@js($suggestion))"
+                        @class(['wizard-pill-suggest', 'is-on' => $picked])
+                        aria-pressed="{{ $picked ? 'true' : 'false' }}"
+                    >
+                        @if ($picked)
+                            <x-icon name="check" :size="12" />
+                        @else
+                            +
+                        @endif
+                        {{ $suggestion }}
+                    </button>
+                @endforeach
+            </div>
+        @endif
 
         <div class="wizard-pills">
             @foreach ($products as $index => $product)

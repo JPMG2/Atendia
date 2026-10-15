@@ -61,6 +61,18 @@ test('it normalizes the three accepted option shapes into value/label pairs', fu
         ->and($pairs)->toContain('Dólar Estadounidense');
 });
 
+test('integer-keyed options send the id, never the label', function (): void {
+    $html = $this->blade('<x-inputsform.combobox name="service_type_id" :options="$options" />', [
+        'options' => [4 => 'Plato', 7 => 'Bebida'],
+    ])->__toString();
+
+    // The options travel as JSON to Alpine: the value must be the id.
+    $options = str_replace(chr(92).'u0022', '"', $html);
+
+    expect($options)->toContain('"value":4,"label":"Plato')
+        ->and($options)->not->toContain('"value":"Plato');
+});
+
 test('a backend error paints the field and is shown, exactly like the input does', function (): void {
     $this->blade(
         '<x-inputsform.combobox name="currency_id" error="La moneda es obligatoria." :options="$options" />',

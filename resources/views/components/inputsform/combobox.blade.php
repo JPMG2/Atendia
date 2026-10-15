@@ -29,14 +29,15 @@
     // against the `errors` bag, so no Blade ever writes that expression by hand.
     $alpineErrorExpr = $alpineError !== null ? 'errors.'.$alpineError : null;
 
-    // Normalises the three shapes of `options` into [['value'=>..,'label'=>..]],
-    // the only one the JS understands. No Blade should repeat this logic.
+    // Normalises `options` into value/label pairs, the only shape the JS reads.
+    // Only a plain list uses its text as the value: [4 => 'Plato'] must send 4.
+    $isPlainList = array_is_list(collect($options)->all());
     $normalizedOptions = collect($options)
         ->map(fn ($option, $key) => is_array($option)
             ? ['value' => $option['value'], 'label' => (string) $option['label']]
-            : (is_string($key)
-                ? ['value' => $key, 'label' => (string) $option]
-                : ['value' => $option, 'label' => (string) $option]))
+            : ($isPlainList
+                ? ['value' => $option, 'label' => (string) $option]
+                : ['value' => $key, 'label' => (string) $option]))
         ->values()
         ->all();
 

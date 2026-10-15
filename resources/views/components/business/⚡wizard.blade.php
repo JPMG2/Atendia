@@ -228,18 +228,20 @@ step actually saves: the exit can then ask before losing real keystrokes. --}}
         <div class="wizard-panel">
             {{-- Every step stays mounted (only hidden) so what was typed
             survives when navigating back and forth, mock-up style. The
-            account step has no panel: it IS Breeze's register. --}}
+            account step has no panel: it IS Breeze's register. Each step
+            carries a fixed key: without it the products step was rebuilt
+            on every update from above and dropped what had just been added. --}}
             <div @if ($step !== 2) hidden @endif>
-                <livewire:business.step-business />
+                <livewire:business.step-business wire:key="wizard-step-business" />
             </div>
             <div @if ($step !== 3) hidden @endif>
-                <livewire:business.step-services :sector="$sector" :activity="$activity" />
+                <livewire:business.step-services :sector="$sector" :activity="$activity" wire:key="wizard-step-services" />
             </div>
             <div @if ($step !== 4) hidden @endif>
-                <livewire:business.step-products />
+                <livewire:business.step-products :sector="$sector" :activity="$activity" wire:key="wizard-step-products" />
             </div>
             <div @if ($step !== 5) hidden @endif>
-                <livewire:business.step-whatsapp />
+                <livewire:business.step-whatsapp wire:key="wizard-step-whatsapp" />
             </div>
 
             @if ($step > 5)
