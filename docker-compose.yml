@@ -58,6 +58,20 @@ services:
       - "traefik.http.routers.atendia-https.priority=100"
       - "traefik.http.routers.atendia-https.tls=true"
       - "traefik.http.routers.atendia-https.service=atendia-svc"
+      # Dominio real (aliadito.com): HTTPS con Let's Encrypt (resolver del Traefik de EasyPanel)
+      # y el HTTP redirige. Mismo servicio que la IP pelada.
+      - "traefik.http.routers.aliadito-https.rule=Host(`aliadito.com`) || Host(`www.aliadito.com`)"
+      - "traefik.http.routers.aliadito-https.entrypoints=https"
+      - "traefik.http.routers.aliadito-https.priority=100"
+      - "traefik.http.routers.aliadito-https.tls=true"
+      - "traefik.http.routers.aliadito-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.aliadito-https.service=atendia-svc"
+      - "traefik.http.routers.aliadito-http.rule=Host(`aliadito.com`) || Host(`www.aliadito.com`)"
+      - "traefik.http.routers.aliadito-http.entrypoints=http"
+      - "traefik.http.routers.aliadito-http.priority=100"
+      - "traefik.http.routers.aliadito-http.middlewares=aliadito-to-https"
+      - "traefik.http.routers.aliadito-http.service=atendia-svc"
+      - "traefik.http.middlewares.aliadito-to-https.redirectscheme.scheme=https"
       # Servicio -> puerto 80 del contenedor (nginx)
       - "traefik.http.services.atendia-svc.loadbalancer.server.port=80"
 
