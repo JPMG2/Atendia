@@ -14,6 +14,14 @@ declare(strict_types=1);
 
 return [
 
+    // El nombre que se ve junto a la dirección de quien envía (App\Enums\MailSender).
+    'sender' => [
+        'system' => ':brand',
+        'billing' => ':brand · Cobranzas',
+        'support' => ':brand · Soporte',
+        'hello' => ':brand',
+    ],
+
     // El chrome que visten todos los correos (components/email/layout).
     'layout' => [
         'rights' => '© :year :brand. Todos los derechos reservados.',
