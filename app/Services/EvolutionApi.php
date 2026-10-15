@@ -208,6 +208,50 @@ class EvolutionApi
             ->json('instance.state', 'closed');
     }
 
+    /**
+     * Every instance the bridge runs, whoever it belongs to.
+     *
+     * @return list<string>
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function instanceNames(): array
+    {
+        return collect((array) $this->request()->get('/instance/fetchInstances')->throw()->json())
+            ->map(fn ($row): string => (string) (is_array($row) ? ($row['name'] ?? $row['instanceName'] ?? '') : ''))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Unpairs the phone from the instance. A phone never paired (or already
+     * dropped) answers with an error that only means "nothing to do", so the
+     * response is not thrown: the delete after it is the real proof.
+     *
+     * @throws ConnectionException
+     */
+    public function logout(string $instance): void
+    {
+        $this->request()->delete("/instance/logout/{$instance}");
+    }
+
+    /**
+     * Idempotent: an instance that is already gone is the state we wanted.
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function deleteInstance(string $instance): void
+    {
+        $response = $this->request()->delete("/instance/delete/{$instance}");
+
+        if ($response->status() === 404) {
+            return;
+        }
+
+        $response->throw();
+    }
+
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim((string) config('services.evolution.url'), '/'))

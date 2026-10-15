@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Admin\FindOrphanInstances;
 use App\Enums\SubscriptionStatus;
 use App\Models\Business;
 use App\Models\Payment;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -92,6 +94,82 @@ test('a baja is recorded and the business keeps being served until its period en
 
     $page->assertNoJavaScriptErrors()
         ->screenshot(filename: 'admin-businesses-canceled');
+});
+
+test('removing a business asks first, then takes it off the list', function (): void {
+    $page = visit(route('admin.businesses'))->resize(1280, 1400);
+
+    $page->click('[data-testid="biz-open-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.remove.action'))
+        ->click('[data-testid="biz-remove-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.remove.accept'))
+        ->screenshot(filename: 'admin-businesses-remove-dialog')
+        ->click('.dialog-foot [x-ref="accept"]')
+        ->waitForText(__('admin.businesses.remove.done'));
+
+    expect(Business::withTrashed()->findOrFail($this->paying->id)->trashed())->toBeTrue();
+
+    $page->assertDontSee('Panadería La Esquina')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-businesses-removed');
+});
+
+test('the ficha opens beside the list and the list keeps every other row in view', function (): void {
+    $page = visit(route('admin.businesses'))->resize(1280, 900);
+
+    $page->click('[data-testid="biz-open-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.card.payments'))
+        // The other business is still there to be picked, with no scrolling.
+        ->assertSee('Estudio Contable Ríos')
+        ->assertSee(__('admin.businesses.cancel.title'))
+        ->screenshot(filename: 'admin-businesses-split-1280')
+        ->click('[data-testid="biz-close-'.$this->paying->id.'"]')
+        ->assertDontSee(__('admin.businesses.card.payments'))
+        ->assertNoJavaScriptErrors();
+});
+
+test('on a phone the ficha takes the screen and gives it back', function (): void {
+    $page = visit(route('admin.businesses'))->resize(390, 844);
+
+    $page->click('[data-testid="biz-open-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.card.payments'))
+        ->screenshot(filename: 'admin-businesses-split-390')
+        ->click('[data-testid="biz-close-'.$this->paying->id.'"]')
+        ->assertDontSee(__('admin.businesses.card.payments'))
+        ->assertNoJavaScriptErrors();
+});
+
+test('a removed business is found under Quitado and restored from its ficha', function (): void {
+    $this->paying->delete();
+
+    $page = visit(route('admin.businesses', ['estado' => 'removed']))->resize(1280, 1400);
+
+    $page->assertSee('Panadería La Esquina')
+        ->click('[data-testid="biz-open-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.restore.action'))
+        ->screenshot(filename: 'admin-businesses-removed-ficha')
+        ->click('[data-testid="biz-restore-'.$this->paying->id.'"]')
+        ->click('.dialog-foot [x-ref="accept"]')
+        ->waitForText(__('admin.businesses.restore.done'));
+
+    expect(Business::query()->find($this->paying->id))->not->toBeNull();
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('the instances nobody holds are listed with their hour and can be freed', function (): void {
+    Cache::put(
+        FindOrphanInstances::CACHE_KEY,
+        ['names' => ['business-7001'], 'at' => now()->toIso8601String()],
+        now()->addDay(),
+    );
+
+    $page = visit(route('admin.businesses'))->resize(1280, 1000);
+
+    $page->assertSee(__('admin.businesses.orphans.title'))
+        ->assertSee('business-7001')
+        ->screenshot(filename: 'admin-businesses-orphans')
+        ->assertNoJavaScriptErrors();
 });
 
 test('a baja whose period already ran out is over, with no grace and no pause', function (): void {

@@ -1,5 +1,9 @@
 <?php
 
+use App\Actions\Admin\FindOrphanInstances;
+use App\Actions\Admin\ReleaseBridgeInstance;
+use App\Actions\Admin\RemoveBusiness;
+use App\Actions\Admin\RestoreBusiness;
 use App\Actions\Billing\CancelSubscription;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
@@ -7,6 +11,8 @@ use App\Models\Business;
 use App\Models\ComplianceEvent;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -65,7 +71,7 @@ new class extends Component
     #[Computed]
     public function total(): int
     {
-        return Business::directoryTotal();
+        return Business::directoryTotal($this->state);
     }
 
     /** How many match the search and the state, of which the page shows `visible`. */
@@ -91,7 +97,7 @@ new class extends Component
     #[Computed]
     public function stateOptions(): array
     {
-        return collect(['problem', 'trialing', 'active', 'past_due', 'paused', 'canceling', 'ended', 'suspended', 'none'])
+        return collect(['problem', 'trialing', 'active', 'past_due', 'paused', 'canceling', 'ended', 'suspended', 'none', 'removed'])
             ->mapWithKeys(fn (string $state): array => [$state => __('admin.businesses.states.'.$state)])
             ->all();
     }
@@ -124,6 +130,108 @@ new class extends Component
     public function undoCancel(int $id): void
     {
         $this->dispatchNotification($this->verdict($id, cancel: false));
+    }
+
+    /**
+     * The one action here that can fail outside the database (it frees the
+     * bridge instance): the answer says so, and nothing was changed.
+     */
+    public function remove(int $id): void
+    {
+        $business = Business::ledger($id);
+
+        if ($business === null || $business->trashed()) {
+            return;
+        }
+
+        try {
+            app(RemoveBusiness::class)->handle($business);
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
+
+            $this->dispatchNotification(new NotificationDto(__('admin.businesses.remove.failed'), NotificationType::Error));
+
+            return;
+        }
+
+        $this->open = null;
+        unset($this->businesses, $this->ficha, $this->total, $this->matching);
+
+        $this->dispatchNotification(new NotificationDto(__('admin.businesses.remove.done'), NotificationType::Success));
+    }
+
+    /** What removing the open business gives back, in a sentence the confirmation repeats. */
+    #[Computed]
+    public function frees(): string
+    {
+        if ($this->ficha === null) {
+            return '';
+        }
+
+        $held = $this->ficha->releasedOnRemoval();
+
+        $items = array_values(array_filter([
+            $held['instance'] === null ? null : __('admin.businesses.remove.item_instance', [
+                'instance' => $held['instance'],
+                'state' => $held['connected'] ? __('admin.businesses.remove.connected') : __('admin.businesses.remove.not_connected'),
+            ]),
+            $held['phone'] === null ? null : __('admin.businesses.remove.item_phone', ['phone' => $held['phone']]),
+            $held['people'] === 0 ? null : trans_choice('admin.businesses.remove.item_people', $held['people'], ['count' => $held['people']]),
+        ]));
+
+        return $items === []
+            ? __('admin.businesses.remove.frees_nothing')
+            : __('admin.businesses.remove.frees', ['items' => implode(', ', $items)]);
+    }
+
+    public function restore(int $id): void
+    {
+        $business = Business::ledger($id);
+
+        if ($business === null || ! $business->trashed()) {
+            return;
+        }
+
+        app(RestoreBusiness::class)->handle($business);
+
+        $this->state = '';
+        unset($this->businesses, $this->ficha, $this->total, $this->matching);
+
+        $this->dispatchNotification(new NotificationDto(__('admin.businesses.restore.done'), NotificationType::Success));
+    }
+
+    /**
+     * What the last look at the bridge found, with its hour: the screen never
+     * calls the bridge on a render, the sweep does.
+     *
+     * @return array{names: list<string>, at: Carbon\CarbonImmutable}|null
+     */
+    #[Computed]
+    public function orphans(): ?array
+    {
+        $seen = FindOrphanInstances::lastKnown();
+
+        return $seen === null || $seen['names'] === [] ? null : $seen;
+    }
+
+    public function releaseOrphan(string $instance): void
+    {
+        try {
+            $freed = app(ReleaseBridgeInstance::class)->handle($instance);
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
+
+            $this->dispatchNotification(new NotificationDto(__('admin.businesses.remove.failed'), NotificationType::Error));
+
+            return;
+        }
+
+        unset($this->orphans);
+
+        $this->dispatchNotification(new NotificationDto(
+            $freed ? __('admin.businesses.orphans.done') : __('admin.businesses.orphans.refused'),
+            $freed ? NotificationType::Success : NotificationType::Error,
+        ));
     }
 
     /**
@@ -171,6 +279,31 @@ new class extends Component
         <x-ui.result-count :shown="$this->matching" :total="$this->total" noun="admin.businesses.count" />
     </div>
 
+    {{-- Instances the bridge keeps running for nobody: the sweep found them, here they are freed. --}}
+    @if ($this->orphans !== null && auth()->user()->can('businesses.manage'))
+        <x-ui.card class="bp-card mb-3" data-testid="bridge-orphans">
+            <div class="bp-card-head">
+                <h2>{{ __('admin.businesses.orphans.title') }}</h2>
+                <span class="text-subtle text-xs font-mono">{{ __('admin.businesses.orphans.as_of', ['date' => $this->orphans['at']->format('d/m H:i')]) }}</span>
+            </div>
+            <p class="bp-card-sub">{{ __('admin.businesses.orphans.sub') }}</p>
+
+            @foreach ($this->orphans['names'] as $instance)
+                <div class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-sunken" wire:key="orphan-{{ $instance }}">
+                    <span class="font-mono text-sm">{{ $instance }}</span>
+                    <x-ui.button
+                        variant="danger"
+                        size="sm"
+                        x-on:click="confirmRelease({{ Illuminate\Support\Js::from($instance) }})"
+                        data-testid="orphan-release-{{ $instance }}"
+                    >{{ __('admin.businesses.orphans.action') }}</x-ui.button>
+                </div>
+            @endforeach
+        </x-ui.card>
+    @endif
+
+    {{-- Master-detail: the list never moves, the ficha sits beside it. --}}
+    <div @class(['split-view', 'has-detail' => $this->ficha !== null])>
     <x-ui.card class="bp-card">
         <x-catalog.form-row>
             <x-inputsform.input
@@ -213,9 +346,9 @@ new class extends Component
                     <thead>
                         <tr>
                             <th>{{ __('admin.businesses.name') }}</th>
-                            <th>{{ __('admin.businesses.plan') }}</th>
+                            <th class="col-aux">{{ __('admin.businesses.plan') }}</th>
                             <th>{{ __('admin.businesses.state') }}</th>
-                            <th>{{ __('admin.businesses.due') }}</th>
+                            <th class="col-aux">{{ __('admin.businesses.due') }}</th>
                             <th>{{ __('admin.businesses.owes') }}</th>
                             <th></th>
                         </tr>
@@ -225,16 +358,16 @@ new class extends Component
                             @php($state = $this->stateOf($business))
                             <tr wire:key="biz-{{ $business->id }}">
                                 <td class="is-key" data-label="{{ __('admin.businesses.name') }}">{{ $business->name }}</td>
-                                <td data-label="{{ __('admin.businesses.plan') }}">
+                                <td class="col-aux" data-label="{{ __('admin.businesses.plan') }}">
                                     {{ $business->subscription ? __('plan.names.'.$business->subscription->plan) : '—' }}
                                 </td>
                                 <td data-label="{{ __('admin.businesses.state') }}">
                                     <span @class([
                                         'status-tag',
-                                        'is-danger' => in_array($state, ['suspended', 'paused', 'ended'], true),
+                                        'is-danger' => in_array($state, ['suspended', 'paused', 'ended', 'removed'], true),
                                     ])>{{ __('admin.businesses.states.'.$state) }}</span>
                                 </td>
-                                <td class="font-mono" data-label="{{ __('admin.businesses.due') }}">
+                                <td class="font-mono col-aux" data-label="{{ __('admin.businesses.due') }}">
                                     {{ $business->subscription?->periodEndsAt()?->format('d/m/Y') ?? '—' }}
                                 </td>
                                 {{-- Zero is not the same sentence as nothing owed: a dash
@@ -266,7 +399,7 @@ new class extends Component
     @if ($this->ficha !== null)
         @php($subscription = $this->ficha->subscription)
 
-        <x-ui.card class="bp-card mt-3">
+        <x-ui.card class="bp-card split-detail" data-testid="biz-ficha">
             <div class="bp-card-head">
                 <h2>{{ $this->ficha->name }}</h2>
 
@@ -284,6 +417,16 @@ new class extends Component
                         >{{ trans_choice('admin.businesses.history', $this->historyCount, ['count' => $this->historyCount]) }}</x-ui.button>
                     </span>
                 @endcan
+
+                <x-ui.icon-button
+                    icon="x"
+                    variant="ghost"
+                    size="sm"
+                    :label="__('admin.businesses.close')"
+                    wire:click="toggle({{ $this->ficha->id }})"
+                    class="split-detail-close"
+                    data-testid="biz-close-{{ $this->ficha->id }}"
+                />
             </div>
 
             <div class="stat-grid stat-grid-fill">
@@ -314,6 +457,18 @@ new class extends Component
                 >{{ __('admin.businesses.states.'.$this->stateOf($this->ficha)) }}</x-ui.stat-card>
             </div>
 
+            @if ($this->ficha->trashed())
+                @can('businesses.manage')
+                    <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.restore.title') }}</h2></div>
+                    <p class="bp-card-sub">{{ __('admin.businesses.restore.hint', ['date' => $this->ficha->deleted_at?->format('d/m/Y')]) }}</p>
+                    <x-ui.button
+                        variant="secondary"
+                        size="sm"
+                        x-on:click="confirmRestore({{ $this->ficha->id }}, {{ Illuminate\Support\Js::from($this->ficha->name) }})"
+                        data-testid="biz-restore-{{ $this->ficha->id }}"
+                    >{{ __('admin.businesses.restore.action') }}</x-ui.button>
+                @endcan
+            @else
             <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.cancel.title') }}</h2></div>
             @if ($subscription === null)
                 <p class="text-muted text-sm">{{ __('admin.businesses.cancel.no_subscription') }}</p>
@@ -344,6 +499,18 @@ new class extends Component
                     x-on:click="confirmCancel({{ $this->ficha->id }}, {{ Illuminate\Support\Js::from($this->ficha->name) }}, {{ Illuminate\Support\Js::from($subscription->periodEndsAt()?->format('d/m/Y')) }})"
                     data-testid="biz-cancel-{{ $this->ficha->id }}"
                 >{{ __('admin.businesses.cancel.action') }}</x-ui.button>
+            @endif
+
+            @can('businesses.manage')
+                <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.remove.title') }}</h2></div>
+                <p class="bp-card-sub" data-testid="biz-frees-{{ $this->ficha->id }}">{{ $this->frees }} {{ __('admin.businesses.remove.hint') }}</p>
+                <x-ui.button
+                    variant="danger"
+                    size="sm"
+                    x-on:click="confirmRemove({{ $this->ficha->id }}, {{ Illuminate\Support\Js::from($this->ficha->name) }}, {{ Illuminate\Support\Js::from($this->frees) }})"
+                    data-testid="biz-remove-{{ $this->ficha->id }}"
+                >{{ __('admin.businesses.remove.action') }}</x-ui.button>
+            @endcan
             @endif
 
             <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.card.payments') }}</h2></div>
@@ -380,6 +547,7 @@ new class extends Component
             @endif
         </x-ui.card>
     @endif
+    </div>
 
     <x-ui.key-hints>
         <kbd class="cmdk-kbd">/</kbd> {{ __('admin.keys.search') }}
@@ -406,6 +574,45 @@ new class extends Component
                 }
 
                 await this.$wire.cancel(id);
+            },
+
+            async confirmRestore(id, name) {
+                if (!(await dialog.confirm({
+                    title: @js(__('admin.businesses.restore.title')),
+                    message: @js(__('admin.businesses.restore.confirm')).replace(':name', name),
+                    accept: @js(__('admin.businesses.restore.accept')),
+                    type: 'warning',
+                }))) {
+                    return;
+                }
+
+                await this.$wire.restore(id);
+            },
+
+            async confirmRelease(instance) {
+                if (!(await dialog.confirm({
+                    title: @js(__('admin.businesses.orphans.title')),
+                    message: @js(__('admin.businesses.orphans.confirm')).replace(':instance', instance),
+                    accept: @js(__('admin.businesses.orphans.accept')),
+                    type: 'danger',
+                }))) {
+                    return;
+                }
+
+                await this.$wire.releaseOrphan(instance);
+            },
+
+            async confirmRemove(id, name, frees) {
+                if (!(await dialog.confirm({
+                    title: @js(__('admin.businesses.remove.title')),
+                    message: @js(__('admin.businesses.remove.confirm')).replace(':name', name).replace(':frees', frees),
+                    accept: @js(__('admin.businesses.remove.accept')),
+                    type: 'danger',
+                }))) {
+                    return;
+                }
+
+                await this.$wire.remove(id);
             },
 
             async confirmUndo(id, name) {

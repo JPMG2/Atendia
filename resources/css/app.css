@@ -1930,6 +1930,26 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bp-todo.is-done { color:var(--text-subtle); text-decoration:line-through; }
   .bp-todo.is-done em { background:var(--brand); border-color:var(--brand); }
   .bp-head-action { margin-left:auto; }
+  /* Master-detail: the list keeps its place and the ficha sits beside it, so
+     going through a hundred rows never costs a scroll. The columns marked
+     .col-aux step aside while a ficha is open: the list is for choosing. */
+  .split-view { display:grid; gap:var(--space-4); align-items:start; grid-template-columns:minmax(0,1fr); }
+  .split-view.has-detail { grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); }
+  .split-view.has-detail .pay-table { min-width:0; }
+  .split-view.has-detail .pay-table td.font-mono { white-space:nowrap; }
+  .split-view.has-detail .col-aux { display:none; }
+  .split-view > .bp-card { margin-bottom:0; }
+  .split-detail { position:sticky; top:calc(var(--topbar-h) + var(--space-4));
+                  max-height:calc(100vh - var(--topbar-h) - 2 * var(--space-4)); overflow-y:auto; }
+  .split-detail-close { margin-left:auto; }
+  .bp-head-action + .split-detail-close { margin-left:0; }
+  /* Too narrow to sit side by side: the ficha takes the screen and gives it back. */
+  @media (max-width:1100px) {
+    .split-view.has-detail { grid-template-columns:minmax(0,1fr); }
+    .split-view.has-detail .col-aux { display:table-cell; }
+    .split-detail { position:fixed; inset:0; z-index:calc(var(--z-modal) - 1); max-height:none;
+                    padding:var(--space-4); background:var(--surface-page); }
+  }
   .bp-try-overlay { position:fixed; inset:0; z-index:80; background:var(--surface-overlay);
                     display:flex; align-items:center; justify-content:center; padding:16px; }
   .bp-try-panel { width:min(360px, 100%); background:var(--surface-card); border:1px solid var(--border-subtle);

@@ -737,7 +737,7 @@ return [
         'open' => 'Ver la ficha',
         'close' => 'Cerrar la ficha',
 
-        'all_states' => 'Todos los estados',
+        'all_states' => 'Todos',
         'search' => 'Buscar',
         'search_placeholder' => 'Nombre del negocio',
         'no_match' => 'Ningún negocio coincide con lo que buscaste.',
@@ -752,6 +752,7 @@ return [
             'canceling' => 'Se da de baja',
             'ended' => 'Dado de baja',
             'none' => 'Sin plan',
+            'removed' => 'Quitado',
         ],
 
         'card' => [
@@ -786,6 +787,43 @@ return [
             'done' => 'Baja registrada.',
             'undone' => 'Baja deshecha.',
             'no_subscription' => 'Este negocio no tiene plan: no hay baja que registrar.',
+        ],
+
+        'remove' => [
+            'title' => 'Quitar el negocio',
+            'hint' => 'Su gente deja de poder entrar. Los datos se conservan y se revierte desde el estado «Quitado».',
+            'action' => 'Quitar el negocio',
+            'accept' => 'Quitar el negocio',
+            'confirm' => '¿Quitas :name? :frees Los datos se conservan.',
+            'frees' => 'Libera :items.',
+            'frees_nothing' => 'No retiene instancia, teléfono ni personas.',
+            'item_instance' => 'la instancia :instance (:state)',
+            'item_phone' => 'el teléfono :phone',
+            'item_people' => '{1} el acceso de :count persona|[2,*] el acceso de :count personas',
+            'connected' => 'conectada',
+            'not_connected' => 'sin conectar',
+            'done' => 'Negocio quitado. Su instancia y su teléfono quedaron libres.',
+            'failed' => 'No se pudo liberar la instancia de WhatsApp. No se cambió nada: vuelve a intentarlo.',
+        ],
+
+        'restore' => [
+            'title' => 'Restaurar el negocio',
+            'hint' => 'Quitado el :date. Vuelve con su equipo y su plan; su WhatsApp hay que vincularlo de nuevo.',
+            'action' => 'Restaurar el negocio',
+            'accept' => 'Restaurar el negocio',
+            'confirm' => '¿Restauras :name? Vuelve con su equipo y su plan. Su WhatsApp hay que vincularlo de nuevo.',
+            'done' => 'Negocio restaurado.',
+        ],
+
+        'orphans' => [
+            'title' => 'Instancias sin negocio',
+            'as_of' => 'Al :date',
+            'sub' => 'El puente las mantiene corriendo, pero ningún negocio activo las usa.',
+            'action' => 'Liberar',
+            'accept' => 'Liberar la instancia',
+            'confirm' => '¿Liberas la instancia :instance? Se desvincula su número y se borra del puente.',
+            'done' => 'Instancia liberada.',
+            'refused' => 'Esa instancia la usa un negocio activo: no se tocó.',
         ],
     ],
 

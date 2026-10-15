@@ -98,7 +98,7 @@ class PlatformSensor extends Model
             'queue', 'database', 'redis', 'disk' => 'admin.logs',
             'ai' => 'admin.ai-usage',
             'platform_whatsapp' => 'admin.integrations',
-            'whatsapp_links', 'signups' => 'admin.businesses',
+            'whatsapp_links', 'bridge_orphans', 'signups' => 'admin.businesses',
             'receipts' => 'admin.payments',
             'late', 'paused' => 'admin.collections',
             'suspended', 'appeals', 'content' => 'admin.compliance',

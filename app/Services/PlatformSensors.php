@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Actions\Admin\FindOrphanInstances;
 use App\Dto\SensorReadingDto;
 use App\Enums\PaymentStatus;
 use App\Enums\PlatformEventKind;
@@ -44,6 +45,7 @@ class PlatformSensors
             $this->guard('mail', 'system', fn (): SensorReadingDto => $this->mail()),
             $this->guard('ai', 'system', fn (): SensorReadingDto => $this->ai()),
             $this->guard('whatsapp_links', 'customers', fn (): SensorReadingDto => $this->whatsappLinks()),
+            $this->guard('bridge_orphans', 'customers', fn (): SensorReadingDto => $this->bridgeOrphans()),
             $this->guard('signups', 'customers', fn (): SensorReadingDto => $this->signups()),
             $this->guard('receipts', 'money', fn (): SensorReadingDto => $this->receipts()),
             $this->guard('late', 'money', fn (): SensorReadingDto => $this->subscriptions('late', SubscriptionStatus::PastDue, Status::Warn)),
@@ -217,6 +219,16 @@ class PlatformSensors
         return $down > 0
             ? new SensorReadingDto('whatsapp_links', 'customers', Status::Warn, $up.' / '.$total, __('platform_events.detail.links_down', ['count' => $down]))
             : new SensorReadingDto('whatsapp_links', 'customers', Status::Ok, $up.' / '.$total, __('platform_events.detail.links_ok'));
+    }
+
+    /** Instances the bridge keeps running for a business that no longer holds them. */
+    private function bridgeOrphans(): SensorReadingDto
+    {
+        $orphans = app(FindOrphanInstances::class)->handle();
+
+        return $orphans === []
+            ? new SensorReadingDto('bridge_orphans', 'customers', Status::Ok, '0', __('platform_events.detail.orphans_none'))
+            : new SensorReadingDto('bridge_orphans', 'customers', Status::Warn, (string) count($orphans), __('platform_events.detail.orphans_some', ['names' => implode(', ', $orphans)]));
     }
 
     private function signups(): SensorReadingDto

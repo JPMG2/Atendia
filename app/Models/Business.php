@@ -881,10 +881,14 @@ class Business extends Model
         return $this->hasMany(Payment::class);
     }
 
-    /** How many businesses `directory()` holds with no search: the "of" in "4 of 34". */
-    public static function directoryTotal(): int
+    /**
+     * How many businesses `directory()` holds with no search: the "of" in
+     * "4 of 34". The removed ones are a list of their own, so their "of" is
+     * their own count and never the active total.
+     */
+    public static function directoryTotal(string $situation = ''): int
     {
-        return self::query()->count();
+        return $situation === 'removed' ? self::onlyTrashed()->count() : self::query()->count();
     }
 
     /**
@@ -917,7 +921,7 @@ class Business extends Model
      */
     private static function directoryQuery(string $search, string $situation): Builder
     {
-        return self::query()
+        return ($situation === 'removed' ? self::onlyTrashed() : self::query())
             // The term goes to the database, not to a filter in memory: that is
             // what makes "Odontologico" find "Odontológico".
             ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name'], trim($search)))
@@ -934,6 +938,7 @@ class Business extends Model
         $subscription = $this->subscription;
 
         return match (true) {
+            $this->trashed() => 'removed',
             $this->isSuspended() => 'suspended',
             $subscription === null => 'none',
             $subscription->hasEnded() => 'ended',
@@ -950,6 +955,11 @@ class Business extends Model
      */
     public function scopeInSituation(Builder $query, string $situation): void
     {
+        // The set itself is cut by `directoryQuery` (only the trashed ones).
+        if ($situation === 'removed') {
+            return;
+        }
+
         if ($situation === 'suspended') {
             $query->whereNotNull('businesses.suspended_at');
 
@@ -999,10 +1009,49 @@ class Business extends Model
      */
     public static function ledger(int $id, int $payments = 10): ?self
     {
-        return self::query()
+        // Trashed too: a removed business is opened to be restored.
+        return self::withTrashed()
             ->whereKey($id)
             ->with(['subscription', 'payments' => fn (HasMany $query) => $query->latest()->limit($payments)])
             ->first();
+    }
+
+    /**
+     * What removing this business gives back, for the confirmation to name it.
+     *
+     * @return array{instance: ?string, connected: bool, phone: ?string, people: int}
+     */
+    public function releasedOnRemoval(): array
+    {
+        return [
+            'instance' => $this->whatsapp_instance,
+            'connected' => $this->whatsapp_connected_at !== null,
+            'phone' => $this->whatsapp_number,
+            'people' => $this->users()->count(),
+        ];
+    }
+
+    /**
+     * The bridge instances the active businesses hold: whatever the bridge
+     * runs that is not in this list belongs to nobody.
+     *
+     * @return list<string>
+     */
+    public static function heldInstances(): array
+    {
+        return self::query()->whereNotNull('whatsapp_instance')->pluck('whatsapp_instance')->all();
+    }
+
+    /**
+     * A removed business that still names an instance the bridge no longer
+     * has must not keep naming it: restoring it would point at nothing.
+     */
+    public static function forgetInstance(string $instance): void
+    {
+        self::onlyTrashed()->where('whatsapp_instance', $instance)->update([
+            'whatsapp_instance' => null,
+            'whatsapp_connected_at' => null,
+        ]);
     }
 
     /** What it owes right now: the period it did not pay, or nothing. */
