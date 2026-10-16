@@ -14,7 +14,7 @@ use Throwable;
 
 /**
  * Resolves the visit's locale: the user's own choice in session first, then
- * geolocation by IP, then the default.
+ * the country (Cloudflare's header, else a lookup by IP), then the default.
  *
  * Geolocation only SUGGESTS — once someone picks a variant in the selector it
  * sticks in session and no lookup happens again.
@@ -45,15 +45,40 @@ class SetLocale
      */
     private function detectFromIp(Request $request, array $supported, string $default): string
     {
+        $country = $this->countryFromCloudflare($request) ?? $this->countryFromLookup($request);
+
+        if ($country === null) {
+            return $default;
+        }
+
+        $locale = config("locales.country_map.{$country}", $default);
+
+        return in_array($locale, $supported, true) ? $locale : $default;
+    }
+
+    /**
+     * The country Cloudflare already worked out, free and with no quota. Anyone
+     * forging it only changes their own language, so it needs no trust check.
+     * XX (unknown) and T1 (Tor) carry no country.
+     */
+    private function countryFromCloudflare(Request $request): ?string
+    {
+        $code = strtoupper(trim((string) $request->header('CF-IPCountry')));
+
+        return preg_match('/^[A-Z]{2}$/', $code) === 1 && $code !== 'XX' ? $code : null;
+    }
+
+    private function countryFromLookup(Request $request): ?string
+    {
         $ip = $request->ip();
 
         // Private and local IPs never geolocate (development, internal requests):
         // no point calling the API for them.
         if ($ip === null || in_array($ip, ['127.0.0.1', '::1'], true)) {
-            return $default;
+            return null;
         }
 
-        $country = Cache::remember(
+        return Cache::remember(
             "geo:country:{$ip}",
             now()->addHours(24),
             function () use ($ip): ?string {
@@ -66,9 +91,5 @@ class SetLocale
                 }
             }
         );
-
-        $locale = config("locales.country_map.{$country}", $default);
-
-        return in_array($locale, $supported, true) ? $locale : $default;
     }
 }

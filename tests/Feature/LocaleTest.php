@@ -104,6 +104,33 @@ it('cae al neutro cuando la IP es local y no geolocaliza', function (): void {
     expect(app()->getLocale())->toBe('es');
 });
 
+it('toma el país de la cabecera de Cloudflare sin consultar a nadie', function (): void {
+    // The lookup is the quota and the licence we are trying not to depend on.
+    Location::shouldReceive('get')->never();
+
+    $this->withHeaders(['CF-IPCountry' => 'AR'])->get('/')->assertOk()->assertSee('por vos');
+
+    expect(app()->getLocale())->toBe('es_AR');
+});
+
+it('acepta la cabecera en minúsculas y con espacios', function (): void {
+    Location::shouldReceive('get')->never();
+
+    $this->withHeaders(['CF-IPCountry' => ' ve '])->get('/')->assertOk();
+
+    expect(app()->getLocale())->toBe('es_VE');
+});
+
+it('ignora una cabecera sin país (XX, T1 o basura) y vuelve a la consulta por IP', function (string $header): void {
+    Location::shouldReceive('get')->once()->andReturn(fakePosition('AR'));
+
+    $this->withHeaders(['CF-IPCountry' => $header])
+        ->withServerVariables(['REMOTE_ADDR' => '200.42.0.1'])
+        ->get('/')->assertOk();
+
+    expect(app()->getLocale())->toBe('es_AR');
+})->with(['XX', 'T1', 'ARG', '1', '']);
+
 it('el selector guarda un locale válido en sesión y redirige', function (): void {
     $this->from('/')
         ->get('/idioma/es_AR')
