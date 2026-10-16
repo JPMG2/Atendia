@@ -40,7 +40,7 @@ RUN apk add --no-cache \
 # contenedor. PLAYWRIGHT_VERSION DEBE coincidir con "playwright" en package.json.
 # ============================================================
 ARG PLAYWRIGHT_VERSION=1.61.1
-RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont \
+RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto-emoji \
     && npx --yes playwright@${PLAYWRIGHT_VERSION} install chromium \
     && find /root/.cache/ms-playwright -type f \( -name chrome -o -name chrome-headless-shell \) | while read -r b; do \
          rm -f "$b"; \

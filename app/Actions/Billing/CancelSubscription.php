@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Admin\RaisePlatformEvent;
+use App\Actions\Admin\ResolvePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Models\Subscription;
 
 /**
@@ -19,6 +22,13 @@ class CancelSubscription
     {
         $subscription->forceFill(['canceled_at' => now()])->save();
 
+        $end = $subscription->periodEndsAt();
+        app(RaisePlatformEvent::class)->handle(
+            PlatformEventKind::BusinessCancelled,
+            $subscription->business_id,
+            $subscription->plan.($end === null ? '' : ' · '.$end->format('d/m/Y')),
+        );
+
         return $subscription->refresh();
     }
 
@@ -26,6 +36,9 @@ class CancelSubscription
     public function undo(Subscription $subscription): Subscription
     {
         $subscription->forceFill(['canceled_at' => null])->save();
+
+        // The line would keep announcing a departure that no longer stands.
+        app(ResolvePlatformEvent::class)->ofKind(PlatformEventKind::BusinessCancelled, $subscription->business_id);
 
         return $subscription->refresh();
     }

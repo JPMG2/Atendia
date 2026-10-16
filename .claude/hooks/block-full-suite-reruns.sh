@@ -27,7 +27,7 @@ command=$(jq -r '.tool_input.command // ""' 2>/dev/null)
 # su patrón, y el hook se contaba a sí mismo: el 2026-09-30 dejó los dos
 # contadores inflados con corridas que nunca existieron.
 case "$command" in
-    *pgrep*|*pkill*|*ps\ -*) exit 0 ;;
+    *pgrep*|*pkill*|*ps\ -*|*--list-tests*) exit 0 ;;
 esac
 
 # Solo la suite de PHP entera. Los browser tests tienen su propio hook.
@@ -37,6 +37,17 @@ case "$command" in
     *vendor/bin/pest*|*artisan\ test*) ;;
     *) exit 0 ;;
 esac
+
+# Una corrida que block-untimed-pest.sh rechaza no ocurre, así que no gasta la
+# corrida completa del commit (costó la del 2026-10-13).
+if [[ "$command" =~ docker[[:space:]]+exec.*vendor/bin/pest([[:space:]\'\"]|$) ]]; then
+    before="${command%%docker exec*}"
+    after="docker exec${command#*docker exec}"
+
+    if [[ "$before" =~ timeout[[:space:]]+[0-9] ]] || ! [[ "$after" =~ timeout[[:space:]]+[0-9] ]]; then
+        exit 0
+    fi
+fi
 
 # `make:test --pest` es scaffolding, no una corrida: sin esto el flag --pest
 # matchea *pest* y crear un test consume la corrida del commit (pasó).

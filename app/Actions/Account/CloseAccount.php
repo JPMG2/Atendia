@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Account;
 
+use App\Actions\Admin\RaisePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Mail\AccountClosed;
 use App\Messaging\Channels\Email;
 use App\Models\User;
@@ -20,6 +22,15 @@ class CloseAccount
         // Closing takes the whole business with it: only its owner holds that key.
         // An agent leaves when the owner removes them from "Equipo".
         abort_if($user->isAgent(), 403);
+
+        // Before the delete: the feed line needs the business id and plan while they are still readable.
+        if ($user->business !== null) {
+            app(RaisePlatformEvent::class)->handle(
+                PlatformEventKind::BusinessCancelled,
+                $user->business->id,
+                $user->business->subscription?->plan,
+            );
+        }
 
         $user->business?->delete();
         $user->pending_email = null;

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Actions\Account\CloseAccount;
 use App\Actions\Admin\RaisePlatformEvent;
 use App\Actions\Admin\ResolvePlatformEvent;
 use App\Actions\Billing\ApprovePayment;
+use App\Actions\Billing\CancelSubscription;
 use App\Actions\Billing\RejectPayment;
 use App\Actions\Billing\SubmitPaymentReceipt;
 use App\Actions\Compliance\RecordComplianceEvent;
@@ -171,10 +173,63 @@ test('a receipt waits on the feed until somebody decides it', function (): void 
     expect(activeKinds())->toBe(['receipt_received', 'receipt_received']);
 
     app(ApprovePayment::class)->handle($first, $admin);
-    expect(activeKinds())->toBe(['receipt_received']);
+    // The decided receipt closes; the credited payment opens its own line.
+    expect(activeKinds())->toBe(['receipt_received', 'payment_approved']);
 
     app(RejectPayment::class)->handle($second, $admin, 'No coincide');
+    expect(activeKinds())->toBe(['payment_approved']);
+});
+
+test('every credited payment is its own line, and a plan that moved adds one', function (): void {
+    $admin = User::factory()->create();
+    $business = Business::factory()->create();
+    $business->subscription->forceFill(['plan' => 'emprende'])->save();
+    PlatformEvent::query()->delete();
+
+    $same = app(SubmitPaymentReceipt::class)->handle($business, UploadedFile::fake()->image('a.jpg'), 'REF-A');
+    app(ApprovePayment::class)->handle($same, $admin);
+
+    expect(activeKinds())->toBe(['payment_approved']);
+
+    $upgrade = app(SubmitPaymentReceipt::class)->handle($business, UploadedFile::fake()->image('b.jpg'), 'REF-B');
+    $upgrade->forceFill(['plan' => 'premium'])->save();
+    app(ApprovePayment::class)->handle($upgrade, $admin);
+
+    $change = PlatformEvent::query()->where('kind', PlatformEventKind::PlanChanged->value)->sole();
+
+    expect(activeKinds())->toBe(['payment_approved', 'payment_approved', 'plan_changed'])
+        ->and($change->detail)->toBe('emprende → premium')
+        ->and($change->severity)->toBe(PlatformEventSeverity::Info);
+});
+
+test('asking to leave reaches the feed, and changing her mind takes it back', function (): void {
+    $business = Business::factory()->create();
+    PlatformEvent::query()->delete();
+
+    app(CancelSubscription::class)->handle($business->subscription);
+
+    $line = PlatformEvent::query()->sole();
+
+    expect($line->kind)->toBe(PlatformEventKind::BusinessCancelled)
+        ->and($line->severity)->toBe(PlatformEventSeverity::Important)
+        ->and($line->about_business_id)->toBe($business->id);
+
+    app(CancelSubscription::class)->undo($business->subscription->refresh());
+
     expect(activeKinds())->toBe([]);
+});
+
+test('closing the account is a departure on the feed', function (): void {
+    $business = Business::factory()->create();
+    $owner = User::factory()->create(['business_id' => $business->id]);
+    PlatformEvent::query()->delete();
+
+    app(CloseAccount::class)->handle($owner);
+
+    $line = PlatformEvent::query()->sole();
+
+    expect($line->kind)->toBe(PlatformEventKind::BusinessCancelled)
+        ->and($line->about_business_id)->toBe($business->id);
 });
 
 test('the number going down and coming back opens and closes its line', function (): void {

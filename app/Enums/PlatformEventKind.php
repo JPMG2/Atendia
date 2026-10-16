@@ -17,9 +17,12 @@ enum PlatformEventKind: string
     // Customers: somebody arrived, or somebody's line went quiet.
     case BusinessJoined = 'business_joined';
     case WhatsAppDisconnected = 'whatsapp_disconnected';
+    case BusinessCancelled = 'business_cancelled';
 
     // Money.
     case ReceiptReceived = 'receipt_received';
+    case PaymentApproved = 'payment_approved';
+    case PlanChanged = 'plan_changed';
     case PaymentLate = 'payment_late';
     case PaymentPaused = 'payment_paused';
 
@@ -38,7 +41,8 @@ enum PlatformEventKind: string
         return match ($this) {
             self::BusinessSuspended, self::PaymentPaused, self::SystemDown => PlatformEventSeverity::Critical,
             self::BusinessJoined, self::ReceiptReceived, self::PaymentLate, self::AppealReceived,
-            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded => PlatformEventSeverity::Important,
+            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled => PlatformEventSeverity::Important,
+            self::PaymentApproved, self::PlanChanged => PlatformEventSeverity::Info,
         };
     }
 
@@ -46,8 +50,8 @@ enum PlatformEventKind: string
     public function area(): string
     {
         return match ($this) {
-            self::BusinessJoined, self::WhatsAppDisconnected => 'customers',
-            self::ReceiptReceived, self::PaymentLate, self::PaymentPaused => 'money',
+            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled => 'customers',
+            self::ReceiptReceived, self::PaymentApproved, self::PlanChanged, self::PaymentLate, self::PaymentPaused => 'money',
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => 'compliance',
             self::SystemDown, self::SystemDegraded => 'system',
         };
@@ -72,12 +76,12 @@ enum PlatformEventKind: string
     public function target(?int $businessId): ?array
     {
         return match ($this) {
-            self::ReceiptReceived => ['route' => 'admin.payments', 'query' => []],
+            self::ReceiptReceived, self::PaymentApproved => ['route' => 'admin.payments', 'query' => []],
             self::PaymentLate, self::PaymentPaused => ['route' => 'admin.collections', 'query' => []],
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => $businessId === null
                 ? ['route' => 'admin.compliance', 'query' => []]
                 : ['route' => 'admin.compliance', 'query' => ['negocio' => $businessId]],
-            self::BusinessJoined, self::WhatsAppDisconnected => $businessId === null
+            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::PlanChanged => $businessId === null
                 ? null
                 : ['route' => 'admin.businesses', 'query' => ['negocio' => $businessId]],
             self::SystemDown, self::SystemDegraded => null,
@@ -90,6 +94,9 @@ enum PlatformEventKind: string
             self::BusinessJoined => 'users',
             self::WhatsAppDisconnected => 'whatsapp',
             self::ReceiptReceived => 'receipt',
+            self::PaymentApproved => 'check-circle',
+            self::PlanChanged => 'repeat',
+            self::BusinessCancelled => 'log-out',
             self::PaymentLate, self::PaymentPaused => 'clock',
             self::BusinessSuspended => 'ban',
             self::AppealReceived => 'message-circle',

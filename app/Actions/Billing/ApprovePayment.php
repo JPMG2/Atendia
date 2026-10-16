@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Billing;
 
+use App\Actions\Admin\RaisePlatformEvent;
 use App\Actions\Admin\ResolvePlatformEvent;
 use App\Actions\Compliance\RecordComplianceEvent;
 use App\Enums\ComplianceEventKind;
 use App\Enums\PaymentStatus;
+use App\Enums\PlatformEventKind;
 use App\Enums\SubscriptionStatus;
 use App\Mail\BillingPaymentReviewed;
 use App\Mail\FirstPaymentReceived;
@@ -28,6 +30,7 @@ class ApprovePayment
         // first payment look identical afterwards, and only one is news.
         $wasTrialing = $payment->subscription?->status === SubscriptionStatus::Trialing;
         $wasLapsed = in_array($payment->subscription?->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Paused], true);
+        $previousPlan = $payment->subscription?->plan;
 
         DB::transaction(function () use ($payment, $reviewer): void {
             $subscription = $payment->subscription;
@@ -61,6 +64,8 @@ class ApprovePayment
         // Somebody did what the feed was asking for.
         app(ResolvePlatformEvent::class)->byKey('receipt_received:'.$payment->id);
 
+        $this->announce($payment, $previousPlan);
+
         // The answer to a late or paused payment goes in the same file as the fault.
         if ($wasLapsed) {
             app(RecordComplianceEvent::class)->handle($payment->business_id, ComplianceEventKind::PaymentRegularized, null, $reviewer->id);
@@ -73,6 +78,31 @@ class ApprovePayment
         }
 
         return $payment;
+    }
+
+    /**
+     * One line per credited payment, keyed by it so a renewal is never folded
+     * into last month's; a plan that moved gets its own line on top.
+     */
+    private function announce(Payment $payment, ?string $previousPlan): void
+    {
+        $raise = app(RaisePlatformEvent::class);
+
+        $raise->handle(
+            PlatformEventKind::PaymentApproved,
+            $payment->business_id,
+            $payment->plan.' · '.$payment->currency.' '.number_format((float) $payment->amount, 2, ',', '.'),
+            'payment_approved:'.$payment->id,
+        );
+
+        if ($previousPlan !== null && $previousPlan !== $payment->plan) {
+            $raise->handle(
+                PlatformEventKind::PlanChanged,
+                $payment->business_id,
+                $previousPlan.' → '.$payment->plan,
+                'plan_changed:'.$payment->id,
+            );
+        }
     }
 
     /**

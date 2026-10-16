@@ -43,6 +43,18 @@ return [
             'label' => 'Comprobante por verificar',
             'hint' => 'El negocio espera que lo apruebes o lo rechaces.',
         ],
+        'payment_approved' => [
+            'label' => 'Pago aprobado',
+            'hint' => 'Un pago quedó acreditado y su plan sigue activo. Solo para que lo sepas.',
+        ],
+        'plan_changed' => [
+            'label' => 'Cambio de plan',
+            'hint' => 'Un negocio pasó a otro plan al acreditarse su pago. Solo para que lo sepas.',
+        ],
+        'business_cancelled' => [
+            'label' => 'Cliente dado de baja',
+            'hint' => 'Pidió irse o cerró su cuenta. Escríbele para saber el motivo: es lo que más enseña.',
+        ],
         'payment_late' => [
             'label' => 'Pago atrasado',
             'hint' => 'Está en días de gracia: si no paga, se pausa su asistente.',
