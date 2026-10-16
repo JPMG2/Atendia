@@ -24,6 +24,7 @@ class RemoveBusiness
     public function __construct(
         private readonly EvolutionApi $evolution,
         private readonly CancelSubscription $cancelSubscription,
+        private readonly ResolvePlatformEvent $resolveEvents,
     ) {}
 
     /**
@@ -57,6 +58,9 @@ class RemoveBusiness
             $business->users()->each(fn ($user) => $user->delete());
 
             $business->delete();
+
+            // After the cancellation, which raises its own departure line: her removal is not news.
+            $this->resolveEvents->ofBusiness($business->id);
         });
     }
 }

@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\Admin\FindOrphanInstances;
+use App\Actions\Admin\RaisePlatformEvent;
 use App\Actions\Admin\ReleaseBridgeInstance;
+use App\Enums\PlatformEventKind;
 use App\Enums\PlatformSensorStatus;
 use App\Models\Business;
+use App\Models\PlatformEvent;
 use App\Models\User;
 use App\Services\PlatformSensors;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -258,6 +261,27 @@ test('the board has a sensor that turns yellow when the bridge keeps an orphan',
     expect($reading->status)->toBe(PlatformSensorStatus::Warn)
         ->and($reading->value)->toBe('1')
         ->and($reading->detail)->toContain('business-7003');
+});
+
+test('removing a business closes every line the board holds about it, and nobody else\'s', function (): void {
+    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'SUCCESS'])]);
+    $business = removableBusiness();
+    $other = Business::factory()->create();
+    PlatformEvent::query()->delete();
+
+    $raise = app(RaisePlatformEvent::class);
+    $raise->handle(PlatformEventKind::BusinessJoined, $business->id, $business->name);
+    $raise->handle(PlatformEventKind::ReceiptReceived, $business->id, null, 'receipt_received:1');
+    $raise->handle(PlatformEventKind::BusinessJoined, $other->id, 'Otro');
+    adminOf('admin');
+
+    Livewire::test('admin.businesses.index')->call('remove', $business->id);
+
+    // Her own removal is not news either: the departure the cancellation raises is closed with the rest.
+    $open = PlatformEvent::query()->active()->get();
+
+    expect($open)->toHaveCount(1)
+        ->and($open->first()->about_business_id)->toBe($other->id);
 });
 
 test('a client cannot reach the admin list at all', function (): void {

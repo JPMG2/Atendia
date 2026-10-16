@@ -27,6 +27,12 @@ class ResolvePlatformEvent
             ->when($businessId === null, fn ($q) => $q->whereNull('about_business_id'), fn ($q) => $q->where('about_business_id', $businessId)));
     }
 
+    /** Every active line about this business, whatever its kind: it is gone, so nothing about it is waiting. */
+    public function ofBusiness(int $businessId): int
+    {
+        return $this->close(fn ($query) => $query->where('about_business_id', $businessId));
+    }
+
     /** One specific line, by the key it was raised with. */
     public function byKey(string $dedupeKey): int
     {
