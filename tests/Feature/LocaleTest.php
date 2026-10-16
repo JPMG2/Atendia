@@ -131,6 +131,19 @@ it('ignora una cabecera sin país (XX, T1 o basura) y vuelve a la consulta por I
     expect(app()->getLocale())->toBe('es_AR');
 })->with(['XX', 'T1', 'ARG', '1', '']);
 
+it('el panel de marca del login habla en tuteo y en voseo para es_AR, sin texto escrito en la vista', function (): void {
+    $this->withSession(['locale' => 'es'])->get('/login')
+        ->assertOk()
+        ->assertSee('Automatiza tu WhatsApp y no pierdas más clientes.')
+        ->assertDontSee('Automatizá')
+        ->assertSee(__('auth.aside.points.fast'));
+
+    $this->withSession(['locale' => 'es_AR'])->get('/login')
+        ->assertOk()
+        ->assertSee('Automatizá tu WhatsApp y no pierdas más clientes.')
+        ->assertSee(__('auth.aside.points.catalog'));
+});
+
 it('el selector guarda un locale válido en sesión y redirige', function (): void {
     $this->from('/')
         ->get('/idioma/es_AR')

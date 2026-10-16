@@ -65,22 +65,20 @@
         <x-site.logo :size="26" href="{{ url('/') }}" />
 
         <div class="max-w-md">
-            <p class="eyebrow eyebrow-line mb-5">Tu negocio, atendido por IA</p>
+            <p class="eyebrow eyebrow-line mb-5">{{ __('auth.aside.eyebrow') }}</p>
             <h1
                 class="text-strong font-display"
                 style="font-weight: 800; font-size: var(--text-4xl); line-height: 1.1; letter-spacing: -0.02em"
             >
-                Automatizá tu WhatsApp y no pierdas más clientes.
+                {{ __('auth.aside.title') }}
             </h1>
-            <p class="text-body mt-5" style="font-size: var(--text-lg); line-height: 1.6">
-                Tu asistente responde, agenda turnos y muestra tus productos. Día y noche, en segundos.
-            </p>
+            <p class="text-body mt-5" style="font-size: var(--text-lg); line-height: 1.6">{{ __('auth.aside.sub') }}</p>
 
             <ul class="mt-9 flex flex-col gap-4">
                 @foreach ([
-                    ['icon' => 'message-circle', 'text' => 'Responde en 2 segundos, las 24 horas'],
-                    ['icon' => 'calendar-check', 'text' => 'Agenda turnos sin que muevas un dedo'],
-                    ['icon' => 'store', 'text' => 'Muestra tu catálogo dentro del chat'],
+                    ['icon' => 'message-circle', 'text' => __('auth.aside.points.fast')],
+                    ['icon' => 'calendar-check', 'text' => __('auth.aside.points.schedule')],
+                    ['icon' => 'store', 'text' => __('auth.aside.points.catalog')],
                 ] as $point)
                     <li class="flex items-center gap-3.5">
                         <span
@@ -110,7 +108,7 @@
     <main class="relative flex flex-col items-center justify-center px-5 py-12 sm:px-8">
         {{-- Theme toggle. --}}
         <div class="absolute right-5 top-5">
-            <x-ui.icon-button label="Cambiar tema" @click="toggleTheme()">
+            <x-ui.icon-button :label="__('landing.nav.toggle_theme')" @click="toggleTheme()">
                 <span x-show="! dark"><x-icon name="moon" :size="18" /></span>
                 <span x-show="dark" x-cloak><x-icon name="sun" :size="18" /></span>
             </x-ui.icon-button>

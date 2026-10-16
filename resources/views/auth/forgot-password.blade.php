@@ -1,29 +1,35 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">{{ __('auth.forgot.intro') }}</div>
+    <div class="mb-8">
+        <h2
+            class="text-strong font-display"
+            style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
+        >
+            {{ __('auth.forgot.heading') }}
+        </h2>
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('auth.forgot.intro') }}</p>
+    </div>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <x-ui.alert variant="success" icon="message-circle" class="mb-6"> {{ session('status') }} </x-ui.alert>
+    @endif
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ route('password.email') }}" class="flex flex-col gap-5">
         @csrf
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('auth.fields.email')" />
-            <x-text-input
-                id="email"
-                class="mt-1 block w-full"
-                type="email"
-                name="email"
-                :value="old('email')"
-                required
-                autofocus
-            />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        <x-ui.input
+            :label="__('auth.fields.email')"
+            name="email"
+            type="email"
+            icon="mail"
+            :value="old('email')"
+            :placeholder="__('auth.register.email_placeholder')"
+            required
+            autofocus
+            autocomplete="username"
+        />
 
-        <div class="mt-4 flex items-center justify-end">
-            <x-primary-button> {{ __('auth.forgot.submit') }} </x-primary-button>
-        </div>
+        <x-ui.button type="submit" variant="primary" size="lg" :fullWidth="true" class="mt-1">
+            {{ __('auth.forgot.submit') }}
+        </x-ui.button>
     </form>
 </x-guest-layout>

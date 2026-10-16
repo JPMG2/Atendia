@@ -1,28 +1,33 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">{{ __('auth.verify.intro') }}</div>
+    <div class="mb-8">
+        <h2
+            class="text-strong font-display"
+            style="font-weight: 800; font-size: var(--text-3xl); letter-spacing: -0.02em"
+        >
+            {{ __('auth.verify.heading') }}
+        </h2>
+        <p class="text-muted mt-1.5" style="font-size: var(--text-base)">{{ __('auth.verify.intro') }}</p>
+    </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 text-sm font-medium text-green-600">{{ __('auth.verify.sent') }}</div>
+        <x-ui.alert variant="success" icon="message-circle" class="mb-6"> {{ __('auth.verify.sent') }} </x-ui.alert>
     @endif
 
-    <div class="mt-4 flex items-center justify-between">
+    <div class="flex flex-col gap-3">
         <form method="POST" action="{{ route('verification.send') }}">
             @csrf
 
-            <div>
-                <x-primary-button> {{ __('auth.verify.resend') }} </x-primary-button>
-            </div>
+            <x-ui.button type="submit" variant="primary" size="lg" :fullWidth="true">
+                {{ __('auth.verify.resend') }}
+            </x-ui.button>
         </form>
 
         <form method="POST" action="{{ route('logout') }}">
             @csrf
 
-            <button
-                type="submit"
-                class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
+            <x-ui.button type="submit" variant="ghost" size="lg" :fullWidth="true">
                 {{ __('auth.verify.logout') }}
-            </button>
+            </x-ui.button>
         </form>
     </div>
 </x-guest-layout>
