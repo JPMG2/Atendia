@@ -192,6 +192,29 @@ test('the topbar pill goes green on the page where the scan happened', function 
         ->screenshot(filename: 'whatsapp-pill-live-green');
 });
 
+test('the topbar pill drops to the warning when the link falls, without a reload', function (): void {
+    $owner = linkOwner();
+    $owner->business->forceFill([
+        'whatsapp_instance' => 'business-99',
+        'whatsapp_connected_at' => now(),
+    ])->save();
+    $owner->business->markLinkVerified();
+
+    $page = visit('/dashboard');
+    $page->assertSee(__('whatsapp.topbar_connected'));
+
+    // What the webhook leaves behind when the phone unlinks; the socket event
+    // that follows is a plain $refresh of the pill, which is what runs here.
+    $owner->business->forceFill(['whatsapp_connected_at' => null])->save();
+    $page->script('Livewire.find(document.querySelector(".conn-pill-slot").closest("[wire\\\\:id]").getAttribute("wire:id")).$refresh()');
+
+    $page->wait(1)
+        ->assertNoJavaScriptErrors()
+        ->assertSee(__('whatsapp.topbar_disconnected'))
+        ->assertDontSee(__('whatsapp.topbar_connected'))
+        ->screenshot(filename: 'whatsapp-pill-fell');
+});
+
 test('wizard step 5 carries the same linking card under the numbers', function (): void {
     linkOwner();
 
