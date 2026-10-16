@@ -7,7 +7,11 @@
 
     <title>{{ $title ?? \App\Models\Company::brand().' — '.__('landing.tagline') }}</title>
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ \App\Models\Company::versionedAsset('assets/logo-mark-color.svg') }}"
+    />
 
     {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>

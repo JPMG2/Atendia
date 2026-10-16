@@ -18,14 +18,18 @@
     <meta property="og:site_name" content="{{ $brand }}" />
     <meta property="og:title" content="{{ $headline }}" />
     <meta property="og:description" content="{{ __('landing.meta_description') }}" />
-    <meta property="og:image" content="{{ asset('assets/og.png') }}" />
+    <meta property="og:image" content="{{ \App\Models\Company::versionedAsset('assets/og.png') }}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:url" content="{{ url()->current() }}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="{{ asset('assets/og.png') }}" />
+    <meta name="twitter:image" content="{{ \App\Models\Company::versionedAsset('assets/og.png') }}" />
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ \App\Models\Company::versionedAsset('assets/logo-mark-color.svg') }}"
+    />
 
     {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>

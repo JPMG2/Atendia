@@ -1376,7 +1376,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
              display:flex; flex-direction:column; gap:6px; padding:18px 14px;
              background:var(--surface-card); border-right:1px solid var(--border-subtle); z-index:80; }
   .sidebar-header { display:flex; align-items:center; gap:10px; padding:4px 8px 16px; }
-  .sidebar-logo { width:30px; height:30px; flex-shrink:0; }
+  .sidebar-logo { width:46px; height:46px; flex-shrink:0; }
   .sidebar-wordmark { font-family:var(--font-display); font-weight:800; font-size:21px;
                       letter-spacing:-0.03em; color:var(--text-strong); }
   .sidebar-wordmark span { color:var(--brand); }

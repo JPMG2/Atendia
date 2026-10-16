@@ -11,7 +11,11 @@ compiled CSS tokens and static assets. --}}
 
     <title>{{ $title }} — {{ \App\Models\Company::brand() }}</title>
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ \App\Models\Company::versionedAsset('assets/logo-mark-color.svg') }}"
+    />
 
     {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>
@@ -33,7 +37,18 @@ compiled CSS tokens and static assets. --}}
         {{-- The bundled mark, not <x-site.logo>: that component reads the
         company from the database and this page must survive without it. --}}
         <a href="{{ url('/') }}" class="inline-flex items-center gap-2.5">
-            <img src="{{ asset('assets/logo-mark.svg') }}" alt="" style="width: 32px; height: 32px" />
+            <img
+                class="logo-mark-light"
+                src="{{ \App\Models\Company::versionedAsset('assets/logo-mark.svg') }}"
+                alt=""
+                style="width: 32px; height: 32px"
+            />
+            <img
+                class="logo-mark-dark"
+                src="{{ \App\Models\Company::versionedAsset('assets/logo-mark-dark.svg') }}"
+                alt=""
+                style="width: 32px; height: 32px"
+            />
             <span
                 class="font-display"
                 style="font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: var(--text-strong)"

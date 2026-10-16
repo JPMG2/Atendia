@@ -83,6 +83,39 @@ class Company extends Model
     }
 
     /**
+     * The mark for each theme, one door for every header: the saved logo wins,
+     * the bundled one stands in while nobody has uploaded. With only one theme
+     * saved that file serves both, because a dark-only upload is rarer than a
+     * single logo that already reads on both grounds.
+     *
+     * @return array{light: string, dark: string}
+     */
+    public static function logoUrls(): array
+    {
+        $company = self::current();
+
+        $light = $company?->logo_path_light ? asset('storage/'.$company->logo_path_light) : self::versionedAsset('assets/logo-mark.svg');
+        $dark = $company?->logo_path_dark
+            ? asset('storage/'.$company->logo_path_dark)
+            : ($company?->logo_path_light ? $light : self::versionedAsset('assets/logo-mark-dark.svg'));
+
+        return ['light' => $light, 'dark' => $dark];
+    }
+
+    /**
+     * A bundled file's URL stamped with its modified time. nginx serves
+     * /assets/ as immutable for a year, so a replaced file keeps its URL and
+     * browsers and Cloudflare would show the old one until it expires.
+     * Touches no database: the error pages rely on that.
+     */
+    public static function versionedAsset(string $path): string
+    {
+        $file = public_path($path);
+
+        return asset($path).(is_file($file) ? '?v='.filemtime($file) : '');
+    }
+
+    /**
      * The number a person writes to, digits only and ready for a wa.me link.
      *
      * One door: the landing, the pricing cards and a support ticket were each

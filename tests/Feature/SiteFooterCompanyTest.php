@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
 use App\Models\Company;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 
@@ -72,6 +75,32 @@ test('the logo resolves the stored mark on its own, wherever it renders', functi
 test('with no company the logo falls back to the bundled mark', function (): void {
     expect(Blade::render('<x-site.logo />'))
         ->toContain(asset('assets/logo-mark.svg'));
+});
+
+test('the bundled fallback has its own mark for dark ground', function (): void {
+    $urls = Company::logoUrls();
+
+    expect($urls['light'])->toStartWith(asset('assets/logo-mark.svg').'?v=')
+        ->and($urls['dark'])->toStartWith(asset('assets/logo-mark-dark.svg').'?v=')
+        ->and(Blade::render('<x-site.logo />'))->toContain($urls['dark']);
+});
+
+test('a replaced bundled logo gets a new URL, since nginx serves assets as immutable', function (): void {
+    expect(Company::versionedAsset('assets/logo-mark.svg'))
+        ->toBe(asset('assets/logo-mark.svg').'?v='.filemtime(public_path('assets/logo-mark.svg')))
+        ->and(Company::versionedAsset('assets/does-not-exist.svg'))->toBe(asset('assets/does-not-exist.svg'));
+});
+
+test('a saved logo reaches the sidebar of both panels, not only the landing', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    Company::factory()->create(['logo_path_light' => 'logos/mine.svg', 'logo_path_dark' => 'logos/mine-dark.svg']);
+
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $this->actingAs($user)->get('/dashboard')
+        ->assertSee(asset('storage/logos/mine.svg'))
+        ->assertSee(asset('storage/logos/mine-dark.svg'));
 });
 
 test('with a single logo saved the same file stands in for both themes', function (): void {

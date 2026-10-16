@@ -8,7 +8,11 @@
     {{-- The default comes from translations: a PHP attribute cannot call __(). --}}
     <title>{{ $title ?? __('wizard.title') }}</title>
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ \App\Models\Company::versionedAsset('assets/logo-mark-color.svg') }}"
+    />
 
     {{-- Theme before the first paint: it avoids the light-to-dark flash. --}}
     <script>

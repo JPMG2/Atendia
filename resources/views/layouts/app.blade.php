@@ -17,7 +17,11 @@
     @php($tab = blank($title ?? null) || str_contains((string) $title, $brand) ? ($title ?: $brand) : $title.' · '.$brand)
     <title>{{ $tab }}</title>
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/logo-mark-color.svg') }}" />
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ \App\Models\Company::versionedAsset('assets/logo-mark-color.svg') }}"
+    />
 
     {{-- Theme and sidebar rail before the first paint: avoids both flashes. --}}
     <script>
@@ -104,11 +108,13 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                 wire:navigate
                 class="sidebar-header"
             >
+                @php($logos = \App\Models\Company::logoUrls())
                 <img
-                    src="{{ asset('assets/logo-mark.svg') }}"
+                    src="{{ $logos['light'] }}"
                     alt="{{ \App\Models\Company::brand() }}"
-                    class="sidebar-logo"
+                    class="sidebar-logo logo-mark-light"
                 />
+                <img src="{{ $logos['dark'] }}" alt="" class="sidebar-logo logo-mark-dark" />
                 <span class="sidebar-wordmark"><x-site.wordmark /></span>
                 @if ($onAdminPanel)
                     <x-ui.badge variant="accent">Admin</x-ui.badge>
