@@ -63,6 +63,10 @@ abstract class TestCase extends BaseTestCase
         $this->fakeContentModeration();
         $this->fakeCertificateReader();
 
+        // Enforced here, report-only in production: a browser test that needs an
+        // origin the policy forgot fails now, and not for a visitor later.
+        config()->set('atendia.csp.mode', 'enforce');
+
         // Once per class, and before its own setup: a row already here was
         // committed by something that ran earlier in this same run.
         if (! isset(self::$checkedClasses[static::class]) && in_array(RefreshDatabase::class, class_uses_recursive($this), true)) {

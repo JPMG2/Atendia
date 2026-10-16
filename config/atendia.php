@@ -470,6 +470,34 @@ return [
     |
     */
 
+    'csp' => [
+        // 'report-only' tells /csp-report what it WOULD block and blocks nothing;
+        // 'enforce' blocks. The suite runs enforced, so a screen that needs an
+        // origin the policy forgot fails there before it fails for a visitor.
+        'mode' => env('CSP_MODE', 'report-only'),
+
+        // Alpine builds code from x-data text (unsafe-eval) and 27 views carry
+        // their own script (unsafe-inline), so this policy fixes WHERE things may
+        // load from and who may frame or post to the page. It does not stop a
+        // script injected into the page itself: that needs nonces and the CSP
+        // build of Alpine, a job of days left for after launch.
+        // The WebSocket origin is added per request, from the host asked.
+        'directives' => [
+            'default-src' => ["'self'"],
+            'script-src' => ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            'font-src' => ["'self'", 'data:', 'https://fonts.gstatic.com'],
+            // The map of a location message is nine OpenStreetMap tiles the browser loads itself.
+            'img-src' => ["'self'", 'data:', 'blob:', 'https://tile.openstreetmap.org'],
+            'media-src' => ["'self'", 'data:', 'blob:'],
+            'connect-src' => ["'self'"],
+            'frame-ancestors' => ["'self'"],
+            'object-src' => ["'none'"],
+            'base-uri' => ["'self'"],
+            'form-action' => ["'self'"],
+        ],
+    ],
+
     'health' => [
         // A look older than this is shown as stale, not as green.
         'stale_minutes' => 6,

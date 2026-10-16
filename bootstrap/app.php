@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\ContentSecurityPolicy;
 use App\Http\Middleware\ExpireIdleStaffSession;
 use App\Http\Middleware\LogoutRevokedDevice;
 use App\Http\Middleware\RequireStaffTwoFactor;
@@ -51,7 +52,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['atendia_ref']);
 
         // Resuelve el locale (sesión › geolocalización › default) en cada request web.
+        // The browser posts its policy reports with no session and no token.
+        $middleware->validateCsrfTokens(except: [ltrim(ContentSecurityPolicy::REPORT_PATH, '/')]);
+
         $middleware->web(append: [
+            ContentSecurityPolicy::class,
             SetLocale::class,
             SetTenantDatabaseContext::class,
             LogoutRevokedDevice::class,
