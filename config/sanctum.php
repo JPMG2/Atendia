@@ -52,7 +52,9 @@ return [
     |
     */
 
-    'expiration' => null,
+    // 60 days, in minutes. A token that never expires is a lost phone that
+    // opens the account for good; the mobile app signs in again after this.
+    'expiration' => 60 * 24 * 60,
 
     /*
     |--------------------------------------------------------------------------

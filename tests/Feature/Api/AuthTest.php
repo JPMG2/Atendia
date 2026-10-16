@@ -81,6 +81,18 @@ it('logout revoca únicamente el token usado en la petición', function (): void
     expect($user->tokens()->count())->toBe(0);
 });
 
+it('un token sirve a los 59 días y deja de servir a los 61', function (): void {
+    $token = User::factory()->create()->createToken('app')->plainTextToken;
+
+    $this->travel(59)->days();
+    $this->withToken($token)->getJson('/api/v1/me')->assertOk();
+
+    // The guard keeps the user it resolved on the first request; a fresh one checks the token again.
+    app('auth')->forgetGuards();
+    $this->travel(2)->days();
+    $this->withToken($token)->getJson('/api/v1/me')->assertUnauthorized();
+});
+
 test('an email sent as a list is a validation error, never a crash', function (): void {
     $this->postJson('/api/v1/login', ['email' => ['a@b.test'], 'password' => 'secret'])
         ->assertUnprocessable();
