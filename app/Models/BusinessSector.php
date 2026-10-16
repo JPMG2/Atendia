@@ -31,6 +31,9 @@ class BusinessSector extends Model implements DataTable, Removable
 {
     use CountsUsage;
 
+    /** The sector Meta bans from its catalog, so its activities are born outside it. */
+    public const string HEALTH = 'salud';
+
     /** @use HasFactory<BusinessSectorFactory> */
     use HasFactory;
 

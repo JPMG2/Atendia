@@ -142,7 +142,7 @@ class BusinessActivitySeeder extends Seeder
                 // Only on birth: a re-run must not undo what she set in the master.
                 // Meta bans health products and services from the catalog.
                 if (! $activity->exists) {
-                    $activity->catalog_eligible = $sectorCode !== 'salud';
+                    $activity->catalog_eligible = $sectorCode !== BusinessSector::HEALTH;
                 }
 
                 $activity->save();

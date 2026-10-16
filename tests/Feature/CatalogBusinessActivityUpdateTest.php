@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Catalog\CreateBusinessActivity;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -68,6 +69,51 @@ test('the WhatsApp catalog switch is saved from the master', function (): void {
         ->assertHasNoErrors();
 
     expect($activity->fresh()->catalog_eligible)->toBeFalse();
+});
+
+test('an activity created in the health sector is born outside the WhatsApp catalog', function (): void {
+    $health = BusinessSector::factory()->create(['code' => BusinessSector::HEALTH, 'name' => 'Salud']);
+    $food = BusinessSector::factory()->create(['code' => 'gastronomia', 'name' => 'Gastronomía']);
+
+    $create = fn (BusinessSector $sector, string $code, bool $eligible) => app(CreateBusinessActivity::class)->handle([
+        'business_sector_id' => $sector->id,
+        'code' => $code,
+        'name' => ucfirst($code),
+        'description' => null,
+        'sort_order' => 0,
+        'is_active' => true,
+        'catalog_eligible' => $eligible,
+    ]);
+
+    // The form's default is on, and a health activity must not inherit it.
+    expect($create($health, 'dentista', true)->catalog_eligible)->toBeFalse()
+        ->and($create($food, 'panaderia', true)->catalog_eligible)->toBeTrue()
+        ->and($create($food, 'cafeteria', false)->catalog_eligible)->toBeFalse();
+});
+
+test('creating a health activity from the master saves it off, and an edit can turn it on', function (): void {
+    $health = BusinessSector::factory()->create(['code' => BusinessSector::HEALTH, 'name' => 'Salud']);
+
+    Livewire::test('catalog.business-activity')
+        ->call('openCreate')
+        ->set('form.data.business_sector_id', $health->id)
+        ->set('form.data.code', 'dentista')
+        ->set('form.data.name', 'Dentista')
+        ->set('form.data.sort_order', 1)
+        ->call('create')
+        ->assertHasNoErrors();
+
+    $activity = BusinessActivity::query()->where('code', 'dentista')->firstOrFail();
+
+    expect($activity->catalog_eligible)->toBeFalse();
+
+    Livewire::test('catalog.business-activity')
+        ->call('openEdit', $activity->id)
+        ->set('form.data.catalog_eligible', true)
+        ->call('update')
+        ->assertHasNoErrors();
+
+    expect($activity->fresh()->catalog_eligible)->toBeTrue();
 });
 
 test('taking a name that already belongs to another activity of the same sector is rejected', function (): void {
