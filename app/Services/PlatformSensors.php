@@ -32,6 +32,8 @@ use Throwable;
  */
 class PlatformSensors
 {
+    public function __construct(private readonly CertificateReader $certificates) {}
+
     /** @return list<SensorReadingDto> */
     public function read(): array
     {
@@ -43,6 +45,7 @@ class PlatformSensors
             $this->guard('disk', 'system', fn (): SensorReadingDto => $this->disk()),
             $this->guard('backup', 'system', fn (): SensorReadingDto => $this->backup()),
             $this->guard('mail', 'system', fn (): SensorReadingDto => $this->mail()),
+            $this->guard('certificate', 'system', fn (): SensorReadingDto => $this->certificate()),
             $this->guard('ai', 'system', fn (): SensorReadingDto => $this->ai()),
             $this->guard('whatsapp_links', 'customers', fn (): SensorReadingDto => $this->whatsappLinks()),
             $this->guard('bridge_orphans', 'customers', fn (): SensorReadingDto => $this->bridgeOrphans()),
@@ -192,6 +195,37 @@ class PlatformSensors
         }
 
         return new SensorReadingDto('mail', 'system', Status::Ok, 'OK', __('platform_events.detail.mail_via', ['host' => $host]));
+    }
+
+    private function certificate(): SensorReadingDto
+    {
+        $url = parse_url((string) config('app.url'));
+        $host = (string) ($url['host'] ?? '');
+
+        // Without HTTPS of its own (local development) there is no certificate to watch.
+        if (($url['scheme'] ?? '') !== 'https' || $host === '') {
+            return new SensorReadingDto('certificate', 'system', Status::Unknown, null, __('platform_events.detail.certificate_none'));
+        }
+
+        $expires = $this->certificates->expiresAt((string) config('atendia.health.certificate_origin') ?: $host, $host);
+        $days = (int) floor(now()->diffInDays($expires, false));
+
+        $status = match (true) {
+            $days <= (int) config('atendia.health.certificate_crit_days') => Status::Crit,
+            $days <= (int) config('atendia.health.certificate_warn_days') => Status::Warn,
+            default => Status::Ok,
+        };
+
+        if ($days < 0) {
+            return new SensorReadingDto('certificate', 'system', $status, __('platform_events.detail.certificate_expired_short'), __('platform_events.detail.certificate_expired', [
+                'date' => $expires->format('d/m/Y'),
+            ]));
+        }
+
+        return new SensorReadingDto('certificate', 'system', $status, $days.' d', __('platform_events.detail.certificate_expires', [
+            'date' => $expires->format('d/m/Y'),
+            'days' => $days,
+        ]));
     }
 
     private function ai(): SensorReadingDto

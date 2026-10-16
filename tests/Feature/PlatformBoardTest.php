@@ -18,8 +18,10 @@ use App\Models\PlatformSensor;
 use App\Models\PlatformSensorReading;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\CertificateReader;
 use App\Services\EvolutionApi;
 use App\Services\PlatformSensors;
+use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -254,4 +256,131 @@ test('the board renders with an empty database', function (): void {
     Livewire::actingAs(adminWithPhone())->test('admin.alerts.index')
         ->assertOk()
         ->assertSee(__('platform_events.screen.empty_title'));
+});
+
+/*
+|--------------------------------------------------------------------------
+| The certificate sensor
+|--------------------------------------------------------------------------
+| The origin certificate is the one that can expire unseen: Cloudflare answers
+| the public name with its own, and an expired origin one is a 526 for everyone.
+*/
+
+/** Binds a reader whose certificate ends in $days and remembers what it was asked. */
+function certificateEndingIn(int $days): CertificateReader
+{
+    $reader = new class($days) extends CertificateReader
+    {
+        /** @var list<array{string, string}> */
+        public array $asked = [];
+
+        public function __construct(private int $days) {}
+
+        public function expiresAt(string $connectTo, string $serverName, int $port = 443): CarbonImmutable
+        {
+            $this->asked[] = [$connectTo, $serverName];
+
+            return CarbonImmutable::now()->addDays($this->days);
+        }
+    };
+
+    app()->instance(CertificateReader::class, $reader);
+
+    return $reader;
+}
+
+function certificateLook(): SensorReadingDto
+{
+    return collect(app(PlatformSensors::class)->read())->firstWhere('key', 'certificate');
+}
+
+test('the certificate sensor changes colour as the end approaches', function (int $days, Status $expected): void {
+    $this->freezeTime();
+    config()->set('app.url', 'https://aliadito.test');
+    certificateEndingIn($days);
+
+    expect(certificateLook()->status)->toBe($expected);
+})->with([
+    'two months' => [60, Status::Ok],
+    'just over three weeks' => [22, Status::Ok],
+    'three weeks' => [21, Status::Warn],
+    'a week and a day' => [8, Status::Warn],
+    'a week' => [7, Status::Crit],
+    'tomorrow' => [1, Status::Crit],
+    'already over' => [-2, Status::Crit],
+]);
+
+test('the certificate sensor says the date and the days left, or that it already ended', function (): void {
+    $this->freezeTime();
+    config()->set('app.url', 'https://aliadito.test');
+
+    certificateEndingIn(30);
+    $look = certificateLook();
+
+    expect($look->value)->toBe('30 d')
+        ->and($look->detail)->toContain(now()->addDays(30)->format('d/m/Y'))->toContain('30 días');
+
+    certificateEndingIn(-2);
+    $look = certificateLook();
+
+    expect($look->value)->toBe('vencido')->and($look->detail)->toContain('venció');
+});
+
+test('the certificate is read at the origin but asked for by the public name', function (): void {
+    config()->set('app.url', 'https://aliadito.test');
+    config()->set('atendia.health.certificate_origin', 'origin.internal');
+    $reader = certificateEndingIn(60);
+
+    certificateLook();
+
+    expect($reader->asked)->toBe([['origin.internal', 'aliadito.test']]);
+});
+
+test('with no origin configured the public host itself is asked', function (): void {
+    config()->set('app.url', 'https://aliadito.test');
+    config()->set('atendia.health.certificate_origin', '');
+    $reader = certificateEndingIn(60);
+
+    certificateLook();
+
+    expect($reader->asked)->toBe([['aliadito.test', 'aliadito.test']]);
+});
+
+test('without HTTPS of its own the certificate sensor has nothing to say and asks nobody', function (): void {
+    config()->set('app.url', 'http://localhost');
+    $reader = certificateEndingIn(60);
+
+    $look = certificateLook();
+
+    expect($look->status)->toBe(Status::Unknown)->and($reader->asked)->toBe([]);
+});
+
+test('an origin that does not answer is red with the reason, and the other sensors still read', function (): void {
+    config()->set('app.url', 'https://aliadito.test');
+    app()->instance(CertificateReader::class, new class extends CertificateReader
+    {
+        public function expiresAt(string $connectTo, string $serverName, int $port = 443): CarbonImmutable
+        {
+            throw new RuntimeException('origin.internal:443 did not answer (timed out)');
+        }
+    });
+
+    $reads = collect(app(PlatformSensors::class)->read());
+
+    expect($reads->firstWhere('key', 'certificate')->status)->toBe(Status::Crit)
+        ->and($reads->firstWhere('key', 'certificate')->detail)->toContain('did not answer')
+        ->and($reads->firstWhere('key', 'database')->status)->toBe(Status::Ok);
+});
+
+test('a certificate that is about to end reaches the feed after the second look, like any system sensor', function (): void {
+    $this->freezeTime();
+    config()->set('app.url', 'https://aliadito.test');
+    certificateEndingIn(5);
+    PlatformEvent::query()->delete();
+
+    app(SweepPlatform::class)->handle();
+    expect(PlatformEvent::query()->active()->where('dedupe_key', 'sensor:certificate:crit')->count())->toBe(0);
+
+    app(SweepPlatform::class)->handle();
+    expect(PlatformEvent::query()->active()->where('dedupe_key', 'sensor:certificate:crit')->count())->toBe(1);
 });

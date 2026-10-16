@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Dto\ModerationVerdictDto;
+use App\Services\CertificateReader;
 use App\Services\ContentModeration;
+use Carbon\CarbonImmutable;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,6 +61,7 @@ abstract class TestCase extends BaseTestCase
         $this->guardAgainstProductionDatabase();
         $this->fakeLeakedPasswordCheck();
         $this->fakeContentModeration();
+        $this->fakeCertificateReader();
 
         // Once per class, and before its own setup: a row already here was
         // committed by something that ran earlier in this same run.
@@ -132,6 +135,22 @@ abstract class TestCase extends BaseTestCase
             public function text(string $text): ModerationVerdictDto
             {
                 return ModerationVerdictDto::clean();
+            }
+        });
+    }
+
+    /**
+     * The certificate sensor opens a TLS socket to the real Traefik; the suite
+     * never does. Every certificate is two months from expiry here — the test
+     * that proves the thresholds rebinds its own reader.
+     */
+    private function fakeCertificateReader(): void
+    {
+        $this->app->instance(CertificateReader::class, new class extends CertificateReader
+        {
+            public function expiresAt(string $connectTo, string $serverName, int $port = 443): CarbonImmutable
+            {
+                return CarbonImmutable::now()->addDays(60);
             }
         });
     }

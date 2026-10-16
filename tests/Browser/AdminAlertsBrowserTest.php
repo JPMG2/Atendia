@@ -29,6 +29,7 @@ beforeEach(function (): void {
     $sensors = [
         ['queue', 'system', 'ok', 'OK', 'último trabajo hace 12 s'],
         ['disk', 'system', 'warn', '81 %', 'quedan 9 GB de 48 GB'],
+        ['certificate', 'system', 'warn', '18 d', 'el de origen vence el 03/11/2026, en 18 días'],
         ['redis', 'system', 'ok', 'OK', 'responde en 1 ms'],
         ['whatsapp_links', 'customers', 'warn', '8 / 9', '1 sin conexión'],
         ['receipts', 'money', 'warn', '3', 'el más viejo, hace 1 día'],
@@ -67,6 +68,7 @@ test('the board holds at every width and leads with the worst', function (string
     $page->assertNoJavaScriptErrors()
         ->assertSee('Tablero de avisos')
         ->assertSee('Cola de trabajos')
+        ->assertSee('Certificado HTTPS')
         ->assertSee('Asistente pausado por falta de pago')
         ->assertSee('Ferretería El Tornillo')
         ->screenshot(filename: 'admin-alerts-'.$label.'-'.($dark ? 'dark' : 'light'));

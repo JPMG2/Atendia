@@ -482,6 +482,15 @@ return [
         'queue_crit_minutes' => 15,
         'backup_warn_hours' => 26,
         'backup_crit_hours' => 50,
+        // Traefik asks Let's Encrypt for a new certificate about 30 days before
+        // the old one ends, so 21 days left means a renewal has been failing for
+        // over a week, and 7 leaves just enough time to fix it by hand.
+        'certificate_warn_days' => 21,
+        'certificate_crit_days' => 7,
+        // Where the certificate is read: Traefik itself, because Cloudflare
+        // answers the public name with its own certificate and the origin one
+        // can expire unseen (every visitor would then get a 526).
+        'certificate_origin' => env('HEALTH_CERT_ORIGIN', 'easypanel-traefik'),
         // Re-tell her a critical nobody has seen after this long (Opsgenie's escalation).
         'escalate_after_minutes' => 30,
         'escalate_max' => 3,
