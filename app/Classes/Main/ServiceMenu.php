@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Actions\Business\DeleteBusinessService;
 use App\Actions\Business\SaveBusinessCategoryOrder;
 use App\Actions\Business\SaveBusinessService;
 use App\Actions\Business\SaveBusinessServiceCategory;
@@ -80,6 +81,34 @@ class ServiceMenu
         app(SyncOfferKnowledge::class)->handle($this->business, 'services');
 
         return $service;
+    }
+
+    /** @return string One of DeleteBusinessService's constants. */
+    public function remove(int $id): string
+    {
+        $result = app(DeleteBusinessService::class)->handle($this->business, $id);
+
+        if ($result === DeleteBusinessService::DELETED) {
+            app(SyncOfferKnowledge::class)->handle($this->business, 'services');
+        }
+
+        return $result;
+    }
+
+    /** The "Deshacer" of {@see remove()}: brings the service back with its photos and its price. */
+    public function restore(int $id): bool
+    {
+        $service = $this->business->services()->onlyTrashed()->find($id);
+
+        if ($service === null) {
+            return false;
+        }
+
+        $service->restore();
+
+        app(SyncOfferKnowledge::class)->handle($this->business, 'services');
+
+        return true;
     }
 
     public function addCategory(string $name): ServiceCategory

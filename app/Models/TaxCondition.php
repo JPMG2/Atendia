@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\TaxConditionFactory;
@@ -18,14 +20,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['country_id', 'name', 'code', 'discriminate_tax', 'is_active'])]
-class TaxCondition extends Model implements DataTable
+class TaxCondition extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<TaxConditionFactory> */
     use HasFactory;
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    public function usage(): array
+    {
+        return $this->onlyHeld([
+            'companies' => $this->heldBy('companies', 'tax_condition_id'),
+            'businesses' => $this->heldBy('businesses', 'tax_condition_id'),
+        ]);
+    }
 
     /**
      * @return BelongsTo<Country, $this>

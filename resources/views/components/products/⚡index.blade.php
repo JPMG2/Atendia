@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Business\DeleteBusinessProduct;
 use App\Actions\Catalog\WriteMissingDescriptions;
 use App\Classes\Main\Client;
 use App\Classes\Main\Inventory;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -187,6 +189,42 @@ new class extends Component
     public function toggle(int $id): void
     {
         $this->inventory()?->toggle($id);
+        $this->refreshList();
+    }
+
+    /** Deletes from the row; a product a customer asked about says so and stays. */
+    public function remove(int $id): void
+    {
+        $result = $this->inventory()?->remove($id);
+
+        if ($result === DeleteBusinessProduct::DELETED) {
+            // The row is only soft-deleted: the toast carries a way back.
+            $this->dispatch(
+                'notify',
+                type: NotificationType::Success->value,
+                message: __('client.products.deleted'),
+                action: ['label' => __('client.products.undo'), 'dispatch' => 'product-restore', 'params' => ['id' => $id]],
+            );
+        } else {
+            $this->dispatchNotification(match ($result) {
+                DeleteBusinessProduct::HELD => new NotificationDto(__('client.products.delete_held'), NotificationType::Warning),
+                default => new NotificationDto(__('notifications.not_found'), NotificationType::Error),
+            });
+        }
+
+        $this->refreshList();
+    }
+
+    /** The toast's "Deshacer". */
+    #[On('product-restore')]
+    public function restore(int $id): void
+    {
+        $restored = $this->inventory()?->restore($id) ?? false;
+
+        $this->dispatchNotification($restored
+            ? new NotificationDto(__('client.products.restored'), NotificationType::Success)
+            : new NotificationDto(__('notifications.not_found'), NotificationType::Error));
+
         $this->refreshList();
     }
 
@@ -375,6 +413,14 @@ new class extends Component
                                     :aria-label="__('client.products.toggle_stock', ['name' => $product->name])" />
                                 <x-ui.icon-button icon="pencil" size="sm" variant="ghost" wire:click="edit({{ $product->id }})"
                                     :label="__('client.products.edit', ['name' => $product->name])" />
+                                <x-ui.icon-button icon="trash-2" size="sm" variant="danger" x-data
+                                    :label="__('client.products.delete', ['name' => $product->name])"
+                                    x-on:click="dialog.confirm({
+                                        title: {{ \Illuminate\Support\Js::from(__('client.products.delete_title', ['name' => $product->name])) }},
+                                        message: {{ \Illuminate\Support\Js::from(__('client.products.delete_message')) }},
+                                        accept: {{ \Illuminate\Support\Js::from(__('client.products.delete_accept')) }},
+                                        type: 'danger',
+                                    }).then((yes) => yes && $wire.remove({{ $product->id }}))" />
                             </li>
                         @endforeach
                     </ul>

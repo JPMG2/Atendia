@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
 use Database\Factories\SeasonalWindowFactory;
@@ -16,14 +18,31 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'starts_at', 'ends_at', 'priority', 'notice', 'is_active'])]
-class SeasonalWindow extends Model implements DataTable
+class SeasonalWindow extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<SeasonalWindowFactory> */
     use HasFactory;
 
     // A window is never really deleted: its variants would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** Nothing outside the season depends on it: what hangs off it is its own. */
+    public function usage(): array
+    {
+        return [];
+    }
+
+    /** The hero tags and WhatsApp variants of the season leave with it (the keys cascade). */
+    public function owns(): array
+    {
+        return $this->onlyHeld([
+            'demo_tags' => $this->heldBy('demo_tags', 'seasonal_window_id'),
+            'whatsapp_variants' => $this->heldBy('whatsapp_variants', 'seasonal_window_id'),
+        ]);
+    }
 
     /**
      * @return array<string, string>

@@ -20,6 +20,7 @@ use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeSuggestion;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
+use App\Services\Tenant;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -58,6 +59,12 @@ function threadFor(User $user, string $name, string $phone, string $lastBody): C
     ]);
 
     return $conversation;
+}
+
+/** A day as the owner sees it: the screen reads picked days in the tenant timezone, not UTC. */
+function ownerDay(int $daysAgo): string
+{
+    return now()->setTimezone(app(Tenant::class)->timezone())->subDays($daysAgo)->toDateString();
 }
 
 /** What the conversation analysis leaves behind for a question nobody answered. */
@@ -225,7 +232,7 @@ test('the date filter narrows the list to the picked range', function (): void {
     $this->actingAs($user);
 
     livewire('conversations.index')
-        ->set('dates', now()->subDays(2)->toDateString().'..'.now()->toDateString())
+        ->set('dates', ownerDay(2).'..'.ownerDay(0))
         ->assertSee('Carla')
         ->assertDontSee('Antigua');
 });
@@ -238,7 +245,7 @@ test('a single picked day filters that day alone', function (): void {
     $this->actingAs($user);
 
     livewire('conversations.index')
-        ->set('dates', now()->subDays(20)->toDateString())
+        ->set('dates', ownerDay(20))
         ->assertSee('Antigua')
         ->assertDontSee('Carla');
 });
@@ -259,7 +266,7 @@ test('with filters on and nothing left the list says so', function (): void {
     $this->actingAs($user);
 
     livewire('conversations.index')
-        ->set('dates', now()->subDays(30)->toDateString())
+        ->set('dates', ownerDay(30))
         ->assertSee(__('client.conversations.no_results'));
 });
 

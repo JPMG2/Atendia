@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Classes\Main\OpeningHours;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\WhatsappVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -20,14 +22,22 @@ use Illuminate\Support\Collection;
  * Overrides {@see Company::reach()} field by field; a field left null inherits.
  */
 #[Fillable(['seasonal_window_id', 'phone', 'opening_schedule', 'is_active'])]
-class WhatsappVariant extends Model implements DataTable
+class WhatsappVariant extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<WhatsappVariantFactory> */
     use HasFactory;
 
     // A variant is never really deleted: the season it speaks in still exists.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A variant only overrides the landing contact for its season. */
+    public function usage(): array
+    {
+        return [];
+    }
 
     /**
      * @return array<string, string>

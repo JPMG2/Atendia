@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Business\DeleteBusinessService;
 use App\Actions\Catalog\WriteMissingDescriptions;
 use App\Classes\Main\Client;
 use App\Classes\Main\ServiceMenu;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -236,6 +238,42 @@ new class extends Component
     public function toggle(int $id): void
     {
         $this->menu()?->toggle($id);
+        $this->refreshList();
+    }
+
+    /** Deletes from the row; a service with history says so and stays, to be paused instead. */
+    public function remove(int $id): void
+    {
+        $result = $this->menu()?->remove($id);
+
+        if ($result === DeleteBusinessService::DELETED) {
+            // The row is only soft-deleted: the toast carries a way back.
+            $this->dispatch(
+                'notify',
+                type: NotificationType::Success->value,
+                message: __('client.services.deleted'),
+                action: ['label' => __('client.services.undo'), 'dispatch' => 'service-restore', 'params' => ['id' => $id]],
+            );
+        } else {
+            $this->dispatchNotification(match ($result) {
+                DeleteBusinessService::HELD => new NotificationDto(__('client.services.delete_held'), NotificationType::Warning),
+                default => new NotificationDto(__('notifications.not_found'), NotificationType::Error),
+            });
+        }
+
+        $this->refreshList();
+    }
+
+    /** The toast's "Deshacer". */
+    #[On('service-restore')]
+    public function restore(int $id): void
+    {
+        $restored = $this->menu()?->restore($id) ?? false;
+
+        $this->dispatchNotification($restored
+            ? new NotificationDto(__('client.services.restored'), NotificationType::Success)
+            : new NotificationDto(__('notifications.not_found'), NotificationType::Error));
+
         $this->refreshList();
     }
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\RegionFactory;
@@ -18,14 +20,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['province_id', 'name', 'is_active'])]
-class Region extends Model implements DataTable
+class Region extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<RegionFactory> */
     use HasFactory;
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** The company address is the only thing that stores a region. */
+    public function usage(): array
+    {
+        return $this->onlyHeld(['companies' => $this->heldBy('companies', 'region_id')]);
+    }
 
     /**
      * @return BelongsTo<Province, $this>

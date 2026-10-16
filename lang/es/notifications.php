@@ -32,6 +32,12 @@ return [
         'marital_status' => 'Estado civil',
         'occupation' => 'Ocupación',
         'record' => 'Registro',
+        'seasonal_window' => 'Temporada',
+        'demo_tag' => 'Etiqueta',
+        'whatsapp_variant' => 'Variante de WhatsApp',
+        'adoption_nudge' => 'Recordatorio',
+        'support_reply' => 'Respuesta',
+        'support_ticket_kind' => 'Tipo de ticket',
     ],
     'created' => [
         'male' => ':entity creado correctamente',

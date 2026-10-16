@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\SupportReplyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,14 +17,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'body', 'is_active'])]
-class SupportReply extends Model implements DataTable
+class SupportReply extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<SupportReplyFactory> */
     use HasFactory;
 
     // A master row is never deleted: a ticket message may have quoted it.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A canned reply is copied into a ticket, never linked. */
+    public function usage(): array
+    {
+        return [];
+    }
 
     /** The longest a reply can be: the composer stops at the same number. */
     public const BODY_MAX = 900;

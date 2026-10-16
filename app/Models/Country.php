@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\CountryFactory;
@@ -18,14 +20,27 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['currency_id', 'name', 'code', 'iso2', 'phone_code', 'is_active'])]
-class Country extends Model implements DataTable
+class Country extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<CountryFactory> */
     use HasFactory;
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A country is the root of an address tree and of the tax and holiday data: all of it blocks. */
+    public function usage(): array
+    {
+        return $this->onlyHeld([
+            'provinces' => $this->heldBy('provinces', 'country_id'),
+            'tax_conditions' => $this->heldBy('tax_conditions', 'country_id'),
+            'country_holidays' => $this->heldBy('country_holidays', 'country_id'),
+            'businesses' => $this->heldBy('businesses', 'country_id'),
+        ]);
+    }
 
     /**
      * @return array<string, string>

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,12 +16,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['code', 'name', 'symbol', 'decimal_places', 'is_active'])]
-class Currency extends Model implements DataTable
+class Currency extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
 
@@ -28,6 +33,21 @@ class Currency extends Model implements DataTable
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A business holds it as its own currency or as the one it compares against. */
+    public function usage(): array
+    {
+        $businesses = DB::table('businesses')
+            ->where(fn ($query) => $query
+                ->where('currency_id', $this->getKey())
+                ->orWhere('reference_currency_id', $this->getKey()))
+            ->count();
+
+        return $this->onlyHeld([
+            'countries' => $this->heldBy('countries', 'currency_id'),
+            'businesses' => $businesses,
+        ]);
+    }
 
     /**
      * Master audit: who changed what, and when.

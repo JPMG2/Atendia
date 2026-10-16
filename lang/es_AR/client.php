@@ -72,6 +72,7 @@ return [
         // "Adelanto" is the neutral base; Argentina says "seña".
         'field_deposit' => 'Seña',
         'deposit_short' => 'seña $ :amount',
+        'delete_held' => 'Tiene citas o consultas de clientes asociadas, así que no se puede eliminar. Pausá el servicio para dejar de ofrecerlo.',
     ],
 
     'products' => [
@@ -83,6 +84,7 @@ return [
         'import_body' => 'Subí la planilla que ya usás: leemos las columnas y tu asistente aprende cada fila.',
         'ai_body' => 'Nuestra inteligencia artificial puede escribir por vos textos claros y atractivos para tus productos.',
         'ai_failed' => 'No pudimos escribir las descripciones ahora. Intentá de nuevo en un momento.',
+        'delete_held' => 'Un cliente consultó por este producto, así que no se puede eliminar. Marcalo sin stock para dejar de ofrecerlo.',
     ],
 
     'simulator' => [

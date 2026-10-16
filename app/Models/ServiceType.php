@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,8 +29,10 @@ use Spatie\Activitylog\Support\LogOptions;
  * exclusively.
  */
 #[Fillable(['code', 'name', 'description', 'service_modality_id', 'business_sector_id', 'sort_order', 'is_active'])]
-class ServiceType extends Model implements DataTable
+class ServiceType extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<ServiceTypeFactory> */
     use HasFactory;
 
@@ -37,6 +41,31 @@ class ServiceType extends Model implements DataTable
     // A master row is never deleted: the pivot and the businesses that adopted it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** What businesses built on it (services, products) and the activities that offer it. */
+    public function usage(): array
+    {
+        return $this->onlyHeld([
+            'services' => $this->heldBy('services', 'service_type_id'),
+            'products' => $this->heldBy('products', 'service_type_id'),
+            'business_activities' => $this->heldBy('activity_service_type', 'service_type_id'),
+        ]);
+    }
+
+    /** Its attribute list and the suggestions made from it are its own configuration. */
+    public function owns(): array
+    {
+        return $this->onlyHeld([
+            'service_attributes' => $this->heldBy('service_type_attribute', 'service_type_id'),
+            'suggested_services' => $this->heldBy('suggested_services', 'service_type_id'),
+        ]);
+    }
+
+    /** The attribute list is held by a RESTRICT key, so it is let go before the row. */
+    public function detachOwned(): void
+    {
+        $this->serviceAttributes()->detach();
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

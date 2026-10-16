@@ -8,6 +8,7 @@ use App\Traits\SearchesText;
 use Database\Factories\HelpArticleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,17 @@ class HelpArticle extends Model
     protected function casts(): array
     {
         return ['is_active' => 'boolean', 'embedding' => 'array'];
+    }
+
+    /**
+     * Articles are written with `:brand` where the platform's name goes, so a
+     * rename is one edited field and not a rewrite of every article.
+     *
+     * @return Attribute<string, string>
+     */
+    protected function body(): Attribute
+    {
+        return Attribute::get(fn (string $value): string => str_replace(':brand', Company::brand(), $value));
     }
 
     /** What gets embedded: the title leads, the keywords carry her words. */

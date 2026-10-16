@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Models\Company;
 use App\Traits\RunsAssignedModel;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
@@ -24,8 +25,10 @@ class DigestWriter implements Agent
 
     public function instructions(): Stringable|string
     {
-        return <<<'INSTRUCCIONES'
-            Sos el redactor de resúmenes de AtendIa. Recibís el registro del día de
+        $brand = Company::brand();
+
+        return <<<INSTRUCCIONES
+            Sos el redactor de resúmenes de {$brand}. Recibís el registro del día de
             las conversaciones que el asistente de un negocio atendió por WhatsApp.
 
             Devolvé un resumen BREVE en español, de 3 a 5 viñetas que empiecen con

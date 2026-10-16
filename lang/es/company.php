@@ -125,7 +125,7 @@ return [
         'legal_name' => 'Razón social',
         'brand_name' => 'Nombre comercial',
         'brand_name_hint' => 'El nombre que ve el usuario en toda la plataforma.',
-        'legal_name_placeholder' => 'AtendIa S.A.',
+        'legal_name_placeholder' => ':brand S.A.',
 
         'tagline' => 'Tagline',
         'tagline_hint' => 'Frase corta bajo el logo.',

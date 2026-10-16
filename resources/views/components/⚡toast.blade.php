@@ -45,8 +45,18 @@ new class extends Component {};
             <p class="toast-message" x-text="toast.message"></p>
 
             {{-- Optional jump from the notice to the screen that solves it. --}}
-            <template x-if="toast.action">
+            <template x-if="toast.action && toast.action.url">
                 <a class="toast-action" x-bind:href="toast.action.url" x-text="toast.action.label"></a>
+            </template>
+
+            {{-- Or an undo: it fires a Livewire event the screen listens for. --}}
+            <template x-if="toast.action && toast.action.dispatch">
+                <button
+                    type="button"
+                    class="toast-action"
+                    x-text="toast.action.label"
+                    x-on:click="Livewire.dispatch(toast.action.dispatch, toast.action.params ?? {}); dismiss(toast.id)"
+                ></button>
             </template>
 
             <button
@@ -82,7 +92,7 @@ new class extends Component {};
                 const id = ++this.lastId;
 
                 // An action needs reading AND clicking: it earns extra life.
-                const action = detail?.action?.url && detail?.action?.label ? detail.action : null;
+                const action = (detail?.action?.url || detail?.action?.dispatch) && detail?.action?.label ? detail.action : null;
 
                 this.toasts.push({
                     id,

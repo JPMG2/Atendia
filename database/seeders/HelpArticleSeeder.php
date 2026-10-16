@@ -56,7 +56,7 @@ class HelpArticleSeeder extends Seeder
                     Casi siempre es la sesión de WhatsApp que se cerró. Lo ves en la barra de arriba: si dice "WhatsApp sin conectar", tu asistente no está recibiendo mensajes.
 
                     1. Revisa que el teléfono tenga internet y batería.
-                    2. En tu teléfono: WhatsApp → Dispositivos vinculados. Si AtendIa no está en la lista, la sesión se cerró.
+                    2. En tu teléfono: WhatsApp → Dispositivos vinculados. Si :brand no está en la lista, la sesión se cerró.
                     3. Entra a WhatsApp en el panel y vuelve a escanear el código.
 
                     Si el chip está verde y aun así no responde, repórtalo: puede ser algo nuestro.

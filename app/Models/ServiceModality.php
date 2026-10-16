@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceModalityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -25,8 +27,10 @@ use Spatie\Activitylog\Support\LogOptions;
  * what the system remembers. The `code` is the hinge with the code.
  */
 #[Fillable(['code', 'name', 'description', 'icon', 'sort_order', 'is_active'])]
-class ServiceModality extends Model implements DataTable
+class ServiceModality extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<ServiceModalityFactory> */
     use HasFactory;
 
@@ -35,6 +39,11 @@ class ServiceModality extends Model implements DataTable
     // A master row is never deleted: the service types would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    public function usage(): array
+    {
+        return $this->onlyHeld(['service_types' => $this->heldBy('service_types', 'service_modality_id')]);
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

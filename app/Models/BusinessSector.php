@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\SuggestsServiceNames;
 use App\Traits\TracksUserActions;
 use Closure;
@@ -25,8 +27,10 @@ use Illuminate\Support\Collection;
  * level the assistant works with.
  */
 #[Fillable(['code', 'name', 'description', 'sort_order', 'is_active'])]
-class BusinessSector extends Model implements DataTable
+class BusinessSector extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<BusinessSectorFactory> */
     use HasFactory;
 
@@ -34,6 +38,14 @@ class BusinessSector extends Model implements DataTable
     use SoftDeletes;
     use SuggestsServiceNames;
     use TracksUserActions;
+
+    public function usage(): array
+    {
+        return $this->onlyHeld([
+            'business_activities' => $this->heldBy('business_activities', 'business_sector_id'),
+            'service_types' => $this->heldBy('service_types', 'business_sector_id'),
+        ]);
+    }
 
     /**
      * @return HasMany<BusinessActivity, $this>

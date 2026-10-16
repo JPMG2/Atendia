@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Actions\Business\DeleteBusinessProduct;
 use App\Actions\Business\SaveBusinessProduct;
 use App\Actions\Business\SyncOfferKnowledge;
 use App\Actions\Business\ToggleBusinessProduct;
@@ -75,5 +76,33 @@ class Inventory
         app(SyncOfferKnowledge::class)->handle($this->business, 'products');
 
         return $product;
+    }
+
+    /** @return string One of DeleteBusinessProduct's constants. */
+    public function remove(int $id): string
+    {
+        $result = app(DeleteBusinessProduct::class)->handle($this->business, $id);
+
+        if ($result === DeleteBusinessProduct::DELETED) {
+            app(SyncOfferKnowledge::class)->handle($this->business, 'products');
+        }
+
+        return $result;
+    }
+
+    /** The "Deshacer" of {@see remove()}. */
+    public function restore(int $id): bool
+    {
+        $product = $this->business->products()->onlyTrashed()->find($id);
+
+        if ($product === null) {
+            return false;
+        }
+
+        $product->restore();
+
+        app(SyncOfferKnowledge::class)->handle($this->business, 'products');
+
+        return true;
     }
 }

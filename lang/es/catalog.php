@@ -51,6 +51,44 @@ return [
         'off' => 'Inactivo',
     ],
 
+    // Eliminar un registro de un maestro. `:uses` y `:owns` son listas de
+    // `usage.*` ("14 negocios y 3 países"): el aviso dice QUIÉN lo sostiene.
+    'remove' => [
+        'blocked_title' => 'No se puede eliminar',
+        'in_use' => '«:name» está en uso por :uses. Para que deje de ofrecerse, cambia su estado a inactivo.',
+        'confirm_title' => 'Eliminar :entity',
+        'confirm' => 'Vas a eliminar «:name». Esto no se puede deshacer.',
+        'confirm_owns' => 'También se eliminan :owns.',
+        'accept' => 'Eliminar :entity',
+        'deactivate' => 'Desactivar',
+        'understood' => 'Entendido',
+        'deactivated' => '«:name» quedó inactivo.',
+        'and' => ' y ',
+        'missing' => 'Ese registro ya no existe.',
+        'unsupported' => 'Este catálogo no permite eliminar registros.',
+    ],
+
+    // Quién sostiene un registro, en plural con su cifra.
+    'usage' => [
+        'businesses' => '{1} :count negocio|[2,*] :count negocios',
+        'countries' => '{1} :count país|[2,*] :count países',
+        'provinces' => '{1} :count provincia|[2,*] :count provincias',
+        'regions' => '{1} :count región|[2,*] :count regiones',
+        'tax_conditions' => '{1} :count condición fiscal|[2,*] :count condiciones fiscales',
+        'country_holidays' => '{1} :count feriado|[2,*] :count feriados',
+        'business_activities' => '{1} :count actividad|[2,*] :count actividades',
+        'service_types' => '{1} :count tipo de servicio|[2,*] :count tipos de servicio',
+        'services' => '{1} :count servicio|[2,*] :count servicios',
+        'products' => '{1} :count producto|[2,*] :count productos',
+        'social_links' => '{1} :count enlace de red social|[2,*] :count enlaces de redes sociales',
+        'support_tickets' => '{1} :count ticket|[2,*] :count tickets',
+        'companies' => '{1} :count compañía|[2,*] :count compañías',
+        'service_attributes' => '{1} :count atributo|[2,*] :count atributos',
+        'suggested_services' => '{1} :count servicio sugerido|[2,*] :count servicios sugeridos',
+        'demo_tags' => '{1} :count etiqueta del hero|[2,*] :count etiquetas del hero',
+        'whatsapp_variants' => '{1} :count variante de WhatsApp|[2,*] :count variantes de WhatsApp',
+    ],
+
     'country_holiday' => [
         'search_placeholder' => 'Buscar por país, feriado o fecha',
         'search_label' => 'Buscar feriado',

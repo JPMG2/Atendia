@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\CurrentStatusFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,14 +17,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'color'])]
-class CurrentStatus extends Model implements DataTable
+class CurrentStatus extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<CurrentStatusFactory> */
     use HasFactory;
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** Nothing in the schema points at a status: it is a label the screens read. */
+    public function usage(): array
+    {
+        return [];
+    }
 
     /**
      * A status palette: what is stored is the KEY of a semantic token, never a hex.

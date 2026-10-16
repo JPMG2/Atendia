@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\KnowledgeDocument;
 use Illuminate\Database\Seeder;
 
@@ -30,7 +31,7 @@ class KnowledgeSeeder extends Seeder
             ],
             [
                 'title' => 'Precios y planes',
-                'content' => 'AtendIa tiene un plan inicial con un canal y un plan pro con múltiples canales y más volumen de mensajes. La facturación es mensual y podés cambiar de plan cuando quieras.',
+                'content' => Company::brand().' tiene un plan inicial con un canal y un plan pro con múltiples canales y más volumen de mensajes. La facturación es mensual y podés cambiar de plan cuando quieras.',
             ],
             [
                 'title' => 'Cómo derivar a un humano',

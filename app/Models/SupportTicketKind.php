@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Enums\SupportTicketPriority;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\SupportTicketKindFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,14 +25,22 @@ use Illuminate\Support\Collection;
  * first reason a ticket never gets sent.
  */
 #[Fillable(['code', 'name', 'icon', 'starting_priority', 'runs_clock', 'sort_order', 'is_active'])]
-class SupportTicketKind extends Model implements DataTable
+class SupportTicketKind extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<SupportTicketKindFactory> */
     use HasFactory;
 
     // A kind is never really deleted: tickets filed under it keep its name.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** Tickets store the kind's `code` as text, which no foreign key can see. */
+    public function usage(): array
+    {
+        return $this->onlyHeld(['support_tickets' => $this->heldBy('support_tickets', 'kind', $this->code)]);
+    }
 
     /**
      * Resolved once per process: a ticket list asks for its kind on every row.

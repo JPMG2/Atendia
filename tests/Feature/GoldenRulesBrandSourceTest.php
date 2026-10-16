@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Ai\Agents\AskAtendia;
+use App\Ai\Agents\DigestWriter;
+use App\Models\Business;
 use App\Models\Company;
+use App\Models\HelpArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Once;
@@ -78,6 +82,12 @@ test('no view spells the brand out', function (): void {
     expect(brandOffendersIn('resources/views', 'AtendIa'))->toBe([]);
 });
 
+// The assistants introduce themselves to customers and the seeders write text
+// the screens print: a name hand-written there survives every rename.
+test('no agent prompt or seeder spells the brand out', function (): void {
+    expect([...brandOffendersIn('app/Ai', 'AtendIa'), ...brandOffendersIn('database/seeders', 'AtendIa')])->toBe([]);
+});
+
 /*
 | Guards the guardian: a rule that only forbids is worth nothing if the
 | supported way does not work. `:brand` has to come back filled in.
@@ -108,4 +118,18 @@ test('renaming the company renames the product everywhere', function (): void {
 
     expect(Company::brand())->toBe('Conversa')
         ->and(__('probe.brand'))->toBe('Gana con Conversa');
+});
+
+test('the assistants and the help articles speak with the renamed brand', function (): void {
+    Company::factory()->create(['brand_name' => 'Aliadito']);
+    Once::flush();
+
+    $business = Business::factory()->create();
+    $article = HelpArticle::factory()->create(['body' => 'Si :brand no está en la lista, la sesión se cerró.']);
+
+    $prompt = (string) (new AskAtendia($business, 'Ana', []))->instructions();
+
+    expect($prompt)->toContain('asistente IA de Aliadito')->not->toContain('AtendIa')
+        ->and((string) (new DigestWriter)->instructions())->toContain('resúmenes de Aliadito')
+        ->and($article->fresh()->body)->toBe('Si Aliadito no está en la lista, la sesión se cerró.');
 });

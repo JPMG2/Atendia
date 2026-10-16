@@ -22,6 +22,10 @@ return [
         'empty_body' => 'Los catálogos son las listas base del sistema: países, monedas, condiciones fiscales, estados. Lo que definas acá es lo que después vas a poder elegir en el resto de :brand.',
     ],
 
+    'remove' => [
+        'in_use' => '«:name» está en uso por :uses. Para que deje de ofrecerse, cambiá su estado a inactivo.',
+    ],
+
     'service_type' => [
         'fields' => [
             'modality_placeholder' => 'Elegí cómo se ofrece',

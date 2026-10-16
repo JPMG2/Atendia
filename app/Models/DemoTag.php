@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
 use Database\Factories\DemoTagFactory;
@@ -17,14 +19,22 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 #[Fillable(['slug', 'seasonal_window_id', 'label', 'business_name', 'noun', 'chips', 'pool', 'sort_order', 'is_active'])]
-class DemoTag extends Model implements DataTable
+class DemoTag extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<DemoTagFactory> */
     use HasFactory;
 
     // A tag is never really deleted: the demo business still points at its slug.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A hero tag is the leaf of the tree: it holds nothing and nobody holds it. */
+    public function usage(): array
+    {
+        return [];
+    }
 
     /** Short, because the landing is public and a season turns at midnight. */
     private const int CACHE_MINUTES = 10;

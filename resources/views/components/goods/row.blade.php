@@ -64,5 +64,18 @@ results: state rides next to the name, actions sit on the row. --}}
             wire:click="toggle({{ $service->id }})"
             :label="__($service->is_active ? 'client.services.pause' : 'client.services.resume', ['name' => $service->name])"
         />
+        <x-ui.icon-button
+            icon="trash-2"
+            size="sm"
+            variant="danger"
+            x-data
+            :label="__('client.services.delete', ['name' => $service->name])"
+            x-on:click="dialog.confirm({
+                title: {{ \Illuminate\Support\Js::from(__('client.services.delete_title', ['name' => $service->name])) }},
+                message: {{ \Illuminate\Support\Js::from(__('client.services.delete_message')) }},
+                accept: {{ \Illuminate\Support\Js::from(__('client.services.delete_accept')) }},
+                type: 'danger',
+            }).then((yes) => yes && $wire.remove({{ $service->id }}))"
+        />
     </div>
 </li>

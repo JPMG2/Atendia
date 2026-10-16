@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Dto\AdoptionRowDto;
 use App\Enums\AdoptionStep;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\AdoptionNudgeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,14 +19,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['step', 'subject', 'body', 'is_active'])]
-class AdoptionNudge extends Model implements DataTable
+class AdoptionNudge extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<AdoptionNudgeFactory> */
     use HasFactory;
 
     // A master row is never deleted: the audit trail may point at it.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** A step's marks are history of who saw it: they do not hold the template. */
+    public function usage(): array
+    {
+        return [];
+    }
 
     /** A mailto: link is read by a mail client, which truncates long ones. */
     public const BODY_MAX = 900;

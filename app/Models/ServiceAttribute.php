@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceAttributeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,14 +26,22 @@ use Spatie\Activitylog\Support\LogOptions;
  * it — and whether it is required there — lives in the pivot, not here.
  */
 #[Fillable(['code', 'name', 'description', 'data_type', 'unit', 'options', 'is_multiple', 'sort_order', 'is_active'])]
-class ServiceAttribute extends Model implements DataTable
+class ServiceAttribute extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<ServiceAttributeFactory> */
     use HasFactory;
 
     use LogsActivity;
     use SoftDeletes;
     use TracksUserActions;
+
+    /** Held by the service types that ask for it. */
+    public function usage(): array
+    {
+        return $this->onlyHeld(['service_types' => $this->heldBy('service_type_attribute', 'service_attribute_id')]);
+    }
 
     /** What a `data_type` the system does not know falls back to. */
     public const string FALLBACK_DATA_TYPE = 'text';

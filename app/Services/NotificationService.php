@@ -44,6 +44,12 @@ class NotificationService
             'genders' => ['entity' => __('notifications.entities.gender'), 'gender' => 'male'],
             'marital_statuses' => ['entity' => __('notifications.entities.marital_status'), 'gender' => 'male'],
             'occupations' => ['entity' => __('notifications.entities.occupation'), 'gender' => 'female'],
+            'seasonal_windows' => ['entity' => __('notifications.entities.seasonal_window'), 'gender' => 'female'],
+            'demo_tags' => ['entity' => __('notifications.entities.demo_tag'), 'gender' => 'female'],
+            'whatsapp_variants' => ['entity' => __('notifications.entities.whatsapp_variant'), 'gender' => 'female'],
+            'adoption_nudges' => ['entity' => __('notifications.entities.adoption_nudge'), 'gender' => 'male'],
+            'support_replies' => ['entity' => __('notifications.entities.support_reply'), 'gender' => 'female'],
+            'support_ticket_kinds' => ['entity' => __('notifications.entities.support_ticket_kind'), 'gender' => 'male'],
         ][mb_strtolower($tableName)] ?? [
             'entity' => __('notifications.entities.record'),
             'gender' => 'male',
@@ -111,6 +117,12 @@ class NotificationService
             __('notifications.updated.'.$context['gender'], ['entity' => $context['entity']]),
             NotificationType::Success,
         );
+    }
+
+    /** What the record is called on screen ("Moneda"), for titles that name it. */
+    public function entityName(Model $model): string
+    {
+        return $this->contextFor($model->getTable())['entity'];
     }
 
     public function deleted(Model $model): NotificationDto

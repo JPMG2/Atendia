@@ -20,6 +20,7 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
         q: '',
         errors: {},
         items,
+        removing: false,
 
         // The row being edited, ONLY so the header can name it. The fields do
         // not come from here: they go through wire:model against the server's
@@ -110,9 +111,59 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
             }
         },
 
-        remove() {
-            // Deleting is not wired into any master yet.
-            this.backToList();
+        async remove() {
+            // The server decides what to say: a record somebody still holds is
+            // explained, an unused one is confirmed. This only draws the answer.
+            if (this.current === null || this.removing) {
+                return;
+            }
+
+            this.removing = true;
+
+            try {
+                const answer = await this.$wire.removalCheck(this.current.id);
+
+                if (answer.status !== 'removed' && answer.deactivate) {
+                    // Held, but it can be switched off from here: the way out
+                    // the message names is one click, not a trip to the form.
+                    const deactivate = await dialog.confirm({
+                        title: answer.title,
+                        message: answer.message,
+                        accept: answer.deactivate,
+                        cancel: answer.dismiss,
+                        type: 'warning',
+                    });
+
+                    if (deactivate && (await this.$wire.deactivateRecord(this.current.id))) {
+                        this.backToList();
+                    }
+
+                    return;
+                }
+
+                if (answer.status !== 'removed') {
+                    await dialog.notify({
+                        title: answer.title || undefined,
+                        message: answer.message,
+                        type: 'warning',
+                    });
+
+                    return;
+                }
+
+                const accepted = await dialog.confirm({
+                    title: answer.title,
+                    message: answer.message,
+                    accept: answer.accept,
+                    type: 'danger',
+                });
+
+                if (accepted && (await this.$wire.removeRecord(this.current.id))) {
+                    this.backToList();
+                }
+            } finally {
+                this.removing = false;
+            }
         },
     };
 }

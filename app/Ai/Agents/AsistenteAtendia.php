@@ -17,6 +17,7 @@ use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\MessageKind;
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
@@ -169,7 +170,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        $name = $this->business?->name ?? 'AtendIa';
+        $name = $this->business?->name ?? Company::brand();
         $contract = AssistantContract::for($this->business);
 
         return <<<INSTRUCCIONES

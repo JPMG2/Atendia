@@ -8,6 +8,7 @@ use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\Plan;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\Business;
+use App\Models\Company;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Arr;
 use Laravel\Ai\Tools\Request;
@@ -31,7 +32,7 @@ class PanelGuide implements OwnerSkillTool
 
     public function description(): Stringable|string
     {
-        return 'Cómo funciona el panel de AtendIa: con module="all" lista los módulos con su enlace; '
+        return 'Cómo funciona el panel de '.Company::brand().': con module="all" lista los módulos con su enlace; '
             .'con la clave de un módulo devuelve los textos de su pantalla (títulos, campos, ayudas, '
             .'gráficos y botones) para explicar qué muestra, qué significa cada dato y cómo se usa.';
     }

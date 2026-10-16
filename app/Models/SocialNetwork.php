@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\Removable;
+use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\SocialNetworkFactory;
@@ -17,14 +19,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'url', 'icon', 'abbreviation', 'is_active'])]
-class SocialNetwork extends Model implements DataTable
+class SocialNetwork extends Model implements DataTable, Removable
 {
+    use CountsUsage;
+
     /** @use HasFactory<SocialNetworkFactory> */
     use HasFactory;
 
     // A master row is never deleted: whatever references it would dangle.
     use SoftDeletes;
     use TracksUserActions;
+
+    /** The links of the company and of every business. */
+    public function usage(): array
+    {
+        return $this->onlyHeld(['social_links' => $this->heldBy('social_links', 'social_network_id')]);
+    }
 
     /**
      * @return array<string, string>
