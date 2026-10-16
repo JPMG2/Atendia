@@ -181,8 +181,10 @@ Candados: `GoldenRulesDatepickerTest` + `check-datepicker-golden-rules.sh`.
 
 ## Campos
 
-- Solo componentes: `<x-inputsform.*>` y `<x-ui.*>`. Cero `<input>`, `<select>`,
-  `<textarea>` crudos. Todo select es `<x-inputsform.combobox>` (`<x-ui.select>` no se usa).
+- Solo componentes. Cero `<input>`, `<select>`, `<textarea>` crudos. Todo select es
+  `<x-inputsform.combobox>` (`<x-ui.select>` no se usa).
+- Un campo de texto dentro de un formulario en filas es `<x-inputsform.input>`. Un campo suelto
+  (login, registro, buscador, caja de chat) es `<x-ui.input>`: no lleva fila ni `span`.
 - El error se autocablea por `name`. Falta un control → se crea el componente con su test
   Pest ANTES de usarlo.
 - Elegir fecha o rango: `<x-inputsform.datepicker>` (`fechas.md`).

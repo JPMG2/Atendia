@@ -251,7 +251,7 @@ Todos son theme-aware (usan tokens → dark/light solos) y blindan props inváli
 - **`<x-ui.badge variant="brand|accent" :dot="false">`** — pill.
 - **`<x-ui.card :interactive="false" as="div">`** — superficie (borde sutil + sombra); `interactive` agrega hover lift + borde jade.
 - **`<x-ui.label for="...">`** — etiqueta de campo.
-- **`<x-ui.input label hint error name icon iconRight size>`** — campo de texto; el `error` se autocompleta del ErrorBag por `name`; pasa `wire:model`, `type`, `placeholder`, etc. al `<input>`.
+- **`<x-ui.input label hint error name icon iconRight size>`** — campo de texto SUELTO (login, buscador, chat); dentro de un formulario en filas va `<x-inputsform.input>`; el `error` se autocompleta del ErrorBag por `name`; pasa `wire:model`, `type`, `placeholder`, etc. al `<input>`.
 - **`<x-ui.textarea label hint error name :rows="4">`** — área de texto.
 - **`<x-ui.select label error name :options="[...]" placeholder size>`** — `options` acepta `['v'=>'Label']`, lista simple o `[['value'=>..,'label'=>..]]`.
 - **`<x-ui.switch name label :checked size="md|sm">`** y **`<x-ui.checkbox name label description :checked>`** — form-native (checkbox real oculto + visual con tokens; `wire:model` funciona).

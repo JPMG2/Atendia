@@ -92,3 +92,7 @@
 2026-10-14	check-blade-golden-rules	resources/views/components/admin/alerts/⚡index.blade.php
 2026-10-14	guardian:BusinessIsolationTest	app/Actions/Admin/SendPlatformDigest.php
 2026-10-14	check-comment-golden-rules	resources/views/components/inputsform/combobox.blade.php
+2026-10-16	check-catalog-form-layout	resources/views/auth/device-challenge.blade.php
+2026-10-16	check-catalog-form-layout	resources/views/auth/login.blade.php
+2026-10-16	check-catalog-form-layout	resources/views/auth/register.blade.php
+2026-10-16	check-catalog-form-layout	resources/views/components/site/phone-mock.blade.php
