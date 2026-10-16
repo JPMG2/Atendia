@@ -11,7 +11,7 @@
         </tr>
         <tr>
             <td style="padding:28px 40px 8px;">
-                <p style="margin:0; font-family:'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; font-size:15px; line-height:1.7; color:#243B33;">{{ __('mail.referral_link.body', ['percent' => (int) config('atendia.referral.reward_percent'), 'days' => (int) config('atendia.referral.invited_trial_days')]) }}</p>
+                <p style="margin:0; font-family:'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; font-size:15px; line-height:1.7; color:#243B33;">{{ __('mail.referral_link.body', ['days' => (int) config('atendia.referral.invited_trial_days')]) }}</p>
             </td>
         </tr>
         <tr>

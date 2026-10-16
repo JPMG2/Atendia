@@ -44,20 +44,18 @@ Route::post('/demo/mensaje', DemoChatController::class)
     ->middleware('throttle:6,1')
     ->name('demo.message');
 
-// The referral code rides session + 30-day cookie (industry window). A real
-// code earns the personal invite page — a named invite converts, a cold form
-// does not (Dropbox pattern); a dead code falls through to plain register.
+// The referral code rides session + 30-day cookie (industry window). A real code earns the
+// invite page and a dead one falls through to register. The page never names the inviter:
+// anyone guessing codes would be reading business names.
 Route::get('/r/{code}', function (string $code) {
-    $inviter = Business::query()->where('referral_code', $code)->first();
-
-    if ($inviter === null) {
+    if (! Business::query()->where('referral_code', $code)->exists()) {
         return redirect()->route('register');
     }
 
     session()->put('atendia_ref', $code);
     Cookie::queue('atendia_ref', $code, 60 * 24 * 30);
 
-    return view('referral-invite', ['inviter' => $inviter->name]);
+    return view('referral-invite');
 })->name('referral.landing');
 
 Route::get('/idioma/{locale}', function (string $locale) {

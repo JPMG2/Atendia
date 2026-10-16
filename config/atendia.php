@@ -447,14 +447,13 @@ return [
     | Referral program ("Gana con AtendIa")
     |--------------------------------------------------------------------------
     |
-    | Payment-agnostic on purpose: the reward is a percent off the next
-    | invoice, whatever the payment rail turns out to be. These numbers are
-    | the launch defaults; the admin dashboard will manage them later.
+    | The reward is a discount on the next invoice, and nothing applies it yet:
+    | the amount is not promised anywhere until the lawyer and the accountant
+    | settle it (R-11). These numbers are the launch defaults.
     |
     */
 
     'referral' => [
-        'reward_percent' => 25,
         'invited_trial_days' => 21,
         'founders' => 10,
     ],

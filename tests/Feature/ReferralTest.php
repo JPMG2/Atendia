@@ -23,12 +23,13 @@ test('every business is born with a shareable code free of lookalike characters'
         ->and(Business::factory()->create()->referral_code)->not->toBe($business->referral_code);
 });
 
-test('a real code lands on the personal invite page and drops the code', function (): void {
+test('a real code lands on the invite page, keeps the code, and never names the inviter', function (): void {
     $referrer = Business::factory()->create(['name' => 'Laboratorio Vida']);
 
     $this->get('/r/'.$referrer->referral_code)
         ->assertOk()
-        ->assertSee(__('referrals.invite.title', ['inviter' => 'Laboratorio Vida']))
+        ->assertSee(__('referrals.invite.title'))
+        ->assertDontSee('Laboratorio Vida')
         ->assertSee(__('referrals.invite.cta'))
         ->assertSee(route('register'))
         ->assertSessionHas('atendia_ref', $referrer->referral_code)
@@ -79,7 +80,7 @@ test('the screen shows the link, the tally and the double-sided deal', function 
         ->assertSee(__('referrals.title'))
         ->assertSee($user->business->referralLink())
         ->assertSee('1')
-        ->assertSee(__('referrals.how_reward', ['percent' => 25]))
+        ->assertSee(__('referrals.how_reward'))
         ->assertSee(__('referrals.how_invited', ['days' => 21]));
 });
 

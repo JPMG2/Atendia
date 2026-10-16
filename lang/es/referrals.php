@@ -11,7 +11,7 @@ return [
     'how_title' => 'Así funciona',
     'how_share' => 'Comparte tu enlace con otros negocios, por WhatsApp o donde quieras.',
     'how_invited' => 'Quien llega con tu enlace estrena :brand con :days días de prueba gratis.',
-    'how_reward' => 'Cuando ese negocio paga su primer mes, tú ganas un :percent% de descuento en tu próxima factura.',
+    'how_reward' => 'Cuando ese negocio paga su primer mes, tú ganas un descuento en tu próxima factura.',
     'how_stack' => 'Los descuentos se acumulan: varios referidos pueden dejarte el mes en cero.',
 
     'no_business' => [
@@ -41,7 +41,7 @@ return [
 
     'invite' => [
         'eyebrow' => 'Una invitación para tu negocio',
-        'title' => ':inviter te invita a probar :brand',
+        'title' => 'Te invitaron a probar :brand',
         'sub' => 'Tu negocio, atendido por IA en WhatsApp. Empieza con :days días de prueba, sin tarjeta.',
         'perk_trial' => ':days días de prueba gratis, por venir invitado',
         'perk_always' => 'Responde a tus clientes 24/7, en cualquier idioma',

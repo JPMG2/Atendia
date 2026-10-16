@@ -2,7 +2,7 @@
 
 {{ __('mail.referral_link.intro', ['name' => $model->name]) }}
 
-{{ __('mail.referral_link.body', ['percent' => (int) config('atendia.referral.reward_percent'), 'days' => (int) config('atendia.referral.invited_trial_days')]) }}
+{{ __('mail.referral_link.body', ['days' => (int) config('atendia.referral.invited_trial_days')]) }}
 
 {{ $model->referralLink() }}
 

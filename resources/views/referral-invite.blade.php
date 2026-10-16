@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="invite-card">
         <p class="eyebrow">{{ __('referrals.invite.eyebrow') }}</p>
-        <h1 class="invite-title font-display">{{ __('referrals.invite.title', ['inviter' => $inviter]) }}</h1>
+        <h1 class="invite-title font-display">{{ __('referrals.invite.title') }}</h1>
         <p class="invite-sub">
             {{ __('referrals.invite.sub', ['days' => (int) config('atendia.referral.invited_trial_days')]) }}
         </p>

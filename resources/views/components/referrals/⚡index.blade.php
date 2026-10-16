@@ -171,7 +171,7 @@ new class extends Component
                 <ol class="referral-steps">
                     <li>{{ __('referrals.how_share') }}</li>
                     <li>{{ __('referrals.how_invited', ['days' => (int) config('atendia.referral.invited_trial_days')]) }}</li>
-                    <li>{{ __('referrals.how_reward', ['percent' => (int) config('atendia.referral.reward_percent')]) }}</li>
+                    <li>{{ __('referrals.how_reward') }}</li>
                     <li>{{ __('referrals.how_stack') }}</li>
                 </ol>
 
