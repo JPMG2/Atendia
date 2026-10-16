@@ -96,3 +96,4 @@
 2026-10-16	check-catalog-form-layout	resources/views/auth/login.blade.php
 2026-10-16	check-catalog-form-layout	resources/views/auth/register.blade.php
 2026-10-16	check-catalog-form-layout	resources/views/components/site/phone-mock.blade.php
+2026-10-16	check-comment-golden-rules	app/Http/Middleware/TrustCloudflareVisitorIp.php

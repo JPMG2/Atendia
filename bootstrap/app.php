@@ -8,6 +8,7 @@ use App\Http\Middleware\LogoutRevokedDevice;
 use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantDatabaseContext;
+use App\Http\Middleware\TrustCloudflareVisitorIp;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -42,6 +43,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // by sending a made-up header. Traefik sits on a private address, which
         // is why the proto and host headers (https assets) keep being honoured.
         $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.1']);
+
+        // After the proxy trust above: it reads what that trust makes of the address.
+        $middleware->append(TrustCloudflareVisitorIp::class);
 
         // A signed-in user bounced off /login lands on their own panel, not
         // on the client dashboard every guest redirect pointed at.
