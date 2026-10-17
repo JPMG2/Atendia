@@ -31,10 +31,17 @@ class AssistantContract
      * assistant next to a tuteo notice read like two businesses in one chat.
      */
     public string $voice {
-        get => $this->locale === 'es_AR'
-            ? 'TRATO. Tratá a la persona de vos (voseo rioplatense: "mirá", "tenés", "querés").'
-            : 'TRATO. Tratá a la persona de tú (tuteo: "mira", "tienes", "quieres"). Las frases de ejemplo de '
-                .'estas instrucciones están en voseo: decilas con este trato.';
+        get => match ($this->locale) {
+            'es_AR' => 'TRATO. Tratá a la persona de vos (voseo rioplatense: "mirá", "tenés", "querés").',
+            'es_VE' => $this->tuteo.' VOCABULARIO. En Venezuela se dice "cita", nunca "turno": donde estas '
+                .'instrucciones o las herramientas digan turno, tú dices cita (una cita, la cita, tu cita).',
+            default => $this->tuteo,
+        };
+    }
+
+    private string $tuteo {
+        get => 'TRATO. Tratá a la persona de tú (tuteo: "mira", "tienes", "quieres"). Las frases de ejemplo de '
+            .'estas instrucciones están en voseo: decilas con este trato.';
     }
 
     /**

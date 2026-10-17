@@ -58,3 +58,9 @@ test('the voice follows the locale: voseo only for es_AR', function (): void {
         ->and(new AssistantContract(CarbonImmutable::now(), 'es')->voice)->toContain('de tú')
         ->and(new AssistantContract(CarbonImmutable::now(), 'es_VE')->voice)->toContain('de tú');
 });
+
+test('only the Venezuelan voice says cita instead of turno', function (): void {
+    expect(new AssistantContract(CarbonImmutable::now(), 'es_VE')->voice)->toContain('"cita", nunca "turno"')
+        ->and(new AssistantContract(CarbonImmutable::now(), 'es')->voice)->not->toContain('cita')
+        ->and(new AssistantContract(CarbonImmutable::now(), 'es_AR')->voice)->not->toContain('cita');
+});

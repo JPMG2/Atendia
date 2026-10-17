@@ -157,3 +157,23 @@ it('el selector ignora un locale que no está en la lista blanca', function (): 
 
     expect(session('locale'))->not->toBe('xx');
 });
+
+it('says cita in Venezuela and keeps turno everywhere else', function (): void {
+    expect(__('agenda.book', [], 'es_VE'))->toBe('Reservar una cita')
+        ->and(__('agenda.book', [], 'es'))->toBe('Reservar un turno')
+        ->and(__('agenda.book', [], 'es_AR'))->toBe('Reservar un turno');
+});
+
+it('keeps turno for working-hour shifts even in Venezuela', function (): void {
+    expect(__('client.business.hours.add_shift', [], 'es_VE'))->toBe('Agregar turno')
+        ->and(__('client.business.appointments.enabled', [], 'es_VE'))->toBe('Agenda de citas');
+});
+
+it('leaves no turno in the Venezuelan strings except working-hour shifts', function (): void {
+    $left = collect(glob(lang_path('es_VE/*.php')))
+        ->flatMap(fn (string $file): array => Arr::dot(require $file))
+        ->filter(fn ($text): bool => is_string($text) && preg_match('/\bturnos?\b/i', $text) === 1)
+        ->keys()->all();
+
+    expect($left)->toBe([]);
+});

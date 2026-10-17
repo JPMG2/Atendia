@@ -27,21 +27,40 @@ case "$command" in
     *pgrep*|*pkill*|*ps\ -*) exit 0 ;;
 esac
 
-# Solo cuenta la suite ENTERA: con --filter o un archivo puntual no aplica.
-case "$command" in
-    *pest*tests/Browser*) ;;
-    *) exit 0 ;;
-esac
+# Solo cuenta la suite ENTERA: con --filter o un archivo puntual no aplica. Se
+# juzga cada tramo del comando por separado: con `pest tests/Eval --filter=x;
+# pest tests/Browser` el --filter del primero descartaba la corrida completa
+# del segundo y no dejaba la marca (costó 30 min el 2026-10-12, T-01).
+is_full_browser_run() {
+    local segment="$1"
 
-case "$command" in
-    *--filter*) exit 0 ;;
-esac
+    case "$segment" in
+        *pest*tests/Browser*) ;;
+        *) return 1 ;;
+    esac
 
-# Un archivo puntual tampoco es la suite: sin esto dos corridas de un solo
-# test file consumían la corrida del commit (pasó el 2026-09-26).
-case "$command" in
-    *tests/Browser/*.php*) exit 0 ;;
-esac
+    case "$segment" in
+        *--filter*) return 1 ;;
+    esac
+
+    # Un archivo puntual tampoco es la suite: sin esto dos corridas de un solo
+    # test file consumían la corrida del commit (pasó el 2026-09-26).
+    case "$segment" in
+        *tests/Browser/*.php*) return 1 ;;
+    esac
+
+    return 0
+}
+
+full_run=0
+while IFS= read -r segment; do
+    if is_full_browser_run "$segment"; then
+        full_run=1
+        break
+    fi
+done < <(printf '%s\n' "$command" | sed -E 's/(&&|\|\||;|\|)/\n/g')
+
+[ "$full_run" -eq 1 ] || exit 0
 
 counter="${TMPDIR:-/tmp}/atendia-browser-suite-runs"
 
