@@ -26,4 +26,14 @@ return [
         'tip' => '¿Tu número es nuevo? WhatsApp confía más en los números con historia: usalo unos días de forma normal antes de conectarlo y arrancás con la mejor reputación.',
         'dedicated_body' => 'Si conectás tu número personal, el asistente también les va a responder a tus familiares y amigos, y tus chats privados se van a mezclar con los de tus clientes.',
     ],
+
+    'business_app' => [
+        'line' => 'Si usás WhatsApp Business, apagá el mensaje de saludo y el de ausencia: pueden salir a la vez que el asistente.',
+        'reminder' => 'Si usás WhatsApp Business, revisá que el saludo y la ausencia de la app estén apagados.',
+        'steps' => [
+            'Abrí WhatsApp Business y entrá a Herramientas para la empresa.',
+            'Abrí Mensaje de saludo y desactivalo.',
+            'Hacé lo mismo con Mensaje de ausencia.',
+        ],
+    ],
 ];

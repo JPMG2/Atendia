@@ -200,6 +200,8 @@ new class extends Component
                         <span class="font-mono">{{ $this->business->whatsapp_connected_at?->inBusinessTime()->format('d/m/Y H:i') }}</span>
                     </p>
 
+                    <x-whatsapp.business-hint compact />
+
                     {{-- The identity check, where the warning about linking a
                     personal line was: a name and a number beat a green tick. --}}
                     @if ($this->profile)
@@ -341,6 +343,8 @@ new class extends Component
                         <span class="text-body"><strong class="text-strong">{{ __('whatsapp.connect.tip_label') }}:</strong>
                             {{ __('whatsapp.connect.tip') }}</span>
                     </p>
+
+                    <x-whatsapp.business-hint />
 
                     @unless ($linking)
                         <x-ui.button variant="primary" icon="whatsapp" wire:click="connect">

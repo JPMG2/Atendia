@@ -63,6 +63,19 @@ return [
         'privacy' => 'Tus conversaciones son privadas: solo tu negocio las ve. Las usamos únicamente para que el asistente responda a tus clientes; nunca las vendemos ni las usamos para publicidad.',
     ],
 
+    // The business app sends its own greeting and away messages from the phone: the assistant cannot see them.
+    'business_app' => [
+        'line' => 'Si usas WhatsApp Business, apaga el mensaje de saludo y el de ausencia: pueden salir a la vez que el asistente.',
+        'reminder' => 'Si usas WhatsApp Business, revisa que el saludo y la ausencia de la app estén apagados.',
+        'how' => 'Ver cómo',
+        'hide' => 'Ocultar',
+        'steps' => [
+            'Abre WhatsApp Business y entra a Herramientas para la empresa.',
+            'Abre Mensaje de saludo y desactívalo.',
+            'Haz lo mismo con Mensaje de ausencia.',
+        ],
+    ],
+
     // Meta reviews the name a business shows. It is a warning, never a block.
     'name_rules' => [
         'title' => 'El nombre de tu negocio puede ser rechazado por Meta',

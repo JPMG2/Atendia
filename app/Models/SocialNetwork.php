@@ -176,4 +176,48 @@ class SocialNetwork extends Model implements DataTable, Removable
             )
             ->all();
     }
+
+    /**
+     * The active network a pasted link belongs to, or null when none is certain.
+     *
+     * The catalog's own base URL is what decides (its host, www aside), and a
+     * network's name covers its other door: twitter.com is "X (Twitter)".
+     */
+    public static function idForUrl(string $url): ?int
+    {
+        $host = self::bareHost($url);
+
+        if ($host === null) {
+            return null;
+        }
+
+        $label = explode('.', $host)[0];
+
+        $match = self::query()
+            ->where('is_active', true)
+            ->get()
+            ->first(function (self $network) use ($host, $label): bool {
+                $own = self::bareHost((string) $network->url);
+
+                if ($own !== null && ($host === $own || str_ends_with($host, '.'.$own))) {
+                    return true;
+                }
+
+                return strlen($label) >= 4 && str_contains(mb_strtolower($network->name), $label);
+            });
+
+        return $match?->id;
+    }
+
+    /** Lower-case host of a link without its `www.`, or null when it is not one. */
+    private static function bareHost(string $url): ?string
+    {
+        $host = parse_url(str_contains($url, '://') ? $url : 'https://'.$url, PHP_URL_HOST);
+
+        if (! is_string($host) || ! str_contains($host, '.')) {
+            return null;
+        }
+
+        return preg_replace('/^www\./', '', mb_strtolower($host));
+    }
 }

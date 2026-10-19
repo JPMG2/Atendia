@@ -500,6 +500,63 @@ test('rows are added and removed on the fly, and the last one always stays', fun
     $component->call('removeSocialRow', 0)->assertCount('form.social', 1);
 });
 
+test('a pasted link picks its network, but never overwrites a choice or steals a taken one', function (): void {
+    $instagram = SocialNetwork::factory()->create(['name' => 'Instagram', 'url' => 'https://www.instagram.com/', 'is_active' => true]);
+    $x = SocialNetwork::factory()->create(['name' => 'X (Twitter)', 'url' => 'https://x.com/', 'is_active' => true]);
+    $this->actingAs(companyAdmin());
+
+    $component = Livewire::test('admin.company.index')
+        ->set('form.social.0.url', 'https://instagram.com/atendia')
+        ->assertSet('form.social.0.social_network_id', $instagram->id);
+
+    // A second link to the same network leaves the row alone: one link per network.
+    $component->call('addSocialRow', 0)
+        ->set('form.social.1.url', 'https://www.instagram.com/otra')
+        ->assertSet('form.social.1.social_network_id', null);
+
+    // The old name of a network still finds it.
+    $component->set('form.social.1.url', 'https://twitter.com/atendia')
+        ->assertSet('form.social.1.social_network_id', $x->id);
+
+    // What she picked herself is never replaced by a guess.
+    $component->call('addSocialRow', 1)
+        ->set('form.social.2.social_network_id', $instagram->id)
+        ->set('form.social.2.url', 'https://x.com/atendia')
+        ->assertSet('form.social.2.social_network_id', $instagram->id);
+});
+
+test('a link that is not a known network leaves the row without one', function (): void {
+    SocialNetwork::factory()->create(['name' => 'Instagram', 'url' => 'https://www.instagram.com/', 'is_active' => true]);
+    $this->actingAs(companyAdmin());
+
+    Livewire::test('admin.company.index')
+        ->set('form.social.0.url', 'https://mi-negocio.com/redes')
+        ->assertSet('form.social.0.social_network_id', null);
+});
+
+test('dragging a network reorders the rows and saving keeps that order', function (): void {
+    $company = Company::factory()->create();
+    $instagram = SocialNetwork::factory()->create(['name' => 'Instagram']);
+    $linkedin = SocialNetwork::factory()->create(['name' => 'LinkedIn']);
+
+    SocialLink::factory()->for($company, 'linkable')->create(['social_network_id' => $instagram->id, 'url' => 'https://instagram.com/a', 'sort_order' => 0]);
+    SocialLink::factory()->for($company, 'linkable')->create(['social_network_id' => $linkedin->id, 'url' => 'https://linkedin.com/a', 'sort_order' => 1]);
+
+    $this->actingAs(companyAdmin());
+
+    Livewire::test('admin.company.index')
+        ->call('reorderSocialRows', 1, 0)
+        ->assertSet('form.social.0.social_network_id', $linkedin->id)
+        ->assertSet('form.social.1.social_network_id', $instagram->id)
+        // A row that does not exist moves nothing.
+        ->call('reorderSocialRows', 9, 0)
+        ->assertSet('form.social.0.social_network_id', $linkedin->id)
+        ->call('saveCommercial');
+
+    expect($company->socialLinks()->orderBy('sort_order')->pluck('social_network_id')->all())
+        ->toBe([$linkedin->id, $instagram->id]);
+});
+
 test('removing a saved network deletes it right away, without waiting for save', function (): void {
     $company = Company::factory()->create();
     $link = SocialLink::factory()->for($company, 'linkable')->create();

@@ -53,13 +53,39 @@ test('the panel screen invites an unlinked number to connect', function (): void
     $page->assertNoJavaScriptErrors()
         ->assertSee(__('whatsapp.connect.title'))
         ->assertSee(__('whatsapp.connect.dedicated_title'))
+        // A business-app owner is told BEFORE scanning that its own greeting can double the reply.
+        ->assertSee(__('whatsapp.business_app.line'))
         // The topbar must agree with the card: one screen, one claim.
         ->assertSee(__('whatsapp.topbar_disconnected'))
         ->screenshot(filename: 'whatsapp-panel-disconnected');
 
+    // The pill that says "sin conectar" must breathe: the dot is what moves.
+    expect($page->script("getComputedStyle(document.querySelector('.conn-pill-warning .conn-dot')).animationName"))->toBe('conn-beacon');
+
     // inDarkMode() leaves the page in light: the shot would carry a "dark" name and a light page.
     $page->script('document.documentElement.classList.add("dark")');
     $page->screenshot(filename: 'whatsapp-panel-disconnected-dark');
+});
+
+test('the business-app hint opens its steps on demand and can never be dismissed', function (): void {
+    linkOwner();
+
+    // x-show only hides: what counts is what is painted, not what is in the DOM.
+    $painted = fn ($page, string $selector): bool => (bool) $page->script("(() => { const e = document.querySelector('{$selector}'); return !!e && e.offsetParent !== null; })()");
+
+    $page = visit('/whatsapp');
+
+    // Quiet by default: the steps are one click away, not on the page.
+    $page->assertSee(__('whatsapp.business_app.how'));
+    expect($painted($page, '[data-testid=business-app-hint] ol'))->toBeFalse();
+
+    $page->click('@business-app-how')->screenshot(filename: 'whatsapp-business-hint-open');
+    expect($painted($page, '[data-testid=business-app-hint] ol'))->toBeTrue();
+
+    // No dismiss control, and a reload brings the line back as it was.
+    expect($page->script("document.querySelector('[data-testid=business-app-done]') === null"))->toBeTrue();
+    $page->script('location.reload()');
+    $page->wait(2)->assertSee(__('whatsapp.business_app.line'));
 });
 
 test('the panel screen holds together on a phone', function (): void {
@@ -69,6 +95,7 @@ test('the panel screen holds together on a phone', function (): void {
 
     $page->assertNoJavaScriptErrors()
         ->assertSee(__('whatsapp.connect.title'))
+        ->assertSee(__('whatsapp.business_app.line'))
         ->screenshot(filename: 'whatsapp-panel-mobile');
 
     expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBe(0);
@@ -97,7 +124,7 @@ test('a linked number reads as connected on both the card and the pill', functio
     // it has no history for.
     $owner = linkOwner([
         'whatsapp_instance' => 'business-99',
-        'whatsapp_connected_at' => now(),
+        'whatsapp_connected_at' => now()->subDays(20),
         'created_at' => now()->subMonth(),
     ]);
 
@@ -120,6 +147,8 @@ test('a linked number reads as connected on both the card and the pill', functio
         ->assertSee('5492995243890')
         ->assertSee(__('whatsapp.history.title', ['days' => 7]))
         ->assertSee(__('whatsapp.history.device_removed'))
+        // Linked weeks ago and still there: the reminder has no expiry.
+        ->assertSee(__('whatsapp.business_app.reminder'))
         ->screenshot(filename: 'whatsapp-panel-connected');
 
     $page->script('document.documentElement.classList.add("dark")');

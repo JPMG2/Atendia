@@ -1635,8 +1635,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      y su x— porque a 900px el sobrante no existe y 150px cortaba la palabra. */
   .bp-form .config-social-row > .f-short { flex:0 1 200px; min-width:170px; }
   .bp-form .config-social-row > .f-long  { flex:1 1 200px; min-width:0; }
-  /* Remove and add sit tight as one pair; the link input takes what they free. */
-  .bp-form .config-social-add { margin-left:-10px; }
+  /* Add and remove sit tight as one pair; the link input takes what they free. */
+  .bp-form .config-social-remove { margin-left:-10px; }
 
   .bp-hours { border:1px solid var(--border-subtle); border-radius:12px; overflow:hidden; }
   .bp-hrow { display:flex; align-items:center; gap:10px; padding:6px 12px; transition:background var(--dur-fast) var(--ease-out); }
@@ -2709,7 +2709,12 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .conn-pill-warning { background:var(--warning-soft); color:var(--warning); text-decoration:none;
                        transition:filter var(--dur-fast) var(--ease-out); }
   .conn-pill-warning:hover { filter:brightness(.95); }
-  .conn-pill-warning .conn-dot { background:var(--warning); }
+  .conn-pill-warning .conn-dot { background:var(--warning); animation:conn-beacon 1.8s var(--ease-out) infinite; }
+  @keyframes conn-beacon {
+    0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--warning) 85%, transparent); }
+    70%, 100% { box-shadow:0 0 0 8px transparent; }
+  }
+  @media (prefers-reduced-motion:reduce) { .conn-pill-warning .conn-dot { animation:none; } }
 
   /* The bell: twin of the theme and Ask AtendIa buttons, plus its inbox panel. */
   /* inline-flex, not a plain block: a block wrapper adds the line box's
@@ -3461,6 +3466,21 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      justo sobre su columna. */
   .config-social-head { padding-bottom:2px; }
   .config-social-spacer { flex:none; width:96px; }
+  .config-social-spacer.is-wide { width:128px; }
+  .config-social-list { display:flex; flex-direction:column; gap:14px; }
+  /* Add, remove and open, one fixed box: the columns keep their edge whether or not a row has a link to open. */
+  .config-social-actions { display:flex; flex:none; gap:4px; width:128px; }
+  .config-social-open { color:var(--brand); }
+  .config-social-grip { flex:none; width:20px; height:40px; display:inline-flex; align-items:center; justify-content:center; color:var(--text-subtle); cursor:grab; }
+  .config-social-head .config-social-grip { height:auto; cursor:default; }
+  .config-social-grip:hover { color:var(--text-strong); }
+  /* The two buttons close the row, never a second line under it: the inputs
+     share what is left and give way (min-width:0) before anything wraps. */
+  .config-social-row > .f-text { flex:5 1 220px; min-width:0; }
+  .config-social-row > .f-long { flex:8 1 280px; min-width:0; }
+  @media (min-width:681px) {
+    .config-social-row { flex-wrap:nowrap; }
+  }
 
   .config-social-remove { flex:none; color:var(--danger); }
   .config-social-remove:hover { background:var(--danger-soft); }
@@ -3473,7 +3493,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
     .config-block { grid-template-columns:1fr; gap:14px; padding:18px 20px; }
   }
   @media (max-width:680px) {
-    .config-social-row > *:not(.config-social-remove):not(.config-social-add) { flex-basis:100%; }
+    .config-social-row > *:not(.config-social-remove):not(.config-social-add):not(.config-social-actions):not(.config-social-grip) { flex-basis:100%; }
     /* Once the columns stack, the column names label nothing: they read as two
        orphan lines above a network picker. Each control carries its own
        aria-label and its placeholder, so nothing is lost by hiding them. */

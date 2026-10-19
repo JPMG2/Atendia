@@ -154,6 +154,47 @@ test('a social network row is added from the row itself', function (): void {
         ->assertNoConsoleLogs();
 });
 
+test('add sits left of remove, both on the same line as the row fields', function (): void {
+    Company::factory()->create();
+
+    foreach ([[1280, 900], [900, 800]] as [$width, $height]) {
+        $page = visit('/admin/company')->resize($width, $height);
+        $page->click('Datos comerciales')->wait(1);
+
+        $geometry = $page->script('(() => {
+            const add = document.querySelector("[data-testid=social-add]").getBoundingClientRect();
+            const remove = document.querySelector("[data-testid=social-remove]").getBoundingClientRect();
+            const url = document.querySelector("#if-social-0-url").getBoundingClientRect();
+
+            return { addBeforeRemove: add.right <= remove.left + 1, sameLine: Math.abs(add.top - remove.top) < 4 && add.top < url.bottom, overflow: document.documentElement.scrollWidth > innerWidth };
+        })()');
+
+        expect($geometry['addBeforeRemove'])->toBeTrue("add must precede remove at {$width}px")
+            ->and($geometry['sameLine'])->toBeTrue("buttons must share the fields' line at {$width}px")
+            ->and($geometry['overflow'])->toBeFalse();
+    }
+
+    $page->screenshot(filename: 'company-social-row');
+});
+
+test('pasting a link picks the network on screen and offers to open it', function (): void {
+    Company::factory()->create();
+
+    $page = visit('/admin/company')->resize(1280, 900);
+
+    $page->click('Datos comerciales')
+        ->fill('#if-social-0-url', 'https://www.instagram.com/atendia');
+
+    // Leaving the field is what sends it (`wire:model.live.blur`).
+    $page->script('document.querySelector("#if-social-0-url").blur()');
+    $page->wait(2)->screenshot(filename: 'company-social-detected');
+
+    expect($page->script('document.querySelector("#if-social-0-network").value'))->toBe('Instagram')
+        ->and($page->script('document.querySelector("[data-testid=social-open]").getAttribute("href")'))->toBe('https://www.instagram.com/atendia');
+
+    $page->assertNoJavaScriptErrors()->screenshot(filename: 'company-social-detected');
+});
+
 test('changing the country empties the province and region combobox on screen too', function (): void {
     // The server nulls province_id/region_id, but what the user reads is Alpine's
     // own `query`, not the :value prop. If the label survived the reset, the field

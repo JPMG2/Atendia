@@ -98,6 +98,15 @@ new class extends Component
                     />
 
                     <x-ui.icon-button
+                        icon="plus"
+                        variant="ghost"
+                        class="config-social-add"
+                        :label="__('client.business.social.add')"
+                        data-testid="social-add"
+                        wire:click="addSocialRow({{ $index }})"
+                    />
+
+                    <x-ui.icon-button
                         icon="trash-2"
                         variant="ghost"
                         class="config-social-remove"
@@ -105,15 +114,6 @@ new class extends Component
                         :label="__('client.business.social.remove')"
                         :disabled="count($form->social) === 1 && $row['id'] === null"
                         wire:click="removeSocialRow({{ $index }})"
-                    />
-
-                    <x-ui.icon-button
-                        icon="plus"
-                        variant="ghost"
-                        class="config-social-add"
-                        :label="__('client.business.social.add')"
-                        data-testid="social-add"
-                        wire:click="addSocialRow({{ $index }})"
                     />
                 </div>
             @endforeach

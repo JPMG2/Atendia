@@ -12,6 +12,7 @@ use App\Mail\NewCompany;
 use App\Messaging\Channels\Email;
 use App\Models\Company;
 use App\Models\SocialLink;
+use App\Models\SocialNetwork;
 use App\Rules\AttributeValidator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -169,6 +170,47 @@ class CompanyForm extends BaseForm
     public function addSocialRow(int $after): void
     {
         array_splice($this->social, $after + 1, 0, [$this->blankSocialRow()]);
+    }
+
+    /**
+     * Picks the network of a pasted link on a row that has none yet.
+     *
+     * A choice already made is never overwritten, and a network another row
+     * holds is left alone: the table keeps one link per network. The row gets
+     * a fresh key because the combobox only reads its value when it is built.
+     */
+    public function detectSocialNetwork(int $index): void
+    {
+        $row = $this->social[$index] ?? null;
+
+        if ($row === null || $row['social_network_id'] !== null || trim((string) $row['url']) === '') {
+            return;
+        }
+
+        $networkId = SocialNetwork::idForUrl((string) $row['url']);
+
+        if ($networkId === null || in_array($networkId, array_column($this->social, 'social_network_id'), true)) {
+            return;
+        }
+
+        $this->social[$index]['social_network_id'] = $networkId;
+        $this->social[$index]['key'] = $this->nextSocialKey++;
+    }
+
+    /** Moves a row to a new position: the order on screen is the order in the footer. */
+    public function moveSocialRow(int $from, int $to): void
+    {
+        if (! array_key_exists($from, $this->social)) {
+            return;
+        }
+
+        $row = $this->social[$from];
+        unset($this->social[$from]);
+
+        $rows = array_values($this->social);
+        array_splice($rows, max(0, $to), 0, [$row]);
+
+        $this->social = $rows;
     }
 
     /**

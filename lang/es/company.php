@@ -107,6 +107,8 @@ return [
         'desc' => 'Agrega las redes donde está la empresa. El orden es el que se ve en el pie de página.',
         'add' => 'Agregar red',
         'remove' => 'Quitar esta red',
+        'open' => 'Abrir el enlace en otra pestaña',
+        'reorder' => 'Arrastra para cambiar el orden',
 
         // La baja es inmediata y no hay papelera: el aviso dice la consecuencia,
         // y el botón nombra la acción en vez de un "Aceptar" genérico.

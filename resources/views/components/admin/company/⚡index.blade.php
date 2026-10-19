@@ -119,6 +119,20 @@ new class extends Component
         $this->form->addSocialRow($after);
     }
 
+    /** The link is committed on blur: that is when its network is guessed. */
+    public function updatedForm(mixed $value, string $key): void
+    {
+        if (preg_match('/^social\.(\d+)\.url$/', $key, $row) === 1) {
+            $this->form->detectSocialNetwork((int) $row[1]);
+        }
+    }
+
+    /** wire:sort hands the dragged row's index and its new position. */
+    public function reorderSocialRows(int $index, int $position): void
+    {
+        $this->form->moveSocialRow($index, $position);
+    }
+
     /**
      * Removes a social row. One already stored is deleted right away.
      *
@@ -583,9 +597,10 @@ field in red from an attempt you had stopped looking at. --}}
                 <div class="config-fields catalog-form">
                     <div class="config-social">
                         <div class="config-social-row config-social-head">
+                            <span class="config-social-grip" aria-hidden="true"></span>
                             <span class="f-text field-label">{{ __('company.social.network') }}</span>
                             <span class="f-long field-label">{{ __('company.social.url') }}</span>
-                            <span class="config-social-spacer" aria-hidden="true"></span>
+                            <span class="config-social-spacer is-wide" aria-hidden="true"></span>
                         </div>
 
                         {{-- Remove and add live on the SAME line as the row: a loose
@@ -596,8 +611,14 @@ field in red from an attempt you had stopped looking at. --}}
                         exists in the browser cannot be saved. The `wire:key`
                         carries the row's key and not its index, so removing
                         one from the middle moves the right node. --}}
+                        {{-- Dragged by the grip: the row position IS the footer order. --}}
+                        <div class="config-social-list" wire:sort="reorderSocialRows">
                         @foreach ($form->social as $index => $row)
-                            <div class="config-social-row" wire:key="social-{{ $row['key'] }}">
+                            <div class="config-social-row" wire:key="social-{{ $row['key'] }}" wire:sort:item="{{ $index }}">
+                                <span wire:sort:handle class="config-social-grip" title="{{ __('company.social.reorder') }}">
+                                    <x-icon name="grip-vertical" :size="16" />
+                                </span>
+
                                 <x-inputsform.combobox
                                     span="text"
                                     :id="'if-social-'.$index.'-network'"
@@ -617,33 +638,53 @@ field in red from an attempt you had stopped looking at. --}}
                                     :aria-label="__('company.social.url')"
                                     :placeholder="__('company.social.url_placeholder')"
                                     maxlength="255"
-                                    wire:model="form.social.{{ $index }}.url"
+                                    wire:model.live.blur="form.social.{{ $index }}.url"
                                 />
 
-                                {{-- Removing a saved network deletes it THERE AND THEN, so it
-                                warns first, through the system dialog — Atendia
-                                has no native browser confirmations. A row that
-                                was never saved goes without asking. --}}
-                                <x-ui.icon-button
-                                    icon="trash-2"
-                                    variant="ghost"
-                                    class="config-social-remove"
-                                    data-testid="social-remove"
-                                    :label="__('company.social.remove')"
-                                    :disabled="count($form->social) === 1 && $row['id'] === null"
-                                    x-on:click="removeSocial({{ $index }}, {{ $row['id'] !== null ? 'true' : 'false' }})"
-                                />
+                                <div class="config-social-actions">
+                                    <x-ui.icon-button
+                                        icon="plus"
+                                        variant="ghost"
+                                        class="config-social-add"
+                                        :label="__('company.social.add')"
+                                        data-testid="social-add"
+                                        wire:click="addSocialRow({{ $index }})"
+                                    />
 
-                                <x-ui.icon-button
-                                    icon="plus"
-                                    variant="ghost"
-                                    class="config-social-add"
-                                    :label="__('company.social.add')"
-                                    data-testid="social-add"
-                                    wire:click="addSocialRow({{ $index }})"
-                                />
+                                    {{-- Removing a saved network deletes it THERE AND THEN, so it
+                                    warns first, through the system dialog — Atendia
+                                    has no native browser confirmations. A row that
+                                    was never saved goes without asking. --}}
+                                    <x-ui.icon-button
+                                        icon="trash-2"
+                                        variant="ghost"
+                                        class="config-social-remove"
+                                        data-testid="social-remove"
+                                        :label="__('company.social.remove')"
+                                        :disabled="count($form->social) === 1 && $row['id'] === null"
+                                        x-on:click="removeSocial({{ $index }}, {{ $row['id'] !== null ? 'true' : 'false' }})"
+                                    />
+
+                                    {{-- Only a real link is worth opening: the check is the same
+                                    the server applies, so the slot stays empty (and the
+                                    column aligned) until then. --}}
+                                    @if (preg_match('#^https?://[^\s/]+\.[^\s/]+#i', (string) $row['url']) === 1)
+                                        <a
+                                            href="{{ $row['url'] }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="icon-btn icon-btn-ghost icon-btn-md config-social-open"
+                                            data-testid="social-open"
+                                            aria-label="{{ __('company.social.open') }}"
+                                            title="{{ __('company.social.open') }}"
+                                        >
+                                            <x-icon name="external-link" :size="18" />
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
