@@ -71,6 +71,19 @@ services:
       - "traefik.http.routers.aliadito-http.priority=100"
       - "traefik.http.routers.aliadito-http.middlewares=aliadito-to-https"
       - "traefik.http.routers.aliadito-http.service=atendia-svc"
+      # aliadito.com.ve va en routers APARTE: cada conjunto de nombres pide su propio certificado,
+      # y uno que falle no debe arrastrar la renovación del de aliadito.com.
+      - "traefik.http.routers.aliaditove-https.rule=Host(`aliadito.com.ve`) || Host(`www.aliadito.com.ve`)"
+      - "traefik.http.routers.aliaditove-https.entrypoints=https"
+      - "traefik.http.routers.aliaditove-https.priority=100"
+      - "traefik.http.routers.aliaditove-https.tls=true"
+      - "traefik.http.routers.aliaditove-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.aliaditove-https.service=atendia-svc"
+      - "traefik.http.routers.aliaditove-http.rule=Host(`aliadito.com.ve`) || Host(`www.aliadito.com.ve`)"
+      - "traefik.http.routers.aliaditove-http.entrypoints=http"
+      - "traefik.http.routers.aliaditove-http.priority=100"
+      - "traefik.http.routers.aliaditove-http.middlewares=aliadito-to-https"
+      - "traefik.http.routers.aliaditove-http.service=atendia-svc"
       - "traefik.http.middlewares.aliadito-to-https.redirectscheme.scheme=https"
       # Servicio -> puerto 80 del contenedor (nginx)
       - "traefik.http.services.atendia-svc.loadbalancer.server.port=80"
