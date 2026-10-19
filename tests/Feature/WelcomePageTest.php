@@ -262,26 +262,21 @@ test('the pricing section emphasizes the business plan, Tailwind Plus style', fu
         ->assertSee(__('plan.names.premium'));
 });
 
-test('pricing charms: yearly toggle, incremental features and a trust line', function (): void {
+test('pricing sells monthly only: incremental features and a trust line', function (): void {
     $this->get('/')
-        // Both billing periods render server-side; Alpine only swaps visibility.
-        ->assertSee(__('landing.pricing.billing_monthly'))
-        ->assertSee(__('landing.pricing.billing_yearly_badge'))
         ->assertSee('$29', false)
-        ->assertSee('$24', false)
-        ->assertSee('$66', false)
+        ->assertSee('$79', false)
+        ->assertSee('$149', false)
         ->assertSee(__('landing.pricing.negocio.includes', ['plan' => __('plan.names.emprende')]))
         ->assertSee(__('landing.pricing.premium.includes', ['plan' => __('plan.names.negocio')]))
-        ->assertSee(__('landing.pricing.trust'));
-});
-
-test('the yearly choice celebrates itself: bouncing badge and the money saved', function (): void {
-    $this->get('/')
-        ->assertSee('badge-bounce', false)
-        // The struck-through monthly price sits beside the yearly one.
-        ->assertSee('line-through', false)
-        ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$58']))
-        ->assertSee(__('landing.pricing.save_yearly', ['amount' => '$158']));
+        ->assertSee(__('landing.pricing.trust'))
+        // Every card carries the same trial line, and the old slogan is gone.
+        ->assertSee(__('landing.pricing.trial_note', ['days' => 14]), false)
+        ->assertSee(__('landing.pricing.title'))
+        ->assertDontSee('Simple y por adelantado')
+        ->assertDontSee('pricing-period', false)
+        ->assertDontSee('line-through', false)
+        ->assertDontSee('badge-bounce', false);
 });
 
 test('the closing pitch shows the product still talking: a pocket phone mid-chat', function (): void {

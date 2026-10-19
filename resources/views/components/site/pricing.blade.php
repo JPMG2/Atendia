@@ -2,14 +2,14 @@
     $registerHref = Route::has('register') ? route('register') : '#';
 
     // Every figure comes from the plans table through Plan — prices, the
-    // yearly deal, the featured card and the lines — so a card can never
+    // featured card and the lines — so a card can never
     // disagree with "Mi plan" or billing. Only the words live in lang.
     $trial = \App\Classes\Main\Plan::trial();
     $ladder = \App\Classes\Main\Plan::ladder();
     $featured = collect($ladder)->first(fn (\App\Classes\Main\Plan $tier): bool => $tier->isFeatured) ?? $trial;
 @endphp
 
-<section id="precios" class="flex w-full justify-center pb-20 pt-16" x-data="{ yearly: false }">
+<section id="precios" class="flex w-full justify-center pb-20 pt-16">
     <div class="w-full px-6" style="max-width: var(--container-xl)">
         <div class="mb-11 flex flex-col items-center gap-3 text-center">
             <span class="eyebrow eyebrow-line">{{ __('landing.pricing.eyebrow') }}</span>
@@ -17,24 +17,8 @@
                 {{ __('landing.pricing.title') }}
             </h2>
             <p class="text-muted" style="font-size: var(--text-lg)">
-                {{ __('landing.pricing.subtitle', ['days' => $trial->trialDays, 'plan' => __('plan.names.'.$trial->code)]) }}
+                {{ __('landing.pricing.subtitle', ['days' => $trial->trialDays]) }}
             </p>
-
-            <div class="pricing-period mt-3" role="group" aria-label="{{ __('landing.pricing.eyebrow') }}">
-                <button
-                    type="button"
-                    class="pricing-period-btn"
-                    :class="! yearly && 'is-active'"
-                    @click="yearly = false"
-                >
-                    {{ __('landing.pricing.billing_monthly') }}
-                </button>
-                <button type="button" class="pricing-period-btn" :class="yearly && 'is-active'" @click="yearly = true">
-                    {{ __('landing.pricing.billing_yearly') }}
-                    <x-ui.badge variant="brand" ::class="yearly && 'badge-bounce'">
-                        {{ __('landing.pricing.billing_yearly_badge') }}</x-ui.badge>
-                </button>
-            </div>
         </div>
 
         <div class="pricing-grid">

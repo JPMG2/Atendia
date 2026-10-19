@@ -237,15 +237,6 @@ new class extends Component
                         <h3 class="plan-preview-title">{{ __('catalog.plan.preview.title') }}</h3>
                         <p class="bp-card-sub">{{ __('catalog.plan.preview.note') }}</p>
                     </div>
-
-                    <div class="pricing-period" role="group" aria-label="{{ __('catalog.plan.preview.title') }}">
-                        <button type="button" class="pricing-period-btn" x-bind:class="! yearly && 'is-active'" x-on:click="yearly = false">
-                            {{ __('landing.pricing.billing_monthly') }}
-                        </button>
-                        <button type="button" class="pricing-period-btn" x-bind:class="yearly && 'is-active'" x-on:click="yearly = true">
-                            {{ __('landing.pricing.billing_yearly') }}
-                        </button>
-                    </div>
                 </div>
 
                 <div class="plan-preview-card" x-html="html"></div>

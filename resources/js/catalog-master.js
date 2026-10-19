@@ -176,7 +176,6 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
 export function planPreview() {
     return {
         html: '',
-        yearly: false,
         timer: null,
 
         init() {

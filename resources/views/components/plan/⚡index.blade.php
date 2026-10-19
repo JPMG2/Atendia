@@ -292,26 +292,9 @@ new class extends Component
         </div>
     @endif
 
-    <div x-data="{ yearly: false }">
+    <div>
         <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
             <h2 class="page-head-title text-xl">{{ __('plan.ladder_title') }}</h2>
-            {{-- Same two-months-free toggle the landing sells with; one voice. --}}
-            <div class="pricing-period" role="group" aria-label="{{ __('plan.ladder_title') }}">
-                <button
-                    type="button"
-                    class="pricing-period-btn"
-                    :class="! yearly && 'is-active'"
-                    @click="yearly = false"
-                >
-                    {{ __('landing.pricing.billing_monthly') }}
-                </button>
-                <button type="button" class="pricing-period-btn" :class="yearly && 'is-active'" @click="yearly = true">
-                    {{ __('landing.pricing.billing_yearly') }}
-                    <x-ui.badge variant="brand" ::class="yearly && 'badge-bounce'">
-                        {{ __('landing.pricing.billing_yearly_badge') }}
-                    </x-ui.badge>
-                </button>
-            </div>
         </div>
         <div class="plan-tiers">
             @foreach ($this->ladder as $tier)
@@ -328,10 +311,7 @@ new class extends Component
                         @endif
                     </div>
                     <p class="plan-tier-price">
-                        <span x-show="! yearly">{{ config('atendia.billing.currency_symbol') }}{{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
-                        <span x-show="yearly" x-cloak>
-                            {{ config('atendia.billing.currency_symbol') }}{{ $tier->annualMonthlyPrice }}<small>{{ __('landing.pricing.per_month_yearly') }}</small>
-                        </span>
+                        <span>{{ config('atendia.billing.currency_symbol') }}{{ $tier->price }}<small>{{ __('plan.per_month') }}</small></span>
                     </p>
 
                     <ul class="mt-3">

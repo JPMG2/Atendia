@@ -324,26 +324,6 @@ new class extends Component
                 class="st-link"
             >{{ __('billing.billing_data.edit') }}</a>
         </x-ui.card>
-
-        @if ($period !== null && $period['cycle'] === 'monthly')
-            @php($periodPlan = \App\Classes\Main\Plan::named($period['plan']))
-            <x-ui.card class="bp-card">
-                <div class="bp-card-head"><h2>{{ __('billing.yearly.title') }}</h2></div>
-                <p class="bp-card-sub">
-                    {{ __('billing.yearly.body', ['amount' => config('atendia.billing.currency').' '.number_format($periodPlan->annualSavings, 0, ',', '.')]) }}
-                </p>
-                <p class="pay-amount pay-amount-sm font-mono">
-                    {{ config('atendia.billing.currency') }} {{ $periodPlan->annualMonthlyPrice }}
-                    <small class="text-muted">{{ __('billing.yearly.per_month') }}</small>
-                </p>
-                <x-ui.button
-                    variant="secondary"
-                    size="sm"
-                    :href="route('my-plan')"
-                >
-                    {{ __('billing.yearly.cta') }}</x-ui.button>
-            </x-ui.card>
-        @endif
     </div>
 
     @if ($uploading)

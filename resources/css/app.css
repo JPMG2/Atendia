@@ -1055,7 +1055,7 @@
 .warn-beacon { animation:warn-beacon 1.8s var(--ease-out) infinite; }
 
 @media (prefers-reduced-motion:reduce) {
-  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .badge-bounce, .warn-beacon, .pill-live-dot { animation:none; }
+  .hero-enter, .hero-phone-enter, .phone-bubble, .badge-dot-pulse, .warn-beacon, .pill-live-dot { animation:none; }
   .cta-spark:hover svg { animation:none; }
   .reveal-pending { opacity:1; transform:none; }
 }
@@ -1154,21 +1154,6 @@
               background:color-mix(in srgb, var(--surface-card) 88%, transparent);
               backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
               border-top:1px solid var(--border-subtle); }
-
-/* Billing period toggle: a sunken pill where the active option floats on a
-   card surface — the segmented-control pattern of Notion/Linear pricing. */
-.pricing-period { display:inline-flex; gap:4px; padding:4px; background:var(--surface-sunken);
-                  border:1px solid var(--border-subtle); border-radius:var(--radius-pill); }
-.pricing-period-btn { display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
-                      border-radius:var(--radius-pill); font-size:var(--text-sm); font-weight:600;
-                      color:var(--text-muted); transition:all var(--dur-fast) var(--ease-out); }
-.pricing-period-btn:hover { color:var(--text-strong); }
-.pricing-period-btn.is-active { background:var(--surface-card); color:var(--text-strong); box-shadow:var(--shadow-xs); }
-
-/* Switching to yearly gives the savings badge one springy hop: the eye
-   lands on the discount exactly when it becomes true. */
-@keyframes badge-bounce { 40% { transform:scale(1.18); } }
-.badge-bounce { animation:badge-bounce .45s var(--ease-spring); }
 
 /* Hero phone bubbles as classes, not inline styles: hero.js appends live
    exchanges and must speak the exact same markup as the Blade ones. */

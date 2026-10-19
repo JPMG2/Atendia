@@ -32,7 +32,7 @@ final class LlmsTxt
                 '## '.__('llms.plans.title'),
                 '',
                 __('llms.plans.currency', ['currency' => config('atendia.billing.currency')]),
-                __('landing.pricing.subtitle', ['days' => $trial->trialDays, 'plan' => __('plan.names.'.$trial->code)]),
+                __('landing.pricing.subtitle', ['days' => $trial->trialDays]),
                 '',
                 ...$this->planLines,
                 '',
@@ -58,7 +58,6 @@ final class LlmsTxt
                 $line = __('llms.plans.line', [
                     'name' => __('plan.names.'.$plan->code),
                     'price' => $symbol.$plan->price,
-                    'yearly' => $symbol.$plan->annualMonthlyPrice,
                     'desc' => __("landing.pricing.{$plan->code}.desc"),
                 ]);
 

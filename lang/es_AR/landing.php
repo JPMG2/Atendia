@@ -60,9 +60,9 @@ return [
     ],
 
     'pricing' => [
-        'subtitle' => 'Probá gratis :days días el plan :plan, sin tarjeta. Cambiá o cancelá cuando quieras.',
+        'subtitle' => 'Probá gratis :days días, sin tarjeta. Cambiá o cancelá cuando quieras.',
+        'trial_note' => ':days días gratis, sin tarjeta',
         'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
-        'save_yearly' => 'Ahorrás :amount al año',
         'multilang' => 'En cualquier idioma — vos lo leés todo en español',
         'ask_title' => 'Preguntale a :brand',
         'ask' => 'Preguntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',

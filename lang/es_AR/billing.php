@@ -5,10 +5,6 @@ declare(strict_types=1);
 // Voseo overrides only: any key missing here falls back to lang/es/billing.php.
 return [
 
-    'yearly' => [
-        'title' => 'Pasate a anual y ahorrá',
-    ],
-
     'next' => [
         'no_instructions' => 'Pronto vas a ver acá cómo pagar. Mientras, escribinos y te pasamos los datos.',
     ],

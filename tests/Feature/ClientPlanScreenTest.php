@@ -66,16 +66,14 @@ test('higher rungs show their extras locked with the padlock hint, never hidden'
         ->assertSee(__('plan.features.audio', ['cap' => 200]));
 });
 
-test('the ladder offers the landing annual toggle with two months free', function (): void {
+test('the ladder shows monthly prices only, with no annual toggle', function (): void {
     $this->actingAs(planClient());
 
     livewire('plan.index')
-        ->assertSee(__('landing.pricing.billing_yearly'))
-        ->assertSee(__('landing.pricing.billing_yearly_badge'))
-        // Annual monthly equivalents mirror the landing exactly.
-        ->assertSee('$24')
-        ->assertSee('$66')
-        ->assertSee('$124');
+        ->assertSee('$29')
+        ->assertSee('$79')
+        ->assertSee('$149')
+        ->assertDontSee('pricing-period', false);
 });
 
 test('every other plan offers its change while the current one does not', function (): void {

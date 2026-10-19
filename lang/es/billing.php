@@ -69,13 +69,6 @@ return [
         'edit' => 'Editar en Mi negocio',
     ],
 
-    'yearly' => [
-        'title' => 'Pásate a anual y ahorra',
-        'body' => 'Pagando el año son 2 meses gratis: :amount menos.',
-        'per_month' => '/ mes, facturado anual',
-        'cta' => 'Ver planes',
-    ],
-
     'receipt' => [
         'title' => 'Subir comprobante',
         'sub' => 'Lo verificamos y te avisamos por correo apenas se acredite.',

@@ -9,7 +9,6 @@
     One plan's card, shared by the landing and by the preview in the plans
     master: the owner sees the very markup the visitor will, so a figure she
     types can never be judged on a drawing that differs from the real card.
-    It reads the Alpine `yearly` flag of whoever wraps it.
 --}}
 @php
     $registerHref = Route::has('register') ? route('register') : '#';
@@ -23,10 +22,7 @@
     $p = [
         'name' => __('plan.names.'.$plan->code),
         'price' => $symbol.$plan->price,
-        'price_year' => $symbol.$plan->annualMonthlyPrice,
-        'save_year' => $symbol.$plan->annualSavings,
         'per' => __('landing.pricing.per_month'),
-        'per_year' => __('landing.pricing.per_month_yearly'),
         'desc' => __("landing.pricing.{$plan->code}.desc"),
         'includes' => Lang::has("landing.pricing.{$plan->code}.includes") ? __("landing.pricing.{$plan->code}.includes", ['plan' => __('plan.names.'.$previous->code)]) : null,
         'feats' => [
@@ -62,53 +58,13 @@
 
     <p class="text-muted" style="font-size: var(--text-sm)">{{ $p['desc'] }}</p>
 
-    @if ($p['price_year'] === $p['price'])
-        <div class="flex items-baseline gap-1.5">
-            <span
-                class="text-strong font-display"
-                style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-            >{{ $p['price'] }}</span>
-            <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
-        </div>
-    @else
-        {{-- Leave is instant on purpose: two prices overlapping shift the row. --}}
-        <div
-            class="flex items-baseline gap-1.5"
-            x-show="! yearly"
-            x-transition:enter="transition duration-200"
-            x-transition:enter-start="opacity-0 translate-y-1"
-            x-transition:enter-end="opacity-100 translate-y-0"
-        >
-            <span
-                class="text-strong font-display"
-                style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-            >{{ $p['price'] }}</span>
-            <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
-        </div>
-        <div
-            x-show="yearly"
-            x-cloak
-            x-transition:enter="transition duration-200"
-            x-transition:enter-start="opacity-0 translate-y-1"
-            x-transition:enter-end="opacity-100 translate-y-0"
-        >
-            <div class="flex items-baseline gap-1.5">
-                {{-- The old monthly price, struck through: the discount reads at a glance. --}}
-                <span
-                    class="text-subtle line-through"
-                    style="font-size: var(--text-xl); font-weight: 600"
-                >{{ $p['price'] }}</span>
-                <span
-                    class="text-strong font-display"
-                    style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
-                >{{ $p['price_year'] }}</span>
-                <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per_year'] }}</span>
-            </div>
-            <p class="text-brand mt-1 font-semibold" style="font-size: var(--text-xs)">
-                {{ __('landing.pricing.save_yearly', ['amount' => $p['save_year']]) }}
-            </p>
-        </div>
-    @endif
+    <div class="flex items-baseline gap-1.5">
+        <span
+            class="text-strong font-display"
+            style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -0.03em"
+        >{{ $p['price'] }}</span>
+        <span class="text-muted" style="font-size: var(--text-sm)">{{ $p['per'] }}</span>
+    </div>
 
     {{-- The owner's AI is THE product (her call): its own block in the house jade and
     display type — never a line lost among the bullets. --}}
@@ -153,4 +109,8 @@
         :rel="$p['external'] ? 'noopener' : null"
     >
         {{ $p['cta'] }}</x-ui.button>
+
+    <p class="text-muted text-center" style="font-size: var(--text-sm)">
+        {{ __('landing.pricing.trial_note', ['days' => \App\Classes\Main\Plan::trial()->trialDays]) }}
+    </p>
 </div>

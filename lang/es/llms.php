@@ -16,7 +16,7 @@ return [
     'plans' => [
         'title' => 'Planes y precios',
         'currency' => 'Precios en :currency por mes.',
-        'line' => ':name: :price al mes (:yearly al mes con pago anual). :desc',
+        'line' => ':name: :price al mes. :desc',
         'includes' => 'Incluye: :lines.',
     ],
 
