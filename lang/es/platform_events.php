@@ -51,6 +51,10 @@ return [
             'label' => 'Cambio de plan',
             'hint' => 'Un negocio pasó a otro plan al acreditarse su pago. Solo para que lo sepas.',
         ],
+        'mention_accepted' => [
+            'label' => 'Un negocio aceptó que lo mencionemos',
+            'hint' => 'Comprueba que sigue nuestra cuenta y publícalo desde Menciones.',
+        ],
         'business_cancelled' => [
             'label' => 'Cliente dado de baja',
             'hint' => 'Pidió irse o cerró su cuenta. Escríbele para saber el motivo: es lo que más enseña.',

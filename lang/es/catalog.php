@@ -488,6 +488,37 @@ return [
         ],
     ],
 
+    'mention_goal' => [
+        'search_placeholder' => 'Buscar por meta o texto',
+        'search_label' => 'Buscar meta',
+        'singular' => 'meta',
+        'plural' => 'metas',
+        'create' => 'Crear meta',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva meta',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay metas que coincidan con la búsqueda.',
+
+        'columns' => [
+            'threshold' => 'Meta',
+            'caption' => 'Texto del post',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'threshold' => 'Conversaciones en un mes',
+            'threshold_hint' => 'Cuando un negocio atiende esta cantidad en un mes, se le ofrece que lo mencionemos',
+            'caption' => 'Texto del post',
+            'caption_hint' => 'Usa {negocio} y {logro}: se reemplazan por los del negocio. Máximo 280 caracteres, para que entre en X.',
+            'status' => 'Estado',
+        ],
+    ],
+
     'seasonal_window' => [
         'search_placeholder' => 'Buscar por nombre',
         'search_label' => 'Buscar temporada',

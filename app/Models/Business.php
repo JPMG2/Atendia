@@ -851,6 +851,14 @@ class Business extends Model
     }
 
     /**
+     * @return HasMany<BusinessMention, $this>
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(BusinessMention::class);
+    }
+
+    /**
      * Whether the testimonial ask is due: a success milestone crossed —
      * 100 conversations held, or a month connected — and never asked
      * before. Asked once, whatever the answer, it stays quiet forever.

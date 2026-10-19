@@ -36,6 +36,7 @@ return [
         'demo_tag' => 'Etiqueta',
         'whatsapp_variant' => 'Variante de WhatsApp',
         'adoption_nudge' => 'Recordatorio',
+        'mention_goal' => 'Meta',
         'support_reply' => 'Respuesta',
         'support_ticket_kind' => 'Tipo de ticket',
     ],

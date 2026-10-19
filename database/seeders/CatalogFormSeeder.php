@@ -51,6 +51,8 @@ class CatalogFormSeeder extends Seeder
             ['group' => 'Landing', 'title' => 'WhatsApp por temporada', 'description' => 'El número, el horario y el mensaje de apertura del WhatsApp de la landing en feriados, vacaciones y fin de año.', 'component' => 'catalog.whatsapp-variant', 'permission_key' => 'catalog.whatsapp-variant', 'icon' => 'clock', 'order' => 19],
 
             ['group' => 'Soporte', 'title' => 'Tipos de reporte', 'description' => 'Lo que un negocio puede enviar a soporte: nombre, ícono, prioridad con la que llega y si corre reloj.', 'component' => 'catalog.support-ticket-kind', 'permission_key' => 'catalog.support-ticket-kind', 'icon' => 'life-buoy', 'order' => 20],
+
+            ['group' => 'Sistema', 'title' => 'Metas de mención', 'description' => 'Cuántas conversaciones al mes ganan que mencionemos al negocio en nuestras redes, y el texto del post.', 'component' => 'catalog.mention-goal', 'permission_key' => 'catalog.mention-goal', 'icon' => 'star', 'order' => 21],
         ];
 
         foreach ($catalogs as $catalog) {

@@ -77,6 +77,7 @@ return [
     'admin_users' => 'Usuarios',
     'admin_catalogs' => 'Catálogos',
     'admin_testimonials' => 'Testimonios',
+    'admin_mentions' => 'Menciones',
     'admin_company' => 'Compañía',
     'admin_integrations' => 'Integraciones',
     'admin_logs' => 'Logs del sistema',

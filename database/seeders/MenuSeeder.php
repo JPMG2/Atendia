@@ -109,6 +109,7 @@ class MenuSeeder extends Seeder
         $trust = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_trust', 'icon' => 'shield-check', 'sort_order' => 5]);
         Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_content', 'icon' => 'eye', 'route_name' => 'admin.moderation', 'permission' => 'moderation.view', 'sort_order' => 1]);
         Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_testimonials', 'icon' => 'star', 'route_name' => 'admin.testimonials', 'permission' => 'testimonials.moderate', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $trust->id, 'panel' => 'admin', 'label_key' => 'menu.admin_mentions', 'icon' => 'star', 'route_name' => 'admin.mentions', 'permission' => 'mentions.manage', 'sort_order' => 3]);
 
         Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_support', 'icon' => 'life-buoy', 'route_name' => 'admin.support', 'permission' => 'support.view', 'sort_order' => 6]);
 

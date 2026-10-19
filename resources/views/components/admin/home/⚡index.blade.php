@@ -3,6 +3,7 @@
 use App\Enums\SubscriptionStatus;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
 use App\Actions\Admin\RankBusinessActivity;
+use App\Models\BusinessMention;
 use App\Models\Payment;
 use App\Models\PlatformFigure;
 use App\Models\Subscription;
@@ -71,6 +72,13 @@ new class extends Component
         $this->dispatchNotification($this->form->approve($id));
 
         unset($this->queue, $this->receipts, $this->oldestWait, $this->collected, $this->collectedLastWeek);
+    }
+
+    /** @return array{pending: int, not_following: int, ready: int, published: int} */
+    #[Computed]
+    public function mentions(): array
+    {
+        return BusinessMention::deskCounts();
     }
 
     #[Computed]
@@ -265,6 +273,16 @@ new class extends Component
         >{{ $this->leaving->isEmpty()
             ? __('admin.home.tiles.leaving_none')
             : __('admin.home.tiles.leaving_amount', ['amount' => number_format($this->leavingAmount, 2, ',', '.')]) }}</x-ui.stat-card>
+
+        <x-ui.stat-card
+            :label="__('admin.home.tiles.mentions')"
+            :value="(string) $this->mentions['pending']"
+            icon="star"
+            :tint="$this->mentions['pending'] > 0 ? 'warning' : 'brand'"
+            :href="route('admin.mentions')"
+        >{{ $this->mentions['pending'] + $this->mentions['ready'] === 0
+            ? __('admin.home.tiles.mentions_none')
+            : trans_choice('admin.home.tiles.mentions_ready', $this->mentions['ready'], ['count' => $this->mentions['ready']]) }}</x-ui.stat-card>
 
         {{-- Revenue is a figure, not a queue: there is nowhere to drill into, so
         it carries its context instead of a door. --}}

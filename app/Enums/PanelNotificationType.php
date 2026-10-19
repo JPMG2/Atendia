@@ -17,11 +17,15 @@ enum PanelNotificationType: string
     case WhatsAppDisconnected = 'whatsapp_disconnected';
     case TaughtByTeammate = 'taught_by_teammate';
     case SupportResolved = 'support_resolved';
+    case MentionOffered = 'mention_offered';
+    case MentionNeedsFollow = 'mention_needs_follow';
+    case MentionPublished = 'mention_published';
 
     /** The row's glyph, from the central registry. */
     public function icon(): string
     {
         return match ($this) {
+            self::MentionOffered, self::MentionNeedsFollow, self::MentionPublished => 'star',
             self::CustomerWaiting => 'message-circle',
             self::HandedToTeam => 'users',
             self::AppointmentBooked => 'calendar-check',
@@ -42,9 +46,9 @@ enum PanelNotificationType: string
     public function tintStyle(): string
     {
         [$background, $glyph] = match ($this) {
-            self::CustomerWaiting, self::WhatsAppDisconnected => ['var(--warning-soft)', 'var(--warning)'],
+            self::CustomerWaiting, self::WhatsAppDisconnected, self::MentionNeedsFollow => ['var(--warning-soft)', 'var(--warning)'],
             self::HandedToTeam, self::TaughtByTeammate => ['var(--info-soft)', 'var(--info)'],
-            self::AppointmentBooked, self::SupportResolved => ['var(--success-soft)', 'var(--success)'],
+            self::AppointmentBooked, self::SupportResolved, self::MentionOffered, self::MentionPublished => ['var(--success-soft)', 'var(--success)'],
         };
 
         return "background:{$background};color:{$glyph};";

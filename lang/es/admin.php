@@ -531,6 +531,10 @@ return [
                 'title' => 'Referidos',
                 'sub' => 'Lo que recibe un negocio que llega invitado por otro.',
             ],
+            'mentions' => [
+                'title' => 'Menciones',
+                'sub' => 'Cuánto espera la oferta de mencionar a un negocio después de un "ahora no", y cuándo deja de ofrecerse.',
+            ],
         ],
 
         // Anidadas, no con el punto en la clave: `__()` lee el punto como
@@ -646,6 +650,20 @@ return [
                 'founders' => [
                     'label' => 'Cupos de fundador',
                     'hint' => 'Cuántos negocios entran como fundadores antes de que el beneficio se cierre.',
+                ],
+            ],
+            'mentions' => [
+                'pause_months' => [
+                    'label' => 'Espera tras un "ahora no"',
+                    'hint' => 'Meses que pasan antes de volver a ofrecer la mención, y solo ante una meta nueva.',
+                ],
+                'max_refusals' => [
+                    'label' => 'Respuestas "no" antes de parar',
+                    'hint' => 'Cuántas veces puede decir que no un negocio antes de que no se le ofrezca más.',
+                ],
+                'followers_stale_days' => [
+                    'label' => 'Días para volver a contar seguidores',
+                    'hint' => 'Pasado este plazo, el conteo de seguidores de nuestras cuentas se marca como vencido en Menciones.',
                 ],
             ],
         ],
@@ -893,6 +911,9 @@ return [
             'leaving_amount' => 'Se deja de cobrar USD :amount por mes',
             'plan_changes' => 'Cambios de plan por verificar',
             'plan_changes_hint' => 'De esos comprobantes, los que mueven de plan',
+            'mentions' => 'Menciones por verificar',
+            'mentions_none' => 'Nada por verificar ni publicar',
+            'mentions_ready' => '{0}Ninguna lista para publicar|{1}1 lista para publicar|[2,*]:count listas para publicar',
             'mrr' => 'Ingreso mensual recurrente',
             'mrr_from' => ':count suscripciones pagando',
             'mrr_none' => 'Todavía nadie paga: :count en prueba',

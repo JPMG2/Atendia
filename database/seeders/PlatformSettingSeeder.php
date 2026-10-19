@@ -66,6 +66,11 @@ class PlatformSettingSeeder extends Seeder
             // What an invited business gets, which the trial really honours.
             ['key' => 'referral.invited_trial_days', 'group' => 'referral', 'type' => 'integer', 'default_value' => '21', 'min' => 0, 'max' => 90, 'sort_order' => 1],
             ['key' => 'referral.founders', 'group' => 'referral', 'type' => 'integer', 'default_value' => '10', 'min' => 0, 'max' => 500, 'sort_order' => 2],
+
+            // How patient the offer to mention a business is after a "no".
+            ['key' => 'mentions.pause_months', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '3', 'min' => 1, 'max' => 24, 'sort_order' => 1],
+            ['key' => 'mentions.max_refusals', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '2', 'min' => 1, 'max' => 10, 'sort_order' => 2],
+            ['key' => 'mentions.followers_stale_days', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '7', 'min' => 1, 'max' => 60, 'sort_order' => 3],
         ];
 
         foreach ($settings as $setting) {

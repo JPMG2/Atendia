@@ -30,7 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.status', 'catalog.social-network',
             'catalog.business-sector', 'catalog.business-activity',
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
-            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.whatsapp-variant', 'catalog.support-ticket-kind', 'catalog.support-reply', 'catalog.adoption-nudge',
+            'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.whatsapp-variant', 'catalog.support-ticket-kind', 'catalog.support-reply', 'catalog.adoption-nudge', 'catalog.mention-goal',
             'catalog.plan', 'catalog.country-holiday',
         ];
 
@@ -40,7 +40,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $adminPermissions = [
             'businesses.view', 'businesses.manage',
             'payments.view', 'payments.verify',
-            'moderation.view', 'testimonials.moderate',
+            'moderation.view', 'testimonials.moderate', 'mentions.manage',
             'support.view',
             'ai.view', 'ai.manage',
             'adoption.view', 'incidents.view', 'contacts.view', 'compliance.view', 'alerts.view', 'alerts.acknowledge',

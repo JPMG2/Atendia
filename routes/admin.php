@@ -40,6 +40,10 @@ Route::livewire('/integrations', 'admin.integrations.index')->name('integrations
 // Testimonials: the moderation desk before an owner's word hits the landing.
 Route::livewire('/testimonios', 'admin.testimonials.index')->name('testimonials')->middleware('permission:testimonials.moderate');
 
+// Mentions: the businesses that accepted to be named on the platform's networks,
+// from checking the follow to pasting the link of the post.
+Route::livewire('/menciones', 'admin.mentions.index')->name('mentions')->middleware('permission:mentions.manage');
+
 // Payments: receipts waiting to be credited or rejected, and the latest ones.
 Route::livewire('/pagos', 'admin.payments.index')->name('payments')->middleware('permission:payments.view');
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt')->middleware('permission:payments.view');

@@ -98,3 +98,7 @@
 2026-10-16	check-catalog-form-layout	resources/views/components/site/phone-mock.blade.php
 2026-10-16	check-comment-golden-rules	app/Http/Middleware/TrustCloudflareVisitorIp.php
 2026-10-19	check-comment-golden-rules	database/seeders/SuggestedServiceSeeder.php
+2026-10-19	check-comment-golden-rules	database/migrations/2026_09_09_185962_create_business_mentions_table.php
+2026-10-19	check-php-getter-golden-rules	app/Dto/MentionOfferDto.php
+2026-10-19	check-blade-golden-rules	resources/views/components/client/⚡mention-offer.blade.php
+2026-10-19	check-panel-screen	resources/views/components/admin/mentions/⚡index.blade.php

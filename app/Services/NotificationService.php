@@ -48,6 +48,7 @@ class NotificationService
             'demo_tags' => ['entity' => __('notifications.entities.demo_tag'), 'gender' => 'female'],
             'whatsapp_variants' => ['entity' => __('notifications.entities.whatsapp_variant'), 'gender' => 'female'],
             'adoption_nudges' => ['entity' => __('notifications.entities.adoption_nudge'), 'gender' => 'male'],
+            'mention_goals' => ['entity' => __('notifications.entities.mention_goal'), 'gender' => 'female'],
             'support_replies' => ['entity' => __('notifications.entities.support_reply'), 'gender' => 'female'],
             'support_ticket_kinds' => ['entity' => __('notifications.entities.support_ticket_kind'), 'gender' => 'male'],
         ][mb_strtolower($tableName)] ?? [

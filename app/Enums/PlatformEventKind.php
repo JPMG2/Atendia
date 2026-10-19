@@ -18,6 +18,7 @@ enum PlatformEventKind: string
     case BusinessJoined = 'business_joined';
     case WhatsAppDisconnected = 'whatsapp_disconnected';
     case BusinessCancelled = 'business_cancelled';
+    case MentionAccepted = 'mention_accepted';
 
     // Money.
     case ReceiptReceived = 'receipt_received';
@@ -41,7 +42,7 @@ enum PlatformEventKind: string
         return match ($this) {
             self::BusinessSuspended, self::PaymentPaused, self::SystemDown => PlatformEventSeverity::Critical,
             self::BusinessJoined, self::ReceiptReceived, self::PaymentLate, self::AppealReceived,
-            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled => PlatformEventSeverity::Important,
+            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled, self::MentionAccepted => PlatformEventSeverity::Important,
             self::PaymentApproved, self::PlanChanged => PlatformEventSeverity::Info,
         };
     }
@@ -50,7 +51,7 @@ enum PlatformEventKind: string
     public function area(): string
     {
         return match ($this) {
-            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled => 'customers',
+            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::MentionAccepted => 'customers',
             self::ReceiptReceived, self::PaymentApproved, self::PlanChanged, self::PaymentLate, self::PaymentPaused => 'money',
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => 'compliance',
             self::SystemDown, self::SystemDegraded => 'system',
@@ -76,6 +77,7 @@ enum PlatformEventKind: string
     public function target(?int $businessId): ?array
     {
         return match ($this) {
+            self::MentionAccepted => ['route' => 'admin.mentions', 'query' => []],
             self::ReceiptReceived, self::PaymentApproved => ['route' => 'admin.payments', 'query' => []],
             self::PaymentLate, self::PaymentPaused => ['route' => 'admin.collections', 'query' => []],
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => $businessId === null
@@ -92,6 +94,7 @@ enum PlatformEventKind: string
     {
         return match ($this) {
             self::BusinessJoined => 'users',
+            self::MentionAccepted => 'star',
             self::WhatsAppDisconnected => 'whatsapp',
             self::ReceiptReceived => 'receipt',
             self::PaymentApproved => 'check-circle',

@@ -480,6 +480,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mentions on the platform's own networks
+    |--------------------------------------------------------------------------
+    |
+    | The offer to mention a business waits `pause_months` after a "no", and
+    | stops for good after `max_refusals` of them. The goals themselves live in
+    | the `mention_goals` master.
+    |
+    */
+
+    'mentions' => [
+        'pause_months' => 3,
+        'max_refusals' => 2,
+        'followers_stale_days' => 7,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Platform health (the admin's board)
     |--------------------------------------------------------------------------
     |

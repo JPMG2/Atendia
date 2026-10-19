@@ -24,6 +24,8 @@ return [
     'body' => 'texto',
     'step' => 'paso',
     'subject' => 'asunto',
+    'threshold' => 'meta',
+    'caption' => 'texto del post',
     'sort_order' => 'orden',
     'business_sector_id' => 'rubro',
     'data_type' => 'tipo de dato',

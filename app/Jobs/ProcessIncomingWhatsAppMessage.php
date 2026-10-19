@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Actions\Business\ComposeDailyDigest;
 use App\Actions\Business\RaiseHandoff;
+use App\Actions\Business\RaiseMentionOffer;
 use App\Actions\Business\SendHumanReply;
 use App\Actions\Business\TranslateForCustomer;
 use App\Ai\Agents\AsistenteAtendia;
@@ -247,9 +248,24 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             }
             $this->rememberForDigest($business, $body, $reply);
             $this->warnOwnerNearCap($business, $evolution);
+            $this->raiseMentionOffer($business);
 
             WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
         });
+    }
+
+    /**
+     * Looks for a reached goal at most once every half hour per business: the
+     * check counts conversations, and a busy chat must not pay for it on every
+     * message. It never fails the exchange it rides on.
+     */
+    private function raiseMentionOffer(Business $business): void
+    {
+        if (! Cache::add('mention-offer-check:'.$business->id, true, now()->addMinutes(30))) {
+            return;
+        }
+
+        rescue(fn () => app(RaiseMentionOffer::class)->handle($business), report: true);
     }
 
     /** A customer writing into a thread waiting on them hands the ball back: the team owes an answer again. */

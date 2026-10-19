@@ -463,6 +463,46 @@ return [
         'thanks' => '¡Gracias! Tu opinión nos ayuda a mejorar.',
     ],
 
+    'mention' => [
+        'open_profile' => 'Abrir :network de :brand',
+        'accept' => 'Sí, mencionen mi negocio',
+        'not_now' => 'Ahora no',
+        'add_network' => 'Agregar mi cuenta',
+        'confirm_follow' => 'Ya las sigo',
+        'withdraw' => 'Retirarme',
+        'withdraw_title' => 'Retirar mi mención',
+        'withdraw_message' => 'No mencionaremos tu negocio. Si vuelves a alcanzar una meta mayor, te lo propondremos de nuevo.',
+        'withdraw_accept' => 'Retirar mi mención',
+        'stale' => 'Esto ya cambió. Actualizamos la tarjeta para que veas cómo está.',
+        'done' => [
+            'accepted' => 'Listo. Revisaremos que nos sigas y te avisamos en la campana.',
+            'dismissed' => 'Entendido. No te lo volvemos a proponer por ahora.',
+            'follow_confirmed' => 'Gracias. Lo revisamos y te avisamos.',
+            'withdrawn' => 'Listo. No mencionaremos tu negocio.',
+        ],
+
+        'offer' => [
+            'title' => 'Alcanzaste :achievement',
+            'body' => 'Queremos celebrarlo: mencionamos tu negocio en las redes de :brand. Publicamos solo su nombre y este logro, sin tu logo. Para mencionarte, tu cuenta tiene que seguir las nuestras de :accounts.',
+        ],
+        'needs_network' => [
+            'title' => 'Alcanzaste :achievement',
+            'body' => 'Queremos celebrarlo mencionando tu negocio en las redes de :brand. Para eso necesitamos tu cuenta en alguna de las redes donde estamos (:accounts): agrégala en tu perfil.',
+        ],
+        'pending' => [
+            'title' => 'Estamos revisando tu mención',
+            'body' => 'Comprobamos que tu cuenta siga las nuestras de :accounts. Te avisamos en la campana apenas esté listo.',
+        ],
+        'not_following' => [
+            'title' => 'Falta seguir nuestra cuenta',
+            'body' => 'No vemos que tu cuenta siga las nuestras de :accounts. Síguelas y toca "Ya las sigo": las revisamos de nuevo.',
+        ],
+        'ready' => [
+            'title' => 'Tu mención está lista',
+            'body' => 'Mencionaremos tu negocio en la próxima tanda de publicaciones. Te avisamos en la campana cuando salga.',
+        ],
+    ],
+
     'assistant' => [
         'title' => 'Lo que sabe tu asistente',
         'sub' => 'Todo lo que usa para responder, a la vista. Enséñale lo que tu catálogo no dice.',

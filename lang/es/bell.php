@@ -18,6 +18,9 @@ return [
         'appointment_booked' => '{1}1 turno nuevo|[2,*]:count turnos nuevos',
         'whatsapp_disconnected' => '{1}1 corte de WhatsApp|[2,*]:count cortes de WhatsApp',
         'taught_by_teammate' => '{1}1 respuesta enseñada por tu equipo|[2,*]:count respuestas enseñadas por tu equipo',
+        'mention_offered' => '{1}1 invitación a ser mencionado|[2,*]:count invitaciones a ser mencionado',
+        'mention_needs_follow' => '{1}1 aviso por seguir nuestra cuenta|[2,*]:count avisos por seguir nuestra cuenta',
+        'mention_published' => '{1}1 mención publicada|[2,*]:count menciones publicadas',
     ],
     'unread' => ':count sin leer',
 
@@ -42,6 +45,9 @@ return [
             'appointment_booked' => 'Se reservó un turno nuevo',
             'whatsapp_disconnected' => 'Tu WhatsApp se desconectó',
             'taught_by_teammate' => 'Alguien de tu equipo le enseñó una respuesta',
+            'mention_offered' => 'Te invitamos a que mencionemos tu negocio',
+            'mention_needs_follow' => 'Falta que sigas nuestra cuenta para mencionarte',
+            'mention_published' => 'Mencionamos tu negocio en nuestras redes',
         ],
     ],
 
@@ -52,6 +58,9 @@ return [
         'appointment_booked' => ':count turnos nuevos',
         'whatsapp_disconnected' => 'Tu WhatsApp se cortó :count veces',
         'taught_by_teammate' => 'Tu equipo le enseñó :count respuestas',
+        'mention_offered' => ':count invitaciones a ser mencionado',
+        'mention_needs_follow' => ':count avisos por seguir nuestra cuenta',
+        'mention_published' => ':count menciones publicadas',
     ],
 
     'lines' => [
@@ -64,5 +73,8 @@ return [
         'whatsapp_disconnected' => 'Tu WhatsApp se desconectó a las :at y dejó de responder',
         'taught_by_teammate' => ':who le enseñó a tu asistente a responder: :question',
         'support_resolved' => 'Resolvimos tu reporte :code',
+        'mention_offered' => 'Alcanzaste :achievement: ¿quieres que mencionemos tu negocio en nuestras redes?',
+        'mention_needs_follow' => 'Para mencionar tu negocio necesitamos que sigas nuestras cuentas de :accounts',
+        'mention_published' => 'Mencionamos tu negocio en nuestras redes por haber alcanzado :achievement',
     ],
 ];

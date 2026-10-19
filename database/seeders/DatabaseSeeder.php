@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
         $this->call(SupportTicketKindSeeder::class);
         $this->call(SupportReplySeeder::class);
         $this->call(AdoptionNudgeSeeder::class);
+        $this->call(MentionGoalSeeder::class);
         $this->call(AdminUserSeeder::class);
     }
 }
