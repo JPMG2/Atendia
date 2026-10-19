@@ -105,7 +105,12 @@ class AgendaReport extends ListReport
     {
         $raw = $scope->value('dia');
 
-        return $raw !== '' && CarbonImmutable::hasFormat($raw, 'Y-m-d') ? CarbonImmutable::createFromFormat('Y-m-d', $raw) : null;
+        if ($raw === '' || ! CarbonImmutable::hasFormat($raw, 'Y-m-d')) {
+            return null;
+        }
+
+        // The "!" starts at midnight and the zone is the business's: parsed with the clock's current time in UTC, the day shifts for a business ahead of or behind it.
+        return CarbonImmutable::createFromFormat('!Y-m-d', $raw, auth()->user()?->business?->localTimezone());
     }
 
     private function agenda(): ?Agenda

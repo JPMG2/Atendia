@@ -17,6 +17,7 @@ use App\Models\User;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 uses(RefreshDatabase::class);
 
@@ -103,6 +104,22 @@ test('every master of the catalog hub exports with real headings and obeys its o
     $client = User::factory()->create();
     $client->syncRoles(['client']);
     $this->actingAs($client)->get(route('reports.show', ['report' => 'catalogo', 'format' => 'csv', 'maestro' => 'currency']))->assertForbidden();
+});
+
+test('the issuer block lists one datum per row and leaves the email out', function (): void {
+    Company::query()->update(['legal_name' => 'Yuca SA', 'tax_id' => '12352659', 'address' => 'Calle 24 - 2 - 4', 'phone' => '5492995529100', 'email' => 'soporte@aliadito.com']);
+
+    $xlsx = (string) $this->actingAs(platformStaff())->get(route('reports.show', ['report' => 'negocios', 'format' => 'xlsx']))->getContent();
+    $path = tempnam(sys_get_temp_dir(), 'xlsx');
+    file_put_contents($path, $xlsx);
+    $sheet = IOFactory::load($path)->getActiveSheet();
+    unlink($path);
+
+    $lines = collect(range(1, 9))->map(fn (int $row): string => (string) $sheet->getCell('A'.$row)->getValue());
+
+    expect($lines->implode("\n"))->toContain('Yuca SA')->not->toContain('@')
+        ->and($lines->first(fn (string $line): bool => str_contains($line, '12352659')))->not->toContain('Yuca SA')->not->toContain('Calle 24')
+        ->and($lines->first(fn (string $line): bool => str_contains($line, 'Calle 24')))->not->toContain('5492995529100');
 });
 
 test('the radar lists every contact with the businesses they reach', function (): void {

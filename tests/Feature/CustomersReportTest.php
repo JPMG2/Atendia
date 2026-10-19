@@ -80,16 +80,21 @@ test('the excel carries the letterhead, then a table with frozen titles and filt
     $content = (string) $this->actingAs($owner)->get(route('reports.show', ['report' => 'clientes', 'format' => 'xlsx', 'buscar' => 'ana']))->getContent();
     [$sheet, $cell] = reportSheet($content);
 
+    $head = collect(range(1, 20))->first(fn (int $row): bool => $cell('A'.$row) === __('reports.customers.name'));
+    $letterhead = collect(range(1, $head - 1))->map(fn (int $row): string => $cell('A'.$row));
+    $first = $head + 1;
+
     expect($cell('A1'))->toContain('Aliadito')->toContain('Tu negocio, atendido por IA.')
         ->and($cell('A2'))->toBe('Clientes')
-        ->and($cell('A3'))->toContain('Laboratorio Vida')->toContain('J-31245678-9')->toContain('Mérida')
-        ->and($cell('A4'))->toContain('Búsqueda = «ana»')->toContain('1 de 2')
-        ->and($cell('A7'))->toBe(__('reports.customers.name'))
-        ->and($cell('A8'))->toBe('Ana Pérez')
-        ->and($sheet->getCell('B8')->getDataType())->toBe('s')
-        ->and($cell('B8'))->toBe('04145550100')
-        ->and($sheet->getFreezePane())->toBe('A8')
-        ->and($sheet->getAutoFilter()->getRange())->toStartWith('A7:');
+        ->and($cell('A3'))->toContain('Laboratorio Vida')->not->toContain('J-31245678-9')
+        ->and($letterhead->first(fn (string $line): bool => str_contains($line, 'J-31245678-9')))->not->toContain('Laboratorio Vida')
+        ->and($letterhead->first(fn (string $line): bool => str_contains($line, 'Mérida')))->not->toBeNull()
+        ->and($letterhead->implode("\n"))->not->toContain('@')->toContain('Búsqueda = «ana»')->toContain('1 de 2')
+        ->and($cell('A'.$first))->toBe('Ana Pérez')
+        ->and($sheet->getCell('B'.$first)->getDataType())->toBe('s')
+        ->and($cell('B'.$first))->toBe('04145550100')
+        ->and($sheet->getFreezePane())->toBe('A'.$first)
+        ->and($sheet->getAutoFilter()->getRange())->toStartWith('A'.$head.':');
 });
 
 test('the csv is only data: the titles on the first row and no letterhead', function (): void {

@@ -99,7 +99,6 @@ final class ReportLetterhead
             [__('reports.letterhead.tax_id'), (string) $business->tax_id],
             [__('reports.letterhead.address'), collect([$business->address, $business->city])->filter()->implode(', ')],
             [__('reports.letterhead.phone'), (string) $business->whatsapp_number],
-            [__('reports.letterhead.email'), (string) $business->email],
             [__('reports.letterhead.plan'), __('plan.names.'.$business->plan()->code)],
         ]);
     }
@@ -111,7 +110,6 @@ final class ReportLetterhead
             [__('reports.letterhead.tax_id'), (string) ($this->company?->tax_id ?? '')],
             [__('reports.letterhead.address'), (string) ($this->company?->address ?? '')],
             [__('reports.letterhead.phone'), (string) ($this->company?->phone ?? '')],
-            [__('reports.letterhead.email'), (string) ($this->company?->email ?? '')],
         ]);
     }
 
