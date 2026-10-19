@@ -113,7 +113,8 @@ final class AuditTrail
     public static function subjectOf(Activity $entry): string
     {
         $kind = __('admin.audit.subjects.'.class_basename((string) $entry->subject_type));
-        $name = $entry->subject?->getAttribute('name');
+        // Not every subject has a name (a plan has a code): reading a missing attribute throws under strict models.
+        $name = array_key_exists('name', $entry->subject?->getAttributes() ?? []) ? $entry->subject->getAttribute('name') : null;
 
         return $name === null ? $kind.' #'.$entry->subject_id : $kind.': '.$name;
     }

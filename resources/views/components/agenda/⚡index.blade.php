@@ -47,6 +47,13 @@ new class extends Component
         return Client::for(Auth::user())->agenda;
     }
 
+    /** What the export menu carries to the report: the day and the view on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['dia' => $this->day, 'vista' => $this->view];
+    }
+
     /**
      * Whether there is an agenda to paint at all. Off, the slot finder gives
      * no hours, so every card below would blame the day for what the switch
@@ -215,7 +222,10 @@ new class extends Component
 <div>
     <x-ui.page-head :title="__('agenda.title')" :sub="__('agenda.sub')">
         @if ($this->isOn)
-            <x-ui.button size="sm" icon="plus" wire:click="book">{{ __('agenda.book') }}</x-ui.button>
+            <div class="flex flex-wrap items-center gap-2">
+                <x-ui.export-menu report="agenda" :params="$this->exportParams" />
+                <x-ui.button size="sm" icon="plus" wire:click="book">{{ __('agenda.book') }}</x-ui.button>
+            </div>
         @endif
     </x-ui.page-head>
 

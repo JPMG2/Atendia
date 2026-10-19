@@ -93,6 +93,20 @@ class Billing
         get => $this->business->payments()->latest('id')->get();
     }
 
+    /**
+     * The history as the screen shows it, optionally one year of it. The year
+     * is the BUSINESS's: a payment made at 22:00 on 31/12 in Buenos Aires
+     * belongs to the year it shows, not to UTC's.
+     *
+     * @return Collection<int, Payment>
+     */
+    public function historyOf(string $year = ''): Collection
+    {
+        return $year === ''
+            ? $this->history
+            : $this->history->filter(fn (Payment $payment): bool => (string) $payment->created_at->inBusinessTime()->year === $year)->values();
+    }
+
     public ?Payment $pending {
         get => $this->business->payments()->where('status', PaymentStatus::Pending)->latest('id')->first();
     }

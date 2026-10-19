@@ -81,7 +81,11 @@ new class extends Component
         </x-slot:inline>
         {{-- The reading is live, but it says so: a count with no stamp gets
         trusted tomorrow morning as if it were fresh. --}}
-        <span class="sup-age">{{ __('incidents.read_at', ['time' => $this->desk->readAt->translatedFormat('d/m/Y H:i')]) }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="sup-age">{{ __('incidents.read_at', ['time' => $this->desk->readAt->translatedFormat('d/m/Y H:i')]) }}</span>
+            {{-- The tabs live in the browser, so the file is the whole desk, every kind. --}}
+            <x-ui.export-menu report="incidencias" />
+        </div>
     </x-ui.page-head>
 
     @if ($this->desk->isEmpty)

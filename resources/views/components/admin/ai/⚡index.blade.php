@@ -264,7 +264,9 @@ new class extends Component
 ?>
 
 <div>
-    <x-ui.page-head :title="__('admin.ai.title')" :sub="__('admin.ai.sub')" />
+    <x-ui.page-head :title="__('admin.ai.title')" :sub="__('admin.ai.sub')">
+        <x-ui.export-menu report="modelos-ia" />
+    </x-ui.page-head>
 
     <x-ui.tabs
         :default="'assign'"

@@ -102,3 +102,5 @@
 2026-10-19	check-php-getter-golden-rules	app/Dto/MentionOfferDto.php
 2026-10-19	check-blade-golden-rules	resources/views/components/client/⚡mention-offer.blade.php
 2026-10-19	check-panel-screen	resources/views/components/admin/mentions/⚡index.blade.php
+2026-10-19	check-php-getter-golden-rules	app/Classes/Main/Agenda.php
+2026-10-19	guardian:GoldenRulesFreshScreensTest	resources/views/components/ui/export-menu.blade.php

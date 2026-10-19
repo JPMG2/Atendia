@@ -60,6 +60,9 @@ new class extends Component
             <h1 class="page-head-title">{{ __('testimonials.title') }}</h1>
             <p class="page-head-sub">{{ __('testimonials.sub') }}</p>
         </div>
+        @if ($this->rows->isNotEmpty())
+            <x-ui.export-menu report="testimonios" />
+        @endif
     </div>
 
     <x-ui.card class="p-5">

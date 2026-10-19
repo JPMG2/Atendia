@@ -92,6 +92,13 @@ new class extends Component
         return BusinessMention::desk($this->status(), $this->limit + 1);
     }
 
+    /** What the export menu carries to the report: the stage on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['ver' => $this->status()->value];
+    }
+
     private function status(): MentionStatus
     {
         $status = MentionStatus::tryFrom($this->stage);
@@ -164,7 +171,9 @@ new class extends Component
 ?>
 
 <div>
-    <x-ui.page-head :title="__('mentions.title')" :sub="__('mentions.sub')" />
+    <x-ui.page-head :title="__('mentions.title')" :sub="__('mentions.sub')">
+        <x-ui.export-menu report="menciones" :params="$this->exportParams" />
+    </x-ui.page-head>
 
     @island(name: 'desk')
     <div wire:poll.30s.visible class="flex flex-col gap-4">

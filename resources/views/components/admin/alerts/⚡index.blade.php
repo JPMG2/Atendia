@@ -98,6 +98,13 @@ new class extends Component
         $this->limit += self::PAGE;
     }
 
+    /** What the export menu carries to the report: the severity on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['ver' => $this->filter === 'all' ? '' : $this->filter];
+    }
+
     public function acknowledge(int $id): void
     {
         $this->authorize('alerts.acknowledge');
@@ -113,7 +120,9 @@ new class extends Component
 ?>
 
 <div>
-    <x-ui.page-head :title="__('platform_events.screen.title')" :sub="__('platform_events.screen.sub')" />
+    <x-ui.page-head :title="__('platform_events.screen.title')" :sub="__('platform_events.screen.sub')">
+        <x-ui.export-menu report="avisos" :params="$this->exportParams" />
+    </x-ui.page-head>
 
     @island(name: 'board')
     <div wire:poll.30s.visible class="flex flex-col gap-4">

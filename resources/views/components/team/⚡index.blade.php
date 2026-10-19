@@ -135,7 +135,11 @@ new class extends Component
 ?>
 
 <div>
-    <x-ui.page-head :title="__('team.title')" :sub="__('team.sub')" />
+    <x-ui.page-head :title="__('team.title')" :sub="__('team.sub')">
+        @if ($this->team !== null)
+            <x-ui.export-menu report="equipo" />
+        @endif
+    </x-ui.page-head>
 
     @if ($this->team === null)
         {{-- The whole team hangs off the business: without one this screen was

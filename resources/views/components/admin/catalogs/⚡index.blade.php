@@ -193,6 +193,9 @@ new class extends Component
                         </h2>
                         <p>{{ $this->current->description }}</p>
                     </div>
+                    @if ($this->editorComponent !== 'catalog.placeholder')
+                        <x-ui.export-menu report="catalogo" :params="['maestro' => \Illuminate\Support\Str::after($this->current->component, 'catalog.')]" />
+                    @endif
                     <button
                         type="button"
                         class="catalog-panel-close"

@@ -66,6 +66,13 @@ new class extends Component
     /**
      * @return Collection<int, array{id: int, name: string, standing: string, recent: int, total: int, last_at: \Illuminate\Support\Carbon|null, last_kind: ComplianceEventKind|null}>
      */
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'estado' => $this->filter];
+    }
+
     #[Computed]
     public function board(): Collection
     {
@@ -126,7 +133,10 @@ new class extends Component
             <span class="status-tag">{{ trans_choice('compliance.count', $this->matching, ['count' => $this->matching]) }}</span>
         </x-slot:inline>
         {{-- The file is live, but it says when it was read. --}}
-        <span class="sup-age">{{ __('compliance.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="sup-age">{{ __('compliance.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+            <x-ui.export-menu report="cumplimiento" :params="$this->exportParams" />
+        </div>
     </x-ui.page-head>
 
     <x-ui.card class="bp-card">

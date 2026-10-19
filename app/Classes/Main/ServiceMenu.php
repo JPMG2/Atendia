@@ -15,6 +15,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceType;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
 
 /**
  * The service-menu piece (Fresha's name for it): the tenant's services and
@@ -33,6 +34,24 @@ class ServiceMenu
      */
     public Collection $services {
         get => $this->business->services()->with('category')->orderBy('id')->get();
+    }
+
+    /**
+     * The offer as the screen shows it: an accent-free search over the name and
+     * a state filter (all, active, paused). ORIGINAL KEYS KEPT: the screen slices
+     * by position, and the export reads the same cut.
+     *
+     * @return Collection<int, Service>
+     */
+    public function filtered(string $search = '', string $filter = 'all'): Collection
+    {
+        $needle = Str::ascii(mb_strtolower(trim($search)));
+
+        return $this->services->filter(fn (Service $service): bool => match ($filter) {
+            'active' => (bool) $service->is_active,
+            'paused' => ! $service->is_active,
+            default => true,
+        } && ($needle === '' || str_contains(Str::ascii(mb_strtolower($service->name)), $needle)));
     }
 
     /**

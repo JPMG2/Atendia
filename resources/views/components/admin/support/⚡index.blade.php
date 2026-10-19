@@ -96,6 +96,13 @@ new class extends Component
         );
     }
 
+    /** What the export menu carries to the report: the queue and filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['cola' => $this->queue, 'tipo' => $this->kind, 'negocio' => $this->business, 'responsable' => $this->who, 'buscar' => $this->search];
+    }
+
     /** @return array{answer: int, waiting: int, blocked: int, resolved: int, late: int, blockedLate: int} */
     #[Computed]
     public function counts(): array
@@ -471,6 +478,7 @@ new class extends Component
                 @endforeach
             @endif
         </span>
+        <x-ui.export-menu report="soporte" :params="$this->exportParams" />
     </x-ui.page-head>
 
     {{-- The queues are server state, so they are not x-ui.tabs (which keeps its

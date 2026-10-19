@@ -264,6 +264,13 @@ new class extends Component
         return $business->situation();
     }
 
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'estado' => $this->state];
+    }
+
     public function render(): View
     {
         return $this->view()->title(__('admin.businesses.title'));
@@ -334,6 +341,10 @@ new class extends Component
                 </x-ui.button>
             @endif
         </x-catalog.form-row>
+
+        <div class="mt-3 mb-4 flex justify-end">
+            <x-ui.export-menu report="negocios" :params="$this->exportParams" />
+        </div>
 
         @if ($this->businesses->isEmpty())
             {{-- Nothing found is not the same sentence as nothing exists. --}}

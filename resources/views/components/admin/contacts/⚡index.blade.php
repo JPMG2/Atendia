@@ -41,7 +41,12 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('contacts.title')" :sub="__('contacts.sub')">
-        <span class="sup-age">{{ __('contacts.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="sup-age">{{ __('contacts.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+            @if ($this->people->isNotEmpty())
+                <x-ui.export-menu report="radar" />
+            @endif
+        </div>
     </x-ui.page-head>
 
     @if ($this->people->isEmpty())

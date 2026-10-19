@@ -19,8 +19,32 @@ use App\Ai\Tools\RememberCustomerFact;
 use App\Ai\Tools\SearchBusinessKnowledge;
 use App\Ai\Tools\SearchCatalog;
 use App\Ai\Tools\SendCatalogPhotos;
+use App\Classes\Report\AdoptionReport;
+use App\Classes\Report\AgendaReport;
+use App\Classes\Report\AiModelsReport;
+use App\Classes\Report\AiQualityReport;
 use App\Classes\Report\AiSpendReport;
+use App\Classes\Report\AlertsReport;
+use App\Classes\Report\AuditReport;
+use App\Classes\Report\BusinessesReport;
+use App\Classes\Report\CatalogReport;
+use App\Classes\Report\CollectionsReport;
 use App\Classes\Report\CompanyReport;
+use App\Classes\Report\ComplianceReport;
+use App\Classes\Report\ContactsReport;
+use App\Classes\Report\ConversationsReport;
+use App\Classes\Report\CustomersReport;
+use App\Classes\Report\IncidentsReport;
+use App\Classes\Report\MentionsReport;
+use App\Classes\Report\ModerationReport;
+use App\Classes\Report\PaymentsReport;
+use App\Classes\Report\PlatformPaymentsReport;
+use App\Classes\Report\ProductsReport;
+use App\Classes\Report\ServicesReport;
+use App\Classes\Report\StaffReport;
+use App\Classes\Report\SupportReport;
+use App\Classes\Report\TeamReport;
+use App\Classes\Report\TestimonialsReport;
 use App\Classes\Search\ConversationSource;
 use App\Classes\Search\CustomerSource;
 use App\Classes\Search\HelpSource;
@@ -139,6 +163,30 @@ return [
     'reports' => [
         'company' => CompanyReport::class,
         'ai-spend' => AiSpendReport::class,
+        'clientes' => CustomersReport::class,
+        'conversaciones' => ConversationsReport::class,
+        'agenda' => AgendaReport::class,
+        'servicios' => ServicesReport::class,
+        'productos' => ProductsReport::class,
+        'equipo' => TeamReport::class,
+        'pagos' => PaymentsReport::class,
+        'negocios' => BusinessesReport::class,
+        'adopcion' => AdoptionReport::class,
+        'incidencias' => IncidentsReport::class,
+        'radar' => ContactsReport::class,
+        'cumplimiento' => ComplianceReport::class,
+        'cobranza' => CollectionsReport::class,
+        'cobros' => PlatformPaymentsReport::class,
+        'calidad-ia' => AiQualityReport::class,
+        'moderacion' => ModerationReport::class,
+        'testimonios' => TestimonialsReport::class,
+        'soporte' => SupportReport::class,
+        'usuarios' => StaffReport::class,
+        'auditoria' => AuditReport::class,
+        'avisos' => AlertsReport::class,
+        'menciones' => MentionsReport::class,
+        'modelos-ia' => AiModelsReport::class,
+        'catalogo' => CatalogReport::class,
     ],
 
     /*

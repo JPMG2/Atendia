@@ -72,6 +72,13 @@ new class extends Component
         return User::directory($this->search, $this->state, $this->factor);
     }
 
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'estado' => $this->state, 'doble' => $this->factor];
+    }
+
     /** @return array{on: int, total: int} */
     #[Computed]
     public function coverage(): array
@@ -247,8 +254,9 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.users.title')" :sub="__('admin.users.sub')">
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
             <x-ui.result-count :shown="$this->people->count()" :total="$this->total" noun="admin.users.count" />
+            <x-ui.export-menu report="usuarios" :params="$this->exportParams" />
 
             @can('manage-admin-users')
                 <x-ui.button variant="primary" icon="plus" wire:click="create">

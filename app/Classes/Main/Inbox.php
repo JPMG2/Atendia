@@ -10,8 +10,11 @@ use App\Models\ConversationMessage;
 use App\Models\KnowledgeSuggestion;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
+use App\Services\Tenant;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * The inbox piece: every thread the assistant holds with this tenant's
@@ -53,6 +56,70 @@ class Inbox
             ->with('latestMessage')
             ->orderByDesc('last_message_at')
             ->get();
+    }
+
+    /**
+     * The list as the screen shows it: threads whose last exchange falls in the
+     * picked dates, narrowed by an accent-free search over name, phone and last
+     * message, falling back to MEANING when nothing literal matches. The screen
+     * and its export both call this, so the file is the list.
+     *
+     * @return array{0: Collection<int, Conversation>, 1: bool} the threads, and whether the meaning search was used
+     */
+    public function filtered(string $search = '', string $dates = ''): array
+    {
+        $threads = $this->withinDates($this->threads, $dates);
+        $needle = Str::ascii(mb_strtolower(trim($search)));
+
+        if ($needle === '') {
+            return [$threads, false];
+        }
+
+        $matches = $threads->filter(fn (Conversation $thread): bool => str_contains(Str::ascii(mb_strtolower((string) $thread->contact_name)), $needle)
+            || str_contains($thread->contact_phone, $needle)
+            || str_contains(Str::ascii(mb_strtolower((string) $thread->latestMessage?->body)), $needle));
+
+        if ($matches->isNotEmpty() || mb_strlen($needle) < 4) {
+            return [$matches, false];
+        }
+
+        // Nothing literal: search by MEANING over what customers asked, so
+        // "ecografías" finds the thread that said "eco doppler".
+        $semantic = $this->withinDates(rescue(fn (): Collection => $this->searchThreads(trim($search)), new Collection, report: false), $dates);
+
+        return [$semantic, $semantic->isNotEmpty()];
+    }
+
+    /**
+     * Keeps only the threads whose last exchange falls inside the picked
+     * dates ("Y-m-d" or "Y-m-d..Y-m-d"). Malformed input filters nothing: a
+     * filter must never take the screen down over a hand-crafted payload.
+     *
+     * @param  Collection<int, Conversation>  $threads
+     * @return Collection<int, Conversation>
+     */
+    private function withinDates(Collection $threads, string $dates): Collection
+    {
+        $raw = trim($dates);
+
+        if ($raw === '') {
+            return $threads;
+        }
+
+        [$from, $to] = array_pad(explode('..', $raw, 2), 2, null);
+        $to ??= $from;
+
+        if (! Carbon::hasFormat((string) $from, 'Y-m-d') || ! Carbon::hasFormat((string) $to, 'Y-m-d')) {
+            return $threads;
+        }
+
+        // The picked days are the owner's days, not UTC's.
+        $timezone = app(Tenant::class)->timezone();
+        $start = Carbon::createFromFormat('Y-m-d', (string) $from, $timezone)->startOfDay();
+        $end = Carbon::createFromFormat('Y-m-d', (string) $to, $timezone)->endOfDay();
+
+        return $threads->filter(fn (Conversation $thread): bool => $thread->last_message_at !== null
+            && $thread->last_message_at->between($start, $end));
     }
 
     /**

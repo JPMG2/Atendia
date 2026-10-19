@@ -42,29 +42,22 @@ new class extends Component
     }
 
     /**
-     * Accent-free search plus the audience filters, in memory: this is
-     * presentation over an already-loaded directory.
+     * The search and the audience filter come from the directory itself, the
+     * same cut the export uses: what is on screen is what the file holds.
      *
      * @return Collection<int, Customer>
      */
     #[Computed]
     public function filtered(): Collection
     {
-        $customers = match ($this->filter) {
-            'optin' => $this->customers->filter(fn (Customer $customer): bool => $customer->marketing_opt_in_at !== null),
-            'birthday' => $this->customers->filter(fn (Customer $customer): bool => $customer->birthday?->month === now(app(\App\Services\Tenant::class)->timezone())->month),
-            default => $this->customers,
-        };
+        return Client::for(Auth::user())->directory?->filtered($this->search, $this->filter) ?? new Collection;
+    }
 
-        $needle = Str::ascii(mb_strtolower(trim($this->search)));
-
-        if ($needle === '') {
-            return $customers->values();
-        }
-
-        return $customers->filter(fn (Customer $customer): bool => str_contains(Str::ascii(mb_strtolower((string) $customer->displayName())), $needle)
-            || str_contains($customer->phone, $needle)
-            || str_contains(Str::ascii(mb_strtolower((string) $customer->email)), $needle))->values();
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'filtro' => $this->filter === 'all' ? '' : $this->filter];
     }
 
     /** @return Collection<int, Customer> */
@@ -143,9 +136,13 @@ new class extends Component
                 />
             </x-catalog.form-row>
 
-            <p class="bd-subtle mt-3 border-b pb-3 font-mono text-sm text-subtle">
-                {{ trans_choice('client.customers.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}
-            </p>
+            {{-- The count and the export share a line: the file is exactly this list. --}}
+            <div class="bd-subtle mt-3 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+                <p class="font-mono text-sm text-subtle">
+                    {{ trans_choice('client.customers.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}
+                </p>
+                <x-ui.export-menu report="clientes" :params="$this->exportParams" />
+            </div>
 
             @if ($this->rows->isEmpty())
                 <p class="text-muted py-6 text-center text-sm">{{ __('client.customers.no_results') }}</p>

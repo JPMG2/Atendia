@@ -64,6 +64,7 @@ new class extends Component
             <h1 class="page-head-title">{{ __('moderation.admin.title') }}</h1>
             <p class="page-head-sub">{{ __('moderation.admin.sub') }}</p>
         </div>
+        <x-ui.export-menu report="moderacion" />
     </div>
 
     <x-ui.card class="bp-card" x-data="adminModeration">

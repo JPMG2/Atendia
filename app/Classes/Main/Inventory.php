@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\ProductImport;
 use App\Models\ServiceType;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
 
 /**
  * The inventory piece: the goods the tenant sells and every write its
@@ -32,6 +33,25 @@ class Inventory
      */
     public Collection $products {
         get => $this->business->products()->orderBy('id')->get();
+    }
+
+    /**
+     * The inventory as the screen shows it: an accent-free search over name and
+     * code, and a stock filter (all, available, out). The export reads the same cut.
+     *
+     * @return Collection<int, Product>
+     */
+    public function filtered(string $search = '', string $filter = 'all'): Collection
+    {
+        $needle = Str::ascii(mb_strtolower(trim($search)));
+
+        return $this->products->filter(fn (Product $product): bool => match ($filter) {
+            'available' => (bool) $product->in_stock,
+            'out' => ! $product->in_stock,
+            default => true,
+        } && ($needle === ''
+            || str_contains(Str::ascii(mb_strtolower($product->name)), $needle)
+            || str_contains(Str::ascii(mb_strtolower($product->code ?? '')), $needle)));
     }
 
     /** The newest finished import — what the lane's footnote reports. */

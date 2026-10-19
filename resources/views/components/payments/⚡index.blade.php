@@ -82,11 +82,14 @@ new class extends Component
     #[Computed]
     public function visibleHistory(): Collection
     {
-        return $this->year === ''
-            ? $this->history
-            : $this->history->filter(
-                fn (Payment $payment): bool => (string) $payment->created_at->inBusinessTime()->year === $this->year
-            )->values();
+        return $this->billing?->historyOf($this->year) ?? new Collection;
+    }
+
+    /** What the export menu carries to the report: the year on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['anio' => $this->year];
     }
 
     public function openUpload(): void
@@ -115,7 +118,11 @@ new class extends Component
 ?>
 
 <div>
-    <x-ui.page-head :title="__('billing.title')" :sub="__('billing.sub')" />
+    <x-ui.page-head :title="__('billing.title')" :sub="__('billing.sub')">
+        @if ($this->history->isNotEmpty())
+            <x-ui.export-menu report="pagos" :params="$this->exportParams" />
+        @endif
+    </x-ui.page-head>
 
     @php
         $period = $this->billing?->period;

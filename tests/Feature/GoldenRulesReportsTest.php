@@ -53,6 +53,9 @@ test('every exporter is a format and every report is registered', function (): v
     $formats = collect(ReportFormat::cases())->map(fn (ReportFormat $format): string => $format->exporter()::class);
     $registered = collect(config('atendia.reports'))->values();
 
+    // An abstract base (ListReport) is a template for reports, not a report to register.
+    $reports = $classes->filter(fn (string $class): bool => is_subclass_of($class, Report::class) && ! (new ReflectionClass($class))->isAbstract());
+
     expect($classes->filter(fn (string $class): bool => is_subclass_of($class, ReportExporter::class))->diff($formats)->values()->all())->toBe([])
-        ->and($classes->filter(fn (string $class): bool => is_subclass_of($class, Report::class))->diff($registered)->values()->all())->toBe([]);
+        ->and($reports->diff($registered)->values()->all())->toBe([]);
 });

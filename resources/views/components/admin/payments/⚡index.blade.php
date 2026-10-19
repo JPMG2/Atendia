@@ -70,6 +70,8 @@ new class extends Component
             <h1 class="page-head-title">{{ __('billing.admin.title') }}</h1>
             <p class="page-head-sub">{{ __('billing.admin.sub') }}</p>
         </div>
+        {{-- The desk shows what needs a decision; the file is the whole ledger. --}}
+        <x-ui.export-menu report="cobros" />
     </div>
 
     <x-ui.card class="bp-card" x-data="adminPayments">

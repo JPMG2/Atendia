@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces\Main;
 
+use App\Classes\Report\ReportLetterhead;
 use App\Dto\ReportDto;
 
 /**
@@ -20,5 +21,5 @@ interface ReportExporter
     /** Whether the browser should open it (print) instead of saving it. */
     public bool $opensInBrowser { get; }
 
-    public function render(ReportDto $report): string;
+    public function render(ReportDto $report, ReportLetterhead $letterhead): string;
 }

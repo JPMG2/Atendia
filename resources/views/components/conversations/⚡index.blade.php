@@ -87,69 +87,24 @@ new class extends Component
     }
 
     /**
-     * Accent-free search over the loaded list: filtering in memory is
-     * presentation, and an inbox is small by nature.
+     * The search and the dates come from the inbox itself, the same cut the
+     * export uses: what is on screen is what the file holds.
      *
      * @return Collection<int, Conversation>
      */
     #[Computed]
     public function filtered(): Collection
     {
-        $this->semanticUsed = false;
-        $threads = $this->withinDates($this->threads);
-        $needle = Str::ascii(mb_strtolower(trim($this->search)));
+        [$threads, $this->semanticUsed] = $this->inbox()?->filtered($this->search, $this->dates) ?? [new Collection, false];
 
-        if ($needle === '') {
-            return $threads;
-        }
-
-        $matches = $threads->filter(fn (Conversation $thread): bool => str_contains(Str::ascii(mb_strtolower((string) $thread->contact_name)), $needle)
-            || str_contains($thread->contact_phone, $needle)
-            || str_contains(Str::ascii(mb_strtolower((string) $thread->latestMessage?->body)), $needle));
-
-        if ($matches->isNotEmpty() || mb_strlen($needle) < 4) {
-            return $matches;
-        }
-
-        // Nothing literal: search by MEANING over what customers asked, so
-        // "ecografías" finds the thread that said "eco doppler".
-        $semantic = rescue(fn (): Collection => $this->inbox()?->searchThreads(trim($this->search)) ?? new Collection, new Collection, report: false);
-        $semantic = $this->withinDates($semantic);
-        $this->semanticUsed = $semantic->isNotEmpty();
-
-        return $semantic;
+        return $threads;
     }
 
-    /**
-     * Keeps only the threads whose last exchange falls inside the picked
-     * dates. Malformed input filters nothing: a filter must never take the
-     * screen down over a hand-crafted wire payload.
-     *
-     * @param  Collection<int, Conversation>  $threads
-     * @return Collection<int, Conversation>
-     */
-    private function withinDates(Collection $threads): Collection
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
     {
-        $raw = trim($this->dates);
-
-        if ($raw === '') {
-            return $threads;
-        }
-
-        [$from, $to] = array_pad(explode('..', $raw, 2), 2, null);
-        $to ??= $from;
-
-        if (! Carbon::hasFormat((string) $from, 'Y-m-d') || ! Carbon::hasFormat((string) $to, 'Y-m-d')) {
-            return $threads;
-        }
-
-        // The picked days are the owner's days, not UTC's.
-        $timezone = app(\App\Services\Tenant::class)->timezone();
-        $start = Carbon::createFromFormat('Y-m-d', (string) $from, $timezone)->startOfDay();
-        $end = Carbon::createFromFormat('Y-m-d', (string) $to, $timezone)->endOfDay();
-
-        return $threads->filter(fn (Conversation $thread): bool => $thread->last_message_at !== null
-            && $thread->last_message_at->between($start, $end));
+        return ['buscar' => $this->search, 'fechas' => $this->dates];
     }
 
     /** @return Collection<int, Conversation> */
@@ -507,12 +462,18 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('client.conversations.title')" :sub="__('client.conversations.sub')">
-        @if ($this->todayCount > 0)
-            <span class="status-tag is-brand">
-                <span class="dot"></span>
-                {{ __('client.conversations.today', ['count' => $this->todayCount]) }}
-            </span>
-        @endif
+        {{-- The list pane is too narrow for a toolbar, so the export sits in the head, beside the day's pulse. --}}
+        <div class="flex flex-wrap items-center gap-3">
+            @if ($this->todayCount > 0)
+                <span class="status-tag is-brand">
+                    <span class="dot"></span>
+                    {{ __('client.conversations.today', ['count' => $this->todayCount]) }}
+                </span>
+            @endif
+            @if ($this->threads->isNotEmpty())
+                <x-ui.export-menu report="conversaciones" :params="$this->exportParams" />
+            @endif
+        </div>
     </x-ui.page-head>
 
     @if ($this->threads->isEmpty())

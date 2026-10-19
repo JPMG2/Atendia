@@ -8,6 +8,7 @@ use App\Actions\Account\SendEmailVerificationLink;
 use App\Actions\Account\SendPasswordResetLink;
 use App\Classes\Main\StaffTwoFactor;
 use App\Dto\AdoptionRowDto;
+use App\Enums\AdoptionSituation;
 use App\Enums\AdoptionStep;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
@@ -498,6 +499,22 @@ class User extends Authenticatable
     public function whatsappDigits(): string
     {
         return (string) preg_replace('/\D/', '', (string) $this->whatsapp);
+    }
+
+    /**
+     * The accounts of one adoption tab: the longest-waiting first, since that
+     * is who loses most to a day more; the active ones, newest first. The
+     * screen and its export both read the tab through here.
+     *
+     * @return Collection<int, AdoptionRowDto>
+     */
+    public static function adoptionTab(AdoptionSituation $situation): Collection
+    {
+        $rows = self::adoptionRows()->filter(fn (AdoptionRowDto $row): bool => $row->situation === $situation);
+
+        return ($situation === AdoptionSituation::Active
+            ? $rows->sortByDesc(fn (AdoptionRowDto $row) => $row->registeredAt)
+            : $rows->sortByDesc(fn (AdoptionRowDto $row): int => $row->daysInStep))->values();
     }
 
     /**

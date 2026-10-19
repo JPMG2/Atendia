@@ -85,7 +85,12 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('collections.title')" :sub="__('collections.sub')">
-        <span class="sup-age">{{ __('collections.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="sup-age">{{ __('collections.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
+            @if ($this->queue->isNotEmpty())
+                <x-ui.export-menu report="cobranza" />
+            @endif
+        </div>
     </x-ui.page-head>
 
     @if ($this->queue->isEmpty())

@@ -87,20 +87,14 @@ new class extends Component
     #[Computed]
     public function filtered(): Collection
     {
-        $needle = Str::ascii(mb_strtolower(trim($this->search)));
+        return $this->inventory()?->filtered($this->search, $this->filter) ?? new Collection;
+    }
 
-        return $this->products->filter(function (Product $product) use ($needle): bool {
-            if ($this->filter === 'available' && ! $product->in_stock) {
-                return false;
-            }
-            if ($this->filter === 'out' && $product->in_stock) {
-                return false;
-            }
-
-            return $needle === ''
-                || str_contains(Str::ascii(mb_strtolower($product->name)), $needle)
-                || str_contains(Str::ascii(mb_strtolower($product->code ?? '')), $needle);
-        });
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'filtro' => $this->filter === 'all' ? '' : $this->filter];
     }
 
     /** @return list<Product> The window the list actually paints. */
@@ -380,9 +374,12 @@ new class extends Component
                     </div>
                 </x-catalog.form-row>
 
-                <p class="mt-3 border-b border-[color:var(--border-subtle)] pb-3 font-mono text-sm text-subtle">
-                    {{ trans_choice('client.products.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}
-                </p>
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border-subtle)] pb-3">
+                    <p class="font-mono text-sm text-subtle">
+                        {{ trans_choice('client.products.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}
+                    </p>
+                    <x-ui.export-menu report="productos" :params="$this->exportParams" />
+                </div>
 
                 @if ($this->rows === [])
                     <p class="py-6 text-center text-sm text-muted">{{ __('client.products.no_results') }}</p>

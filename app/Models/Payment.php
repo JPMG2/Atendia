@@ -120,6 +120,18 @@ class Payment extends Model
         return self::query()->where('status', '!=', PaymentStatus::Pending)->with('business')->latest('updated_at')->limit($limit)->get();
     }
 
+    /**
+     * Every payment the platform has taken or refused, newest first, with its
+     * business: the ledger an accountant asks for. The desk shows the part that
+     * needs a decision; this is the whole of it.
+     *
+     * @return Collection<int, Payment>
+     */
+    public static function ledger(): Collection
+    {
+        return self::query()->with('business')->latest('id')->get();
+    }
+
     /** "USD 79,00": money reads the same on every screen and mail. */
     public function formattedAmount(): string
     {

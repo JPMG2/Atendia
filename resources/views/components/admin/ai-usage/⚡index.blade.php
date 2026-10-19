@@ -177,13 +177,7 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.ai_usage.title')" :sub="__('admin.ai_usage.sub')">
-        {{-- One box, or `space-between` in the head would scatter the three
-        buttons across the width instead of grouping them. --}}
-        <div class="flex flex-wrap items-center gap-2">
-            <x-ui.export-button report="ai-spend" format="pdf" size="sm" :params="['mes' => $month]" />
-            <x-ui.export-button report="ai-spend" format="xlsx" size="sm" :params="['mes' => $month]" />
-            <x-ui.export-button report="ai-spend" format="csv" size="sm" :params="['mes' => $month]" />
-        </div>
+        <x-ui.export-menu report="ai-spend" :params="['mes' => $month]" />
     </x-ui.page-head>
 
     <x-ui.card class="mb-3 p-5">

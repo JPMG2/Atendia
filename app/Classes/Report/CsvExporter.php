@@ -8,8 +8,10 @@ use App\Dto\ReportDto;
 use App\Interfaces\Main\ReportExporter;
 
 /**
- * Every CSV. Semicolon and a UTF-8 BOM on purpose: Spanish-locale Excel
- * reads the comma as the decimal mark and mangles accents without the BOM.
+ * Every CSV: the data and nothing else, so any system can import it. Semicolon
+ * and a UTF-8 BOM on purpose: Spanish-locale Excel reads the comma as the
+ * decimal mark and mangles accents without the BOM. The letterhead is for the
+ * formats a person reads, and the filters travel in the file name.
  */
 class CsvExporter implements ReportExporter
 {
@@ -25,7 +27,7 @@ class CsvExporter implements ReportExporter
         get => false;
     }
 
-    public function render(ReportDto $report): string
+    public function render(ReportDto $report, ReportLetterhead $letterhead): string
     {
         $stream = fopen('php://temp', 'r+');
 

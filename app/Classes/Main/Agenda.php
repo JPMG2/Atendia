@@ -82,6 +82,36 @@ class Agenda
     }
 
     /**
+     * The bookings the screen paints: that day, or the whole week holding it.
+     * The screen's export asks the same question, so the file is the view.
+     *
+     * @return Collection<int, Appointment>
+     */
+    public function inView(CarbonImmutable $day, string $view): Collection
+    {
+        if ($view !== 'week') {
+            return $this->day($day);
+        }
+
+        $monday = $day->setTimezone($this->business->localTimezone())->startOfWeek();
+
+        return Appointment::between($this->business, $monday, $monday->addDays(7));
+    }
+
+    /**
+     * Every booking the business has ever had, newest first, cancelled ones
+     * included: what "export everything" means for a calendar.
+     *
+     * @var Collection<int, Appointment>
+     */
+    public Collection $everything {
+        get => $this->business->appointments()
+            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes')
+            ->orderByDesc('starts_at')
+            ->get();
+    }
+
+    /**
      * The week that holds a day, Monday first: each day with its bookings and
      * how many hours it still has free — what the week view paints.
      *

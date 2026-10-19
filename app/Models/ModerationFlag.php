@@ -50,6 +50,17 @@ class ModerationFlag extends Model
         return static::query()->whereNull('reviewed_at')->with('business')->latest()->get();
     }
 
+    /**
+     * Every flag ever raised, newest first, with its business: the file the
+     * admin keeps when the desk is not enough.
+     *
+     * @return Collection<int, self>
+     */
+    public static function ledger(): Collection
+    {
+        return static::query()->with(['business', 'reviewer'])->latest()->get();
+    }
+
     /** @return Collection<int, self> */
     public static function recentlyReviewed(int $limit = 20): Collection
     {

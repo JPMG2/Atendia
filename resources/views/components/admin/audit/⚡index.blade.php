@@ -39,6 +39,13 @@ new class extends Component
         return AuditTrail::total();
     }
 
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['quien' => $this->causer, 'accion' => $this->action, 'fuertes' => $this->onlyStrong ? '1' : '0'];
+    }
+
     /** @return array<string, string> */
     #[Computed]
     public function causerOptions(): array
@@ -108,7 +115,10 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.audit.title')" :sub="__('admin.audit.sub')">
-        <x-ui.result-count :shown="$this->entries->count()" :total="$this->total" noun="admin.audit.count" />
+        <div class="flex flex-wrap items-center gap-3">
+            <x-ui.result-count :shown="$this->entries->count()" :total="$this->total" noun="admin.audit.count" />
+            <x-ui.export-menu report="auditoria" :params="$this->exportParams" />
+        </div>
     </x-ui.page-head>
 
     <x-ui.card class="p-5">

@@ -93,18 +93,14 @@ new class extends Component
     #[Computed]
     public function filtered(): Collection
     {
-        $needle = Str::ascii(mb_strtolower(trim($this->search)));
+        return $this->menu()?->filtered($this->search, $this->filter) ?? new Collection;
+    }
 
-        return $this->services->filter(function (Service $service) use ($needle): bool {
-            if ($this->filter === 'active' && ! $service->is_active) {
-                return false;
-            }
-            if ($this->filter === 'paused' && $service->is_active) {
-                return false;
-            }
-
-            return $needle === '' || str_contains(Str::ascii(mb_strtolower($service->name)), $needle);
-        });
+    /** What the export menu carries to the report: the very filters on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['buscar' => $this->search, 'filtro' => $this->filter === 'all' ? '' : $this->filter];
     }
 
     /**
@@ -503,6 +499,7 @@ new class extends Component
             {{-- Per-row completeness, GBP-style: it nudges, it never blocks. --}}
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[color:var(--border-subtle)] pb-3">
                 <p class="font-mono text-sm text-subtle">{{ trans_choice('client.services.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}</p>
+                <x-ui.export-menu class="ml-auto" report="servicios" :params="$this->exportParams" />
                 <p class="text-sm text-muted">{{ __('client.services.meter', ['done' => $this->priced, 'total' => $this->services->count()]) }}</p>
                 <div class="h-1.5 min-w-24 max-w-40 flex-1 overflow-hidden rounded-full bg-sunken">
                     <div class="h-full rounded-full bg-[color:var(--brand)]" style="width: {{ $this->services->isNotEmpty() ? round($this->priced / $this->services->count() * 100) : 0 }}%"></div>

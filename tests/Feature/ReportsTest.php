@@ -27,7 +27,7 @@ test('imprimir opens a real pdf in the browser', function (): void {
     $response = $this->actingAs(reportAdmin())->get(route('reports.show', ['report' => 'company', 'format' => 'pdf']));
 
     $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
-    expect($response->headers->get('Content-Disposition'))->toStartWith('inline; filename="compania-')
+    expect($response->headers->get('Content-Disposition'))->toStartWith('inline; filename="Compania_')
         ->and(substr((string) $response->getContent(), 0, 4))->toBe('%PDF');
 });
 
@@ -38,7 +38,7 @@ test('excel and csv download, csv readable by a Spanish-locale Excel', function 
     $xlsx = $this->actingAs($admin)->get(route('reports.show', ['report' => 'company', 'format' => 'xlsx']));
     $csv = $this->actingAs($admin)->get(route('reports.show', ['report' => 'company', 'format' => 'csv']));
 
-    expect($xlsx->headers->get('Content-Disposition'))->toStartWith('attachment; filename="compania-')
+    expect($xlsx->headers->get('Content-Disposition'))->toStartWith('attachment; filename="Compania_')
         ->and(substr((string) $xlsx->getContent(), 0, 2))->toBe('PK')
         ->and((string) $csv->getContent())->toStartWith("\u{FEFF}")
         ->toContain('"'.__('company.fields.legal_name').'";"Atendia SRL"');
@@ -57,20 +57,19 @@ test('a guest is sent to log in', function (): void {
     $this->get(route('reports.show', ['report' => 'company', 'format' => 'pdf']))->assertRedirect(route('login'));
 });
 
-test('the export button points at the report in its format, and prints in a new tab', function (): void {
-    $html = (string) $this->blade('<x-ui.export-button report="company" format="pdf" /><x-ui.export-button report="company" format="xlsx" />');
+test('the export menu offers the three formats, and prints in a new tab', function (): void {
+    $html = (string) $this->blade('<x-ui.export-menu report="company" />');
 
-    expect($html)->toContain(route('reports.show', ['report' => 'company', 'format' => 'pdf']))
-        ->toContain('target="_blank"')
-        ->toContain('btn-export')
-        ->toContain(__('reports.buttons.xlsx'));
-});
-
-test('the export group renders the three formats by default', function (): void {
-    $html = (string) $this->blade('<x-ui.export-buttons report="company" />');
-
-    expect($html)->toContain('export-group')
+    expect($html)->toContain('export-menu')
         ->toContain(route('reports.show', ['report' => 'company', 'format' => 'pdf']))
         ->toContain(route('reports.show', ['report' => 'company', 'format' => 'xlsx']))
-        ->toContain(route('reports.show', ['report' => 'company', 'format' => 'csv']));
+        ->toContain(route('reports.show', ['report' => 'company', 'format' => 'csv']))
+        ->toContain('target="_blank"')
+        ->toContain(__('reports.menu.button'));
+});
+
+test('a report with no list has no scope question: there is nothing to filter', function (): void {
+    $html = (string) $this->blade('<x-ui.export-menu report="company" />');
+
+    expect($html)->not->toContain(__('reports.menu.scope_title'));
 });

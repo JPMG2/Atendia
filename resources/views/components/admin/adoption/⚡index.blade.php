@@ -53,11 +53,14 @@ new class extends Component
     #[Computed]
     public function rows(): Collection
     {
-        $rows = $this->accounts->filter(fn (AdoptionRowDto $row): bool => $row->situation === $this->situation);
+        return User::adoptionTab($this->situation);
+    }
 
-        return ($this->situation === AdoptionSituation::Active
-            ? $rows->sortByDesc(fn (AdoptionRowDto $row) => $row->registeredAt)
-            : $rows->sortByDesc(fn (AdoptionRowDto $row): int => $row->daysInStep))->values();
+    /** What the export menu carries to the report: the tab on screen. */
+    #[Computed]
+    public function exportParams(): array
+    {
+        return ['ver' => $this->situation->value];
     }
 
     /** @return array<string, int> How many accounts each tab holds. */
@@ -152,6 +155,9 @@ new class extends Component
         <x-slot:inline>
             <span class="status-tag">{{ trans_choice('adoption.count', $this->accounts->count(), ['count' => $this->accounts->count()]) }}</span>
         </x-slot:inline>
+        @if ($this->accounts->isNotEmpty())
+            <x-ui.export-menu report="adopcion" :params="$this->exportParams" />
+        @endif
     </x-ui.page-head>
 
     @if ($this->accounts->isEmpty())
