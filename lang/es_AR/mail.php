@@ -10,6 +10,16 @@ return [
         'next' => 'Un solo paso lo separa de atender de verdad: conectá el WhatsApp de tu negocio.',
     ],
 
+    'daily_digest' => [
+        'referrals' => '1 negocio llegó con tu enlace esta semana. ¡Seguí compartiéndolo!|:count negocios llegaron con tu enlace esta semana. ¡Seguí compartiéndolo!',
+        'ask' => 'Cuando quieras otro resumen, escribile «resumen» a tu asistente desde tu WhatsApp.',
+        'closing' => 'Que descanses: tu asistente sigue atendiendo.',
+    ],
+
+    'knowledge_digest' => [
+        'closing' => 'Cada respuesta que le enseñás es una consulta menos para vos.',
+    ],
+
     'contact_updated' => [
         'alert' => 'Si no hiciste este cambio, entrá a tu panel y revisá tus datos de contacto.',
     ],

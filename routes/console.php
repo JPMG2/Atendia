@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Company;
 use App\Models\PanelNotification;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -18,7 +19,7 @@ Artisan::command('inspire', function (): void {
 // They all walk business by business over WhatsApp and the model: a slow tick
 // still running when the next starts would re-pick rows it has not stamped yet
 // and send the same reminder twice. A lock older than one tick is stale.
-Schedule::command('atendia:whatsapp-digest')->everyFifteenMinutes()->withoutOverlapping(15);
+Schedule::command('atendia:daily-digest')->everyFifteenMinutes()->withoutOverlapping(15);
 // Monday morning: the week's learning recap opens the owner's planning.
 Schedule::command('atendia:knowledge-digest')->everyFifteenMinutes()->withoutOverlapping(15);
 Schedule::command('atendia:birthday-greetings')->everyFifteenMinutes()->withoutOverlapping(15);
@@ -37,7 +38,12 @@ Schedule::command('atendia:whatsapp-reconcile')->everyFiveMinutes()->withoutOver
 Schedule::command('atendia:platform-sweep')->everyTwoMinutes()->withoutOverlapping(5);
 
 // The evening summary of what is still unseen; silent when nothing is.
-Schedule::command('atendia:platform-digest')->dailyAt('20:00')->withoutOverlapping(10);
+// The admin's sends below tick every minute and ask the platform's clock:
+// `dailyAt()` reads the server's UTC, which put "20:00" at 16:00 in Caracas.
+Schedule::command('atendia:platform-digest')
+    ->everyMinute()
+    ->when(fn (): bool => Company::isNowAt((string) config('atendia.schedule.admin_platform_digest')))
+    ->withoutOverlapping(10);
 
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverlapping(15);
@@ -48,10 +54,16 @@ Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dai
 
 // Weekly on purpose: an account that went quiet is a call to make this week,
 // and a daily copy of the same list stops being read by the second one.
-Schedule::command('atendia:adoption-alert')->dailyAt('09:00')->withoutOverlapping(60);
+Schedule::command('atendia:adoption-alert')
+    ->everyMinute()
+    ->when(fn (): bool => Company::isNowAt((string) config('atendia.schedule.admin_adoption_alert')))
+    ->withoutOverlapping(60);
 
 // The day before a team member's plazo for the second step ends: one mail, with time to act.
-Schedule::command('atendia:staff-two-factor-warning')->dailyAt('09:05')->withoutOverlapping(30);
+Schedule::command('atendia:staff-two-factor-warning')
+    ->everyMinute()
+    ->when(fn (): bool => Company::isNowAt((string) config('atendia.schedule.admin_staff_two_factor')))
+    ->withoutOverlapping(30);
 
 // The month's revenue, kept so next month has something to be compared with.
 // Daily and before midnight: a server down on the 1st would otherwise lose
@@ -67,10 +79,14 @@ Schedule::command('atendia:business-activity-watch')->everyThirtyMinutes()->with
 // What went wrong today, brought to her. Daily and in the evening, and quiet
 // on a clean day: a nightly "nothing happened" teaches her to archive unread.
 Schedule::command('atendia:incidents-digest')
-    ->dailyAt((string) config('atendia.incidents.digest_time'))
+    ->everyMinute()
+    ->when(fn (): bool => Company::isNowAt((string) config('atendia.incidents.digest_time')))
     ->withoutOverlapping(30);
 
 // Same reasoning, the other side of the ledger: a client whose AI is eating
 // its own plan has to reach her before the month is spent, not when she next
 // opens the screen. Weekly, and only while it is still over.
-Schedule::command('atendia:ai-alert')->weeklyOn(1, '09:30')->withoutOverlapping(60);
+Schedule::command('atendia:ai-alert')
+    ->everyMinute()
+    ->when(fn (): bool => Company::isNowAt((string) config('atendia.schedule.admin_ai_alert.time'), (int) config('atendia.schedule.admin_ai_alert.weekday')))
+    ->withoutOverlapping(60);

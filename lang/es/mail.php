@@ -72,6 +72,37 @@ return [
         'reason' => 'Recibiste este correo porque creaste tu negocio en :brand con esta dirección.',
     ],
 
+    'daily_digest' => [
+        'subject' => 'Así cerró el día en :business',
+        'preheader' => 'Lo que tu asistente atendió hoy y lo que viene mañana.',
+        'eyebrow' => 'Cierre del día',
+        'title' => 'Tu asistente trabajó por ti',
+        'intro' => 'Esto fue lo que pasó hoy en :business.',
+        'messages' => 'Mensajes atendidos',
+        'contacts' => 'Contactos',
+        'tomorrow' => 'Citas de mañana',
+        'summary_title' => 'En pocas palabras',
+        'questions_title' => 'Lo que preguntaron tus clientes',
+        'referrals' => '1 negocio llegó con tu enlace esta semana. ¡Sigue compartiéndolo!|:count negocios llegaron con tu enlace esta semana. ¡Sigue compartiéndolo!',
+        'cta' => 'Ver las conversaciones',
+        'ask' => 'Cuando quieras otro resumen, escríbele «resumen» a tu asistente desde tu WhatsApp.',
+        'closing' => 'Que descanses: tu asistente sigue atendiendo.',
+        'reason' => 'Recibes este correo porque tu plan incluye el resumen del día de :business.',
+    ],
+
+    'knowledge_digest' => [
+        'subject' => 'Lo que aprendió tu asistente esta semana en :business',
+        'preheader' => 'Respuestas nuevas y preguntas que todavía no sabe contestar.',
+        'eyebrow' => 'Resumen de la semana',
+        'title' => 'Tu asistente sigue aprendiendo',
+        'intro' => 'Esto fue lo que aprendió esta semana en :business.',
+        'taught' => 'Le enseñaste 1 respuesta nueva y ya la usa al responder.|Le enseñaste :count respuestas nuevas y ya las usa al responder.',
+        'missed' => '1 pregunta quedó sin respuesta: «:question».|:count preguntas quedaron sin respuesta. La más pedida: «:question».',
+        'cta' => 'Enseñarle respuestas',
+        'closing' => 'Cada respuesta que le enseñas es una consulta menos para ti.',
+        'reason' => 'Recibes este correo porque tu plan incluye el resumen semanal de :business.',
+    ],
+
     'referral_link' => [
         'subject' => 'Tu enlace para ganar con :brand',
         'preheader' => 'Compártelo con otros negocios y gana descuentos en tu factura.',

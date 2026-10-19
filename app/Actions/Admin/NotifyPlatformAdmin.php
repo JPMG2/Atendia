@@ -8,13 +8,13 @@ use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformEventState;
 use App\Messaging\Channels\WhatsApp;
 use App\Messaging\WhatsApp\PlatformAlert;
+use App\Models\Company;
 use App\Models\PlatformEvent;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 
 /**
- * Puts a critical fact on the admin's phone, and tells it again if nobody
- * has looked. Only critical interrupts: everything else waits on the board.
+ * Puts a critical fact on the admin's phone, once. Only critical interrupts:
+ * everything else waits on the board.
  */
 class NotifyPlatformAdmin
 {
@@ -34,30 +34,25 @@ class NotifyPlatformAdmin
             return 0;
         }
 
+        // Out of hours the alert waits (notified_at stays null) and leaves when
+        // the window opens; the evening digest names whatever is still open.
+        if (! Company::inSendWindow()) {
+            return 0;
+        }
+
         $sent = 0;
-        $after = now()->subMinutes((int) config('atendia.health.escalate_after_minutes'));
-        $max = (int) config('atendia.health.escalate_max');
 
         $events = PlatformEvent::query()
             ->where('severity', PlatformEventSeverity::Critical->value)
             ->where('state', PlatformEventState::Open->value)
+            ->whereNull('notified_at')
             ->with('aboutBusiness')
             ->get();
 
         foreach ($events as $event) {
-            $key = "platform.alert.sent.{$event->id}";
-            $times = (int) Cache::get($key, 0);
-
-            $due = $event->notified_at === null
-                || ($event->notified_at->lt($after) && $times < $max);
-
-            if (! $due) {
-                continue;
-            }
-
-            // Stamp first: a send that fails must not retry every two minutes.
+            // Stamp first: a send that fails must not retry every two minutes,
+            // and the same text is never sent twice.
             $event->forceFill(['notified_at' => now()])->save();
-            Cache::put($key, $times + 1, now()->addDays(2));
 
             rescue(fn () => (new WhatsApp($event, $numbers, PlatformAlert::class))->send());
             $sent++;

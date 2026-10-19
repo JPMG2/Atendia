@@ -122,7 +122,8 @@ test('an ordinary renewal is not a regularization', function (): void {
 });
 
 test('the billing pass writes the day a payment turned late once, and the pause when it comes', function (): void {
-    $this->travelTo(now()->setTime(9, 5));
+    // A Wednesday: the billing pass rests on Sunday.
+    $this->travelTo(now()->next('Wednesday')->setTime(9, 5));
     $business = Business::factory()->create(['timezone' => 'UTC', 'billing_email' => 'pagos@shop.test']);
     $subscription = $business->subscription;
 

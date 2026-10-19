@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Business\ComposeDailyDigest;
 use App\Actions\Business\RaiseHandoff;
 use App\Actions\Business\SendHumanReply;
 use App\Actions\Business\TranslateForCustomer;
@@ -27,12 +28,14 @@ use App\Models\User;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
 use App\Services\OwnerPings;
+use App\Services\ProactiveSends;
 use App\Services\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Ai\Files\Document;
 use Laravel\Ai\Files\File;
 use Laravel\Ai\Files\Image;
@@ -114,6 +117,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
             return;
         }
+
+        // They wrote: what the business sent on its own is no longer unanswered.
+        ProactiveSends::heard($business, $this->from);
 
         app(Tenant::class)->speakingAs($business, function () use ($business, $plan, $evolution): void {
             $customer = $this->rememberCustomer();
@@ -280,6 +286,12 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         }
 
         app(Tenant::class)->speakingAs($business, function () use ($business, $evolution, $text, $agent): void {
+            if ($this->asksForDigest($business, $text)) {
+                $this->answerDigest($business, $evolution);
+
+                return;
+            }
+
             $target = $this->ownerTarget($evolution, $text, $agent);
 
             if ($target === null) {
@@ -560,6 +572,34 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
             'author' => MessageAuthor::Assistant,
             'body' => $thanks,
         ]);
+    }
+
+    /**
+     * "resumen" (or "hola resumen") from the OWNER's own phone, on a plan that
+     * sells the digest: the one door to it on WhatsApp. Since the owner wrote
+     * first, the answer is a reply, never a message out of the blue.
+     */
+    private function asksForDigest(Business $business, string $text): bool
+    {
+        if (! $business->isOwnerWhatsApp($this->from) || ! $business->plan()->hasDailyDigest) {
+            return false;
+        }
+
+        $words = trim((string) preg_replace('/[^a-z ]+/', '', mb_strtolower(Str::ascii($text))));
+
+        return in_array($words, ['resumen', 'hola resumen'], true);
+    }
+
+    /** Answers with the same read the closing mail carries; the tally stays, tonight's mail still leaves. */
+    private function answerDigest(Business $business, EvolutionApi $evolution): void
+    {
+        $entries = (array) Cache::get('wa:digest:'.$business->id, []);
+
+        $text = $entries === []
+            ? __('assistant.digest.nothing_today')
+            : app(ComposeDailyDigest::class)->handle($business, array_values($entries))->toText();
+
+        $evolution->sendText($this->instance, $this->from, $text);
     }
 
     /**

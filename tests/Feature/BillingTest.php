@@ -40,7 +40,8 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     app()->setLocale('es');
     // The billing pass runs at each business's local 09:00 (UTC here: no country set).
-    $this->travelTo(now()->setTime(9, 5));
+    // A Wednesday: reminders to businesses rest on Sunday.
+    $this->travelTo(now()->next('Wednesday')->setTime(9, 5));
     $this->seed(RolesAndPermissionsSeeder::class);
     Mail::fake();
     Storage::fake('local');
@@ -94,6 +95,8 @@ test('the page reads the running period, the next payment and how to pay', funct
 });
 
 test('a receipt is stored privately under the tenant and waits for review, one at a time', function (): void {
+    // Livewire sweeps temporary uploads older than a day: a clock days ahead of the fake file would eat it.
+    $this->travelBack();
     $user = billingClient();
     $this->actingAs($user);
 

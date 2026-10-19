@@ -11,6 +11,7 @@ use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Services\EvolutionApi;
+use App\Services\ProactiveSends;
 use App\Services\Tenant;
 use Illuminate\Console\Command;
 
@@ -32,7 +33,9 @@ class SendAppointmentReminders extends Command
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
             ->get()
-            ->filter(fn (Business $business): bool => $business->canMessageCustomers());
+            // Unsent reminders stay due, so one blocked by a rest day or the
+            // night leaves at the next open tick.
+            ->filter(fn (Business $business): bool => $business->canMessageCustomers() && $business->mayMessageCustomersNow());
 
         foreach ($businesses as $business) {
             app(Tenant::class)->speakingAs($business, fn () => $this->remind($evolution, $business));
@@ -54,13 +57,15 @@ class SendAppointmentReminders extends Command
             ->with('customer', 'service')
             ->get();
 
+        $gate = ProactiveSends::for($business);
+
         foreach ($due as $appointment) {
             // One failed send never cuts off the bookings after it.
-            rescue(fn () => $this->send($evolution, $business, $appointment));
+            rescue(fn () => $this->send($evolution, $business, $appointment, $gate));
         }
     }
 
-    private function send(EvolutionApi $evolution, Business $business, Appointment $appointment): void
+    private function send(EvolutionApi $evolution, Business $business, Appointment $appointment, ProactiveSends $gate): void
     {
         $customer = $appointment->customer;
 
@@ -68,15 +73,24 @@ class SendAppointmentReminders extends Command
             return;
         }
 
+        // Left due, not stamped: a person who writes in later, or tomorrow's cap, lets it go.
+        if (($why = $gate->refusal($customer->phone, $customer)) !== null) {
+            $this->line("Reminder held for {$business->name} ({$why})");
+
+            return;
+        }
+
         $when = $appointment->starts_at->setTimezone($business->localTimezone());
-        $text = __('agenda.reminder', [
+        $text = ProactiveSends::wording('agenda.reminder', $appointment->id, [
             'business' => $business->name,
             'day' => $when->locale(app()->getLocale())->translatedFormat('l j/n'),
             'time' => $when->format('H:i'),
             'what' => $appointment->service?->name ?? __('agenda.plain_slot'),
         ]);
 
+        $gate->pace();
         $evolution->sendText((string) $business->whatsapp_instance, $customer->phone, $text);
+        $gate->sent($customer->phone);
 
         // Stamped after the send: a failure leaves it due for the next tick.
         $appointment->update(['reminder_sent_at' => now()]);

@@ -10,6 +10,7 @@ use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\Customer;
 use App\Services\EvolutionApi;
+use App\Services\ProactiveSends;
 use App\Services\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -58,20 +59,29 @@ class SendBirthdayGreetings extends Command
             ->whereDay('birthday', $today->day)
             ->get();
 
+        $gate = ProactiveSends::for($business);
+
         foreach ($celebrants as $customer) {
+            // A held greeting is skipped, not postponed: a birthday greeting a day late reads wrong.
+            if ($gate->refusal($customer->phone, $customer) !== null) {
+                continue;
+            }
+
             // Once a year per customer: a rerun or a second tick never greets twice.
             if (! Cache::add("birthday:{$customer->id}:{$today->year}", true, now()->addDays(400))) {
                 continue;
             }
 
             // One failed send never cuts off the celebrants after it.
-            rescue(function () use ($evolution, $business, $customer): void {
-                $text = __('client.customers.birthday_greeting', [
+            rescue(function () use ($evolution, $business, $customer, $gate): void {
+                $text = ProactiveSends::wording('client.customers.birthday_greeting', $customer->id, [
                     'name' => ($who = $customer->displayName()) !== null ? ' '.$who : '',
                     'business' => $business->name,
                 ]);
 
+                $gate->pace();
                 $evolution->sendText((string) $business->whatsapp_instance, $customer->phone, $text);
+                $gate->sent($customer->phone);
 
                 // In the thread too: a "¡gracias!" back needs the assistant to know why.
                 Conversation::query()->where('contact_phone', $customer->phone)->first()?->messages()->create([

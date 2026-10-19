@@ -3,14 +3,15 @@
 declare(strict_types=1);
 
 use App\Enums\SubscriptionStatus;
+use App\Mail\BusinessKnowledgeDigest;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\KnowledgeDocument;
 use App\Models\KnowledgeSuggestion;
 use App\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -20,6 +21,7 @@ beforeEach(function (): void {
     config()->set('services.evolution.url', 'http://evolution.test');
     config()->set('services.evolution.key', 'test-key');
 
+    Mail::fake();
     Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
 });
 
@@ -63,15 +65,19 @@ test('the owner receives the weekly learning recap on the fallback number', func
 
     $this->artisan('atendia:knowledge-digest')->assertSuccessful();
 
-    Http::assertSent(function (Request $request): bool {
-        return str_ends_with($request->url(), '/message/sendText/atendia-demo')
-            && $request['number'] === '5492995529100'
-            && str_contains((string) $request['text'], 'Laboratorio Vida')
-            && str_contains((string) $request['text'], '2 respuestas nuevas')
-            && str_contains((string) $request['text'], '2 preguntas quedaron sin respuesta')
-            && str_contains((string) $request['text'], '«¿Hacen envíos?»')
-            && str_contains((string) $request['text'], route('assistant'));
+    Mail::assertQueued(BusinessKnowledgeDigest::class, function (BusinessKnowledgeDigest $mail) use ($business): bool {
+        $html = $mail->render();
+
+        return $mail->hasTo($business->billing_email)
+            && str_contains($html, 'Laboratorio Vida')
+            && str_contains($html, '2 respuestas nuevas')
+            && str_contains($html, '2 preguntas quedaron sin respuesta')
+            && str_contains($html, '«¿Hacen envíos?»')
+            && str_contains($html, route('assistant'));
     });
+
+    // Never a WhatsApp out of the blue.
+    Http::assertNothingSent();
 });
 
 test('a week with nothing learned and nothing missed sends no recap', function (): void {
@@ -91,7 +97,7 @@ test('a week with nothing learned and nothing missed sends no recap', function (
 
     $this->artisan('atendia:knowledge-digest')->assertSuccessful();
 
-    Http::assertNothingSent();
+    Mail::assertNothingQueued();
 });
 
 test('a business without a connected WhatsApp is skipped', function (): void {
@@ -102,10 +108,10 @@ test('a business without a connected WhatsApp is skipped', function (): void {
 
     $this->artisan('atendia:knowledge-digest')->assertSuccessful();
 
-    Http::assertNothingSent();
+    Mail::assertNothingQueued();
 });
 
-test('the teach footer only rides along when something went unanswered', function (): void {
+test('the unanswered line only rides along when something went unanswered', function (): void {
     Queue::fake();
 
     $business = knowledgeDigestBusiness();
@@ -116,6 +122,6 @@ test('the teach footer only rides along when something went unanswered', functio
 
     $this->artisan('atendia:knowledge-digest')->assertSuccessful();
 
-    Http::assertSent(fn (Request $request): bool => str_contains((string) $request['text'], '1 respuesta nueva')
-        && ! str_contains((string) $request['text'], route('assistant')));
+    Mail::assertQueued(BusinessKnowledgeDigest::class, fn (BusinessKnowledgeDigest $mail): bool => str_contains($mail->render(), '1 respuesta nueva')
+        && ! str_contains($mail->render(), 'sin respuesta'));
 });

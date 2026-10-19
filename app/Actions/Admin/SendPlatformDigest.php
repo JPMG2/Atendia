@@ -8,9 +8,11 @@ use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformEventState;
 use App\Messaging\Channels\WhatsApp;
 use App\Messaging\WhatsApp\PlatformDigest;
+use App\Models\Company;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Closes the day on the admin's phone with what is still waiting. It stays
@@ -47,9 +49,16 @@ class SendPlatformDigest
             return false;
         }
 
+        // One summary per local day, whatever starts the command twice.
+        $day = 'platform.digest.'.now(Company::localTimezone())->toDateString();
+
+        if (! Cache::add($day, true, now()->addDay())) {
+            return false;
+        }
+
         $lines = $events->take(self::LINES)->map(fn (PlatformEvent $event): string => $event->kind->label().($event->aboutBusiness === null ? '' : ' · '.$event->aboutBusiness->name))->all();
 
-        return (new WhatsApp($admins->first(), $numbers, PlatformDigest::class, [
+        $sent = (new WhatsApp($admins->first(), $numbers, PlatformDigest::class, [
             [
                 'critical' => $events->where('severity', PlatformEventSeverity::Critical)->count(),
                 'important' => $events->where('severity', PlatformEventSeverity::Important)->count(),
@@ -58,5 +67,12 @@ class SendPlatformDigest
             $platform,
             max(0, $events->count() - self::LINES),
         ]))->send();
+
+        // A failed send must not use up the day's only chance.
+        if (! $sent) {
+            Cache::forget($day);
+        }
+
+        return $sent;
     }
 }

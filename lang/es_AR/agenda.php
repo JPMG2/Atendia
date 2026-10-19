@@ -5,7 +5,11 @@ declare(strict_types=1);
 // Only the voseo overrides: everything else falls back to lang/es.
 return [
 
-    'reminder' => '🔔 *:business*: te esperamos :day a las :time para :what. Respondé *Confirmo* si venís, o *Reprogramar* si necesitás otro horario.',
+    'reminder' => [
+        '🔔 *:business*: te esperamos :day a las :time para :what. Respondé *Confirmo* si venís, o *Reprogramar* si necesitás otro horario.',
+        '👋 Te recordamos tu turno en *:business*: :day a las :time, :what. Si venís, respondé *Confirmo*; si necesitás cambiarlo, escribí *Reprogramar*.',
+        '📅 *:business* te espera :day a las :time para :what. Contanos si venís con *Confirmo* o pedí otro horario con *Reprogramar*.',
+    ],
 
     'public' => [
         'sub' => 'Elegí el día y la hora que te queden bien. Te confirmamos al instante.',

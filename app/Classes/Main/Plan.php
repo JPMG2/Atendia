@@ -78,7 +78,7 @@ final class Plan
         get => (bool) ($this->limits['reads_media'] ?? false);
     }
 
-    /** The evening WhatsApp digest and the Monday learning recap: sold from the middle plan up. */
+    /** The evening mail digest and the Monday learning recap: sold from the middle plan up. */
     public bool $hasDailyDigest {
         get => (bool) ($this->limits['daily_digest'] ?? false);
     }

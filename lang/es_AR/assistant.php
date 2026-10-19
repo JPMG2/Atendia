@@ -15,7 +15,7 @@ return [
     ],
 
     'digest' => [
-        'knowledge_footer' => 'Enseñale las respuestas desde tu panel y no vuelve a pasar: :url',
+        'nothing_today' => '🤖 Hoy tu asistente todavía no atendió ninguna conversación. Cuando haya movimiento, escribime «resumen» y te cuento.',
     ],
 
     'grounding' => [

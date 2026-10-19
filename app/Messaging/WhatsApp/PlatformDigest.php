@@ -27,7 +27,7 @@ class PlatformDigest extends WhatsAppMessage
 
     public function text(): string
     {
-        $parts = [__('platform_events.digest.head', ['brand' => Company::brand(), 'hour' => '20:00'])];
+        $parts = [__('platform_events.digest.head', ['brand' => Company::brand(), 'hour' => config('atendia.schedule.admin_platform_digest')])];
 
         if ($this->counts['critical'] > 0) {
             $parts[] = trans_choice('platform_events.digest.critical', $this->counts['critical']);

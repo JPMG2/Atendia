@@ -333,6 +333,17 @@ return [
     | that many businesses see it. All move to the admin settings later.
     */
 
+    // Messages a business starts on its own (reminders, greetings) are the ones
+    // WhatsApp reads as spam, so they are paced: a pause between sends, a daily
+    // cap that grows while the number is young (days linked => cap) and a
+    // stop after this many unanswered ones in a row. Replies are never counted.
+    'outbound' => [
+        'gap_seconds' => [(int) env('OUTBOUND_GAP_MIN', 4), (int) env('OUTBOUND_GAP_MAX', 12)],
+        'max_unanswered' => 2,
+        'daily_cap' => 150,
+        'warmup' => [7 => 20, 14 => 40, 28 => 80],
+    ],
+
     // Automated sends go out at these LOCAL times, on each business's clock
     // (they went out in UTC: birthdays at 05:15 in Caracas). The scheduler
     // ticks every 15 minutes. Moves to the admin settings later.
@@ -340,6 +351,15 @@ return [
         'birthday_greetings' => '09:15',
         'whatsapp_digest' => '20:30',
         'billing_cycle' => '09:00',
+        // The platform's own clock is the company's country. Admin sends leave
+        // every day; a customer-facing one rests on Sunday (Carbon: 0 = Sunday).
+        'admin_platform_digest' => '20:00',
+        'admin_adoption_alert' => '09:00',
+        'admin_staff_two_factor' => '09:05',
+        'admin_ai_alert' => ['weekday' => 1, 'time' => '09:30'],
+        'customer_days' => [1, 2, 3, 4, 5, 6],
+        // Nothing automated lands outside these local hours, on either side.
+        'send_window' => ['from' => '08:00', 'until' => '21:00'],
         // The day-before nudge travels this many hours before the slot.
         'appointment_reminder_hours' => 24,
         'knowledge_digest' => ['weekday' => 1, 'time' => '09:30'],
@@ -531,9 +551,6 @@ return [
         // answers the public name with its own certificate and the origin one
         // can expire unseen (every visitor would then get a 526).
         'certificate_origin' => env('HEALTH_CERT_ORIGIN', 'easypanel-traefik'),
-        // Re-tell her a critical nobody has seen after this long (Opsgenie's escalation).
-        'escalate_after_minutes' => 30,
-        'escalate_max' => 3,
         // An outside service that raises the alarm when THIS server stops
         // pinging it: a dead server cannot report its own death.
         'heartbeat_url' => env('HEALTH_HEARTBEAT_URL'),

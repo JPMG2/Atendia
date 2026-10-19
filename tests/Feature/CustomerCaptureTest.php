@@ -179,7 +179,8 @@ test('pre-existing threads are adopted into customers, idempotently', function (
 
 test('birthday greetings reach only today\'s consenting celebrants, at the local morning, once', function (): void {
     // 09:15 on the business's clock (UTC here: no country set).
-    $this->travelTo(now()->setTime(9, 20));
+    // A Wednesday: customer-facing sends rest on Sunday.
+    $this->travelTo(now()->next('Wednesday')->setTime(9, 20));
     $business = Business::factory()->create([
         'whatsapp_instance' => 'demo',
         'whatsapp_connected_at' => now(),

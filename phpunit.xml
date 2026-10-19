@@ -42,6 +42,8 @@
              testing.log, nunca al laravel.log que lee la pantalla de Logs. -->
         <env name="LOG_CHANNEL" value="testing"/>
         <env name="MAIL_MAILER" value="array"/>
+        <env name="OUTBOUND_GAP_MIN" value="0"/>
+        <env name="OUTBOUND_GAP_MAX" value="0"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

@@ -13,9 +13,13 @@ use App\Enums\PlatformSensorStatus as Status;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\PlatformHeartbeat;
 use App\Models\Business;
+use App\Models\Company;
+use App\Models\Country;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
 use App\Models\PlatformSensorReading;
+use App\Models\Province;
+use App\Models\Region;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\CertificateReader;
@@ -142,7 +146,9 @@ test('reconciling raises a line for a condition that predates the feed and close
     expect($line->fresh()->state)->toBe(PlatformEventState::Resolved);
 });
 
-test('only an unseen critical reaches the admin phone, once, and again after the wait', function (): void {
+test('only a critical reaches the admin phone, once, and never repeats its text', function (): void {
+    // Wednesday noon on the platform's own clock, inside the send window.
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 12:00', Company::localTimezone()));
     adminWithPhone();
     $sent = [];
     $this->mock(EvolutionApi::class, function ($mock) use (&$sent): void {
@@ -162,11 +168,62 @@ test('only an unseen critical reaches the admin phone, once, and again after the
         ->and($sent[0])->toContain($critical->kind->label());
 
     $this->travel(31)->minutes();
-    expect(app(NotifyPlatformAdmin::class)->handle())->toBe(1);
+    expect(app(NotifyPlatformAdmin::class)->handle())->toBe(0)
+        ->and($sent)->toHaveCount(1);
+});
 
-    $critical->acknowledge(User::query()->first());
-    $this->travel(31)->minutes();
+test('a critical raised at night waits for the window and goes out once', function (): void {
+    adminWithPhone();
+    $sent = [];
+    $this->mock(EvolutionApi::class, function ($mock) use (&$sent): void {
+        $mock->shouldReceive('sendText')->andReturnUsing(function (string $instance, string $number, string $text) use (&$sent): string {
+            $sent[] = $text;
+
+            return 'id';
+        });
+    });
+
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create();
+
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 03:00', Company::localTimezone()));
     expect(app(NotifyPlatformAdmin::class)->handle())->toBe(0);
+
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 08:00', Company::localTimezone()));
+    expect(app(NotifyPlatformAdmin::class)->handle())->toBe(1)
+        ->and(app(NotifyPlatformAdmin::class)->handle())->toBe(0)
+        ->and($sent)->toHaveCount(1);
+});
+
+test('the evening digest leaves once a day and says the platform hour', function (): void {
+    adminWithPhone();
+    Cache::flush();
+    $sent = [];
+    $this->mock(EvolutionApi::class, function ($mock) use (&$sent): void {
+        $mock->shouldReceive('sendText')->andReturnUsing(function (string $instance, string $number, string $text) use (&$sent): string {
+            $sent[] = $text;
+
+            return 'id';
+        });
+    });
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create();
+
+    expect(app(SendPlatformDigest::class)->handle())->toBeTrue()
+        ->and(app(SendPlatformDigest::class)->handle())->toBeFalse()
+        ->and($sent)->toHaveCount(1)
+        ->and($sent[0])->toContain(config('atendia.schedule.admin_platform_digest'));
+});
+
+test('an admin send fires on the platform clock, not on the server UTC', function (): void {
+    Company::factory()->create(['region_id' => Region::factory()->for(Province::factory()->for(Country::factory()->create(['iso2' => 'VE'])))]);
+
+    // 20:00 in Caracas is 00:00 UTC of the next day.
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 20:00', 'America/Caracas'));
+    expect(Company::isNowAt('20:00'))->toBeTrue()
+        ->and(now('UTC')->format('H:i'))->toBe('00:00');
+
+    // 20:00 UTC (the old firing time) is 16:00 in Caracas: not the hour.
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 20:00', 'UTC'));
+    expect(Company::isNowAt('20:00'))->toBeFalse();
 });
 
 test('a client cannot open the board and an admin can', function (): void {

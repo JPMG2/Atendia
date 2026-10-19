@@ -5,24 +5,25 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Classes\Main\KnowledgeBase;
+use App\Mail\BusinessKnowledgeDigest;
+use App\Messaging\Channels\Email;
 use App\Models\Business;
-use App\Services\EvolutionApi;
 use App\Services\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * The owner's weekly learning recap: what the assistant was taught and what
- * it still could not answer, delivered to the human fallback number over
- * the business's own instance — the teaching loop closed from the pocket.
+ * it still could not answer, mailed to the account address — the teaching
+ * loop closed without a WhatsApp nobody asked for.
  */
 class SendKnowledgeDigests extends Command
 {
     protected $signature = 'atendia:knowledge-digest';
 
-    protected $description = 'Send each connected business its weekly learning digest';
+    protected $description = 'Mail each connected business its weekly learning digest';
 
-    public function handle(EvolutionApi $evolution): int
+    public function handle(): int
     {
         $weekday = (int) config('atendia.schedule.knowledge_digest.weekday');
         $time = (string) config('atendia.schedule.knowledge_digest.time');
@@ -30,7 +31,7 @@ class SendKnowledgeDigests extends Command
         $businesses = Business::query()
             ->whereNotNull('whatsapp_instance')
             ->whereNotNull('whatsapp_connected_at')
-            ->whereNotNull('fallback_whatsapp_number')
+            ->whereNotNull('billing_email')
             ->with('subscription')
             ->get()
             // Same dial as the evening digest: the weekly recap is sold from
@@ -44,50 +45,23 @@ class SendKnowledgeDigests extends Command
                 continue;
             }
 
-            rescue(fn () => app(Tenant::class)->speakingAs($business, function () use ($evolution, $business): void {
-                $text = $this->compose($business);
+            rescue(fn () => app(Tenant::class)->speakingAs($business, function () use ($business): void {
+                $knowledge = new KnowledgeBase($business);
+                $taught = $knowledge->weeklyTaughtCount;
+                $missed = $knowledge->weeklySuggestionRecap;
 
-                if ($text === null) {
+                // Silent when the week taught and missed nothing: an empty
+                // recap reads as noise, not as progress.
+                if ($taught === 0 && $missed['count'] === 0) {
                     return;
                 }
 
-                $evolution->sendText((string) $business->whatsapp_instance, $business->ownerWhatsAppDigits(), $text);
+                (new Email($business, [(string) $business->billing_email], BusinessKnowledgeDigest::class, [$taught, $missed]))->send();
 
-                $this->info("Knowledge digest sent for {$business->name}");
+                $this->info("Knowledge digest mailed for {$business->name}");
             }));
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Silent when the week taught and missed nothing: an empty recap reads
-     * as noise, not as progress — same rule as the referral brag.
-     */
-    private function compose(Business $business): ?string
-    {
-        $knowledge = new KnowledgeBase($business);
-        $taught = $knowledge->weeklyTaughtCount;
-        $missed = $knowledge->weeklySuggestionRecap;
-
-        if ($taught === 0 && $missed['count'] === 0) {
-            return null;
-        }
-
-        $lines = [__('assistant.digest.knowledge_header', ['business' => $business->name])];
-
-        if ($taught > 0) {
-            $lines[] = trans_choice('assistant.digest.knowledge_taught', $taught, ['count' => $taught]);
-        }
-
-        if ($missed['count'] > 0) {
-            $lines[] = trans_choice('assistant.digest.knowledge_missed', $missed['count'], [
-                'count' => $missed['count'],
-                'question' => (string) $missed['top'],
-            ]);
-            $lines[] = __('assistant.digest.knowledge_footer', ['url' => route('assistant')]);
-        }
-
-        return implode("\n", $lines);
     }
 }

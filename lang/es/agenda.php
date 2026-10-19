@@ -90,7 +90,12 @@ return [
         'powered' => 'Reservas atendidas por :brand',
     ],
 
-    'reminder' => '🔔 *:business*: te esperamos :day a las :time para :what. Responde *Confirmo* si vienes, o *Reprogramar* si necesitas otro horario.',
+    // Several wordings on purpose: identical text sent to many people is what spam filters learn first.
+    'reminder' => [
+        '🔔 *:business*: te esperamos :day a las :time para :what. Responde *Confirmo* si vienes, o *Reprogramar* si necesitas otro horario.',
+        '👋 Te recordamos tu cita en *:business*: :day a las :time, :what. Si vienes, responde *Confirmo*; si necesitas cambiarla, escribe *Reprogramar*.',
+        '📅 *:business* te espera :day a las :time para :what. Cuéntanos si vienes con *Confirmo* o pide otro horario con *Reprogramar*.',
+    ],
 
     // Se cierra el día y alguien tenía la hora tomada: enterarse al llegar a
     // la puerta cerrada es lo único que no se puede permitir.

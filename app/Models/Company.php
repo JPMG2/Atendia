@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Classes\Main\OpeningHours;
+use App\Classes\Main\SendWindow;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
 use DateTimeZone;
@@ -175,6 +176,24 @@ class Company extends Model
         $zones = $iso2 === null ? [] : DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, strtoupper($iso2));
 
         return $zones[0] ?? (string) config('app.timezone');
+    }
+
+    /**
+     * Whether it is this exact minute (HH:MM, optionally on a weekday, 0 =
+     * Sunday) on the platform's clock. Admin sends tick every minute through
+     * this instead of `dailyAt()`, which reads the server's UTC.
+     */
+    public static function isNowAt(string $time, ?int $weekday = null): bool
+    {
+        $now = now(self::localTimezone());
+
+        return $now->format('H:i') === $time && ($weekday === null || $now->dayOfWeek === $weekday);
+    }
+
+    /** Whether the admin's phone may be buzzed right now, on the platform's clock. */
+    public static function inSendWindow(): bool
+    {
+        return SendWindow::containsHour(now(self::localTimezone()));
     }
 
     public static function forgetReach(): void

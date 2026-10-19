@@ -591,6 +591,10 @@ return [
         'merge_confirm_title' => '¿Fusionar las fichas?',
         'merge_confirm_body' => 'Las conversaciones de ambas quedan en esta ficha y la otra se elimina. Esto no se puede deshacer.',
         'merged' => 'Fichas fusionadas.',
-        'birthday_greeting' => '¡Feliz cumpleaños:name! 🎂 Todo el equipo de :business te desea un gran día.',
+        'birthday_greeting' => [
+            '¡Feliz cumpleaños:name! 🎂 Todo el equipo de :business te desea un gran día.',
+            '🎉 :business te manda un abrazo y te desea un feliz cumpleaños:name. ¡Que lo disfrutes mucho!',
+            '¡Hoy es tu día:name! 🎈 Desde :business te deseamos un cumpleaños lleno de alegría.',
+        ],
     ],
 ];

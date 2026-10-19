@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Actions\Business\VerifyWhatsAppLink;
 use App\Classes\Main\Plan;
+use App\Classes\Main\SendWindow;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
@@ -175,6 +176,20 @@ class Business extends Model
         return self::query()
             ->where('referred_by_business_id', $this->id)
             ->where('created_at', '>=', now($this->localTimezone())->startOfWeek()->utc())
+            ->count();
+    }
+
+    /** Bookings still holding a slot tomorrow, on the business's own calendar. */
+    public function appointmentsTomorrow(): int
+    {
+        if (! $this->appointments_enabled) {
+            return 0;
+        }
+
+        $tomorrow = now($this->localTimezone())->addDay();
+
+        return $this->appointments()->holdingSlot()
+            ->whereBetween('starts_at', [$tomorrow->copy()->startOfDay()->utc(), $tomorrow->copy()->endOfDay()->utc()])
             ->count();
     }
 
@@ -738,13 +753,24 @@ class Business extends Model
      * Whether a local "HH:MM" (and weekday, 0 = Sunday) is the current
      * 15-minute slot on this business's clock: the scheduler ticks every 15
      * minutes, so each business gets its automated sends at its own time.
+     * Never on a rest day: a customer-facing send waits for the next one.
      */
     public function isDueAt(string $time, ?int $weekday = null): bool
     {
         $now = now($this->localTimezone());
         $slot = $now->setTime((int) $now->format('H'), intdiv((int) $now->format('i'), 15) * 15);
 
-        return $slot->format('H:i') === $time && ($weekday === null || (int) $now->format('w') === $weekday);
+        return $slot->format('H:i') === $time
+            && ($weekday === null || (int) $now->format('w') === $weekday)
+            && SendWindow::isCustomerDay($now);
+    }
+
+    /** Whether an automated message may reach this business's customers right now, on ITS clock. */
+    public function mayMessageCustomersNow(): bool
+    {
+        $now = now($this->localTimezone());
+
+        return SendWindow::isCustomerDay($now) && SendWindow::containsHour($now);
     }
 
     /**

@@ -87,7 +87,7 @@ const EXTRAS_LOCKS = [
     // own switch, and the test below fails the day someone gates it.
     'Agenda y catálogo' => ['app/Classes/Main/Agenda.php'],
     'Resumen diario y reportes a pedido' => [
-        'app/Console/Commands/SendWhatsAppDigests.php',
+        'app/Console/Commands/SendDailyDigests.php',
         'app/Console/Commands/SendKnowledgeDigests.php',
     ],
 ];

@@ -17,6 +17,8 @@ use App\Mail\AiSpendAlert;
 use App\Mail\BillingPaymentReviewed;
 use App\Mail\BillingReminder;
 use App\Mail\BusinessActivityStale;
+use App\Mail\BusinessDailyDigest;
+use App\Mail\BusinessKnowledgeDigest;
 use App\Mail\BusinessSuspended;
 use App\Mail\BusinessWelcome;
 use App\Mail\ContactEmailUpdated;
@@ -112,6 +114,8 @@ enum MailSender: string
                 AccountTwoFactorReset::class,
                 AiSpendAlert::class,
                 BusinessActivityStale::class,
+                BusinessDailyDigest::class,
+                BusinessKnowledgeDigest::class,
                 ContactEmailUpdated::class,
                 DeviceChallengeCode::class,
                 FirstPaymentReceived::class,

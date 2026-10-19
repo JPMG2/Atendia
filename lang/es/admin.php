@@ -543,7 +543,7 @@ return [
                 ],
                 'whatsapp_digest' => [
                     'label' => 'Resumen del día',
-                    'hint' => 'A qué hora recibe el negocio por WhatsApp el resumen de su jornada.',
+                    'hint' => 'A qué hora recibe el negocio por correo el resumen de su jornada.',
                 ],
                 'billing_cycle' => [
                     'label' => 'Avisos de pago',
