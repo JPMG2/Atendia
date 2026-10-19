@@ -85,6 +85,30 @@ test('the sector pool hides inactive suggestions and caps the chips', function (
         ->and($pooled->pluck('name')->all())->not->toContain('Dormido');
 });
 
+test('a suggestion is said in the visitor variant and falls back to the base', function (): void {
+    $activity = BusinessActivity::factory()->create();
+
+    SuggestedService::factory()->create([
+        'business_activity_id' => $activity->id, 'name' => 'Charcutería', 'sort_order' => 1,
+        'regional_names' => ['es_AR' => 'Fiambrería'],
+    ]);
+    SuggestedService::factory()->create(['business_activity_id' => $activity->id, 'name' => 'Café', 'sort_order' => 2]);
+
+    app()->setLocale('es_AR');
+    expect(BusinessActivity::suggestionsName($activity->code))->toBe(['Fiambrería', 'Café']);
+
+    app()->setLocale('es_VE');
+    expect(BusinessActivity::suggestionsName($activity->code))->toBe(['Charcutería', 'Café']);
+});
+
+test('a regional name adopts the same catalog type as the base name', function (): void {
+    $suggestion = SuggestedService::factory()->create(['name' => 'Charcutería', 'regional_names' => ['es_AR' => 'Fiambrería']]);
+
+    expect(SuggestedService::typeIdFor('fiambrería'))->toBe($suggestion->service_type_id)
+        ->and(SuggestedService::typeIdFor('Charcutería'))->toBe($suggestion->service_type_id)
+        ->and(SuggestedService::typeIdFor('Otra cosa'))->toBeNull();
+});
+
 test('an activity lists its suggestions in demand order', function (): void {
     $activity = BusinessActivity::factory()->create();
 

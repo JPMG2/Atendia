@@ -33,7 +33,7 @@ trait SuggestsServiceNames
 
         return $rows->load('serviceType.modality')
             ->filter(fn (SuggestedService $row): bool => ($row->serviceType?->modality?->code === 'producto') === $goods)
-            ->pluck('name')
+            ->map(fn (SuggestedService $row): string => $row->nameFor(app()->getLocale()))
             ->values()
             ->all();
     }

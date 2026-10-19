@@ -20,7 +20,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * Not to be confused with {@see Service} (what a tenant actually offers):
  * adopting a suggestion creates a Service already carrying its type.
  */
-#[Fillable(['business_activity_id', 'service_type_id', 'name', 'sort_order', 'is_active'])]
+#[Fillable(['business_activity_id', 'service_type_id', 'name', 'regional_names', 'sort_order', 'is_active'])]
 class SuggestedService extends Model
 {
     /** @use HasFactory<SuggestedServiceFactory> */
@@ -35,7 +35,7 @@ class SuggestedService extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['business_activity_id', 'service_type_id', 'name', 'sort_order', 'is_active'])
+            ->logOnly(['business_activity_id', 'service_type_id', 'name', 'regional_names', 'sort_order', 'is_active'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('suggested_service');
@@ -49,6 +49,7 @@ class SuggestedService extends Model
         return [
             'business_activity_id' => 'integer',
             'service_type_id' => 'integer',
+            'regional_names' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
@@ -61,9 +62,22 @@ class SuggestedService extends Model
      */
     public static function typeIdFor(string $name): ?int
     {
+        $name = mb_strtolower($name);
+
         return self::query()
-            ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            ->where(fn ($query) => $query
+                ->whereRaw('lower(name) = ?', [$name])
+                ->orWhereRaw('exists (select 1 from jsonb_each_text(regional_names) as regional where lower(regional.value) = ?)', [$name]))
             ->value('service_type_id');
+    }
+
+    /**
+     * How this suggestion is said in a Spanish variant (es_AR says "fiambrería"
+     * where the base says "charcutería"); a variant with no entry reads the base.
+     */
+    public function nameFor(string $locale): string
+    {
+        return $this->regional_names[$locale] ?? $this->name;
     }
 
     /**

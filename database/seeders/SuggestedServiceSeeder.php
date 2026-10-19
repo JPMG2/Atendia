@@ -21,6 +21,7 @@ class SuggestedServiceSeeder extends Seeder
     public function run(): void
     {
         $types = ServiceType::query()->pluck('id', 'code');
+        $regional = $this->regionalNames();
 
         foreach ($this->suggestions() as $activityCode => $services) {
             $activity = BusinessActivity::query()->where('code', $activityCode)->sole();
@@ -31,12 +32,32 @@ class SuggestedServiceSeeder extends Seeder
                     ['business_activity_id' => $activity->id, 'name' => $name],
                     [
                         'service_type_id' => $types[$typeCode],
+                        'regional_names' => $regional[$activityCode][$name] ?? null,
                         'sort_order' => ++$order,
                         'is_active' => true,
                     ],
                 );
             }
         }
+    }
+
+    /**
+     * The base names are the Venezuelan ones; where Argentina says the same
+     * thing differently, its wording is listed here.
+     *
+     * @return array<string, array<string, array<string, string>>> activity code => [base name => [locale => name]]
+     */
+    private function regionalNames(): array
+    {
+        return [
+            'panaderia' => [
+                'Pastelería (facturas y medialunas)' => ['es_AR' => 'Facturas y medialunas'],
+                'Charcutería (quesos y jamones)' => ['es_AR' => 'Fiambrería (quesos y jamones)'],
+            ],
+            'almacen' => [
+                'Charcutería y lácteos' => ['es_AR' => 'Fiambres y lácteos'],
+            ],
+        ];
     }
 
     /**
@@ -49,10 +70,11 @@ class SuggestedServiceSeeder extends Seeder
             'panaderia' => [
                 'Pan del día' => 'producto-mostrador',
                 'Pan de masa madre' => 'producto-mostrador',
-                'Facturas por docena' => 'producto-mostrador',
-                'Sándwiches de miga' => 'pedido',
+                'Panes dulces' => 'producto-mostrador',
+                'Panes salados' => 'producto-mostrador',
+                'Pastelería (facturas y medialunas)' => 'producto-mostrador',
                 'Torta por encargo' => 'pedido',
-                'Quesos y jamones' => 'producto-mostrador',
+                'Charcutería (quesos y jamones)' => 'producto-mostrador',
                 'Golosinas y snacks' => 'producto-mostrador',
                 'Café para llevar' => 'pedido-llevar',
                 'Envío a domicilio' => 'pedido-llevar',
@@ -292,7 +314,7 @@ class SuggestedServiceSeeder extends Seeder
             'almacen' => [
                 'Pedido a domicilio' => 'pedido',
                 'Frutas y verduras' => 'producto-mostrador',
-                'Fiambres y lácteos' => 'producto-mostrador',
+                'Charcutería y lácteos' => 'producto-mostrador',
                 'Quesos y jamones' => 'producto-mostrador',
                 'Panificados' => 'producto-mostrador',
                 'Bebidas y gaseosas' => 'producto-mostrador',

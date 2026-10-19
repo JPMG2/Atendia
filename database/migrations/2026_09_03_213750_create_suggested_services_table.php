@@ -28,6 +28,7 @@ return new class extends Migration
             $table->foreignId('service_type_id')->constrained()->restrictOnDelete();
 
             $table->string('name')->comment('El servicio concreto sugerido: Corte de caballero, Menú del día');
+            $table->jsonb('regional_names')->nullable()->comment('Como se dice en otra variante del español: {"es_AR": "Fiambrería"}; name es la base');
             $table->unsignedSmallInteger('sort_order')->default(0)->comment('Orden por demanda dentro de la actividad');
             $table->boolean('is_active')->default(true)->comment('Dejar de sugerirlo sin borrarlo');
 
