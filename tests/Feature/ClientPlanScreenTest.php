@@ -52,6 +52,27 @@ test('the conversations meter counts this month active threads', function (): vo
         ->assertSee(__('plan.meters.conversations_of', ['used' => 1, 'cap' => '1.000']));
 });
 
+test('a trial that ran out unpaid says so and names the plan the business is on', function (): void {
+    $user = planClient();
+    $user->business->subscription->update(['trial_ends_at' => now()->subDay(), 'current_period_ends_at' => null]);
+
+    $this->actingAs($user);
+
+    livewire('plan.index')
+        ->assertSeeHtml('data-testid="trial-over"')
+        ->assertSee(__('plan.trial_over', ['plan' => __('plan.names.emprende')]))
+        ->assertDontSee(__('plan.trial_badge', ['days' => 1]));
+});
+
+test('once a payment sets the period, the trial notice goes away', function (): void {
+    $user = planClient();
+    $user->business->subscription->update(['trial_ends_at' => now()->subMonth(), 'current_period_ends_at' => now()->addMonth()]);
+
+    $this->actingAs($user);
+
+    livewire('plan.index')->assertDontSeeHtml('data-testid="trial-over"');
+});
+
 test('higher rungs show their extras locked with the padlock hint, never hidden', function (): void {
     $user = planClient();
     // Expired trial: the business reads the ladder from the floor plan.

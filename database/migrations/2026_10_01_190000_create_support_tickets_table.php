@@ -39,6 +39,9 @@ return new class extends Migration
             $table->text('reply')->nullable()->comment('What we answered, kept so the next person reads the same thing she did');
             $table->timestamp('answered_at')->nullable();
             $table->timestamp('resolved_at')->nullable();
+            // Prepared for the team and never sent to the business: a draft and a reading of the report.
+            $table->jsonb('ai_suggestion')->nullable();
+            $table->timestamp('ai_suggested_at')->nullable();
             $table->timestamps();
 
             $table->index(['status', 'created_at']);

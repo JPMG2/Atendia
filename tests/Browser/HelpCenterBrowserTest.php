@@ -78,7 +78,7 @@ test('the help reads on a phone and in the dark', function (): void {
     visit('/ayuda')->resize(1280, 900)
         ->click('@theme-toggle')
         ->click('[data-testid="help-article-importar-productos-excel"]')
-        ->waitForText('Arrastra el archivo')
+        ->waitForText('Arrastra tu planilla')
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'help-open-dark');
 });

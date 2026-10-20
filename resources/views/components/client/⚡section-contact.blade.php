@@ -72,7 +72,7 @@ new class extends Component
             :default-dial="$this->defaultDial"
             :value="$form->whatsapp_number"
             wire:model="form.whatsapp_number"
-            :label="__('wizard.fields.whatsapp_number').' · '.__('client.business.optional')"
+            :label="__('wizard.fields.whatsapp_number')"
             :hint="__('wizard.fields.whatsapp_number_hint')"
         />
         <x-inputsform.phone
@@ -83,7 +83,7 @@ new class extends Component
             :default-dial="$this->defaultDial"
             :value="$form->fallback_whatsapp_number"
             wire:model="form.fallback_whatsapp_number"
-            :label="__('wizard.fields.fallback_whatsapp_number').' · '.__('client.business.optional')"
+            :label="__('wizard.fields.fallback_whatsapp_number')"
             :hint="__('wizard.fields.fallback_whatsapp_number_hint')"
         />
     </x-catalog.form-row>
@@ -91,7 +91,7 @@ new class extends Component
     <x-catalog.form-row>
         <x-inputsform.input
             span="text"
-            :label="__('client.business.contact.email').' · '.__('client.business.optional')"
+            :label="__('client.business.contact.email')"
             name="email"
             alpine-error="email"
             wire:model="form.email"

@@ -22,8 +22,8 @@ return [
     // Upsell card del footer del sidebar (skeleton temporal)
     'profile_progress' => 'Tu perfil, al :percent%',
     'profile_missing' => [
-        'personal_data' => 'Faltan tus datos personales',
-        'tax_details' => 'Faltan tus datos fiscales',
+        'personal_data' => 'Falta completar tu contacto',
+        'tax_details' => 'Falta elegir tu moneda',
         'schedule' => 'Faltan tus horarios de atención',
         'social_media' => 'Faltan tus redes sociales',
     ],

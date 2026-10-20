@@ -67,7 +67,7 @@ return [
     'business' => [
         'title' => 'Mi negocio',
         'back' => 'Volver al inicio',
-        'sub' => 'Todo lo que completes aquí ayuda a tu asistente a presentarse y responder mejor. Nada es obligatorio.',
+        'sub' => 'Todo lo que completes aquí ayuda a tu asistente a presentarse y responder mejor. Lo único obligatorio es el nombre del negocio.',
         'optional' => 'opcional',
         'recommended' => 'Recomendado',
         'unsaved_pill' => 'Cambios sin guardar',
@@ -159,7 +159,7 @@ return [
 
         'contact' => [
             'title' => 'Contacto',
-            'sub' => 'Otras vías además del WhatsApp, para tu perfil público.',
+            'sub' => 'Con tu WhatsApp, el número donde te avisamos y el correo del negocio completas este paso de tu perfil. Puedes guardar sin ellos.',
             'email' => 'Correo del negocio',
             'web' => 'Sitio web',
             'web_placeholder' => 'https://tunegocio.com',
@@ -186,6 +186,8 @@ return [
             'tax_condition_placeholder' => 'Elegir…',
             'tax_id' => 'Número fiscal',
             'tax_id_placeholder' => 'RIF / CUIT',
+            'billing_email' => 'Correo de facturación',
+            'billing_email_hint' => 'A este correo llegan los avisos de cobro y los de tus pagos.',
             'natural_hint' => '¿No tienes datos fiscales? Sin problema: tu factura sale a tu nombre, como persona natural.',
         ],
 

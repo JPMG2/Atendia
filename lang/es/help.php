@@ -18,6 +18,9 @@ return [
         'equipo' => 'Tu equipo',
         'plan' => 'Plan y pagos',
         'asistente' => 'Tu asistente',
+        'negocio' => 'Tu negocio y tus turnos',
+        'cuenta' => 'Tu cuenta',
+        'soporte' => 'Soporte',
     ],
 
     'useful' => '¿Te sirvió?',

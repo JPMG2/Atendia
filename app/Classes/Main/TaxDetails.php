@@ -16,7 +16,7 @@ class TaxDetails
     public function __construct(private Business $business) {}
 
     /**
-     * @var array{currency_id: ?int, reference_currency_id: ?int, tax_condition_id: ?int, tax_id: ?string}
+     * @var array{currency_id: ?int, reference_currency_id: ?int, tax_condition_id: ?int, tax_id: ?string, billing_email: string}
      */
     public array $data {
         get => [
@@ -24,6 +24,7 @@ class TaxDetails
             'reference_currency_id' => $this->business->reference_currency_id,
             'tax_condition_id' => $this->business->tax_condition_id,
             'tax_id' => $this->business->tax_id,
+            'billing_email' => (string) $this->business->billing_email,
         ];
     }
 

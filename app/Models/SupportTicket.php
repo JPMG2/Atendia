@@ -29,7 +29,7 @@ use Illuminate\Support\Str;
  * the person is told to quote back, so it is short, unambiguous out loud and
  * free of the letters that look like digits.
  */
-#[Fillable(['business_id', 'user_id', 'code', 'kind', 'status', 'priority', 'assigned_to', 'blocked_tried', 'blocked_missing', 'blocked_owner', 'blocked_due', 'blocked_at', 'screen', 'after_help', 'body', 'attachment_path', 'context', 'reply', 'answered_at', 'resolved_at'])]
+#[Fillable(['business_id', 'user_id', 'code', 'kind', 'status', 'priority', 'assigned_to', 'blocked_tried', 'blocked_missing', 'blocked_owner', 'blocked_due', 'blocked_at', 'screen', 'after_help', 'body', 'attachment_path', 'context', 'reply', 'answered_at', 'resolved_at', 'ai_suggestion', 'ai_suggested_at'])]
 class SupportTicket extends Model
 {
     use BelongsToBusiness;
@@ -51,6 +51,8 @@ class SupportTicket extends Model
             'status' => SupportTicketStatus::class,
             'priority' => SupportTicketPriority::class,
             'context' => 'array',
+            'ai_suggestion' => 'array',
+            'ai_suggested_at' => 'datetime',
             'after_help' => 'boolean',
             'answered_at' => 'datetime',
             'resolved_at' => 'datetime',

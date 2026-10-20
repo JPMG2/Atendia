@@ -15,9 +15,11 @@ use Illuminate\Support\Collection;
  */
 class LogReader
 {
-    private const int TAIL_BYTES = 524_288;
+    /** How far back from the end of a file the detail looks for the newest example of a problem. */
+    private const int SAMPLE_BYTES = 2_097_152;
 
-    private const string ENTRY_HEADER = '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(\w+)\.(\w+):\s?(.*)$/';
+    /** The first line of an entry: timestamp, environment, level and the headline. */
+    public const string ENTRY_HEADER = '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(\w+)\.(\w+):\s?(.*)$/';
 
     /** The directory is injectable so tests never touch the real logs. */
     public function __construct(
@@ -45,47 +47,37 @@ class LogReader
     }
 
     /**
-     * The latest entries of ONE file, newest first.
+     * The full path of one of {@see files()}, or null for anything else.
      *
-     * The name must be one of {@see files()}: it travels from the browser, so
-     * anything else — a path, a dot-dot — reads nothing.
-     *
-     * @return Collection<int, LogEntryDto>
+     * The name can travel from the browser, so a path or a dot-dot reads nothing.
      */
-    public function entries(string $file, int $limit = 100): Collection
+    public function pathOf(string $file): ?string
     {
-        if (! in_array($file, $this->files(), true)) {
-            return collect();
-        }
-
-        return $this->group(
-            $this->parse($this->tail($this->directory().'/'.$file))->reverse()->values()
-        )->take($limit);
+        return in_array($file, $this->files(), true) ? $this->directory().'/'.$file : null;
     }
 
     /**
-     * The same error forty times is ONE line that says forty, not forty
-     * blocks burying everything else. The newest occurrence is the one kept:
-     * its trace is the one worth pasting.
-     *
-     * @param  Collection<int, LogEntryDto>  $entries
-     * @return Collection<int, LogEntryDto>
+     * The newest entry of a file that belongs to a problem, VERBATIM — headline
+     * plus trace — because that is what gets pasted into a help conversation.
+     * Null when the file no longer holds one: logs rotate, the summary stays.
      */
-    private function group(Collection $entries): Collection
+    public function latestRaw(string $file, string $fingerprint): ?string
     {
-        return $entries
-            ->groupBy(fn (LogEntryDto $entry): string => $entry->level.'|'.$entry->message)
-            ->map(function (Collection $same): LogEntryDto {
-                $newest = $same->first();
+        $path = $this->pathOf($file);
 
-                return $same->count() === 1
-                    ? $newest
-                    : $newest->repeated($same->count(), (string) $same->last()->timestamp);
-            })
-            // NOT re-sorted: grouping already keeps the order they appeared
-            // in, and sorting by timestamp shuffles everything written inside
-            // the same second — which is most of a busy log.
-            ->values();
+        if ($path === null) {
+            return null;
+        }
+
+        $entries = $this->parse($this->tail($path, self::SAMPLE_BYTES))->reverse();
+
+        foreach ($entries as $entry) {
+            if (LogFingerprint::of($entry->level, $entry->message)?->hash === $fingerprint) {
+                return $entry->raw;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -95,17 +87,17 @@ class LogReader
      * environment, which install. This is the answer to all of them, and it
      * never guesses: only what this process really knows.
      */
-    public function context(string $file): string
+    public function context(string $file = ''): string
     {
-        return implode("\n", [
+        return implode("\n", array_filter([
             '--- '.__('logs.context.title').' ---',
             __('logs.context.app').': '.config('app.name').' · '.config('app.url'),
             __('logs.context.environment').': '.app()->environment(),
             __('logs.context.versions').': PHP '.PHP_VERSION.' · Laravel '.app()->version(),
-            __('logs.context.file').': '.$file,
+            $file === '' ? null : __('logs.context.file').': '.$file,
             __('logs.context.copied_at').': '.now()->format('d/m/Y H:i:s T'),
             '---',
-        ]);
+        ]));
     }
 
     private function directory(): string
@@ -113,7 +105,7 @@ class LogReader
         return $this->directory ?? storage_path('logs');
     }
 
-    private function tail(string $path): string
+    private function tail(string $path, int $bytes): string
     {
         $size = (int) filesize($path);
         $handle = fopen($path, 'rb');
@@ -123,8 +115,8 @@ class LogReader
         }
 
         try {
-            if ($size > self::TAIL_BYTES) {
-                fseek($handle, -self::TAIL_BYTES, SEEK_END);
+            if ($size > $bytes) {
+                fseek($handle, -$bytes, SEEK_END);
             }
 
             return (string) stream_get_contents($handle);

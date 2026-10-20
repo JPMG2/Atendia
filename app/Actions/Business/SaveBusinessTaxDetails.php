@@ -8,13 +8,14 @@ use App\Models\Business;
 use Illuminate\Support\Arr;
 
 /**
- * The fiscal slice: currencies, tax condition and tax id. Everything
- * nullable on purpose — clearing a field invoices a natural person.
+ * The billing slice: currencies, tax condition, tax id and where the charge
+ * notices go. The fiscal fields are nullable on purpose — clearing one invoices
+ * a natural person — but the notices need an address, so that one never empties.
  */
 class SaveBusinessTaxDetails
 {
     /** @var list<string> */
-    private const array COLUMNS = ['currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id'];
+    private const array COLUMNS = ['currency_id', 'reference_currency_id', 'tax_condition_id', 'tax_id', 'billing_email'];
 
     /**
      * @param  array<string, mixed>  $data  Already validated by the calling form.

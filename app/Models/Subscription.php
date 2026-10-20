@@ -267,6 +267,17 @@ class Subscription extends Model
             && $this->trial_ends_at->isFuture();
     }
 
+    /**
+     * The trial ran out and nothing was ever paid: the business sits on the
+     * floor plan. A first approved payment sets the period, which ends this.
+     */
+    public function trialEnded(): bool
+    {
+        return $this->trial_ends_at !== null
+            && $this->trial_ends_at->isPast()
+            && $this->current_period_ends_at === null;
+    }
+
     /** Whole days left of the trial, never zero while it runs; null when off trial. */
     public function trialDaysLeft(): ?int
     {

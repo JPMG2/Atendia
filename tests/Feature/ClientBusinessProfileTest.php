@@ -212,6 +212,45 @@ test('the billing card rejects a tax condition from another country', function (
     expect($business->fresh()->tax_condition_id)->toBeNull();
 });
 
+test('the billing email shows what the business has and can be changed', function (): void {
+    $business = Business::factory()->create(['billing_email' => 'old@example.com']);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    Livewire::test('client.section-billing')
+        ->assertSet('form.billing_email', 'old@example.com')
+        ->set('form.billing_email', '  Cobros@Example.com ')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    // Where the charge notices go: stored clean, so a typo in the case never splits an address.
+    expect($business->fresh()->billing_email)->toBe('cobros@example.com');
+});
+
+test('the billing email is never empty and must be an address', function (): void {
+    $business = Business::factory()->create(['billing_email' => 'keep@example.com']);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    Livewire::test('client.section-billing')
+        ->set('form.billing_email', '')
+        ->call('save')
+        ->assertHasErrors(['billing_email'])
+        ->set('form.billing_email', 'not-an-address')
+        ->call('save')
+        ->assertHasErrors(['billing_email']);
+
+    expect($business->fresh()->billing_email)->toBe('keep@example.com');
+});
+
+test('the contact card no longer calls optional the three data the profile meter counts', function (): void {
+    $business = Business::factory()->create();
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+
+    $html = Livewire::test('client.section-contact')->html();
+
+    expect($html)->toContain(e(__('client.business.contact.sub')))
+        ->and($html)->not->toContain(__('wizard.fields.fallback_whatsapp_number').' · '.__('client.business.optional'));
+});
+
 test('the social card hydrates from the business and saves through the client class', function (): void {
     $kept = SocialNetwork::factory()->create();
     $added = SocialNetwork::factory()->create();

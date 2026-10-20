@@ -103,6 +103,17 @@ new class extends Component
                 class="font-mono"
             />
         </x-catalog.form-row>
+        <x-catalog.form-row>
+            <x-inputsform.input
+                span="long"
+                type="email"
+                :label="__('client.business.billing.billing_email')"
+                name="billing_email"
+                alpine-error="billing_email"
+                wire:model="form.billing_email"
+                :hint="__('client.business.billing.billing_email_hint')"
+            />
+        </x-catalog.form-row>
     </div>
     <p class="bp-hint">{{ __('client.business.billing.natural_hint') }}</p>
 
@@ -133,6 +144,7 @@ new class extends Component
 
             rules: {
                 tax_id: [['maxLength', 20], 'noMarkup'],
+                billing_email: ['required', 'email', ['maxLength', 255]],
             },
 
             async submit() {

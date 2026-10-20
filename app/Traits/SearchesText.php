@@ -54,11 +54,7 @@ trait SearchesText
      */
     public function scopeWhereAnyWordMatches(Builder $query, array $columns, string $term, int $minWord = 4): Builder
     {
-        $words = array_values(array_filter(
-            preg_split('/\s+/', trim($term)) ?: [],
-            fn (string $word): bool => mb_strlen($word) >= $minWord
-                && ! in_array(Accents::fold(mb_strtolower($word)), self::STOP_WORDS, true),
-        ));
+        $words = self::searchWords($term, $minWord);
 
         if ($words === []) {
             return $query->whereTextMatches($columns, $term);
@@ -69,6 +65,48 @@ trait SearchesText
                 $query->orWhere(fn (Builder $inner) => $inner->whereTextMatches($columns, $word));
             }
         });
+    }
+
+    /**
+     * The words of a sentence that can mean something. Split on anything that
+     * is not a letter or digit, so "verificar," still matches "verificar".
+     *
+     * @return list<string>
+     */
+    private static function searchWords(string $term, int $minWord): array
+    {
+        return array_values(array_filter(
+            preg_split('/[^\p{L}\p{N}]+/u', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            fn (string $word): bool => mb_strlen($word) >= $minWord
+                && ! in_array(Accents::fold(mb_strtolower($word)), self::STOP_WORDS, true),
+        ));
+    }
+
+    /**
+     * Most distinct words of the sentence first. With a generic word like
+     * "asistente" in half the titles, the article that matches two words of
+     * the sentence has to beat the ones that match only the generic one.
+     *
+     * @param  list<string>  $columns
+     */
+    public function scopeOrderByWordHits(Builder $query, array $columns, string $term, int $minWord = 4): Builder
+    {
+        $words = self::searchWords($term, $minWord);
+        $score = [];
+        $bindings = [];
+
+        foreach ($words as $word) {
+            $hit = [];
+
+            foreach ($columns as $column) {
+                $hit[] = "translate(lower({$column}), ?, ?) like ?";
+                array_push($bindings, Accents::ACCENTED, Accents::PLAIN, Accents::needle($word));
+            }
+
+            $score[] = 'case when '.implode(' or ', $hit).' then 1 else 0 end';
+        }
+
+        return $score === [] ? $query : $query->orderByRaw('('.implode(' + ', $score).') desc', $bindings);
     }
 
     /**

@@ -95,7 +95,7 @@ test('the inbox names the screens that hurt most and opens a reply box', functio
     $this->seed(HelpArticleSeeder::class);
     HelpArticle::query()->where('slug', 'conectar-whatsapp')->sole()
         ->forceFill(['unhelpful_count' => 5, 'helpful_count' => 1, 'opened_count' => 24])->saveQuietly();
-    HelpArticle::query()->where('slug', 'cambiar-plan')->sole()
+    HelpArticle::query()->where('slug', 'ver-mi-plan')->sole()
         ->forceFill(['updated_at' => now()->subMonths(9)])->saveQuietly();
     SupportTicket::factory()->for($this->business)->create(['after_help' => true]);
 

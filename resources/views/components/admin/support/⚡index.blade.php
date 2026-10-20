@@ -256,6 +256,48 @@ new class extends Component
         $this->saved = '';
     }
 
+    /** Pastes the AI's draft into the answer: a start she reads and edits, never something sent on its own. */
+    public function useDraft(): void
+    {
+        $draft = (string) ($this->ticket?->ai_suggestion['draft'] ?? '');
+
+        if ($draft !== '') {
+            $this->reply->body = trim($this->reply->body."\n".$draft);
+        }
+    }
+
+    /**
+     * What the AI prepared for the open report, ready to paint: names instead of
+     * codes, and the kind and priority only when they differ from what it has now.
+     *
+     * @return array{summary: string, confidence: string, suggests: ?string, looks_like: ?string, draft: string, sources: array<string, string>, reason: string}|null
+     */
+    #[Computed]
+    public function aiReading(): ?array
+    {
+        $ticket = $this->ticket;
+        $ai = $ticket?->ai_suggestion;
+
+        if ($ticket === null || ! is_array($ai) || in_array($ticket->status, [SupportTicketStatus::Resolved, SupportTicketStatus::Closed], true)) {
+            return null;
+        }
+
+        $kind = SupportTicketKind::byCode($ai['kind'] ?? null);
+        $differs = ($ai['kind'] ?? null) !== $ticket->getRawOriginal('kind') || ($ai['priority'] ?? null) !== $ticket->priority->value;
+
+        return [
+            'summary' => (string) ($ai['summary'] ?? ''),
+            'confidence' => (string) ($ai['confidence'] ?? 'low'),
+            'suggests' => $differs && $kind !== null
+                ? __('support.admin.ai.suggests', ['kind' => $kind->name, 'priority' => SupportTicketPriority::tryFrom((string) ($ai['priority'] ?? ''))?->label() ?? '—'])
+                : null,
+            'looks_like' => $ai['looks_like'] ?? null,
+            'draft' => (string) ($ai['draft'] ?? ''),
+            'sources' => HelpArticle::titlesFor((array) ($ai['used'] ?? [])),
+            'reason' => (string) ($ai['reason'] ?? ''),
+        ];
+    }
+
     public function sendReply(): void
     {
         $ticket = SupportTicket::locate((int) $this->open);
@@ -799,6 +841,52 @@ new class extends Component
                             @endif
                         </span>
                     </div>
+
+                    @if ($this->aiReading !== null)
+                        @php($ai = $this->aiReading)
+                        {{-- Prepared for the team only: it sits between the report and the
+                        answer box, and nothing in it leaves until a person sends. --}}
+                        <div class="sup-ai" data-testid="ai-suggestion">
+                            <div class="sup-ai-head">
+                                <x-icon name="sparkles" :size="16" />
+                                <strong>{{ __('support.admin.ai.title') }}</strong>
+                                <span @class(['status-tag', 'is-success' => $ai['confidence'] === 'high', 'is-warning' => $ai['confidence'] === 'medium', 'is-neutral' => $ai['confidence'] === 'low'])>{{ __('support.admin.ai.confidence.'.$ai['confidence']) }}</span>
+                            </div>
+
+                            @if ($ai['summary'] !== '')
+                                <p class="sup-body">{{ $ai['summary'] }}</p>
+                            @endif
+
+                            @if ($ai['suggests'] !== null || $ai['looks_like'] !== null)
+                                <div class="sup-ai-chips">
+                                    @if ($ai['suggests'] !== null)
+                                        <span class="status-tag is-info">{{ $ai['suggests'] }}</span>
+                                    @endif
+                                    @if ($ai['looks_like'] !== null)
+                                        <span class="status-tag is-warning">{{ __('support.admin.ai.looks_like', ['code' => $ai['looks_like']]) }}</span>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if ($ai['draft'] !== '')
+                                <p class="sup-meta">{{ __('support.admin.ai.draft') }}</p>
+                                <p class="sup-bubble sup-ai-draft">{{ $ai['draft'] }}</p>
+                                @if ($ai['sources'] !== [])
+                                    <p class="sup-meta">{{ __('support.admin.ai.sources') }}: {{ implode(' · ', $ai['sources']) }}</p>
+                                @endif
+                                <span class="support-actions">
+                                    <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="useDraft" data-testid="ai-use-draft">{{ __('support.admin.ai.use') }}</x-ui.button>
+                                </span>
+                            @else
+                                <p class="sup-meta">{{ __('support.admin.ai.no_draft') }}</p>
+                            @endif
+
+                            @if ($ai['reason'] !== '')
+                                <p class="sup-meta">{{ $ai['reason'] }}</p>
+                            @endif
+                            <p class="sup-meta">{{ __('support.admin.ai.only_team') }}</p>
+                        </div>
+                    @endif
 
                     @foreach ($ticket->messages->where('is_internal', false) as $message)
                         <div class="sup-msg is-ours" wire:key="message-{{ $message->id }}">

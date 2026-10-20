@@ -118,6 +118,7 @@ class HelpArticle extends Model
                 // mentions "panel" or "pantalla" everywhere, so matching it
                 // turns any sentence into a hit and the meaning lane dead.
                 ->whereAnyWordMatches(['title', 'keywords'], $term)
+                ->orderByWordHits(['title', 'keywords'], $term)
                 ->orderByLeadingMatch('title', $term)
                 // Its own screen breaks the tie: same words, closer problem.
                 ->orderByRaw('case when screen = ? then 0 else 1 end', [$screen])
@@ -214,6 +215,17 @@ class HelpArticle extends Model
             ->orderBy('sort_order')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * The titles behind a list of slugs, for naming what an answer leans on.
+     *
+     * @param  list<string>  $slugs
+     * @return array<string, string>
+     */
+    public static function titlesFor(array $slugs): array
+    {
+        return $slugs === [] ? [] : static::query()->whereIn('slug', $slugs)->pluck('title', 'slug')->all();
     }
 
     /** One article by id, for the screen acting on a row it just listed. */

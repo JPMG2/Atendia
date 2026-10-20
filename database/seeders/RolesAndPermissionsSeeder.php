@@ -45,7 +45,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'ai.view', 'ai.manage',
             'adoption.view', 'incidents.view', 'contacts.view', 'compliance.view', 'alerts.view', 'alerts.acknowledge',
             'catalogs.manage', 'company.manage', 'integrations.view',
-            'settings.manage', 'users.view', 'logs.view', 'roles.manage', 'audit.view',
+            'settings.manage', 'users.view', 'logs.view', 'logs.manage', 'roles.manage', 'audit.view',
         ];
 
         foreach ([...$areaPermissions, ...$catalogPermissions, ...$adminPermissions] as $permission) {

@@ -80,6 +80,12 @@ new class extends Component
         return $this->business?->subscription?->trialDaysLeft();
     }
 
+    #[Computed]
+    public function trialEnded(): bool
+    {
+        return $this->business?->subscription?->trialEnded() ?? false;
+    }
+
     /** Meter color, shared with the home strip via the Plan class. */
     public function meterState(int $used, int $cap): string
     {
@@ -204,6 +210,10 @@ new class extends Component
         @if ($this->trialDaysLeft !== null)
             <x-ui.badge variant="brand" :dot="true">
                 {{ __('plan.trial_badge', ['days' => $this->trialDaysLeft]) }}
+            </x-ui.badge>
+        @elseif ($this->trialEnded)
+            <x-ui.badge variant="accent" :dot="true" data-testid="trial-over">
+                {{ __('plan.trial_over', ['plan' => __('plan.names.'.$this->plan->code)]) }}
             </x-ui.badge>
         @endif
     </x-ui.page-head>

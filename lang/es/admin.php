@@ -453,7 +453,7 @@ return [
             'manage-admin-users' => 'Crear usuarios y darles acceso',
             'reset-two-factor' => 'Restablecer el doble factor de otra persona',
             'roles' => ['manage' => 'Crear y editar roles'],
-            'logs' => ['view' => 'Leer los logs del sistema'],
+            'logs' => ['view' => 'Leer los logs del sistema', 'manage' => 'Resolver o silenciar los problemas de los logs'],
         ],
     ],
 
@@ -667,6 +667,10 @@ return [
                 'overdue_hours' => [
                     'label' => 'Atraso de una pregunta',
                     'hint' => 'Horas que puede esperar un reporte de prioridad normal (por defecto, una pregunta). Una idea no corre reloj.',
+                ],
+                'ai_suggestions' => [
+                    'label' => 'Sugerencias de la IA en Soporte',
+                    'hint' => '1 = la IA prepara un borrador y una lectura de cada reporte nuevo, solo para tu equipo: nunca le llega al negocio. 0 = apagado.',
                 ],
             ],
             'security' => [

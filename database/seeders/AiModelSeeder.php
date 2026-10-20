@@ -110,6 +110,7 @@ class AiModelSeeder extends Seeder
             ['BusinessBioWriter', 'Escribe la presentación de un negocio', true, AiCapability::Text],
             ['FaqDrafter', 'Redacta preguntas frecuentes', true, AiCapability::Text],
             ['DigestWriter', 'Arma el resumen del día', true, AiCapability::Text],
+            ['SupportTicketReviewer', 'Prepara la lectura y el borrador de un reporte de soporte', false, AiCapability::Text],
             ['ActivityIntentDesigner', 'Diseña las intenciones de un rubro', true, AiCapability::Text],
             [AiTask::TRANSCRIPTION, 'Transcribe el audio que manda el cliente', true, AiCapability::Transcription],
         ];

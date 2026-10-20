@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Support;
 
 use App\Enums\SupportTicketStatus;
+use App\Jobs\PrepareSupportSuggestion;
 use App\Mail\SupportTicketOpened as SupportTicketOpenedMail;
 use App\Messaging\Channels\Email;
 use App\Messaging\Channels\WhatsApp;
@@ -56,6 +57,13 @@ class CreateSupportTicket
         }
 
         $this->tellTheTeam($ticket);
+
+        // Off the request, and never able to fail it: the draft is a help, the ticket is the point.
+        try {
+            PrepareSupportSuggestion::dispatch((int) $ticket->business_id, $ticket->id);
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return $ticket;
     }

@@ -15,6 +15,8 @@ use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SupportTicketKindSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -72,6 +74,18 @@ test('it is searched by what happens to her, not by what we call it', function (
 
     // And the accents are not hers to remember.
     expect(HelpArticle::suggest(null, 'telefono')->pluck('slug'))->toContain('conectar-whatsapp');
+});
+
+test('punctuation glued to a word does not hide the article', function (): void {
+    $hits = HelpArticle::suggest('whatsapp', 'en vez de conectado me sale sin verificar, que significa eso?');
+
+    expect($hits->pluck('slug'))->toContain('whatsapp-sin-verificar');
+});
+
+test('the article matching more words of the sentence beats the ones matching a generic word', function (): void {
+    $hits = HelpArticle::suggest(null, 'me voy de vacaciones, como apago el asistente?', 3);
+
+    expect($hits->first()->slug)->toBe('apagar-asistente');
 });
 
 test('a thumb down counts and hands her over with the article named', function (): void {
@@ -160,7 +174,7 @@ test('when her words are not ours, meaning answers', function (): void {
     expect(HelpArticle::closestInMeaning($vector)->pluck('slug'))->toContain('conectar-whatsapp');
 
     // No word of this is in any title or keyword: only meaning can find it.
-    $hits = app(HelpFinder::class)->find(null, 'escanear el cuadrito desde el celular');
+    $hits = app(HelpFinder::class)->find(null, 'apuntar la camara al cuadrito con el celular');
 
     expect($hits->pluck('slug'))->toContain('conectar-whatsapp');
 });
@@ -222,10 +236,10 @@ test('a report handed over by an article is marked as a deflection that failed',
 });
 
 test('an article nobody touched in months asks to be reviewed', function (): void {
-    $article = HelpArticle::query()->where('slug', 'cambiar-plan')->sole();
+    $article = HelpArticle::query()->where('slug', 'ver-mi-plan')->sole();
     $article->forceFill(['updated_at' => now()->subMonths(8)])->saveQuietly();
 
-    expect(HelpArticle::stale()->pluck('slug')->all())->toBe(['cambiar-plan']);
+    expect(HelpArticle::stale()->pluck('slug')->all())->toBe(['ver-mi-plan']);
 });
 
 test('the palette reaches the help from any screen', function (): void {
@@ -247,4 +261,34 @@ test('an invited agent reads the help too: it holds no business data', function 
     $agent->business()->associate($this->business)->save();
 
     $this->actingAs($agent->refresh())->get('/ayuda')->assertOk();
+});
+
+/*
+| An article that points at a screen which does not exist is never offered on
+| the screen it is about, and nothing fails: it just stops helping. The base
+| holds our documentation, so the seeded set is what gets checked.
+*/
+test('every article points at a screen that exists and a category that has a name', function (): void {
+    $articles = HelpArticle::query()->get(['slug', 'screen', 'category']);
+
+    expect($articles)->not->toBeEmpty();
+
+    foreach ($articles as $article) {
+        if ($article->screen !== null) {
+            expect(Route::has($article->screen))->toBeTrue("{$article->slug} points at the unknown screen '{$article->screen}'");
+        }
+
+        expect(Lang::has('help.categories.'.$article->category))->toBeTrue("{$article->slug} sits in the unnamed category '{$article->category}'");
+    }
+});
+
+test('an article is written the way that deflects a ticket: the answer first, then one step per line', function (): void {
+    foreach (HelpArticle::query()->get() as $article) {
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $article->body))));
+
+        expect($lines[0])->not->toMatch('/^\d+\./', "{$article->slug} opens with a step and not with the answer")
+            ->and(collect($lines)->filter(fn (string $line): bool => (bool) preg_match('/^\d+\. /', $line))->count())
+            ->toBeGreaterThanOrEqual(2, "{$article->slug} has no steps to follow")
+            ->and($article->title)->not->toEndWith('?', "{$article->slug}: the title is the task as she would type it, not a question mark");
+    }
 });

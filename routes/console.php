@@ -76,6 +76,10 @@ Schedule::command('atendia:business-activity')->hourly()->withoutOverlapping(30)
 // Its watcher is a different command: a job cannot report its own death.
 Schedule::command('atendia:business-activity-watch')->everyThirtyMinutes()->withoutOverlapping(30);
 
+// The logs screen's problems: only the bytes written since the last run, so two
+// minutes keeps it current and costs next to nothing. The screen shows its age.
+Schedule::command('atendia:ingest-logs')->everyTwoMinutes()->withoutOverlapping(5);
+
 // What went wrong today, brought to her. Daily and in the evening, and quiet
 // on a clean day: a nightly "nothing happened" teaches her to archive unread.
 Schedule::command('atendia:incidents-digest')

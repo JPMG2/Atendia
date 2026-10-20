@@ -310,6 +310,8 @@ return [
     'support' => [
         'overdue_hours' => 24,
         'overdue_hours_high' => 8,
+        // 1 = the AI prepares a draft and a reading of each new report for the team; 0 = off.
+        'ai_suggestions' => 1,
     ],
 
     // Second step for the platform's own staff (admin and support). The grace

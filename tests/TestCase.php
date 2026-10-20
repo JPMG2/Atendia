@@ -63,6 +63,10 @@ abstract class TestCase extends BaseTestCase
         $this->fakeContentModeration();
         $this->fakeCertificateReader();
 
+        // A new report asks the AI for a draft over the network, and the .env key
+        // reaches the suite: off here, and the tests that prove it turn it on against a faked agent.
+        config()->set('atendia.support.ai_suggestions', 0);
+
         // Enforced here, report-only in production: a browser test that needs an
         // origin the policy forgot fails now, and not for a visitor later.
         config()->set('atendia.csp.mode', 'enforce');

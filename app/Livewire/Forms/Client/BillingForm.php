@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 /**
- * Currency and billing card of "Mi negocio". Everything optional: no tax
- * data means the invoice goes out to a natural person, and the reference
- * currency mirrors the Venezuelan "Ref" habit. Reads and saves through the
- * client's main class — the same door the wizard uses.
+ * Currency and billing card of "Mi negocio". The fiscal data is optional: none
+ * means the invoice goes out to a natural person, and the reference currency
+ * mirrors the Venezuelan "Ref" habit. Only the billing email is required.
+ * Reads and saves through the client's main class — the wizard's door.
  */
 class BillingForm extends BaseForm
 {
@@ -28,6 +28,9 @@ class BillingForm extends BaseForm
     public ?int $tax_condition_id = null;
 
     public ?string $tax_id = null;
+
+    /** Where the charge notices go: the column is never empty, so neither is the field. */
+    public string $billing_email = '';
 
     /** Called from the component's `mount()`, not a Form hook. */
     public function setup(): void
@@ -79,6 +82,7 @@ class BillingForm extends BaseForm
             'reference_currency_id' => $this->reference_currency_id,
             'tax_condition_id' => $this->tax_condition_id,
             'tax_id' => DtoCast::squish($this->tax_id),
+            'billing_email' => mb_strtolower(trim($this->billing_email)),
         ];
     }
 
@@ -89,6 +93,7 @@ class BillingForm extends BaseForm
             'reference_currency_id' => ['nullable', 'integer', 'different:currency_id', Rule::exists('currencies', 'id')->where('is_active', true)],
             'tax_condition_id' => ['nullable', 'integer', Rule::exists('tax_conditions', 'id')->where('country_id', Auth::user()?->business?->country_id)],
             'tax_id' => ['nullable', ...AttributeValidator::stringValid(false, '1'), 'max:20'],
+            'billing_email' => ['required', 'string', 'email:rfc', 'max:255'],
         ];
     }
 
@@ -102,6 +107,7 @@ class BillingForm extends BaseForm
             'reference_currency_id' => __('client.business.billing.reference'),
             'tax_condition_id' => __('client.business.billing.tax_condition'),
             'tax_id' => __('client.business.billing.tax_id'),
+            'billing_email' => __('client.business.billing.billing_email'),
         ];
     }
 }
