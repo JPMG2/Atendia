@@ -11,8 +11,6 @@ use App\Services\SignedLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
-use Stevebauman\Location\Facades\Location;
-use Stevebauman\Location\Position;
 
 uses(RefreshDatabase::class);
 
@@ -66,21 +64,25 @@ test('a known device never alerts again', function (): void {
     Mail::assertNothingOutgoing();
 });
 
-test('the device records the approximate location of a public ip', function (): void {
-    // Private IPs never geolocate (the guard shared with SetLocale), so the
-    // test must arrive from a public address with the lookup faked.
+test('the device records the place Cloudflare reports for the visitor', function (): void {
     Mail::fake();
-    Location::shouldReceive('get')->andReturn(tap(new Position, function (Position $position): void {
-        $position->cityName = 'Buenos Aires';
-        $position->countryName = 'Argentina';
-    }));
-
     $user = User::factory()->create();
 
-    $this->withServerVariables(['REMOTE_ADDR' => '181.44.10.10'])
+    $this->withHeaders(['CF-IPCity' => 'M%C3%A9rida', 'CF-IPCountry' => 'VE'])
         ->post('/login', ['email' => $user->email, 'password' => 'password']);
 
-    expect($user->loginDevices()->sole()->location)->toBe('Buenos Aires, Argentina');
+    expect($user->loginDevices()->sole()->location)->toBe('Mérida, Venezuela');
+});
+
+test('a login without a known place records none and still works', function (): void {
+    Mail::fake();
+    $user = User::factory()->create();
+
+    $this->withHeaders(['CF-IPCountry' => 'XX'])
+        ->post('/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertRedirect();
+
+    expect($user->loginDevices()->sole()->location)->toBeNull();
 });
 
 test('the alert mail shows the location when it is known', function (): void {

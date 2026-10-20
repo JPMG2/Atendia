@@ -10,9 +10,7 @@ use App\Messaging\Channels\Email;
 use App\Models\LoginDevice;
 use App\Models\User;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Cache;
-use Stevebauman\Location\Facades\Location;
-use Throwable;
+use Locale;
 
 /**
  * Watches every login: leaves an activity row (the account's own trail) and
@@ -29,7 +27,7 @@ class SendNewDeviceLoginAlert
         $user = $event->user;
         $ip = (string) request()->ip();
         $agent = (string) request()->userAgent();
-        $location = $this->approximateLocation(request()->ip());
+        $location = $this->approximateLocation();
 
         $user->loginActivities()->create([
             'ip' => $ip,
@@ -67,27 +65,20 @@ class SendNewDeviceLoginAlert
     }
 
     /**
-     * "City, Country" cached a day per IP, same guards as SetLocale: private
-     * IPs never geolocate and a failing lookup must never block a login.
+     * "City, Country" from the headers Cloudflare adds at the edge, free and with no
+     * quota. Forging them only changes the place shown for the forger's own login, and
+     * the origin accepts traffic from Cloudflare alone. Missing headers mean no place:
+     * a login must never fail over a label.
      */
-    private function approximateLocation(?string $ip): ?string
+    private function approximateLocation(): ?string
     {
-        if ($ip === null || $ip === '' || in_array($ip, ['127.0.0.1', '::1'], true)) {
-            return null;
-        }
+        $city = trim(strip_tags(rawurldecode((string) request()->header('CF-IPCity'))));
+        $code = strtoupper(trim((string) request()->header('CF-IPCountry')));
 
-        return Cache::remember("geo:place:{$ip}", now()->addHours(24), function () use ($ip): ?string {
-            try {
-                $position = Location::get($ip);
+        $country = preg_match('/^[A-Z]{2}$/', $code) === 1 && ! in_array($code, ['XX', 'T1'], true)
+            ? Locale::getDisplayRegion("-{$code}", app()->getLocale())
+            : null;
 
-                if ($position === false) {
-                    return null;
-                }
-
-                return implode(', ', array_filter([$position->cityName, $position->countryName])) ?: null;
-            } catch (Throwable) {
-                return null;
-            }
-        });
+        return implode(', ', array_filter([mb_substr($city, 0, 80), $country])) ?: null;
     }
 }
