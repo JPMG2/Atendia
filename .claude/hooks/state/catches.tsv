@@ -106,3 +106,13 @@
 2026-10-19	guardian:GoldenRulesFreshScreensTest	resources/views/components/ui/export-menu.blade.php
 2026-10-20	check-comment-golden-rules	app/Classes/Main/Access.php
 2026-10-20	check-comment-golden-rules	app/Classes/Main/Access.php
+2026-10-20	check-blade-query-golden-rules	resources/views/components/admin/logs/⚡index.blade.php
+2026-10-20	check-blade-query-golden-rules	resources/views/components/admin/logs/⚡index.blade.php
+2026-10-20	check-blade-query-golden-rules	resources/views/components/admin/logs/⚡index.blade.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
+2026-10-20	check-comment-golden-rules	app/Actions/Support/SuggestForSupportTicket.php

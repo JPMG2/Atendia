@@ -53,6 +53,31 @@ is_full_browser_run() {
 }
 
 full_run=0
+# Cada archivo de browser que se corre ENTERO (sin --filter) queda anotado: es lo
+# que require-browser-suite-before-commit.sh compara contra lo que el commit toca.
+record_files() {
+    local segment="$1" file
+
+    case "$segment" in
+        *pest*tests/Browser/*.php*) ;;
+        *) return 0 ;;
+    esac
+
+    case "$segment" in
+        *--filter*) return 0 ;;
+    esac
+
+    mkdir -p "${TMPDIR:-/tmp}/atendia-browser-ran"
+
+    while IFS= read -r file; do
+        touch "${TMPDIR:-/tmp}/atendia-browser-ran/$(basename "$file")"
+    done < <(printf '%s\n' "$segment" | grep -oE 'tests/Browser/[A-Za-z0-9_]+\.php')
+}
+
+while IFS= read -r segment; do
+    record_files "$segment"
+done < <(printf '%s\n' "$command" | sed -E 's/(&&|\|\||;|\|)/\n/g')
+
 while IFS= read -r segment; do
     if is_full_browser_run "$segment"; then
         full_run=1
