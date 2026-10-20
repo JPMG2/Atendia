@@ -8,15 +8,19 @@ use App\Models\AssistantRating;
 use App\Models\Business;
 use App\Models\Company;
 use App\Models\ComplianceEvent;
+use App\Models\Country;
 use App\Models\ModerationFlag;
 use App\Models\Payment;
 use App\Models\PlatformContact;
+use App\Models\Province;
+use App\Models\Region;
 use App\Models\Subscription;
 use App\Models\Testimonial;
 use App\Models\User;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 uses(RefreshDatabase::class);
@@ -104,6 +108,23 @@ test('every master of the catalog hub exports with real headings and obeys its o
     $client = User::factory()->create();
     $client->syncRoles(['client']);
     $this->actingAs($client)->get(route('reports.show', ['report' => 'catalogo', 'format' => 'csv', 'maestro' => 'currency']))->assertForbidden();
+});
+
+test('a platform report is stamped on the platform clock, not on UTC', function (): void {
+    $region = Region::factory()->for(Province::factory()->for(Country::factory()->state(['iso2' => 'VE'])))->create();
+    Company::query()->update(['region_id' => $region->id]);
+    Once::flush();
+
+    $xlsx = (string) $this->actingAs(platformStaff())->get(route('reports.show', ['report' => 'negocios', 'format' => 'xlsx']))->getContent();
+    $path = tempnam(sys_get_temp_dir(), 'xlsx');
+    file_put_contents($path, $xlsx);
+    $sheet = IOFactory::load($path)->getActiveSheet();
+    unlink($path);
+
+    $stamp = collect(range(1, 9))->map(fn (int $row): string => (string) $sheet->getCell('A'.$row)->getValue())
+        ->first(fn (string $line): bool => str_contains($line, 'Generado'));
+
+    expect($stamp)->toContain('America/Caracas (UTC-04:00)')->not->toContain('UTC (UTC+00:00)');
 });
 
 test('the issuer block lists one datum per row and leaves the email out', function (): void {

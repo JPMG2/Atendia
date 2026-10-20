@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Business;
+use App\Models\Company;
 use Closure;
 use Illuminate\Support\Facades\DB;
 
@@ -35,8 +36,9 @@ class Tenant
     {
         $id = $this->id();
 
+        // No business means the admin side: it lives on the platform's own clock, not on UTC.
         if ($id === null) {
-            return (string) config('app.timezone');
+            return Company::localTimezone();
         }
 
         return $this->timezones[$id] ??= Business::query()->find($id)?->localTimezone() ?? (string) config('app.timezone');
