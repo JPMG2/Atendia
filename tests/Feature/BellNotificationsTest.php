@@ -276,3 +276,11 @@ test('a booking with no service reads without a dangling tail', function (): voi
     expect($rendered)->toContain('Turno nuevo de Ana: 06/10 09:00')
         ->and($rendered)->not->toContain('09:00, <');
 });
+
+test('every kind has its settings label, digest line and bundle text', function (PanelNotificationType $kind): void {
+    foreach (['settings.kinds', 'digest', 'bundles', 'lines'] as $group) {
+        $key = "bell.{$group}.{$kind->value}";
+
+        expect(trans($key))->not->toBe($key, "missing translation: {$key}");
+    }
+})->with(PanelNotificationType::cases());
