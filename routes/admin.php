@@ -69,6 +69,12 @@ Route::livewire('/usuarios', 'admin.users.index')->name('users')->middleware('pe
 // new role is born, so the panel grows without touching a seeder.
 Route::livewire('/roles', 'admin.roles.index')->name('roles')->middleware('permission:roles.manage');
 
+// The role editor: the admin menu painted with one switch per screen. It is
+// reached from the list, so it has no menu row of its own. `nuevo` goes first
+// or `{role}` would swallow it.
+Route::livewire('/roles/nuevo', 'admin.roles.edit')->name('roles.create')->middleware('permission:roles.manage');
+Route::livewire('/roles/{role}', 'admin.roles.edit')->name('roles.edit')->middleware('permission:roles.manage');
+
 // Audit: who did what. Opened on people, because most of the trail is the
 // assistant filing suggestions and that buries what somebody actually did.
 Route::livewire('/auditoria', 'admin.audit.index')->name('audit')->middleware('permission:audit.view');

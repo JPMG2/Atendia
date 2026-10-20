@@ -37,7 +37,8 @@ class RoleForm extends BaseForm
 
         $this->id = $role->id;
         $this->name = $role->name;
-        $this->permissions = $role->permissions->pluck('name')->all();
+        // The panel key is implicit and not on the matrix: sending it back would fail validation on save.
+        $this->permissions = $role->permissions->pluck('name')->reject(Access::PANEL)->values()->all();
     }
 
     public function save(): NotificationDto

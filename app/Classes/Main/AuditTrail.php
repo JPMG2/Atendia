@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Lang;
 use Spatie\Activitylog\Models\Activity;
+use Spatie\Permission\Models\Role;
 
 /**
  * Who did what, and what of it cannot be undone.
@@ -42,6 +43,29 @@ final class AuditTrail
             ->when($onlyStrong, fn (Builder $query) => $query->where(
                 fn (Builder $inner) => $inner->whereIn('description', self::STRONG)->orWhere('log_name', self::ACCESS),
             ))
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * What was granted or taken from one role, and who was given or lost it,
+     * newest first. The first lives on the role, the second on the person.
+     *
+     * @return Collection<int, Activity>
+     */
+    public static function forRole(Role $role, int $limit = 30): Collection
+    {
+        return Activity::query()
+            ->with(['causer:id,name', 'subject'])
+            ->where('log_name', self::ACCESS)
+            ->where(fn (Builder $query) => $query
+                ->where(fn (Builder $own) => $own
+                    ->where('subject_type', $role->getMorphClass())
+                    ->where('subject_id', $role->getKey()))
+                ->orWhere(fn (Builder $held) => $held
+                    ->where('properties->what', 'role')
+                    ->whereJsonContains('properties->names', $role->name)))
             ->latest('id')
             ->limit($limit)
             ->get();

@@ -163,6 +163,24 @@ class Menu extends Model
     }
 
     /**
+     * Every active root of a panel with its descendants, whoever is looking.
+     * For the screens that EDIT access: filtering by the viewer's permissions
+     * there would hide exactly the doors being handed out.
+     *
+     * @return Collection<int, Menu>
+     */
+    public static function unfilteredTree(string $panel): Collection
+    {
+        return self::query()
+            ->active()
+            ->roots()
+            ->where('panel', $panel)
+            ->with('childrenRecursive')
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    /**
      * The screen's own name, for a tab that has to say which screen it is.
      * The client panel's screens are nested components, so Livewire's
      * ->title() never reaches the head: the menu item names the tab, and a

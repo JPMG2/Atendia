@@ -68,6 +68,7 @@ class StaffReport extends ListReport
     {
         return collect([
             ['label' => __('reports/admin.search'), 'value' => $scope->value('buscar') === '' ? '' : '«'.$scope->value('buscar').'»'],
+            ['label' => __('reports/admin.staff.role'), 'value' => $scope->value('rol') === '' ? '' : User::roleLabel($scope->value('rol'))],
             ['label' => __('reports/admin.state'), 'value' => $scope->value('estado') === '' ? '' : __('admin.users.states.'.$scope->value('estado'))],
             ['label' => __('reports/admin.staff.two_factor'), 'value' => match ($scope->value('doble')) {
                 'on' => __('reports/admin.yes'),
@@ -80,6 +81,6 @@ class StaffReport extends ListReport
     /** @return Collection<int, User> */
     private function people(ReportScope $scope): Collection
     {
-        return User::directory($scope->value('buscar'), $scope->value('estado'), $scope->value('doble'));
+        return User::directory($scope->value('buscar'), $scope->value('estado'), $scope->value('doble'), $scope->value('rol'));
     }
 }

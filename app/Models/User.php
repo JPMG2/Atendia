@@ -201,13 +201,16 @@ class User extends Authenticatable
      *
      * @param  string  $state  '' | active | unverified | closed
      * @param  string  $factor  '' | on | off: whether the second step is turned on
+     * @param  string  $role  '' = any · otherwise the role's name
      * @return Collection<int, self>
      */
-    public static function directory(string $search = '', string $state = '', string $factor = ''): Collection
+    public static function directory(string $search = '', string $state = '', string $factor = '', string $role = ''): Collection
     {
         return self::withTrashed()
             ->permission('access-admin-panel')
             ->with(['roles:id,name', 'latestLogin'])
+            // Not the `role()` scope: it throws on a name that no longer exists, and a stale link must just be empty.
+            ->when($role !== '', fn (Builder $q) => $q->whereHas('roles', fn (Builder $roles) => $roles->where('name', $role)))
             ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name', 'email'], trim($search)))
             ->when($state === 'active', fn (Builder $q) => $q->whereNull('deleted_at')->whereNotNull('email_verified_at'))
             ->when($state === 'unverified', fn (Builder $q) => $q->whereNull('deleted_at')->whereNull('email_verified_at'))

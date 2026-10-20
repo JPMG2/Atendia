@@ -3,7 +3,6 @@
 use App\Classes\Main\Access;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Livewire\Forms\Admin\RoleForm;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -22,59 +21,11 @@ new class extends Component
 {
     use HasNotifications;
 
-    public RoleForm $form;
-
-    /** Which role is open on the matrix; null means nobody is being edited. */
-    public ?int $editing = null;
-
     /** @return Collection<int, Role> */
     #[Computed]
     public function roles(): Collection
     {
         return Access::staffRoles();
-    }
-
-    /** @return array<string, list<string>> */
-    #[Computed]
-    public function matrix(): array
-    {
-        return Access::matrix();
-    }
-
-    public function create(): void
-    {
-        $this->form->setup();
-        $this->editing = 0;
-    }
-
-    public function edit(int $id): void
-    {
-        // The owner's role never comes back from there: it passes every gate,
-        // so a screen that could load it would be the way to lose the platform.
-        $role = Access::staffRole($id);
-
-        if ($role === null) {
-            return;
-        }
-
-        $this->form->setup($role);
-        $this->editing = $id;
-    }
-
-    public function cancel(): void
-    {
-        $this->form->setup();
-        $this->editing = null;
-    }
-
-    public function save(): void
-    {
-        $this->authorize('roles.manage');
-
-        $this->dispatchNotification($this->form->save());
-
-        $this->editing = null;
-        unset($this->roles);
     }
 
     /** A role nobody holds can go; one in use would lock people out. */
@@ -116,54 +67,10 @@ new class extends Component
 
 <div>
     <x-ui.page-head :title="__('admin.roles.title')" :sub="__('admin.roles.sub')">
-        <x-ui.button variant="primary" icon="plus" wire:click="create">
+        <x-ui.button variant="primary" icon="plus" :href="route('admin.roles.create')" wire:navigate>
             {{ __('admin.roles.new') }}
         </x-ui.button>
     </x-ui.page-head>
-
-    @if ($editing !== null)
-        <x-ui.card class="mb-3 p-5">
-            <form wire:submit="save">
-                <x-catalog.form-row>
-                    <x-inputsform.input
-                        span="short"
-                        :label="__('admin.roles.fields.name')"
-                        required
-                        name="name"
-                        :hint="__('admin.roles.fields.name_hint')"
-                        maxlength="40"
-                        wire:model="form.name"
-                    />
-                </x-catalog.form-row>
-
-                {{-- Grouped by area because that is how a job is described:
-                "works the claims and looks up a business", never by key. --}}
-                @foreach ($this->matrix as $area => $permissions)
-                    <div class="role-area" wire:key="area-{{ $area }}">
-                        <h3 class="aiu-section">{{ __('admin.roles.areas.'.$area) }}</h3>
-
-                        <div class="role-grid">
-                            @foreach ($permissions as $permission)
-                                <x-ui.checkbox
-                                    :name="'permissions-'.$permission"
-                                    :label="__('admin.roles.permissions.'.$permission)"
-                                    :value="$permission"
-                                    :checked="in_array($permission, $form->permissions, true)"
-                                    wire:model="form.permissions"
-                                />
-                            @endforeach
-                        </div>
-                    </div>
-                @endforeach
-
-                <div class="aim-actions">
-                    <x-ui.button type="submit" variant="primary" icon="check">{{ __('admin.roles.save') }}</x-ui.button>
-                    <x-ui.button variant="danger" wire:click="cancel">{{ __('admin.roles.cancel') }}</x-ui.button>
-                    <span class="sup-age">{{ __('admin.roles.panel_implicit') }}</span>
-                </div>
-            </form>
-        </x-ui.card>
-    @endif
 
     <x-ui.card class="p-5">
         <div class="pay-table-wrap">
@@ -190,7 +97,11 @@ new class extends Component
                             </td>
 
                             <td class="is-num font-mono" data-label="{{ __('admin.roles.columns.people') }}">
-                                {{ $role->users_count }}
+                                @if ($role->users_count > 0 && auth()->user()->can('users.view'))
+                                    <a class="row-link" href="{{ route('admin.users', ['rol' => $role->name]) }}" wire:navigate>{{ $role->users_count }}</a>
+                                @else
+                                    {{ $role->users_count }}
+                                @endif
                             </td>
 
                             <td data-label="{{ __('admin.roles.columns.opens') }}">
@@ -207,7 +118,7 @@ new class extends Component
                             <td data-label="">
                                 @unless (App\Classes\Main\Access::isProtected($role->name))
                                     <div class="flex flex-wrap gap-2">
-                                        <x-ui.button size="sm" variant="secondary" icon="pencil" wire:click="edit({{ $role->id }})" data-row-action>
+                                        <x-ui.button size="sm" variant="secondary" icon="pencil" :href="route('admin.roles.edit', $role->id)" wire:navigate data-row-action>
                                             {{ __('admin.roles.edit') }}
                                         </x-ui.button>
 

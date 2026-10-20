@@ -52,8 +52,11 @@ esac
 # Excepciones, cada una con su razón escrita (un allowlist que no crece sin
 # una razón que se pueda leer):
 #   ws-demo → prueba de vida del WebSocket, se va cuando exista el chat real.
+#   roles.edit → subpantalla de Roles y permisos: se llega desde su lista y el
+#   ítem de menú es el padre (`admin.roles`), que sí está exigido.
 case "$component" in
     admin.ws-demo) exit 0 ;;
+    admin.roles.edit) exit 0 ;;
 esac
 
 [ -f "$file" ] || exit 0

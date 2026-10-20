@@ -104,3 +104,5 @@
 2026-10-19	check-panel-screen	resources/views/components/admin/mentions/⚡index.blade.php
 2026-10-19	check-php-getter-golden-rules	app/Classes/Main/Agenda.php
 2026-10-19	guardian:GoldenRulesFreshScreensTest	resources/views/components/ui/export-menu.blade.php
+2026-10-20	check-comment-golden-rules	app/Classes/Main/Access.php
+2026-10-20	check-comment-golden-rules	app/Classes/Main/Access.php

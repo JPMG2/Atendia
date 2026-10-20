@@ -52,8 +52,7 @@ function accessTrail(): Collection
 test('granting a permission to a role is written down, with who did it', function (): void {
     $admin = auditAdmin();
 
-    Livewire::test('admin.roles.index')
-        ->call('create')
+    Livewire::test('admin.roles.edit')
         ->set('form.name', 'call-center')
         ->set('form.permissions', ['support.view'])
         ->call('save')
@@ -71,8 +70,7 @@ test('taking a permission away is written down too', function (): void {
     auditAdmin();
     $support = Role::findByName('support');
 
-    Livewire::test('admin.roles.index')
-        ->call('edit', $support->id)
+    Livewire::test('admin.roles.edit', ['role' => $support->id])
         // Leaves only logs.view: support.view and businesses.view go.
         ->set('form.permissions', ['logs.view'])
         ->call('save')

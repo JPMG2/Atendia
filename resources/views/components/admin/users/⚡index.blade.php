@@ -42,6 +42,10 @@ new class extends Component
     #[Url(as: 'doble', except: '')]
     public string $factor = '';
 
+    /** One role's people; the roles screen links here with it. */
+    #[Url(as: 'rol', except: '')]
+    public string $roleFilter = '';
+
     public TwoFactorResetForm $resetForm;
 
     /** The person whose second step is about to be taken away; the panel asks for her password. */
@@ -62,21 +66,21 @@ new class extends Component
 
     public function clearFilters(): void
     {
-        $this->reset('search', 'state', 'factor');
+        $this->reset('search', 'state', 'factor', 'roleFilter');
     }
 
     /** @return Collection<int, User> */
     #[Computed]
     public function people(): Collection
     {
-        return User::directory($this->search, $this->state, $this->factor);
+        return User::directory($this->search, $this->state, $this->factor, $this->roleFilter);
     }
 
     /** What the export menu carries to the report: the very filters on screen. */
     #[Computed]
     public function exportParams(): array
     {
-        return ['buscar' => $this->search, 'estado' => $this->state, 'doble' => $this->factor];
+        return ['buscar' => $this->search, 'estado' => $this->state, 'doble' => $this->factor, 'rol' => $this->roleFilter];
     }
 
     /** @return array{on: int, total: int} */
@@ -146,6 +150,20 @@ new class extends Component
     public function roleOptions(): array
     {
         return AdminUserForm::assignableRoles();
+    }
+
+    /**
+     * Every role that opens the panel, the owner's included: it has people too.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function roleFilterOptions(): array
+    {
+        return collect(User::panelRoleNames())
+            ->sort()
+            ->mapWithKeys(fn (string $name): array => [$name => User::roleLabel($name)])
+            ->all();
     }
 
     /** @return list<string> */
@@ -355,6 +373,17 @@ new class extends Component
 
             <x-inputsform.combobox
                 size="s"
+                span="text"
+                :label="__('admin.users.role')"
+                name="roleFilter"
+                :options="$this->roleFilterOptions"
+                :value="$roleFilter"
+                :placeholder="__('admin.users.all_roles')"
+                wire:model.live="roleFilter"
+            />
+
+            <x-inputsform.combobox
+                size="s"
                 span="short"
                 :label="__('admin.users.state')"
                 name="state"
@@ -375,7 +404,7 @@ new class extends Component
                 wire:model.live="factor"
             />
 
-            @if ($search !== '' || $state !== '' || $factor !== '')
+            @if ($search !== '' || $state !== '' || $factor !== '' || $roleFilter !== '')
                 <x-ui.button variant="ghost" size="sm" wire:click="clearFilters" data-key-click="c">
                     {{ __('admin.keys.clear_filters') }}
                 </x-ui.button>

@@ -160,6 +160,17 @@ return [
     |
     */
 
+    /*
+    | Starting points for a new staff role in the role editor: the screens a
+    | job usually opens. They only preload the switches; nothing is saved
+    | until the role is.
+    */
+    'role_templates' => [
+        'support' => ['support.view', 'businesses.view'],
+        'billing' => ['payments.view', 'payments.verify', 'businesses.view'],
+        'moderation' => ['moderation.view', 'testimonials.moderate', 'mentions.manage'],
+    ],
+
     'reports' => [
         'company' => CompanyReport::class,
         'ai-spend' => AiSpendReport::class,
