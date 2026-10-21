@@ -162,7 +162,7 @@ test('crediting a payment continues the period and mails the client', function (
     expect($payment->refresh()->status)->toBe(PaymentStatus::Paid)
         ->and($payment->period_starts_at->equalTo($end))->toBeTrue()
         ->and($subscription->status)->toBe(SubscriptionStatus::Active)
-        ->and($subscription->current_period_ends_at->equalTo($end->copy()->addMonth()))->toBeTrue();
+        ->and($subscription->current_period_ends_at->equalTo($end->copy()->addMonthNoOverflow()))->toBeTrue();
 
     Mail::assertQueued(BillingPaymentReviewed::class, fn ($mail): bool => $mail->hasTo('pagos@shop.test'));
 });
