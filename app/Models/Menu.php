@@ -163,6 +163,35 @@ class Menu extends Model
     }
 
     /**
+     * The client menu as the mobile app draws it: the web's own tree, in the
+     * web's own order, cut down to the screens the app already has. A button
+     * for a screen that does not exist yet is not drawn; the list in
+     * `atendia.app.screens` grows with each wave.
+     *
+     * @return Collection<int, Menu>
+     */
+    public static function forApp(): Collection
+    {
+        return self::onlyScreens(self::tree('client'), config('atendia.app.screens'));
+    }
+
+    /**
+     * @param  Collection<int, Menu>  $items
+     * @param  list<string>  $screens
+     * @return Collection<int, Menu>
+     */
+    private static function onlyScreens(Collection $items, array $screens): Collection
+    {
+        return $items
+            ->each(fn (Menu $item) => $item->setRelation(
+                'childrenRecursive',
+                self::onlyScreens($item->childrenRecursive, $screens),
+            ))
+            ->filter(fn (Menu $item): bool => in_array($item->route_name, $screens, true) || $item->childrenRecursive->isNotEmpty())
+            ->values();
+    }
+
+    /**
      * Every active root of a panel with its descendants, whoever is looking.
      * For the screens that EDIT access: filtering by the viewer's permissions
      * there would hide exactly the doors being handed out.

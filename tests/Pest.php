@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\SubscriptionStatus;
 use App\Models\Business;
 use App\Models\LoginDevice;
 use App\Models\Menu;
@@ -145,11 +146,26 @@ function apiDeviceHeaders(string $deviceId = 'install-0000-aaaa-1111'): array
     return ['X-Device-Id' => $deviceId];
 }
 
+/** A user of a business that has paid its plan: the only kind the app lets in. */
+function payingUser(array $attributes = [], array $business = []): User
+{
+    $business = Business::factory()->create($business);
+    $business->subscription->forceFill([
+        'status' => SubscriptionStatus::Active,
+        'current_period_ends_at' => now()->addDays(20),
+    ])->save();
+
+    return User::factory()->create([...$attributes, 'business_id' => $business->id]);
+}
+
 /** A real app token the way sign-in makes it: named after its install, whose device row exists. */
 function appInstallToken(User $user, string $deviceId = 'install-0000-aaaa-1111'): string
 {
     $fingerprint = LoginDevice::fingerprintForApp($deviceId);
-    LoginDevice::factory()->for($user)->create(['fingerprint' => $fingerprint]);
+
+    if (! $user->loginDevices()->where('fingerprint', $fingerprint)->exists()) {
+        LoginDevice::factory()->for($user)->create(['fingerprint' => $fingerprint]);
+    }
 
     return $user->createToken($fingerprint)->plainTextToken;
 }

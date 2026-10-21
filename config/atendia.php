@@ -534,6 +534,13 @@ return [
     |
     */
 
+    'app' => [
+        // Client-menu route names the mobile app already has a screen for.
+        'screens' => ['conversations', 'whatsapp'],
+        'conversations_per_page' => 20,
+        'messages_per_page' => 30,
+    ],
+
     'referral' => [
         'invited_trial_days' => 21,
         'founders' => 10,

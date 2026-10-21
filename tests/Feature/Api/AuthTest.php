@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,37 +10,19 @@ use Illuminate\Support\Facades\Hash;
 // RefreshDatabase, so each test is wrapped in a transaction.
 uses(DatabaseTransactions::class);
 
-it('registra un usuario y devuelve un token de acceso', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $response = $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
+it('has no sign-up: the app is only for customers who already bought a plan', function (): void {
+    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
         'name' => 'Ana Pérez',
         'email' => 'ana@example.com',
         'password' => 'Password#123',
         'password_confirmation' => 'Password#123',
-        'device_name' => 'iphone-de-ana',
-    ]);
+    ])->assertNotFound();
 
-    $response->assertCreated()
-        ->assertJsonStructure(['data' => ['id', 'name', 'email'], 'token'])
-        ->assertJsonPath('data.email', 'ana@example.com');
-
-    expect(User::where('email', 'ana@example.com')->exists())->toBeTrue();
-});
-
-it('rechaza el registro con email duplicado', function (): void {
-    User::factory()->create(['email' => 'dup@example.com']);
-
-    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
-        'name' => 'Otro',
-        'email' => 'dup@example.com',
-        'password' => 'Password#123',
-        'password_confirmation' => 'Password#123',
-    ])->assertStatus(422)->assertJsonValidationErrors('email');
+    expect(User::where('email', 'ana@example.com')->exists())->toBeFalse();
 });
 
 it('hace login con credenciales válidas y devuelve un token', function (): void {
-    $user = User::factory()->create(['password' => Hash::make('secret123')]);
+    $user = payingUser(['password' => Hash::make('secret123')]);
 
     $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login', [
         'email' => $user->email,
@@ -62,7 +43,7 @@ it('rechaza el login con credenciales inválidas', function (): void {
 });
 
 it('me devuelve el usuario autenticado', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = appInstallToken($user);
 
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
@@ -75,7 +56,7 @@ it('me rechaza la petición sin token', function (): void {
 });
 
 it('logout revoca únicamente el token usado en la petición', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = appInstallToken($user);
 
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->postJson('/api/v1/logout')->assertOk();
@@ -84,7 +65,7 @@ it('logout revoca únicamente el token usado en la petición', function (): void
 });
 
 it('un token sirve a los 59 días y deja de servir a los 61', function (): void {
-    $token = appInstallToken(User::factory()->create());
+    $token = appInstallToken(payingUser());
 
     $this->travel(59)->days();
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();

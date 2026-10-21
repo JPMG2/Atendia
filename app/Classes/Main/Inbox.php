@@ -11,10 +11,13 @@ use App\Models\KnowledgeSuggestion;
 use App\Models\User;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use App\Services\Tenant;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The inbox piece: every thread the assistant holds with this tenant's
@@ -43,7 +46,48 @@ class Inbox
      * @var Collection<int, Conversation>
      */
     public Collection $threads {
-        get => $this->conversations()
+        get => $this->listing()->get();
+    }
+
+    /**
+     * The same list, one cursor page at a time: the phone never receives the
+     * whole inbox. A thread that never held an exchange has nothing to show.
+     *
+     * @return CursorPaginator<int, Conversation>
+     *
+     * @throws ValidationException when the cursor is not one this list handed out
+     */
+    public function page(int $perPage, ?string $encodedCursor = null): CursorPaginator
+    {
+        $cursor = $encodedCursor === null ? null : Cursor::fromEncoded($encodedCursor);
+
+        // A hand-made cursor goes straight into the SQL: only a date and an id may pass.
+        if ($encodedCursor !== null && ! $this->isListCursor($cursor)) {
+            throw ValidationException::withMessages(['cursor' => __('api.invalid_cursor')]);
+        }
+
+        return $this->listing()
+            ->whereNotNull('last_message_at')
+            ->orderByDesc('id')
+            ->cursorPaginate($perPage, cursor: $cursor);
+    }
+
+    private function isListCursor(?Cursor $cursor): bool
+    {
+        if ($cursor === null) {
+            return false;
+        }
+
+        $parameters = $cursor->toArray();
+        $at = $parameters['last_message_at'] ?? null;
+
+        return is_string($at) && Carbon::hasFormat($at, 'Y-m-d H:i:s') && is_int($parameters['id'] ?? null);
+    }
+
+    /** @return HasMany<Conversation, Business> */
+    private function listing(): HasMany
+    {
+        return $this->conversations()
             ->select('conversations.*')
             // Photos, documents and places per thread, in the same query: the list's paperclip count.
             ->selectSub(
@@ -54,8 +98,7 @@ class Inbox
                 'attachments_count',
             )
             ->with('latestMessage')
-            ->orderByDesc('last_message_at')
-            ->get();
+            ->orderByDesc('last_message_at');
     }
 
     /**
@@ -127,7 +170,7 @@ class Inbox
      * this tenant's. Windowed on purpose: a 200-message thread must not ride
      * every render; `messages_count` tells the screen how far back it can walk.
      */
-    public function thread(int $id, int $latest = 30): ?Conversation
+    public function thread(int $id, int $latest = 30, ?int $beforeMessageId = null): ?Conversation
     {
         $thread = $this->conversations()
             ->withCount(['messages', 'taughtFaqs'])
@@ -141,6 +184,7 @@ class Inbox
         }
 
         $thread->setRelation('messages', $thread->messages()
+            ->when($beforeMessageId !== null, fn ($messages) => $messages->where('id', '<', $beforeMessageId))
             ->latest('id')
             ->limit($latest)
             ->get()
@@ -148,6 +192,13 @@ class Inbox
             ->values());
 
         return $thread;
+    }
+
+    /** Whether the thread holds messages older than the given one. */
+    public function hasMessagesBefore(int $threadId, int $messageId): bool
+    {
+        return $this->conversations()->whereKey($threadId)->exists()
+            && ConversationMessage::query()->where('conversation_id', $threadId)->where('id', '<', $messageId)->exists();
     }
 
     /** Today's pulse for the inbox header. */

@@ -6,10 +6,8 @@ use App\Actions\Account\GenerateRecoveryCodes;
 use App\Mail\AccountPasswordReset;
 use App\Mail\DeviceChallengeCode;
 use App\Mail\NewDeviceLogin;
-use App\Models\Business;
 use App\Models\LoginDevice;
 use App\Models\User;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -20,9 +18,9 @@ use Laravel\Sanctum\Sanctum;
 uses(RefreshDatabase::class);
 
 /** An account that already signed in from a browser, so the app is a stranger to it. */
-function accountSeenOnTheWeb(array $attributes = []): User
+function accountSeenOnTheWeb(array $attributes = [], array $business = []): User
 {
-    $user = User::factory()->create($attributes);
+    $user = payingUser($attributes, $business);
     LoginDevice::factory()->for($user)->create();
 
     return $user;
@@ -60,35 +58,19 @@ function answerChallenge(string $challengeId, string $code, string $deviceId = '
     ]);
 }
 
-test('a mobile sign-up gets the client role and its first device is remembered without an alert', function (): void {
+test('the first sign-in of an account with no devices remembers the install without an alert', function (): void {
     Mail::fake();
-    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = payingUser();
 
-    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
-        'name' => 'Ana Pérez',
-        'email' => 'ana.nueva@example.com',
-        'password' => 'Password#123',
-        'password_confirmation' => 'Password#123',
-    ])->assertCreated();
+    appLogin($user)->assertOk();
 
-    $user = User::where('email', 'ana.nueva@example.com')->firstOrFail();
-
-    expect($user->hasRole('client'))->toBeTrue()
-        ->and($user->loginDevices()->count())->toBe(1)
-        ->and($user->tokens()->count())->toBe(1);
+    expect($user->loginDevices()->count())->toBe(1)->and($user->tokens()->count())->toBe(1);
 
     Mail::assertNotQueued(NewDeviceLogin::class);
 });
 
-test('sign-up and sign-in refuse a call that does not name its install', function (): void {
-    $user = User::factory()->create();
-
-    $this->postJson('/api/v1/register', [
-        'name' => 'Sin Id',
-        'email' => 'sin.id@example.com',
-        'password' => 'Password#123',
-        'password_confirmation' => 'Password#123',
-    ])->assertUnprocessable()->assertJsonValidationErrors('device_id');
+test('sign-in refuses a call that does not name its install', function (): void {
+    $user = payingUser();
 
     $this->postJson('/api/v1/login', ['email' => $user->email, 'password' => 'password'])
         ->assertUnprocessable()->assertJsonValidationErrors('device_id');
@@ -97,7 +79,7 @@ test('sign-up and sign-in refuse a call that does not name its install', functio
 });
 
 test('an install the account already used gets its token and signing in again replaces it', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     LoginDevice::factory()->for($user)->create(['fingerprint' => LoginDevice::fingerprintForApp('install-0000-aaaa-1111')]);
 
     appLogin($user)->assertOk()->assertJsonStructure(['data' => ['id'], 'token']);
@@ -188,8 +170,7 @@ test('a resend replaces the code and stops after three', function (): void {
 
 test('a backup code opens the door once when the phone is lost', function (): void {
     Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
-    $business = Business::factory()->create(['fallback_whatsapp_number' => '+54 9 11 2233-4455']);
-    $user = accountSeenOnTheWeb(['business_id' => $business->id]);
+    $user = accountSeenOnTheWeb(business: ['fallback_whatsapp_number' => '+54 9 11 2233-4455']);
     $user->forceFill(['two_factor_whatsapp_at' => now()])->save();
     $codes = app(GenerateRecoveryCodes::class)->handle($user);
 
@@ -206,7 +187,7 @@ test('a backup code opens the door once when the phone is lost', function (): vo
 });
 
 test('five wrong passwords lock the sign-in even for the right one, like on the web', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
 
     foreach (range(1, 5) as $try) {
         appLogin($user, password: 'not-the-password')->assertUnprocessable();
@@ -218,7 +199,7 @@ test('five wrong passwords lock the sign-in even for the right one, like on the 
 });
 
 test('a closed account inside its restore window comes back with the right password', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $user->delete();
 
     appLogin($user)->assertOk()->assertJsonStructure(['token']);
@@ -227,7 +208,7 @@ test('a closed account inside its restore window comes back with the right passw
 });
 
 test('a closed account past its restore window cannot come back by itself', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $user->delete();
     $user->forceFill(['deleted_at' => now()->subDays(31)])->saveQuietly();
 
@@ -237,18 +218,17 @@ test('a closed account past its restore window cannot come back by itself', func
 });
 
 test('every call with a token fixes the business the database row security reads', function (): void {
-    $business = Business::factory()->create();
-    $user = User::factory()->create(['business_id' => $business->id]);
+    $user = payingUser();
     DB::select("select set_config('app.current_tenant', '999999', false)");
     $token = appInstallToken($user);
 
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();
 
-    expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe((string) $business->id);
+    expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe((string) $user->business_id);
 });
 
 test('a call with a token but without the install id is refused', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    Sanctum::actingAs(payingUser());
 
     $this->getJson('/api/v1/me')->assertStatus(400)->assertJsonPath('code', 'device_required');
 });
@@ -264,13 +244,13 @@ test('a token dies the moment its device is no longer listed', function (): void
 });
 
 test('a listed device keeps its access', function (): void {
-    $token = appInstallToken(User::factory()->create());
+    $token = appInstallToken(payingUser());
 
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();
 });
 
 test('a token shown with another install id is refused and stays alive for its own install', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = appInstallToken($user, 'install-0000-aaaa-1111');
     LoginDevice::factory()->for($user)->create(['fingerprint' => LoginDevice::fingerprintForApp('install-9999-bbbb-2222')]);
 
@@ -282,7 +262,7 @@ test('a token shown with another install id is refused and stays alive for its o
 });
 
 test('an account with no device rows left is no free pass for a token', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = $user->createToken(LoginDevice::fingerprintForApp('install-0000-aaaa-1111'))->plainTextToken;
 
     $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
@@ -292,7 +272,7 @@ test('an account with no device rows left is no free pass for a token', function
 });
 
 test('closing the account ends its tokens', function (): void {
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = appInstallToken($user);
 
     $user->delete();
@@ -302,7 +282,7 @@ test('closing the account ends its tokens', function (): void {
 
 test('resetting the password through the web ends the account tokens', function (): void {
     Mail::fake();
-    $user = User::factory()->create();
+    $user = payingUser();
     $token = appInstallToken($user);
 
     $this->post('/forgot-password', ['email' => $user->email]);
@@ -335,16 +315,8 @@ test('the code gate limits each challenge, not every person behind one address',
     $call($other)->assertUnprocessable();
 });
 
-test('the app sign-up is held to five a minute per address, whatever e-mail it carries', function (): void {
-    foreach (range(1, 5) as $try) {
-        $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', ['email' => "bot{$try}@example.com"])->assertUnprocessable();
-    }
-
-    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', ['email' => 'bot6@example.com'])->assertStatus(429);
-});
-
 test('the language is the one the phone announces, inside the supported list', function (string $header, string $expected): void {
-    $token = appInstallToken(User::factory()->create());
+    $token = appInstallToken(payingUser());
     // Start somewhere else, so a fallback to the default proves the middleware ran.
     app()->setLocale($expected === 'es_AR' ? 'es_VE' : 'es_AR');
 

@@ -7,9 +7,12 @@ namespace App\Models;
 use App\Actions\Business\VerifyWhatsAppLink;
 use App\Classes\Main\Plan;
 use App\Classes\Main\SendWindow;
+use App\Enums\AppAccess;
 use App\Enums\ConversationStatus;
 use App\Enums\HandoffLevel;
 use App\Enums\MessageDirection;
+use App\Enums\PaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Enums\SuggestionStatus;
 use App\Enums\WhatsAppLinkState;
 use App\Services\EvolutionApi;
@@ -979,6 +982,33 @@ class Business extends Model
             $subscription->isCanceling() => 'canceling',
             default => $subscription->status->value,
         };
+    }
+
+    /**
+     * May this business's people use the mobile app? Only once a payment was
+     * approved: the trial, its grace days after it and a closed subscription
+     * are sent back to the web. Past due still passes for a business that
+     * paid before — the same grace that keeps its assistant answering. The
+     * period date alone proves nothing: the trial writes one too.
+     */
+    public function appAccess(): AppAccess
+    {
+        $subscription = $this->subscription;
+
+        return match (true) {
+            $this->isSuspended() => AppAccess::Suspended,
+            $subscription === null => AppAccess::NoPlan,
+            $subscription->hasEnded() => AppAccess::Ended,
+            ! $this->hasPaidAPlan() => $subscription->onTrial() ? AppAccess::OnTrial : AppAccess::TrialEnded,
+            $subscription->status === SubscriptionStatus::Paused => AppAccess::Paused,
+            default => AppAccess::Allowed,
+        };
+    }
+
+    private function hasPaidAPlan(): bool
+    {
+        return $this->subscription?->status === SubscriptionStatus::Active
+            || $this->payments()->where('status', PaymentStatus::Paid)->exists();
     }
 
     /**

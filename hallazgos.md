@@ -280,3 +280,6 @@
 
 - 2026-10-20 · Support battery run 2 (34/36). (1) HelpFinder did not offer `whatsapp-sin-verificar` for "en vez de conectado me sale sin verificar, que significa eso?" even with screen=whatsapp: a real retrieval miss, not fixed. (2) The help has no article for "the QR does not appear when I tap Conectar mi WhatsApp": the model was right to leave the draft empty; it is a documentation gap (the case stays in the battery as the marker).
 - 2026-10-20 · Help search: fixed punctuation glued to words (SearchesText split on whitespace) and added ordering by distinct word hits; whatsapp-no-sale-el-qr article added. Battery run 3: 35/36 (the miss was the ordering, now fixed + unit test); run 4 pending her OK.
+
+- 2026-10-21 · El hook `require-design-skill.sh` bloquea como "escritura por Bash" comandos de SOLO lectura en rutas de app/tests (un `grep ... | head` sobre tests/ y otro con `2>/dev/null`, y un `cat >>` por un nombre de carpeta en el texto). Falso positivo: partir el comando en dos lo deja pasar. Sin tocar.
+- 2026-10-21 · App (Ola 1): los 9 negocios de la base `atendia` (incluido Laboratorio Vida, el piloto real) dan `trial_ended` en la regla de acceso de la app: ninguno ha pagado. Para probar la app en su teléfono hace falta un negocio de prueba con un pago aprobado (decisión suya, ver aliadito-app.md).

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Account\IssueAppToken;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Requests\Api\V1\ChallengeCodeRequest;
 use App\Http\Requests\Api\V1\ChallengeRecoveryRequest;
 use App\Http\Requests\Api\V1\ChallengeResendRequest;
@@ -75,6 +76,13 @@ class DeviceChallengeController extends Controller
     {
         if ($granted === null) {
             throw ValidationException::withMessages([$field => $message]);
+        }
+
+        // The plan may have lapsed between the password and the code.
+        $access = $granted['user']->appAccess();
+
+        if (! $access->isAllowed()) {
+            return EnsureAppAccess::denial($access);
         }
 
         $token = $this->issueToken->handle($granted['user'], $granted['device_id'], $granted['device_name']);

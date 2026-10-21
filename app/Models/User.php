@@ -10,6 +10,7 @@ use App\Classes\Main\StaffTwoFactor;
 use App\Dto\AdoptionRowDto;
 use App\Enums\AdoptionSituation;
 use App\Enums\AdoptionStep;
+use App\Enums\AppAccess;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\PanelNotificationType;
@@ -500,6 +501,12 @@ class User extends Authenticatable
     public static function emailHasAccount(string $email): bool
     {
         return self::withTrashed()->where('email', mb_strtolower(trim($email)))->exists();
+    }
+
+    /** The app follows the business's standing; the admin's own door opens in a later wave. */
+    public function appAccess(): AppAccess
+    {
+        return $this->business?->appAccess() ?? AppAccess::NoBusiness;
     }
 
     /** A team member invited by the owner: sees the inbox, never the business setup. */

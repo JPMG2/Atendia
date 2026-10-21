@@ -401,15 +401,3 @@ test('signing up mails the verification link through the channel', function (): 
 
     Mail::assertQueued(AccountEmailVerification::class, fn ($mail): bool => $mail->hasTo('ana@shop.test'));
 });
-
-test('signing up from the mobile app mails it too', function (): void {
-    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
-        'name' => 'Ana Pérez',
-        'email' => 'ana@shop.test',
-        'password' => 'Segura#2026',
-        'password_confirmation' => 'Segura#2026',
-        'device_name' => 'iPhone',
-    ])->assertCreated();
-
-    Mail::assertQueued(AccountEmailVerification::class, fn ($mail): bool => $mail->hasTo('ana@shop.test'));
-});

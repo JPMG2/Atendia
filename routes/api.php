@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceChallengeController;
+use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
+use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Middleware\RejectRevokedDevice;
 use App\Http\Middleware\SetTenantDatabaseContext;
 use App\Http\Middleware\VerifyEvolutionWebhook;
@@ -30,7 +34,6 @@ Route::post('webhooks/evolution', EvolutionWebhookController::class)
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     // Public.
-    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:app-register');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
 
     // The second half of a sign-in from an install the account never used.
@@ -43,7 +46,15 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     // Behind a bearer token. Authentication comes first, so the business
     // (Postgres row security) and the device check can read who is calling.
     Route::middleware(['auth:sanctum', SetTenantDatabaseContext::class, RejectRevokedDevice::class])->group(function (): void {
+        // Signing out stays open to everyone: a lapsed plan must not trap a token.
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me', [AuthController::class, 'me']);
+
+        Route::middleware(EnsureAppAccess::class)->group(function (): void {
+            Route::get('me', [AuthController::class, 'me']);
+            Route::get('menu', MenuController::class);
+            Route::get('conversations', [ConversationController::class, 'index']);
+            Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->whereNumber('conversation');
+            Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
+        });
     });
 });
