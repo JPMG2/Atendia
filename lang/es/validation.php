@@ -198,6 +198,10 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'device_id' => 'identificador del dispositivo',
+        'challenge_id' => 'identificador del desafío',
+        'recovery_code' => 'código de respaldo',
+    ],
 
 ];

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Traits\ReadsAppDevice;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
+    use ReadsAppDevice;
+
     public function authorize(): bool
     {
         return true;
@@ -23,15 +26,7 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'device_name' => ['sometimes', 'string', 'max:255'],
+            ...$this->deviceRules(),
         ];
-    }
-
-    /**
-     * Name of the device asking for the token, so it can be revoked later.
-     */
-    public function deviceName(): string
-    {
-        return $this->validated('device_name') ?? 'app';
     }
 }

@@ -51,6 +51,10 @@ class NewPasswordController extends Controller
                     'password_changed_at' => now(),
                 ])->save();
 
+                // Whoever held the old password may still hold an app token: a
+                // reset is the owner taking the account back, so those die too.
+                $user->tokens()->delete();
+
                 event(new PasswordReset($user));
             }
         );

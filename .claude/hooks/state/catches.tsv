@@ -116,3 +116,6 @@
 2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
 2026-10-20	check-comment-golden-rules	database/seeders/HelpArticleSeeder.php
 2026-10-20	check-comment-golden-rules	app/Actions/Support/SuggestForSupportTicket.php
+2026-10-21	check-comment-golden-rules	app/Providers/AppServiceProvider.php
+2026-10-21	check-comment-golden-rules	app/Http/Middleware/RejectRevokedDevice.php
+2026-10-21	check-comment-golden-rules	app/Http/Middleware/RejectRevokedDevice.php

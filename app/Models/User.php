@@ -173,10 +173,20 @@ class User extends Authenticatable
      */
     public function deviceIsUnknown(?string $userAgent): bool
     {
+        return $this->fingerprintIsUnknown(LoginDevice::fingerprintFor($userAgent));
+    }
+
+    /** The same rule for a mobile install, keyed on the id the app sends. */
+    public function appDeviceIsUnknown(string $deviceId): bool
+    {
+        return $this->fingerprintIsUnknown(LoginDevice::fingerprintForApp($deviceId));
+    }
+
+    private function fingerprintIsUnknown(string $fingerprint): bool
+    {
         $fingerprints = $this->loginDevices()->pluck('fingerprint');
 
-        return $fingerprints->isNotEmpty()
-            && ! $fingerprints->contains(LoginDevice::fingerprintFor($userAgent));
+        return $fingerprints->isNotEmpty() && ! $fingerprints->contains($fingerprint);
     }
 
     /**

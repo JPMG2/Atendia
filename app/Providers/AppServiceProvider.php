@@ -204,5 +204,17 @@ class AppServiceProvider extends ServiceProvider
         // A crafted request can send email as an array: never let it 500 the limiter.
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
             ->by((is_string($request->input('email')) ? $request->input('email') : '').'|'.$request->ip()));
+
+        // The app's sign-up is the web's: five a minute per address, whatever e-mail
+        // each try carries. Keyed on the e-mail it would be a free pass.
+        RateLimiter::for('app-register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
+        // The code gate sends no e-mail: keyed on e-mail|IP it was ONE bucket per address,
+        // locking out strangers behind a carrier's NAT. Per challenge is the fine net, per
+        // address the wide one against invented ids.
+        RateLimiter::for('app-challenge', fn (Request $request) => [
+            Limit::perMinute(10)->by('challenge:'.(is_string($request->input('challenge_id')) ? $request->input('challenge_id') : '').'|'.$request->ip()),
+            Limit::perMinute(60)->by('challenge-ip:'.$request->ip()),
+        ]);
     }
 }

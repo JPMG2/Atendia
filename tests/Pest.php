@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\LoginDevice;
 use App\Models\Menu;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -136,4 +137,19 @@ function railConfig(string $html, string $key): array
     preg_match("/{$key}: JSON\.parse\('(.*?)'\)/", $html, $matches);
 
     return json_decode(json_decode('"'.$matches[1].'"'), true);
+}
+
+/** The id a mobile install sends on every API call, so tests can speak as one. */
+function apiDeviceHeaders(string $deviceId = 'install-0000-aaaa-1111'): array
+{
+    return ['X-Device-Id' => $deviceId];
+}
+
+/** A real app token the way sign-in makes it: named after its install, whose device row exists. */
+function appInstallToken(User $user, string $deviceId = 'install-0000-aaaa-1111'): string
+{
+    $fingerprint = LoginDevice::fingerprintForApp($deviceId);
+    LoginDevice::factory()->for($user)->create(['fingerprint' => $fingerprint]);
+
+    return $user->createToken($fingerprint)->plainTextToken;
 }

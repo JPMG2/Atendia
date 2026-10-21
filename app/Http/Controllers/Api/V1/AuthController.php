@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Account\IssueAppToken;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\MobileDeviceChallenge;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,8 +22,11 @@ use Illuminate\Validation\ValidationException;
  */
 class AuthController extends Controller
 {
+    public function __construct(private readonly IssueAppToken $issueToken) {}
+
     /**
-     * Registers a user and hands back their first access token.
+     * Registers a user, with the role the web sign-up gives, and hands back
+     * their first access token.
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -31,10 +36,12 @@ class AuthController extends Controller
             'password' => Hash::make($request->validated('password')),
         ]);
 
+        $user->assignRole('client');
+
         // Same event as the web sign-up: the verification mail rides on it.
         event(new Registered($user));
 
-        $token = $user->createToken($request->deviceName())->plainTextToken;
+        $token = $this->issueToken->handle($user, $request->deviceId(), $request->deviceName());
 
         return UserResource::make($user)
             ->additional(['token' => $token])
@@ -43,21 +50,23 @@ class AuthController extends Controller
     }
 
     /**
-     * Checks the credentials and issues a new access token.
+     * Checks the credentials. An install the account never used gets no token
+     * yet: a code goes to its e-mail or WhatsApp and the app answers it at
+     * `login/challenge`, exactly like the web's unknown-device gate.
      *
      * @throws ValidationException
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->validated('email'))->first();
+        $user = $request->authenticatedUser();
 
-        if (! $user || ! Hash::check($request->validated('password'), $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
-            ]);
+        if ($user->appDeviceIsUnknown($request->deviceId())) {
+            $challenge = MobileDeviceChallenge::start($user, $request->deviceId(), $request->deviceName());
+
+            return response()->json(['challenge' => $challenge], 202);
         }
 
-        $token = $user->createToken($request->deviceName())->plainTextToken;
+        $token = $this->issueToken->handle($user, $request->deviceId(), $request->deviceName());
 
         return UserResource::make($user)
             ->additional(['token' => $token])

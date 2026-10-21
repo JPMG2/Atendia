@@ -403,7 +403,7 @@ test('signing up mails the verification link through the channel', function (): 
 });
 
 test('signing up from the mobile app mails it too', function (): void {
-    $this->postJson('/api/v1/register', [
+    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
         'name' => 'Ana Pérez',
         'email' => 'ana@shop.test',
         'password' => 'Segura#2026',

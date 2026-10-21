@@ -48,4 +48,13 @@ class LoginDevice extends Model
     {
         return hash('sha256', mb_strtolower((string) $userAgent));
     }
+
+    /**
+     * A mobile install is told apart by the id the app generated on its first
+     * run: its user agent is the same on every phone, so it proves nothing.
+     */
+    public static function fingerprintForApp(string $deviceId): string
+    {
+        return hash('sha256', 'app:'.mb_strtolower($deviceId));
+    }
 }

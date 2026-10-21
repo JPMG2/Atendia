@@ -26,6 +26,28 @@ class DeviceChallenge
 
     public static function start(User $user, bool $remember): void
     {
+        $issued = self::issueCode($user);
+
+        session()->put(self::SESSION_KEY, [
+            'user_id' => $user->id,
+            'code_hash' => $issued['code_hash'],
+            'remember' => $remember,
+            'expires_at' => now()->addMinutes(self::LIFETIME_MINUTES)->timestamp,
+            'attempts' => 0,
+            'via_whatsapp' => $issued['via_whatsapp'],
+            'whatsapp_failed' => $issued['whatsapp_failed'],
+        ]);
+    }
+
+    /**
+     * Sends a fresh code and returns only what may be remembered of it. The
+     * web keeps it in the session and the mobile API in the cache: the
+     * delivery ritual is the same, so it lives in one place.
+     *
+     * @return array{code_hash: string, via_whatsapp: bool, whatsapp_failed: bool}
+     */
+    public static function issueCode(User $user): array
+    {
         $code = (string) random_int(100000, 999999);
 
         // Through the house channels like every message: one ritual, one door.
@@ -38,15 +60,11 @@ class DeviceChallenge
             (new Email($user, [$user->email], DeviceChallengeCode::class, [$code]))->send();
         }
 
-        session()->put(self::SESSION_KEY, [
-            'user_id' => $user->id,
+        return [
             'code_hash' => hash('sha256', $code),
-            'remember' => $remember,
-            'expires_at' => now()->addMinutes(self::LIFETIME_MINUTES)->timestamp,
-            'attempts' => 0,
             'via_whatsapp' => $viaWhatsApp,
             'whatsapp_failed' => ! $viaWhatsApp && $user->sendsLoginCodesByWhatsApp(),
-        ]);
+        ];
     }
 
     /** Whose login is waiting on the code, for the screen's masked address. */

@@ -3,16 +3,18 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\Sanctum;
 
 // The testing database is pre-migrated and does not use a global
 // RefreshDatabase, so each test is wrapped in a transaction.
 uses(DatabaseTransactions::class);
 
 it('registra un usuario y devuelve un token de acceso', function (): void {
-    $response = $this->postJson('/api/v1/register', [
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $response = $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
         'name' => 'Ana Pérez',
         'email' => 'ana@example.com',
         'password' => 'Password#123',
@@ -30,7 +32,7 @@ it('registra un usuario y devuelve un token de acceso', function (): void {
 it('rechaza el registro con email duplicado', function (): void {
     User::factory()->create(['email' => 'dup@example.com']);
 
-    $this->postJson('/api/v1/register', [
+    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/register', [
         'name' => 'Otro',
         'email' => 'dup@example.com',
         'password' => 'Password#123',
@@ -41,7 +43,7 @@ it('rechaza el registro con email duplicado', function (): void {
 it('hace login con credenciales válidas y devuelve un token', function (): void {
     $user = User::factory()->create(['password' => Hash::make('secret123')]);
 
-    $this->postJson('/api/v1/login', [
+    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login', [
         'email' => $user->email,
         'password' => 'secret123',
         'device_name' => 'android',
@@ -53,7 +55,7 @@ it('hace login con credenciales válidas y devuelve un token', function (): void
 it('rechaza el login con credenciales inválidas', function (): void {
     $user = User::factory()->create(['password' => Hash::make('secret123')]);
 
-    $this->postJson('/api/v1/login', [
+    $this->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login', [
         'email' => $user->email,
         'password' => 'incorrecta',
     ])->assertStatus(422)->assertJsonValidationErrors('email');
@@ -61,9 +63,9 @@ it('rechaza el login con credenciales inválidas', function (): void {
 
 it('me devuelve el usuario autenticado', function (): void {
     $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    $token = appInstallToken($user);
 
-    $this->getJson('/api/v1/me')
+    $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
         ->assertOk()
         ->assertJsonPath('data.email', $user->email);
 });
@@ -74,23 +76,23 @@ it('me rechaza la petición sin token', function (): void {
 
 it('logout revoca únicamente el token usado en la petición', function (): void {
     $user = User::factory()->create();
-    $token = $user->createToken('app')->plainTextToken;
+    $token = appInstallToken($user);
 
-    $this->withToken($token)->postJson('/api/v1/logout')->assertOk();
+    $this->withToken($token)->withHeaders(apiDeviceHeaders())->postJson('/api/v1/logout')->assertOk();
 
     expect($user->tokens()->count())->toBe(0);
 });
 
 it('un token sirve a los 59 días y deja de servir a los 61', function (): void {
-    $token = User::factory()->create()->createToken('app')->plainTextToken;
+    $token = appInstallToken(User::factory()->create());
 
     $this->travel(59)->days();
-    $this->withToken($token)->getJson('/api/v1/me')->assertOk();
+    $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();
 
     // The guard keeps the user it resolved on the first request; a fresh one checks the token again.
     app('auth')->forgetGuards();
     $this->travel(2)->days();
-    $this->withToken($token)->getJson('/api/v1/me')->assertUnauthorized();
+    $this->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertUnauthorized();
 });
 
 test('an email sent as a list is a validation error, never a crash', function (): void {
