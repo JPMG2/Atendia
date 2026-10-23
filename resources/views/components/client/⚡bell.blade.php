@@ -1,6 +1,7 @@
 <?php
 
-use App\Enums\PanelNotificationType;
+use App\Classes\Main\Bell;
+use App\Classes\Main\Client;
 use App\Models\Business;
 use App\Models\PanelNotification;
 use App\Models\User;
@@ -17,9 +18,6 @@ use Livewire\Component;
  */
 new class extends Component
 {
-    /** Where a repeated kind stops being listed one by one and becomes a count. */
-    private const int BUNDLE_FROM = 3;
-
     /** True while the panel is open: the feed is fetched only then. */
     public bool $opened = false;
 
@@ -66,24 +64,14 @@ new class extends Component
     #[Computed]
     public function groups(): Collection
     {
-        if ($this->business === null || $this->user === null) {
-            return collect();
-        }
+        return $this->bell?->groups ?? collect();
+    }
 
-        $timezone = $this->business->localTimezone();
-        $today = now($timezone)->startOfDay();
-
-        return PanelNotification::feedFor($this->user)
-            ->groupBy(function (PanelNotification $notice) use ($today, $timezone): string {
-                $days = $notice->localDay($timezone)->diffInDays($today);
-
-                return match (true) {
-                    $days < 1 => 'today',
-                    $days < 2 => 'yesterday',
-                    default => 'earlier',
-                };
-            })
-            ->map(fn (Collection $day): Collection => $this->rowsFor($day, $timezone));
+    /** The piece both the panel and the mobile app read the inbox through. */
+    #[Computed]
+    public function bell(): ?Bell
+    {
+        return $this->user === null ? null : Client::for($this->user)->bell;
     }
 
     /**
@@ -93,83 +81,7 @@ new class extends Component
     #[Computed]
     public function digest(): string
     {
-        $counts = $this->groups
-            ->flatten(1)
-            ->reject(fn (array $row): bool => $row['read'])
-            ->groupBy(fn (array $row): string => $row['type']->value)
-            ->map(fn (Collection $rows): int => $rows->sum(fn (array $row): int => count($row['ids'])));
-
-        return __('bell.digest.lead').' '.$counts
-            ->map(fn (int $count, string $type): string => trans_choice('bell.digest.'.$type, $count, ['count' => $count]))
-            ->join(' · ');
-    }
-
-    /**
-     * One day's notices as the rows the panel prints. Three or more of the same
-     * kind collapse into a single counted row: a list that repeats the same
-     * sentence stops being read, and the screen behind it holds the detail.
-     *
-     * @param  Collection<int, PanelNotification>  $day
-     * @return Collection<int, array<string, mixed>>
-     */
-    private function rowsFor(Collection $day, string $timezone): Collection
-    {
-        return $day->groupBy(fn (PanelNotification $notice): string => $notice->type->value)
-            ->flatMap(function (Collection $sameKind): Collection {
-                return $sameKind->count() < self::BUNDLE_FROM
-                    ? $sameKind->map(fn (PanelNotification $notice): array => $this->singleRow($notice))
-                    : collect([$this->bundledRow($sameKind)]);
-            })
-            ->sortByDesc('at')
-            ->values();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function singleRow(PanelNotification $notice): array
-    {
-        return [
-            'key' => 'n'.$notice->id,
-            'ids' => [$notice->id],
-            'type' => $notice->type,
-            'text' => __($this->lineFor($notice), $notice->payload),
-            'at' => $notice->created_at,
-            'read' => (bool) $notice->read,
-        ];
-    }
-
-    /**
-     * A booking taken without choosing a service (the public link allows it)
-     * has no tail to print, and the line that names one would end in a comma
-     * and nothing. Resolved HERE, where the reader's locale is the one in use.
-     */
-    private function lineFor(PanelNotification $notice): string
-    {
-        $key = 'bell.lines.'.$notice->type->value;
-        $plain = $notice->type === PanelNotificationType::AppointmentBooked
-            && trim((string) ($notice->payload['service'] ?? '')) === '';
-
-        return $plain ? $key.'_plain' : $key;
-    }
-
-    /**
-     * @param  Collection<int, PanelNotification>  $sameKind
-     * @return array<string, mixed>
-     */
-    private function bundledRow(Collection $sameKind): array
-    {
-        $first = $sameKind->first();
-
-        return [
-            'key' => 'b'.$first->type->value,
-            'ids' => $sameKind->pluck('id')->all(),
-            'type' => $first->type,
-            'text' => trans_choice('bell.bundles.'.$first->type->value, $sameKind->count(), ['count' => $sameKind->count()]),
-            'at' => $sameKind->max('created_at'),
-            // Bundled reads as unread while ANY of them is: the count is the news.
-            'read' => $sameKind->every(fn (PanelNotification $notice): bool => (bool) $notice->read),
-        ];
+        return $this->bell?->digestFor($this->groups) ?? '';
     }
 
     public function open(): void

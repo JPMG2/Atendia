@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceChallengeController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
 use App\Http\Middleware\EnsureAppAccess;
@@ -57,6 +58,10 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::middleware(EnsureAppAccess::class)->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
             Route::get('menu', MenuController::class);
+
+            Route::get('notifications', [NotificationController::class, 'index']);
+            Route::post('notifications/read', [NotificationController::class, 'read']);
+            Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
 
             Route::get('account', [AccountController::class, 'show']);
             Route::post('account/password', [AccountController::class, 'password'])->middleware('throttle:app-account');
