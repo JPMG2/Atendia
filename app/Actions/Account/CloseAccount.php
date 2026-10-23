@@ -32,6 +32,9 @@ class CloseAccount
             );
         }
 
+        // Gone for good: restoring the account must not bring a phone's old token back to life.
+        $user->tokens()->delete();
+
         $user->business?->delete();
         $user->pending_email = null;
         $user->save();

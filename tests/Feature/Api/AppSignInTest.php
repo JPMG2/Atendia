@@ -227,6 +227,14 @@ test('every call with a token fixes the business the database row security reads
     expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe((string) $user->business_id);
 });
 
+test('the signed-in user carries the name of their business for the app header', function (): void {
+    $user = payingUser(business: ['name' => 'Laboratorio Vida']);
+
+    $this->withToken(appInstallToken($user))->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
+        ->assertOk()
+        ->assertJsonPath('data.business', 'Laboratorio Vida');
+});
+
 test('a call with a token but without the install id is refused', function (): void {
     Sanctum::actingAs(payingUser());
 

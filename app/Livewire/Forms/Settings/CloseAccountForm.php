@@ -32,7 +32,7 @@ class CloseAccountForm extends BaseForm
     public function save(): NotificationDto
     {
         $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'close');
+        $this->confirmCurrentPassword($this->current_password);
 
         return $this->tryAction(function (): NotificationDto {
             app(CloseAccount::class)->handle(Auth::user());

@@ -11,16 +11,17 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Re-authentication for the sensitive account actions (email, password,
- * closing). Throttled per action so no settings card can become a quiet
- * oracle to brute-force the password from inside a stolen session.
+ * closing). ONE throttle per account, not per action: with a bucket for each
+ * card a stolen session got five guesses at every one of them, so the cards
+ * (and the app's endpoints) would have been a wider oracle than any single one.
  */
 trait ConfirmsCurrentPassword
 {
     /** @throws ValidationException */
-    protected function confirmCurrentPassword(string $password, string $action, string $field = 'current_password'): void
+    protected function confirmCurrentPassword(string $password, string $field = 'current_password'): void
     {
         $user = Auth::user();
-        $key = "confirm-password:{$action}:{$user->id}";
+        $key = "confirm-password:{$user->id}";
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);

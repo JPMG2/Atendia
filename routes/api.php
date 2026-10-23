@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceChallengeController;
+use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
@@ -49,11 +51,20 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         // Signing out stays open to everyone: a lapsed plan must not trap a token.
         Route::post('logout', [AuthController::class, 'logout']);
 
+        // Closing the account stays open too: leaving is a right a lapsed plan does not suspend.
+        Route::delete('account', [AccountController::class, 'close'])->middleware('throttle:app-account');
+
         Route::middleware(EnsureAppAccess::class)->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
             Route::get('menu', MenuController::class);
+
+            Route::get('account', [AccountController::class, 'show']);
+            Route::post('account/password', [AccountController::class, 'password'])->middleware('throttle:app-account');
+            Route::get('account/devices', [DeviceController::class, 'index']);
+            Route::delete('account/devices/{device}', [DeviceController::class, 'destroy'])->where('device', '[0-9]{1,18}');
+            Route::post('account/devices/revoke-others', [DeviceController::class, 'revokeOthers'])->middleware('throttle:app-account');
             Route::get('conversations', [ConversationController::class, 'index']);
-            Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->whereNumber('conversation');
+            Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->where('conversation', '[0-9]{1,18}');
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
         });
     });

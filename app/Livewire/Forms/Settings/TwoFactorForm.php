@@ -49,7 +49,7 @@ class TwoFactorForm extends BaseForm
     {
         $this->step = 'password';
         $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'two-factor');
+        $this->confirmCurrentPassword($this->current_password);
 
         $key = 'two-factor-send:'.Auth::id();
 
@@ -89,7 +89,7 @@ class TwoFactorForm extends BaseForm
     {
         $this->step = 'password';
         $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'two-factor');
+        $this->confirmCurrentPassword($this->current_password);
 
         $this->setup();
         $this->recovery_codes = app(GenerateRecoveryCodes::class)->handle(Auth::user());
@@ -102,7 +102,7 @@ class TwoFactorForm extends BaseForm
     {
         $this->step = 'password';
         $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'two-factor');
+        $this->confirmCurrentPassword($this->current_password);
 
         return $this->tryAction(function (): NotificationDto {
             app(DisableWhatsAppTwoFactor::class)->handle(Auth::user());

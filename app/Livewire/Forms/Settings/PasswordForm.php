@@ -34,7 +34,7 @@ class PasswordForm extends BaseForm
     public function save(): NotificationDto
     {
         $validated = $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'password');
+        $this->confirmCurrentPassword($this->current_password);
 
         $notification = $this->tryAction(function () use ($validated): NotificationDto {
             $this->client()->account->changePassword(

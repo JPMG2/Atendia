@@ -33,7 +33,7 @@ class TwoFactorResetForm extends BaseForm
     public function save(int $personId): NotificationDto
     {
         $this->validateServiceData();
-        $this->confirmCurrentPassword($this->current_password, 'reset-two-factor');
+        $this->confirmCurrentPassword($this->current_password);
 
         $person = User::staffMember($personId);
 

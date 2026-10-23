@@ -205,6 +205,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
             ->by((is_string($request->input('email')) ? $request->input('email') : '').'|'.$request->ip()));
 
+        // Account actions (password, closing, ending sessions) sit behind a token, so the
+        // person is the key; the password re-check has its own, finer throttle inside.
+        RateLimiter::for('app-account', fn (Request $request) => Limit::perMinute(10)
+            ->by('account:'.($request->user()?->id ?: $request->ip())));
+
         // The code gate sends no e-mail: keyed on e-mail|IP it was ONE bucket per address,
         // locking out strangers behind a carrier's NAT. Per challenge is the fine net, per
         // address the wide one against invented ids.
