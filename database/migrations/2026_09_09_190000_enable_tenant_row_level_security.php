@@ -49,6 +49,7 @@ return new class extends Migration
         'assistant_ratings',
         'compliance_events',
         'business_mentions',
+        'daily_digests',
     ];
 
     /**

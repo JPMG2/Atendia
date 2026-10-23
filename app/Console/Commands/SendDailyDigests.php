@@ -8,6 +8,7 @@ use App\Actions\Business\ComposeDailyDigest;
 use App\Mail\BusinessDailyDigest;
 use App\Messaging\Channels\Email;
 use App\Models\Business;
+use App\Models\DailyDigest;
 use App\Services\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -56,6 +57,8 @@ class SendDailyDigests extends Command
                     return;
                 }
 
+                // Only what actually left is kept: a failed send leaves the tally for the next run.
+                DailyDigest::keep($business, $digest);
                 Cache::forget($key);
 
                 $this->info("Digest mailed for {$business->name}");

@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Actions\Business\ComposeDailyDigest;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\DigestWriter;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Mail\BusinessDailyDigest;
 use App\Models\Business;
+use App\Models\DailyDigest;
 use App\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -81,11 +83,53 @@ test('the owner receives the day digest by e-mail and nothing goes out on WhatsA
     expect(Cache::get('wa:digest:'.$business->id))->toBeNull();
 });
 
+test('the day digest is kept once it left, so the app can show it again', function (): void {
+    $business = digestBusiness();
+    DigestWriter::fake(['• Tres consultas por turnos de laboratorio.']);
+    Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+
+    $this->artisan('atendia:daily-digest')->assertSuccessful();
+
+    $kept = DailyDigest::query()->where('business_id', $business->id)->sole();
+
+    expect($kept->for_day->toDateString())->toBe(now()->toDateString())
+        ->and($kept->messages)->toBe(2)
+        ->and($kept->contacts)->toBe(2)
+        ->and($kept->questions)->toBe(['¿Precio del perfil?', '¿Turnos?'])
+        ->and($kept->summary)->toContain('Tres consultas');
+});
+
+test('a second run the same day replaces the kept digest instead of doubling it', function (): void {
+    $business = digestBusiness();
+    DigestWriter::fake(['• Una consulta.']);
+
+    foreach ([1, 2] as $_) {
+        Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+        $this->artisan('atendia:daily-digest')->assertSuccessful();
+    }
+
+    expect(DailyDigest::query()->where('business_id', $business->id)->count())->toBe(1);
+});
+
+test('a digest that did not leave is not kept', function (): void {
+    $business = digestBusiness();
+    DigestWriter::fake(['nunca']);
+    Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+    // The mail door is down: the channel answers false instead of breaking the run.
+    Mail::shouldReceive('to')->andThrow(new RuntimeException('smtp down'));
+
+    $this->artisan('atendia:daily-digest')->assertSuccessful();
+
+    expect(DailyDigest::query()->count())->toBe(0)
+        // And the tally stays, so the next run tries again.
+        ->and(Cache::get('wa:digest:'.$business->id))->not->toBeNull();
+});
+
 test('the mail renders its figures and the way to ask for another one', function (): void {
     $business = digestBusiness();
     DigestWriter::fake(['• Una consulta.']);
 
-    $digest = app(App\Actions\Business\ComposeDailyDigest::class)->handle($business, digestTally());
+    $digest = app(ComposeDailyDigest::class)->handle($business, digestTally());
     $html = (new BusinessDailyDigest($business, $digest))->render();
 
     expect($html)->toContain('Laboratorio Vida')
