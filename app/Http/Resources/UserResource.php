@@ -23,6 +23,12 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'business' => $this->business?->name,
+            // What the phone needs to dial the socket: the public app key (it
+            // ships in the web bundle too) and the one channel it may ask for.
+            'realtime' => $this->business_id === null ? null : [
+                'key' => config('broadcasting.connections.reverb.key'),
+                'channel' => 'business.'.$this->business_id,
+            ],
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
         ];

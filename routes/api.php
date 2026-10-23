@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BroadcastAuthController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceChallengeController;
 use App\Http\Controllers\Api\V1\DeviceController;
@@ -59,6 +60,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::middleware(EnsureAppAccess::class)->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
             Route::get('menu', MenuController::class);
+            Route::post('broadcasting/auth', BroadcastAuthController::class);
 
             Route::get('digests', DigestController::class)->middleware('can:manage-business');
             Route::get('notifications', [NotificationController::class, 'index']);

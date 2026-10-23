@@ -235,6 +235,15 @@ test('the signed-in user carries the name of their business for the app header',
         ->assertJsonPath('data.business', 'Laboratorio Vida');
 });
 
+test('the signed-in user carries the key and the one channel the phone may dial', function (): void {
+    $user = payingUser();
+
+    $this->withToken(appInstallToken($user))->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
+        ->assertOk()
+        ->assertJsonPath('data.realtime.key', config('broadcasting.connections.reverb.key'))
+        ->assertJsonPath('data.realtime.channel', 'business.'.$user->business_id);
+});
+
 test('a call with a token but without the install id is refused', function (): void {
     Sanctum::actingAs(payingUser());
 
