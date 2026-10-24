@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\PanelNotificationType;
 use App\Events\PanelNotificationRaised;
+use App\Jobs\SendBellPush;
 use App\Traits\BelongsToBusiness;
 use Carbon\CarbonInterface;
 use Database\Factories\PanelNotificationFactory;
@@ -76,6 +77,9 @@ class PanelNotification extends Model
             'dedupe_key' => $dedupeKey,
         ]);
 
+        // The phone only buzzes for news: a fact a sweep re-reports unchanged is not.
+        $isNews = ! $notice->exists || $revive;
+
         if ($notice->exists && $revive) {
             $notice->readers()->detach();
             $notice->created_at = now();
@@ -85,6 +89,11 @@ class PanelNotification extends Model
         $notice->save();
 
         PanelNotificationRaised::dispatch((int) $business->id);
+
+        if ($isNews) {
+            // After commit: the badge counts the row, and a rollback must not buzz anyone.
+            SendBellPush::dispatch((int) $business->id, $type->value)->afterCommit();
+        }
 
         return $notice;
     }

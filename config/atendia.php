@@ -539,6 +539,13 @@ return [
         'screens' => ['conversations', 'whatsapp'],
         'conversations_per_page' => 20,
         'messages_per_page' => 30,
+
+        'push' => [
+            // Expo's relay; it forwards to Google's FCM with the key stored in EAS.
+            'url' => env('EXPO_PUSH_URL', 'https://exp.host/--/api/v2/push/send'),
+            // Seconds a person is left alone after a push, so a burst buzzes once.
+            'window_seconds' => 30,
+        ],
     ],
 
     'referral' => [

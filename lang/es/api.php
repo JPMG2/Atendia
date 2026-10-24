@@ -16,4 +16,8 @@ return [
     ],
     'invalid_cursor' => 'No pudimos continuar la lista. Vuelve a abrirla desde el principio.',
     'challenge_expired' => 'El código venció. Inicia sesión de nuevo para recibir uno nuevo.',
+    'push' => [
+        'registered' => 'Avisos activados en este dispositivo.',
+        'removed' => 'Avisos desactivados en este dispositivo.',
+    ],
 ];

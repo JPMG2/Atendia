@@ -23,6 +23,9 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->text('user_agent');
             $table->timestamp('last_login_at');
+            // The mobile push address of this install; unique because a phone
+            // handed to another account must move the token, not duplicate it.
+            $table->string('push_token')->nullable()->unique();
             $table->timestamps();
 
             $table->unique(['user_id', 'fingerprint']);

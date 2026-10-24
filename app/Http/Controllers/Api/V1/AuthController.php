@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Resources\UserResource;
+use App\Models\LoginDevice;
 use App\Services\MobileDeviceChallenge;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        // A phone that signed out stops receiving this account's news right away.
+        $request->user()->loginDevices()
+            ->where('fingerprint', LoginDevice::fingerprintForApp((string) $request->header('X-Device-Id')))
+            ->first()?->clearPushToken();
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => __('Sesión cerrada correctamente.')]);
