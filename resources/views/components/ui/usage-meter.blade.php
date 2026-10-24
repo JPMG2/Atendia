@@ -6,6 +6,7 @@ cap via data-state. Repeating this markup was how the copies drifted. --}}
     'text',
     'percent' => 0,
     'state' => 'ok',
+    'hint' => null,
 ])
 
 <div class="plan-meter" data-state="{{ $state }}">
@@ -16,4 +17,7 @@ cap via data-state. Repeating this markup was how the copies drifted. --}}
     <div class="plan-meter-track">
         <div class="plan-meter-fill" style="width: {{ min(100, max(0, (int) $percent)) }}%"></div>
     </div>
+    @if ($hint)
+        <p class="plan-meter-hint">{{ $hint }}</p>
+    @endif
 </div>

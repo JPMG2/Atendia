@@ -19,7 +19,7 @@ return [
             'per_day_hint' => 'Máximo de citas en un día. Vacío = solo manda la capacidad.',
             'needs_services' => 'Marca en Servicios cuáles se reservan con cita.',
             'ready' => '{1} 1 servicio se reserva con cita.|[2,*] :count servicios se reservan con cita.',
-            'saved' => 'Citas actualizados.',
+            'saved' => 'Citas actualizadas.',
         ],
     ],
     'assistant' => [

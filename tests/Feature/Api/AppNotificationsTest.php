@@ -67,6 +67,17 @@ describe('the feed', function (): void {
             ->and($rows[0]['ids'])->toEqualCanonicalizing($ids);
     });
 
+    it('says its empty state with the web\'s words in a Venezuelan visit', function (): void {
+        asBellApp(payingUser())->withHeaders(['Accept-Language' => 'es-US', 'CF-IPCountry' => 'VE'])->getJson('/api/v1/notifications')->assertOk()
+            ->assertJsonPath('data.empty.title', 'No hay nada pendiente')
+            ->assertJsonPath('data.empty.body', 'Acá aparece lo que necesita tu atención: un cliente esperando respuesta, una cita nueva o tu WhatsApp caído.');
+    });
+
+    it('says its empty state in the neutral words when the visit has no regional variant', function (): void {
+        asBellApp(payingUser())->withHeaders(['Accept-Language' => 'es-US'])->getJson('/api/v1/notifications')->assertOk()
+            ->assertJsonPath('data.empty.body', 'Acá aparece lo que necesita tu atención: un cliente esperando respuesta, un turno nuevo o tu WhatsApp caído.');
+    });
+
     it('is empty and dark when there is nothing to read', function (): void {
         asBellApp(payingUser())->getJson('/api/v1/notifications')->assertOk()
             ->assertJsonPath('data.unread', 0)

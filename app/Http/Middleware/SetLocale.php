@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Traits\ReadsCloudflareCountry;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -21,6 +22,8 @@ use Throwable;
  */
 class SetLocale
 {
+    use ReadsCloudflareCountry;
+
     public function handle(Request $request, Closure $next): Response
     {
         $supported = config('locales.supported');
@@ -54,18 +57,6 @@ class SetLocale
         $locale = config("locales.country_map.{$country}", $default);
 
         return in_array($locale, $supported, true) ? $locale : $default;
-    }
-
-    /**
-     * The country Cloudflare already worked out, free and with no quota. Anyone
-     * forging it only changes their own language, so it needs no trust check.
-     * XX (unknown) and T1 (Tor) carry no country.
-     */
-    private function countryFromCloudflare(Request $request): ?string
-    {
-        $code = strtoupper(trim((string) $request->header('CF-IPCountry')));
-
-        return preg_match('/^[A-Z]{2}$/', $code) === 1 && $code !== 'XX' ? $code : null;
     }
 
     private function countryFromLookup(Request $request): ?string

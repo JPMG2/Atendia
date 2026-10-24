@@ -27,7 +27,7 @@ class BusinessProfile
     public function __construct(private Business $business) {}
 
     /**
-     * @var list<array{key: string, title: string, icon: string, screen: string, summary: string|null}>
+     * @var list<array{key: string, title: string, icon: string, screen: string, summary: string|null, badge: array{label: string, tone: string}|null}>
      */
     public array $sections {
         get {
@@ -36,7 +36,7 @@ class BusinessProfile
             return [
                 $this->row('identity', 'sparkles', 'my-business.identidad', __('client.business.identity.title'), $data->name !== '' ? $data->name : null),
                 $this->row('location', 'map-pin', 'my-business.ubicacion', __('client.business.location.title'), $this->location($data)),
-                $this->row('hours', 'clock', 'my-business.horarios', __('client.business.hours.title'), $this->hoursToday()),
+                $this->row('hours', 'clock', 'my-business.horarios', __('client.business.hours.title'), $this->hoursToday(), $this->openNow()),
                 $this->row('appointments', 'calendar-check', 'my-business.turnos', __('client.business.appointments.title'), $this->appointments($data)),
                 $this->row('contact', 'at-sign', 'my-business.contacto', __('client.business.contact.title'), $this->contact($data)),
                 $this->row('social', 'share-2', 'my-business.redes', __('client.business.social.title'), $this->networks()),
@@ -77,11 +77,31 @@ class BusinessProfile
     }
 
     /**
-     * @return array{key: string, title: string, icon: string, screen: string, summary: string|null}
+     * @param  array{label: string, tone: string}|null  $badge
+     * @return array{key: string, title: string, icon: string, screen: string, summary: string|null, badge: array{label: string, tone: string}|null}
      */
-    private function row(string $key, string $icon, string $screen, string $title, ?string $summary): array
+    private function row(string $key, string $icon, string $screen, string $title, ?string $summary, ?array $badge = null): array
     {
-        return ['key' => $key, 'title' => $title, 'icon' => $icon, 'screen' => $screen, 'summary' => $summary];
+        return ['key' => $key, 'title' => $title, 'icon' => $icon, 'screen' => $screen, 'summary' => $summary, 'badge' => $badge];
+    }
+
+    /**
+     * Whether the door is open at this minute, by the same clock the assistant
+     * and the agenda use (closures and night shifts included). A business with
+     * no hours has no "now" to say: its answer is always open, and saying so
+     * here would be inventing a promise.
+     *
+     * @return array{label: string, tone: string}|null
+     */
+    private function openNow(): ?array
+    {
+        if (! $this->business->hours()->exists()) {
+            return null;
+        }
+
+        return $this->business->isOpenNow()
+            ? ['label' => __('client.business.summary.open_now'), 'tone' => 'open']
+            : ['label' => __('client.business.summary.closed_now'), 'tone' => 'closed'];
     }
 
     private function location(BusinessDto $data): ?string

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\CatalogPhoto;
+use App\Models\ConversationMessage;
 use App\Models\Product;
 use App\Models\SubscriptionPlan;
 use App\Services\Tenant;
@@ -72,6 +73,31 @@ test('Mi plan lists the meters in the web order and looks right in both themes a
     'desktop dark' => ['desktop-dark', 1280, true],
     'phone light' => ['phone-light', 390, false],
     'phone dark' => ['phone-dark', 390, true],
+]);
+
+test('Mi plan says the day the month\'s pace reaches the cap, under its meter, in both themes', function (bool $dark): void {
+    // Ten threads ten days into the month against a cap of twenty: one a day, so the cap lands on day 21.
+    SubscriptionPlan::query()->where('code', 'negocio')->firstOrFail()->update(['conversations_per_month' => 20]);
+    $this->travelTo(now($this->owner->business->localTimezone())->startOfMonth()->addDays(10)->addHour());
+    app(Tenant::class)->for((int) $this->owner->business_id, fn () => ConversationMessage::factory()->count(10)->create(['business_id' => $this->owner->business_id]));
+
+    $reachedOn = now($this->owner->business->localTimezone())->startOfMonth()->addDays(20)->format('d/m/Y');
+
+    $page = visit(route('my-plan'))->resize(390, 1000);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->wait(1)
+        ->assertSee('Al ritmo de este mes, el tope se alcanza el '.$reachedOn.'.')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'client-plan-pace-'.($dark ? 'dark' : 'light'));
+
+    expect((bool) $page->script('document.documentElement.scrollWidth <= document.documentElement.clientWidth'))->toBeTrue();
+})->with([
+    'light' => [false],
+    'dark' => [true],
 ]);
 
 test('the home strip shows the conversations meter from the same piece', function (): void {

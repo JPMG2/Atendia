@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Business;
 
 use App\Models\Business;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The opening-hours slice: the screen always shows the WHOLE week, so the
@@ -19,17 +20,20 @@ class SaveBusinessSchedule
      */
     public function handle(Business $business, array $week): Business
     {
-        $business->hours()->delete();
+        // All or nothing: a failure halfway must not leave the business with an empty week.
+        DB::transaction(function () use ($business, $week): void {
+            $business->hours()->delete();
 
-        foreach ($week as $day => $shifts) {
-            foreach ($shifts as $shift) {
-                $business->hours()->create([
-                    'day_of_week' => $day,
-                    'opens_at' => $shift['opens_at'],
-                    'closes_at' => $shift['closes_at'],
-                ]);
+            foreach ($week as $day => $shifts) {
+                foreach ($shifts as $shift) {
+                    $business->hours()->create([
+                        'day_of_week' => $day,
+                        'opens_at' => $shift['opens_at'],
+                        'closes_at' => $shift['closes_at'],
+                    ]);
+                }
             }
-        }
+        });
 
         // The cached relation still holds the old week; the next read reloads.
         app(SyncProfileKnowledge::class)->handle($business);

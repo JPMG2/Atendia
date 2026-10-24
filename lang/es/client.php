@@ -136,6 +136,17 @@ return [
             'closure_booked' => '{1} 1 turno reservado|[2,*] :count turnos reservados',
             'closure_notify' => 'Avisar y cancelar',
             'closure_notified' => '{0} No había a quién avisar|{1} Avisamos a 1 persona y su turno quedó cancelado|[2,*] Avisamos a :count personas y sus turnos quedaron cancelados',
+
+            // The mobile app types dates instead of dragging a calendar, and carries a few conveniences of its own.
+            'closure_from' => 'Desde',
+            'closure_to' => 'Hasta (opcional)',
+            'closure_date_hint' => 'Día, mes y año. Por ejemplo, 24/12/2026.',
+            'date_placeholder' => 'dd/mm/aaaa',
+            'closure_range_invalid' => 'Elige un día válido, o un rango que termine el mismo día o después.',
+            'copy_to' => 'Copiar a otros días',
+            'copy_apply' => 'Copiar',
+            'assistant_title' => 'Lo que sabe tu asistente',
+            'assistant_sub' => 'Así responderá cuando le pregunten tu horario, con lo último que guardaste.',
         ],
 
         'appointments' => [
@@ -214,6 +225,8 @@ return [
             'empty' => 'Sin completar',
             'today' => 'Hoy :hours',
             'closed_today' => 'Hoy cerrado',
+            'open_now' => 'Abierto ahora',
+            'closed_now' => 'Cerrado ahora',
             'slots' => 'Cada :minutes minutos',
             'no_agenda' => 'Sin agenda',
             'people' => ':used de :cap personas',

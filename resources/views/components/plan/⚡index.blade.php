@@ -210,7 +210,7 @@ new class extends Component
         {{-- The list, its order and its words come from the piece the mobile app reads too. --}}
         @foreach ($this->usage?->meters ?? [] as $meter)
             @if ($meter['percent'] !== null)
-                <x-ui.usage-meter :label="$meter['label']" :text="$meter['text']" :percent="$meter['percent']" :state="$meter['state']" />
+                <x-ui.usage-meter :label="$meter['label']" :text="$meter['text']" :percent="$meter['percent']" :state="$meter['state']" :hint="$meter['hint']" />
             @else
                 <div class="plan-meter">
                     <div class="plan-meter-head">

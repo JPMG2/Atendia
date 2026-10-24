@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Client;
 
 use App\Classes\Main\Client;
+use App\Classes\Main\Schedule;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
-use App\Models\BusinessHour;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -20,9 +20,6 @@ use Illuminate\Validation\ValidationException;
  */
 class HoursForm extends BaseForm
 {
-    /** Monday first, 0 = Sunday like date("w"), matching Schedule::week(). */
-    private const DAYS = [1, 2, 3, 4, 5, 6, 0];
-
     /** @var array<int, list<array{opens_at: string, closes_at: string}>> */
     public array $week = [];
 
@@ -80,18 +77,9 @@ class HoursForm extends BaseForm
         $this->validateServiceData();
         $this->assertShiftsDoNotOverlap();
 
-        // Built from the known day keys only: an id injected into the public
-        // array can never reach the table.
-        $week = [];
+        $week = $schedule->normalized($this->week);
 
-        foreach (self::DAYS as $day) {
-            $week[$day] = array_map(
-                fn (array $shift): array => ['opens_at' => $shift['opens_at'], 'closes_at' => $shift['closes_at']],
-                $this->week[$day] ?? [],
-            );
-        }
-
-        if ($week === $this->weekFromStore()) {
+        if (! $schedule->differsFrom($week)) {
             return new NotificationDto(__('notifications.no_changes'), NotificationType::Info);
         }
 
@@ -107,37 +95,13 @@ class HoursForm extends BaseForm
     }
 
     /**
-     * Two shifts that step on each other make the SAME hour be offered twice
-     * — to her in the agenda and to her customer over WhatsApp. The error
-     * lands on the second shift, which is the one she has to move.
+     * The rule lives in {@see Schedule}, shared with the mobile app's endpoint.
      *
      * @throws ValidationException
      */
     private function assertShiftsDoNotOverlap(): void
     {
-        $errors = [];
-
-        foreach ($this->week as $day => $shifts) {
-            foreach ($shifts as $index => $shift) {
-                $pieces = BusinessHour::pieces($shift['opens_at'], $shift['closes_at']);
-
-                foreach (array_slice($shifts, 0, $index, true) as $earlier) {
-                    // Touching ends are fine (09–12 then 12–18); only a real
-                    // overlap offers the same minute twice.
-                    $collides = collect(BusinessHour::pieces($earlier['opens_at'], $earlier['closes_at']))
-                        ->crossJoin($pieces)
-                        ->contains(fn (array $pair): bool => $pair[0][0] < $pair[1][1] && $pair[1][0] < $pair[0][1]);
-
-                    if ($collides) {
-                        $errors["week.{$day}.{$index}.opens_at"] = __('client.business.hours.overlaps', [
-                            'shift' => $earlier['opens_at'].'–'.$earlier['closes_at'],
-                        ]);
-
-                        break;
-                    }
-                }
-            }
-        }
+        $errors = Schedule::overlapErrors($this->week);
 
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
@@ -151,24 +115,11 @@ class HoursForm extends BaseForm
     }
 
     /**
-     * The stored week as screen shifts. Postgres hands times back with
-     * seconds, which the time inputs and the comparison must not see.
-     *
      * @return array<int, list<array{opens_at: string, closes_at: string}>>
      */
     private function weekFromStore(): array
     {
-        $stored = $this->client()->schedule?->week ?? [];
-
-        return collect(self::DAYS)
-            ->mapWithKeys(fn (int $day): array => [$day => array_map(
-                fn (BusinessHour $shift): array => [
-                    'opens_at' => substr($shift->opens_at, 0, 5),
-                    'closes_at' => substr($shift->closes_at, 0, 5),
-                ],
-                $stored[$day] ?? [],
-            )])
-            ->all();
+        return $this->client()->schedule?->times ?? array_fill_keys(Schedule::DAYS, []);
     }
 
     /**
@@ -196,15 +147,7 @@ class HoursForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        return [
-            'week' => ['array'],
-            'week.*' => ['array'],
-            // No "after": a shift CAN close before it opens — that is the
-            // night shift closing the next day. Equal times are the one thing
-            // that means nothing, and overlap is checked after this.
-            'week.*.*.opens_at' => ['required', 'date_format:H:i'],
-            'week.*.*.closes_at' => ['required', 'date_format:H:i', 'different:week.*.*.opens_at'],
-        ];
+        return Schedule::rules();
     }
 
     /**
@@ -212,9 +155,6 @@ class HoursForm extends BaseForm
      */
     protected function getValidationAttributes(): array
     {
-        return [
-            'week.*.*.opens_at' => config('nicename.opens_at'),
-            'week.*.*.closes_at' => config('nicename.closes_at'),
-        ];
+        return Schedule::attributes();
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\SubscriptionStatus;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -170,6 +171,30 @@ test('moving up applies today and asks for the receipt of the difference', funct
         ->assertSee(__('plan.change.down', ['plan' => __('plan.names.negocio')]))
         ->assertSee(__('plan.change.upload'))
         ->assertSee(route('my-payments'));
+});
+
+test('the screen says the day the month\'s pace reaches the cap, in the words the app uses', function (): void {
+    $user = planClient();
+    // Ten threads in ten days against a cap of twenty: one a day, so the cap lands on day 21.
+    SubscriptionPlan::query()->where('code', 'negocio')->firstOrFail()->update(['conversations_per_month' => 20]);
+    $this->travelTo(now($user->business->localTimezone())->startOfMonth()->addDays(10)->addHour());
+    Conversation::factory()->count(10)->create(['business_id' => $user->business_id])
+        ->each(fn (Conversation $conversation) => ConversationMessage::factory()->for($conversation)->create(['business_id' => $user->business_id]));
+
+    $this->actingAs($user);
+
+    $reachedOn = now($user->business->localTimezone())->startOfMonth()->addDays(20)->format('d/m/Y');
+
+    livewire('plan.index')->assertSee('Al ritmo de este mes, el tope se alcanza el '.$reachedOn.'.');
+});
+
+test('the screen stays quiet about the pace when it would not reach the cap', function (): void {
+    $user = planClient();
+    $this->travelTo(now($user->business->localTimezone())->startOfMonth()->addDays(10)->addHour());
+
+    $this->actingAs($user);
+
+    livewire('plan.index')->assertDontSee('Al ritmo de este mes');
 });
 
 test('an unknown or current plan changes nothing', function (): void {

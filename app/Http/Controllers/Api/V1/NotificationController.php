@@ -21,8 +21,11 @@ class NotificationController extends Controller
     {
         $bell = Client::for($request->user())->bell;
 
+        // Said by the same lines as the web's empty bell, so the two never differ in a region's words.
+        $empty = ['title' => __('bell.empty.title'), 'body' => __('bell.empty.body')];
+
         if ($bell === null) {
-            return response()->json(['data' => ['unread' => 0, 'digest' => '', 'groups' => []]]);
+            return response()->json(['data' => ['unread' => 0, 'digest' => '', 'empty' => $empty, 'groups' => []]]);
         }
 
         $groups = $bell->groups;
@@ -31,6 +34,7 @@ class NotificationController extends Controller
         return response()->json(['data' => [
             'unread' => $unread,
             'digest' => $unread > 0 ? $bell->digestFor($groups) : '',
+            'empty' => $empty,
             'groups' => $groups->map(fn (Collection $rows, string $group): array => [
                 'group' => $group,
                 'label' => __('bell.groups.'.$group),
