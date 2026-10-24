@@ -39,16 +39,15 @@ class PlanUsage
     /**
      * The conversations meter alone: the one the home keeps always in sight.
      *
-     * @var array{key: string, label: string, text: string, used: int, cap: int, percent: int, state: string}
+     * @var array{key: string, label: string, text: string, used: int, cap: int, percent: int, state: string, screen: string|null, hint: string|null}
      */
     public array $conversations {
-        get => $this->meter(
-            'conversations',
-            __('plan.meters.conversations'),
-            $this->business->conversationsThisMonth(),
-            $this->plan->conversationsPerMonth,
-            'conversations_of',
-        );
+        get {
+            $used = $this->business->conversationsThisMonth();
+            $cap = $this->plan->conversationsPerMonth;
+
+            return $this->meter('conversations', __('plan.meters.conversations'), $used, $cap, 'conversations_of', screen: 'conversations', hint: $this->projection($used, $cap));
+        }
     }
 
     /**
@@ -56,7 +55,7 @@ class PlanUsage
      * `used`, `cap`, `percent` and `state`; one without (people, pace) carries
      * only its text, as the web draws it.
      *
-     * @var list<array{key: string, label: string, text: string, used: int|null, cap: int|null, percent: int|null, state: string|null}>
+     * @var list<array{key: string, label: string, text: string, used: int|null, cap: int|null, percent: int|null, state: string|null, screen: string|null, hint: string|null}>
      */
     public array $meters {
         get {
@@ -64,7 +63,7 @@ class PlanUsage
 
             return array_values(array_filter([
                 $this->conversations,
-                $this->meter('photos', __('plan.meters.photos'), $this->business->catalogPhotosCount(), $plan->catalogPhotos, 'photos_of'),
+                $this->meter('photos', __('plan.meters.photos'), $this->business->catalogPhotosCount(), $plan->catalogPhotos, 'photos_of', screen: 'my-products'),
                 $plan->allowsAudio
                     ? $this->meter(
                         'audio',
@@ -73,9 +72,10 @@ class PlanUsage
                         $plan->audioMinutesPerMonth,
                         'audio_of',
                         false,
+                        'conversations',
                     )
                     : null,
-                $this->plain('seats', __('plan.meters.seats'), __('plan.meters.seats_of', ['used' => $this->business->teamSeatsUsed(), 'cap' => $plan->teamSeats])),
+                $this->plain('seats', __('plan.meters.seats'), __('plan.meters.seats_of', ['used' => $this->business->teamSeatsUsed(), 'cap' => $plan->teamSeats]), 'team'),
                 $this->plain('pace', __('plan.meters.pace'), __('plan.meters.pace_value', ['cap' => $plan->messagesPerHour])),
             ]));
         }
@@ -116,9 +116,9 @@ class PlanUsage
      * A meter with a bar. Numbers print the web's way (thousands with a dot),
      * except where the web prints them bare (audio, minutes).
      *
-     * @return array{key: string, label: string, text: string, used: int, cap: int, percent: int, state: string}
+     * @return array{key: string, label: string, text: string, used: int, cap: int, percent: int, state: string, screen: string|null, hint: string|null}
      */
-    private function meter(string $key, string $label, int $used, int $cap, string $textKey, bool $thousands = true): array
+    private function meter(string $key, string $label, int $used, int $cap, string $textKey, bool $thousands = true, ?string $screen = null, ?string $hint = null): array
     {
         $format = fn (int $number): string|int => $thousands ? number_format($number, 0, ',', '.') : $number;
 
@@ -130,17 +130,41 @@ class PlanUsage
             'cap' => $cap,
             'percent' => $this->percent($used, $cap),
             'state' => Plan::usageState($used, $cap),
+            'screen' => $screen,
+            'hint' => $hint,
         ];
     }
 
     /**
      * A row with no bar: the people in the panel and the pace.
      *
-     * @return array{key: string, label: string, text: string, used: null, cap: null, percent: null, state: null}
+     * @return array{key: string, label: string, text: string, used: null, cap: null, percent: null, state: null, screen: string|null, hint: null}
      */
-    private function plain(string $key, string $label, string $text): array
+    private function plain(string $key, string $label, string $text, ?string $screen = null): array
     {
-        return ['key' => $key, 'label' => $label, 'text' => $text, 'used' => null, 'cap' => null, 'percent' => null, 'state' => null];
+        return ['key' => $key, 'label' => $label, 'text' => $text, 'used' => null, 'cap' => null, 'percent' => null, 'state' => null, 'screen' => $screen, 'hint' => null];
+    }
+
+    /**
+     * When this month's pace would reach the cap, said as a date; null when it
+     * would not reach it before the month ends. Needs three days of the month
+     * behind it: before that a single busy morning would predict a cliff.
+     */
+    private function projection(int $used, int $cap): ?string
+    {
+        $now = now($this->business->localTimezone());
+        $start = $now->copy()->startOfMonth();
+        $elapsed = $start->diffInSeconds($now) / 86400;
+
+        if ($used <= 0 || $used >= $cap || $elapsed < 3) {
+            return null;
+        }
+
+        $reach = $start->copy()->addSeconds((int) round($cap / ($used / $elapsed) * 86400));
+
+        return $reach->lt($start->copy()->addMonthNoOverflow())
+            ? __('plan.projection', ['date' => $reach->format('d/m/Y')])
+            : null;
     }
 
     /** What the bar fills to: the share used, never past the track. */

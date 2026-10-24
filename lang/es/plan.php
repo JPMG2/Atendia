@@ -12,6 +12,8 @@ return [
     'trial_badge' => 'Prueba gratis: te quedan :days días',
     'trial_over' => 'Tu prueba terminó: sigues en el plan :plan',
     'per_month' => '/mes',
+    // Impersonal on purpose: no second-person verb, so es_AR needs no override.
+    'projection' => 'Al ritmo de este mes, el tope se alcanza el :date.',
 
     'meters' => [
         'title' => 'Tu uso este mes',

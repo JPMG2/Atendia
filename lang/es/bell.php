@@ -22,6 +22,7 @@ return [
         'mention_offered' => '{1}1 invitación a ser mencionado|[2,*]:count invitaciones a ser mencionado',
         'mention_needs_follow' => '{1}1 aviso por seguir nuestra cuenta|[2,*]:count avisos por seguir nuestra cuenta',
         'mention_published' => '{1}1 mención publicada|[2,*]:count menciones publicadas',
+        'plan_usage_high' => '{1}1 aviso de tu plan|[2,*]:count avisos de tu plan',
     ],
     'unread' => ':count sin leer',
 
@@ -50,6 +51,7 @@ return [
             'mention_offered' => 'Te invitamos a que mencionemos tu negocio',
             'mention_needs_follow' => 'Falta que sigas nuestra cuenta para mencionarte',
             'mention_published' => 'Mencionamos tu negocio en nuestras redes',
+            'plan_usage_high' => 'Tu plan va por el 80 % de las conversaciones del mes',
         ],
     ],
 
@@ -64,6 +66,7 @@ return [
         'mention_offered' => ':count invitaciones a ser mencionado',
         'mention_needs_follow' => ':count avisos por seguir nuestra cuenta',
         'mention_published' => ':count menciones publicadas',
+        'plan_usage_high' => ':count avisos de tu plan',
     ],
 
     'lines' => [
@@ -79,5 +82,6 @@ return [
         'mention_offered' => 'Alcanzaste :achievement: ¿quieres que mencionemos tu negocio en nuestras redes?',
         'mention_needs_follow' => 'Para mencionar tu negocio necesitamos que sigas nuestras cuentas de :accounts',
         'mention_published' => 'Mencionamos tu negocio en nuestras redes por haber alcanzado :achievement',
+        'plan_usage_high' => 'Tu plan lleva :used de :cap conversaciones este mes (:percent %)',
     ],
 ];

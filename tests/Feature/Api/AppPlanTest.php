@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Classes\Main\Client;
 use App\Models\Business;
 use App\Models\CatalogPhoto;
+use App\Models\ConversationMessage;
 use App\Models\Product;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Services\Tenant;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 uses(DatabaseTransactions::class);
@@ -76,6 +78,18 @@ describe('the plan screen', function (): void {
             ->and($byKey['seats']['percent'])->toBeNull()
             ->and($byKey['seats']['state'])->toBeNull()
             ->and($byKey['pace']['percent'])->toBeNull();
+    });
+
+    it('names the web screen that spends each meter, and only a screen that exists', function (): void {
+        $screens = collect(asPlanApp(ownerOn('negocio'))->getJson('/api/v1/plan')->json('data.meters'))->pluck('screen', 'key');
+
+        expect($screens->all())->toBe([
+            'conversations' => 'conversations',
+            'photos' => 'my-products',
+            'audio' => 'conversations',
+            'seats' => 'team',
+            'pace' => null,
+        ])->and($screens->filter()->every(fn (string $name): bool => Route::has($name)))->toBeTrue();
     });
 
     it('leaves out audio and the Ask quota on a plan that does not include them', function (): void {
@@ -145,6 +159,59 @@ describe('the plan screen', function (): void {
         $api = asPlanApp($owner)->getJson('/api/v1/plan')->json('data.meters');
 
         expect($api)->toBe(Client::for($owner)->planUsage->meters);
+    });
+});
+
+describe('the projection', function (): void {
+    /** Ten days into the month, ten conversations of a twenty cap: one a day, so the cap lands on day 21. */
+    function pacedOwner(int $daysIn, int $conversations, int $cap): User
+    {
+        $owner = ownerOn('negocio');
+        SubscriptionPlan::query()->where('code', 'negocio')->firstOrFail()->update(['conversations_per_month' => $cap]);
+
+        test()->travelTo(now($owner->business->localTimezone())->startOfMonth()->addDays($daysIn)->addHour());
+        app(Tenant::class)->for((int) $owner->business_id, fn () => ConversationMessage::factory()->count($conversations)->create(['business_id' => $owner->business_id]));
+
+        return $owner;
+    }
+
+    it('says the day the cap is reached when the month\'s pace gets there before it ends', function (): void {
+        $owner = pacedOwner(10, 10, 20);
+        $start = now($owner->business->localTimezone())->startOfMonth();
+
+        $hint = collect(asPlanApp($owner)->getJson('/api/v1/plan')->json('data.meters'))->firstWhere('key', 'conversations')['hint'];
+
+        expect($hint)->toBe('Al ritmo de este mes, el tope se alcanza el '.$start->copy()->addDays(20)->format('d/m/Y').'.');
+    });
+
+    it('stays quiet when the pace would not reach the cap this month', function (): void {
+        $owner = pacedOwner(10, 2, 1000);
+
+        $hint = collect(asPlanApp($owner)->getJson('/api/v1/plan')->json('data.meters'))->firstWhere('key', 'conversations')['hint'];
+
+        expect($hint)->toBeNull();
+    });
+
+    it('waits three days of the month before it dares to predict', function (): void {
+        $owner = pacedOwner(1, 8, 20);
+
+        $hint = collect(asPlanApp($owner)->getJson('/api/v1/plan')->json('data.meters'))->firstWhere('key', 'conversations')['hint'];
+
+        expect($hint)->toBeNull();
+    });
+
+    it('says nothing once the cap is already reached', function (): void {
+        $owner = pacedOwner(10, 20, 20);
+
+        $hint = collect(asPlanApp($owner)->getJson('/api/v1/plan')->json('data.meters'))->firstWhere('key', 'conversations')['hint'];
+
+        expect($hint)->toBeNull();
+    });
+
+    it('never puts a hint on the rows that have no flow of their own', function (): void {
+        $meters = asPlanApp(ownerOn('negocio'))->getJson('/api/v1/plan')->json('data.meters');
+
+        expect(collect($meters)->where('key', '!=', 'conversations')->pluck('hint')->filter()->all())->toBe([]);
     });
 });
 

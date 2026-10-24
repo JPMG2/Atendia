@@ -6,6 +6,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\ReplyTranslator;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
+use App\Enums\PanelNotificationType;
 use App\Events\WhatsAppExchangeArrived;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\AiUsage;
@@ -14,6 +15,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Country;
 use App\Models\Customer;
+use App\Models\PanelNotification;
 use App\Models\SubscriptionPlan;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -405,7 +407,40 @@ test('crossing 80% of the month cap warns the owner once, and the assistant keep
         fn (string $text): bool => $text === $warning,
     );
 
-    expect($warnings)->toHaveCount(1);
+    expect($warnings)->toHaveCount(1)
+        // The bell says the same, once: the row is keyed to the month.
+        ->and(PanelNotification::query()->withoutGlobalScopes()->where('business_id', $business->id)->where('type', PanelNotificationType::PlanUsageHigh)->count())->toBe(1);
+});
+
+test('the 80% heads-up reaches the bell even when the owner has no human number to message', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo', 'fallback_whatsapp_number' => null]);
+    AsistenteAtendia::fake(['…', 'Claro, te cuento.']);
+
+    SubscriptionPlan::query()->where('code', 'negocio')->sole()->update(['conversations_per_month' => 5]);
+    ConversationMessage::factory()->count(4)->create(['business_id' => $business->id]);
+
+    runIncoming('¿Tienen stock?');
+
+    $notice = PanelNotification::query()->withoutGlobalScopes()->where('business_id', $business->id)->where('type', PanelNotificationType::PlanUsageHigh)->sole();
+    $texts = array_map(fn ($request): string => (string) $request['text'], sentTexts());
+
+    expect($notice->payload)->toMatchArray(['used' => '5', 'cap' => '5', 'percent' => 100])
+        ->and($notice->url)->toBe(route('my-plan'))
+        // No number to write to: only the assistant's own answer went out on WhatsApp.
+        ->and($texts)->not->toContain(__('assistant.plan.cap_warning', ['used' => 5, 'cap' => 5, 'url' => route('my-plan')]));
+});
+
+test('below 80% of the month cap the bell stays quiet', function (): void {
+    fakeWhatsAppHttp();
+    $business = Business::factory()->create(['whatsapp_instance' => 'atendia-demo']);
+    AsistenteAtendia::fake(['…', 'Claro, te cuento.']);
+
+    SubscriptionPlan::query()->where('code', 'negocio')->sole()->update(['conversations_per_month' => 50]);
+
+    runIncoming('¿Tienen stock?');
+
+    expect(PanelNotification::query()->withoutGlobalScopes()->where('business_id', $business->id)->where('type', PanelNotificationType::PlanUsageHigh)->count())->toBe(0);
 });
 
 test('a message for an unclaimed instance warns and answers nobody', function (): void {

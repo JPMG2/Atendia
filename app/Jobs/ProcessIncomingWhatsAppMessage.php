@@ -19,6 +19,8 @@ use App\Enums\HandoffSignal;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Events\WhatsAppExchangeArrived;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\PlanUsageHigh;
 use App\Models\AiTask;
 use App\Models\Business;
 use App\Models\Conversation;
@@ -469,8 +471,9 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     }
 
     /**
-     * One heads-up per month to the owner's human number when usage crosses
-     * 80% of the plan. Informative only: the assistant NEVER stops answering
+     * One heads-up per month when usage crosses 80% of the plan: a row in the
+     * owner's bell (and its push), plus a message to the owner's human number
+     * when there is one. Informative only: the assistant NEVER stops answering
      * at the cap — the WhatsApp is the client's cash register.
      */
     private function warnOwnerNearCap(Business $business, EvolutionApi $evolution): void
@@ -478,13 +481,19 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         $plan = $business->plan();
         $used = $business->conversationsThisMonth();
 
-        if ($used < (int) ($plan->conversationsPerMonth * 0.8) || $business->fallback_whatsapp_number === null) {
+        if ($used < (int) ($plan->conversationsPerMonth * 0.8)) {
             return;
         }
 
         $sentKey = 'wa:cap80:'.$business->id.':'.now($business->localTimezone())->format('Y-m');
 
         if (! Cache::add($sentKey, true, now()->addDays(45))) {
+            return;
+        }
+
+        (new Panel($business, [], PlanUsageHigh::class, [$used, $plan->conversationsPerMonth]))->send();
+
+        if ($business->fallback_whatsapp_number === null) {
             return;
         }
 
