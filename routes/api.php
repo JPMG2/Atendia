@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
+use App\Http\Controllers\Api\V1\BusinessController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceChallengeController;
 use App\Http\Controllers\Api\V1\DeviceController;
@@ -81,6 +82,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->where('conversation', '[0-9]{1,18}');
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
             Route::get('plan', PlanController::class)->middleware('can:manage-business');
+            Route::get('business', BusinessController::class)->middleware('can:manage-business');
         });
     });
 });

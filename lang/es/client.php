@@ -209,6 +209,16 @@ return [
             'accept' => 'Salir sin guardar',
         ],
 
+        // One line per section of the profile, as the mobile app lists them; none carries a second-person verb.
+        'summary' => [
+            'empty' => 'Sin completar',
+            'today' => 'Hoy :hours',
+            'closed_today' => 'Hoy cerrado',
+            'slots' => 'Cada :minutes minutos',
+            'no_agenda' => 'Sin agenda',
+            'people' => ':used de :cap personas',
+        ],
+
         'meter' => [
             'title' => 'Tu perfil, al :percent%',
             'count' => ':done de :total',

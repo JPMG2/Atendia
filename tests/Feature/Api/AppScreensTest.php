@@ -43,12 +43,13 @@ describe('menu', function (): void {
 
         asAppUser($owner)->getJson('/api/v1/menu')
             ->assertOk()
-            ->assertJsonPath('data.*.label', ['Conversaciones', 'WhatsApp', 'Plan y pagos'])
-            ->assertJsonPath('data.0.screen', 'conversations')
-            ->assertJsonPath('data.0.icon', 'message-circle')
+            ->assertJsonPath('data.*.label', ['Mi negocio', 'Conversaciones', 'WhatsApp', 'Plan y pagos'])
+            ->assertJsonPath('data.0.screen', 'my-business')
+            ->assertJsonPath('data.1.screen', 'conversations')
+            ->assertJsonPath('data.1.icon', 'message-circle')
             // A group has no screen of its own: "Mi plan" is the one child the app can draw.
-            ->assertJsonPath('data.2.screen', null)
-            ->assertJsonPath('data.2.children.*.screen', ['my-plan']);
+            ->assertJsonPath('data.3.screen', null)
+            ->assertJsonPath('data.3.children.*.screen', ['my-plan']);
     });
 
     it('keeps the web nesting and order as the app grows a screen', function (): void {
@@ -71,7 +72,7 @@ describe('menu', function (): void {
     it('speaks the language the phone announces', function (): void {
         $owner = payingUser();
 
-        asAppUser($owner)->withHeader('Accept-Language', 'en')->getJson('/api/v1/menu')->assertJsonPath('data.0.label', 'Conversaciones');
+        asAppUser($owner)->withHeader('Accept-Language', 'en')->getJson('/api/v1/menu')->assertJsonPath('data.1.label', 'Conversaciones');
     });
 });
 
