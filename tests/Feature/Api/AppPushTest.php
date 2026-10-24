@@ -132,7 +132,8 @@ describe('buzzing the team', function (): void {
             ->and(collect($sent)->pluck('to')->sort()->values()->all())->toBe([PUSH_A, PUSH_B])
             ->and($sent[0]['body'])->toBe('Hay un aviso nuevo para revisar')
             ->and(json_encode($sent))->not->toContain('Maria')
-            ->and($sent[0]['data'])->toBe(['screen' => 'notifications']);
+            ->and($sent[0]['data'])->toBe(['screen' => 'notifications'])
+            ->and($sent[0]['priority'])->toBe('high');
     });
 
     it('carries the unread count for that person as the badge', function (): void {

@@ -54,6 +54,8 @@ class Push extends Channel
                 'title' => $message->title(),
                 'body' => $message->body(),
                 'sound' => 'default',
+                // Normal priority waits for Android's Doze; news must wake the phone.
+                'priority' => 'high',
                 'channelId' => 'default',
                 'badge' => $message->badgeFor($device->user),
                 'data' => $message->data() ?: null,
