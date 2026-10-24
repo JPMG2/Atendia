@@ -10,6 +10,7 @@ use App\Messaging\Channels\Panel;
 use App\Messaging\Panel\WhatsAppDisconnected;
 use App\Models\Business;
 use App\Models\WhatsAppLinkEvent;
+use App\Services\PlatformWhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -54,6 +55,12 @@ class EvolutionWebhookController extends Controller
         }
 
         $instance = (string) $request->input('instance', '');
+
+        // The platform's own line only speaks: whoever answers it is not a customer of any business.
+        if (PlatformWhatsApp::owns($instance)) {
+            return false;
+        }
+
         $from = (string) strstr($remoteJid, '@', true);
         $senderName = (string) $request->input('data.pushName', '');
         $messageId = (string) ($key['id'] ?? '');

@@ -14,6 +14,7 @@ use App\Services\PlatformSensors;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
@@ -251,6 +252,71 @@ test('support cannot release an instance or restore a business', function (): vo
     Livewire::test('admin.businesses.index')->call('restore', $business->id)->assertForbidden();
 
     expect(Business::withTrashed()->find($business->id)->trashed())->toBeTrue();
+});
+
+describe('the platform\'s own WhatsApp instance is never a business\'s', function (): void {
+    beforeEach(fn () => config()->set('services.evolution.instance', 'aliadito-plataforma'));
+
+    test('no business can be given it, on creation or on update, and its other fields still save', function (): void {
+        $business = Business::factory()->create();
+
+        expect(fn () => $business->forceFill(['whatsapp_instance' => 'aliadito-plataforma'])->save())->toThrow(DomainException::class)
+            ->and(fn () => Business::factory()->create(['whatsapp_instance' => 'aliadito-plataforma']))->toThrow(DomainException::class)
+            ->and(Business::query()->where('whatsapp_instance', 'aliadito-plataforma')->exists())->toBeFalse();
+
+        $business->forceFill(['whatsapp_instance' => 'business-'.$business->id])->save();
+
+        expect($business->refresh()->whatsapp_instance)->toBe('business-'.$business->id);
+    });
+
+    test('a row that already holds it (from before the rule) can still be saved and detached', function (): void {
+        $legacy = Business::factory()->create();
+        DB::table('businesses')->where('id', $legacy->id)->update(['whatsapp_instance' => 'aliadito-plataforma']);
+        $legacy = $legacy->refresh();
+
+        $legacy->update(['name' => 'Laboratorio de prueba']);
+        $legacy->forceFill(['whatsapp_instance' => null])->save();
+
+        expect($legacy->refresh()->name)->toBe('Laboratorio de prueba')->and($legacy->whatsapp_instance)->toBeNull();
+    });
+
+    test('removing a business that still names it never logs it out nor deletes it, and says it gives nothing back', function (): void {
+        Http::fake();
+        $legacy = Business::factory()->create();
+        DB::table('businesses')->where('id', $legacy->id)->update(['whatsapp_instance' => 'aliadito-plataforma', 'whatsapp_connected_at' => now()]);
+        $legacy = $legacy->refresh();
+        adminOf('admin');
+
+        expect($legacy->releasedOnRemoval()['instance'])->toBeNull();
+
+        Livewire::test('admin.businesses.index')->call('remove', $legacy->id);
+
+        Http::assertNothingSent();
+        expect(Business::withTrashed()->findOrFail($legacy->id)->trashed())->toBeTrue()
+            ->and(Business::withTrashed()->findOrFail($legacy->id)->whatsapp_instance)->toBeNull();
+    });
+
+    test('it is not an orphan even when nobody holds it and the bridge lists it, and it cannot be released', function (): void {
+        // Named like a business instance on purpose: only the explicit rule can protect it here.
+        config()->set('services.evolution.instance', 'business-4242');
+        bridgeRuns('business-4242', 'business-9001');
+        adminOf('admin');
+
+        expect(app(FindOrphanInstances::class)->handle())->toBe(['business-9001'])
+            ->and(app(ReleaseBridgeInstance::class)->handle('business-4242'))->toBeFalse();
+
+        Http::assertNotSent(fn (Request $request): bool => $request->method() === 'DELETE');
+    });
+
+    test('with no platform instance configured, nothing is mistaken for it', function (): void {
+        config()->set('services.evolution.instance', '');
+        $business = Business::factory()->create();
+
+        $business->forceFill(['whatsapp_instance' => null])->save();
+        $business->forceFill(['whatsapp_instance' => ''])->save();
+
+        expect($business->refresh()->whatsapp_instance)->toBe('');
+    });
 });
 
 test('the board has a sensor that turns yellow when the bridge keeps an orphan', function (): void {

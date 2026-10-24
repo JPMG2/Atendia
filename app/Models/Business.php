@@ -16,6 +16,7 @@ use App\Enums\SubscriptionStatus;
 use App\Enums\SuggestionStatus;
 use App\Enums\WhatsAppLinkState;
 use App\Services\EvolutionApi;
+use App\Services\PlatformWhatsApp;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
@@ -109,6 +110,14 @@ class Business extends Model
         static::creating(function (self $business): void {
             $business->referral_code ??= self::freshReferralCode();
             $business->booking_code ??= self::freshCode('booking_code');
+        });
+
+        // The platform's own WhatsApp instance is never a business's: only a NEW assignment is refused, so a row
+        // that already holds it (from before this rule) can still be saved while it is being detached.
+        static::saving(function (self $business): void {
+            if ($business->isDirty('whatsapp_instance') && PlatformWhatsApp::owns($business->whatsapp_instance)) {
+                throw new \DomainException('The platform WhatsApp instance cannot be assigned to a business.');
+            }
         });
 
         static::created(function (self $business): void {
@@ -1088,7 +1097,8 @@ class Business extends Model
     public function releasedOnRemoval(): array
     {
         return [
-            'instance' => $this->whatsapp_instance,
+            // The platform's own instance is never given back: removing a business does not touch it.
+            'instance' => PlatformWhatsApp::owns($this->whatsapp_instance) ? null : $this->whatsapp_instance,
             'connected' => $this->whatsapp_connected_at !== null,
             'phone' => $this->whatsapp_number,
             'people' => $this->users()->count(),

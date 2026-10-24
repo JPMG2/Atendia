@@ -179,10 +179,7 @@ class EvolutionApi
      */
     public function profile(string $instance): ?array
     {
-        $row = (array) ($this->request()
-            ->get('/instance/fetchInstances', ['instanceName' => $instance])
-            ->throw()
-            ->json('0') ?? []);
+        $row = $this->instanceRow($instance);
 
         $jid = (string) ($row['ownerJid'] ?? '');
 
@@ -195,6 +192,22 @@ class EvolutionApi
             'name' => trim((string) ($row['profileName'] ?? '')),
             'picture' => filled($row['profilePicUrl'] ?? null) ? (string) $row['profilePicUrl'] : null,
         ];
+    }
+
+    /**
+     * What the bridge knows of one instance: its owner, its state and, once the
+     * session closed, when and why. Empty when the bridge does not run it.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws ConnectionException|RequestException
+     */
+    public function instanceRow(string $instance): array
+    {
+        return (array) ($this->request()
+            ->get('/instance/fetchInstances', ['instanceName' => $instance])
+            ->throw()
+            ->json('0') ?? []);
     }
 
     /**

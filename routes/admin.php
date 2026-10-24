@@ -37,6 +37,9 @@ Route::livewire('/company', 'admin.company.index')->name('company')->middleware(
 // Integrations: the health of everything the platform consumes.
 Route::livewire('/integrations', 'admin.integrations.index')->name('integrations')->middleware('permission:integrations.view');
 
+// The platform's own WhatsApp line: its state and the QR that links it. Seeing it is one key, linking it another.
+Route::livewire('/platform-whatsapp', 'admin.platform-whatsapp.index')->name('platform-whatsapp')->middleware('permission:integrations.view');
+
 // Testimonials: the moderation desk before an owner's word hits the landing.
 Route::livewire('/testimonios', 'admin.testimonials.index')->name('testimonials')->middleware('permission:testimonials.moderate');
 

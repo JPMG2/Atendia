@@ -44,7 +44,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'support.view',
             'ai.view', 'ai.manage',
             'adoption.view', 'incidents.view', 'contacts.view', 'compliance.view', 'alerts.view', 'alerts.acknowledge',
-            'catalogs.manage', 'company.manage', 'integrations.view',
+            // `integrations.manage` links and unlinks the platform's own WhatsApp line: the owner's alone, support only looks.
+            'catalogs.manage', 'company.manage', 'integrations.view', 'integrations.manage',
             'settings.manage', 'users.view', 'logs.view', 'logs.manage', 'roles.manage', 'audit.view',
         ];
 

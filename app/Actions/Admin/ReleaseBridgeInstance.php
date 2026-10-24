@@ -6,6 +6,7 @@ namespace App\Actions\Admin;
 
 use App\Models\Business;
 use App\Services\EvolutionApi;
+use App\Services\PlatformWhatsApp;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -32,7 +33,8 @@ class ReleaseBridgeInstance
     {
         Gate::authorize('businesses.manage');
 
-        if (! in_array($instance, $this->orphans->handle(), true)) {
+        // Never the platform's own, even if the bridge lists it with nobody behind it: it is not an orphan, it is ours.
+        if (PlatformWhatsApp::owns($instance) || ! in_array($instance, $this->orphans->handle(), true)) {
             return false;
         }
 

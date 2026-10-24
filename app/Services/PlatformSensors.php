@@ -122,7 +122,7 @@ class PlatformSensors
 
     private function platformWhatsApp(): SensorReadingDto
     {
-        $instance = (string) config('services.evolution.instance');
+        $instance = PlatformWhatsApp::instance();
 
         if ($instance === '') {
             return new SensorReadingDto('platform_whatsapp', 'system', Status::Unknown, null, __('platform_events.detail.no_instance'));

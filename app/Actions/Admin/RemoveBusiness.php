@@ -7,6 +7,7 @@ namespace App\Actions\Admin;
 use App\Actions\Billing\CancelSubscription;
 use App\Models\Business;
 use App\Services\EvolutionApi;
+use App\Services\PlatformWhatsApp;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,8 @@ class RemoveBusiness
 
         $instance = $business->whatsapp_instance;
 
-        if ($instance !== null) {
+        // The platform's own instance is Aliadito's voice, not this business's: whatever the row says, it stays.
+        if ($instance !== null && ! PlatformWhatsApp::owns($instance)) {
             $this->evolution->logout($instance);
             $this->evolution->deleteInstance($instance);
         }

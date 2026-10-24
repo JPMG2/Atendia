@@ -80,6 +80,7 @@ return [
     'admin_mentions' => 'Menciones',
     'admin_company' => 'Compañía',
     'admin_integrations' => 'Integraciones',
+    'admin_platform_whatsapp' => 'Línea de WhatsApp',
     'admin_logs' => 'Logs del sistema',
     'admin_security' => 'Mi seguridad',
     'admin_settings' => 'Ajustes',

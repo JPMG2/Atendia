@@ -7,6 +7,7 @@ namespace App\Messaging\Channels;
 use App\Messaging\Channel;
 use App\Messaging\WhatsAppMessage;
 use App\Services\EvolutionApi;
+use App\Services\PlatformWhatsApp;
 
 class WhatsApp extends Channel
 {
@@ -30,7 +31,8 @@ class WhatsApp extends Channel
             app()->setLocale($original);
         }
 
-        $instance = (string) config('services.evolution.instance');
+        // Everything Aliadito says goes out through its own line, never through a business's.
+        $instance = PlatformWhatsApp::instance();
 
         foreach ($this->receives as $number) {
             app(EvolutionApi::class)->sendText($instance, $number, $text);

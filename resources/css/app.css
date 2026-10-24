@@ -3013,6 +3013,38 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .integration-latency { font-size:var(--text-xs); color:var(--text-subtle); margin-left:6px; }
   .integration-foot { margin-top:auto; display:flex; justify-content:flex-end; padding-top:4px; }
 
+  /* WhatsApp de la plataforma: dos columnas que apilan en el teléfono. Todo por tokens. */
+  /* The long subtitle must not push the button under the title: the text block takes what is left and wraps. */
+  .pw-bar > div:first-child { flex:1 1 420px; min-width:0; }
+  .pw-guard > svg { flex:none; margin-top:2px; }
+  .pw-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:var(--space-6); align-items:start; }
+  @media (max-width:900px) { .pw-grid { grid-template-columns:minmax(0, 1fr); } }
+  .pw-col { display:flex; flex-direction:column; gap:var(--space-6); min-width:0; }
+  .pw-card { padding:var(--space-6); display:flex; flex-direction:column; gap:var(--space-4); }
+  .pw-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .pw-title { font-family:var(--font-display); font-size:var(--text-lg); font-weight:600; color:var(--text-strong); }
+  .pw-sub { margin-top:4px; font-size:var(--text-sm); color:var(--text-muted); line-height:1.5; }
+  .pw-facts { display:grid; grid-template-columns:minmax(110px, 140px) minmax(0, 1fr); gap:12px 16px; font-size:var(--text-sm); }
+  .pw-facts dt { color:var(--text-muted); }
+  .pw-facts dd { color:var(--text-strong); overflow-wrap:anywhere; }
+  .pw-pair { display:flex; flex-wrap:wrap; gap:var(--space-6); align-items:center; }
+  .pw-qr-box { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .pw-qr { width:200px; height:200px; padding:12px; border:1px solid var(--border-default); border-radius:var(--radius-lg); background:var(--ink-0); }
+  .pw-renews { font-size:var(--text-sm); color:var(--text-muted); }
+  .pw-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; flex:1 1 240px; min-width:0; }
+  .pw-steps li { display:flex; gap:12px; align-items:flex-start; font-size:var(--text-sm); line-height:1.5; color:var(--text-body); }
+  .pw-step-n { flex:none; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    background:var(--brand-soft); color:var(--brand-soft-text); font-weight:700; font-size:var(--text-xs); }
+  .pw-use { display:flex; gap:14px; padding:12px 0; border-top:1px solid var(--border-subtle); }
+  .pw-use b { display:block; font-size:var(--text-base); color:var(--text-strong); }
+  .pw-use span:not(.pw-use-ico) { font-size:var(--text-sm); color:var(--text-muted); line-height:1.5; }
+  .pw-use-ico { flex:none; width:40px; height:40px; border-radius:var(--radius-md); background:var(--brand-soft); color:var(--brand-soft-text);
+    display:inline-flex; align-items:center; justify-content:center; }
+  .pw-guard { display:flex; gap:14px; align-items:flex-start; padding:20px var(--space-6); border-radius:var(--radius-xl);
+    background:var(--brand-soft); color:var(--brand-soft-text); }
+  .pw-guard b { display:block; font-size:var(--text-base); }
+  .pw-guard span { display:block; margin-top:4px; font-size:var(--text-sm); line-height:1.5; color:var(--text-body); }
+
   /* Logs del sistema: una fila por problema. El detalle se copia VERBATIM y
      envuelve (pre-wrap) para que jamás haya scroll horizontal de página. */
   .lg-stamp { margin:0 0 var(--space-3); text-align:right; font-size:var(--text-xs); color:var(--text-muted); }

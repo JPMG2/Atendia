@@ -6,6 +6,7 @@ namespace App\Actions\Admin;
 
 use App\Models\Business;
 use App\Services\EvolutionApi;
+use App\Services\PlatformWhatsApp;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -35,7 +36,7 @@ class FindOrphanInstances
 
         $orphans = collect($this->evolution->instanceNames())
             ->filter(fn (string $name): bool => preg_match('/^business-\d+$/', $name) === 1)
-            ->reject(fn (string $name): bool => in_array($name, $held, true))
+            ->reject(fn (string $name): bool => in_array($name, $held, true) || PlatformWhatsApp::owns($name))
             ->values()
             ->all();
 
