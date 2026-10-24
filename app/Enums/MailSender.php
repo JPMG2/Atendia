@@ -31,6 +31,7 @@ use App\Mail\ModerationAppeal;
 use App\Mail\NewBusinessJoined;
 use App\Mail\NewCompany;
 use App\Mail\NewDeviceLogin;
+use App\Mail\PlatformAlertMail;
 use App\Mail\ReferralLink;
 use App\Mail\StaffTwoFactorDeadline;
 use App\Mail\StalledAdoptionReport;
@@ -126,6 +127,7 @@ enum MailSender: string
                 NewBusinessJoined::class,
                 NewCompany::class,
                 NewDeviceLogin::class,
+                PlatformAlertMail::class,
                 StaffTwoFactorDeadline::class,
                 StalledAdoptionReport::class,
                 TeamInvitationMail::class,

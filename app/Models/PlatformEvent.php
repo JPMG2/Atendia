@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
  */
 #[Fillable([
     'kind', 'severity', 'state', 'about_business_id', 'dedupe_key', 'detail', 'occurrences',
-    'first_seen_at', 'last_seen_at', 'notified_at', 'acknowledged_at', 'acknowledged_by', 'resolved_at',
+    'first_seen_at', 'last_seen_at', 'notified_at', 'emailed_at', 'acknowledged_at', 'acknowledged_by', 'resolved_at',
 ])]
 class PlatformEvent extends Model
 {
@@ -42,6 +42,7 @@ class PlatformEvent extends Model
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'notified_at' => 'datetime',
+            'emailed_at' => 'datetime',
             'acknowledged_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];

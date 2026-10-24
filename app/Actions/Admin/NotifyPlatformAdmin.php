@@ -6,6 +6,8 @@ namespace App\Actions\Admin;
 
 use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformEventState;
+use App\Mail\PlatformAlertMail;
+use App\Messaging\Channels\Email;
 use App\Messaging\Channels\WhatsApp;
 use App\Messaging\WhatsApp\PlatformAlert;
 use App\Models\Company;
@@ -13,14 +15,18 @@ use App\Models\PlatformEvent;
 use App\Models\User;
 
 /**
- * Puts a critical fact on the admin's phone, once. Only critical interrupts:
- * everything else waits on the board.
+ * Puts a critical fact on the admin's phone, once, and in her inbox, once. Only
+ * critical interrupts: everything else waits on the board. The e-mail does not
+ * wait for the send window nor depend on the WhatsApp line: that line can be
+ * the very thing that is down.
  */
 class NotifyPlatformAdmin
 {
-    /** @return int How many messages left. */
+    /** @return int How many WhatsApp messages left. */
     public function handle(): int
     {
+        $this->email();
+
         $numbers = User::role('admin')
             ->whereNotNull('whatsapp')
             ->get()
@@ -59,5 +65,29 @@ class NotifyPlatformAdmin
         }
 
         return $sent;
+    }
+
+    /** Every open critical reaches the admins' inbox once, at any hour. */
+    private function email(): void
+    {
+        $addresses = User::role('admin')->whereNotNull('email')->pluck('email')->unique()->values()->all();
+
+        if ($addresses === []) {
+            return;
+        }
+
+        $events = PlatformEvent::query()
+            ->where('severity', PlatformEventSeverity::Critical->value)
+            ->where('state', PlatformEventState::Open->value)
+            ->whereNull('emailed_at')
+            ->with('aboutBusiness')
+            ->get();
+
+        foreach ($events as $event) {
+            // Stamp first, like the phone: a failing send must not retry every two minutes.
+            $event->forceFill(['emailed_at' => now()])->save();
+
+            rescue(fn () => (new Email($event, $addresses, PlatformAlertMail::class))->send());
+        }
     }
 }

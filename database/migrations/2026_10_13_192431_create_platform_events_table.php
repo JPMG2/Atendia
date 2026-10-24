@@ -31,6 +31,7 @@ return new class extends Migration
             $table->timestamp('first_seen_at');
             $table->timestamp('last_seen_at');
             $table->timestamp('notified_at')->nullable()->comment('When it was pushed to her phone, if it was');
+            $table->timestamp('emailed_at')->nullable()->comment('When it was e-mailed to the admin, if it was: a critical must not ride only on the WhatsApp line that may be down');
             $table->timestamp('acknowledged_at')->nullable();
             $table->foreignId('acknowledged_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('resolved_at')->nullable();

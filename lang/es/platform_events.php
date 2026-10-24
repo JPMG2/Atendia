@@ -92,6 +92,17 @@ return [
     'whatsapp' => ":brand · :kind\n:detail:business\nÁbrelo: :url",
     'whatsapp_business' => 'Negocio: :name',
 
+    // The same critical, by e-mail: it must reach her even when WhatsApp is the thing that is down.
+    'mail' => [
+        'subject' => 'Aviso crítico: :kind',
+        'preheader' => 'Algo en la plataforma no puede esperar.',
+        'eyebrow' => 'Aviso crítico',
+        'chip' => 'Crítico',
+        'cta' => 'Abrir el tablero',
+        'closing' => 'Este aviso sale una sola vez; el tablero sigue marcándolo hasta que se resuelva o lo marques como visto.',
+        'reason' => 'Recibiste este correo porque eres la administradora de :brand.',
+    ],
+
     'digest' => [
         'head' => ':brand · resumen de las :hour',
         'critical' => '{1} 1 crítico sin resolver|[2,*] :count críticos sin resolver',
