@@ -34,6 +34,11 @@ class Closures
         get => $this->business->closures()->upcoming()->get();
     }
 
+    /** Whether the business's own WhatsApp is up to tell the people holding an hour; down, nothing is cancelled. */
+    public bool $canTell {
+        get => $this->business->hasOwnWhatsAppLine();
+    }
+
     /**
      * From today to a year ahead, which is as far as anyone plans and as far
      * as the calendar can be trusted without a decree.
@@ -171,10 +176,15 @@ class Closures
      */
     public function cancelAndTell(int $id): ?int
     {
-        // Reached THROUGH the business: an id from the front can never point at another tenant's row.
-        $closure = $this->business->closures()->find($id);
+        $closure = $this->find($id);
 
         return $closure === null ? null : app(CancelAppointmentsForClosure::class)->handle($closure);
+    }
+
+    /** Reached THROUGH the business: an id from the front can never point at another tenant's row. */
+    public function find(int $id): ?BusinessClosure
+    {
+        return $this->business->closures()->find($id);
     }
 
     /** @return bool False when the closure is not this business's. */

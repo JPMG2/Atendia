@@ -56,6 +56,14 @@ class BusinessClosuresController extends Controller
     public function tell(Request $request, int $closure): JsonResponse
     {
         $closures = $this->closures($request);
+
+        abort_if($closures->find($closure) === null, 404);
+
+        // A line that is down cannot tell anyone, so nothing is cancelled: the owner is told why and what to do.
+        if (! $closures->canTell) {
+            return response()->json(['message' => __('client.business.hours.closure_line_down')], 422);
+        }
+
         $told = $closures->cancelAndTell($closure);
 
         abort_if($told === null, 404);

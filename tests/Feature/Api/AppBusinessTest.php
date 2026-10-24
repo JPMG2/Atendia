@@ -494,7 +494,9 @@ describe('the days she does not open', function (): void {
 
     it('tells the people holding an hour on a closed day, frees the hour, and counts them on the list', function (): void {
         $whatsapp = mock(EvolutionApi::class);
-        $whatsapp->shouldReceive('sendText')->once()->andReturn('MSG-1');
+        // From the business's own number, never the platform's.
+        config()->set('services.evolution.instance', 'aliadito-plataforma');
+        $whatsapp->shouldReceive('sendText')->once()->with('business-1', '5493415557788', Mockery::type('string'), Mockery::any())->andReturn('MSG-1');
         app()->instance(EvolutionApi::class, $whatsapp);
 
         $owner = profileOwner();
@@ -517,6 +519,30 @@ describe('the days she does not open', function (): void {
             ->and($listed['booked_label'])->toBe('1 turno reservado')
             ->and($told->json('message'))->toBe('Avisamos a 1 persona y su turno quedó cancelado')
             ->and($appointment->fresh()->status)->toBe(AppointmentStatus::Cancelled);
+    });
+
+    it('refuses to tell while the business\'s own WhatsApp is down, and cancels nothing', function (): void {
+        $whatsapp = mock(EvolutionApi::class);
+        $whatsapp->shouldReceive('sendText')->never();
+        app()->instance(EvolutionApi::class, $whatsapp);
+
+        $owner = profileOwner();
+        $business = $owner->business;
+        $business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => null]);
+        $customer = Customer::factory()->create(['business_id' => $business->id, 'phone' => '5493415557788']);
+        $closure = $business->closures()->create(['starts_on' => '2099-12-24', 'ends_on' => '2099-12-24']);
+        $appointment = Appointment::factory()->create([
+            'business_id' => $business->id,
+            'customer_id' => $customer->id,
+            'starts_at' => CarbonImmutable::parse('2099-12-24 10:00', $business->localTimezone()),
+            'ends_at' => CarbonImmutable::parse('2099-12-24 11:00', $business->localTimezone()),
+            'status' => AppointmentStatus::Confirmed,
+        ]);
+
+        $response = asProfileApp($owner)->postJson("/api/v1/business/closures/{$closure->id}/tell")->assertUnprocessable();
+
+        expect($response->json('message'))->toBe(__('client.business.hours.closure_line_down'))
+            ->and($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
     });
 
     it('tells nobody of another business', function (): void {

@@ -135,6 +135,7 @@ return [
             'holidays_none' => 'Ya tenías cargados todos los feriados que vienen.',
             'closure_booked' => '{1} 1 turno reservado|[2,*] :count turnos reservados',
             'closure_notify' => 'Avisar y cancelar',
+            'closure_line_down' => 'Tu WhatsApp está desconectado, así que no se pudo avisar y no se canceló ninguna cita. Vuelve a vincularlo e inténtalo de nuevo.',
             'closure_notified' => '{0} No había a quién avisar|{1} Avisamos a 1 persona y su turno quedó cancelado|[2,*] Avisamos a :count personas y sus turnos quedaron cancelados',
 
             // The mobile app types dates instead of dragging a calendar, and carries a few conveniences of its own.

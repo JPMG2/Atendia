@@ -301,7 +301,9 @@ test('Easter moves the holidays that hang off it', function (): void {
 
 test('the people holding an hour on a closed day are told, and the hour is freed', function (): void {
     $whatsapp = mock(EvolutionApi::class);
-    $whatsapp->shouldReceive('sendText')->once()->andReturn('MSG-1');
+    // The notice is the business's word to its customer: it leaves from the business's own number, never the platform's.
+    config()->set('services.evolution.instance', 'aliadito-plataforma');
+    $whatsapp->shouldReceive('sendText')->once()->with('business-1', '5493415557788', Mockery::type('string'), Mockery::any())->andReturn('MSG-1');
     app()->instance(EvolutionApi::class, $whatsapp);
 
     $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
@@ -326,6 +328,51 @@ test('the people holding an hour on a closed day are told, and the hour is freed
         ->call('notifyClosure', $closure->id);
 
     expect($appointment->fresh()->status)->toBe(AppointmentStatus::Cancelled);
+});
+
+test('with its own WhatsApp down nothing is cancelled and the owner is told why', function (): void {
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->never();
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => null]);
+    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788']);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    $appointment = Appointment::factory()->create([
+        'business_id' => $this->business->id,
+        'customer_id' => $customer->id,
+        'starts_at' => CarbonImmutable::parse('2026-12-24 10:00', $this->business->localTimezone()),
+        'ends_at' => CarbonImmutable::parse('2026-12-24 11:00', $this->business->localTimezone()),
+        'status' => AppointmentStatus::Confirmed,
+    ]);
+
+    Livewire::actingAs($this->owner)
+        ->test('client.section-hours')
+        ->call('notifyClosure', $closure->id)
+        ->assertDispatched('notify', type: 'error', message: __('client.business.hours.closure_line_down'));
+
+    expect($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
+});
+
+test('an hour is cancelled only once its notice left: a failed send leaves it standing', function (): void {
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->once()->andThrow(new RuntimeException('bridge down'));
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788']);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    $appointment = Appointment::factory()->create([
+        'business_id' => $this->business->id,
+        'customer_id' => $customer->id,
+        'starts_at' => CarbonImmutable::parse('2026-12-24 10:00', $this->business->localTimezone()),
+        'ends_at' => CarbonImmutable::parse('2026-12-24 11:00', $this->business->localTimezone()),
+        'status' => AppointmentStatus::Confirmed,
+    ]);
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+
+    expect($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
 });
 
 test('a suspended business tells nobody anything', function (): void {

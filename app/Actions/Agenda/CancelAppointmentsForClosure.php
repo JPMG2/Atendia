@@ -5,52 +5,79 @@ declare(strict_types=1);
 namespace App\Actions\Agenda;
 
 use App\Enums\AppointmentStatus;
-use App\Messaging\Channels\WhatsApp;
+use App\Enums\MessageAuthor;
+use App\Enums\MessageDirection;
 use App\Messaging\WhatsApp\AppointmentCancelledByClosure;
 use App\Models\Appointment;
 use App\Models\BusinessClosure;
+use App\Models\Conversation;
+use App\Services\EvolutionApi;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
  * The hours someone was holding on a day that is no longer going to happen.
  *
- * Cancelling without telling them is how a person shows up to a closed door,
- * so the notice is the point and the cancellation is the side effect.
+ * The notice is the point and the cancellation its side effect: an hour is
+ * cancelled only once its notice left. It is the business's word to its own
+ * customer, so it leaves from the business's number, never the platform's.
  */
 class CancelAppointmentsForClosure
 {
-    public function __construct(private readonly CancelAppointment $cancel) {}
+    /** Milliseconds between two notices, so a business with many bookings does not burst from its number. */
+    private const int STAGGER_MS = 3000;
 
-    /** @return int How many people were told */
+    public function __construct(
+        private readonly CancelAppointment $cancel,
+        private readonly EvolutionApi $evolution,
+    ) {}
+
+    /**
+     * @return int How many people were told. Nothing is cancelled when the business
+     *             may not message customers or has no linked WhatsApp line of its own.
+     */
     public function handle(BusinessClosure $closure): int
     {
         $business = $closure->business;
 
-        // The same gate every outgoing message passes: a suspended business
-        // does not get to message anyone.
-        if (! $business->canMessageCustomers()) {
+        // The same gate every outgoing message passes: a suspended business does not get to message anyone.
+        if (! $business->canMessageCustomers() || ! $business->hasOwnWhatsAppLine()) {
             return 0;
         }
 
         $told = 0;
 
         foreach ($this->pending($closure) as $appointment) {
-            $this->cancel->handle($appointment);
-
             $phone = preg_replace('/\D+/', '', (string) $appointment->customer?->phone) ?? '';
 
+            // Nobody to tell: the hour is freed all the same.
             if (strlen($phone) < 8) {
+                $this->cancel->handle($appointment);
+
                 continue;
             }
 
-            $sent = $business->speaking(fn (): bool => new WhatsApp(
-                $appointment,
-                [$phone],
-                AppointmentCancelledByClosure::class,
-                [$closure->reason],
-            )->send());
+            $text = $business->speaking(fn (): string => (new AppointmentCancelledByClosure($appointment, $closure->reason))->text());
 
-            $told += $sent ? 1 : 0;
+            // A failed send leaves the hour standing: she can try again, and the customer is not left at a closed door.
+            $sent = rescue(function () use ($business, $phone, $text, $told): bool {
+                $this->evolution->sendText((string) $business->whatsapp_instance, $phone, $text, $told * self::STAGGER_MS);
+
+                return true;
+            }, false);
+
+            if (! $sent) {
+                continue;
+            }
+
+            $this->cancel->handle($appointment);
+            $told++;
+
+            // In the thread too: a reply to the notice needs the assistant to know why.
+            Conversation::query()->where('contact_phone', $appointment->customer->phone)->first()?->messages()->create([
+                'direction' => MessageDirection::Out,
+                'author' => MessageAuthor::Assistant,
+                'body' => $text,
+            ]);
         }
 
         return $told;

@@ -118,6 +118,14 @@ class ClosuresForm extends BaseForm
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
         }
 
+        if ($closures->find($id) === null) {
+            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
+        }
+
+        if (! $closures->canTell) {
+            return new NotificationDto(__('client.business.hours.closure_line_down'), NotificationType::Error);
+        }
+
         return $this->tryAction(function () use ($closures, $id): NotificationDto {
 
             $told = $closures->cancelAndTell($id);

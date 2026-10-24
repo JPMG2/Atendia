@@ -1247,6 +1247,17 @@ class Business extends Model
     }
 
     /**
+     * Whether the business can speak to its customers right now from its own number.
+     * Every business joins with one; this is false only while that line is down.
+     */
+    public function hasOwnWhatsAppLine(): bool
+    {
+        return $this->whatsapp_instance !== null
+            && $this->isConnected()
+            && ! PlatformWhatsApp::owns($this->whatsapp_instance);
+    }
+
+    /**
      * How long a bridge answer stays good for. Three missed reconcile ticks:
      * one late run is not news, a quarter hour of silence is.
      */
