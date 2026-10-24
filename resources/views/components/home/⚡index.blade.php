@@ -1,7 +1,6 @@
 <?php
 
 use App\Classes\Main\Client;
-use App\Classes\Main\Plan;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -67,26 +66,15 @@ new class extends Component
      * The plan usage strip, REAL data amid the mock-up: Vercel keeps this
      * meter always in sight and it upsells by itself. Null hides it.
      *
-     * @return array{used: int, cap: int, percent: int, state: string}|null
+     * @return array{key: string, label: string, text: string, used: int, cap: int, percent: int, state: string}|null
      */
     #[Computed]
     public function usage(): ?array
     {
-        $business = auth()->user()?->business;
+        $user = Auth::user();
 
-        if ($business === null) {
-            return null;
-        }
-
-        $used = $business->conversationsThisMonth();
-        $cap = $business->plan()->conversationsPerMonth;
-
-        return [
-            'used' => $used,
-            'cap' => $cap,
-            'percent' => min(100, (int) round($used / max(1, $cap) * 100)),
-            'state' => Plan::usageState($used, $cap),
-        ];
+        // The same piece "Mi plan" and the mobile app read: one meter, one set of words.
+        return $user === null ? null : Client::for($user)->planUsage?->conversations;
     }
 };
 ?>
@@ -126,8 +114,8 @@ new class extends Component
     @if ($this->usage !== null)
         <a href="{{ route('my-plan') }}" wire:navigate class="home-usage">
             <x-ui.usage-meter
-                :label="__('plan.meters.conversations')"
-                :text="__('plan.meters.conversations_of', ['used' => number_format($this->usage['used'], 0, ',', '.'), 'cap' => number_format($this->usage['cap'], 0, ',', '.')])"
+                :label="$this->usage['label']"
+                :text="$this->usage['text']"
                 :percent="$this->usage['percent']"
                 :state="$this->usage['state']"
             />

@@ -1,6 +1,7 @@
 <?php
 
 use App\Classes\Main\Plan;
+use App\Classes\Main\PlanUsage;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Models\Business;
@@ -50,28 +51,11 @@ new class extends Component
         return Plan::ladderFor($this->plan);
     }
 
+    /** This month's meters and the Ask quota: the same piece the home strip and the mobile app read. */
     #[Computed]
-    public function conversationsUsed(): int
+    public function usage(): ?PlanUsage
     {
-        return $this->business?->conversationsThisMonth() ?? 0;
-    }
-
-    #[Computed]
-    public function audioMinutesUsed(): int
-    {
-        return (int) ceil(($this->business?->audioSecondsThisMonth() ?? 0) / 60);
-    }
-
-    #[Computed]
-    public function catalogPhotosUsed(): int
-    {
-        return $this->business?->catalogPhotosCount() ?? 0;
-    }
-
-    #[Computed]
-    public function askQuestionsUsed(): int
-    {
-        return $this->business?->askQuestionsThisMonth() ?? 0;
+        return $this->business === null ? null : new PlanUsage($this->business, $this->plan);
     }
 
     #[Computed]
@@ -84,12 +68,6 @@ new class extends Component
     public function trialEnded(): bool
     {
         return $this->business?->subscription?->trialEnded() ?? false;
-    }
-
-    /** Meter color, shared with the home strip via the Plan class. */
-    public function meterState(int $used, int $cap): string
-    {
-        return Plan::usageState($used, $cap);
     }
 
     /**
@@ -218,63 +196,40 @@ new class extends Component
         @endif
     </x-ui.page-head>
 
+    {{-- The card's name and price come from the piece too, so the app cannot print them another way. --}}
+    @php($card = $this->usage?->card)
     <x-ui.card class="p-6">
         <div class="plan-tier-head">
             <div>
                 <p class="eyebrow">{{ __('plan.current') }}</p>
-                <h2 class="plan-tier-name">{{ __('plan.names.'.$this->plan->code) }}</h2>
+                <h2 class="plan-tier-name">{{ $card['name'] ?? __('plan.names.'.$this->plan->code) }}</h2>
             </div>
-            <p class="plan-tier-price">{{ config('atendia.billing.currency_symbol') }}{{ $this->plan->price }}<small>{{ __('plan.per_month') }}</small></p>
+            <p class="plan-tier-price">{{ $card['price'] ?? config('atendia.billing.currency_symbol').$this->plan->price }}<small>{{ $card['per_month'] ?? __('plan.per_month') }}</small></p>
         </div>
 
-        <x-ui.usage-meter
-            :label="__('plan.meters.conversations')"
-            :text="__('plan.meters.conversations_of', ['used' => number_format($this->conversationsUsed, 0, ',', '.'), 'cap' => number_format($this->plan->conversationsPerMonth, 0, ',', '.')])"
-            :percent="(int) round($this->conversationsUsed / max(1, $this->plan->conversationsPerMonth) * 100)"
-            :state="$this->meterState($this->conversationsUsed, $this->plan->conversationsPerMonth)"
-        />
-
-        <x-ui.usage-meter
-            :label="__('plan.meters.photos')"
-            :text="__('plan.meters.photos_of', ['used' => number_format($this->catalogPhotosUsed, 0, ',', '.'), 'cap' => number_format($this->plan->catalogPhotos, 0, ',', '.')])"
-            :percent="(int) round($this->catalogPhotosUsed / max(1, $this->plan->catalogPhotos) * 100)"
-            :state="$this->meterState($this->catalogPhotosUsed, $this->plan->catalogPhotos)"
-        />
-        @if ($this->plan->allowsAudio)
-            <x-ui.usage-meter
-                :label="__('plan.meters.audio')"
-                :text="__('plan.meters.audio_of', ['used' => $this->audioMinutesUsed, 'cap' => $this->plan->audioMinutesPerMonth])"
-                :percent="(int) round($this->audioMinutesUsed / max(1, $this->plan->audioMinutesPerMonth) * 100)"
-                :state="$this->meterState($this->audioMinutesUsed, $this->plan->audioMinutesPerMonth)"
-            />
-        @endif
-
-        <div class="plan-meter">
-            <div class="plan-meter-head">
-                <span>{{ __('plan.meters.seats') }}</span>
-                <b>
-                    {{ __('plan.meters.seats_of', ['used' => $this->business?->teamSeatsUsed() ?? 0, 'cap' => $this->plan->teamSeats]) }}
-                </b>
-            </div>
-        </div>
-        <div class="plan-meter">
-            <div class="plan-meter-head">
-                <span>{{ __('plan.meters.pace') }}</span>
-                <b>{{ __('plan.meters.pace_value', ['cap' => $this->plan->messagesPerHour]) }}</b>
-            </div>
-        </div>
+        {{-- The list, its order and its words come from the piece the mobile app reads too. --}}
+        @foreach ($this->usage?->meters ?? [] as $meter)
+            @if ($meter['percent'] !== null)
+                <x-ui.usage-meter :label="$meter['label']" :text="$meter['text']" :percent="$meter['percent']" :state="$meter['state']" />
+            @else
+                <div class="plan-meter">
+                    <div class="plan-meter-head">
+                        <span>{{ $meter['label'] }}</span>
+                        <b>{{ $meter['text'] }}</b>
+                    </div>
+                </div>
+            @endif
+        @endforeach
     </x-ui.card>
 
     {{-- The owner's AI is the star of the plan: its quota gets its own card, not one more bar. --}}
-    @if ($this->plan->allowsAsk)
+    @php($ask = $this->usage?->ask)
+    @if ($ask !== null)
         <div class="mt-4">
             <x-plan.ask-quota
-                :used="$this->askQuestionsUsed"
-                :cap="$this->plan->askPerMonth"
-                {{-- Same fallback as the topbar's own quota line: every other
-                read on this screen already defends, and the day the entry plan
-                opens "Ask" this one would 500 for a client with no business. --}}
-                :renewsOn="($this->business?->quotaRenewsOn() ?? now()->startOfMonth()->addMonthNoOverflow())->format('d/m/Y')"
+                :used="$ask['used']"
+                :cap="$ask['cap']"
+                :renewsOn="$this->business->quotaRenewsOn()->format('d/m/Y')"
             />
         </div>
     @endif

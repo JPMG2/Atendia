@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DigestController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\PushTokenController;
 use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
@@ -79,6 +80,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('conversations', [ConversationController::class, 'index']);
             Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->where('conversation', '[0-9]{1,18}');
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
+            Route::get('plan', PlanController::class)->middleware('can:manage-business');
         });
     });
 });

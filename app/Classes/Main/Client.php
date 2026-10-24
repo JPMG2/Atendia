@@ -30,6 +30,7 @@ class Client
         public readonly ?Team $team = null,
         public readonly ?Agenda $agenda = null,
         public readonly ?Bell $bell = null,
+        public readonly ?PlanUsage $planUsage = null,
     ) {}
 
     /**
@@ -57,6 +58,7 @@ class Client
             $business === null ? null : new Team($business),
             $business === null ? null : new Agenda($business),
             $business === null ? null : new Bell($business, $user),
+            $business === null ? null : new PlanUsage($business),
         );
     }
 

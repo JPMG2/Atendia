@@ -43,9 +43,12 @@ describe('menu', function (): void {
 
         asAppUser($owner)->getJson('/api/v1/menu')
             ->assertOk()
-            ->assertJsonPath('data.*.label', ['Conversaciones', 'WhatsApp'])
+            ->assertJsonPath('data.*.label', ['Conversaciones', 'WhatsApp', 'Plan y pagos'])
             ->assertJsonPath('data.0.screen', 'conversations')
-            ->assertJsonPath('data.0.icon', 'message-circle');
+            ->assertJsonPath('data.0.icon', 'message-circle')
+            // A group has no screen of its own: "Mi plan" is the one child the app can draw.
+            ->assertJsonPath('data.2.screen', null)
+            ->assertJsonPath('data.2.children.*.screen', ['my-plan']);
     });
 
     it('keeps the web nesting and order as the app grows a screen', function (): void {
