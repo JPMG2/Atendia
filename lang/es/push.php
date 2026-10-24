@@ -7,4 +7,7 @@ return [
     'bell' => [
         'body' => 'Hay un aviso nuevo para revisar',
     ],
+    'digest' => [
+        'body' => 'Tu informe del día ya está listo',
+    ],
 ];

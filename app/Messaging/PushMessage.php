@@ -37,6 +37,15 @@ abstract class PushMessage
         return true;
     }
 
+    /**
+     * What a person is left alone about for a while after a push. One kind
+     * (news in the bell) must not swallow another (the day's report).
+     */
+    public function quietKey(): string
+    {
+        return class_basename(static::class);
+    }
+
     /** The number on the app icon for this person; null leaves it alone. */
     public function badgeFor(User $user): ?int
     {

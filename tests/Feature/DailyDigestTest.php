@@ -11,6 +11,8 @@ use App\Mail\BusinessDailyDigest;
 use App\Models\Business;
 use App\Models\DailyDigest;
 use App\Models\Subscription;
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,7 +29,10 @@ beforeEach(function (): void {
 
     Cache::flush();
     Mail::fake();
-    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
+    Http::fake([
+        'http://evolution.test/*' => Http::response(['status' => 'PENDING']),
+        'exp.host/*' => Http::response(['data' => [['status' => 'ok']]]),
+    ]);
 });
 
 function digestBusiness(string $plan = 'negocio'): Business
@@ -123,6 +128,63 @@ test('a digest that did not leave is not kept', function (): void {
     expect(DailyDigest::query()->count())->toBe(0)
         // And the tally stays, so the next run tries again.
         ->and(Cache::get('wa:digest:'.$business->id))->not->toBeNull();
+});
+
+/** A person of this business with a phone the app can push to, from an install that holds a live session. */
+function digestPhone(Business $business, string $role, string $token): User
+{
+    test()->seed(RolesAndPermissionsSeeder::class);
+
+    $user = User::factory()->create(['business_id' => $business->id]);
+    $user->syncRoles([$role]);
+    appInstallToken($user);
+    $user->loginDevices()->firstOrFail()->registerPushToken($token);
+
+    return $user;
+}
+
+test('the owner\'s phone is told the report is ready, with a line that holds no figures, and an agent is not', function (): void {
+    $business = digestBusiness();
+    digestPhone($business, 'client', 'ExponentPushToken[owner0000000000000000]');
+    digestPhone($business, 'agent', 'ExponentPushToken[agent000000000000000]');
+    DigestWriter::fake(['• Tres consultas por turnos de laboratorio.']);
+    Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+
+    $this->artisan('atendia:daily-digest')->assertSuccessful();
+
+    $sent = Http::recorded(fn (Request $request): bool => str_contains($request->url(), 'exp.host'))
+        ->flatMap(fn (array $pair): array => $pair[0]->data());
+
+    expect($sent)->toHaveCount(1)
+        ->and($sent[0]['to'])->toBe('ExponentPushToken[owner0000000000000000]')
+        ->and($sent[0]['body'])->toBe('Tu informe del día ya está listo')
+        ->and($sent[0]['data'])->toBe(['screen' => 'digest'])
+        ->and(json_encode($sent))->not->toContain('turnos')->not->toContain('Precio');
+});
+
+test('no push goes out for a digest that did not leave', function (): void {
+    $business = digestBusiness();
+    digestPhone($business, 'client', 'ExponentPushToken[owner0000000000000000]');
+    DigestWriter::fake(['nunca']);
+    Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+    Mail::shouldReceive('to')->andThrow(new RuntimeException('smtp down'));
+
+    $this->artisan('atendia:daily-digest')->assertSuccessful();
+
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), 'exp.host'));
+});
+
+test('the report push is not swallowed by a bell push that just buzzed the same person', function (): void {
+    $business = digestBusiness();
+    $owner = digestPhone($business, 'client', 'ExponentPushToken[owner0000000000000000]');
+    DigestWriter::fake(['• Una consulta.']);
+    Cache::put('wa:digest:'.$business->id, digestTally(), 3600);
+    // The bell buzzed this person a moment ago: its own quiet window is taken.
+    Cache::put('push:window:NewBellNotice:'.$owner->id, true, 30);
+
+    $this->artisan('atendia:daily-digest')->assertSuccessful();
+
+    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'exp.host'));
 });
 
 test('the mail renders its figures and the way to ask for another one', function (): void {

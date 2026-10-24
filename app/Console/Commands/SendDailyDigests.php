@@ -7,6 +7,8 @@ namespace App\Console\Commands;
 use App\Actions\Business\ComposeDailyDigest;
 use App\Mail\BusinessDailyDigest;
 use App\Messaging\Channels\Email;
+use App\Messaging\Channels\Push;
+use App\Messaging\Push\DailyDigestReady;
 use App\Models\Business;
 use App\Models\DailyDigest;
 use App\Services\Tenant;
@@ -14,10 +16,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * The owner's closing mail: what the assistant handled today. It goes by
- * e-mail, never by an unsolicited WhatsApp: a number that writes first to its
- * owner every night looks like spam to WhatsApp. The owner can still ask for
- * it on WhatsApp by writing "resumen". Reads the tally the reply job keeps.
+ * The owner's closing report: what the assistant handled today. It goes by
+ * e-mail and a generic push to the app, never by an unsolicited WhatsApp: a
+ * number that writes first to its owner every night looks like spam to
+ * WhatsApp. The owner can still ask for it there by writing "resumen".
+ * Reads the tally the reply job keeps.
  */
 class SendDailyDigests extends Command
 {
@@ -60,6 +63,9 @@ class SendDailyDigests extends Command
                 // Only what actually left is kept: a failed send leaves the tally for the next run.
                 DailyDigest::keep($business, $digest);
                 Cache::forget($key);
+
+                // The report now exists for the app as well: tell the owner's phone it is ready.
+                (new Push($business, [], DailyDigestReady::class))->send();
 
                 $this->info("Digest mailed for {$business->name}");
             }));

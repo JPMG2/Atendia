@@ -39,11 +39,12 @@ class Push extends Channel
         $outgoing = LoginDevice::pushTargetsFor((int) $business->id)
             ->filter(fn (LoginDevice $device): bool => $message->wants($device->user))
             ->groupBy('user_id')
-            ->filter(function ($devices, $userId) use ($window, &$claimed): bool {
-                $taken = Cache::add("push:window:{$userId}", true, $window);
+            ->filter(function ($devices, $userId) use ($message, $window, &$claimed): bool {
+                $key = "push:window:{$message->quietKey()}:{$userId}";
+                $taken = Cache::add($key, true, $window);
 
                 if ($taken) {
-                    $claimed[] = $userId;
+                    $claimed[] = $key;
                 }
 
                 return $taken;
@@ -73,8 +74,8 @@ class Push extends Channel
                 }
             }
         } catch (Throwable $e) {
-            foreach ($claimed as $userId) {
-                Cache::forget("push:window:{$userId}");
+            foreach ($claimed as $key) {
+                Cache::forget($key);
             }
 
             throw $e;
