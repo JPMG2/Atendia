@@ -66,6 +66,22 @@ class AssistantSkill extends Model
     }
 
     /**
+     * The platform admin's skills, all upfront: read across every business,
+     * so they belong to no trade.
+     *
+     * @return list<string>
+     */
+    public static function adminKeys(): array
+    {
+        return self::query()
+            ->where('is_active', true)
+            ->where('audience', SkillAudience::Admin)
+            ->orderBy('sort_order')
+            ->pluck('key')
+            ->all();
+    }
+
+    /**
      * @return BelongsToMany<BusinessActivity, $this>
      */
     public function activities(): BelongsToMany

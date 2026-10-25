@@ -48,6 +48,9 @@ class PlatformSettingSeeder extends Seeder
             ['key' => 'support.overdue_hours', 'group' => 'support', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 720, 'sort_order' => 2],
             ['key' => 'support.ai_suggestions', 'group' => 'support', 'type' => 'integer', 'default_value' => '1', 'min' => 0, 'max' => 1, 'sort_order' => 3],
 
+            // The admin's AI assistant is paid by the platform: a daily ceiling on its questions.
+            ['key' => 'admin_assistant.daily_questions', 'group' => 'admin_assistant', 'type' => 'integer', 'default_value' => '100', 'min' => 5, 'max' => 2000, 'sort_order' => 1],
+
             // How long an admin or support session may sit untouched before it ends.
             ['key' => 'security.staff_idle_minutes', 'group' => 'security', 'type' => 'integer', 'default_value' => '20', 'min' => 5, 'max' => 240, 'sort_order' => 0],
 

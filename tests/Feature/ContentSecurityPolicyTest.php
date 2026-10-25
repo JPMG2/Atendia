@@ -46,6 +46,9 @@ test('the policy names what the pages really load and closes the rest', function
         ->toContain('https://fonts.googleapis.com')
         ->toContain('https://fonts.gstatic.com')
         ->toContain('https://tile.openstreetmap.org')
+        ->toContain('https://pps.whatsapp.net')
+        ->toContain("connect-src 'self' blob:")
+        ->not->toContain('cloudflareinsights')
         ->toContain("object-src 'none'")
         ->toContain("base-uri 'self'")
         ->toContain("form-action 'self'")
@@ -54,8 +57,8 @@ test('the policy names what the pages really load and closes the rest', function
 });
 
 test('the WebSocket origin follows the host and the scheme of the request', function (): void {
-    expect(policyOf($this->get('https://aliadito.test/')))->toContain('connect-src \'self\' wss://aliadito.test')
-        ->and(policyOf($this->get('http://aliadito.test/')))->toContain('connect-src \'self\' ws://aliadito.test');
+    expect(policyOf($this->get('https://aliadito.test/')))->toContain('connect-src \'self\' blob: wss://aliadito.test')
+        ->and(policyOf($this->get('http://aliadito.test/')))->toContain('connect-src \'self\' blob: ws://aliadito.test');
 });
 
 test('a violation report is logged once an hour for each directive and address', function (): void {

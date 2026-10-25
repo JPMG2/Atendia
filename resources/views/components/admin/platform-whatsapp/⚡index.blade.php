@@ -48,6 +48,9 @@ new class extends Component
             'checked_at' => $line->checkedAt->setTimezone($local)->format('d/m H:i'),
         ];
 
+        // The topbar pill must not say otherwise than the card the admin is looking at.
+        $this->dispatch('platform-whatsapp:read');
+
         if ($line->state->isConnected()) {
             if ($this->qr !== null) {
                 $this->dispatchNotification(new NotificationDto(__('platform_whatsapp.link.linked'), NotificationType::Success));

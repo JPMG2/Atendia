@@ -1,6 +1,11 @@
 <?php
 
 declare(strict_types=1);
+use App\Ai\Tools\AdminAlerts;
+use App\Ai\Tools\AdminBusinessFile;
+use App\Ai\Tools\AdminFindBusiness;
+use App\Ai\Tools\AdminPaymentQueue;
+use App\Ai\Tools\AdminPlatformPulse;
 use App\Ai\Tools\BookCustomerAppointment;
 use App\Ai\Tools\CheckBusinessHours;
 use App\Ai\Tools\CheckFreeSlots;
@@ -488,6 +493,11 @@ return [
             'owner_plan' => OwnerPlanUsage::class,
             'owner_team' => OwnerTeamStatus::class,
             'panel_guide' => PanelGuide::class,
+            'admin_pulse' => AdminPlatformPulse::class,
+            'admin_find_business' => AdminFindBusiness::class,
+            'admin_business_file' => AdminBusinessFile::class,
+            'admin_alerts' => AdminAlerts::class,
+            'admin_payment_queue' => AdminPaymentQueue::class,
         ],
     ],
 
@@ -520,6 +530,49 @@ return [
             'team' => ['menu.team', 'team'],
             'settings' => ['menu.settings', 'settings'],
             'help' => ['menu.help', 'help'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | The admin's panel assistant
+    |--------------------------------------------------------------------------
+    | `daily_questions`: how many questions the admin side may ask per day (it
+    | is paid by the platform; a platform setting overrides it). `guide`: admin
+    | route name => [menu label key, translation path of the screen]. Each
+    | becomes an SDK skill the model loads on demand, read from the very texts
+    | the screen prints, so a new screen without a line here fails its test.
+    */
+
+    'admin_assistant' => [
+        'daily_questions' => 100,
+        'guide' => [
+            'admin.dashboard' => ['menu.admin_home', 'admin.home'],
+            'admin.alerts' => ['menu.admin_alerts', 'platform_events'],
+            'admin.businesses' => ['menu.admin_all_businesses', 'admin.businesses'],
+            'admin.adoption' => ['menu.admin_adoption', 'adoption'],
+            'admin.incidents' => ['menu.admin_incidents', 'incidents'],
+            'admin.contacts' => ['menu.admin_contacts', 'contacts'],
+            'admin.compliance' => ['menu.admin_compliance', 'compliance'],
+            'admin.payments' => ['menu.admin_payments', 'billing'],
+            'admin.collections' => ['menu.admin_collections', 'collections'],
+            'admin.ai' => ['menu.admin_ai', 'admin.ai'],
+            'admin.ai-usage' => ['menu.admin_ai_usage', 'admin.ai_usage'],
+            'admin.ai-quality' => ['menu.admin_ai_quality', 'ai_quality'],
+            'admin.moderation' => ['menu.admin_content', 'moderation'],
+            'admin.testimonials' => ['menu.admin_testimonials', 'testimonials'],
+            'admin.mentions' => ['menu.admin_mentions', 'mentions'],
+            'admin.support' => ['menu.admin_support', 'support'],
+            'admin.company' => ['menu.admin_company', 'company'],
+            'admin.catalogs' => ['menu.admin_catalogs', 'catalog'],
+            'admin.integrations' => ['menu.admin_integrations', 'integrations'],
+            'admin.platform-whatsapp' => ['menu.admin_platform_whatsapp', 'platform_whatsapp'],
+            'admin.settings' => ['menu.admin_settings', 'admin.settings'],
+            'admin.users' => ['menu.admin_users', 'admin.users'],
+            'admin.roles' => ['menu.admin_roles', 'admin.roles'],
+            'admin.audit' => ['menu.admin_audit', 'admin.audit'],
+            'admin.logs' => ['menu.admin_logs', 'logs'],
+            'admin.security' => ['menu.admin_security', 'security'],
         ],
     ],
 
@@ -612,9 +665,11 @@ return [
             'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             'font-src' => ["'self'", 'data:', 'https://fonts.gstatic.com'],
             // The map of a location message is nine OpenStreetMap tiles the browser loads itself.
-            'img-src' => ["'self'", 'data:', 'blob:', 'https://tile.openstreetmap.org'],
+            // pps.whatsapp.net serves the profile picture of the number that just linked.
+            'img-src' => ["'self'", 'data:', 'blob:', 'https://tile.openstreetmap.org', 'https://pps.whatsapp.net'],
             'media-src' => ["'self'", 'data:', 'blob:'],
-            'connect-src' => ["'self'"],
+            // blob: is the avatar cropper reading the picture the person just picked.
+            'connect-src' => ["'self'", 'blob:'],
             'frame-ancestors' => ["'self'"],
             'object-src' => ["'none'"],
             'base-uri' => ["'self'"],

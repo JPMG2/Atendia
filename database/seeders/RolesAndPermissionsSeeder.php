@@ -42,7 +42,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'payments.view', 'payments.verify',
             'moderation.view', 'testimonials.moderate', 'mentions.manage',
             'support.view',
-            'ai.view', 'ai.manage',
+            // `ai.ask` opens the admin's AI assistant, which reads across every business: its own key, not support's by default.
+            'ai.view', 'ai.manage', 'ai.ask',
             'adoption.view', 'incidents.view', 'contacts.view', 'compliance.view', 'alerts.view', 'alerts.acknowledge',
             // `integrations.manage` links and unlinks the platform's own WhatsApp line: the owner's alone, support only looks.
             'catalogs.manage', 'company.manage', 'integrations.view', 'integrations.manage',

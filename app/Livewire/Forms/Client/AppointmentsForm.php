@@ -67,6 +67,16 @@ class AppointmentsForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules();
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
+    {
         return [
             'appointments_enabled' => ['boolean'],
             'appointment_capacity' => ['required', 'integer', 'min:1', 'max:50'],
@@ -80,6 +90,14 @@ class AppointmentsForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'appointment_capacity' => __('client.business.appointments.capacity'),

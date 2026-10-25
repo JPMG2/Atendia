@@ -76,6 +76,21 @@ it('sirve voseo (es_AR) a una visita desde Argentina', function (): void {
     expect(app()->getLocale())->toBe('es_AR');
 });
 
+it('dice las menciones con voseo en es_AR y con tuteo en la base, sin perder lo que no se pisa', function (): void {
+    app()->setLocale('es_AR');
+
+    expect(__('client.mention.not_following.body', ['accounts' => 'X', 'brand' => 'B']))->toContain('Seguilas y tocá')
+        ->and(__('client.mention.withdraw_message'))->toContain('volvés')
+        ->and(__('bell.lines.mention_offered', ['achievement' => 'una meta']))->toContain('querés')
+        ->and(__('mentions.followers.stale'))->toBe('Vencido: volvé a contar')
+        ->and(__('mentions.title'))->toBe('Menciones');
+
+    app()->setLocale('es');
+
+    expect(__('client.mention.not_following.body', ['accounts' => 'X', 'brand' => 'B']))->toContain('Síguelas y toca')
+        ->and(__('mentions.followers.stale'))->toBe('Vencido: vuelve a contar');
+});
+
 it('sirve neutro (es_VE) a una visita desde Venezuela', function (): void {
     Location::shouldReceive('get')->andReturn(fakePosition('VE'));
 

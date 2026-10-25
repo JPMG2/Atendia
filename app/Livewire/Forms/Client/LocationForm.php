@@ -74,6 +74,16 @@ class LocationForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules();
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
+    {
         return [
             'hasPremises' => ['nullable', ...AttributeValidator::booleanValue(false)],
             'address' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
@@ -85,6 +95,14 @@ class LocationForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'address' => config('nicename.address'),

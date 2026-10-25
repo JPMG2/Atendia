@@ -1,6 +1,9 @@
 <?php
 
+use App\Enums\PlatformWhatsAppState;
 use App\Enums\SubscriptionStatus;
+use App\Services\PlatformWhatsApp;
+use Carbon\CarbonImmutable;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
 use App\Actions\Admin\RankBusinessActivity;
 use App\Models\BusinessMention;
@@ -27,6 +30,26 @@ new class extends Component
     private const QUEUE_PREVIEW = 5;
 
     public PaymentReviewForm $form;
+
+    /**
+     * Aliadito's own WhatsApp line when it is KNOWN to be down, for whoever may look at it.
+     * "Not verified" is not down (the board has its own sensor for a silent bridge).
+     *
+     * @return array{state: PlatformWhatsAppState, since: ?CarbonImmutable}|null
+     */
+    #[Computed]
+    public function lineDown(): ?array
+    {
+        if (auth()->user()?->can('integrations.view') !== true) {
+            return null;
+        }
+
+        $line = PlatformWhatsApp::lastKnown();
+
+        return $line['state']->isConnected() || $line['state'] === PlatformWhatsAppState::Unreachable
+            ? null
+            : ['state' => $line['state'], 'since' => $line['since']];
+    }
 
     #[Computed]
     public function receipts(): int
@@ -234,10 +257,27 @@ new class extends Component
     the poll and of the copy below are the same number. --}}
     @island(name: 'board')
     <div wire:poll.30s.visible>
+    {{-- Inside the island so it clears itself when the line comes back; the lock
+    for linking is the route's permission, the button is only courtesy. --}}
+    @if ($this->lineDown !== null)
+        <x-ui.alert variant="danger" icon="triangle-alert" class="mb-3" data-testid="platform-line-down">
+            {{ __('admin.home.line_down.text', ['brand' => \App\Models\Company::brand()]) }}
+            @if ($this->lineDown['since'] !== null)
+                {{ __('admin.home.line_down.since', ['ago' => $this->lineDown['since']->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE, short: true)]) }}.
+            @endif
+            @can('integrations.manage')
+                <a class="row-link" href="{{ route('admin.platform-whatsapp') }}" wire:navigate>{{ __('admin.home.line_down.link') }}</a>
+            @endcan
+        </x-ui.alert>
+    @endif
+
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span class="text-subtle text-sm">{{ __('admin.home.live', ['seconds' => 30]) }}</span>
-        <span class="text-subtle font-mono text-sm">
-            {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i:s')]) }}
+        <span class="flex items-center gap-3">
+            <x-ask.admin-button :question="__('ask_admin.ask.pulse')" />
+            <span class="text-subtle font-mono text-sm">
+                {{ __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i:s')]) }}
+            </span>
         </span>
     </div>
 
@@ -300,7 +340,7 @@ new class extends Component
     {{-- The queue comes first: what is stuck waiting for her beats what is
     merely coming (atendiadesign §7.2). --}}
     <x-ui.card class="bp-card mt-3">
-        <div class="bp-card-head"><h2>{{ __('admin.home.queue.title') }}</h2></div>
+        <div class="bp-card-head"><h2>{{ __('admin.home.queue.title') }}</h2><x-ask.admin-button :question="__('ask_admin.ask.queue')" /></div>
         <p class="bp-card-sub">{{ __('admin.home.queue.sub') }}</p>
 
         @if ($this->queue->isEmpty())
@@ -424,7 +464,7 @@ new class extends Component
         </div>
 
         <div x-show="tab === 'leaving'" x-cloak>
-            <div class="bp-card-head"><h2>{{ __('admin.home.leaving.title') }}</h2></div>
+            <div class="bp-card-head"><h2>{{ __('admin.home.leaving.title') }}</h2><x-ask.admin-button :question="__('ask_admin.ask.leaving')" /></div>
             <p class="bp-card-sub">{{ __('admin.home.leaving.sub') }}</p>
 
             @if ($this->leaving->isEmpty())
@@ -460,7 +500,7 @@ new class extends Component
         </div>
 
         <div x-show="tab === 'struggling'" x-cloak>
-        <div class="bp-card-head"><h2>{{ __('admin.home.struggling.title') }}</h2></div>
+        <div class="bp-card-head"><h2>{{ __('admin.home.struggling.title') }}</h2><x-ask.admin-button :question="__('ask_admin.ask.struggling')" /></div>
         <p class="bp-card-sub">{{ __('admin.home.struggling.sub') }}</p>
 
         @if ($this->struggling->isEmpty())

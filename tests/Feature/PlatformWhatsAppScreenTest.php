@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Enums\PlatformWhatsAppState;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
+use App\Models\Company;
 use App\Models\Menu;
 use App\Models\PlatformSensor;
 use App\Models\User;
+use App\Services\PlatformWhatsApp;
+use Carbon\CarbonImmutable;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -296,6 +300,139 @@ describe('unlinking it', function (): void {
         Livewire::test('admin.platform-whatsapp.index')->call('unlink')->assertForbidden();
 
         Http::assertNothingSent();
+    });
+});
+
+function lineSensor(string $status, int $minutesAgo = 1, ?int $changedMinutesAgo = null): void
+{
+    PlatformSensor::query()->create([
+        'sensor_key' => 'platform_whatsapp',
+        'group' => 'system',
+        'status' => $status,
+        'value' => $status === 'ok' ? 'open' : 'close',
+        'checked_at' => now()->subMinutes($minutesAgo),
+        'changed_at' => now()->subMinutes($changedMinutesAgo ?? $minutesAgo),
+    ]);
+}
+
+describe('how long it has been down', function (): void {
+    test('the pill says for how long the line has been down, from the board\'s own date', function (): void {
+        lineSensor('crit', changedMinutesAgo: 125);
+        lineViewer();
+
+        Livewire::test('whatsapp.platform-pill')
+            ->assertSeeHtml('data-testid="platform-pill-since"')
+            ->assertSee('2');
+    });
+
+    test('a date the board does not stand behind is not shown beside what the screen just read', function (): void {
+        lineSensor('ok', changedMinutesAgo: 600);
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Closed, CarbonImmutable::now());
+        lineViewer();
+
+        Livewire::test('whatsapp.platform-pill')
+            ->assertSeeHtml('data-testid="platform-pill-down"')
+            ->assertDontSeeHtml('platform-pill-since');
+    });
+
+    test('the home warns while the line is known to be down, with the way back only for who may link it', function (): void {
+        lineSensor('crit', changedMinutesAgo: 90);
+        platformAdmin();
+
+        Livewire::test('admin.home.index')
+            ->assertSeeHtml('data-testid="platform-line-down"')
+            ->assertSee(__('admin.home.line_down.link'));
+
+        $this->actingAs(lineViewer());
+
+        Livewire::test('admin.home.index')
+            ->assertSeeHtml('data-testid="platform-line-down"')
+            ->assertDontSee(__('admin.home.line_down.link'));
+    });
+
+    test('the home says nothing when the line is fine, unverified or the viewer cannot look at it', function (): void {
+        lineSensor('ok');
+        platformAdmin();
+
+        Livewire::test('admin.home.index')->assertDontSeeHtml('platform-line-down');
+
+        PlatformSensor::query()->delete();
+        lineSensor('crit', minutesAgo: 30);
+
+        Livewire::test('admin.home.index')->assertDontSeeHtml('platform-line-down');
+
+        PlatformSensor::query()->delete();
+        lineSensor('crit');
+        $this->actingAs(platformAdmin('support'));
+
+        Livewire::test('admin.home.index')->assertDontSeeHtml('platform-line-down');
+    });
+});
+
+describe('the topbar pill', function (): void {
+    test('it says connected, naming the brand, while the board reads the line green', function (): void {
+        Http::fake();
+        lineSensor('ok');
+        lineViewer();
+
+        Livewire::test('whatsapp.platform-pill')
+            ->assertSee(__('platform_whatsapp.topbar.connected', ['brand' => Company::brand()]))
+            ->assertSeeHtml('data-testid="platform-pill-connected"');
+
+        Http::assertNothingSent();
+    });
+
+    test('a closed session is a warning that links to the line screen', function (): void {
+        lineSensor('crit');
+        lineViewer();
+
+        Livewire::test('whatsapp.platform-pill')
+            ->assertSeeHtml('data-testid="platform-pill-down"')
+            ->assertSee(__('platform_whatsapp.topbar.disconnected', ['brand' => Company::brand()]))
+            ->assertSeeHtml(route('admin.platform-whatsapp'));
+    });
+
+    test('a green nobody refreshed, or no reading at all, is never shown as connected', function (): void {
+        lineViewer();
+
+        Livewire::test('whatsapp.platform-pill')->assertSeeHtml('data-testid="platform-pill-unverified"');
+
+        lineSensor('ok', minutesAgo: 30);
+
+        Livewire::test('whatsapp.platform-pill')
+            ->assertSeeHtml('data-testid="platform-pill-unverified"')
+            ->assertDontSeeHtml('platform-pill-connected');
+    });
+
+    test('what the screen just learned from the bridge wins over an older reading', function (): void {
+        lineSensor('crit', minutesAgo: 3);
+        bridgeSays('open');
+        platformAdmin();
+
+        Livewire::test('whatsapp.platform-pill')->assertSeeHtml('data-testid="platform-pill-down"');
+
+        Livewire::test('admin.platform-whatsapp.index')->call('check');
+
+        Livewire::test('whatsapp.platform-pill')->assertSeeHtml('data-testid="platform-pill-connected"');
+    });
+
+    test('whoever cannot see the line does not get the pill', function (): void {
+        lineSensor('ok');
+        $this->actingAs(platformAdmin('support'));
+
+        Livewire::test('whatsapp.platform-pill')->assertDontSeeHtml('conn-pill ');
+    });
+
+    test('the admin topbar carries it and the client topbar does not', function (): void {
+        lineSensor('ok');
+        platformAdmin();
+
+        $this->get(route('admin.dashboard'))->assertOk()->assertSee('platform-pill-connected', false);
+
+        $client = User::factory()->create(['email_verified_at' => now()]);
+        $client->assignRole('client');
+
+        $this->actingAs($client)->get(route('dashboard'))->assertDontSee('platform-pill-', false);
     });
 });
 

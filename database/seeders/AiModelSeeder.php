@@ -101,6 +101,7 @@ class AiModelSeeder extends Seeder
         $tasks = [
             ['AsistenteAtendia', 'Atiende a los clientes del negocio por WhatsApp', false, AiCapability::Vision],
             ['AskAtendia', 'Responde las consultas de la dueña sobre su plataforma', false, AiCapability::Text],
+            ['AskAdmin', 'Responde las consultas del admin sobre la plataforma y sus negocios', false, AiCapability::Text],
             ['ConversationAnalyst', 'Analiza de qué se trató cada conversación', false, AiCapability::Text],
             ['QuestionMatcher', 'Agrupa preguntas repetidas', true, AiCapability::Text],
             ['ReplyTranslator', 'Traduce una respuesta al idioma del cliente', true, AiCapability::Text],

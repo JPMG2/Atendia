@@ -7,9 +7,7 @@ namespace App\Livewire\Forms\Client;
 use App\Classes\Main\Client;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Events\BusinessConnectionSaved;
 use App\Livewire\Forms\BaseForm;
-use App\Models\Business;
 use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,17 +42,9 @@ class ContactForm extends BaseForm
     {
         $validated = $this->validateServiceData();
 
-        // Taken BEFORE the save: afterwards the model can no longer tell a
-        // first address from a corrected one.
-        $hadEmail = filled(Auth::user()->business?->email);
+        return $this->tryAction(function () use ($validated): NotificationDto {
 
-        // Leaves the closure by reference: the event fires OUTSIDE tryAction,
-        // where a listener's failure cannot turn a good save into an error.
-        $saved = null;
-
-        $notification = $this->tryAction(function () use ($validated, &$saved): NotificationDto {
-
-            $saved = $this->client()->personalData->saveConnection($validated);
+            $saved = $this->client()->personalData->saveContact($validated);
 
             if ($saved === null) {
                 return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -63,12 +53,6 @@ class ContactForm extends BaseForm
             return $this->notificationService()->notificationFor($saved, 'updated');
 
         }, __('notifications.not_updated'));
-
-        if ($saved instanceof Business) {
-            BusinessConnectionSaved::dispatch($saved, $hadEmail);
-        }
-
-        return $notification;
     }
 
     /** Rebuilt per request: a Livewire form cannot hold it in a constructor. */
@@ -89,6 +73,16 @@ class ContactForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules();
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
+    {
         return [
             // Optional HERE on purpose: the wizard demands the trio to
             // "connect"; the card just edits what exists.
@@ -103,6 +97,14 @@ class ContactForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'whatsapp_number' => config('nicename.whatsapp_number'),

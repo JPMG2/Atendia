@@ -233,6 +233,23 @@ class Menu extends Model
     }
 
     /**
+     * The group each menu item sits under, by label key: how a screen is named
+     * in full ("Negocios › Todos") when its own label alone says nothing.
+     *
+     * @return array<string, string> child label key => parent label key
+     */
+    public static function parentLabelKeys(): array
+    {
+        return self::query()
+            ->whereNotNull('parent_id')
+            ->with('parent:id,label_key')
+            ->get(['id', 'parent_id', 'label_key'])
+            ->mapWithKeys(fn (self $item): array => [$item->label_key => (string) $item->parent?->label_key])
+            ->filter()
+            ->all();
+    }
+
+    /**
      * Recursively drop items (and their subtrees) the user may not see.
      *
      * @param  Collection<int, Menu>  $items

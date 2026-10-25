@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\SkillAudience;
+use App\Interfaces\Main\AdminSkillTool;
 use App\Interfaces\Main\AssistantSkillTool;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\AssistantSkill;
@@ -29,9 +30,11 @@ function assistantToolClasses(): array
         ->all();
 }
 
-test('every tool in app/Ai/Tools is a skill of the customer assistant or of the owner one', function (): void {
+test('every tool in app/Ai/Tools is a skill of the customer assistant, the owner one or the admin one', function (): void {
     $plainTools = collect(assistantToolClasses())
-        ->reject(fn (string $class): bool => is_subclass_of($class, AssistantSkillTool::class) || is_subclass_of($class, OwnerSkillTool::class))
+        ->reject(fn (string $class): bool => is_subclass_of($class, AssistantSkillTool::class)
+            || is_subclass_of($class, OwnerSkillTool::class)
+            || is_subclass_of($class, AdminSkillTool::class))
         ->values();
 
     expect($plainTools->implode("\n"))->toBe('');
@@ -73,7 +76,11 @@ test('a seeded skill serves exactly the audience its tool is built for', functio
     $crossed = AssistantSkill::query()->get()
         ->reject(fn (AssistantSkill $skill): bool => is_subclass_of(
             (string) config("atendia.assistant.skills.{$skill->key}"),
-            $skill->audience === SkillAudience::Owner ? OwnerSkillTool::class : AssistantSkillTool::class,
+            match ($skill->audience) {
+                SkillAudience::Owner => OwnerSkillTool::class,
+                SkillAudience::Admin => AdminSkillTool::class,
+                SkillAudience::Customer => AssistantSkillTool::class,
+            },
         ))
         ->pluck('key');
 

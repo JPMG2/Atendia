@@ -33,6 +33,7 @@ class Client
         public readonly ?PlanUsage $planUsage = null,
         public readonly ?BusinessProfile $businessProfile = null,
         public readonly ?Closures $closures = null,
+        public readonly ?BusinessCards $businessCards = null,
     ) {}
 
     /**
@@ -63,6 +64,7 @@ class Client
             $business === null ? null : new PlanUsage($business),
             $business === null ? null : new BusinessProfile($business),
             $business === null ? null : new Closures($business),
+            $business === null ? null : new BusinessCards($business),
         );
     }
 

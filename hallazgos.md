@@ -13,6 +13,16 @@
 >
 > Formato: una línea por hallazgo, con la fecha y dónde está. Cuando se arregla, se borra.
 
+## 2026-10-25
+
+- **`php artisan boost:update` NO es inofensivo.** Regeneró `CLAUDE.md` con el texto base de SU versión (borró las secciones «tests rules» y «Replies» del proyecto) y reescribió seis archivos de `.claude/skills/` (`infer-conventions`, `laravel-best-practices`, `testing-best-practices`). Se restauró desde el repositorio y se reaplicó solo la línea propia. Para tocar una guía de `.ai/guidelines/`: editar la guía y el bloque de `CLAUDE.md` a mano, sin correrlo.
+- **Dos sesiones corriendo `pest` sobre `atendia_testing` a la vez se matan** (`deadlock detected`, `relation "permissions" does not exist`): la primera prueba de cada archivo hace `migrate:fresh`. Cada rojo de hoy con esa firma pasó de a uno. Antes de dar un rojo por real, repetirlo solo y mirar `pgrep -f "[p]est tests"`.
+- **El logo del negocio se guarda en `logos/`, no en `businesses/{id}/` como pide `tenancy.md`, y el anterior se borra ANTES de confirmar el nuevo** (`PersonalData::storeLogo`, heredado tal cual del formulario de la web): si el guardado falla, el negocio apunta a un archivo borrado. Sin tocar: es de la web y no era la tarea.
+- **`/var/www/atendia161026/.claude-code.env`** (133 bytes, solo root) sigue en la copia vieja del proyecto; no se abrió. Probablemente un token de Claude: decidir si se borra con la carpeta.
+- **Las conversaciones del SDK (`agent_conversations*`) no tienen retención ni se borran con `PurgeBusiness`** y guardan las salidas de las herramientas del admin (correos, montos, números de WhatsApp de negocios). Decisión de privacidad que cuelga de R-10.
+- **Los avisos del tablero guardan al negocio solo por una clave** (`whatsapp_disconnected:24`) y la llave foránea se anula al borrarlo: cualquier borrado de negocio hecho por fuera de `PurgeBusiness` deja avisos huérfanos. Ya corregido en `PurgeBusiness`; los 13 de Laboratorio Vida y de otros cuatro negocios de prueba se borraron a mano.
+- **`D-06` estaba marcado «en espera de ella» y ya estaba hecho** (regla y pruebas en `ProcessIncomingWhatsAppMessage::ownerTarget` / `HandoffTest`). Lección que repite la del 20/10: antes de listar un pendiente, buscarlo en el código.
+
 ## 2026-10-08
 
 - **La suite de navegador del 08/10 dio 257 verdes y 3 rojos, en 1646 s (27 min).** Uno era mío

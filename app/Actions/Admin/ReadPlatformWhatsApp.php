@@ -26,6 +26,15 @@ class ReadPlatformWhatsApp
 
     public function handle(): PlatformWhatsAppDto
     {
+        $line = $this->ask();
+
+        PlatformWhatsApp::remember($line->state, $line->checkedAt);
+
+        return $line;
+    }
+
+    private function ask(): PlatformWhatsAppDto
+    {
         $instance = PlatformWhatsApp::instance();
         $now = CarbonImmutable::now();
 

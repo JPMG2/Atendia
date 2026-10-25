@@ -26,6 +26,19 @@ class AiUsage extends Model
     /** The owner's panel assistant: agent rows are keyed by class basename. */
     public const string ASK_ATENDIA = 'AskAtendia';
 
+    /** The admin's panel assistant: it belongs to no business, so its rows carry none. */
+    public const string ASK_ADMIN = 'AskAdmin';
+
+    /** Questions the admin side asked today, on the platform's own clock: what the daily ceiling counts. */
+    public static function adminQuestionsToday(): int
+    {
+        return self::query()
+            ->whereNull('business_id')
+            ->where('kind', self::ASK_ADMIN)
+            ->where('created_at', '>=', now(Company::localTimezone())->startOfDay()->utc())
+            ->count();
+    }
+
     /**
      * The real businesses that asked the AI the most between two moments (up
      * to now when `$until` is null), most first. Calls with no business (the

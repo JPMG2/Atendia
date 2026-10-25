@@ -11,7 +11,6 @@ use App\Livewire\Forms\BaseForm;
 use App\Rules\AttributeValidator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
@@ -63,7 +62,7 @@ class IdentityForm extends BaseForm
             // A picked file becomes the path; with none picked the column is not
             // sent at all, so the stored logo stays.
             if ($validated['logo_file'] instanceof UploadedFile) {
-                $payload['logo_path'] = $this->storeLogo($validated['logo_file']);
+                $payload['logo_path'] = $this->client()->personalData->storeLogo($validated['logo_file']);
             }
 
             $business = $this->client()->personalData->saveIdentity($payload);
@@ -82,23 +81,6 @@ class IdentityForm extends BaseForm
         return Client::for(Auth::user());
     }
 
-    /**
-     * Stores the logo and drops the one it replaces: nothing points at the
-     * old file any more, and an orphan on a public disk is nobody's to find.
-     */
-    private function storeLogo(UploadedFile $file): string
-    {
-        $path = (string) $file->store('logos', 'public');
-
-        $previous = Auth::user()->business?->logo_path;
-
-        if ($previous !== null && $previous !== $path) {
-            Storage::disk('public')->delete($previous);
-        }
-
-        return $path;
-    }
-
     protected function transformServiceData(): array
     {
         return [
@@ -109,6 +91,16 @@ class IdentityForm extends BaseForm
     }
 
     protected function getValidationRules(?int $excludeId = null): array
+    {
+        return self::fieldRules();
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
     {
         return [
             'name' => AttributeValidator::stringValid(true, '3'),
@@ -121,6 +113,14 @@ class IdentityForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'name' => config('nicename.name'),

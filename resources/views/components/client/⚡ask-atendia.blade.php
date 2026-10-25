@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\AskAtendia;
+use App\Classes\Main\AnswerHtml;
 use App\Classes\Main\Plan;
 use App\Livewire\Forms\Client\AskAtendiaForm;
 use App\Models\AskFeedback;
@@ -180,67 +181,18 @@ new class extends Component
         return str_replace('%ASSISTANT%', '<strong class="ask-hello-brand">'.$name.'</strong>', e(__('ask.intro', ['assistant' => '%ASSISTANT%'])));
     }
 
-    /**
-     * The answer's text escaped, with only its own links turned live: a link
-     * the model wrote to anywhere but this app stays plain text.
-     */
+    /** The answer made safe to print: the one shared by both assistants. */
     public function answerHtml(string $text): string
     {
-        $host = parse_url((string) config('app.url'), PHP_URL_HOST);
-        $html = e($text);
-
-        $html = preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/', function (array $link) use ($host): string {
-            $url = html_entity_decode($link[2]);
-
-            return parse_url($url, PHP_URL_HOST) === $host
-                ? '<a href="'.e($url).'" wire:navigate class="ask-link">'.$link[1].'</a>'
-                : $link[1];
-        }, $html) ?? $html;
-
-        $html = preg_replace('/\*\*(.+?)\*\*/', '<b>$1</b>', $html) ?? $html;
-
-        return nl2br($html);
+        return AnswerHtml::of($text);
     }
 };
 ?>
 
 <div
     class="ask-atendia"
-    x-data="{
-        open: false,
-        pending: '',
-        show() {
-            this.open = true;
-            const ready = $wire.opened ? Promise.resolve() : $wire.open();
-            ready.then(() => this.$nextTick(() => document.getElementById('in-question')?.focus()));
-
-            return ready;
-        },
-        scrollDown() {
-            this.$nextTick(() => {
-                const thread = document.querySelector('.ask-thread');
-                thread?.scrollTo({ top: thread.scrollHeight, behavior: 'smooth' });
-            });
-        },
-        send(suggested) {
-            const question = (suggested ?? $wire.form.question ?? '').trim();
-            if (this.pending !== '' || question === '') {
-                return;
-            }
-            this.pending = question;
-            this.scrollDown();
-            (suggested === undefined ? $wire.ask() : $wire.ask(question)).finally(() => {
-                this.pending = '';
-                this.scrollDown();
-            });
-        },
-    }"
-    x-on:slide-over-close.window="
-        if (open) {
-            open = false;
-            $wire.close();
-        }
-    "
+    x-data="askPanel"
+    x-on:slide-over-close.window="close()"
     x-on:ask-atendia.window="
         const question = $event.detail.question;
         show().then(() => {
@@ -305,58 +257,9 @@ new class extends Component
                                 </div>
                             @endif
 
-                            @foreach ($messages as $index => $message)
-                                <div
-                                    wire:key="ask-message-{{ $index }}"
-                                    @class(['ask-msg', 'ask-msg-owner' => $message['role'] === 'owner', 'ask-msg-ai' => $message['role'] !== 'owner'])
-                                >
-                                    @if ($message['role'] === 'owner')
-                                        {{ $message['text'] }}
-                                    @else
-                                        {!! $this->answerHtml($message['text']) !!}
-                                    @endif
-                                </div>
-                                @if ($message['role'] === 'ai' && array_key_exists('rating', $message))
-                                    <div class="ask-rate" wire:key="ask-rate-{{ $index }}">
-                                        @if ($message['rating'] === null)
-                                            <x-ui.icon-button
-                                                icon="thumbs-up"
-                                                size="sm"
-                                                variant="ghost"
-                                                :label="__('ask.rate.up')"
-                                                :title="__('ask.rate.up')"
-                                                wire:click="rate({{ $index }}, 'up')"
-                                            />
-                                            <x-ui.icon-button
-                                                icon="thumbs-down"
-                                                size="sm"
-                                                variant="ghost"
-                                                :label="__('ask.rate.down')"
-                                                :title="__('ask.rate.down')"
-                                                wire:click="rate({{ $index }}, 'down')"
-                                            />
-                                        @else
-                                            <span class="ask-rate-done">
-                                                <x-icon
-                                                    :name="$message['rating'] === 'up' ? 'thumbs-up' : 'thumbs-down'"
-                                                    :size="14"
-                                                />
-                                                {{ __('ask.rate.thanks') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                @endif
-                            @endforeach
+                            <x-ask.messages :messages="$messages" :rateable="true" />
 
-                            <template x-if="pending !== ''">
-                                <div class="ask-thread-pending">
-                                    <div class="ask-msg ask-msg-owner" x-text="pending"></div>
-                                    <div class="ask-msg ask-msg-ai ask-thinking">
-                                        <span class="ask-dots"><i></i><i></i><i></i></span>
-                                        {{ __('ask.thinking') }}
-                                    </div>
-                                </div>
-                            </template>
+                            <x-ask.pending :thinking="__('ask.thinking')" />
 
                             <div class="ask-suggestions" x-show="pending === ''">
                                 <p class="ask-suggestions-title">{{ __('ask.suggestions_title') }}</p>

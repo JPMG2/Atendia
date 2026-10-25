@@ -77,21 +77,48 @@ class BillingForm extends BaseForm
 
     protected function transformServiceData(): array
     {
-        return [
+        return self::tidy([
             'currency_id' => $this->currency_id,
             'reference_currency_id' => $this->reference_currency_id,
             'tax_condition_id' => $this->tax_condition_id,
-            'tax_id' => DtoCast::squish($this->tax_id),
-            'billing_email' => mb_strtolower(trim($this->billing_email)),
+            'tax_id' => $this->tax_id,
+            'billing_email' => $this->billing_email,
+        ]);
+    }
+
+    /**
+     * The values as the card stores them (squished number, lower-cased mail),
+     * public so the mobile API cleans its input exactly the same way.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function tidy(array $input): array
+    {
+        return [
+            ...$input,
+            'tax_id' => DtoCast::squish($input['tax_id'] ?? null),
+            'billing_email' => mb_strtolower(trim((string) ($input['billing_email'] ?? ''))),
         ];
     }
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules(Auth::user()?->business?->country_id);
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     * The tax condition must belong to the business's own country.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(?int $countryId): array
+    {
         return [
             'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')->where('is_active', true)],
             'reference_currency_id' => ['nullable', 'integer', 'different:currency_id', Rule::exists('currencies', 'id')->where('is_active', true)],
-            'tax_condition_id' => ['nullable', 'integer', Rule::exists('tax_conditions', 'id')->where('country_id', Auth::user()?->business?->country_id)],
+            'tax_condition_id' => ['nullable', 'integer', Rule::exists('tax_conditions', 'id')->where('country_id', $countryId)],
             'tax_id' => ['nullable', ...AttributeValidator::stringValid(false, '1'), 'max:20'],
             'billing_email' => ['required', 'string', 'email:rfc', 'max:255'],
         ];
@@ -101,6 +128,14 @@ class BillingForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'currency_id' => __('client.business.billing.currency'),

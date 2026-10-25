@@ -77,7 +77,7 @@
 
     {{-- CSS and form-guard through Vite. app.js is NOT loaded, since it starts its
     own Alpine: Livewire brings Alpine and form-guard hooks onto it. --}}
-    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/avatar-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/photo-viewer.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/role-editor.js', 'resources/js/table-enhance.js', 'resources/js/livewire-failures.js'])
+    @vite(['resources/css/app.css', 'resources/js/form-guard.js', 'resources/js/dialog.js', 'resources/js/combobox.js', 'resources/js/datepicker.js', 'resources/js/file-field.js', 'resources/js/avatar-field.js', 'resources/js/phone-field.js', 'resources/js/ws-phone.js', 'resources/js/catalog-master.js', 'resources/js/catalog-rail.js', 'resources/js/photo-viewer.js', 'resources/js/echo.js', 'resources/js/security-alerts.js', 'resources/js/section-dirty.js', 'resources/js/role-editor.js', 'resources/js/table-enhance.js', 'resources/js/livewire-failures.js', 'resources/js/ask-panel.js'])
     @livewireStyles
 </head>
 {{-- data-*: config for livewire-failures.js — JS can resolve neither routes
@@ -161,6 +161,17 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                     stamp alone stayed green through a whole outage. --}}
                     @if (! $onAdminPanel && auth()->user()?->business)
                         <livewire:whatsapp.pill />
+                    @endif
+
+                    {{-- Admin's own pill is for Aliadito's line, never a business's:
+                    the two lines are told apart by name and never share a component. --}}
+                    @if ($onAdminPanel)
+                        <livewire:whatsapp.platform-pill />
+
+                        {{-- The admin's AI reads across every business: its own key opens it, and the component asks again. --}}
+                        @can('ai.ask')
+                            <livewire:ask.admin />
+                        @endcan
                     @endif
 
                     {{-- The owner's assistant is a client-panel tool: admin has

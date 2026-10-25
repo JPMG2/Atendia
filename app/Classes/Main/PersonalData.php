@@ -7,8 +7,12 @@ namespace App\Classes\Main;
 use App\Actions\Business\SaveBusinessConnection;
 use App\Actions\Business\SaveBusinessIdentity;
 use App\Dto\BusinessDto;
+use App\Events\BusinessConnectionSaved;
 use App\Models\Business;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 /**
  * The personal-data piece: the tenant's identity and contact. Reads through
@@ -45,6 +49,48 @@ class PersonalData
     public function saveIdentity(array $validated): Business
     {
         return app(SaveBusinessIdentity::class)->handle($this->user, $validated);
+    }
+
+    /**
+     * Stores a new logo and drops the file it replaces: nothing points at the
+     * old one any more, and an orphan on a public disk is nobody's to find.
+     * The caller has already put the file through the moderation rule.
+     */
+    public function storeLogo(UploadedFile $file): string
+    {
+        $path = (string) $file->store('logos', 'public');
+        $previous = $this->user->business?->logo_path;
+
+        if ($previous !== null && $previous !== $path) {
+            Storage::disk('public')->delete($previous);
+        }
+
+        return $path;
+    }
+
+    /**
+     * The contact card's save: the connection slice plus the event that tells
+     * the welcome mail whether this was the first address. The event goes out
+     * AFTER the save and a listener that fails is reported, never turned into
+     * a failed save.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function saveContact(array $validated): ?Business
+    {
+        // Taken BEFORE the save: afterwards the model can no longer tell a first address from a corrected one.
+        $hadEmail = filled($this->user->business?->email);
+        $saved = $this->saveConnection($validated);
+
+        if ($saved !== null) {
+            try {
+                BusinessConnectionSaved::dispatch($saved, $hadEmail);
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $saved;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Classes\Main;
 
 use App\Models\Business;
+use App\Models\Company;
 use Carbon\CarbonImmutable;
 use Throwable;
 
@@ -17,11 +18,14 @@ class AssistantContract
 {
     public function __construct(public readonly CarbonImmutable $now, public readonly string $locale = 'es') {}
 
-    /** Without a locale the business's region decides: a worker has no visitor session. */
+    /**
+     * Without a locale the business's region decides: a worker has no visitor session.
+     * Without a business (the admin side) the platform's own clock rules, as it does everywhere else.
+     */
     public static function for(?Business $business, ?string $locale = null): self
     {
         return new self(
-            CarbonImmutable::now($business?->localTimezone() ?? (string) config('app.timezone')),
+            CarbonImmutable::now($business?->localTimezone() ?? Company::localTimezone()),
             $locale ?? $business?->locale() ?? (string) config('locales.default'),
         );
     }

@@ -2796,6 +2796,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .conn-pill-warning { background:var(--warning-soft); color:var(--warning); text-decoration:none;
                        transition:filter var(--dur-fast) var(--ease-out); }
   .conn-pill-warning:hover { filter:brightness(.95); }
+  /* Admin's connected pill is a way in to the line's screen, so it answers the pointer too. */
+  .conn-pill-link { text-decoration:none; transition:filter var(--dur-fast) var(--ease-out); }
+  .conn-pill-link:hover { filter:brightness(.95); }
   .conn-pill-warning .conn-dot { background:var(--warning); animation:conn-beacon 1.8s var(--ease-out) infinite; }
   @keyframes conn-beacon {
     0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--warning) 85%, transparent); }

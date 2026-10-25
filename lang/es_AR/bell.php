@@ -7,4 +7,8 @@ return [
     'settings' => [
         'sub' => 'Elegí qué querés ver en tu campana. Solo cambia lo tuyo: el resto del equipo sigue viendo lo que eligió.',
     ],
+
+    'lines' => [
+        'mention_offered' => 'Alcanzaste :achievement: ¿querés que mencionemos tu negocio en nuestras redes?',
+    ],
 ];

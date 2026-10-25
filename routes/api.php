@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
+use App\Http\Controllers\Api\V1\BusinessCardController;
 use App\Http\Controllers\Api\V1\BusinessClosuresController;
 use App\Http\Controllers\Api\V1\BusinessController;
 use App\Http\Controllers\Api\V1\BusinessHoursController;
@@ -85,6 +86,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
             Route::get('plan', PlanController::class)->middleware('can:manage-business');
             Route::get('business', BusinessController::class)->middleware('can:manage-business');
+            Route::get('business/{card}', [BusinessCardController::class, 'show'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');
+            Route::put('business/{card}', [BusinessCardController::class, 'update'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');
+            Route::post('business/identity/logo', [BusinessCardController::class, 'logo'])->middleware('can:manage-business');
             Route::get('business/hours', [BusinessHoursController::class, 'show'])->middleware('can:manage-business');
             Route::put('business/hours', [BusinessHoursController::class, 'update'])->middleware('can:manage-business');
             Route::get('business/closures', [BusinessClosuresController::class, 'show'])->middleware('can:manage-business');

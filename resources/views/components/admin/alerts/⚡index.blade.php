@@ -256,6 +256,7 @@ new class extends Component
                                                 @if ($target !== null)
                                                     <x-ui.button variant="ghost" size="sm" :href="route($target['route'], $target['query'])" wire:navigate>{{ __('platform_events.screen.go') }}</x-ui.button>
                                                 @endif
+                                                <x-ask.admin-button :question="__('ask_admin.ask.alert', ['kind' => $event->kind->label(), 'business' => $event->aboutBusiness?->name ?? __('platform_events.screen.platform')])" />
                                             </div>
                                         </td>
                                     </tr>

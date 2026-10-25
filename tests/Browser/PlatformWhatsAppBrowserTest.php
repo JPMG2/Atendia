@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Company;
+use App\Models\PlatformSensor;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -101,6 +102,62 @@ test('linked, it says so and offers to unlink, in both themes and widths', funct
 })->with([
     'desktop light' => ['desktop-light', 1280, false],
     'phone dark' => ['phone-dark', 390, true],
+]);
+
+test('the topbar pill follows what the screen learns from the bridge, in both themes', function (string $state, string $pill, bool $dark): void {
+    bridgeForScreen($state);
+
+    $page = visit(route('admin.platform-whatsapp'))->resize(1280, 800);
+
+    if ($dark) {
+        $page->script('document.documentElement.classList.add("dark")');
+    }
+
+    $page->wait(2)
+        ->assertPresent('[data-testid="'.$pill.'"]')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'platform-pill-'.$pill.($dark ? '-dark' : '-light'));
+
+    // It sits in the topbar row with its neighbours, inside the bar, without pushing the page sideways.
+    expect((bool) $page->script('(() => { const p = document.querySelector(".topbar-actions .conn-pill").getBoundingClientRect(); const t = document.querySelector(".topbar").getBoundingClientRect(); return p.right <= t.right && p.height > 0 && p.height <= 40 && document.documentElement.scrollWidth <= document.documentElement.clientWidth; })()'))->toBeTrue();
+})->with([
+    'linked, light' => ['open', 'platform-pill-connected', false],
+    'linked, dark' => ['open', 'platform-pill-connected', true],
+    'closed, light' => ['close', 'platform-pill-down', false],
+    'closed, dark' => ['close', 'platform-pill-down', true],
+]);
+
+test('a line that is down says so on the admin home and for how long, without sideways scroll', function (string $label, int $width, bool $dark): void {
+    PlatformSensor::query()->create([
+        'sensor_key' => 'platform_whatsapp',
+        'group' => 'system',
+        'status' => 'crit',
+        'value' => 'close',
+        'checked_at' => now(),
+        'changed_at' => now()->subMinutes(125),
+    ]);
+
+    $page = visit(route('admin.dashboard'))->resize($width, 900);
+
+    if ($dark) {
+        $page->script('document.documentElement.classList.add("dark")');
+    }
+
+    $page->wait(2)
+        ->assertPresent('[data-testid="platform-line-down"]')
+        ->assertSee(__('admin.home.line_down.link'))
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'platform-line-down-'.$label);
+
+    expect((bool) $page->script('document.documentElement.scrollWidth <= document.documentElement.clientWidth'))->toBeTrue();
+
+    if ($width > 900) {
+        $page->assertPresent('[data-testid="platform-pill-since"]');
+    }
+})->with([
+    'desktop light' => ['desktop-light', 1280, false],
+    'desktop dark' => ['desktop-dark', 1280, true],
+    'phone light' => ['phone-light', 390, false],
 ]);
 
 test('unlinking asks first, through the system dialog, and nothing is closed until it is accepted', function (): void {

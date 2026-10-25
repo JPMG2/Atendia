@@ -87,6 +87,7 @@ return [
         'link_hint' => 'Pégalo en tu Instagram o en tu perfil de WhatsApp: tus clientes eligen hueco sin escribirte.',
         'link_copy' => 'Copiar',
         'link_copied' => 'Copiado',
+        'link_share' => 'Compartir',
         'powered' => 'Reservas atendidas por :brand',
     ],
 

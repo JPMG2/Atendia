@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Actions\Admin\PurgeBusiness;
+use App\Actions\Admin\RaisePlatformEvent;
+use App\Actions\Admin\ResolvePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Models\Business;
 use App\Models\Payment;
 use App\Models\User;
@@ -48,6 +51,23 @@ test('the purge leaves the other businesses alone', function (): void {
 
     expect(DB::table('businesses')->where('id', $other->id)->exists())->toBeTrue()
         ->and(DB::table('users')->where('business_id', $other->id)->count())->toBe(1);
+});
+
+test('the purge also erases the board events about the business, open or resolved, and only those', function (): void {
+    $business = removedBusiness();
+    $other = Business::factory()->create();
+    $raise = app(RaisePlatformEvent::class);
+
+    $raise->handle(PlatformEventKind::WhatsAppDisconnected, $business->id, 'device_removed');
+    $raise->handle(PlatformEventKind::PaymentPaused, $business->id);
+    app(ResolvePlatformEvent::class)->byKey('payment_paused:'.$business->id);
+    $raise->handle(PlatformEventKind::WhatsAppDisconnected, $other->id);
+
+    $erased = app(PurgeBusiness::class)->handle($business);
+
+    expect($erased['platform_events'])->toBe(2)
+        ->and(DB::table('platform_events')->where('dedupe_key', 'like', '%:'.$business->id)->count())->toBe(0)
+        ->and(DB::table('platform_events')->where('about_business_id', $other->id)->count())->toBe(1);
 });
 
 test('an active business cannot be purged', function (): void {

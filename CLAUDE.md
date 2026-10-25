@@ -434,8 +434,12 @@ Si sí, lleva skill. Si no, se dice en una línea por qué no.
   (`is_universal`, o del rubro y asignado a sus actividades).
 - **El agente no instancia herramientas**: las pide a `AssistantSkills` / `OwnerSkills`, así
   apagar una clave la saca de todos los asistentes sin tocar código.
-- Dos públicos que no se cruzan: cliente (`AssistantSkillTool`, `audience = customer`) y
-  dueña (`OwnerSkillTool`, solo lectura, `audience = owner`, fechas explícitas AAAA-MM-DD).
+- Tres públicos que no se cruzan: cliente (`AssistantSkillTool`, `audience = customer`),
+  dueña (`OwnerSkillTool`, solo lectura, `audience = owner`, fechas explícitas AAAA-MM-DD) y
+  admin (`AdminSkillTool`, `audience = admin`, lo entrega `AdminSkills`; lee todos los negocios, por eso
+  jamás devuelve lo que escriben sus clientes). Cómo funciona una PANTALLA no es una tool: es una skill
+  nativa del SDK (`AdminModuleSkills`), leída de los mismos textos que la pantalla imprime; una pantalla
+  nueva del admin entra en `atendia.admin_assistant.guide` o su prueba falla.
 - La respuesta es corta y exacta: datos, no párrafos, y el "no hay dato" dicho.
 - Las instrucciones del asistente nombran qué skill usar para qué.
 

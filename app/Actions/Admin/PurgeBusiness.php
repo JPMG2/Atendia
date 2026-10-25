@@ -49,6 +49,13 @@ class PurgeBusiness
 
             $erased = $this->eraseTenantRows($id);
 
+            // The board's feed has no business_id and its key to the business is nulled when the row goes: erase first.
+            $events = DB::table('platform_events')->where('about_business_id', $id)->delete();
+
+            if ($events > 0) {
+                $erased['platform_events'] = $events;
+            }
+
             DB::table('users')->whereIn('id', $userIds)->delete();
             DB::table('businesses')->where('id', $id)->delete();
         });

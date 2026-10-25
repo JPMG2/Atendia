@@ -87,6 +87,13 @@ return [
         'digest_body' => 'Lo que pasó en la plataforma, a la hora de cierre.',
     ],
 
+    'topbar' => [
+        'connected' => 'WhatsApp de :brand conectado',
+        'disconnected' => 'WhatsApp de :brand sin conectar',
+        'unverified' => 'WhatsApp de :brand sin verificar',
+        'verified_ago' => 'Verificado :ago',
+    ],
+
     'guard' => [
         'title' => 'Ningún negocio puede usarla ni borrarla',
         'body' => 'Quitar un negocio nunca toca esta cuenta, y esta instancia no se ofrece como «sin dueño» para liberarla. Vincular y desvincular piden un permiso propio, que Soporte no tiene.',

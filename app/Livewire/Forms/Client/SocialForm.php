@@ -147,10 +147,21 @@ class SocialForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules();
+    }
+
+    /**
+     * The card's rules, public so the mobile API validates with these very ones.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
+    {
         return [
             'social' => ['array', 'max:20'],
             'social.*.social_network_id' => ['required', 'integer', 'distinct', 'exists:social_networks,id'],
-            'social.*.url' => [...AttributeValidator::stringValid(true, '3'), 'max:255'],
+            // "instagram.com/x" and "@x" are fine; any other scheme ("javascript:", "data:") never becomes a link.
+            'social.*.url' => [...AttributeValidator::stringValid(true, '3'), 'max:255', 'not_regex:/^\s*(?!https?:\/\/)[a-z][a-z0-9+.\-]*:/i'],
         ];
     }
 
@@ -158,6 +169,14 @@ class SocialForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'social.*.social_network_id' => config('nicename.social_network_id'),

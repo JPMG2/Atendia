@@ -6,11 +6,11 @@ namespace App\Ai\Tools;
 
 use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\Plan;
+use App\Classes\Main\ScreenTexts;
 use App\Interfaces\Main\OwnerSkillTool;
 use App\Models\Business;
 use App\Models\Company;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\Support\Arr;
 use Laravel\Ai\Tools\Request;
 use Stringable;
 
@@ -50,17 +50,7 @@ class PanelGuide implements OwnerSkillTool
 
         [$title, $group] = $modules[$module];
 
-        // A regional file (es_AR) is partial: asked for a whole group it returns
-        // only its overrides, so the base language is laid underneath first.
-        $screen = array_replace_recursive(
-            (array) trans($group, [], (string) config('app.fallback_locale')),
-            (array) trans($group),
-        );
-
-        $texts = collect(Arr::dot($screen))
-            ->filter(fn (mixed $text): bool => is_string($text) && $text !== '')
-            ->map(fn (string $text, string $key): string => $key.': '.strip_tags($text))
-            ->implode("\n");
+        $texts = ScreenTexts::of($group);
 
         // How the numbers are measured goes first: it never fits on the screen, so the cut must not reach it.
         $measures = (array) __("ask.guide.{$module}", collect(['counts', 'patterns', 'trends'])

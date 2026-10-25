@@ -125,4 +125,14 @@ return [
         'opt_in_message' => 'Hola:name 👋 Somos :business. ¿Te gustaría recibir por acá nuestras ofertas y novedades? Respondé "sí" y listo. Podés pedir salir cuando quieras.',
         'opt_in_thanks' => '¡Listo! Te vamos a avisar por acá de nuestras ofertas y novedades. Podés pedir salir cuando quieras.',
     ],
+
+    'mention' => [
+        'withdraw_message' => 'No mencionaremos tu negocio. Si volvés a alcanzar una meta mayor, te lo vamos a proponer de nuevo.',
+        'needs_network' => [
+            'body' => 'Queremos celebrarlo mencionando tu negocio en las redes de :brand. Para eso necesitamos tu cuenta en alguna de las redes donde estamos (:accounts): agregala en tu perfil.',
+        ],
+        'not_following' => [
+            'body' => 'No vemos que tu cuenta siga las nuestras de :accounts. Seguilas y tocá "Ya las sigo": las revisamos de nuevo.',
+        ],
+    ],
 ];

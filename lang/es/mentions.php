@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Sin imperativo en segunda persona a propósito: así no necesita override de voseo en es_AR.
+// Las pocas frases con imperativo en segunda persona tienen su voseo en lang/es_AR/mentions.php.
 return [
     'title' => 'Menciones',
     'sub' => 'Los negocios que aceptaron que los mencionemos en nuestras redes. Se publica solo a quien sigue nuestra cuenta.',

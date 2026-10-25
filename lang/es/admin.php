@@ -584,6 +584,10 @@ return [
                 'title' => 'Soporte',
                 'sub' => 'Cuánto puede esperar un reporte antes de que la cola lo marque como atrasado.',
             ],
+            'admin_assistant' => [
+                'title' => 'Asistente IA del admin',
+                'sub' => 'La IA del panel de administración la paga la plataforma: este es su tope de preguntas por día.',
+            ],
             'security' => [
                 'title' => 'Seguridad del equipo',
                 'sub' => 'El doble factor de quienes entran al panel de administración: admin y soporte.',
@@ -657,6 +661,12 @@ return [
                 'grace_days' => [
                     'label' => 'Días de gracia',
                     'hint' => 'Días después del vencimiento en los que el asistente sigue atendiendo. Pasados, se pausa.',
+                ],
+            ],
+            'admin_assistant' => [
+                'daily_questions' => [
+                    'label' => 'Preguntas por día',
+                    'hint' => 'Cuántas preguntas puede hacer el equipo de administración a la IA cada día. Al llegar al tope el campo se cierra hasta mañana.',
                 ],
             ],
             'support' => [
@@ -970,6 +980,12 @@ return [
         'two_factor_due' => [
             'text' => '{1} Vence esta semana el plazo del doble factor de :names.|[2,*] Vencen esta semana los plazos del doble factor de :count personas: :names.',
             'see' => 'Ver quién falta',
+        ],
+
+        'line_down' => [
+            'text' => 'La línea de WhatsApp de :brand no está vinculada: los códigos de acceso salen por correo y los avisos al admin no salen por WhatsApp.',
+            'since' => 'Lleva :ago sin conectar',
+            'link' => 'Vincular de nuevo',
         ],
 
         'tiles' => [

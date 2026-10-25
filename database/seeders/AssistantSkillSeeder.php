@@ -54,5 +54,21 @@ class AssistantSkillSeeder extends Seeder
                 [...$skill, 'audience' => SkillAudience::Owner, 'is_universal' => true, 'sort_order' => $order + 1],
             );
         }
+
+        // The platform admin's own assistant: it reads across every business, so none of these ever reaches a business.
+        $adminSkills = [
+            ['key' => 'admin_pulse', 'name' => 'Pulso de la plataforma', 'description' => 'Negocios por situación, ingreso, comprobantes esperando, avisos y sensores'],
+            ['key' => 'admin_find_business', 'name' => 'Buscar un negocio', 'description' => 'Encuentra negocios por nombre o situación, con su plan y su enlace'],
+            ['key' => 'admin_business_file', 'name' => 'Ficha de un negocio', 'description' => 'Plan, cobros, uso del mes, WhatsApp y avisos de un negocio, sin lo que escriben sus clientes'],
+            ['key' => 'admin_alerts', 'name' => 'Avisos del tablero', 'description' => 'Los avisos abiertos, los más graves primero, de la plataforma o de un negocio'],
+            ['key' => 'admin_payment_queue', 'name' => 'Comprobantes por verificar', 'description' => 'Los pagos que esperan su verificación, el más viejo primero'],
+        ];
+
+        foreach ($adminSkills as $order => $skill) {
+            AssistantSkill::query()->updateOrCreate(
+                ['key' => $skill['key']],
+                [...$skill, 'audience' => SkillAudience::Admin, 'is_universal' => true, 'sort_order' => $order + 1],
+            );
+        }
     }
 }
