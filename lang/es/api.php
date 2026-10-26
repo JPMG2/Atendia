@@ -15,6 +15,10 @@ return [
         'suspended' => 'Tu negocio está suspendido. Revisa el aviso en la web o escríbenos para resolverlo.',
     ],
     'invalid_cursor' => 'No pudimos continuar la lista. Vuelve a abrirla desde el principio.',
+    'staff_only' => 'Esta parte de la app es solo para el equipo de la plataforma.',
+    'staff_refused' => 'Esta acción no está disponible con una cuenta del equipo de la plataforma.',
+    'staff_revoked' => 'Tu cuenta ya no tiene acceso del equipo. Inicia sesión de nuevo.',
+    'staff_idle' => 'Tu sesión se cerró por inactividad. Inicia sesión de nuevo.',
     'challenge_expired' => 'El código venció. Inicia sesión de nuevo para recibir uno nuevo.',
     'push' => [
         'registered' => 'Avisos activados en este dispositivo.',

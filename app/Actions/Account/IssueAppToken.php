@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Account;
 
+use App\Http\Middleware\ExpireIdleStaffToken;
+use App\Http\Middleware\StaffTokenGate;
 use App\Models\LoginDevice;
 use App\Models\User;
 
@@ -25,6 +27,14 @@ class IssueAppToken
         // One token per install: signing in again replaces it instead of piling up.
         $user->tokens()->where('name', $fingerprint)->delete();
 
-        return $user->createToken($fingerprint)->plainTextToken;
+        // Staff get their own ability and an idle clock: that token opens `admin/*`, and nothing else does.
+        if (! $user->isStaff()) {
+            return $user->createToken($fingerprint)->plainTextToken;
+        }
+
+        $token = $user->createToken($fingerprint, [StaffTokenGate::ABILITY]);
+        ExpireIdleStaffToken::begin($token->accessToken);
+
+        return $token->plainTextToken;
     }
 }

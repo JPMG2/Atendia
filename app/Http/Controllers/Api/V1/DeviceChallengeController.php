@@ -78,10 +78,10 @@ class DeviceChallengeController extends Controller
             throw ValidationException::withMessages([$field => $message]);
         }
 
-        // The plan may have lapsed between the password and the code.
+        // The plan may have lapsed between the password and the code. Staff have none to lapse.
         $access = $granted['user']->appAccess();
 
-        if (! $access->isAllowed()) {
+        if (! $granted['user']->isStaff() && ! $access->isAllowed()) {
             return EnsureAppAccess::denial($access);
         }
 

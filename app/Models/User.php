@@ -134,6 +134,12 @@ class User extends Authenticatable
         return $this->loginActivities()->where('location', $location)->count() < 2;
     }
 
+    /** The platform's own people (admin and support): whoever may open the admin panel. */
+    public function isStaff(): bool
+    {
+        return $this->can('access-admin-panel');
+    }
+
     /**
      * Landing panel by capability: admin → /admin, everyone else → /dashboard.
      */

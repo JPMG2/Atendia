@@ -33,6 +33,13 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         $user = $request->authenticatedUser();
+
+        // The platform's people have no plan to check, but hold the keys to every business:
+        // they answer a code on EVERY sign-in, from an install they know or not.
+        if ($user->isStaff()) {
+            return response()->json(['challenge' => MobileDeviceChallenge::start($user, $request->deviceId(), $request->deviceName())], 202);
+        }
+
         $access = $user->appAccess();
 
         if (! $access->isAllowed()) {

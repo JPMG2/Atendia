@@ -107,7 +107,8 @@ class MobileDeviceChallenge
             'whatsapp_failed' => $issued['whatsapp_failed'],
         ], now()->addMinutes(self::LIFETIME_MINUTES));
 
-        Cache::put(self::attemptsKey($id), 0, now()->addMinutes(self::LIFETIME_MINUTES));
+        // `add`, not `put`: a resend brings a new code but not new tries, or three resends would turn five guesses into twenty.
+        Cache::add(self::attemptsKey($id), 0, now()->addMinutes(self::LIFETIME_MINUTES));
 
         return [
             'id' => $id,

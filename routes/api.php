@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AdminSessionController;
 use App\Http\Controllers\Api\V1\AgendaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
@@ -26,8 +27,10 @@ use App\Http\Controllers\Api\V1\TeamController;
 use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
 use App\Http\Middleware\EnsureAppAccess;
+use App\Http\Middleware\ExpireIdleStaffToken;
 use App\Http\Middleware\RejectRevokedDevice;
 use App\Http\Middleware\SetTenantDatabaseContext;
+use App\Http\Middleware\StaffTokenGate;
 use App\Http\Middleware\VerifyEvolutionWebhook;
 use Illuminate\Support\Facades\Route;
 
@@ -62,14 +65,23 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
 
     // Behind a bearer token. Authentication comes first, so the business
     // (Postgres row security) and the device check can read who is calling.
-    Route::middleware(['auth:sanctum', SetTenantDatabaseContext::class, RejectRevokedDevice::class])->group(function (): void {
+    Route::middleware(['auth:sanctum', ExpireIdleStaffToken::class, SetTenantDatabaseContext::class, RejectRevokedDevice::class])->group(function (): void {
         // Signing out stays open to everyone: a lapsed plan must not trap a token.
         Route::post('logout', [AuthController::class, 'logout']);
 
         // Closing the account stays open too: leaving is a right a lapsed plan does not suspend.
-        Route::delete('account', [AccountController::class, 'close'])->middleware('throttle:app-account');
+        // A staff token never closes an account: it would take the admin's own with it.
+        Route::delete('account', [AccountController::class, 'close'])->middleware(['throttle:app-account', StaffTokenGate::class.':never']);
 
-        Route::middleware(EnsureAppAccess::class)->group(function (): void {
+        // The platform's own people. The lock is on the server: a staff token (born only from the second
+        // step) AND the area permission, then the key of each screen (`can:`: spatie's middleware reads the web guard).
+        Route::prefix('admin')->middleware([StaffTokenGate::class.':only', 'can:access-admin-panel'])->group(function (): void {
+            Route::get('me', AdminSessionController::class);
+        });
+
+        // Everything below is a customer's own: the staff token is for `admin/*` and nothing else, even for
+        // an account that also holds a business (the plan check alone would let that one in).
+        Route::middleware([EnsureAppAccess::class, StaffTokenGate::class.':never'])->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
             Route::get('menu', MenuController::class);
             Route::post('broadcasting/auth', BroadcastAuthController::class);

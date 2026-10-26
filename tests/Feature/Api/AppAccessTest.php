@@ -90,12 +90,16 @@ it('refuses an account without a business', function (): void {
     expect(User::factory()->create()->appAccess())->toBe(AppAccess::NoBusiness);
 });
 
-it('refuses the admin until the app has its own door for them', function (): void {
+it('gives the admin its own door, a code and never a token, and still refuses a person with no business and no role', function (): void {
+    Mail::fake();
     $this->seed(RolesAndPermissionsSeeder::class);
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    signInFromTheApp($admin)->assertForbidden()->assertJsonPath('reason', 'no_business');
+    // No plan to check for the platform's people: they answer the second step instead.
+    signInFromTheApp($admin)->assertStatus(202)->assertJsonMissingPath('token');
+
+    signInFromTheApp(User::factory()->create())->assertForbidden()->assertJsonPath('reason', 'no_business');
 });
 
 it('sends no code and records no device to someone the plan keeps out', function (): void {
