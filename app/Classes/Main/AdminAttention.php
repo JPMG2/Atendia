@@ -26,6 +26,18 @@ class AdminAttention
         get => $this->items ??= $this->read();
     }
 
+    /**
+     * The same lines with the web address of the screen that solves each, for the pages that print the card.
+     *
+     * @var list<array{key: string, count: int, icon: string, url: string}>
+     */
+    public array $links {
+        get => array_map(
+            fn (array $item): array => ['key' => $item['key'], 'count' => $item['count'], 'icon' => $item['icon'], 'url' => route($item['route'])],
+            $this->items,
+        );
+    }
+
     /** @return list<array{key: string, count: int, icon: string, route: string}> */
     private function read(): array
     {

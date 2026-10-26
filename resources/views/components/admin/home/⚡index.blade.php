@@ -6,6 +6,7 @@ use App\Services\PlatformWhatsApp;
 use Carbon\CarbonImmutable;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
 use App\Actions\Admin\RankBusinessActivity;
+use App\Classes\Main\AdminAttention;
 use App\Models\BusinessMention;
 use App\Models\Payment;
 use App\Models\PlatformFigure;
@@ -49,6 +50,18 @@ new class extends Component
         return $line['state']->isConnected() || $line['state'] === PlatformWhatsAppState::Unreachable
             ? null
             : ['state' => $line['state'], 'since' => $line['since']];
+    }
+
+    /**
+     * What waits for her today, with the screen that solves each: the same card the assistant opens with
+     * and the phone's home prints, so the three say one thing.
+     *
+     * @return list<array{key: string, count: int, icon: string, url: string}>
+     */
+    #[Computed]
+    public function attention(): array
+    {
+        return (new AdminAttention(auth()->user()))->links;
     }
 
     #[Computed]
@@ -280,6 +293,8 @@ new class extends Component
             </span>
         </span>
     </div>
+
+    <x-ask.today class="mb-4" :items="$this->attention" data-testid="admin-home-today" />
 
     <div class="stat-grid stat-grid-fill">
         <x-ui.stat-card

@@ -69,9 +69,7 @@ new class extends Component
     #[Computed]
     public function attention(): array
     {
-        return collect((new AdminAttention(Auth::user()))->items)
-            ->map(fn (array $item): array => ['key' => $item['key'], 'count' => $item['count'], 'icon' => $item['icon'], 'url' => route($item['route'])])
-            ->all();
+        return (new AdminAttention(Auth::user()))->links;
     }
 
     public function open(): void
@@ -164,26 +162,7 @@ new class extends Component
                                 </div>
                             </div>
 
-                            <div class="ask-today" data-testid="ask-admin-today">
-                                <p class="ask-today-title">
-                                    <x-icon name="bell" :size="16" />
-                                    {{ __('ask_admin.today.title') }}
-                                </p>
-                                @forelse ($this->attention as $item)
-                                    <a
-                                        href="{{ $item['url'] }}"
-                                        wire:navigate
-                                        wire:key="admin-today-{{ $item['key'] }}"
-                                        class="ask-today-row"
-                                    >
-                                        <x-icon :name="$item['icon']" :size="16" />
-                                        <span>{{ trans_choice('ask_admin.today.'.$item['key'], $item['count'], ['count' => $item['count']]) }}</span>
-                                        <x-icon name="chevron-right" :size="16" class="ask-today-go" />
-                                    </a>
-                                @empty
-                                    <p class="ask-today-clear">{{ __('ask_admin.today.clear') }}</p>
-                                @endforelse
-                            </div>
+                            <x-ask.today :items="$this->attention" data-testid="ask-admin-today" />
 
                             <x-ask.messages :messages="$messages" />
 

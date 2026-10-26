@@ -203,6 +203,34 @@ describe('the three touches that make it welcome', function (): void {
             ->assertSeeHtml(route('admin.payments'));
     });
 
+    test('the admin\'s home prints the same card as the assistant and the phone, each line leading to its screen', function (): void {
+        Payment::factory()->create();
+        app(RaisePlatformEvent::class)->handle(PlatformEventKind::PaymentPaused, Business::factory()->create()->id);
+
+        $home = Livewire::actingAs(askAdminUser())->test('admin.home.index')
+            ->assertSeeHtml('data-testid="admin-home-today"')
+            ->assertSee(__('ask_admin.today.title'))
+            ->assertSeeHtml('href="'.route('admin.payments').'"')
+            ->assertSeeHtml('href="'.route('admin.alerts').'"');
+
+        // The very lines the assistant and the phone read: one piece, so none of the three can say another thing.
+        foreach ((new AdminAttention(askAdminUser()))->links as $line) {
+            $home->assertSee(trans_choice('ask_admin.today.'.$line['key'], $line['count'], ['count' => $line['count']]));
+        }
+    });
+
+    test('a person without the keys of those lines sees the card clear of them, and says so only when nothing waits', function (): void {
+        Payment::factory()->create();
+
+        $none = User::factory()->create(['email_verified_at' => now()]);
+        $none->givePermissionTo(['access-admin-panel']);
+
+        Livewire::actingAs($none->refresh())->test('admin.home.index')
+            ->assertSeeHtml('data-testid="admin-home-today"')
+            ->assertDontSee(trans_choice('ask_admin.today.receipts', 1, ['count' => 1]))
+            ->assertSee(__('ask_admin.today.clear'));
+    });
+
     test('the Preguntar buttons are drawn for the key holder only, on the home and on every alert', function (): void {
         $business = Business::factory()->create(['name' => 'Taller Luz']);
         app(RaisePlatformEvent::class)->handle(PlatformEventKind::PaymentPaused, $business->id);

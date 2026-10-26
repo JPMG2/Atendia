@@ -154,6 +154,37 @@ test('the most-movement card reads the stored ranking and fits at every width', 
 ]);
 
 /*
+| The card of the day opens the home with what waits for her, in the same words
+| the assistant and the phone use, each line a door to its screen.
+*/
+test('the home opens with the card of what waits for her and it fits at every width', function (string $label, int $width, int $height, bool $dark): void {
+    $page = visit(route('admin.dashboard'))->resize($width, $height);
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    $page->assertSee('Lo que necesita tu atención hoy')
+        ->assertSee('2 comprobantes esperan verificación')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'admin-home-today-'.$label.($dark ? '-dark' : '-light'));
+
+    expect((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0)
+        ->and((int) $page->script('document.querySelectorAll("[data-testid=admin-home-today] a.ask-today-row[href]").length'))->toBeGreaterThan(0)
+        ->and((int) $page->script(
+            'Array.from(document.querySelectorAll("[data-testid=admin-home-today] .ask-today-row"))
+                .map(row => row.scrollWidth - row.clientWidth)
+                .reduce((a, b) => Math.max(a, b), 0)'
+        ))->toBe(0);
+})->with([
+    'desktop light' => ['desktop', 1280, 1000, false],
+    'desktop dark' => ['desktop', 1280, 1000, true],
+    'tablet light' => ['tablet', 900, 1000, false],
+    'phone light' => ['phone', 390, 900, false],
+    'phone dark' => ['phone', 390, 900, true],
+]);
+
+/*
 | The pulse and the arrows are read at a glance, so they are looked at: the
 | dot has to read as amber (late job) and each arrow beside its own name.
 */
