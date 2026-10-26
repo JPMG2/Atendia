@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Actions\Business\VerifyWhatsAppLink;
+use App\Ai\Agents\BusinessBioWriter;
+use App\Ai\Agents\CatalogCopywriter;
 use App\Classes\Main\Plan;
 use App\Classes\Main\SendWindow;
 use App\Enums\AppAccess;
@@ -1204,6 +1206,20 @@ class Business extends Model
                 ->whereBetween('starts_at', [$today->copy()->utc(), $today->copy()->endOfDay()->utc()])
                 ->count()
             : 0;
+    }
+
+    /**
+     * Times "Optimizar con IA" ran today, on the business's own clock, across the
+     * identity card, services and products. Read from the meter, so it is what
+     * was really spent and survives a restart.
+     */
+    public function aiOptimizeUsesToday(): int
+    {
+        return AiUsage::query()
+            ->where('business_id', $this->id)
+            ->whereIn('kind', [class_basename(BusinessBioWriter::class), class_basename(CatalogCopywriter::class)])
+            ->where('created_at', '>=', now($this->localTimezone())->startOfDay()->utc())
+            ->count();
     }
 
     /** When the monthly quotas start over: the 1st of next month, on the business's clock. */

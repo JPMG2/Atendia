@@ -47,6 +47,8 @@ test('the settings screen holds at every width in both themes', function (string
         ->assertSee('Ajustes de la plataforma')
         ->assertSee('Cuándo salen los mensajes automáticos')
         ->assertSee('Silencio para dar por terminada una charla')
+        // The daily ceiling of "Optimizar con IA" is a knob she can see and move.
+        ->assertSee('Usos por día y negocio')
         // The consequence is on screen; the config path never is.
         ->assertSee('puede cortar una charla viva')
         ->assertDontSee('analysis.idle_hours')

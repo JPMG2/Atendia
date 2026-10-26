@@ -56,6 +56,26 @@ test('the services search narrows live and the sheet slides over and closes', fu
         ->assertSee('Corte de caballero');
 });
 
+test('"Optimizar con IA" says the daily ceiling instead of calling the model once it is spent', function (): void {
+    config()->set('atendia.ai_optimize.daily_uses', 1);
+    Business::query()->first()->services()->update(['description' => null]);
+
+    App\Models\AiUsage::query()->create([
+        'business_id' => Business::query()->first()->id,
+        'kind' => 'CatalogCopywriter',
+        'model' => 'gpt-6-luna',
+        'input_tokens' => 0,
+        'cached_tokens' => 0,
+        'output_tokens' => 0,
+    ]);
+
+    visit('/servicios')
+        ->assertNoJavaScriptErrors()
+        ->click(__('client.services.ai_action'))
+        ->assertSee('Hoy ya usaste «Optimizar con IA» 1 veces')
+        ->screenshot(filename: 'optimize-ceiling-services');
+});
+
 test('the products search matches the code in the real browser', function (): void {
     $page = visit('/productos');
 

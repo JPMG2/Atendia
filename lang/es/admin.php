@@ -584,6 +584,10 @@ return [
                 'title' => 'Soporte',
                 'sub' => 'Cuánto puede esperar un reporte antes de que la cola lo marque como atrasado.',
             ],
+            'ai_optimize' => [
+                'title' => 'Optimizar con IA',
+                'sub' => 'La plataforma paga lo que la IA escribe por un negocio: este es su tope de usos por día.',
+            ],
             'admin_assistant' => [
                 'title' => 'Asistente IA del admin',
                 'sub' => 'La IA del panel de administración la paga la plataforma: este es su tope de preguntas por día.',
@@ -661,6 +665,12 @@ return [
                 'grace_days' => [
                     'label' => 'Días de gracia',
                     'hint' => 'Días después del vencimiento en los que el asistente sigue atendiendo. Pasados, se pausa.',
+                ],
+            ],
+            'ai_optimize' => [
+                'daily_uses' => [
+                    'label' => 'Usos por día y negocio',
+                    'hint' => 'Cuántas veces puede pulsar un negocio «Optimizar con IA» cada día, sumando Identidad, Servicios y Productos. Al llegar al tope se le avisa y vuelve mañana.',
                 ],
             ],
             'admin_assistant' => [

@@ -535,6 +535,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | "Optimizar con IA"
+    |--------------------------------------------------------------------------
+    | `daily_uses`: how many times a business may press it per day, counted
+    | across its identity card, services and products (a platform setting
+    | overrides it). The platform pays for these calls, so the ceiling is a
+    | good-use limit, not a quota the plan sells.
+    */
+
+    'ai_optimize' => [
+        'daily_uses' => 10,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | The admin's panel assistant
     |--------------------------------------------------------------------------
     | `daily_questions`: how many questions the admin side may ask per day (it

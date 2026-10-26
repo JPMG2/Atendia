@@ -2,6 +2,7 @@
 
 use App\Actions\Business\DeleteBusinessService;
 use App\Actions\Catalog\WriteMissingDescriptions;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Classes\Main\Client;
 use App\Classes\Main\ServiceMenu;
 use App\Dto\NotificationDto;
@@ -294,6 +295,15 @@ new class extends Component
      */
     public function writeDescriptions(WriteMissingDescriptions $writer): void
     {
+        $limit = AiOptimizeLimit::for(Auth::user()->business);
+
+        // Only when there is something to write: a catalog that reads fine costs nothing and needs no ceiling.
+        if ($limit->reached && $this->services->contains(fn ($service): bool => trim((string) $service->description) === '')) {
+            $this->dispatchNotification(new NotificationDto($limit->message, NotificationType::Warning));
+
+            return;
+        }
+
         $written = $writer->handle(Auth::user()->business, $this->services);
 
         // Null is the model never answering: saying "they all have one already"

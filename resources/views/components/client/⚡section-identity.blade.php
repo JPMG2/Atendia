@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Business\WriteBusinessBio;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\IdentityForm;
@@ -44,6 +45,14 @@ new class extends Component
     public function writeBio(WriteBusinessBio $writer): void
     {
         $business = Auth::user()?->business;
+        $limit = $business !== null ? AiOptimizeLimit::for($business) : null;
+
+        if ($limit?->reached) {
+            $this->dispatchNotification(new NotificationDto($limit->message, NotificationType::Warning));
+
+            return;
+        }
+
         $written = $business !== null ? $writer->handle($business, $this->form->name) : null;
 
         if ($written === null) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Business;
 
 use App\Ai\Agents\BusinessBioWriter;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Models\Business;
 use Throwable;
 
@@ -25,7 +26,8 @@ class WriteBusinessBio
     {
         $name = trim($name ?? '') !== '' ? trim((string) $name) : $business->name;
 
-        if (trim((string) $name) === '') {
+        // The ceiling is checked here too, not only by the screens: whoever calls this pays for it.
+        if (trim((string) $name) === '' || AiOptimizeLimit::for($business)->reached) {
             return null;
         }
 

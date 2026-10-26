@@ -64,6 +64,8 @@ return [
         'view_all' => 'Ver todas',
     ],
 
+    'ai_limit' => 'Hoy ya usaste «Optimizar con IA» :cap veces, que es el tope diario. Mañana vuelve a estar disponible.',
+
     'business' => [
         'title' => 'Mi negocio',
         'back' => 'Volver al inicio',

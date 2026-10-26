@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Catalog;
 
 use App\Ai\Agents\CatalogCopywriter;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Models\Business;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -33,6 +34,11 @@ class WriteMissingDescriptions
 
         if ($pending->isEmpty()) {
             return 0;
+        }
+
+        // Checked here too, not only by the screens: whoever calls this pays for it.
+        if (AiOptimizeLimit::for($business)->reached) {
+            return null;
         }
 
         try {
