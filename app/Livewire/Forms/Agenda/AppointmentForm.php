@@ -103,19 +103,27 @@ class AppointmentForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $businessId = Auth::user()?->business_id;
+        return self::fieldRules(Auth::user()?->business_id, $this->editingId !== null);
+    }
 
+    /**
+     * The booking sheet's rules, shared with the app's API.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(?int $businessId, bool $moving): array
+    {
         return [
             // Moving a booking never re-picks the person: only the hour travels.
             'customer_id' => [
-                $this->editingId === null ? 'required' : 'nullable',
+                $moving ? 'nullable' : 'required',
                 'integer',
                 Rule::exists('customers', 'id')->where('business_id', $businessId),
             ],
             'service_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('services', 'id')->where('business_id', $businessId)->where('is_bookable', true),
+                Rule::exists('services', 'id')->where('business_id', $businessId)->where('is_bookable', true)->whereNull('deleted_at'),
             ],
             'day' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
@@ -127,6 +135,14 @@ class AppointmentForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'customer_id' => __('agenda.form.customer'),

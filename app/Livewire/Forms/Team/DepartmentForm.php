@@ -67,9 +67,17 @@ class DepartmentForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $businessId = Auth::user()?->business_id;
-        $ownHours = ! $this->data->uses_business_hours;
+        return self::fieldRules($this->data->uses_business_hours, $this->data->week, Auth::user()?->business_id, $excludeId);
+    }
 
+    /**
+     * The department sheet's rules, shared with the app's API so both validate a room alike.
+     *
+     * @param  array<int, array{open: bool, opens: string, closes: string}>  $week
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(bool $usesBusinessHours, array $week, ?int $businessId, ?int $excludeId = null): array
+    {
         $rules = [
             'name' => [
                 ...AttributeValidator::stringValid(true, '2'),
@@ -79,11 +87,12 @@ class DepartmentForm extends BaseForm
             'routing_hint' => ['required', 'string', 'min:10', 'max:500', AttributeValidator::xssFree()],
             'uses_business_hours' => ['boolean'],
             'user_ids' => ['array'],
-            'user_ids.*' => ['integer', Rule::exists('users', 'id')->where('business_id', $businessId)],
+            // Someone taken out of the team is no longer anyone to staff a room.
+            'user_ids.*' => ['integer', Rule::exists('users', 'id')->where('business_id', $businessId)->whereNull('deleted_at')],
         ];
 
         foreach (range(0, 6) as $day) {
-            $open = $ownHours && $this->data->week[$day]['open'];
+            $open = ! $usesBusinessHours && $week[$day]['open'];
             $rules["week.{$day}.open"] = ['boolean'];
             $rules["week.{$day}.opens"] = $open ? ['required', 'date_format:H:i'] : ['nullable'];
             $rules["week.{$day}.closes"] = $open ? ['required', 'date_format:H:i', "after:week.{$day}.opens"] : ['nullable'];
@@ -94,6 +103,12 @@ class DepartmentForm extends BaseForm
 
     /** @return array<string, string> */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /** @return array<string, string> */
+    public static function fieldNames(): array
     {
         $attributes = [
             'name' => __('team.department.name'),

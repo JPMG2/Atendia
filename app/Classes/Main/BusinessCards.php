@@ -127,7 +127,8 @@ class BusinessCards
     {
         return match ($key) {
             // The links are replaced as a whole list, so a body without one leaves them as they are.
-            'social' => array_key_exists('social', $input) ? ['social' => $this->filledSocialRows((array) $input['social'])] : [],
+            // Only a list may replace them: `null` or text is refused by the rules, never read as "delete all".
+            'social' => array_key_exists('social', $input) ? ['social' => is_array($input['social']) ? $this->filledSocialRows($input['social']) : $input['social']] : [],
             'location' => [
                 'hasPremises' => $input['has_premises'] ?? null,
                 'address' => DtoCast::squish($input['address'] ?? null),

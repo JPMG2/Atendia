@@ -95,24 +95,41 @@ class SupportTicketForm extends BaseForm
     protected function getValidationRules(?int $excludeId = null): array
     {
         return [
-            'body' => ['required', 'string', 'min:10', 'max:'.self::MAX_BODY],
-            // Only a kind she still offers: an old one is a label, not a choice.
-            'kind' => ['required', Rule::exists('support_ticket_kinds', 'code')->where('is_active', true)->whereNull('deleted_at')],
-            'screen' => ['nullable', 'string', 'max:80'],
+            ...self::fieldRules(),
             // Nothing is captured on its own: this is only what she chose to
             // attach, and it goes through the same gate as every other upload.
             'attachment' => AttributeValidator::imageUpload('support', false, self::MAX_IMAGE_KB),
         ];
     }
 
+    /**
+     * The written part of the report, shared with the app's API.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
+    {
+        return [
+            'body' => ['required', 'string', 'min:10', 'max:'.self::MAX_BODY],
+            // Only a kind she still offers: an old one is a label, not a choice.
+            'kind' => ['required', Rule::exists('support_ticket_kinds', 'code')->where('is_active', true)->whereNull('deleted_at')],
+            'screen' => ['nullable', 'string', 'max:80'],
+        ];
+    }
+
     /** @return array<string, string> */
     protected function getValidationAttributes(): array
+    {
+        return [...self::fieldNames(), 'attachment' => __('support.fields.attachment')];
+    }
+
+    /** @return array<string, string> */
+    public static function fieldNames(): array
     {
         return [
             'body' => __('support.fields.body'),
             'kind' => __('support.fields.kind'),
             'screen' => __('support.fields.screen'),
-            'attachment' => __('support.fields.attachment'),
         ];
     }
 }

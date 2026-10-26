@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -165,6 +166,8 @@ class Customer extends Model
         return self::query()
             ->whereKeyNot($this->id)
             ->where('email', $this->email)
+            // Several twins: always the same one, so what was shown is what a confirm finds.
+            ->orderBy('id')
             ->first();
     }
 
@@ -175,18 +178,25 @@ class Customer extends Model
      */
     public function mergeFrom(self $duplicate): void
     {
-        $duplicate->conversations()->update(['customer_id' => $this->id]);
+        DB::transaction(function () use ($duplicate): void {
+            $duplicate->conversations()->update(['customer_id' => $this->id]);
 
-        foreach (['name', 'email', 'birthday', 'notes', 'country_code', 'language'] as $field) {
-            $this->{$field} ??= $duplicate->{$field};
-        }
+            foreach (['name', 'email', 'birthday', 'notes', 'country_code', 'language'] as $field) {
+                $this->{$field} ??= $duplicate->{$field};
+            }
 
-        $this->ai_extracted = array_merge($duplicate->ai_extracted ?? [], $this->ai_extracted ?? []);
-        $this->marketing_opt_in_at ??= $duplicate->marketing_opt_in_at;
-        $this->conversations_count = $this->conversations()->count();
-        $this->save();
+            $this->ai_extracted = array_merge($duplicate->ai_extracted ?? [], $this->ai_extracted ?? []);
+            $this->marketing_opt_in_at ??= $duplicate->marketing_opt_in_at;
+            // Someone who asked not to be written to stays blocked, and the history keeps its oldest dates.
+            $this->blocked_at ??= $duplicate->blocked_at;
+            $this->marketing_opt_in_requested_at ??= $duplicate->marketing_opt_in_requested_at;
+            $this->first_seen_at = collect([$this->first_seen_at, $duplicate->first_seen_at])->filter()->min();
+            $this->last_activity_at = collect([$this->last_activity_at, $duplicate->last_activity_at])->filter()->max();
+            $this->conversations_count = $this->conversations()->count();
+            $this->save();
 
-        $duplicate->delete();
+            $duplicate->delete();
+        });
     }
 
     /**

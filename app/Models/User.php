@@ -196,7 +196,9 @@ class User extends Authenticatable
      */
     public static function restorableByEmail(string $email): ?self
     {
+        // A teammate taken out of the team is not a closed account: only the owner closes one, so an agent never comes back by signing in.
         return self::onlyTrashed()
+            ->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'agent'))
             ->where('email', mb_strtolower($email))
             ->where('deleted_at', '>=', now()->subDays((int) config('atendia.account_restore_days')))
             ->first();

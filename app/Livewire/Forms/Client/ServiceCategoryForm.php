@@ -61,12 +61,22 @@ class ServiceCategoryForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
+        return self::fieldRules(Auth::user()?->business_id);
+    }
+
+    /**
+     * The shelf sheet's rules, shared with the app's API.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(?int $businessId): array
+    {
         return [
             'name' => [
                 ...AttributeValidator::stringValid(true, '2'),
                 'max:30',
                 Rule::unique('service_categories', 'name')
-                    ->where('business_id', Auth::user()?->business_id)
+                    ->where('business_id', $businessId)
                     ->whereNull('deleted_at'),
             ],
         ];
@@ -76,6 +86,14 @@ class ServiceCategoryForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'name' => __('client.services.field_category_name'),

@@ -33,10 +33,10 @@ class SaveTeamMemberRequest extends FormRequest
             $payload = TeamMemberDto::fromArray([
                 'whatsapp' => $member->whatsapp,
                 'department_ids' => $member->departments->pluck('id')->all(),
-                ...$this->only(['whatsapp', 'department_ids']),
+                ...$this->boxes($this->only(['whatsapp', 'department_ids'])),
             ])->toPayload();
         } else {
-            $payload = TeamMemberDto::fromArray($this->all())->toPayload();
+            $payload = TeamMemberDto::fromArray($this->boxes($this->all()))->toPayload();
         }
 
         // Without the plan's departments there is nowhere to route: nothing rides in.
@@ -63,6 +63,17 @@ class SaveTeamMemberRequest extends FormRequest
     public function attributes(): array
     {
         return TeamMemberForm::fieldNames();
+    }
+
+    /**
+     * A text box that arrives as a list or an object is read as nothing sent, not as a crash.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function boxes(array $input): array
+    {
+        return array_filter($input, fn (mixed $value, string|int $key): bool => ! in_array($key, ['name', 'email', 'whatsapp'], true) || ! is_array($value), ARRAY_FILTER_USE_BOTH);
     }
 
     private function editing(): bool

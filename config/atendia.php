@@ -589,7 +589,7 @@ return [
 
     'app' => [
         // Client-menu route names the mobile app already has a screen for.
-        'screens' => ['conversations', 'whatsapp', 'my-plan', 'my-business'],
+        'screens' => ['conversations', 'customers', 'my-services', 'my-products', 'agenda', 'whatsapp', 'my-plan', 'my-business'],
         'conversations_per_page' => 20,
         'messages_per_page' => 30,
 

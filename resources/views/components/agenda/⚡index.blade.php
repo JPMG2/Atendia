@@ -117,19 +117,9 @@ new class extends Component
      *
      * @return array<string, string>
      */
-    public function hoursFor(string $day, ?string $keep = null): array
+    public function hoursFor(string $day, ?string $keep = null, ?int $serviceId = null): array
     {
-        $hours = array_map(
-            fn (CarbonImmutable $slot): string => $slot->format('H:i'),
-            $this->agenda->freeSlots(CarbonImmutable::parse($day, $this->timezone())->startOfDay()),
-        );
-
-        if ($keep !== null && ! in_array($keep, $hours, true)) {
-            $hours[] = $keep;
-            sort($hours);
-        }
-
-        return array_combine($hours, $hours);
+        return $this->agenda->hoursFor($day, $keep, $serviceId);
     }
 
     public function go(int $days): void
@@ -415,7 +405,7 @@ new class extends Component
                                 :options="$this->serviceOptions"
                                 :value="$form->service_id"
                                 :placeholder="__('agenda.form.service_placeholder')"
-                                wire:model="form.service_id"
+                                wire:model.live="form.service_id"
                             />
                         </x-catalog.form-row>
                     @endif
@@ -436,7 +426,7 @@ new class extends Component
                         span="text"
                         name="time"
                         :label="__('agenda.form.time')"
-                        :options="$this->hoursFor($form->day, $form->editingId === null ? null : $form->time)"
+                        :options="$this->hoursFor($form->day, $form->editingId === null ? null : $form->time, $form->service_id)"
                         :value="$form->time"
                         :placeholder="__('agenda.form.time_placeholder')"
                         :empty="__('agenda.free.none')"

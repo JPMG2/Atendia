@@ -26,6 +26,8 @@ class AccountController extends Controller
             'can_close' => ! $request->user()->isAgent(),
             'close_keyword' => __('settings.close.keyword'),
             'restore_days' => (int) config('atendia.account_restore_days'),
+            // The row that opens the report sheet is named as the web's top-bar button is.
+            'support_label' => __('support.open'),
         ]]);
     }
 

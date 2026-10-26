@@ -583,7 +583,7 @@ describe('the menu', function (): void {
     it('offers "Mi negocio" first, as the web menu does, as the one screen the app has for it', function (): void {
         $menu = asProfileApp(profileOwner())->getJson('/api/v1/menu')->assertOk()->json('data');
 
-        expect(collect($menu)->pluck('label')->all())->toBe(['Mi negocio', 'Conversaciones', 'WhatsApp', 'Plan y pagos'])
+        expect(collect($menu)->pluck('label')->all())->toBe(['Mi negocio', 'Catálogo', 'Conversaciones', 'Clientes', 'Agenda', 'WhatsApp', 'Plan y pagos'])
             ->and($menu[0]['screen'])->toBe('my-business')
             ->and($menu[0]['icon'])->toBe('store')
             // The profile's sections are the hub's rows, served by GET /business, not buttons of the menu.

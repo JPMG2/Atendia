@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Team\RemoveTeamMember;
 use App\Enums\ConversationStatus;
 use App\Mail\TeamInvitationMail;
 use App\Models\Business;
@@ -293,5 +294,246 @@ describe('editing and removing a person', function (): void {
 
         expect(User::query()->whereKey($agent->id)->exists())->toBeFalse()
             ->and($thread->refresh()->assigned_user_id)->toBeNull();
+    });
+});
+
+function ownerWithDepartments(): User
+{
+    $owner = payingUser();
+    $owner->business->subscription->forceFill(['plan' => 'negocio', 'trial_ends_at' => now()->subDay()])->save();
+
+    return $owner;
+}
+
+describe('the departments', function (): void {
+    it('hands the sheet the web\'s week, Monday first, with each day\'s name and who answers', function (): void {
+        $owner = ownerWithDepartments();
+        $agent = agentOf($owner->business);
+        $room = Department::factory()->create(['business_id' => $owner->business_id, 'hours' => ['2' => ['08:00', '12:30']]]);
+        $room->users()->sync([$agent->id]);
+
+        $data = asTeamApp($owner)->getJson('/api/v1/team')->assertOk()->json('data');
+        $row = collect($data['departments'])->firstWhere('id', $room->id);
+
+        expect(collect($row['week'])->pluck('day')->all())->toBe([1, 2, 3, 4, 5, 6, 0])
+            ->and($row['usesBusinessHours'])->toBeFalse()
+            ->and($row['userIds'])->toBe([$agent->id])
+            ->and(collect($row['week'])->firstWhere('day', 2))->toMatchArray(['open' => true, 'opens' => '08:00', 'closes' => '12:30'])
+            ->and(collect($row['week'])->firstWhere('day', 3)['open'])->toBeFalse()
+            ->and($row['editTitle'])->toBe(__('team.departments.edit', ['name' => $room->name]))
+            ->and($row['deleteTitle'])->toBe(__('team.department.delete_title', ['name' => $room->name]))
+            ->and($data['copy']['department']['save'])->toBe(__('team.department.save'))
+            ->and($data['copy']['hours']['use_business'])->toBe(__('team.hours.use_business'))
+            ->and($data['copy']['departments']['new'])->toBe(__('team.departments.new'))
+            ->and($data['departmentDefaults']['usesBusinessHours'])->toBeTrue()
+            ->and(collect($data['departmentDefaults']['week'])->where('open', true)->pluck('day')->all())->toBe([1, 2, 3, 4, 5]);
+    });
+
+    it('creates one with its own week and who answers, as the web\'s sheet saves it', function (): void {
+        $owner = ownerWithDepartments();
+        $agent = agentOf($owner->business);
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', [
+            'name' => 'Ventas',
+            'routing_hint' => 'Cuando quieran comprar o pedir un presupuesto.',
+            'uses_business_hours' => false,
+            'week' => collect(range(0, 6))->mapWithKeys(fn (int $day): array => [$day => match ($day) {
+                1 => ['open' => true, 'opens' => '09:00', 'closes' => '13:00'],
+                6 => ['open' => true, 'opens' => '10:00', 'closes' => '12:00'],
+                default => ['open' => false, 'opens' => '09:00', 'closes' => '18:00'],
+            }])->all(),
+            'user_ids' => [$agent->id],
+        ])->assertCreated()->assertJsonPath('message', __('team.notify.department_saved', ['name' => 'Ventas']));
+
+        $room = Department::query()->sole();
+
+        expect($room->hours)->toBe(['1' => ['09:00', '13:00'], '6' => ['10:00', '12:00']])
+            ->and($room->users->pluck('id')->all())->toBe([$agent->id]);
+    });
+
+    it('follows the business\'s hours when the body says nothing about them', function (): void {
+        $owner = ownerWithDepartments();
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', ['name' => 'Pagos', 'routing_hint' => 'Cuando hablen de un pago o un comprobante.'])
+            ->assertCreated();
+
+        expect(Department::query()->sole()->usesBusinessHours())->toBeTrue();
+    });
+
+    it('refuses what the web\'s sheet refuses', function (array $body, string $field): void {
+        $owner = ownerWithDepartments();
+        Department::factory()->create(['business_id' => $owner->business_id, 'name' => 'Ventas']);
+        $foreign = agentOf(payingUser()->business);
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', [
+            'name' => 'Soporte',
+            'routing_hint' => 'Cuando algo no funcione como debería.',
+            ...$body,
+            ...($field === 'user_ids.0' ? ['user_ids' => [$foreign->id]] : []),
+        ])->assertUnprocessable()->assertJsonValidationErrors($field);
+
+        expect(Department::query()->count())->toBe(1);
+    })->with([
+        'a name already taken' => [['name' => 'Ventas'], 'name'],
+        'a hint too short to route by' => [['routing_hint' => 'corto'], 'routing_hint'],
+        'a day that closes before it opens' => [['uses_business_hours' => false, 'week' => [1 => ['open' => true, 'opens' => '18:00', 'closes' => '09:00']]], 'week.1.closes'],
+        'a day open without its hours' => [['uses_business_hours' => false, 'week' => [2 => ['open' => true, 'opens' => '', 'closes' => '']]], 'week.2.opens'],
+        'a person of another business' => [[], 'user_ids.0'],
+    ]);
+
+    it('ignores a week that is not in use when the department follows the business hours', function (): void {
+        $owner = ownerWithDepartments();
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', [
+            'name' => 'Pagos',
+            'routing_hint' => 'Cuando hablen de un pago o un comprobante.',
+            'uses_business_hours' => true,
+            'week' => [1 => ['open' => true, 'opens' => '18:00', 'closes' => '09:00']],
+        ])->assertCreated();
+
+        expect(Department::query()->sole()->hours)->toBeNull();
+    });
+
+    it('is closed with the plan\'s own sentence when the plan has no departments', function (): void {
+        $owner = payingUser();
+        $owner->business->subscription->forceFill(['plan' => 'emprende', 'trial_ends_at' => now()->subDay()])->save();
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', ['name' => 'Ventas', 'routing_hint' => 'Cuando quieran comprar algo.'])
+            ->assertForbidden()->assertJsonPath('message', __('team.notify.plan_needed'));
+
+        expect(Department::query()->count())->toBe(0);
+    });
+
+    it('changes only what the body carries and keeps the rest', function (): void {
+        $owner = ownerWithDepartments();
+        $agent = agentOf($owner->business);
+        $room = Department::factory()->create(['business_id' => $owner->business_id, 'name' => 'Ventas', 'routing_hint' => 'Cuando quieran comprar o pedir precios.', 'hours' => ['1' => ['09:00', '13:00'], '2' => ['09:00', '13:00']]]);
+        $room->users()->sync([$agent->id]);
+
+        asTeamApp($owner)->putJson("/api/v1/team/departments/{$room->id}", ['name' => 'Comercial', 'week' => [2 => ['opens' => '10:00']]])
+            ->assertOk()->assertJsonPath('message', __('team.notify.department_saved', ['name' => 'Comercial']));
+
+        $room->refresh();
+
+        expect($room->name)->toBe('Comercial')
+            ->and($room->routing_hint)->toBe('Cuando quieran comprar o pedir precios.')
+            ->and($room->hours)->toBe(['1' => ['09:00', '13:00'], '2' => ['10:00', '13:00']])
+            ->and($room->users->pluck('id')->all())->toBe([$agent->id]);
+    });
+
+    it('can clear who answers and go back to the business hours', function (): void {
+        $owner = ownerWithDepartments();
+        $agent = agentOf($owner->business);
+        $room = Department::factory()->create(['business_id' => $owner->business_id, 'hours' => ['1' => ['09:00', '13:00']]]);
+        $room->users()->sync([$agent->id]);
+
+        asTeamApp($owner)->putJson("/api/v1/team/departments/{$room->id}", ['uses_business_hours' => true, 'user_ids' => []])->assertOk();
+
+        expect($room->refresh()->hours)->toBeNull()->and($room->users()->count())->toBe(0);
+    });
+
+    it('deletes one and its threads fall back to the whole team', function (): void {
+        $owner = ownerWithDepartments();
+        $room = Department::factory()->create(['business_id' => $owner->business_id]);
+        $thread = Conversation::factory()->create(['business_id' => $owner->business_id, 'department_id' => $room->id, 'status' => ConversationStatus::Team]);
+
+        asTeamApp($owner)->deleteJson("/api/v1/team/departments/{$room->id}")
+            ->assertOk()->assertJsonPath('message', __('team.notify.department_deleted'));
+
+        expect(Department::query()->count())->toBe(0)->and($thread->refresh()->department_id)->toBeNull();
+    });
+
+    it('never reaches the department of another business', function (): void {
+        $owner = ownerWithDepartments();
+        $foreign = Department::factory()->create(['business_id' => payingUser()->business_id, 'name' => 'Ajeno']);
+
+        asTeamApp($owner)->putJson("/api/v1/team/departments/{$foreign->id}", ['name' => 'Mío'])->assertNotFound();
+        asTeamApp($owner)->deleteJson("/api/v1/team/departments/{$foreign->id}")->assertNotFound();
+
+        expect(app(Tenant::class)->for($foreign->business_id, fn (): string => Department::query()->whereKey($foreign->id)->value('name')))->toBe('Ajeno');
+    });
+
+    it('is closed to an agent and to a call without a token', function (): void {
+        $owner = ownerWithDepartments();
+        $agent = agentOf($owner->business);
+        $room = Department::factory()->create(['business_id' => $owner->business_id]);
+
+        asTeamApp($agent)->postJson('/api/v1/team/departments', ['name' => 'Ventas', 'routing_hint' => 'Cuando quieran comprar algo.'])->assertForbidden();
+        asTeamApp($agent)->putJson("/api/v1/team/departments/{$room->id}", ['name' => 'X1'])->assertForbidden();
+        asTeamApp($agent)->deleteJson("/api/v1/team/departments/{$room->id}")->assertForbidden();
+
+        expect(Department::query()->count())->toBe(1);
+    });
+
+    it('is closed to a call without a token', function (): void {
+        test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/team/departments', [])->assertUnauthorized();
+    });
+});
+
+describe('a body that is not what the sheet sends', function (): void {
+    it('does not staff a department with someone already taken out of the team', function (): void {
+        $owner = ownerWithDepartments();
+        $gone = agentOf($owner->business);
+        $room = Department::factory()->create(['business_id' => $owner->business_id]);
+        app(RemoveTeamMember::class)->handle($gone);
+
+        asTeamApp($owner)->putJson("/api/v1/team/departments/{$room->id}", ['user_ids' => [$gone->id]])
+            ->assertUnprocessable()->assertJsonValidationErrors('user_ids.0');
+    });
+
+    it('answers a department body made of lists and words with the sheet\'s own refusals, never a crash', function (): void {
+        $owner = ownerWithDepartments();
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', [
+            'name' => ['x'], 'routing_hint' => ['y'], 'uses_business_hours' => 'false', 'user_ids' => 'todos',
+            'week' => [1 => 'lunes', 2 => ['open' => 'true', 'opens' => ['09:00'], 'closes' => ['18:00']]],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['name', 'routing_hint']);
+
+        expect(Department::query()->count())->toBe(0);
+    });
+
+    it('reads "false" as false', function (): void {
+        $owner = ownerWithDepartments();
+
+        asTeamApp($owner)->postJson('/api/v1/team/departments', ['name' => 'Pagos', 'routing_hint' => 'Cuando hablen de un pago o un comprobante.', 'uses_business_hours' => 'false', 'week' => [1 => ['open' => 'false', 'opens' => '09:00', 'closes' => '13:00']]])
+            ->assertCreated();
+
+        expect(Department::query()->sole()->hours)->not->toBeNull()->and(Department::query()->sole()->hours)->not->toHaveKey('1');
+    });
+
+    it('invites with a name that is not text as if no name came', function (): void {
+        $owner = payingUser();
+
+        asTeamApp($owner)->postJson('/api/v1/team/invitations', ['email' => 'nuevo@shop.test', 'name' => ['x'], 'whatsapp' => ['1']])->assertCreated();
+
+        expect(TeamInvitation::query()->sole()->name)->toBeNull();
+    });
+});
+
+describe('a person taken out of the team', function (): void {
+    it('cannot walk back in by signing in with their old password', function (): void {
+        $owner = payingUser();
+        $agent = agentOf($owner->business);
+
+        app(RemoveTeamMember::class)->handle($agent);
+
+        // The app's door and the web's door: both used to bring a closed account back.
+        test()->withHeaders(apiDeviceHeaders('install-0000-bbbb-2222'))->postJson('/api/v1/login', ['email' => $agent->email, 'password' => 'password', 'device_name' => 'Pixel 8'])
+            ->assertUnprocessable();
+        test()->post('/login', ['email' => $agent->email, 'password' => 'password'])->assertSessionHasErrors('email');
+
+        expect(User::query()->whereKey($agent->id)->exists())->toBeFalse()
+            ->and($agent->tokens()->count())->toBe(0);
+    });
+
+    it('still lets an owner who closed their own account come back by signing in', function (): void {
+        $owner = payingUser();
+        $owner->syncRoles(['client']);
+        $owner->delete();
+
+        test()->withHeaders(apiDeviceHeaders('install-0000-cccc-3333'))->postJson('/api/v1/login', ['email' => $owner->email, 'password' => 'password', 'device_name' => 'Pixel 8'])
+            ->assertOk();
+
+        expect(User::query()->whereKey($owner->id)->exists())->toBeTrue();
     });
 });

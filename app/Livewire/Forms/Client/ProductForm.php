@@ -98,8 +98,19 @@ class ProductForm extends BaseForm
 
     protected function transformServiceData(): array
     {
-        $payload = $this->data->toPayload();
-        $payload['attribute_values'] = AttributeValueRules::normalize($this->attributeSet(), $this->data->attribute_values);
+        return self::payload($this->data);
+    }
+
+    /**
+     * The sheet as it is stored: squished, and the type's values shaped against its set.
+     * Shared with the app's API so both write a product alike.
+     *
+     * @return array<string, mixed>
+     */
+    public static function payload(ProductDto $data): array
+    {
+        $payload = $data->toPayload();
+        $payload['attribute_values'] = AttributeValueRules::normalize(ServiceType::attributeSetFor($data->service_type_id), $data->attribute_values);
 
         return $payload;
     }
@@ -112,14 +123,24 @@ class ProductForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $businessId = Auth::user()?->business_id;
+        return self::fieldRules(Auth::user()?->business_id, $this->attributeSet(), $excludeId);
+    }
 
+    /**
+     * The sheet's rules, shared with the app's API.
+     *
+     * @param  list<array<string, mixed>>  $attributeSet
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(?int $businessId, array $attributeSet, ?int $excludeId = null): array
+    {
         return [
             'name' => [
                 ...AttributeValidator::stringValid(true, '2'),
                 Rule::unique('products', 'name')
                     ->where('business_id', $businessId)
-                    ->whereNull('deleted_at')
+                    // A new name may revive a trashed row; renaming cannot, and the table's unique index counts it.
+                    ->when($excludeId === null, fn ($rule) => $rule->whereNull('deleted_at'))
                     ->ignore($excludeId),
             ],
             // Trashed rows count: a code is a sync identity (future
@@ -139,7 +160,7 @@ class ProductForm extends BaseForm
             'stock' => [...AttributeValidator::numericDecimal(false), 'max:9999999999'],
             'in_stock' => ['boolean'],
             'is_active' => ['boolean'],
-            ...AttributeValueRules::rules($this->attributeSet()),
+            ...AttributeValueRules::rules($attributeSet),
         ];
     }
 
@@ -147,6 +168,15 @@ class ProductForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames($this->attributeSet());
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $attributeSet
+     * @return array<string, string>
+     */
+    public static function fieldNames(array $attributeSet): array
     {
         return [
             'name' => __('client.products.field_name'),
@@ -156,7 +186,7 @@ class ProductForm extends BaseForm
             'price' => __('client.products.field_price'),
             'stock' => __('client.products.field_stock'),
             'in_stock' => __('client.products.sheet_available'),
-            ...AttributeValueRules::attributes($this->attributeSet()),
+            ...AttributeValueRules::attributes($attributeSet),
         ];
     }
 }

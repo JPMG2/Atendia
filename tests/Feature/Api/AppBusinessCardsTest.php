@@ -286,6 +286,17 @@ describe('a partial save', function (): void {
 });
 
 describe('the social networks', function (): void {
+    it('never reads a list that is not a list as "delete them all"', function (): void {
+        $owner = payingUser();
+        $network = SocialNetwork::factory()->create();
+        asCardsApp($owner)->putJson('/api/v1/business/social', ['social' => [['social_network_id' => $network->id, 'url' => 'instagram.com/sol']]])->assertOk();
+
+        asCardsApp($owner)->putJson('/api/v1/business/social', ['social' => null])->assertUnprocessable()->assertJsonValidationErrors('social');
+        asCardsApp($owner)->putJson('/api/v1/business/social', ['social' => 'x'])->assertUnprocessable()->assertJsonValidationErrors('social');
+
+        expect($owner->business->socialLinks()->count())->toBe(1);
+    });
+
     it('refuses a link that is no web address, and accepts a plain handle or a bare domain', function (): void {
         $owner = payingUser();
         $network = SocialNetwork::factory()->create();

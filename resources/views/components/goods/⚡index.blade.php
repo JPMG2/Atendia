@@ -104,107 +104,52 @@ new class extends Component
     }
 
     /**
-     * Groups only rest state, and only once a shelf EXISTS: searching or
-     * filtering flattens them, and a business yet to create its first
-     * category gets a plain list instead of one lonely "Sin categoría".
+     * The list as the piece cuts it: shelves while nothing is searched or filtered
+     * (and once a shelf exists), a flat window of hits otherwise. The app reads the
+     * very same cut, so the two can never group or count differently.
+     *
+     * @return array<string, mixed>
      */
+    #[Computed]
+    public function listing(): array
+    {
+        return $this->menu()?->listing($this->search, $this->filter, $this->visible, $this->collapsed)
+            ?? ['grouped' => false, 'groups' => [], 'flat' => [], 'shown' => 0, 'total' => 0, 'count' => 0, 'priced' => 0, 'all' => 0];
+    }
+
+    /** Groups only rest state: see ServiceMenu::listing(). */
     #[Computed]
     public function grouped(): bool
     {
-        return trim($this->search) === '' && $this->filter === 'all' && $this->categories->isNotEmpty();
+        return $this->listing['grouped'];
     }
 
     /** @return list<Service> The flat window, destacados leading as promised. */
     #[Computed]
     public function flatRows(): array
     {
-        return $this->filtered->sortByDesc('is_featured')->values()->take($this->visible)->all();
+        return $this->listing['flat'];
     }
 
-    /**
-     * The grouped view: Destacados pinned first (WhatsApp collections repeat
-     * a product across collections, so featured rows also keep their shelf),
-     * then the client's shelves in drag order. A collapsed group keeps its
-     * header and hides its rows; groups past the window come with "load more".
-     *
-     * @return list<array{key: string, name: string, count: int, collapsed: bool, featured: bool, rows: list<Service>}>
-     */
+    /** @return list<array{key: string, name: string, count: int, collapsed: bool, featured: bool, rows: list<Service>}> */
     #[Computed]
     public function groups(): array
     {
-        $buckets = [['_featured', __('client.services.featured_title'), $this->services->filter(fn (Service $service): bool => $service->is_featured)]];
-
-        foreach ($this->categories as $category) {
-            $buckets[] = [(string) $category->id, $category->name, $this->services->where('service_category_id', $category->id)];
-        }
-
-        $buckets[] = ['', __('client.services.uncategorized'), $this->services->whereNull('service_category_id')];
-
-        $groups = [];
-        $shown = 0;
-
-        foreach ($buckets as [$key, $name, $members]) {
-            if ($members->isEmpty()) {
-                continue;
-            }
-
-            if ($shown >= $this->visible) {
-                break;
-            }
-
-            $collapsed = in_array($key, $this->collapsed, true);
-            $rows = [];
-
-            if (! $collapsed) {
-                foreach ($members as $service) {
-                    if ($shown >= $this->visible) {
-                        break;
-                    }
-
-                    $rows[] = $service;
-                    $shown++;
-                }
-            }
-
-            $groups[] = [
-                'key' => $key,
-                'name' => $name,
-                'count' => $members->count(),
-                'collapsed' => $collapsed,
-                'featured' => $key === '_featured',
-                'rows' => $rows,
-            ];
-        }
-
-        return $groups;
+        return $this->listing['groups'];
     }
 
     /** Rows actually on screen — what the load-more footer counts. */
     #[Computed]
     public function shownRows(): int
     {
-        if (! $this->grouped) {
-            return count($this->flatRows);
-        }
-
-        return array_sum(array_map(fn (array $group): int => count($group['rows']), $this->groups));
+        return $this->listing['shown'];
     }
 
     /** Loadable rows: collapsed groups keep theirs out of the count. */
     #[Computed]
     public function listTotal(): int
     {
-        if (! $this->grouped) {
-            return $this->filtered->count();
-        }
-
-        $featured = in_array('_featured', $this->collapsed, true)
-            ? 0
-            : $this->services->filter(fn (Service $service): bool => $service->is_featured)->count();
-
-        return $featured + $this->services->filter(
-            fn (Service $service): bool => ! in_array((string) ($service->service_category_id ?? ''), $this->collapsed, true),
-        )->count();
+        return $this->listing['total'];
     }
 
     public function toggleGroup(string $category): void
@@ -217,16 +162,7 @@ new class extends Component
     /** wire:sort drops a dragged shelf at its new position, persisted. */
     public function reorderCategories(int $category, int $position): void
     {
-        $ids = $this->categories->pluck('id')->all();
-
-        if (! in_array($category, $ids, true)) {
-            return;
-        }
-
-        $order = array_values(array_diff($ids, [$category]));
-        array_splice($order, max(0, $position), 0, [$category]);
-
-        $this->menu()?->reorderCategories($order);
+        $this->menu()?->moveCategory($category, $position);
         $this->refreshList();
     }
 
@@ -277,7 +213,7 @@ new class extends Component
     #[Computed]
     public function priced(): int
     {
-        return $this->services->filter(fn (Service $service): bool => $service->hasResolvedPrice())->count();
+        return $this->listing['priced'];
     }
 
     public function loadMore(): void
@@ -409,7 +345,7 @@ new class extends Component
     /** Busts every computed that reads the tenant's rows after a write. */
     private function refreshList(): void
     {
-        unset($this->services, $this->categories, $this->filtered, $this->flatRows, $this->groups, $this->shownRows, $this->listTotal, $this->priced);
+        unset($this->services, $this->categories, $this->filtered, $this->listing, $this->grouped, $this->flatRows, $this->groups, $this->shownRows, $this->listTotal, $this->priced);
     }
 
     /** @return array<int, string> The sheet's type picker, suggested first. */

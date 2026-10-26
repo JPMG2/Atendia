@@ -11,6 +11,7 @@ use App\Actions\Team\RemoveTeamMember;
 use App\Actions\Team\ResendTeamInvitation;
 use App\Actions\Team\SaveDepartment;
 use App\Actions\Team\UpdateTeamMember;
+use App\Dto\DepartmentDto;
 use App\Enums\ConversationStatus;
 use App\Models\Business;
 use App\Models\Country;
@@ -101,9 +102,16 @@ class Team
                     ->mapWithKeys(fn (string $key): array => [$key => __('team.people.'.$key)])->all(),
                 'invite' => collect(['title', 'sub', 'name', 'email', 'whatsapp', 'whatsapp_hint', 'departments', 'departments_hint', 'send', 'cancel'])
                     ->mapWithKeys(fn (string $key): array => [$key => __('team.invite.'.$key)])->all(),
-                'departments' => collect(['title', 'sub', 'empty', 'when', 'nobody'])
+                'departments' => collect(['title', 'sub', 'empty', 'when', 'nobody', 'new'])
                     ->mapWithKeys(fn (string $key): array => [$key => __('team.departments.'.$key)])->all(),
+                // The department sheet: its labels, hours switch and the words that ask before deleting.
+                'department' => collect(['name', 'when_hint', 'people', 'closed', 'save', 'delete', 'delete_message', 'opens', 'closes'])
+                    ->mapWithKeys(fn (string $key): array => [$key => __('team.department.'.$key)])->all(),
+                'hours' => collect(['label', 'hint', 'use_business', 'switch_on', 'switch_off'])
+                    ->mapWithKeys(fn (string $key): array => [$key => __('team.hours.'.$key)])->all(),
             ],
+            // What a new department starts from: the office week, on the business's own hours.
+            'departmentDefaults' => $this->sheetOf(new DepartmentDto),
             // Without the plan's departments the web shows what unlocks them instead of the list.
             'locked' => $this->hasDepartments ? null : [
                 'title' => __('team.locked.title', ['plan' => __('plan.names.'.Plan::lowestWithDepartments()->code)]),
@@ -153,6 +161,28 @@ class Team
                     ? trans_choice('team.departments.waiting', $department->waiting, ['count' => $department->waiting])
                     : __('team.departments.none_waiting'),
                 'people' => $department->users->pluck('name')->all(),
+                'editTitle' => __('team.departments.edit', ['name' => $department->name]),
+                'deleteTitle' => __('team.department.delete_title', ['name' => $department->name]),
+                ...$this->sheetOf(DepartmentDto::fromStored($department->hours, $department->name, $department->routing_hint, $department->users->pluck('id')->all())),
+            ])->all(),
+        ];
+    }
+
+    /**
+     * What the department sheet edits, as the web draws it: who answers, whether it
+     * follows the business's hours, and the week Monday first with each day's name.
+     *
+     * @return array{userIds: list<int>, usesBusinessHours: bool, week: list<array{day: int, label: string, open: bool, opens: string, closes: string}>}
+     */
+    private function sheetOf(DepartmentDto $sheet): array
+    {
+        return [
+            'userIds' => $sheet->user_ids,
+            'usesBusinessHours' => $sheet->uses_business_hours,
+            'week' => collect([1, 2, 3, 4, 5, 6, 0])->map(fn (int $day): array => [
+                'day' => $day,
+                'label' => ucfirst(now()->startOfWeek()->addDays(($day + 6) % 7)->locale(app()->getLocale())->isoFormat('ddd')),
+                ...$sheet->week[$day],
             ])->all(),
         ];
     }

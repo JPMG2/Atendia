@@ -6,27 +6,31 @@ namespace App\Actions\Team;
 
 use App\Models\Business;
 use App\Models\Department;
+use Illuminate\Support\Facades\DB;
 
 class SaveDepartment
 {
     /** @param  array{name: string, routing_hint: string, uses_business_hours: bool, week: array<int, array{open: bool, opens: string, closes: string}>, user_ids: list<int>}  $data  Already validated. */
     public function handle(Business $business, array $data, ?int $id = null): Department
     {
-        $department = $id === null
-            ? new Department(['sort_order' => (int) $business->departments()->max('sort_order') + 1])
-            : $business->departments()->findOrFail($id);
+        // All or nothing: a room is never left saved without the people the sheet chose.
+        return DB::transaction(function () use ($business, $data, $id): Department {
+            $department = $id === null
+                ? new Department(['sort_order' => (int) $business->departments()->max('sort_order') + 1])
+                : $business->departments()->findOrFail($id);
 
-        $department->fill([
-            'name' => $data['name'],
-            'routing_hint' => $data['routing_hint'],
-            'hours' => $data['uses_business_hours'] ? null : $this->storedHours($data['week']),
-        ]);
-        $department->business()->associate($business)->save();
+            $department->fill([
+                'name' => $data['name'],
+                'routing_hint' => $data['routing_hint'],
+                'hours' => $data['uses_business_hours'] ? null : $this->storedHours($data['week']),
+            ]);
+            $department->business()->associate($business)->save();
 
-        // Only this business's people can staff its departments.
-        $department->users()->sync($business->users()->whereKey($data['user_ids'])->pluck('id'));
+            // Only this business's people can staff its departments.
+            $department->users()->sync($business->users()->whereKey($data['user_ids'])->pluck('id'));
 
-        return $department;
+            return $department;
+        });
     }
 
     /**

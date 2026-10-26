@@ -43,13 +43,17 @@ describe('menu', function (): void {
 
         asAppUser($owner)->getJson('/api/v1/menu')
             ->assertOk()
-            ->assertJsonPath('data.*.label', ['Mi negocio', 'Conversaciones', 'WhatsApp', 'Plan y pagos'])
+            ->assertJsonPath('data.*.label', ['Mi negocio', 'Catálogo', 'Conversaciones', 'Clientes', 'Agenda', 'WhatsApp', 'Plan y pagos'])
             ->assertJsonPath('data.0.screen', 'my-business')
-            ->assertJsonPath('data.1.screen', 'conversations')
-            ->assertJsonPath('data.1.icon', 'message-circle')
-            // A group has no screen of its own: "Mi plan" is the one child the app can draw.
-            ->assertJsonPath('data.3.screen', null)
-            ->assertJsonPath('data.3.children.*.screen', ['my-plan']);
+            // A group has no screen of its own: "Servicios" and "Productos" are the catalog's two children the app can draw.
+            ->assertJsonPath('data.1.screen', null)
+            ->assertJsonPath('data.1.children.*.screen', ['my-services', 'my-products'])
+            ->assertJsonPath('data.2.screen', 'conversations')
+            ->assertJsonPath('data.2.icon', 'message-circle')
+            ->assertJsonPath('data.3.screen', 'customers')
+            ->assertJsonPath('data.4.screen', 'agenda')
+            ->assertJsonPath('data.6.screen', null)
+            ->assertJsonPath('data.6.children.*.screen', ['my-plan']);
     });
 
     it('keeps the web nesting and order as the app grows a screen', function (): void {
@@ -66,13 +70,13 @@ describe('menu', function (): void {
         $owner = payingUser();
         $agent = teamAgentOf($owner);
 
-        asAppUser($agent)->getJson('/api/v1/menu')->assertOk()->assertJsonPath('data.*.label', ['Conversaciones']);
+        asAppUser($agent)->getJson('/api/v1/menu')->assertOk()->assertJsonPath('data.*.label', ['Conversaciones', 'Clientes']);
     });
 
     it('speaks the language the phone announces', function (): void {
         $owner = payingUser();
 
-        asAppUser($owner)->withHeader('Accept-Language', 'en')->getJson('/api/v1/menu')->assertJsonPath('data.1.label', 'Conversaciones');
+        asAppUser($owner)->withHeader('Accept-Language', 'en')->getJson('/api/v1/menu')->assertJsonPath('data.2.label', 'Conversaciones');
     });
 });
 

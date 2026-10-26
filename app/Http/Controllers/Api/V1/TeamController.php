@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Classes\Main\Client;
 use App\Classes\Main\Team;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\SaveDepartmentRequest;
 use App\Http\Requests\Api\V1\SaveTeamMemberRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,6 +71,29 @@ class TeamController extends Controller
         $this->team($request)->remove($member);
 
         return $this->done($request, __('team.notify.removed'));
+    }
+
+    public function storeDepartment(SaveDepartmentRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $this->team($request)->saveDepartment($validated);
+
+        return $this->done($request, __('team.notify.department_saved', ['name' => $validated['name']]), 201);
+    }
+
+    public function updateDepartment(SaveDepartmentRequest $request, int $department): JsonResponse
+    {
+        $validated = $request->validated();
+        $this->team($request)->saveDepartment($validated, $department);
+
+        return $this->done($request, __('team.notify.department_saved', ['name' => $validated['name']]));
+    }
+
+    public function removeDepartment(Request $request, int $department): JsonResponse
+    {
+        $this->team($request)->deleteDepartment($department);
+
+        return $this->done($request, __('team.notify.department_deleted'));
     }
 
     private function done(Request $request, string $message, int $status = 200): JsonResponse

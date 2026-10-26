@@ -62,15 +62,37 @@ class CustomerForm extends BaseForm
 
     protected function transformServiceData(): array
     {
+        return self::payload(['name' => $this->name, 'email' => $this->email, 'birthday' => $this->birthday, 'notes' => $this->notes]);
+    }
+
+    /**
+     * The sheet's four boxes as they are stored: squished, and empty means unknown.
+     * Shared with the app's API so both write a customer alike.
+     *
+     * @param  array{name: string, email: string, birthday: string, notes: string}  $boxes
+     * @return array{name: ?string, email: ?string, birthday: ?string, notes: ?string}
+     */
+    public static function payload(array $boxes): array
+    {
         return [
-            'name' => DtoCast::squish($this->name),
-            'email' => DtoCast::squish($this->email),
-            'birthday' => trim($this->birthday) === '' ? null : trim($this->birthday),
-            'notes' => trim($this->notes) === '' ? null : trim($this->notes),
+            'name' => DtoCast::squish($boxes['name']),
+            'email' => DtoCast::squish($boxes['email']),
+            'birthday' => trim($boxes['birthday']) === '' ? null : trim($boxes['birthday']),
+            'notes' => trim($boxes['notes']) === '' ? null : trim($boxes['notes']),
         ];
     }
 
     protected function getValidationRules(?int $excludeId = null): array
+    {
+        return self::fieldRules();
+    }
+
+    /**
+     * The sheet's rules, shared with the app's API.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(): array
     {
         return [
             'name' => AttributeValidator::stringValid(false, '2'),
@@ -84,6 +106,14 @@ class CustomerForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function fieldNames(): array
     {
         return [
             'name' => __('client.customers.field_name'),

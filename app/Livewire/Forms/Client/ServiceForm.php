@@ -85,8 +85,19 @@ class ServiceForm extends BaseForm
 
     protected function transformServiceData(): array
     {
-        $payload = $this->data->toPayload();
-        $payload['attribute_values'] = AttributeValueRules::normalize($this->attributeSet(), $this->data->attribute_values);
+        return self::payload($this->data);
+    }
+
+    /**
+     * The sheet as it is stored: squished, and the type's values shaped against its set.
+     * Shared with the app's API so both write a service alike.
+     *
+     * @return array<string, mixed>
+     */
+    public static function payload(ServiceDto $data): array
+    {
+        $payload = $data->toPayload();
+        $payload['attribute_values'] = AttributeValueRules::normalize(ServiceType::attributeSetFor($data->service_type_id), $data->attribute_values);
 
         return $payload;
     }
@@ -99,18 +110,30 @@ class ServiceForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $businessId = Auth::user()?->business_id;
+        return self::fieldRules(Auth::user()?->business_id, $this->attributeSet(), $excludeId);
+    }
 
+    /**
+     * The sheet's rules, shared with the app's API. `$typeIds`, when given, are the only
+     * types the screen offers (the app's list): a type of another modality is refused.
+     *
+     * @param  list<array<string, mixed>>  $attributeSet
+     * @param  list<int>|null  $typeIds
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(?int $businessId, array $attributeSet, ?int $excludeId = null, ?array $typeIds = null): array
+    {
         return [
             'name' => [
                 ...AttributeValidator::stringValid(true, '2'),
                 Rule::unique('services', 'name')
                     ->where('business_id', $businessId)
-                    ->whereNull('deleted_at')
+                    // A new name may revive a trashed row; renaming cannot, and the table's unique index counts it.
+                    ->when($excludeId === null, fn ($rule) => $rule->whereNull('deleted_at'))
                     ->ignore($excludeId),
             ],
             'service_category_id' => ['nullable', 'integer', Rule::exists('service_categories', 'id')->where('business_id', $businessId)],
-            'service_type_id' => ['nullable', 'integer', Rule::exists('service_types', 'id')->where('is_active', true)],
+            'service_type_id' => ['nullable', 'integer', Rule::exists('service_types', 'id')->where('is_active', true), ...($typeIds === null ? [] : [Rule::in($typeIds)])],
             'price_type' => ['required', Rule::in(Service::PRICE_TYPES)],
             'price' => [...AttributeValidator::numericDecimal(false), 'max:9999999999'],
             'deposit' => [...AttributeValidator::numericDecimal(false), 'max:9999999999'],
@@ -119,7 +142,7 @@ class ServiceForm extends BaseForm
             'prep_note' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
-            ...AttributeValueRules::rules($this->attributeSet()),
+            ...AttributeValueRules::rules($attributeSet),
         ];
     }
 
@@ -127,6 +150,15 @@ class ServiceForm extends BaseForm
      * @return array<string, string>
      */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames($this->attributeSet());
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $attributeSet
+     * @return array<string, string>
+     */
+    public static function fieldNames(array $attributeSet): array
     {
         return [
             'name' => __('client.services.field_name'),
@@ -140,7 +172,7 @@ class ServiceForm extends BaseForm
             'prep_note' => __('client.services.field_prep'),
             'is_active' => __('client.services.offered'),
             'is_featured' => __('client.services.featured'),
-            ...AttributeValueRules::attributes($this->attributeSet()),
+            ...AttributeValueRules::attributes($attributeSet),
         ];
     }
 }
