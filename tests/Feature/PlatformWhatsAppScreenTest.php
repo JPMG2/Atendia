@@ -45,7 +45,7 @@ beforeEach(function (): void {
  * @param  list<string>  $instances
  * @param  array<string, mixed>  $row
  */
-function bridgeSays(string $state = 'open', array $instances = ['aliadito-plataforma'], array $row = []): void
+function platformBridgeSays(string $state = 'open', array $instances = ['aliadito-plataforma'], array $row = []): void
 {
     // A fresh client each time: a second fake would sit BEHIND the first, and what was recorded would linger.
     Http::swap(new HttpFactory);
@@ -133,7 +133,7 @@ describe('what it says', function (): void {
     });
 
     test('a linked line says connected, with its number and instance, and offers to unlink it', function (): void {
-        bridgeSays('open');
+        platformBridgeSays('open');
         platformAdmin();
 
         Livewire::test('admin.platform-whatsapp.index')
@@ -146,7 +146,7 @@ describe('what it says', function (): void {
     });
 
     test('a closed line says since when and why, only when the board agrees with the bridge', function (): void {
-        bridgeSays('close', row: ['disconnectionObject' => json_encode(['error' => ['data' => ['attrs' => ['type' => 'device_removed']]]])]);
+        platformBridgeSays('close', row: ['disconnectionObject' => json_encode(['error' => ['data' => ['attrs' => ['type' => 'device_removed']]]])]);
         PlatformSensor::query()->create(['sensor_key' => 'platform_whatsapp', 'group' => 'system', 'status' => 'crit', 'value' => 'close', 'changed_at' => '2026-10-21 23:14:44', 'checked_at' => now()]);
         platformAdmin();
 
@@ -159,7 +159,7 @@ describe('what it says', function (): void {
     });
 
     test('a date the board does not stand behind is not shown', function (): void {
-        bridgeSays('open');
+        platformBridgeSays('open');
         PlatformSensor::query()->create(['sensor_key' => 'platform_whatsapp', 'group' => 'system', 'status' => 'crit', 'value' => 'close', 'changed_at' => '2026-10-21 23:14:44', 'checked_at' => now()]);
         platformAdmin();
 
@@ -170,7 +170,7 @@ describe('what it says', function (): void {
     });
 
     test('an instance the bridge does not run yet says it is not created', function (): void {
-        bridgeSays('close', instances: ['ai_project']);
+        platformBridgeSays('close', instances: ['ai_project']);
         platformAdmin();
 
         Livewire::test('admin.platform-whatsapp.index')->call('check')->assertSee(__('platform_whatsapp.status.missing'));
@@ -213,7 +213,7 @@ describe('what it says', function (): void {
 
 describe('linking it', function (): void {
     test('the first time the instance is created and a QR is shown; the next time it is not created again', function (): void {
-        bridgeSays('close', instances: ['ai_project']);
+        platformBridgeSays('close', instances: ['ai_project']);
         platformAdmin();
 
         Livewire::test('admin.platform-whatsapp.index')
@@ -223,24 +223,24 @@ describe('linking it', function (): void {
 
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/instance/create') && $request['instanceName'] === 'aliadito-plataforma');
 
-        bridgeSays('close');
+        platformBridgeSays('close');
         Livewire::test('admin.platform-whatsapp.index')->call('link')->assertSet('qr', 'data:image/png;base64,QUFB');
 
         Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/instance/create'));
     });
 
     test('when the phone scans it the QR goes away by itself on the next look', function (): void {
-        bridgeSays('close');
+        platformBridgeSays('close');
         platformAdmin();
 
         $screen = Livewire::test('admin.platform-whatsapp.index')->call('link')->assertSet('qr', 'data:image/png;base64,QUFB');
 
-        bridgeSays('open');
+        platformBridgeSays('open');
         $screen->call('check')->assertSet('qr', null)->assertSee(__('platform_whatsapp.status.connected'));
     });
 
     test('a QR older than its life is replaced with a fresh one', function (): void {
-        bridgeSays('close');
+        platformBridgeSays('close');
         platformAdmin();
 
         Livewire::test('admin.platform-whatsapp.index')
@@ -271,7 +271,7 @@ describe('linking it', function (): void {
     });
 
     test('whoever may only look cannot link', function (): void {
-        bridgeSays('close');
+        platformBridgeSays('close');
         lineViewer();
 
         Livewire::test('admin.platform-whatsapp.index')->call('link')->assertForbidden();
@@ -282,7 +282,7 @@ describe('linking it', function (): void {
 
 describe('unlinking it', function (): void {
     test('it closes the session of the platform instance, and only that one', function (): void {
-        bridgeSays('open');
+        platformBridgeSays('open');
         platformAdmin();
 
         Livewire::test('admin.platform-whatsapp.index')
@@ -294,7 +294,7 @@ describe('unlinking it', function (): void {
     });
 
     test('whoever may only look cannot unlink', function (): void {
-        bridgeSays('open');
+        platformBridgeSays('open');
         lineViewer();
 
         Livewire::test('admin.platform-whatsapp.index')->call('unlink')->assertForbidden();
@@ -406,7 +406,7 @@ describe('the topbar pill', function (): void {
 
     test('what the screen just learned from the bridge wins over an older reading', function (): void {
         lineSensor('crit', minutesAgo: 3);
-        bridgeSays('open');
+        platformBridgeSays('open');
         platformAdmin();
 
         Livewire::test('whatsapp.platform-pill')->assertSeeHtml('data-testid="platform-pill-down"');
