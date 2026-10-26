@@ -165,7 +165,9 @@ test('an alarm leads somewhere only when the app has that screen, and never to a
     PlatformEvent::factory()->ofKind(PlatformEventKind::ReceiptReceived)->create(['about_business_id' => $business->id]);
     $token = screensToken();
 
-    // The app has no Pagos yet: the row is information, with no destination.
+    // A screen the app lacks leaves the row as information, with no destination; once it has it, the row leads there.
+    config()->set('atendia.app.admin_screens', ['admin.dashboard', 'admin.alerts']);
+
     expect(screensGet($token, 'alerts')->json('data.events.rows.0.target'))->toBeNull();
 
     config()->set('atendia.app.admin_screens', ['admin.dashboard', 'admin.alerts', 'admin.payments']);
@@ -184,10 +186,11 @@ test('a person without the key of Avisos is refused there, but not at the door o
 test('the menu is the web\'s admin menu, in its order, cut to the screens the app has and to what the person may open', function (): void {
     $admin = screensGet(screensToken('admin'), 'menu')->assertOk()->json('data');
 
-    // "Negocios" is a group in the web's menu: it keeps its place and holds only the screens the app has.
-    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null])
-        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses')])
-        ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses']);
+    // "Negocios" and "Cobros" are groups in the web's menu: they keep their place and hold only the screens the app has.
+    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null])
+        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing')])
+        ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
+        ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments']);
 });
 
 test('support holds no key for the board, so its menu has the home and the businesses it may look up', function (): void {
@@ -363,6 +366,77 @@ test('Inicio serves the web\'s "needs you today" card with its words, and keeps 
     $kept = collect(screensGet($token, 'home')->json('data.attention.items'))->firstWhere('key', 'alerts');
 
     expect($kept['count'])->toBe(2)->and($kept['screen'])->toBeNull();
+});
+
+test('Pagos reads from the very piece the web desk reads: the queue, the reviewed and the words', function (): void {
+    $waiting = Payment::factory()->create(['reference' => '55512345', 'receipt_path' => 'receipts/secret.png', 'status' => 'pending']);
+    $rejected = Payment::factory()->create(['status' => 'rejected', 'rejection_reason' => 'El comprobante no se lee']);
+    $data = screensGet(screensToken(), 'payments')->assertOk()->json('data');
+
+    expect($data['title'])->toBe(__('billing.admin.title'))
+        ->and($data['pending']['total'])->toBe(1)
+        ->and($data['pending']['rows'])->toBe([[
+            'id' => $waiting->id,
+            'date' => $waiting->created_at->format('d/m/Y H:i'),
+            'business' => $waiting->business->name,
+            'concept' => __('billing.history.concept_line', ['plan' => __('plan.names.negocio')]),
+            'amount' => 'USD 79,00',
+            'reference' => '55512345',
+        ]])
+        ->and($data['recent']['rows'][0])->toMatchArray([
+            'id' => $rejected->id,
+            'status' => __('billing.history.statuses.rejected'),
+            'tone' => 'danger',
+            'reason' => 'El comprobante no se lee',
+        ]);
+});
+
+test('a receipt with no reference reads as a dash and another currency keeps its own', function (): void {
+    Payment::factory()->create(['status' => 'pending', 'reference' => null, 'currency' => 'VES', 'amount' => 1234.5]);
+    $row = screensGet(screensToken(), 'payments')->json('data.pending.rows.0');
+
+    expect($row['reference'])->toBe('—')->and($row['amount'])->toBe('VES 1.234,50');
+});
+
+test('Pagos never hands out the receipt file, and says so with an empty desk in the web\'s words', function (): void {
+    Payment::factory()->create(['status' => 'pending', 'receipt_path' => 'receipts/secret.png']);
+    $token = screensToken();
+
+    expect(json_encode(screensGet($token, 'payments')->json()))->not->toContain('secret.png')->not->toContain('receipt');
+
+    Payment::query()->delete();
+    $empty = screensGet($token, 'payments')->assertOk()->json('data');
+
+    expect($empty['pending']['rows'])->toBe([])
+        ->and($empty['pending']['empty'])->toBe(__('billing.admin.empty'))
+        ->and($empty['recent']['empty'])->toBe(__('billing.admin.recent_empty'));
+});
+
+test('the queue pages in SQL and the last page promises no more', function (): void {
+    // Equal dates: only the id keeps the slices consistent from one call to the next.
+    Payment::factory()->count(27)->create(['status' => 'pending', 'created_at' => now()->subDay()]);
+    $token = screensToken();
+
+    $first = screensGet($token, 'payments')->json('data.pending');
+    $second = screensGet($token, 'payments?page=2')->json('data.pending');
+
+    expect($first['rows'])->toHaveCount(25)->and($first['has_more'])->toBeTrue()->and($first['total'])->toBe(27)
+        ->and($second['rows'])->toHaveCount(27)->and($second['has_more'])->toBeFalse()
+        ->and(array_slice(array_column($second['rows'], 'id'), 0, 25))->toBe(array_column($first['rows'], 'id'));
+
+    foreach (['page[]=2', 'page=0', 'page=-3', 'page=99999999999'] as $odd) {
+        screensGet($token, 'payments?'.$odd)->assertOk();
+    }
+
+    expect(screensGet($token, 'payments?page=99999999999')->json('data.pending.has_more'))->toBeFalse();
+});
+
+test('without the key of Pagos the desk is closed', function (): void {
+    screensGet(screensToken('support'), 'payments')->assertForbidden();
+});
+
+test('a customer\'s token reads nothing of Pagos', function (): void {
+    screensGet(appInstallToken(payingUser()), 'payments')->assertForbidden()->assertJsonPath('code', 'staff_only');
 });
 
 test('Inicio with nothing pending offers the clear sentence of the web', function (): void {

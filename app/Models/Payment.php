@@ -57,7 +57,8 @@ class Payment extends Model
      */
     public function scopeAwaitingReview(Builder $query): void
     {
-        $query->where('status', PaymentStatus::Pending)->oldest();
+        // The id breaks ties: the app asks for a longer slice each time, and equal dates must not reshuffle it.
+        $query->where('status', PaymentStatus::Pending)->oldest()->oldest('id');
     }
 
     /** How many receipts are waiting for the admin right now. */
@@ -117,7 +118,7 @@ class Payment extends Model
      */
     public static function recentlyReviewed(int $limit = 20): Collection
     {
-        return self::query()->where('status', '!=', PaymentStatus::Pending)->with('business')->latest('updated_at')->limit($limit)->get();
+        return self::query()->where('status', '!=', PaymentStatus::Pending)->with('business')->latest('updated_at')->latest('id')->limit($limit)->get();
     }
 
     /**

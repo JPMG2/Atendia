@@ -1,10 +1,9 @@
 <?php
 
+use App\Classes\Main\PaymentsDesk;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
-use App\Models\Payment;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -19,24 +18,16 @@ new class extends Component
 
     public PaymentReviewForm $form;
 
-    /** @return Collection<int, Payment> */
     #[Computed]
-    public function queue(): Collection
+    public function desk(): PaymentsDesk
     {
-        return Payment::reviewQueue();
-    }
-
-    /** @return Collection<int, Payment> */
-    #[Computed]
-    public function recent(): Collection
-    {
-        return Payment::recentlyReviewed();
+        return new PaymentsDesk;
     }
 
     public function approve(int $id): void
     {
         $this->dispatchNotification($this->form->approve($id));
-        unset($this->queue, $this->recent);
+        unset($this->desk);
     }
 
     public function startReject(int $id): void
@@ -54,7 +45,7 @@ new class extends Component
     public function reject(): void
     {
         $this->dispatchNotification($this->form->reject());
-        unset($this->queue, $this->recent);
+        unset($this->desk);
     }
 
     public function render(): View
@@ -77,7 +68,7 @@ new class extends Component
     <x-ui.card class="bp-card" x-data="adminPayments">
         <div class="bp-card-head"><h2>{{ __('billing.admin.pending') }}</h2></div>
 
-        @if ($this->queue->isEmpty())
+        @if ($this->desk->pendingRows === [])
             <p class="text-muted text-sm">{{ __('billing.admin.empty') }}</p>
         @else
             <div class="pay-table-wrap">
@@ -94,23 +85,23 @@ new class extends Component
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($this->queue as $payment)
-                            <tr wire:key="pending-{{ $payment->id }}">
+                        @foreach ($this->desk->pendingRows as $payment)
+                            <tr wire:key="pending-{{ $payment['id'] }}">
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 so each cell has to say what it is. --}}
-                                <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="is-key" data-label="{{ __('billing.admin.business') }}">{{ $payment->business?->name }}</td>
-                                <td data-label="{{ __('billing.history.concept') }}">{{ __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]) }}</td>
-                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment->formattedAmount() }}</td>
-                                <td class="font-mono" data-label="{{ __('billing.admin.reference') }}">{{ $payment->reference ?? '—' }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment['date'] }}</td>
+                                <td class="is-key" data-label="{{ __('billing.admin.business') }}">{{ $payment['business'] }}</td>
+                                <td data-label="{{ __('billing.history.concept') }}">{{ $payment['concept'] }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment['amount'] }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.admin.reference') }}">{{ $payment['reference'] }}</td>
                                 <td data-label="{{ __('billing.history.receipt') }}">
-                                    @if ($payment->receipt_path)
-                                        <a class="st-link" href="{{ route('admin.payments.receipt', $payment) }}" target="_blank" rel="noopener">
+                                    @if ($payment['receipt'])
+                                        <a class="st-link" href="{{ route('admin.payments.receipt', $payment['id']) }}" target="_blank" rel="noopener">
                                             {{ __('billing.history.receipt') }}</a>
                                     @endif
                                 </td>
                                 <td>
-                                    @if ($form->rejectingId === $payment->id)
+                                    @if ($form->rejectingId === $payment['id'])
                                         <div class="flex min-w-[260px] flex-col gap-2">
                                             <x-catalog.form-row>
                                                 <x-inputsform.input
@@ -133,10 +124,10 @@ new class extends Component
                                             <x-ui.button
                                                 variant="primary"
                                                 size="sm"
-                                                x-on:click="confirmApprove({{ $payment->id }}, {{ Illuminate\Support\Js::from($payment->business?->name ?? '') }})"
+                                                x-on:click="confirmApprove({{ $payment['id'] }}, {{ Illuminate\Support\Js::from($payment['business']) }})"
                                             >
                                                 {{ __('billing.admin.approve') }}</x-ui.button>
-                                            <x-ui.button variant="secondary" size="sm" wire:click="startReject({{ $payment->id }})">
+                                            <x-ui.button variant="secondary" size="sm" wire:click="startReject({{ $payment['id'] }})">
                                                 {{ __('billing.admin.reject') }}</x-ui.button>
                                         </div>
                                     @endif
@@ -151,25 +142,25 @@ new class extends Component
 
     <x-ui.card class="bp-card mt-3">
         <div class="bp-card-head"><h2>{{ __('billing.admin.recent') }}</h2></div>
-        @if ($this->recent->isEmpty())
+        @if ($this->desk->recentRows === [])
             <p class="text-muted text-sm">{{ __('billing.admin.recent_empty') }}</p>
         @else
             <div class="pay-table-wrap">
                 <table class="pay-table" data-sortable>
                     <tbody>
-                        @foreach ($this->recent as $payment)
-                            <tr wire:key="recent-{{ $payment->id }}">
-                                <td class="font-mono">{{ $payment->updated_at->format('d/m/Y') }}</td>
-                                <td>{{ $payment->business?->name }}</td>
-                                <td class="font-mono">{{ $payment->formattedAmount() }}</td>
+                        @foreach ($this->desk->recentRows as $payment)
+                            <tr wire:key="recent-{{ $payment['id'] }}">
+                                <td class="font-mono">{{ $payment['date'] }}</td>
+                                <td>{{ $payment['business'] }}</td>
+                                <td class="font-mono">{{ $payment['amount'] }}</td>
                                 <td>
                                     <span @class([
                                         'status-tag',
-                                        'is-brand' => $payment->status === App\Enums\PaymentStatus::Paid,
-                                        'is-danger' => $payment->status === App\Enums\PaymentStatus::Rejected,
-                                    ])>{{ __('billing.history.statuses.'.$payment->status->value) }}</span>
+                                        'is-brand' => $payment['tone'] === 'brand',
+                                        'is-danger' => $payment['tone'] === 'danger',
+                                    ])>{{ $payment['status'] }}</span>
                                 </td>
-                                <td class="text-muted">{{ $payment->rejection_reason }}</td>
+                                <td class="text-muted">{{ $payment['reason'] }}</td>
                             </tr>
                         @endforeach
                     </tbody>
