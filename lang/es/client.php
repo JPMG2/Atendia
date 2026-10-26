@@ -64,6 +64,8 @@ return [
         'view_all' => 'Ver todas',
     ],
 
+    'ai_left' => '{0}Hoy no te quedan usos de «Optimizar con IA». Mañana vuelves a tener :cap.|{1}Te queda 1 de :cap usos hoy.|[2,*]Te quedan :left de :cap usos hoy.',
+    'ai_left_warn' => '{0}Hoy no te quedan usos de «Optimizar con IA». Mañana vuelves a tener :cap.|{1}Te queda 1 de :cap usos hoy: es el último.|[2,*]Te quedan solo :left de :cap usos hoy.',
     'ai_limit' => 'Hoy ya usaste «Optimizar con IA» :cap veces, que es el tope diario. Mañana vuelve a estar disponible.',
 
     'business' => [

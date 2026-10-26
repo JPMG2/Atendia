@@ -416,6 +416,7 @@ new class extends Component
             :body="__('client.services.ai_body')"
             :action="__('client.services.ai_action')"
             call="writeDescriptions"
+            metered
         />
 
         {{-- ONE surface: toolbar to find, meter to nudge, list to act. The

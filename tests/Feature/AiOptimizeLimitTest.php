@@ -16,6 +16,7 @@ use App\Models\User;
 use Database\Seeders\PlatformSettingSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -36,7 +37,8 @@ beforeEach(function (): void {
 
 function spendOptimizeUses(Business $business, int $times, string $agent = 'BusinessBioWriter'): void
 {
-    foreach (range(1, $times) as $ignored) {
+    // Not range(1, $times): with zero it counts backwards and would spend two.
+    for ($i = 0; $i < $times; $i++) {
         AiUsage::query()->create([
             'business_id' => $business->id,
             'kind' => $agent,
@@ -113,6 +115,44 @@ test('the catalog writer stops calling the model at the ceiling, but a catalog w
         ->and(app(WriteMissingDescriptions::class)->handle($this->business, collect([$written])))->toBe(0);
 
     CatalogCopywriter::assertNeverPrompted();
+});
+
+test('the counter is calm, turns to a warning from eight of ten and says so once it is spent', function (int $spent, string $state, string $sentence): void {
+    spendOptimizeUses($this->business, $spent);
+
+    $limit = AiOptimizeLimit::for($this->business);
+
+    expect($limit->state)->toBe($state)
+        ->and($limit->left)->toBe(10 - $spent)
+        ->and($limit->note)->toBe($sentence);
+})->with([
+    'untouched' => [0, 'ok', 'Te quedan 10 de 10 usos hoy.'],
+    'seven spent' => [7, 'ok', 'Te quedan 3 de 10 usos hoy.'],
+    'eight spent' => [8, 'warn', 'Te quedan solo 2 de 10 usos hoy.'],
+    'nine spent' => [9, 'warn', 'Te queda 1 de 10 usos hoy: es el último.'],
+    'ten spent' => [10, 'over', 'Hoy no te quedan usos de «Optimizar con IA». Mañana vuelves a tener 10.'],
+]);
+
+test('every screen shows the counter beside the offer', function (string $screen): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    spendOptimizeUses($this->business, 8);
+
+    $user = User::factory()->create();
+    $user->business()->associate($this->business)->save();
+
+    Service::factory()->for($this->business)->create(['description' => null]);
+    Product::factory()->for($this->business)->create(['description' => null]);
+
+    Livewire::actingAs($user)
+        ->test($screen)
+        ->assertSeeHtml('data-testid="ai-banner-note"')
+        ->assertSee('Te quedan solo 2 de 10 usos hoy.');
+})->with(['client.section-identity', 'goods.index', 'products.index']);
+
+test('a banner that is not metered prints no counter', function (): void {
+    $html = Blade::render('<x-ui.ai-banner title="T" body="B" />');
+
+    expect($html)->not->toContain('ai-banner-note');
 });
 
 test('every screen says the ceiling in the same words and never calls the model', function (string $screen, string $action, string $agent): void {

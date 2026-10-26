@@ -4,7 +4,12 @@
     'action' => null, // action button label; needs `call` to become a button
     'call' => null,   // Livewire method the action button runs; without it the banner only tells
     'icon' => 'sparkles',
+    'metered' => false, // shows how many uses of "Optimizar con IA" the business has left today
 ])
+
+@php
+    $limit = $metered && auth()->user()?->business ? \App\Classes\Main\AiOptimizeLimit::for(auth()->user()->business) : null;
+@endphp
 
 <div {{ $attributes->merge(['class' => 'ai-banner']) }}>
     <div class="ai-banner-icon">
@@ -13,6 +18,11 @@
     <div class="ai-banner-copy">
         <p class="ai-banner-title">{{ $title }}</p>
         <p class="ai-banner-body">{{ $body }}</p>
+        @if ($limit)
+            <p class="ai-banner-note" data-state="{{ $limit->state }}" data-testid="ai-banner-note">
+                {{ $limit->note }}
+            </p>
+        @endif
     </div>
     {{-- No label without something to run: a label alone used to print a button
     that did nothing on two screens. Blade reads neither a directive nor an

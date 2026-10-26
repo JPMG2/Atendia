@@ -102,6 +102,7 @@ new class extends Component
         :body="__('client.business.identity.ai_body')"
         :action="__('client.business.identity.ai_action')"
         call="writeBio"
+        metered
     />
 
     <div class="bp-form">

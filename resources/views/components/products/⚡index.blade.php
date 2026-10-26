@@ -362,6 +362,7 @@ new class extends Component
                 :body="__('client.products.ai_body')"
                 :action="__('client.products.ai_action')"
                 call="writeDescriptions"
+                metered
             />
 
             {{-- ONE surface: toolbar to find, list to act; the sheet slides over. --}}

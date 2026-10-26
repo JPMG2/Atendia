@@ -38,6 +38,25 @@ class AiOptimizeLimit
         get => $this->used >= $this->cap;
     }
 
+    /** @var int uses still available today */
+    public int $left {
+        get => max(0, $this->cap - $this->used);
+    }
+
+    /** @var string `ok`, `warn` from 80% of the ceiling, `over` once it is spent: the same states the plan meters use */
+    public string $state {
+        get => Plan::usageState($this->used, $this->cap);
+    }
+
+    /** @var string the counter beside the button: how many uses are left, and a plain warning near the end */
+    public string $note {
+        get => trans_choice(
+            $this->state === 'warn' ? 'client.ai_left_warn' : 'client.ai_left',
+            $this->left,
+            ['left' => $this->left, 'cap' => $this->cap],
+        );
+    }
+
     /** @var string what the owner reads when she is out of uses, on the web and in the app */
     public string $message {
         get => __('client.ai_limit', ['cap' => $this->cap]);

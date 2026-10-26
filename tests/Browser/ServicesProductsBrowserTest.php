@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\CatalogPhoto;
 use App\Models\Product;
@@ -60,7 +61,7 @@ test('"Optimizar con IA" says the daily ceiling instead of calling the model onc
     config()->set('atendia.ai_optimize.daily_uses', 1);
     Business::query()->first()->services()->update(['description' => null]);
 
-    App\Models\AiUsage::query()->create([
+    AiUsage::query()->create([
         'business_id' => Business::query()->first()->id,
         'kind' => 'CatalogCopywriter',
         'model' => 'gpt-6-luna',
@@ -75,6 +76,40 @@ test('"Optimizar con IA" says the daily ceiling instead of calling the model onc
         ->assertSee('Hoy ya usaste «Optimizar con IA» 1 veces')
         ->screenshot(filename: 'optimize-ceiling-services');
 });
+
+test('the counter beside "Optimizar con IA" turns amber at eight of ten and fits every width in both themes', function (string $label, int $width, int $height, bool $dark): void {
+    Business::query()->first()->services()->update(['description' => null]);
+
+    foreach (range(1, 8) as $ignored) {
+        AiUsage::query()->create([
+            'business_id' => Business::query()->first()->id,
+            'kind' => 'CatalogCopywriter',
+            'model' => 'gpt-6-luna',
+            'input_tokens' => 0,
+            'cached_tokens' => 0,
+            'output_tokens' => 0,
+        ]);
+    }
+
+    $page = visit('/servicios')->resize($width, $height);
+
+    if ($dark) {
+        $page->script('document.documentElement.classList.add("dark")');
+    }
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Te quedan solo 2 de 10 usos hoy.')
+        ->screenshot(filename: 'optimize-counter-'.$label.($dark ? '-dark' : '-light'));
+
+    $overflow = $page->script('document.documentElement.scrollWidth - window.innerWidth');
+
+    expect((int) $overflow)->toBeLessThanOrEqual(0);
+})->with([
+    'desktop light' => ['desktop', 1280, 900, false],
+    'desktop dark' => ['desktop', 1280, 900, true],
+    'phone light' => ['phone', 390, 844, false],
+    'phone dark' => ['phone', 390, 844, true],
+]);
 
 test('the products search matches the code in the real browser', function (): void {
     $page = visit('/productos');

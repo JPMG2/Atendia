@@ -397,6 +397,10 @@
   .ai-banner-copy { flex:1; min-width:220px; }
   .ai-banner-title { font-weight:700; font-size:var(--text-sm); color:var(--brand-soft-text); }
   .ai-banner-body { font-size:var(--text-sm); color:var(--text-muted); margin-top:2px; }
+  /* What is left of the daily ceiling: calm, then amber from 80%, then red once spent. */
+  .ai-banner-note { font-size:var(--text-sm); color:var(--text-subtle); margin-top:4px; }
+  .ai-banner-note[data-state="warn"] { color:var(--warning); font-weight:700; }
+  .ai-banner-note[data-state="over"] { color:var(--danger); font-weight:700; }
 
   /* ---- Tag de estado ----
      Pinta un estado en cualquier pantalla del programa. El color NO se escribe
