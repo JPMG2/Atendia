@@ -256,7 +256,7 @@ new class extends Component
     row inside re-renders the same region, so it stays one truth. The 30 s of
     the poll and of the copy below are the same number. --}}
     @island(name: 'board')
-    <div wire:poll.30s.visible>
+    <div wire:poll.{{ \App\Classes\Main\PlatformBoard::POLL_SECONDS }}s.visible>
     {{-- Inside the island so it clears itself when the line comes back; the lock
     for linking is the route's permission, the button is only courtesy. --}}
     @if ($this->lineDown !== null)
@@ -272,7 +272,7 @@ new class extends Component
     @endif
 
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span class="text-subtle text-sm">{{ __('admin.home.live', ['seconds' => 30]) }}</span>
+        <span class="text-subtle text-sm">{{ __('admin.home.live', ['seconds' => \App\Classes\Main\PlatformBoard::POLL_SECONDS]) }}</span>
         <span class="flex items-center gap-3">
             <x-ask.admin-button :question="__('ask_admin.ask.pulse')" />
             <span class="text-subtle font-mono text-sm">

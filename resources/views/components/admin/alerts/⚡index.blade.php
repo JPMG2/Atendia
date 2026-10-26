@@ -1,12 +1,8 @@
 <?php
 
-use App\Enums\PlatformEventSeverity;
-use App\Enums\PlatformSensorStatus;
+use App\Classes\Main\PlatformBoard;
 use App\Models\PlatformEvent;
-use App\Models\PlatformSensor;
-use App\Models\PlatformSensorReading;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -18,84 +14,21 @@ use Livewire\Component;
  */
 new class extends Component
 {
-    private const PAGE = 25;
-
     #[Url(as: 'ver')]
     public string $filter = 'all';
 
-    public int $limit = self::PAGE;
+    public int $limit = PlatformBoard::PAGE;
 
-    /** @return array{critical: int, important: int, info: int, unseen: int} */
+    /** The board is built once per request by the piece the mobile API reads too. */
     #[Computed]
-    public function counts(): array
+    public function board(): PlatformBoard
     {
-        return PlatformEvent::counts();
-    }
-
-    /** @return array{ok: int, total: int, problems: int} */
-    #[Computed]
-    public function summary(): array
-    {
-        return PlatformSensor::summary();
-    }
-
-    /**
-     * The one-sentence answer the board opens with: is the platform fine?
-     *
-     * @return array{level: 'ok'|'warning'|'danger', names: string, count: int}
-     */
-    #[Computed]
-    public function verdict(): array
-    {
-        // About the platform only: the business facts are the alarms and
-        // tiles right below, and saying them twice is what made it noisy.
-        $problems = PlatformSensor::problems();
-        $worst = $problems->first()?->shownStatus();
-        $level = match (true) {
-            $worst === PlatformSensorStatus::Crit => 'danger',
-            $problems->isNotEmpty() => 'warning',
-            default => 'ok',
-        };
-
-        return [
-            'level' => $level,
-            'total' => $this->tree->flatten(1)->count(),
-            'count' => $problems->count(),
-            'names' => $problems->map(fn (PlatformSensor $s): string => __('platform_events.sensors.'.$s->sensor_key.'.name'))->implode(', '),
-        ];
-    }
-
-    /** @return Collection<string, Collection<int, PlatformSensor>> */
-    #[Computed]
-    public function tree(): Collection
-    {
-        return PlatformSensor::tree(PlatformSensor::INFRA);
-    }
-
-    /**
-     * The last day of every component, hour by hour, for its strip.
-     *
-     * @return array<string, list<PlatformSensorStatus|null>>
-     */
-    #[Computed]
-    public function history(): array
-    {
-        return PlatformSensorReading::strips($this->tree->flatten(1)->pluck('sensor_key')->all());
-    }
-
-    /** @return Collection<int, PlatformEvent> */
-    #[Computed]
-    public function events(): Collection
-    {
-        $severity = PlatformEventSeverity::tryFrom($this->filter);
-
-        // One row past the page: it tells whether "load more" has anything to load.
-        return PlatformEvent::board($this->limit + 1, $severity, unseenOnly: $this->filter === 'unseen');
+        return new PlatformBoard($this->filter, $this->limit);
     }
 
     public function loadMore(): void
     {
-        $this->limit += self::PAGE;
+        $this->limit += PlatformBoard::PAGE;
     }
 
     /** What the export menu carries to the report: the severity on screen. */
@@ -125,58 +58,41 @@ new class extends Component
     </x-ui.page-head>
 
     @island(name: 'board')
-    <div wire:poll.30s.visible class="flex flex-col gap-4">
-        @php($quiet = PlatformSensor::watcherIsQuiet())
-        @php($last = PlatformSensor::lastLook())
+    <div wire:poll.{{ PlatformBoard::POLL_SECONDS }}s.visible class="flex flex-col gap-4">
+        @php($board = $this->board)
 
         <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-subtle font-mono text-sm">{{ __('platform_events.screen.read_at', ['time' => now()->format('H:i:s')]) }}</span>
+            <span class="text-subtle font-mono text-sm">{{ $board->readAt }}</span>
         </div>
 
         {{-- A board whose watcher stopped still paints green: say it first. --}}
-        @if ($quiet)
+        @if ($board->quiet !== null)
             <x-ui.alert variant="warning" icon="triangle-alert">
-                {{ __('platform_events.screen.watcher_quiet', ['age' => $last === null ? '—' : $last->diffForHumans(null, true)]) }}
+                {{ $board->quiet }}
             </x-ui.alert>
         @endif
 
         {{-- The verdict first: one sentence that says whether to keep reading. --}}
-        @php($verdict = $this->verdict)
-        @if ($verdict['level'] === 'ok')
-            <x-ui.alert variant="success" icon="circle-check" :title="__('platform_events.screen.verdict_ok')">
-                {{ __('platform_events.screen.verdict_ok_body', ['total' => $verdict['total']]) }}
-            </x-ui.alert>
-        @else
-            <x-ui.alert :variant="$verdict['level']" icon="triangle-alert" :title="trans_choice('platform_events.screen.verdict_bad', $verdict['count'])">
-                {{ __('platform_events.screen.verdict_bad_body', ['names' => $verdict['names']]) }}
-            </x-ui.alert>
-        @endif
+        @php($verdict = $board->verdict)
+        <x-ui.alert
+            :variant="$verdict['level'] === 'ok' ? 'success' : $verdict['level']"
+            :icon="$verdict['level'] === 'ok' ? 'circle-check' : 'triangle-alert'"
+            :title="$verdict['title']"
+        >
+            {{ $verdict['body'] }}
+        </x-ui.alert>
 
         <div class="stat-grid stat-grid-fill">
-            <x-ui.stat-card
-                :label="__('platform_events.screen.critical')"
-                :value="(string) $this->counts['critical']"
-                icon="siren"
-                :tint="$this->counts['critical'] > 0 ? 'danger' : 'brand'"
-                :href="route('admin.alerts', ['ver' => 'critical'])"
-            >{{ __('platform_events.screen.critical_sub') }}</x-ui.stat-card>
-
-            <x-ui.stat-card
-                :label="__('platform_events.screen.important')"
-                :value="(string) $this->counts['important']"
-                icon="triangle-alert"
-                :tint="$this->counts['important'] > 0 ? 'warning' : 'brand'"
-                :href="route('admin.alerts', ['ver' => 'important'])"
-            >{{ __('platform_events.screen.important_sub', ['count' => $this->counts['unseen']]) }}</x-ui.stat-card>
-
-            <x-ui.stat-card
-                :label="__('platform_events.screen.info')"
-                :value="(string) $this->counts['info']"
-                icon="info"
-                tint="info"
-                :href="route('admin.alerts', ['ver' => 'info'])"
-            >{{ __('platform_events.screen.info_sub') }}</x-ui.stat-card>
-
+            @foreach ($board->cards as $card)
+                <x-ui.stat-card
+                    :label="$card['label']"
+                    :value="(string) $card['value']"
+                    :icon="$card['icon']"
+                    :tint="$card['tint']"
+                    :href="route('admin.alerts', ['ver' => $card['key']])"
+                    wire:key="card-{{ $card['key'] }}"
+                >{{ $card['sub'] }}</x-ui.stat-card>
+            @endforeach
         </div>
 
         {{-- Side by side only when the alarms table has its 640px: below that the
@@ -190,19 +106,19 @@ new class extends Component
                 </div>
 
                 <div class="mb-3 flex flex-wrap gap-2">
-                    @foreach (['all' => __('platform_events.screen.filter_all'), 'critical' => __('platform_events.severity.critical'), 'important' => __('platform_events.severity.important'), 'info' => __('platform_events.severity.info'), 'unseen' => __('platform_events.screen.filter_unseen')] as $value => $label)
+                    @foreach ($board->filters as $option)
                         <x-ui.button
-                            :variant="$filter === $value ? 'primary' : 'secondary'"
+                            :variant="$filter === $option['value'] ? 'primary' : 'secondary'"
                             size="sm"
-                            wire:click="$set('filter', '{{ $value }}')"
-                            wire:key="filter-{{ $value }}"
-                        >{{ $label }}</x-ui.button>
+                            wire:click="$set('filter', '{{ $option['value'] }}')"
+                            wire:key="filter-{{ $option['value'] }}"
+                        >{{ $option['label'] }}</x-ui.button>
                     @endforeach
                 </div>
 
-                @php($rows = $this->events->take($limit))
+                @php($rows = $board->rows)
 
-                @if ($rows->isEmpty())
+                @if ($rows === [])
                     <x-ui.empty-state compact icon="circle-check" :title="__('platform_events.screen.empty_title')" :body="__('platform_events.screen.empty_body')" />
                 @else
                     <div class="pay-table-wrap">
@@ -216,11 +132,11 @@ new class extends Component
                             </thead>
                             <tbody>
                                 @foreach ($rows as $event)
-                                    @php($target = $event->kind->target($event->about_business_id))
-                                    <tr wire:key="event-{{ $event->id }}" @class(['opacity-60' => $event->state->value === 'acknowledged'])>
+                                    @php($target = $event['target'])
+                                    <tr wire:key="event-{{ $event['id'] }}" @class(['opacity-60' => $event['state'] === 'acknowledged'])>
                                         <td class="is-key" data-label="{{ __('platform_events.screen.col_severity') }}">
-                                            <span @class(['status-tag', 'is-danger' => $event->severity->tone() === 'danger', 'is-warning' => $event->severity->tone() === 'warning', 'is-neutral' => $event->severity->tone() === 'info'])>
-                                                {{ $event->severity->label() }}
+                                            <span @class(['status-tag', 'is-danger' => $event['severity']['tone'] === 'danger', 'is-warning' => $event['severity']['tone'] === 'warning'])>
+                                                {{ $event['severity']['label'] }}
                                             </span>
                                         </td>
                                         <td data-label="{{ __('platform_events.screen.col_what') }}">
@@ -228,35 +144,35 @@ new class extends Component
                                             children side by side, one per line of text. --}}
                                             <div class="min-w-0">
                                             <div class="font-semibold">
-                                                {{ $event->kind->label() }}
-                                                @if ($event->occurrences > 1)
-                                                    <span class="text-subtle font-mono text-xs">× {{ $event->occurrences }}</span>
+                                                {{ $event['title'] }}
+                                                @if ($event['times'] > 1)
+                                                    <span class="text-subtle font-mono text-xs">× {{ $event['times'] }}</span>
                                                 @endif
                                             </div>
                                             <div class="text-subtle text-xs">
-                                                {{ $event->detail !== null && $event->detail !== '' ? $event->detail.' · ' : '' }}{{ __('platform_events.kinds.'.$event->kind->value.'.hint') }}
+                                                {{ $event['detail'] }}
                                             </div>
                                             {{-- Who and since when live under the line: two more columns
                                             pushed the actions out of the card at 1280px. --}}
                                             <div class="mt-1 flex flex-wrap items-center gap-x-2 text-xs">
-                                                <span class="font-semibold">{{ $event->aboutBusiness?->name ?? __('platform_events.screen.platform') }}</span>
-                                                <span class="text-subtle font-mono whitespace-nowrap">{{ $event->first_seen_at->diffForHumans(null, true) }}</span>
+                                                <span class="font-semibold">{{ $event['business'] }}</span>
+                                                <span class="text-subtle font-mono whitespace-nowrap">{{ $event['since'] }}</span>
                                             </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="flex flex-wrap gap-2">
-                                                @if ($event->state->value === 'open')
+                                                @if ($event['state'] === 'open')
                                                     @can('alerts.acknowledge')
-                                                        <x-ui.button variant="secondary" size="sm" wire:click="acknowledge({{ $event->id }})">{{ __('platform_events.screen.ack') }}</x-ui.button>
+                                                        <x-ui.button variant="secondary" size="sm" wire:click="acknowledge({{ $event['id'] }})">{{ __('platform_events.screen.ack') }}</x-ui.button>
                                                     @endcan
                                                 @else
-                                                    <span class="text-subtle text-xs">{{ __('platform_events.screen.seen_by', ['name' => $event->acknowledgedBy?->name ?? '—']) }}</span>
+                                                    <span class="text-subtle text-xs">{{ $event['seen_by'] }}</span>
                                                 @endif
                                                 @if ($target !== null)
                                                     <x-ui.button variant="ghost" size="sm" :href="route($target['route'], $target['query'])" wire:navigate>{{ __('platform_events.screen.go') }}</x-ui.button>
                                                 @endif
-                                                <x-ask.admin-button :question="__('ask_admin.ask.alert', ['kind' => $event->kind->label(), 'business' => $event->aboutBusiness?->name ?? __('platform_events.screen.platform')])" />
+                                                <x-ask.admin-button :question="__('ask_admin.ask.alert', ['kind' => $event['title'], 'business' => $event['business']])" />
                                             </div>
                                         </td>
                                     </tr>
@@ -265,7 +181,7 @@ new class extends Component
                         </table>
                     </div>
 
-                    <x-ui.load-more :shown="$rows->count()" :total="$this->events->count()" />
+                    <x-ui.load-more :shown="count($rows)" :total="$board->hasMore ? count($rows) + 1 : count($rows)" />
                 @endif
             </x-ui.card>
 
@@ -276,44 +192,43 @@ new class extends Component
                     <span class="text-subtle text-xs">{{ __('platform_events.screen.sensors_sub') }}</span>
                 </div>
 
-                @forelse ($this->tree as $group => $sensors)
-                    <div class="mb-4" wire:key="group-{{ $group }}">
+                @forelse ($board->sensorGroups as $group)
+                    <div class="mb-4" wire:key="group-{{ $group['key'] }}">
                         <p class="eyebrow mb-1 flex justify-between">
-                            <span>{{ __('platform_events.groups.'.$group) }}</span>
-                            <span class="font-mono">{{ $sensors->filter(fn ($s) => $s->shownStatus() === PlatformSensorStatus::Ok)->count() }} / {{ $sensors->count() }}</span>
+                            <span>{{ $group['title'] }}</span>
+                            <span class="font-mono">{{ $group['ok'] }} / {{ $group['total'] }}</span>
                         </p>
-                        @foreach ($sensors as $sensor)
-                            @php($shown = $sensor->shownStatus())
-                            @php($dot = ['ok' => 'var(--success)', 'warn' => 'var(--warning)', 'crit' => 'var(--danger)', 'unknown' => 'var(--text-subtle)'][$shown->value])
-                            @php($goes = $sensor->target())
-                            <div x-data="{ open: false, copied: false }" data-diag="{{ $sensor->diagnostic() }}" class="rounded-lg hover:bg-sunken" wire:key="sensor-{{ $sensor->sensor_key }}">
+                        @foreach ($group['sensors'] as $sensor)
+                            @php($dot = ['ok' => 'var(--success)', 'warn' => 'var(--warning)', 'crit' => 'var(--danger)', 'unknown' => 'var(--text-subtle)'][$sensor['status']])
+                            @php($goes = $sensor['target'])
+                            <div x-data="{ open: false, copied: false }" data-diag="{{ $sensor['diagnostic'] }}" class="rounded-lg hover:bg-sunken" wire:key="sensor-{{ $sensor['key'] }}">
                                 <button type="button" x-on:click="open = ! open" x-bind:aria-expanded="open" class="grid w-full grid-cols-[12px_minmax(0,1fr)_auto] items-center gap-3 px-1.5 py-2 text-left">
                                     <span class="size-2.5 rounded-full" style="background:{{ $dot }}"></span>
                                     <span class="min-w-0">
-                                        <span class="block font-semibold">{{ __('platform_events.sensors.'.$sensor->sensor_key.'.name') }}</span>
-                                        <span class="text-subtle block text-xs">{{ $sensor->isStale() ? __('platform_events.screen.stale') : $sensor->detail }}</span>
+                                        <span class="block font-semibold">{{ $sensor['name'] }}</span>
+                                        <span class="text-subtle block text-xs">{{ $sensor['line'] }}</span>
                                     </span>
-                                    <span class="font-mono text-sm font-bold">{{ $sensor->isStale() ? '—' : ($sensor->value ?? '') }}</span>
+                                    <span class="font-mono text-sm font-bold">{{ $sensor['value'] }}</span>
                                 </button>
                                 <dl x-show="open" x-cloak class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 px-1.5 pb-3 pl-7 text-xs">
                                     <dt class="text-subtle">{{ __('platform_events.screen.detail_checked') }}</dt>
-                                    <dd class="font-mono">{{ $sensor->checked_at->format('d/m H:i:s') }} · {{ $sensor->checked_at->diffForHumans(null, true) }}</dd>
+                                    <dd class="font-mono">{{ $sensor['checked'] }}</dd>
                                     <dt class="text-subtle">{{ __('platform_events.screen.detail_since') }}</dt>
-                                    <dd class="font-mono">{{ $sensor->changed_at?->format('d/m H:i') ?? '—' }} · {{ __('platform_events.screen.status_'.$shown->value) }}</dd>
+                                    <dd class="font-mono">{{ $sensor['since'] }}</dd>
                                     <dt class="text-subtle">{{ __('platform_events.screen.detail_failures') }}</dt>
-                                    <dd class="font-mono">{{ $sensor->failures }}</dd>
+                                    <dd class="font-mono">{{ $sensor['failures'] }}</dd>
                                     <dt class="text-subtle">{{ __('platform_events.screen.detail_says') }}</dt>
-                                    <dd>{{ $sensor->detail ?? '—' }}</dd>
+                                    <dd>{{ $sensor['says'] }}</dd>
                                     <dt class="text-subtle">{{ __('platform_events.screen.detail_fix') }}</dt>
-                                    <dd>{{ __('platform_events.sensors.'.$sensor->sensor_key.'.fix') }}</dd>
+                                    <dd>{{ $sensor['fix'] }}</dd>
                                     <dt class="text-subtle">{{ __('platform_events.screen.history') }}</dt>
                                     <dd>
                                         <div class="flex h-5 items-end gap-px" title="{{ __('platform_events.screen.history_hint') }}">
-                                            @foreach ($this->history[$sensor->sensor_key] ?? [] as $hour => $bucket)
+                                            @foreach ($sensor['history'] as $hour => $bucket)
                                                 <span
                                                     class="h-full min-w-0 flex-1 rounded-sm"
-                                                    style="background:{{ $bucket === null ? 'var(--border-default)' : ['ok' => 'var(--success)', 'warn' => 'var(--warning)', 'crit' => 'var(--danger)', 'unknown' => 'var(--text-subtle)'][$bucket->value] }}"
-                                                    wire:key="hour-{{ $sensor->sensor_key }}-{{ $hour }}"
+                                                    style="background:{{ $bucket === null ? 'var(--border-default)' : ['ok' => 'var(--success)', 'warn' => 'var(--warning)', 'crit' => 'var(--danger)', 'unknown' => 'var(--text-subtle)'][$bucket] }}"
+                                                    wire:key="hour-{{ $sensor['key'] }}-{{ $hour }}"
                                                 ></span>
                                             @endforeach
                                         </div>

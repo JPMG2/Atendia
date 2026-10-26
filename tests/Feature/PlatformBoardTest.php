@@ -6,8 +6,10 @@ use App\Actions\Admin\NotifyPlatformAdmin;
 use App\Actions\Admin\ReconcilePlatformEvents;
 use App\Actions\Admin\SendPlatformDigest;
 use App\Actions\Admin\SweepPlatform;
+use App\Classes\Main\PlatformBoard;
 use App\Dto\SensorReadingDto;
 use App\Enums\PlatformEventKind;
+use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformEventState;
 use App\Enums\PlatformSensorStatus as Status;
 use App\Enums\SubscriptionStatus;
@@ -305,6 +307,58 @@ test('the evening digest goes out only when something is waiting, and names it',
         ->and($sent)->toHaveCount(1)
         ->and($sent[0])->toContain(PlatformEventKind::PaymentPaused->label())
         ->and($sent[0])->toContain(route('admin.alerts'));
+});
+
+test('the web board prints the very words the piece gives the phone, so the two cannot contradict each other', function (): void {
+    $tornillo = Business::factory()->create(['name' => 'Ferretería El Tornillo']);
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create(['about_business_id' => $tornillo->id]);
+    PlatformEvent::factory()->ofKind(PlatformEventKind::SystemDegraded)->create(['detail' => 'Disco · quedan 9 GB de 48 GB']);
+    PlatformSensor::query()->create(['sensor_key' => 'disk', 'group' => 'system', 'status' => Status::Warn, 'value' => '81 %', 'detail' => 'quedan 9 GB de 48 GB', 'failures' => 0, 'checked_at' => now(), 'changed_at' => now()->subHour()]);
+
+    $board = new PlatformBoard;
+    $screen = Livewire::actingAs(adminWithPhone())->test('admin.alerts.index');
+
+    $screen->assertSee($board->verdict['title'])->assertSee($board->verdict['body']);
+
+    foreach ($board->cards as $card) {
+        $screen->assertSee($card['label'])->assertSee($card['sub']);
+    }
+
+    foreach ($board->rows as $row) {
+        $screen->assertSee($row['title'])->assertSee($row['detail'])->assertSee($row['business']);
+    }
+
+    foreach ($board->sensorGroups as $group) {
+        foreach ($group['sensors'] as $sensor) {
+            $screen->assertSee($sensor['name'])->assertSee($sensor['fix'])->assertSee($sensor['says']);
+        }
+    }
+
+    // The web asks again at the beat the phone is told.
+    expect(file_get_contents(resource_path('views/components/admin/alerts/⚡index.blade.php')))->toContain('PlatformBoard::POLL_SECONDS');
+});
+
+test('an informative line keeps the plain look it always had, and the others keep their tone', function (): void {
+    PlatformEvent::factory()->severity(PlatformEventSeverity::Info)->create();
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create();
+
+    $html = Livewire::actingAs(adminWithPhone())->test('admin.alerts.index')->html();
+
+    expect($html)->toMatch('/<span class="status-tag"[^>]*>\s*'.preg_quote(PlatformEventSeverity::Info->label(), '/').'/')
+        ->and($html)->toMatch('/<span class="status-tag is-danger"[^>]*>\s*'.preg_quote(PlatformEventSeverity::Critical->label(), '/').'/');
+});
+
+test('"Marcar visto" shows only to whoever holds the key to acknowledge, though others may read the board', function (): void {
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create();
+
+    $reader = User::factory()->create();
+    $reader->givePermissionTo(['access-admin-panel', 'alerts.view']);
+
+    Livewire::actingAs($reader->refresh())->test('admin.alerts.index')
+        ->assertSee(PlatformEventKind::PaymentPaused->label())
+        ->assertDontSee(__('platform_events.screen.ack'));
+
+    Livewire::actingAs(adminWithPhone())->test('admin.alerts.index')->assertSee(__('platform_events.screen.ack'));
 });
 
 test('the board renders with an empty database', function (): void {

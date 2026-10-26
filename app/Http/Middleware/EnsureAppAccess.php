@@ -21,6 +21,12 @@ class EnsureAppAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+
+        // A staff token has no plan to lapse: its own door (StaffTokenGate and the area key) decides what it opens.
+        if ($user instanceof User && StaffTokenGate::holds($user->currentAccessToken())) {
+            return $next($request);
+        }
+
         $access = $user instanceof User ? $user->appAccess() : AppAccess::Allowed;
 
         return $access->isAllowed() ? $next($request) : self::denial($access);

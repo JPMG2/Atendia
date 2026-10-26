@@ -176,6 +176,18 @@ class Menu extends Model
     }
 
     /**
+     * The admin menu as the app draws it for the platform's staff: the web's
+     * own tree and order, cut to the admin screens the app already has and to
+     * what this person may open.
+     *
+     * @return Collection<int, Menu>
+     */
+    public static function forAdminApp(): Collection
+    {
+        return self::onlyScreens(self::tree('admin'), config('atendia.app.admin_screens'));
+    }
+
+    /**
      * @param  Collection<int, Menu>  $items
      * @param  list<string>  $screens
      * @return Collection<int, Menu>

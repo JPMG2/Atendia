@@ -1,0 +1,223 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Classes\Main\PlatformBoard;
+use App\Enums\PlatformEventKind;
+use App\Enums\PlatformEventSeverity;
+use App\Enums\PlatformSensorStatus;
+use App\Mail\DeviceChallengeCode;
+use App\Models\Business;
+use App\Models\PlatformEvent;
+use App\Models\PlatformSensor;
+use App\Models\User;
+use Database\Seeders\MenuSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Testing\TestResponse;
+
+uses(RefreshDatabase::class);
+
+/*
+|--------------------------------------------------------------------------
+| The Admin in the app: Inicio, Avisos and the menu
+|--------------------------------------------------------------------------
+| What the app shows comes from the same pieces and the same words as the web
+| (`PlatformBoard`, `AdminAttention`, the admin menu), so the two cannot
+| contradict each other. Only what the person may open is served.
+*/
+
+beforeEach(function (): void {
+    app()->setLocale('es');
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(MenuSeeder::class);
+    config()->set('atendia.security.staff_idle_minutes', 20);
+});
+
+/** A person of the platform's team, signed in the way the app does: password, then the code. */
+function screensToken(string $role = 'admin'): string
+{
+    Mail::fake();
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    $user->syncRoles([$role]);
+
+    $id = test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'device_name' => 'Pixel 8',
+    ])->assertStatus(202)->json('challenge.id');
+
+    $code = '';
+    Mail::assertQueued(DeviceChallengeCode::class, function (DeviceChallengeCode $mail) use (&$code): bool {
+        $code = $mail->code;
+
+        return true;
+    });
+
+    return test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login/challenge', ['challenge_id' => $id, 'code' => $code])
+        ->assertOk()->json('token');
+}
+
+function screensGet(string $token, string $path): TestResponse
+{
+    return test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/admin/'.$path);
+}
+
+function watchSensor(string $key, string $group, PlatformSensorStatus $status, ?string $checked = null): PlatformSensor
+{
+    return PlatformSensor::query()->create([
+        'sensor_key' => $key,
+        'group' => $group,
+        'status' => $status,
+        'value' => '81 %',
+        'detail' => 'quedan 9 GB de 48 GB',
+        'failures' => 0,
+        'checked_at' => $checked ?? now(),
+        'changed_at' => now()->subHour(),
+    ]);
+}
+
+test('Avisos reads from the very piece the web board reads, so what the app says is what the web says', function (): void {
+    $business = Business::factory()->create(['name' => 'Ferretería El Tornillo']);
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->create(['about_business_id' => $business->id]);
+    PlatformEvent::factory()->ofKind(PlatformEventKind::BusinessJoined)->create(['about_business_id' => $business->id]);
+    watchSensor('disk', 'system', PlatformSensorStatus::Warn);
+    watchSensor('redis', 'system', PlatformSensorStatus::Ok);
+
+    $board = new PlatformBoard;
+    $response = screensGet(screensToken(), 'alerts')->assertOk();
+
+    expect($response->json('data.verdict'))->toBe($board->verdict)
+        ->and($response->json('data.cards.0.value'))->toBe($board->counts['critical'])
+        ->and(array_column($response->json('data.events.rows'), 'id'))->toBe(array_column($board->rows, 'id'))
+        ->and($response->json('data.events.rows.0.business'))->toBe('Ferretería El Tornillo')
+        ->and($response->json('data.title'))->toBe(__('platform_events.screen.title'))
+        ->and($response->json('data.sensors.groups.0.title'))->toBe(__('platform_events.groups.system'));
+});
+
+test('both screens say how often they refresh themselves, so the phone keeps the promise the web\'s sentence makes', function (): void {
+    $token = screensToken();
+
+    expect(screensGet($token, 'alerts')->json('data.poll_seconds'))->toBe(PlatformBoard::POLL_SECONDS)
+        ->and(screensGet($token, 'home')->json('data.poll_seconds'))->toBe(PlatformBoard::POLL_SECONDS)
+        ->and(__('platform_events.screen.read_at', ['time' => '00:00:00']))->toContain((string) PlatformBoard::POLL_SECONDS);
+});
+
+test('the verdict names the platform\'s problem in the web\'s words', function (): void {
+    watchSensor('disk', 'system', PlatformSensorStatus::Warn);
+
+    $verdict = screensGet(screensToken(), 'alerts')->assertOk()->json('data.verdict');
+
+    expect($verdict['level'])->toBe('warning')
+        ->and($verdict['title'])->toBe(trans_choice('platform_events.screen.verdict_bad', 1))
+        ->and($verdict['body'])->toBe(__('platform_events.screen.verdict_bad_body', ['names' => __('platform_events.sensors.disk.name')]));
+});
+
+test('a sensor nobody refreshed is shown unknown, never green, with its detail ready for the phone', function (): void {
+    watchSensor('redis', 'system', PlatformSensorStatus::Ok, now()->subHours(3)->toDateTimeString());
+    watchSensor('disk', 'system', PlatformSensorStatus::Ok);
+
+    $sensors = collect(screensGet(screensToken(), 'alerts')->assertOk()->json('data.sensors.groups.0.sensors'))->keyBy('key');
+
+    expect($sensors['redis']['status'])->toBe('unknown')
+        ->and($sensors['redis']['value'])->toBe('—')
+        ->and($sensors['redis']['line'])->toBe(__('platform_events.screen.stale'))
+        ->and($sensors['disk']['status'])->toBe('ok')
+        ->and($sensors['disk']['history'])->toHaveCount(24)
+        ->and($sensors['disk'])->toHaveKeys(['name', 'checked', 'since', 'failures', 'says', 'fix', 'diagnostic']);
+});
+
+test('the list pages in SQL like the web: a page of twenty-five, and the next one on ask', function (): void {
+    PlatformEvent::factory()->count(30)->severity(PlatformEventSeverity::Info)->create();
+    $token = screensToken();
+
+    $first = screensGet($token, 'alerts?filter=info')->assertOk();
+    expect($first->json('data.events.rows'))->toHaveCount(25)->and($first->json('data.events.has_more'))->toBeTrue();
+
+    $second = screensGet($token, 'alerts?filter=info&page=2')->assertOk();
+    expect($second->json('data.events.rows'))->toHaveCount(30)->and($second->json('data.events.has_more'))->toBeFalse();
+});
+
+test('a filter the board does not offer reads as all of them', function (): void {
+    PlatformEvent::factory()->count(2)->create();
+
+    screensGet(screensToken(), 'alerts?filter=nonsense')->assertOk()->assertJsonPath('data.filter', 'all');
+});
+
+test('with an empty database Avisos still answers and says so, no 500 and no blank', function (): void {
+    $data = screensGet(screensToken(), 'alerts')->assertOk()->json('data');
+
+    expect($data['events']['rows'])->toBe([])
+        ->and($data['events']['empty']['title'])->toBe(__('platform_events.screen.empty_title'))
+        ->and($data['sensors']['groups'])->toBe([])
+        ->and($data['quiet'])->not->toBeNull();
+});
+
+test('an alarm leads somewhere only when the app has that screen, and never to a button that goes nowhere', function (): void {
+    $business = Business::factory()->create();
+    PlatformEvent::factory()->ofKind(PlatformEventKind::ReceiptReceived)->create(['about_business_id' => $business->id]);
+    $token = screensToken();
+
+    // The app has no Pagos yet: the row is information, with no destination.
+    expect(screensGet($token, 'alerts')->json('data.events.rows.0.target'))->toBeNull();
+
+    config()->set('atendia.app.admin_screens', ['admin.dashboard', 'admin.alerts', 'admin.payments']);
+
+    expect(screensGet($token, 'alerts')->json('data.events.rows.0.target'))->toBe(['screen' => 'admin.payments', 'query' => []]);
+});
+
+test('a person without the key of Avisos is refused there, but not at the door of the app', function (): void {
+    $token = screensToken('support');
+
+    screensGet($token, 'alerts')->assertForbidden();
+    screensGet($token, 'me')->assertOk();
+    screensGet($token, 'home')->assertOk();
+});
+
+test('the menu is the web\'s admin menu, in its order, cut to the screens the app has and to what the person may open', function (): void {
+    $admin = screensGet(screensToken('admin'), 'menu')->assertOk()->json('data');
+
+    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts'])
+        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts')]);
+});
+
+test('support holds no key for the board, so its menu has only the home', function (): void {
+    $support = screensGet(screensToken('support'), 'menu')->assertOk()->json('data');
+
+    expect(array_column($support, 'screen'))->toBe(['admin.dashboard']);
+});
+
+test('Inicio serves the web\'s "needs you today" card with its words, and keeps every line even when the app lacks its screen', function (): void {
+    PlatformEvent::factory()->ofKind(PlatformEventKind::PaymentPaused)->count(2)->create();
+    $token = screensToken();
+
+    $data = screensGet($token, 'home')->assertOk()->json('data');
+    $alerts = collect($data['attention']['items'])->firstWhere('key', 'alerts');
+
+    expect($data['title'])->toBe(__('admin.home.title'))
+        ->and($data['attention']['title'])->toBe(__('ask_admin.today.title'))
+        ->and($alerts['count'])->toBe(2)
+        ->and($alerts['label'])->toBe(trans_choice('ask_admin.today.alerts', 2, ['count' => 2]))
+        ->and($alerts['screen'])->toBe('admin.alerts');
+
+    // Dropping the lines whose screen the app lacks would say "all clear" over what the web lists.
+    config()->set('atendia.app.admin_screens', ['admin.dashboard']);
+    $kept = collect(screensGet($token, 'home')->json('data.attention.items'))->firstWhere('key', 'alerts');
+
+    expect($kept['count'])->toBe(2)->and($kept['screen'])->toBeNull();
+});
+
+test('Inicio with nothing pending offers the clear sentence of the web', function (): void {
+    $data = screensGet(screensToken(), 'home')->assertOk()->json('data.attention');
+
+    expect($data['items'])->toBe([])->and($data['clear'])->toBe(__('ask_admin.today.clear'));
+});
+
+test('a customer\'s token reads none of the three', function (): void {
+    $token = appInstallToken(payingUser());
+
+    foreach (['home', 'alerts', 'menu'] as $path) {
+        screensGet($token, $path)->assertForbidden()->assertJsonPath('code', 'staff_only');
+    }
+});

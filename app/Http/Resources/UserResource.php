@@ -18,14 +18,19 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // The platform's team has no business on the phone, even an account that also owns one.
+        $staff = $this->isStaff();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'business' => $this->business?->name,
+            'business' => $staff ? null : $this->business?->name,
+            // Which side of the app this person is on: the platform's team gets the Admin, a customer gets the business.
+            'staff' => $staff,
             // What the phone needs to dial the socket: the public app key (it
             // ships in the web bundle too) and the one channel it may ask for.
-            'realtime' => $this->business_id === null ? null : [
+            'realtime' => $staff || $this->business_id === null ? null : [
                 'key' => config('broadcasting.connections.reverb.key'),
                 'channel' => 'business.'.$this->business_id,
             ],

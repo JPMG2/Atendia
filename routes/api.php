@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AdminAlertsController;
+use App\Http\Controllers\Api\V1\AdminHomeController;
+use App\Http\Controllers\Api\V1\AdminMenuController;
 use App\Http\Controllers\Api\V1\AdminSessionController;
 use App\Http\Controllers\Api\V1\AgendaController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -77,12 +80,17 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         // step) AND the area permission, then the key of each screen (`can:`: spatie's middleware reads the web guard).
         Route::prefix('admin')->middleware([StaffTokenGate::class.':only', 'can:access-admin-panel'])->group(function (): void {
             Route::get('me', AdminSessionController::class);
+            Route::get('menu', AdminMenuController::class);
+            Route::get('home', AdminHomeController::class);
+            Route::get('alerts', AdminAlertsController::class)->middleware('can:alerts.view');
         });
+
+        // The one door both kinds of token share: it tells the app which side it is on (`staff`).
+        Route::get('me', [AuthController::class, 'me'])->middleware(EnsureAppAccess::class);
 
         // Everything below is a customer's own: the staff token is for `admin/*` and nothing else, even for
         // an account that also holds a business (the plan check alone would let that one in).
         Route::middleware([EnsureAppAccess::class, StaffTokenGate::class.':never'])->group(function (): void {
-            Route::get('me', [AuthController::class, 'me']);
             Route::get('menu', MenuController::class);
             Route::post('broadcasting/auth', BroadcastAuthController::class);
 

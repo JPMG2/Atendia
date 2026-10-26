@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
 use App\Models\Service;
@@ -160,7 +161,11 @@ test('an account that is staff AND owns a business reaches the admin door and st
 
     asStaffToken($token)->assertOk();
 
-    foreach (['/api/v1/me', '/api/v1/business', '/api/v1/team', '/api/v1/products'] as $path) {
+    // On the phone the team has no business, so it gets no business channel either.
+    $me = test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();
+    expect($me->json('data.staff'))->toBeTrue()->and($me->json('data.business'))->toBeNull()->and($me->json('data.realtime'))->toBeNull();
+
+    foreach (['/api/v1/menu', '/api/v1/business', '/api/v1/team', '/api/v1/products'] as $path) {
         test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson($path)
             ->assertForbidden()->assertJsonPath('code', 'staff_refused');
     }
@@ -222,11 +227,31 @@ test('a resend after a few wrong tries still lets the fresh code in', function (
 test('a staff token reaches nothing that is a customer\'s', function (): void {
     $token = staffInApp(staffMember());
 
-    test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
-        ->assertForbidden()->assertJsonPath('code', 'app_access_denied');
+    foreach (['/api/v1/menu', '/api/v1/business', '/api/v1/plan', '/api/v1/conversations'] as $path) {
+        test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson($path)
+            ->assertForbidden()->assertJsonPath('code', 'staff_refused');
+    }
+});
 
-    test()->withToken($token)->withHeaders(apiDeviceHeaders())->getJson('/api/v1/business')
-        ->assertForbidden();
+test('/me is the one door both kinds of token share, and it says which side the person is on', function (): void {
+    $staff = test()->withToken(staffInApp(staffMember()))->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
+        ->assertOk();
+
+    expect($staff->json('data.staff'))->toBeTrue()->and($staff->json('data.business'))->toBeNull();
+});
+
+test('/me says a customer is not staff', function (): void {
+    $customer = test()->withToken(appInstallToken(payingUser()))->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')->assertOk();
+
+    expect($customer->json('data.staff'))->toBeFalse();
+});
+
+test('a customer\'s paused plan still closes /me, as before', function (): void {
+    $owner = payingUser();
+    $owner->business->subscription->forceFill(['status' => SubscriptionStatus::Paused, 'current_period_ends_at' => now()->subDays(40)])->save();
+
+    test()->withToken(appInstallToken($owner))->withHeaders(apiDeviceHeaders())->getJson('/api/v1/me')
+        ->assertForbidden()->assertJsonPath('code', 'app_access_denied');
 });
 
 test('a staff token cannot close an account, which would take the admin\'s own', function (): void {
