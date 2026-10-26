@@ -1,6 +1,7 @@
 <?php
 
 use App\Classes\Main\PaymentsDesk;
+use App\Classes\Main\PlatformBoard;
 use App\Livewire\Forms\Admin\PaymentReviewForm;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
@@ -65,6 +66,8 @@ new class extends Component
         <x-ui.export-menu report="cobros" />
     </div>
 
+    {{-- The desk moves by itself, but stands still while a reason is being typed: a refresh must not eat it. --}}
+    <div @if ($form->rejectingId === null) wire:poll.{{ PlatformBoard::POLL_SECONDS }}s.visible @endif>
     <x-ui.card class="bp-card" x-data="adminPayments">
         <div class="bp-card-head"><h2>{{ __('billing.admin.pending') }}</h2></div>
 
@@ -168,6 +171,7 @@ new class extends Component
             </div>
         @endif
     </x-ui.card>
+    </div>
 
     <x-ui.key-hints />
 </div>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Classes\Main\PaymentsDesk;
+use App\Classes\Main\PlatformBoard;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class AdminPaymentsController extends Controller
         return response()->json(['data' => [
             'title' => __('billing.admin.title'),
             'sub' => __('billing.admin.sub'),
+            'poll_seconds' => PlatformBoard::POLL_SECONDS,
             'labels' => $desk->labels,
             'pending' => [
                 'title' => __('billing.admin.pending'),

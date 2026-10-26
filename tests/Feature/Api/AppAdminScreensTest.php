@@ -374,6 +374,7 @@ test('Pagos reads from the very piece the web desk reads: the queue, the reviewe
     $data = screensGet(screensToken(), 'payments')->assertOk()->json('data');
 
     expect($data['title'])->toBe(__('billing.admin.title'))
+        ->and($data['poll_seconds'])->toBe(PlatformBoard::POLL_SECONDS)
         ->and($data['pending']['total'])->toBe(1)
         ->and($data['pending']['rows'])->toBe([[
             'id' => $waiting->id,

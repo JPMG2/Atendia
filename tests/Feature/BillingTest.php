@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Billing\ApprovePayment;
 use App\Ai\Agents\AsistenteAtendia;
+use App\Classes\Main\PlatformBoard;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
@@ -228,6 +229,20 @@ test('the admin desk credits and rejects with a reason the client reads', functi
     expect($credited->refresh()->status)->toBe(PaymentStatus::Paid)
         ->and($rejected->refresh()->status)->toBe(PaymentStatus::Rejected)
         ->and($rejected->rejection_reason)->toBe('El comprobante no se lee');
+});
+
+test('the admin desk refreshes by itself at the beat the app keeps, and stands still while a reason is typed', function (): void {
+    $payment = Payment::factory()->create();
+    $admin = User::factory()->create();
+    $admin->syncRoles(['admin']);
+    $this->actingAs($admin->refresh());
+
+    $beat = 'wire:poll.'.PlatformBoard::POLL_SECONDS.'s.visible';
+
+    livewire('admin.payments.index')
+        ->assertSeeHtml($beat)
+        ->call('startReject', $payment->id)
+        ->assertDontSeeHtml($beat);
 });
 
 test('the owner is reminded at 10 and 5 days, once each, by mail and whatsapp', function (int $days, bool $reminded): void {
