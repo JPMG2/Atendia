@@ -13,6 +13,7 @@ use App\Actions\Team\SaveDepartment;
 use App\Actions\Team\UpdateTeamMember;
 use App\Enums\ConversationStatus;
 use App\Models\Business;
+use App\Models\Country;
 use App\Models\Department;
 use App\Models\TeamInvitation;
 use App\Models\User;
@@ -71,6 +72,100 @@ class Team
             'cap' => $this->business->plan()->teamSeats,
             'plan' => $this->business->plan()->code,
         ];
+    }
+
+    /**
+     * The team as the app draws it: people, open offers, departments and the
+     * seats used, from the same reads the web screen makes.
+     *
+     * @var array{
+     *     seats: array{used: int, cap: int, plan: string},
+     *     hasDepartments: bool,
+     *     copy: array<string, mixed>,
+     *     locked: array{title: string, body: string, cta: string}|null,
+     *     members: list<array<string, mixed>>,
+     *     invitations: list<array<string, mixed>>,
+     *     departments: list<array<string, mixed>>
+     * }
+     */
+    public array $overview {
+        get => [
+            'seats' => $this->seats,
+            'hasDepartments' => $this->hasDepartments,
+            'defaultDial' => Country::dialCode($this->business->country_id),
+            // The web screen's own words, so the phone never writes a sentence of its own.
+            'copy' => [
+                'title' => __('team.title'),
+                'sub' => __('team.sub'),
+                'people' => collect(['title', 'sub', 'invite', 'you', 'pending', 'resend', 'cancel', 'edit', 'remove', 'save', 'no_whatsapp', 'all_departments', 'available', 'away', 'remove_accept', 'cancel_message', 'cancel_accept', 'cancel_keep'])
+                    ->mapWithKeys(fn (string $key): array => [$key => __('team.people.'.$key)])->all(),
+                'invite' => collect(['title', 'sub', 'name', 'email', 'whatsapp', 'whatsapp_hint', 'departments', 'departments_hint', 'send', 'cancel'])
+                    ->mapWithKeys(fn (string $key): array => [$key => __('team.invite.'.$key)])->all(),
+                'departments' => collect(['title', 'sub', 'empty', 'when', 'nobody'])
+                    ->mapWithKeys(fn (string $key): array => [$key => __('team.departments.'.$key)])->all(),
+            ],
+            // Without the plan's departments the web shows what unlocks them instead of the list.
+            'locked' => $this->hasDepartments ? null : [
+                'title' => __('team.locked.title', ['plan' => __('plan.names.'.Plan::lowestWithDepartments()->code)]),
+                'body' => __('team.locked.body'),
+                'cta' => __('team.locked.cta'),
+            ],
+            'members' => $this->members->map(fn (User $member): array => [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'whatsapp' => $member->whatsapp,
+                'phone' => $this->phoneBoxes($member->whatsapp),
+                'isAgent' => $member->isAgent(),
+                'role' => __('team.roles.'.($member->isAgent() ? 'agent' : 'owner')),
+                'isAvailable' => (bool) $member->is_available,
+                'openThreads' => (int) $member->open_threads,
+                // Removing never strands a customer: the sentence says where the open threads go.
+                'removeTitle' => __('team.people.remove_title', ['name' => $member->name]),
+                'removeMessage' => $member->open_threads > 0
+                    ? __('team.people.remove_message', ['count' => $member->open_threads])
+                    : __('team.people.remove_message_none'),
+                'departmentIds' => $member->departments->pluck('id')->all(),
+                'departments' => $member->departments->pluck('name')->all(),
+            ])->all(),
+            'invitations' => $this->invitations->map(fn (TeamInvitation $invitation): array => [
+                'id' => $invitation->id,
+                'name' => $invitation->name,
+                'email' => $invitation->email,
+                'whatsapp' => $invitation->whatsapp,
+                'role' => __('team.roles.agent'),
+                'departmentIds' => $invitation->department_ids ?? [],
+                'label' => $invitation->name ?? $invitation->email,
+                'sentLabel' => __('team.people.sent', ['when' => $invitation->updated_at->diffForHumans()]),
+                'cancelTitle' => __('team.people.cancel_title', ['name' => $invitation->name ?? $invitation->email]),
+                'sentAt' => $invitation->updated_at->toIso8601String(),
+                'expired' => $invitation->isExpired(),
+            ])->all(),
+            'departments' => $this->departments->map(fn (Department $department): array => [
+                'id' => $department->id,
+                'name' => $department->name,
+                'hint' => $department->routing_hint,
+                'hours' => $department->usesBusinessHours()
+                    ? __('team.hours.business')
+                    : __('team.hours.own', ['hours' => $department->scheduleLabel()]),
+                'waiting' => (int) $department->waiting,
+                'waitingLabel' => $department->waiting > 0
+                    ? trans_choice('team.departments.waiting', $department->waiting, ['count' => $department->waiting])
+                    : __('team.departments.none_waiting'),
+                'people' => $department->users->pluck('name')->all(),
+            ])->all(),
+        ];
+    }
+
+    /**
+     * The WhatsApp as the web's phone box holds it: dial code and number. Seats
+     * store bare digits, so the sheet reads them with the "+" it adds itself.
+     *
+     * @return array{dial: string|null, number: string}
+     */
+    private function phoneBoxes(?string $digits): array
+    {
+        return Country::splitPhone($digits === null ? null : '+'.$digits, Country::dialCode($this->business->country_id));
     }
 
     public function canOfferSeatTo(string $email): bool

@@ -212,6 +212,41 @@ class Country extends Model implements DataTable, Removable
     }
 
     /**
+     * A stored phone as the web's two boxes hold it: the dial code and the number.
+     * A value with no dial gets the default one.
+     *
+     * @return array{dial: string|null, number: string}
+     */
+    public static function splitPhone(?string $stored, ?string $defaultDial): array
+    {
+        $stored = trim((string) $stored);
+
+        if (preg_match('/^\+(\d{1,4})\s+(.+)$/', $stored, $parts) === 1) {
+            return ['dial' => $parts[1], 'number' => $parts[2]];
+        }
+
+        // Older numbers were typed as they came: "+584247673951" or "584247673951" carry their own
+        // dial code (the longest known one wins, as on the web), "04247673951" is national.
+        $digits = preg_replace('/\D/', '', $stored) ?? '';
+        $international = str_starts_with($stored, '+') || ($defaultDial !== null && str_starts_with($digits, $defaultDial) && strlen($digits) >= strlen($defaultDial) + 7);
+
+        if ($international) {
+            $dial = collect(self::phoneFlags())
+                ->pluck('code')
+                ->map(fn (string $code): string => ltrim($code, '+'))
+                ->filter(fn (string $code): bool => $code !== '' && str_starts_with($digits, $code))
+                ->sortByDesc(fn (string $code): int => strlen($code))
+                ->first();
+
+            if ($dial !== null) {
+                return ['dial' => $dial, 'number' => substr($digits, strlen($dial))];
+            }
+        }
+
+        return ['dial' => $defaultDial, 'number' => ltrim($stored, '+')];
+    }
+
+    /**
      * The country behind a raw WhatsApp number. Longest dial-code prefix
      * wins, so 1-268… resolves the island and not the whole NANP.
      */

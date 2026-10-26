@@ -249,8 +249,8 @@ class BusinessCards
 
         return [
             'fields' => [
-                $this->field('whatsapp_number', 'phone', __('wizard.fields.whatsapp_number'), $this->splitPhone($data->whatsapp_number, $dial), hint: __('wizard.fields.whatsapp_number_hint')),
-                $this->field('fallback_whatsapp_number', 'phone', __('wizard.fields.fallback_whatsapp_number'), $this->splitPhone($data->fallback_whatsapp_number, $dial), hint: __('wizard.fields.fallback_whatsapp_number_hint')),
+                $this->field('whatsapp_number', 'phone', __('wizard.fields.whatsapp_number'), Country::splitPhone($data->whatsapp_number, $dial), hint: __('wizard.fields.whatsapp_number_hint')),
+                $this->field('fallback_whatsapp_number', 'phone', __('wizard.fields.fallback_whatsapp_number'), Country::splitPhone($data->fallback_whatsapp_number, $dial), hint: __('wizard.fields.fallback_whatsapp_number_hint')),
                 $this->field('email', 'email', __('client.business.contact.email'), $data->email, max: 255),
                 $this->field('web', 'url', __('client.business.contact.web'), $data->web, placeholder: __('client.business.contact.web_placeholder'), max: 255),
             ],
@@ -270,41 +270,6 @@ class BusinessCards
                 $this->field('billing_email', 'email', __('client.business.billing.billing_email'), (string) $this->business->billing_email, hint: __('client.business.billing.billing_email_hint'), required: true, max: 255),
             ],
         ];
-    }
-
-    /**
-     * The web stores "+58 4247673951": the dial and the number are two boxes
-     * on both screens. A value with no dial gets the business's country's.
-     *
-     * @return array{dial: string|null, number: string}
-     */
-    private function splitPhone(?string $stored, ?string $defaultDial): array
-    {
-        $stored = trim((string) $stored);
-
-        if (preg_match('/^\+(\d{1,4})\s+(.+)$/', $stored, $parts) === 1) {
-            return ['dial' => $parts[1], 'number' => $parts[2]];
-        }
-
-        // Older numbers were typed as they came: "+584247673951" or "584247673951" carry their own
-        // dial code (the longest known one wins, as on the web), "04247673951" is national.
-        $digits = preg_replace('/\D/', '', $stored) ?? '';
-        $international = str_starts_with($stored, '+') || ($defaultDial !== null && str_starts_with($digits, $defaultDial) && strlen($digits) >= strlen($defaultDial) + 7);
-
-        if ($international) {
-            $dial = collect(Country::phoneFlags())
-                ->pluck('code')
-                ->map(fn (string $code): string => ltrim($code, '+'))
-                ->filter(fn (string $code): bool => $code !== '' && str_starts_with($digits, $code))
-                ->sortByDesc(fn (string $code): int => strlen($code))
-                ->first();
-
-            if ($dial !== null) {
-                return ['dial' => $dial, 'number' => substr($digits, strlen($dial))];
-            }
-        }
-
-        return ['dial' => $defaultDial, 'number' => ltrim($stored, '+')];
     }
 
     /**

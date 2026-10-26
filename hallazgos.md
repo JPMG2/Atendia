@@ -15,13 +15,26 @@
 
 ## 2026-10-25
 
+> **Revisión de la noche del 25/10 (pedida por ella: «tachar solo lo realmente culminado»).** Cada línea de este archivo se leyó y se contrastó con el código, la base real o una prueba corrida ese día. Lo cerrado lleva `RESUELTO` (o `DESCARTADO`/`SUPERADO`) con su evidencia; lo que dice «no re-medido hoy» se apoya en la medición de `pendientes.md`. **Re-verificado hoy y SIGUE ABIERTO (no se tachó):**
+> - `PersonalData::storeLogo` guarda en `logos/` y borra el logo anterior ANTES de confirmar el nuevo (el código no cambió).
+> - `/var/www/atendia161026/.claude-code.env` existe (133 bytes, solo root, del 16/10); el `.env` de esa carpeta ya no.
+> - `agent_conversations*` no tiene retención y `PurgeBusiness` no las toca (hoy 0 filas; el riesgo es de cuando haya uso).
+> - `AdminUserForm::assignableRoles()` sigue pintando `__('admin.users.roles.'.$name)`: un rol creado desde el editor saldría como clave cruda.
+> - `Schedule::overlapErrors` solo compara turnos del MISMO día (lunes 22:00–02:00 y martes 01:00–05:00 no chocan); `CustomersReportTest` sigue sin proteger la medianoche.
+> - `ProactiveSends` devuelve `'cold'` y el recordatorio por link no sale; `services.is_bookable` no tiene control en ninguna vista; el aviso del logo dice «PNG o JPG» (acepta WebP); la Ayuda se ordena por `category` alfabética.
+> - `MobileDeviceChallenge::issue` reinicia los intentos en cada reenvío; `POST closures/{id}/tell` sigue sin freno; `GET business/closures` calcula `pendingFor` por cierre.
+> - `BusinessForm` (wizard) conserva su propia copia de «hadEmail + evento de bienvenida»; `PlatformSetting` no tiene tipo booleano.
+> - El flake del candado de overflow de Catálogos («Atributos») sigue: `CatalogTableLayoutBrowserTest` mide justo después del clic, sin esperar (T-04, aceptado).
+> - El falso positivo de `require-design-skill.sh` volvió a ocurrir hoy (un `cp` con origen en `tests/` de otro repo y un `python` que solo lee).
+> - El login 500 del 15/10 está MITIGADO (`opcache.jit = off` y buffer 0 en `docker/php/php.ini`), pero la causa nunca se probó: no se tacha.
+
 - **`php artisan boost:update` NO es inofensivo.** Regeneró `CLAUDE.md` con el texto base de SU versión (borró las secciones «tests rules» y «Replies» del proyecto) y reescribió seis archivos de `.claude/skills/` (`infer-conventions`, `laravel-best-practices`, `testing-best-practices`). Se restauró desde el repositorio y se reaplicó solo la línea propia. Para tocar una guía de `.ai/guidelines/`: editar la guía y el bloque de `CLAUDE.md` a mano, sin correrlo.
 - **Dos sesiones corriendo `pest` sobre `atendia_testing` a la vez se matan** (`deadlock detected`, `relation "permissions" does not exist`): la primera prueba de cada archivo hace `migrate:fresh`. Cada rojo de hoy con esa firma pasó de a uno. Antes de dar un rojo por real, repetirlo solo y mirar `pgrep -f "[p]est tests"`.
 - **El logo del negocio se guarda en `logos/`, no en `businesses/{id}/` como pide `tenancy.md`, y el anterior se borra ANTES de confirmar el nuevo** (`PersonalData::storeLogo`, heredado tal cual del formulario de la web): si el guardado falla, el negocio apunta a un archivo borrado. Sin tocar: es de la web y no era la tarea.
 - **`/var/www/atendia161026/.claude-code.env`** (133 bytes, solo root) sigue en la copia vieja del proyecto; no se abrió. Probablemente un token de Claude: decidir si se borra con la carpeta.
 - **Las conversaciones del SDK (`agent_conversations*`) no tienen retención ni se borran con `PurgeBusiness`** y guardan las salidas de las herramientas del admin (correos, montos, números de WhatsApp de negocios). Decisión de privacidad que cuelga de R-10.
-- **Los avisos del tablero guardan al negocio solo por una clave** (`whatsapp_disconnected:24`) y la llave foránea se anula al borrarlo: cualquier borrado de negocio hecho por fuera de `PurgeBusiness` deja avisos huérfanos. Ya corregido en `PurgeBusiness`; los 13 de Laboratorio Vida y de otros cuatro negocios de prueba se borraron a mano.
-- **`D-06` estaba marcado «en espera de ella» y ya estaba hecho** (regla y pruebas en `ProcessIncomingWhatsAppMessage::ownerTarget` / `HandoffTest`). Lección que repite la del 20/10: antes de listar un pendiente, buscarlo en el código.
+- **RESUELTO 2026-10-25 (re-comprobado hoy: `PurgeBusinessTest` y `AdminRemoveBusinessTest` en verde; el borrado quita los avisos antes del negocio) —** **Los avisos del tablero guardan al negocio solo por una clave** (`whatsapp_disconnected:24`) y la llave foránea se anula al borrarlo: cualquier borrado de negocio hecho por fuera de `PurgeBusiness` deja avisos huérfanos. Ya corregido en `PurgeBusiness`; los 13 de Laboratorio Vida y de otros cuatro negocios de prueba se borraron a mano.
+- **RESUELTO 2026-10-25 (`HandoffTest` en verde hoy; D-06 ya figura Hecho en `pendientes.md`) —** **`D-06` estaba marcado «en espera de ella» y ya estaba hecho** (regla y pruebas en `ProcessIncomingWhatsAppMessage::ownerTarget` / `HandoffTest`). Lección que repite la del 20/10: antes de listar un pendiente, buscarlo en el código.
 
 ## 2026-10-08
 
@@ -36,7 +49,7 @@
   `PanelAccessTest`, `SiteFooterCompanyTest` y `WelcomePageTest` no estaban en esa lista. Es la
   misma enfermedad y no se persigue ahora, pero conviene mirar qué estado deja una prueba anterior.
 
-- **El audio que corre hoy no tiene precio verificado.** `gpt-4o-transcribe-diarize` no figura
+- **RESUELTO 2026-10-25 (medido en la base real: la tarea `Transcription` usa `gpt-4o-transcribe` y `ai_models.per_minute` = 0,0060 con su fuente) —** **El audio que corre hoy no tiene precio verificado.** `gpt-4o-transcribe-diarize` no figura
   en la página de precios de OpenAI, así que su costo se estima con `audio_per_minute` (0,003).
   Para que la cifra sea verdad hay que asignar a Voz a texto un modelo del catálogo con su
   precio (`gpt-4o-mini-transcribe` cuesta 0,003 por minuto, `gpt-4o-transcribe` 0,006). No se
@@ -44,7 +57,7 @@
 - **Las 9 mecánicas pasaron a `gpt-6-luna`** (2026-10-08, con `gpt-6-astra` de respaldo): su batería
   (`MechanicalEvalTest`, 25 casos objetivos, sin juez) dio Astra 25/25 y Luna 25/25. Son ~9% del
   gasto de hoy; el cambio se deshace desde Modelos de IA.
-- **La conversación con `gpt-6-sol` dio 69 de 71** (97%), y NO se asignó: falló en un día futuro
+- **SUPERADO 2026-10-25 (P-23, decidido el 13/10; `ai_tasks` hoy: `AsistenteAtendia` = `gpt-6-luna`, 72/72) —** **La conversación con `gpt-6-sol` dio 69 de 71** (97%), y NO se asignó: falló en un día futuro
   ("¿cuántas conversaciones hubo pasado mañana?" contestó 0 en vez de decir que no pasó) y en dar el
   horario completo. Falta el punto de comparación: la misma batería con Astra (~3 a 4 USD) dice si
   esos dos fallos son de Sol o de la batería. Sol cuesta 2/10 contra 10/50 de Astra.
@@ -55,19 +68,19 @@
 
 ## 2026-10-07
 
-- **La API de Mailpit responde 404 y no se puede leer un correo entregado.** `atendia-mailpit`
+- **RESUELTO 2026-10-16 (T-05: no era un defecto, la raíz lleva el prefijo `/mailpit` y su credencial) —** **La API de Mailpit responde 404 y no se puede leer un correo entregado.** `atendia-mailpit`
   tiene el 8025 abierto y algo contesta ahí, pero `/api/v1/messages`, `/api/v1/info` y la raíz
   dan 404 desde el contenedor de la app. Sirve igual para que el correo NO se vaya a internet,
   pero hoy un correo se verifica renderizando el Mailable, no mirando lo que llegó. Posible
   causa a confirmar: `MP_WEBROOT` con un prefijo de path.
 
-- **`block-full-suite-reruns.sh` cuenta `pest --list-tests` como una corrida entera.** Listar
+- **RESUELTO 2026-10-16 (T-02: el hook exime `--list-tests`, probado con un `TMPDIR` aparte; no re-medido hoy) —** **`block-full-suite-reruns.sh` cuenta `pest --list-tests` como una corrida entera.** Listar
   no ejecuta nada y cuesta segundos, pero el hook lo frena igual, así que verificar qué
   testsuite corre por defecto no se puede hacer con la herramienta que lo dice. El hook ya
   distingue `--filter` y una ruta de archivo: falta que distinga también las opciones que
   solo LISTAN.
 
-- **El hook `Stop` corre los guardianes sobre la MISMA base que la puerta, y la arruina.**
+- **RESUELTO 2026-10-16 (T-03: `enforce-turn-exit.sh` ve la corrida viva y no lanza los guardianes; medido ese día, no re-medido hoy) —** **El hook `Stop` corre los guardianes sobre la MISMA base que la puerta, y la arruina.**
   Cerré un turno mientras la corrida de la puerta estaba a mitad de camino: los guardianes
   `GoldenRules*` arrancaron su propio `RefreshDatabase` sobre `atendia_testing` y la corrida
   pasó de 17 rojos a **118**, con `QueryException`, `MultipleRecordsFound` y uniques por todas
@@ -82,7 +95,7 @@
   paso, pero NO está confirmado en una corrida completa limpia. Lo que los hace frágiles es el
   conteo absoluto (`toBe(10)`, `toBe(0)`) sobre una base que comparten todos.
 
-- **El contenedor no tiene fuente de emoji, y las capturas lo muestran.** En
+- **RESUELTO 2026-10-25 (T-08; `fc-list` del contenedor lista una fuente de emoji hoy) —** **El contenedor no tiene fuente de emoji, y las capturas lo muestran.** En
   `hero-demo-chat.png` el emoji del guion de la ferretería sale como el rectángulo vacío de
   "glifo que falta". Es el Chromium headless del contenedor, no la landing: en un navegador
   con fuentes de emoji se ve bien. Molesta sólo para revisar capturas; se arregla instalando
@@ -112,23 +125,23 @@
   anotados (`CatalogCurrencyEdit`, `PanelResponsive`, `DemoChat`), ahora con el error exacto:
   la única base de test es compartida y nadie serializa los archivos de browser.
 
-- **Las dos familias de campos conviven** (`x-ui.input` y `x-inputsform.input`). Hoy NO se
+- **DESCARTADO 2026-10-16 (F-05, decisión de ella: se quedan los dos, cada uno con su trabajo; la regla está escrita en `formularios.md`) —** **Las dos familias de campos conviven** (`x-ui.input` y `x-inputsform.input`). Hoy NO se
   contradicen a la vista — comparten `.field`, `.field-label` y `.field-control` — y
   `x-ui.select` no se usa en ninguna vista. La deuda es tener dos puertas para lo mismo:
   `x-inputsform.*` agrega `span` y el asterisco de requerido, `x-ui.*` no.
-- **El minutaje de audio ya no se muestra en `Consumo de IA`.** Entra en el costo y sigue en
+- **RESUELTO 2026-10-12 (D-08; re-comprobado hoy: `lang/es/admin.php` tiene la columna `'audio' => 'Audio (min)'`) —** **El minutaje de audio ya no se muestra en `Consumo de IA`.** Entra en el costo y sigue en
   los tres exportables, pero perdió su columna al pasar la pantalla a tabla: nueve columnas no
   entran a 1280 sin cortar. Si lo quiere en pantalla, hay que sacarle el lugar a otra.
 
 ## 2026-10-04
 
-- **En oscuro, el fondo del sidebar del panel se corta a media página.** En una pantalla
+- **RESUELTO 2026-10-16 (F-06; `SidebarStickyBrowserTest` en verde hoy, claro y oscuro) —** **En oscuro, el fondo del sidebar del panel se corta a media página.** En una pantalla
   larga la columna izquierda pinta negro hasta ~900px de alto y abajo queda blanca. Se ve en
   `tests/Browser/Screenshots/admin-ai-desktop-dark.png`. Es del shell del panel (lo sufren
   todas las pantallas largas de los DOS paneles), no de la pantalla nueva: el alto del aside
   se fija en vez de seguir al contenido.
 
-- **Los embeddings siguen clavados en OpenAI.** Los 12 agentes ya salen de la fila
+- **DESCARTADO 2026-10-12 (F-08, decisión de ella: se queda en `3-small`; se reabre si cambia de lab) —** **Los embeddings siguen clavados en OpenAI.** Los 12 agentes ya salen de la fila
   (`RunsAssignedModel`, hoy), pero `KnowledgeEmbedder` pide `Lab::OpenAI` a mano con
   `config('rag.embedding.model')`: el RAG no es un agente y no pasa por `ai_tasks`. El día
   que el embedding cambie de lab hay que editar código, y los vectores viejos de 1536
@@ -145,7 +158,7 @@
 
 ## 2026-10-02
 
-- **El panel izquierdo de las pantallas de acceso dice "Automatizá tu WhatsApp" también en
+- **RESUELTO 2026-10-16 (F-12: el panel sale de `auth.aside.*`; hoy `lang/es_VE` no trae ningún «Automatiz») —** **El panel izquierdo de las pantallas de acceso dice "Automatizá tu WhatsApp" también en
   `es_VE`**: ese titular sale de `landing`, y `lang/es_VE/landing.php` existe pero no lo pisa.
   Visto en la captura `auth-register-es_VE`.
 
@@ -154,7 +167,7 @@
   Confirmado otra vez el 2026-10-03: los 3 fallaron en la suite y pasaron solos a los 2 min.
 - **Solo 2 de 18 hooks comparten el scanner con su guardián** (comentarios y controles vivos).
   Hoy ninguno miente (probado 8 de 8), pero los otros 16 pueden divergir el día que cambie un criterio.
-- **`resources/js/echo.js` tiene un comentario en español** (línea 19): la regla de comentarios
+- **RESUELTO 2026-10-13 (F-04; re-comprobado hoy: la línea 19 de `echo.js` está en inglés) —** **`resources/js/echo.js` tiene un comentario en español** (línea 19): la regla de comentarios
   alcanza a `resources/js`. Es deuda vieja, anterior a hoy.
 - **La suite de browser cuesta 1052 s** (17,5 min) y es la puerta de cada commit que toca pantallas.
   Nadie lo había medido.
@@ -162,12 +175,12 @@
   `sync` en pruebas, el job de conocimiento llama a OpenAI sin clave, falla, y `tryAction` lo
   convierte en "Registro no actualizado" — aunque el guardado funcionó. En producción la cola es
   Redis y no pasa. Entrena a ignorar errores en pantalla, igual que el 404 de Reverb.
-- **26 procesos node huérfanos de VS Code Dev Containers** (`vscode-remote-containers-server-*.js`),
+- **SIGUE ABIERTO, re-medido 2026-10-25: quedan 2 procesos `vscode-remote-containers-server` (T-07; no 0) —** **26 procesos node huérfanos de VS Code Dev Containers** (`vscode-remote-containers-server-*.js`),
   uno con 65 días de vida, otros con 19, 16 y 10 días. Son sesiones de VS Code ya cerradas que
   nunca murieron. **Medido: suman solo 0,2 GB de RAM**, así que NO son el problema de memoria que
   parecían — es prolijidad, no urgencia. Conviene entender por qué no se cierran solos antes de
   matarlos a mano.
-- **Sobras del camino viejo tras retirar chatwoot y n8n** (2026-10-06): el servicio Swarm
+- **RESUELTO 2026-10-25 (medido hoy: `docker service ls` lista 5 servicios —Evolution, Postgres, un solo Redis, Traefik y `easypanel` en 0/0 a propósito—; `ai_project_ai_project2025` y el segundo Redis ya no existen; `laravel_prod` se borró el 25/10, T-12; `pgadmin` queda a propósito en 127.0.0.1:5050, P-24) —** **Sobras del camino viejo tras retirar chatwoot y n8n** (2026-10-06): el servicio Swarm
   `ai_project_ai_project2025` está en 0/0 (muerto, nunca arranca); `ai_project_pgadmin` sigue
   arriba con su imagen de 507 MB; hay **dos Redis** (`ai_project_redis` y `ai_project_redis-shared`)
   y no está claro si AtendIa usa uno, el otro o ninguno; y la base `laravel_prod` (7,8 MB, 9 tablas)
@@ -185,7 +198,7 @@
   `fetchInstances` dice `disconnectionAt 2026-10-02T23:22:53`, código 401,
   `tag: conflict / type: device_removed`: el dispositivo se desvinculó desde el teléfono el 2 de
   octubre. El webhook sí llegó — la fila 1 de `panel_notifications` es de un segundo después.
-- **No hay pantalla de conexión de WhatsApp**: `EvolutionApi::qrCode()` existe y su PHPDoc dice
+- **RESUELTO (la ruta `/whatsapp` existe en `routes/web.php`; conecta por QR en vivo, y el 25/10 se vinculó la línea de la plataforma desde su pantalla de admin) —** **No hay pantalla de conexión de WhatsApp**: `EvolutionApi::qrCode()` existe y su PHPDoc dice
   "la pantalla de conexión se lo pedirá", pero ningún Blade la llama. Hoy re-emparejar obliga a
   entrar al Manager de Evolution por fuera de AtendIa.
 - **La tabla del hub de Catálogos nunca fue responsive** (2026-10-06, MEDIDO): con un maestro
@@ -198,7 +211,7 @@
   Todas las capturas `*-dark` que hay hoy (`whatsapp-panel-connected-dark`, etc.) están
   mintiendo: muestran el tema claro con otro nombre de archivo. Lo que sí funciona es
   `->script('document.documentElement.classList.add("dark")')`. Revisar las que ya existen.
-- **La píldora del topbar vuelve a amarillo sólo al recargar** (2026-10-06): ahora se pone verde
+- **RESUELTO 2026-10-16 (F-07; `WhatsAppLinkBrowserTest` en verde hoy, incluida «the topbar pill drops to the warning when the link falls, without a reload») —** **La píldora del topbar vuelve a amarillo sólo al recargar** (2026-10-06): ahora se pone verde
   en vivo con `whatsapp:connected`, pero el camino inverso (se cae el vínculo mientras ella mira
   otra pantalla) no tiene aviso. La campana ya escucha `private-business.{id}` y el webhook ya
   levanta esa notificación: la píldora podría colgarse del MISMO socket, sin poll ni costo nuevo.
@@ -237,20 +250,20 @@
 - **RESUELTO 2026-10-10 (`<x-ui.key-hints>` en las 13 pantallas con tabla ordenable del admin; el `?` lista lo que dice la línea) — Solo Auditoría tenía línea de teclas (`.key-hints`)**, aunque `j`/`k` funcionan en toda tabla `.pay-table[data-sortable]`: el atajo `?` no dice nada en esas pantallas. Decide ella si cada tabla lleva su línea.
 - **ABIERTO 2026-10-12 — AUDITORÍA DE DEFAULTS (medida contra la app corriendo, no leída del código).**
   - **RESUELTO el 2026-10-12 (raíz: `trustProxies` solo a redes privadas; más dos redes anchas en el login: 25 fallos por correo y 30 por IP cada 15 min; repetido el ataque en vivo y ahora bloquea al 6.º; tests en `LoginThrottleTest`). Ojo con Cloudflare al salir (ver `aproduccion.md` §3).** Texto original — ALTA — el límite de intentos de login se esquiva rotando `X-Forwarded-For`. Sin la cabecera se bloquea en el 6.º intento; rotándola, 9 de 9 pasan. La clave de `LoginRequest::throttleKey()` y del limitador `auth` de la API es `email|ip`, y con `trustProxies(at: '*')` la IP la elige quien llama. Mitigante: el admin tiene 2.º paso; los clientes no. Arreglo: clave solo por correo (más un tope por IP de `REMOTE_ADDR`), y confiar solo en la IP de Traefik. NO tocar `trustProxies` a ciegas: sin él los assets salen en http.
-  - **MEDIA — recuperar clave dice si el correo existe** ("No encontramos ningún usuario…" contra silencio). Enumeración de cuentas; en un SaaS con negocios de verdad es dato de clientes. Arreglo: misma respuesta siempre.
-  - **MEDIA — `/maqueta-registro.html` (37 KB) está en `public/` y responde 200.** Es una maqueta de diseño, no debería publicarse.
-  - **MEDIA (a resolver con el dominio) — cabeceras:** no hay HSTS, CSP, Referrer-Policy ni Permissions-Policy; la cookie de sesión no lleva `Secure`; la de sesión dura 12 h y es persistente (ya cerrado el caso de staff por inactividad).
-  - **BAJA — `GET /r/{code}` devuelve el nombre del negocio invitador a quien adivine un código.**
+  - **RESUELTO 2026-10-13 (S-01; `PasswordResetPrivacyTest` en verde hoy) — MEDIA — recuperar clave dice si el correo existe** ("No encontramos ningún usuario…" contra silencio). Enumeración de cuentas; en un SaaS con negocios de verdad es dato de clientes. Arreglo: misma respuesta siempre.
+  - **RESUELTO 2026-10-13 (S-02; hoy `public/` no trae ninguna maqueta: 0 coincidencias) — MEDIA — `/maqueta-registro.html` (37 KB) está en `public/` y responde 200.** Es una maqueta de diseño, no debería publicarse.
+  - **RESUELTO (S-03/P-04, re-comprobado hoy: `Strict-Transport-Security` en `docker/nginx/conf.d/laravel.conf`, `CSP_MODE=enforce`, `session.secure` = true, `ContentSecurityPolicyTest` en verde; la sesión de 12 h es decisión vigente, no defecto) — MEDIA (a resolver con el dominio) — cabeceras:** no hay HSTS, CSP, Referrer-Policy ni Permissions-Policy; la cookie de sesión no lleva `Secure`; la de sesión dura 12 h y es persistente (ya cerrado el caso de staff por inactividad).
+  - **RESUELTO 2026-10-16 (S-04; `ReferralTest` en verde hoy) — BAJA — `GET /r/{code}` devuelve el nombre del negocio invitador a quien adivine un código.**
   - **OK, verificado:** webhook de Evolution da 401 sin firma y falla cerrado con secreto vacío; `.env`, `.git` y `storage/logs` dan 403; `/telescope`, `/horizon`, `/_debugbar`, `phpinfo` dan 404; el seeder de admin no trae contraseña por defecto y `.env` no está versionado; el login se bloquea al 6.º intento (sin la cabecera); las rutas sin login son las esperadas (landing, webhooks, enlaces firmados, `/up`).
 - **2026-10-12 — REVISIÓN INDEPENDIENTE del trabajo de hoy (agente `revisor-independiente`, contexto limpio, 28 comprobaciones, 6 hallazgos).**
   - **RESUELTO — una pestaña de admin que solo hace polls no vencía si su sesión no tenía la marca** (la de antes del deploy, o si el primer pedido era un poll). Ahora el primer pedido arranca el reloj. Test: "a tab that only polls still idles out…".
   - **RESUELTO — `/llms.txt` salía con `Cache-Control: public` y cookies de sesión.** Ahora `no-cache, private`. Test incluido.
-  - **ABIERTO — `catalog_eligible` no lo consulta nadie** (ya dicho: el sync a Meta no existe; la columna es la regla lista, no una protección).
-  - **ABIERTO — una actividad de salud creada a mano desde Catálogos nace con el interruptor encendido** (el DTO trae `true`). Decidir si el alta toma el valor del rubro.
-  - **ABIERTO — el cierre por inactividad se ve como éxito** (alerta verde en el login) y, desde una pantalla Livewire, cae en `/login` sin explicación (419 vacío).
-  - **ABIERTO — el arreglo de las alertas vive solo en el árbol de trabajo** (`public/build` está en `.gitignore`): un build limpio desde `HEAD` vuelve a purgar `.alert-*`. Se cierra al commitear `tailwind.config.js`.
+  - **SIGUE ABIERTO, re-medido 2026-10-25 (F-02: solo `CreateBusinessActivity` y `UpdateBusinessActivity` lo escriben, nada lo lee) — `catalog_eligible` no lo consulta nadie** (ya dicho: el sync a Meta no existe; la columna es la regla lista, no una protección).
+  - **RESUELTO 2026-10-16 (S-08; `CreateBusinessActivity` fuerza `catalog_eligible = false` en salud; `BusinessActivityTest` y `CatalogBusinessActivityTest` en verde hoy) — una actividad de salud creada a mano desde Catálogos nace con el interruptor encendido** (el DTO trae `true`). Decidir si el alta toma el valor del rubro.
+  - **RESUELTO 2026-10-13 (S-05; `LoginViewTest` y `StaffIdleSessionTest` en verde hoy) — el cierre por inactividad se ve como éxito** (alerta verde en el login) y, desde una pantalla Livewire, cae en `/login` sin explicación (419 vacío).
+  - **RESUELTO 2026-10-13 (F-01; hoy `tailwind.config.js` está versionado sin cambios, commit `9dd1636`, y el build trae `alert-warning`) — el arreglo de las alertas vive solo en el árbol de trabajo** (`public/build` está en `.gitignore`): un build limpio desde `HEAD` vuelve a purgar `.alert-*`. Se cierra al commitear `tailwind.config.js`.
 - **RESUELTO 2026-10-12 (safelist en `tailwind.config.js`, y el aviso de Meta ya no lleva fondo en línea; guardado por la medición de `ActivityCatalogSwitchBrowserTest`) — todos los `<x-ui.alert>` salían sin fondo ni borde.** El build no trae ninguna `.alert-info|success|warning|danger|brand` (`grep` sobre `public/build/assets/*.css` da cero): el componente arma la clase con `'alert-'.$v` y Tailwind la descarta por no ver el nombre completo. Afecta device-challenge, el archivar de Planes, el aviso del login y el de Meta. Arreglo de una línea: sumar las cinco al `safelist` de `tailwind.config.js` (ahí ya están `status-tag`, `is-*`). No se tocó porque cambia el aspecto de pantallas ya aprobadas; decide ella. El aviso del nombre de Meta se dibuja con su fondo en línea.
-- **2026-10-11 — copy con voseo en la base neutra (`lang/es/`).** Al tocar `lang/es/collections.php` se vio que la base ya trae voseo ("dejás de cobrar", "Revisá…") cuando la regla de `formularios.md` es base en tuteo y `es_AR` solo con los overrides. No se tocó (no era la tarea): hay que barrer `lang/es/*.php` buscando formas en -ás/-és/-ís y pasarlas al tuteo, con su override en `es_AR` donde corresponda.
+- **RESUELTO 2026-10-13 (F-03; `LocaleTest` en verde hoy, 20 pruebas, lee los valores de `lang/es` y falla con cualquier voseo) — 2026-10-11 — copy con voseo en la base neutra (`lang/es/`).** Al tocar `lang/es/collections.php` se vio que la base ya trae voseo ("dejás de cobrar", "Revisá…") cuando la regla de `formularios.md` es base en tuteo y `es_AR` solo con los overrides. No se tocó (no era la tarea): hay que barrer `lang/es/*.php` buscando formas en -ás/-és/-ís y pasarlas al tuteo, con su override en `es_AR` donde corresponda.
 - **2026-10-11 — flake en la suite de browser completa (358 pruebas, 1 roja que pasa aislada):** `ConfigurationCompanyBrowserTest` "deleting a network asks first, through the system dialog" agotó el timeout de 5 s; corrida sola, 11/11 verdes. No toca nada de lo hecho ese día.
 - **2026-10-11 — el test de browser que espera un poll no puede usar `waitForText`.** En el plugin instalado `waitForText` es un alias de `assertSee`, que reintenta ~5 s; para esperar un intervalo de 30 s hay que `->wait(34)` antes. Lo mismo vale para cualquier test futuro de `wire:poll`.
 - **2026-10-10 — flake en la suite de browser completa** (tres fallos que PASAN aislados, exit 0): `CatalogTableLayoutBrowserTest` (dos maestros, la tabla 64 y 71px más ancha que su caja a 1280) y `CatalogSeasonalMastersBrowserTest` (timeout de 5 s con `route app/… not found` de Livewire). Solo aparecen dentro de la corrida larga (~30 min). No se persigue; si el de ancho de tabla vuelve, mirar qué maestro es antes de culpar al CSS.
@@ -261,7 +274,7 @@
 - **RESUELTO 2026-10-14 — el paso Productos del wizard se reconstruía vacío en cada actualización del padre** (el producto agregado con Enter desaparecía; no era solo el Enter sin confirmar). Causa: el hijo `step-products` sin `wire:key` explícito se re-montaba cuando el padre re-renderizaba por `wizard:products-updated`, y `mount()` lo recargaba desde la base (vacía). Arreglo: `wire:key` fijo en los cuatro pasos de `⚡wizard.blade.php`, botón "Agregar", y las sugerencias de tipo producto pasaron del paso Servicios al paso Productos (`suggestionsName(..., goods: true)`). Cubierto por `WizardProductDraftBrowserTest`.
 - **2026-10-15 — el login dio 500 once veces entre 15:39 y 15:56 UTC con `ArgumentCountError` en Carbon (`rawCreateFromFormat`, "3 passed … at least 2 expected").** Salía en `SendNewDeviceLoginAlert` al guardar `last_login_at`. Reproducido por consola 200.000 veces con JIT y sin JIT: no falla, y la línea declarada (587) no coincide con el archivo en disco (568), así que parece caché de opcache dañada. Se cortó con `kill -USR2` al master de php-fpm (16:00 UTC) y el login volvió a dar 302. **Causa NO probada; sospecha: el JIT tracing de PHP 8.5.10** (`docker/php/php.ini`, `opcache.jit = tracing`). Si reaparece: `opcache.jit = off` y reconstruir/recrear. No se tocó.
 
-- 2026-10-15 · "Prueba Conexión" (business 25) sigue activa y SÍ tiene su instancia `business-25` (no es huérfana: el sensor no la marca), pero quedó en estado `connecting`, sin número ni emparejar. Candidata a quitarse con "Quitar el negocio". No se tocó.
+- **RESUELTO 2026-10-24 (T-14; medido hoy: los negocios 24 y 25 ya no existen, ni borrados lógicos) —** 2026-10-15 · "Prueba Conexión" (business 25) sigue activa y SÍ tiene su instancia `business-25` (no es huérfana: el sensor no la marca), pero quedó en estado `connecting`, sin número ni emparejar. Candidata a quitarse con "Quitar el negocio". No se tocó.
 
 - 2026-10-20 · Probando Aliadito con Cloudflare Access cerrado, un teléfono en datos móviles Y en wifi de otra casa no resuelve `wispy-sunset-7406.cloudflareaccess.com` (DNS_PROBE_FINISHED_NXDOMAIN, también abriéndolo directo). Desde el servidor y desde 1.1.1.1 / 8.8.8.8 / 9.9.9.9 resuelve bien. Sospecha: bloqueo DNS de la operadora o del teléfono; país y operadora sin confirmar. Si es de la operadora, Access no sirve para cerrar el piloto en Venezuela. Falta probar con DNS privado `one.one.one.one`. No se tocó.
 
@@ -286,12 +299,13 @@
 
 - 2026-10-20 · RESUELTOS los cuatro hallazgos del bloque "De la verificación independiente de la ayuda" (menos el del recordatorio por link, que sigue abierto): `plan.trial_over` ya se muestra en Mi plan cuando la prueba pasó y no hay un primer pago (`Subscription::trialEnded`); el subtítulo de Mi negocio dice que solo el nombre es obligatorio; Contacto ya no llama "opcionales" a los tres datos que cuenta el medidor y el aviso del menú dice "Falta completar tu contacto" / "Falta elegir tu moneda"; el "Correo de facturación" se edita en Mi negocio → Moneda (obligatorio, validado).
 
-- 2026-10-20 · Sugerencias de la IA en Soporte (Paso 1): el interruptor `support.ai_suggestions` es un entero 0/1 porque `PlatformSetting` solo tiene tipos time, weekday, integer y decimal; un tipo booleano lo dejaría más claro en la pantalla de Ajustes. Sin tocar. Pendiente de ella antes de depender de esto: UNA llamada real de prueba (costo estimado de centavos) y la batería de tickets reales en `tests/Eval` cuando haya tickets; hoy hay 0 en la base.
+- **PARCIAL 2026-10-25: lo pendiente de ella SE CERRÓ (llamada real el 21/10; `storage/logs/ai-eval-support.md` del 21/10 11:29 trae 36 PASS y 0 FAIL); queda abierto lo del tipo booleano (`PlatformSetting` sigue con time, weekday, integer y decimal) —** 2026-10-20 · Sugerencias de la IA en Soporte (Paso 1): el interruptor `support.ai_suggestions` es un entero 0/1 porque `PlatformSetting` solo tiene tipos time, weekday, integer y decimal; un tipo booleano lo dejaría más claro en la pantalla de Ajustes. Sin tocar. Pendiente de ella antes de depender de esto: UNA llamada real de prueba (costo estimado de centavos) y la batería de tickets reales en `tests/Eval` cuando haya tickets; hoy hay 0 en la base.
 
-- 2026-10-20 · Support battery run 2 (34/36). (1) HelpFinder did not offer `whatsapp-sin-verificar` for "en vez de conectado me sale sin verificar, que significa eso?" even with screen=whatsapp: a real retrieval miss, not fixed. (2) The help has no article for "the QR does not appear when I tap Conectar mi WhatsApp": the model was right to leave the draft empty; it is a documentation gap (the case stays in the battery as the marker).
-- 2026-10-20 · Help search: fixed punctuation glued to words (SearchesText split on whitespace) and added ordering by distinct word hits; whatsapp-no-sale-el-qr article added. Battery run 3: 35/36 (the miss was the ordering, now fixed + unit test); run 4 pending her OK.
+- **RESUELTO 2026-10-21 (informe real del 21/10 11:29: 36 PASS, 0 FAIL; el artículo `whatsapp-no-sale-el-qr` se ofrece) —** 2026-10-20 · Support battery run 2 (34/36). (1) HelpFinder did not offer `whatsapp-sin-verificar` for "en vez de conectado me sale sin verificar, que significa eso?" even with screen=whatsapp: a real retrieval miss, not fixed. (2) The help has no article for "the QR does not appear when I tap Conectar mi WhatsApp": the model was right to leave the draft empty; it is a documentation gap (the case stays in the battery as the marker).
+- **RESUELTO 2026-10-21 (la corrida 5 dio 36/36; la «run 4 pending her OK» ya se corrió con su OK) —** 2026-10-20 · Help search: fixed punctuation glued to words (SearchesText split on whitespace) and added ordering by distinct word hits; whatsapp-no-sale-el-qr article added. Battery run 3: 35/36 (the miss was the ordering, now fixed + unit test); run 4 pending her OK.
 
 - 2026-10-21 · El hook `require-design-skill.sh` bloquea como "escritura por Bash" comandos de SOLO lectura en rutas de app/tests (un `grep ... | head` sobre tests/ y otro con `2>/dev/null`, y un `cat >>` por un nombre de carpeta en el texto). Falso positivo: partir el comando en dos lo deja pasar. Sin tocar.
 - 2026-10-24 · Hallados al revisar «Horarios y cierres» de la app; ninguno se tocó (no era la tarea): (a) `Schedule::overlapErrors` solo compara turnos del MISMO día, así que lunes 22:00–02:00 y martes 01:00–05:00 no se ven como solape aunque `isOpenNow` los trata como el mismo tramo: la agenda ofrecería esa hora dos veces (ya era así en la web); (b) `CustomersReportTest > the file name says whose it is` falla si la corrida completa cruza la medianoche (compara el nombre del archivo con la fecha de hoy calculada antes): pasa aislado.
 - **RESUELTO 2026-10-24 — el aviso «tu cita se canceló por un cierre» salía por el número de Aliadito** (`CancelAppointmentsForClosure`, web y ruta `tell` de la app) en vez del del negocio. Ahora sale por la instancia del negocio, la hora se cancela solo si su aviso salió, y con el WhatsApp del negocio caído no se cancela nada y se le dice a la dueña. Lo cubren `BusinessClosuresTest` y `AppBusinessTest` (mutación comprobada: con la instancia de la plataforma fallan las dos). Lección: lo hallé en una auditoría y lo anoté en vez de corregirlo, siendo parte exacta de la regla que ella había dado.
 - 2026-10-21 · App (Ola 1): los 9 negocios de la base `atendia` (incluido Laboratorio Vida, el piloto real) dan `trial_ended` en la regla de acceso de la app: ninguno ha pagado. Para probar la app en su teléfono hace falta un negocio de prueba con un pago aprobado (decisión suya, ver aliadito-app.md).
+- 2026-10-25 · Hallados al llevar «Equipo» a la app; ninguno se tocó (no era la tarea): (a) el hook `require-design-skill.sh` vuelve a dar falso positivo, ahora con un `cp` cuyo ORIGEN está en `tests/` de OTRO repo (la app) y destino en `storage/`, y con un `python` heredoc que solo lee; (b) en la web, un rechazo por plan lleno al invitar sale como aviso, y en la app sale bajo el campo del correo (misma frase, otro lugar): decide ella si la app lo muestra como aviso; (c) la pantalla Equipo de la web NO muestra «N de M lugares» (solo la fila de «Mi negocio» y «Mi plan» lo dicen): si se quiere en Equipo, se agrega a la web y la app a la vez; (d) los departamentos se crean y editan solo en la web: falta la rebanada (e) en la app para que vayan a la par.

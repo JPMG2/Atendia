@@ -95,11 +95,19 @@ class TeamMemberForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $businessId = Auth::user()?->business_id;
+        return self::fieldRules($excludeId !== null, Auth::user()?->business_id);
+    }
 
+    /**
+     * The person sheet's rules, shared with the app's API so both validate a seat alike.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function fieldRules(bool $editing, ?int $businessId): array
+    {
         return [
             // The login address: taken by any account, it cannot be offered again.
-            'email' => $excludeId === null
+            'email' => ! $editing
                 ? ['required', ...AttributeValidator::emailValid((new User)->getTable(), 'email')]
                 : ['required', 'email:rfc'],
             'name' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
@@ -111,6 +119,12 @@ class TeamMemberForm extends BaseForm
 
     /** @return array<string, string> */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /** @return array<string, string> */
+    public static function fieldNames(): array
     {
         return [
             'email' => __('team.invite.email'),
