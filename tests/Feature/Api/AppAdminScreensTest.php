@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Admin\FindOrphanInstances;
 use App\Classes\Main\BusinessLedger;
 use App\Classes\Main\CollectionsDesk;
+use App\Classes\Main\OpeningHours;
 use App\Classes\Main\PlatformBoard;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
@@ -12,9 +13,12 @@ use App\Enums\PlatformSensorStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
+use App\Models\Region;
+use App\Models\SocialLink;
 use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -189,10 +193,11 @@ test('the menu is the web\'s admin menu, in its order, cut to the screens the ap
     $admin = screensGet(screensToken('admin'), 'menu')->assertOk()->json('data');
 
     // "Negocios" and "Cobros" are groups in the web's menu: they keep their place and hold only the screens the app has.
-    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null])
-        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing')])
+    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null, null])
+        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing'), __('menu.admin_platform')])
         ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
-        ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections']);
+        ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections'])
+        ->and(array_column($admin[4]['children'], 'screen'))->toBe(['admin.company']);
 });
 
 test('support holds no key for the board, so its menu has the home and the businesses it may look up', function (): void {
@@ -503,6 +508,72 @@ test('without the key of the payments Cobranza is closed', function (): void {
 
 test('a customer\'s token reads nothing of Cobranza', function (): void {
     screensGet(appInstallToken(payingUser()), 'collections')->assertForbidden()->assertJsonPath('code', 'staff_only');
+});
+
+test('Compañía hands over the company\'s data in the words of the web form, with a dash where nothing was filled in', function (): void {
+    $region = Region::factory()->create(['name' => 'Zona Norte']);
+    $company = Company::factory()->create([
+        'legal_name' => 'Aliadito Servicios S.A.',
+        'brand_name' => 'Aliadito',
+        'tagline' => null,
+        'region_id' => $region->id,
+        'tax_id' => '30123456789',
+        'opening_schedule' => ['1' => ['09:00', '18:00'], '2' => ['09:00', '18:00']],
+        'payment_instructions' => null,
+    ]);
+    SocialLink::factory()->for($company, 'linkable')->create(['sort_order' => 2, 'url' => 'https://example.com/second']);
+    SocialLink::factory()->for($company, 'linkable')->create(['sort_order' => 1, 'url' => 'https://example.com/first']);
+
+    $data = screensGet(screensToken(), 'company')->assertOk()->json('data');
+    $fields = collect($data['sections'])->flatMap(fn (array $section): array => $section['fields'])->keyBy('key');
+
+    expect($data['title'])->toBe(__('company.title'))
+        ->and(array_column($data['sections'], 'key'))->toBe(['identity', 'address', 'tax', 'footer', 'contact'])
+        ->and($data['sections'][0]['title'])->toBe(__('company.identity.title'))
+        ->and($fields['legal_name'])->toBe(['key' => 'legal_name', 'label' => __('company.fields.legal_name'), 'value' => 'Aliadito Servicios S.A.', 'mono' => false])
+        ->and($fields['tax_id']['mono'])->toBeTrue()
+        // A field nobody filled in reads as a dash, never as an empty string.
+        ->and($fields['tagline']['value'])->toBe('—')->and($fields['payment_instructions']['value'])->toBe('—')
+        ->and($fields['region']['value'])->toBe('Zona Norte')
+        ->and($fields['province']['value'])->toBe($region->province->name)
+        ->and($fields['country']['value'])->toBe($region->province->country->name)
+        // The week in words, as the web's own helper says it.
+        ->and($fields['opening_schedule']['value'])->toBe((new OpeningHours(OpeningHours::normalize($company->opening_schedule), 'UTC'))->summary)
+        ->and(array_column($data['social']['rows'], 'url'))->toBe(['https://example.com/first', 'https://example.com/second'])
+        ->and($data['logos']['light']['url'])->toBeNull();
+});
+
+test('Compañía with no company ever loaded is the web\'s blank form: every field a dash, no error', function (): void {
+    $data = screensGet(screensToken(), 'company')->assertOk()->json('data');
+    $values = collect($data['sections'])->flatMap(fn (array $section): array => array_column($section['fields'], 'value'))->unique()->all();
+
+    expect($values)->toBe(['—'])->and($data['social']['rows'])->toBe([]);
+});
+
+/** The opening-hours line of the company sheet, as the app reads it. */
+function companyHours(): string
+{
+    return collect(screensGet(screensToken(), 'company')->assertOk()->json('data.sections.4.fields'))->firstWhere('key', 'opening_schedule')['value'];
+}
+
+test('a company without a declared week reads as not set, never as closed', function (): void {
+    Company::factory()->create(['opening_schedule' => null]);
+
+    expect(companyHours())->toBe('—');
+});
+
+test('a company with a declared week and no shift at all reads as closed', function (): void {
+    Company::factory()->create(['opening_schedule' => []]);
+
+    expect(companyHours())->toBe(__('company.hours.closed'));
+});
+
+test('without the key of the company screen Compañía is closed', function (): void {
+    screensGet(screensToken('support'), 'company')->assertForbidden();
+});
+
+test('a customer\'s token reads nothing of Compañía', function (): void {
+    screensGet(appInstallToken(payingUser()), 'company')->assertForbidden()->assertJsonPath('code', 'staff_only');
 });
 
 test('Inicio with nothing pending offers the clear sentence of the web', function (): void {
