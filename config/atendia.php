@@ -605,7 +605,7 @@ return [
         // Client-menu route names the mobile app already has a screen for.
         'screens' => ['conversations', 'customers', 'my-services', 'my-products', 'agenda', 'whatsapp', 'my-plan', 'my-business'],
         // The same for the platform's staff: admin-menu route names the app has a screen for. It grows with each delivery.
-        'admin_screens' => ['admin.dashboard', 'admin.alerts', 'admin.businesses', 'admin.payments', 'admin.collections', 'admin.company'],
+        'admin_screens' => ['admin.dashboard', 'admin.alerts', 'admin.businesses', 'admin.payments', 'admin.collections', 'admin.company', 'admin.support'],
         'conversations_per_page' => 20,
         'messages_per_page' => 30,
 

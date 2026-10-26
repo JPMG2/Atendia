@@ -152,7 +152,9 @@ class SupportTicket extends Model
     {
         return $query
             ->orderByRaw("case when status in ('new','open','waiting','blocked') then 0 else 1 end")
-            ->orderBy('created_at');
+            ->orderBy('created_at')
+            // Equal arrival times keep a fixed order: the app asks for longer slices and none may reshuffle.
+            ->orderBy('id');
     }
 
     /**

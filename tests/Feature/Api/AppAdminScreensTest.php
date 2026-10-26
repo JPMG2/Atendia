@@ -7,6 +7,7 @@ use App\Classes\Main\BusinessLedger;
 use App\Classes\Main\CollectionsDesk;
 use App\Classes\Main\OpeningHours;
 use App\Classes\Main\PlatformBoard;
+use App\Classes\Main\SupportQueue;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformSensorStatus;
@@ -14,12 +15,15 @@ use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
 use App\Models\Company;
+use App\Models\HelpArticle;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
 use App\Models\Region;
 use App\Models\SocialLink;
 use App\Models\Subscription;
+use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\PlanSeeder;
@@ -28,6 +32,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -193,17 +199,17 @@ test('the menu is the web\'s admin menu, in its order, cut to the screens the ap
     $admin = screensGet(screensToken('admin'), 'menu')->assertOk()->json('data');
 
     // "Negocios" and "Cobros" are groups in the web's menu: they keep their place and hold only the screens the app has.
-    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null, null])
-        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing'), __('menu.admin_platform')])
+    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null, 'admin.support', null])
+        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing'), __('menu.admin_support'), __('menu.admin_platform')])
         ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
         ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections'])
-        ->and(array_column($admin[4]['children'], 'screen'))->toBe(['admin.company']);
+        ->and(array_column($admin[5]['children'], 'screen'))->toBe(['admin.company']);
 });
 
-test('support holds no key for the board, so its menu has the home and the businesses it may look up', function (): void {
+test('support holds no key for the board, so its menu has the home, the businesses it may look up and its own desk', function (): void {
     $support = screensGet(screensToken('support'), 'menu')->assertOk()->json('data');
 
-    expect(array_column($support, 'screen'))->toBe(['admin.dashboard', null])
+    expect(array_column($support, 'screen'))->toBe(['admin.dashboard', null, 'admin.support'])
         ->and(array_column($support[1]['children'], 'screen'))->toBe(['admin.businesses']);
 });
 
@@ -574,6 +580,253 @@ test('without the key of the company screen Compañía is closed', function (): 
 
 test('a customer\'s token reads nothing of Compañía', function (): void {
     screensGet(appInstallToken(payingUser()), 'company')->assertForbidden()->assertJsonPath('code', 'staff_only');
+});
+
+/** A report of a business, with the fields the queue reads; the rest is the factory's. */
+function supportReport(Business $business, array $fields = []): SupportTicket
+{
+    return SupportTicket::factory()->create(['business_id' => $business->id, 'code' => SupportTicket::freshCode(), ...$fields]);
+}
+
+test('the support queue reads from the very pieces the web desk reads: counts, order, rows and words', function (): void {
+    config()->set('atendia.support.overdue_hours_high', 4);
+    $late = ledgerBusiness('Panadería La Esquina', SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
+    $fine = ledgerBusiness('Ferretería El Tornillo');
+    $urgent = supportReport($late, ['priority' => 'high', 'created_at' => now()->subHours(30), 'body' => 'No me deja guardar los productos.']);
+    $newer = supportReport($fine, ['status' => 'waiting', 'answered_at' => now()->subHours(2)]);
+    $data = screensGet(screensToken(), 'support')->assertOk()->json('data');
+    $row = $data['rows'][0];
+
+    expect($data['title'])->toBe(__('support.admin.title'))
+        ->and($data['queue'])->toBe('answer')
+        ->and(array_column($data['tabs'], 'key'))->toBe(['answer', 'waiting', 'blocked', 'resolved', 'help'])
+        ->and($data['tabs'][0])->toMatchArray(['label' => __('support.admin.tabs.answer'), 'count' => 1, 'late' => true])
+        ->and($data['tabs'][1]['count'])->toBe(1)
+        // The help tab carries no badge while nothing needs eyes.
+        ->and($data['tabs'][4]['count'])->toBeNull()
+        ->and($data['total'])->toBe(trans_choice('support.admin.count', 2, ['count' => 2]))
+        ->and($data['oldest'])->toBe(__('support.admin.oldest', ['time' => $urgent->refresh()->waitLabel()]))
+        ->and($row)->toMatchArray([
+            'id' => $urgent->id,
+            'code' => $urgent->code,
+            'excerpt' => 'No me deja guardar los productos.',
+            'late' => true,
+            'assignee' => null,
+            'priority' => ['label' => __('support.admin.priorities.high'), 'tone' => 'danger'],
+            'blocked' => null,
+        ])
+        ->and($row['wait']['overdue'])->toBe(__('support.admin.overdue', ['hours' => 4]))
+        ->and($row['business'])->toMatchArray(['id' => $late->id, 'name' => 'Panadería La Esquina'])
+        ->and($row['business']['payment']['tone'])->toBe('warning')
+        ->and($data['rows'])->toHaveCount(1)
+        ->and($newer->id)->not->toBe($urgent->id);
+});
+
+test('the blocked queue says what is missing, who follows and when, and the waiting one says it waits for the business', function (): void {
+    $business = ledgerBusiness('Kiosco La Esquina');
+    supportReport($business, ['status' => 'blocked', 'blocked_tried' => 'Reiniciamos el puente.', 'blocked_missing' => 'Que Meta apruebe la plantilla.', 'blocked_owner' => 'Meta', 'blocked_due' => today()->subDay(), 'blocked_at' => now()->subDays(3)]);
+    supportReport($business, ['status' => 'waiting', 'answered_at' => now()->subHour()]);
+    $token = screensToken();
+
+    $blocked = screensGet($token, 'support?queue=blocked')->assertOk()->json('data');
+
+    expect($blocked['rows'][0]['blocked'])->toBe([
+        'missing' => 'Que Meta apruebe la plantilla.',
+        'owner' => 'Meta',
+        'late' => true,
+        'follows' => __('support.admin.block.late', ['date' => today()->subDay()->format('d/m')]),
+    ])->and($blocked['tabs'][2]['late'])->toBeTrue();
+});
+
+test('the waiting queue reads as waiting for the business', function (): void {
+    supportReport(ledgerBusiness('Kiosco La Esquina'), ['status' => 'waiting', 'answered_at' => now()->subHour()]);
+    $waiting = screensGet(screensToken(), 'support?queue=waiting')->assertOk()->json('data');
+
+    expect($waiting['rows'][0]['wait']['note'])->toBe(__('support.admin.waiting_business'))
+        ->and($waiting['rows'][0]['wait']['overdue'])->toBeNull();
+});
+
+test('the queue is cut by search, kind and owner, and says which truth an empty list is', function (): void {
+    $business = ledgerBusiness('Panadería La Esquina');
+    $mine = supportReport($business, ['body' => 'Falla el calendario de citas', 'kind' => 'problem']);
+    supportReport($business, ['body' => 'Una idea para el informe', 'kind' => 'idea']);
+    $token = screensToken();
+
+    $cut = screensGet($token, 'support?search=calendario')->assertOk()->json('data');
+    $nobody = screensGet($token, 'support?who=none&kind=idea')->assertOk()->json('data');
+    $nothing = screensGet($token, 'support?search=zzzz')->assertOk()->json('data');
+
+    expect(array_column($cut['rows'], 'id'))->toBe([$mine->id])
+        ->and($cut['is_filtered'])->toBeTrue()->and($cut['applied']['search'])->toBe('calendario')
+        ->and($nobody['rows'])->toHaveCount(1)
+        ->and($nothing['rows'])->toBe([])
+        ->and($nothing['empty'])->toBe(['title' => __('support.admin.no_match_title'), 'body' => __('support.admin.no_match_body')]);
+});
+
+test('a queue that is simply clear and a desk nobody ever wrote to say different things', function (): void {
+    $token = screensToken();
+
+    expect(screensGet($token, 'support')->json('data.empty'))->toBe(['title' => __('support.admin.empty_title'), 'body' => __('support.admin.empty_body')]);
+});
+
+test('odd input to the support queue is read as nothing, never a 500, and the web\'s ceiling of 100 holds', function (): void {
+    $business = ledgerBusiness('Panadería La Esquina');
+
+    foreach (range(1, 105) as $n) {
+        supportReport($business);
+    }
+
+    $token = screensToken();
+
+    foreach (['search[]=a', 'kind[]=x', 'business[]=1', 'who[]=1', 'queue[]=answer', 'page=0', 'page=-3', 'page[]=2', 'business=abc', 'queue=nonsense', 'who=1%27'] as $odd) {
+        screensGet($token, 'support?'.$odd)->assertOk();
+    }
+
+    $first = screensGet($token, 'support')->json('data');
+    $last = screensGet($token, 'support?page=99999999999')->json('data');
+
+    expect($first['rows'])->toHaveCount(25)->and($first['has_more'])->toBeTrue()
+        ->and($last['rows'])->toHaveCount(100)->and($last['has_more'])->toBeFalse();
+});
+
+test('a report opens with its thread, its notes, what is blocked, what the widget captured and its customer', function (): void {
+    config()->set('atendia.support.overdue_hours', 24);
+    $business = ledgerBusiness('Panadería La Esquina', SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
+    $ticket = supportReport($business, [
+        'status' => 'blocked',
+        'body' => 'No puedo conectar mi WhatsApp.',
+        'blocked_tried' => 'Reiniciamos el puente.',
+        'blocked_missing' => 'Que Meta apruebe la plantilla.',
+        'blocked_owner' => 'Meta',
+        'blocked_due' => today()->addDays(3),
+        'blocked_at' => now()->subDay(),
+        'attachment_path' => 'support/secret-shot.png',
+        'context' => ['url' => 'https://example.com/whatsapp', 'viewport' => '390x800', 'errors' => 'TypeError: x is undefined'],
+        'ai_suggestion' => ['summary' => 'No conecta el QR.', 'confidence' => 'high', 'kind' => 'problem', 'priority' => 'normal', 'draft' => 'Escanea el QR de nuevo desde Ajustes.', 'used' => [], 'reason' => 'Coincide con la guía.'],
+    ]);
+    $team = User::factory()->create(['name' => 'Ana Soporte']);
+    SupportTicketMessage::query()->create(['support_ticket_id' => $ticket->id, 'business_id' => $business->id, 'user_id' => $team->id, 'body' => 'Estamos revisándolo.', 'is_internal' => false, 'delivery' => 'whatsapp']);
+    SupportTicketMessage::query()->create(['support_ticket_id' => $ticket->id, 'business_id' => $business->id, 'user_id' => $team->id, 'body' => 'Nota: parece el token vencido.', 'is_internal' => true]);
+    supportReport($business, ['status' => 'resolved', 'resolved_at' => now()]);
+
+    $data = screensGet(screensToken(), 'support/'.$ticket->id)->assertOk()->json('data');
+
+    expect($data['head'])->toBe(['title' => 'Panadería La Esquina', 'subtitle' => $ticket->code.' · '.$ticket->kind->name.' · '.SupportQueue::screenName('my-products')])
+        ->and($data['state']['status']['label'])->toBe(__('support.admin.statuses.blocked'))
+        ->and(array_column($data['panels'], 'key'))->toBe(['thread', 'notes', 'customer'])
+        ->and($data['panels'][1]['badge'])->toBe(1)
+        ->and($data['thread']['report']['body'])->toBe('No puedo conectar mi WhatsApp.')
+        // The file is announced, never served: no path, no address.
+        ->and($data['thread']['report']['attachment'])->toBe(__('support.admin.attachment'))
+        ->and(json_encode($data))->not->toContain('secret-shot')
+        ->and($data['thread']['answers'][0])->toMatchArray(['body' => 'Estamos revisándolo.', 'author' => 'Ana Soporte'])
+        ->and($data['thread']['answers'][0]['delivery'])->toBe(['label' => __('support.admin.delivery.whatsapp'), 'tone' => 'brand'])
+        ->and($data['notes']['rows'][0]['body'])->toBe('Nota: parece el token vencido.')
+        ->and($data['handoff']['rows'][1])->toBe(['label' => __('support.admin.block.missing'), 'value' => 'Que Meta apruebe la plantilla.'])
+        ->and($data['context']['errors']['lines'])->toBe(['TypeError: x is undefined'])
+        ->and($data['ai']['draft'])->toBe('Escanea el QR de nuevo desde Ajustes.')
+        ->and($data['ai']['confidence']['tone'])->toBe('success')
+        ->and($data['customer']['rows'][2])->toMatchArray(['label' => __('support.admin.customer.payment_label'), 'tone' => 'warning'])
+        ->and($data['customer']['others']['rows'])->toHaveCount(1)
+        ->and($data['customer']['business'])->toBe($business->id)
+        ->and($data['settled'])->toBeNull();
+});
+
+test('a settled report ends on how long it took, and the AI reading is gone', function (): void {
+    $ticket = supportReport(ledgerBusiness('Kiosco La Esquina'), ['status' => 'resolved', 'resolved_at' => now(), 'ai_suggestion' => ['summary' => 'x', 'confidence' => 'low', 'draft' => 'y']]);
+    $data = screensGet(screensToken(), 'support/'.$ticket->id)->assertOk()->json('data');
+
+    expect($data['settled'])->toStartWith(substr(__('support.admin.resolved_in', ['time' => 'X']), 0, 12))->and($data['ai'])->toBeNull();
+});
+
+test('a report that does not exist is a plain 404, and ids out of range never reach the database', function (): void {
+    $token = screensToken();
+
+    screensGet($token, 'support/999999')->assertNotFound();
+    screensGet($token, 'support/99999999999999999999')->assertNotFound();
+    screensGet($token, 'support/abc')->assertNotFound();
+});
+
+test('a report of a business that closed its account still opens, with no customer beside it', function (): void {
+    $business = ledgerBusiness('Kiosco La Esquina');
+    $ticket = supportReport($business, ['body' => 'Quiero cerrar mi cuenta.']);
+    $business->delete();
+
+    $data = screensGet(screensToken(), 'support/'.$ticket->id)->assertOk()->json('data');
+
+    expect($data['thread']['report']['body'])->toBe('Quiero cerrar mi cuenta.')->and($data['customer'])->toBeNull();
+});
+
+test('a reading or a capture written in an odd shape is read as text, never a crash', function (): void {
+    $ticket = supportReport(ledgerBusiness('Kiosco La Esquina'), [
+        'context' => ['url' => ['not', 'a', 'string'], 'errors' => ['x', 'y'], 'viewport' => '390x800'],
+        'ai_suggestion' => ['summary' => ['x'], 'confidence' => ['high'], 'kind' => ['problem'], 'draft' => 'Borrador válido.', 'used' => [['a'], 'b'], 'looks_like' => ['ATN-1'], 'reason' => ['y']],
+    ]);
+
+    $data = screensGet(screensToken(), 'support/'.$ticket->id)->assertOk()->json('data');
+
+    expect($data['ai']['draft'])->toBe('Borrador válido.')->and($data['ai']['summary'])->toBe('')->and($data['ai']['confidence']['tone'])->toBe('neutral')
+        ->and($data['context']['rows'][0]['label'])->not->toBe('');
+});
+
+test('a kind the desk does not know is no filter, and says so', function (): void {
+    supportReport(ledgerBusiness('Kiosco La Esquina'));
+    $data = screensGet(screensToken(), 'support?kind=zzz')->assertOk()->json('data');
+
+    expect($data['is_filtered'])->toBeFalse()->and($data['applied']['kind'])->toBe('')->and($data['rows'])->toHaveCount(1);
+});
+
+test('reports that arrived at the same moment keep their order as the app asks for more', function (): void {
+    $business = ledgerBusiness('Panadería La Esquina');
+    $moment = now()->subDay();
+
+    foreach (range(1, 27) as $n) {
+        supportReport($business, ['created_at' => $moment]);
+    }
+
+    $token = screensToken();
+    $first = screensGet($token, 'support')->json('data.rows');
+    $second = screensGet($token, 'support?page=2')->json('data.rows');
+
+    expect($first)->toHaveCount(25)->and($second)->toHaveCount(27)
+        ->and(array_slice(array_column($second, 'id'), 0, 25))->toBe(array_column($first, 'id'));
+});
+
+test('the help tab brings the answers that fail, the stale ones and the screens reported most', function (): void {
+    HelpArticle::factory()->create(['title' => 'Cómo conectar WhatsApp', 'helpful_count' => 1, 'unhelpful_count' => 5]);
+    HelpArticle::factory()->create(['title' => 'Cambiar el horario', 'updated_at' => now()->subMonths(8)]);
+    supportReport(ledgerBusiness('Kiosco La Esquina'), ['screen' => 'my-products']);
+    $data = screensGet(screensToken(), 'support/help')->assertOk()->json('data');
+
+    expect($data['failing']['rows'][0])->toMatchArray(['title' => 'Cómo conectar WhatsApp', 'count' => 5])
+        ->and($data['stale']['rows'][0]['title'])->toBe('Cambiar el horario')
+        ->and($data['pain']['rows'][0])->toBe(['screen' => SupportQueue::screenName('my-products'), 'total' => 1])
+        ->and($data['empty'])->toBeNull();
+});
+
+test('the help tab with nothing to look at says so, as the web does', function (): void {
+    expect(screensGet(screensToken(), 'support/help')->json('data.empty'))->toBe(['title' => __('support.admin.help_empty_title'), 'body' => __('support.admin.help_empty_body')]);
+});
+
+test('the support role holds the key of Soporte', function (): void {
+    supportReport(ledgerBusiness('Kiosco La Esquina'));
+
+    screensGet(screensToken('support'), 'support')->assertOk();
+});
+
+test('another staff role without the key of Soporte is refused at its three doors', function (): void {
+    $ticket = supportReport(ledgerBusiness('Kiosco La Esquina'));
+
+    Role::findOrCreate('desk', 'web')->givePermissionTo(Permission::findByName('access-admin-panel', 'web'));
+    $token = screensToken('desk');
+
+    screensGet($token, 'support')->assertForbidden();
+    screensGet($token, 'support/help')->assertForbidden();
+    screensGet($token, 'support/'.$ticket->id)->assertForbidden();
+});
+
+test('a customer\'s token reads nothing of Soporte', function (): void {
+    screensGet(appInstallToken(payingUser()), 'support')->assertForbidden()->assertJsonPath('code', 'staff_only');
 });
 
 test('Inicio with nothing pending offers the clear sentence of the web', function (): void {

@@ -13,8 +13,15 @@ use Illuminate\Support\Str;
  */
 final class TicketEvidence
 {
-    /** @param array<string, mixed>|null $context */
-    public function __construct(private readonly ?array $context) {}
+    /** @var array<string, bool|float|int|string> */
+    private readonly array $context;
+
+    /** @param  array<array-key, mixed>|null  $context */
+    public function __construct(?array $context)
+    {
+        // The widget of a business wrote this: only plain values are read, so a malformed one cannot crash the panel.
+        $this->context = array_filter($context ?? [], is_scalar(...));
+    }
 
     /**
      * The captured facts, labelled, in the order they help: where, on what,

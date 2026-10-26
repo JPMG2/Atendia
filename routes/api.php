@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\AdminHomeController;
 use App\Http\Controllers\Api\V1\AdminMenuController;
 use App\Http\Controllers\Api\V1\AdminPaymentsController;
 use App\Http\Controllers\Api\V1\AdminSessionController;
+use App\Http\Controllers\Api\V1\AdminSupportController;
 use App\Http\Controllers\Api\V1\AgendaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
@@ -92,6 +93,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('payments', AdminPaymentsController::class)->middleware('can:payments.view');
             Route::get('collections', AdminCollectionsController::class)->middleware('can:payments.view');
             Route::get('company', AdminCompanyController::class)->middleware('can:company.manage');
+            Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');
+            Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');
+            Route::get('support/{ticket}', [AdminSupportController::class, 'show'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
         });
 
         // The one door both kinds of token share: it tells the app which side it is on (`staff`).
