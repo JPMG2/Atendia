@@ -2,18 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Actions\Admin\FindOrphanInstances;
+use App\Classes\Main\BusinessLedger;
 use App\Classes\Main\PlatformBoard;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformSensorStatus;
+use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
+use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
+use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\TestResponse;
 
@@ -178,14 +184,165 @@ test('a person without the key of Avisos is refused there, but not at the door o
 test('the menu is the web\'s admin menu, in its order, cut to the screens the app has and to what the person may open', function (): void {
     $admin = screensGet(screensToken('admin'), 'menu')->assertOk()->json('data');
 
-    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts'])
-        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts')]);
+    // "Negocios" is a group in the web's menu: it keeps its place and holds only the screens the app has.
+    expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null])
+        ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses')])
+        ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses']);
 });
 
-test('support holds no key for the board, so its menu has only the home', function (): void {
+test('support holds no key for the board, so its menu has the home and the businesses it may look up', function (): void {
     $support = screensGet(screensToken('support'), 'menu')->assertOk()->json('data');
 
-    expect(array_column($support, 'screen'))->toBe(['admin.dashboard']);
+    expect(array_column($support, 'screen'))->toBe(['admin.dashboard', null])
+        ->and(array_column($support[1]['children'], 'screen'))->toBe(['admin.businesses']);
+});
+
+test('an alarm about a business leads to its ficha in the app, with the word of the web\'s button', function (): void {
+    $business = Business::factory()->create();
+    PlatformEvent::factory()->ofKind(PlatformEventKind::WhatsAppDisconnected)->create(['about_business_id' => $business->id]);
+
+    $data = screensGet(screensToken(), 'alerts')->assertOk()->json('data');
+
+    expect($data['events']['rows'][0]['target'])->toBe(['screen' => 'admin.businesses', 'query' => ['negocio' => $business->id]])
+        ->and($data['events']['go'])->toBe(__('platform_events.screen.go'))
+        ->and($data['sensors']['labels']['open'])->toBe(__('platform_events.screen.detail_open'));
+});
+
+/** A business with the plan row that decides its situation. */
+function ledgerBusiness(string $name, SubscriptionStatus $status = SubscriptionStatus::Active, array $plan = []): Business
+{
+    $business = Business::factory()->create(['name' => $name]);
+
+    Subscription::factory()->for($business)->create([
+        'plan' => 'negocio',
+        'status' => $status,
+        'billing_cycle' => 'monthly',
+        'current_period_ends_at' => now()->addDays(10),
+        ...$plan,
+    ]);
+
+    return $business->refresh();
+}
+
+test('Negocios reads from the very piece the web list reads: the rows, the count and the words', function (): void {
+    ledgerBusiness('Odontología Norte');
+    ledgerBusiness('Panadería La Esquina', SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
+
+    $ledger = new BusinessLedger;
+    $data = screensGet(screensToken(), 'businesses')->assertOk()->json('data');
+
+    expect($data['rows'])->toBe($ledger->rows)
+        ->and($data['count_label'])->toBe($ledger->countLabel)
+        ->and($data['title'])->toBe(__('admin.businesses.title'))
+        ->and($data['labels'])->toBe($ledger->labels)
+        ->and($data['states']['options'])->toBe($ledger->stateOptions)
+        ->and(array_column($data['rows'], 'name'))->toBe(['Odontología Norte', 'Panadería La Esquina']);
+
+    $late = collect($data['rows'])->firstWhere('name', 'Panadería La Esquina');
+
+    expect($late['state'])->toBe('past_due')
+        ->and($late['state_label'])->toBe(__('admin.businesses.states.past_due'))
+        ->and($late['owes'])->toStartWith('USD ')
+        ->and(collect($data['rows'])->firstWhere('name', 'Odontología Norte')['owes'])->toBe('—');
+});
+
+test('odd input to the list is read as nothing, never a 500, and the last page promises no more', function (): void {
+    ledgerBusiness('Odontología Norte');
+    $token = screensToken();
+
+    foreach (['search[]=a', 'state[]=paused', 'page=0', 'page=-3', 'page[]=2', 'page=99999999999'] as $odd) {
+        screensGet($token, 'businesses?'.$odd)->assertOk()->assertJsonCount(1, 'data.rows');
+    }
+
+    expect(screensGet($token, 'businesses?page=99999999999')->json('data.has_more'))->toBeFalse();
+});
+
+test('the search finds without accents and the state cuts the list, as on the web', function (): void {
+    ledgerBusiness('Odontología Norte');
+    ledgerBusiness('Panadería La Esquina', SubscriptionStatus::Paused);
+    $token = screensToken();
+
+    expect(array_column(screensGet($token, 'businesses?search=odontologia')->json('data.rows'), 'name'))->toBe(['Odontología Norte'])
+        ->and(array_column(screensGet($token, 'businesses?state=paused')->json('data.rows'), 'name'))->toBe(['Panadería La Esquina'])
+        ->and(screensGet($token, 'businesses?search=zzzz')->json('data.empty'))->toBe(__('admin.businesses.no_match'));
+
+    // A state the list does not offer reads as all of them, never as an error.
+    expect(screensGet($token, 'businesses?state=nonsense')->assertOk()->json('data.rows'))->toHaveCount(2);
+});
+
+test('the list pages in SQL in tranches of twenty-five and says how many are held back', function (): void {
+    Business::factory()->count(30)->create();
+    $token = screensToken();
+
+    $first = screensGet($token, 'businesses')->json('data');
+    $second = screensGet($token, 'businesses?page=2')->json('data');
+
+    expect($first['rows'])->toHaveCount(25)->and($first['has_more'])->toBeTrue()
+        ->and($first['count_label'])->toBe(trans_choice('admin.businesses.count', 30, ['count' => 30]))
+        ->and($second['rows'])->toHaveCount(30)->and($second['has_more'])->toBeFalse();
+});
+
+test('the ficha brings the three cards, what the plan row says about leaving and the last payments', function (): void {
+    $business = ledgerBusiness('Estudio Contable Ríos', SubscriptionStatus::Active, ['canceled_at' => now()->subDay()]);
+    Payment::factory()->for($business)->create(['plan' => 'negocio', 'status' => 'pending']);
+
+    $ficha = screensGet(screensToken(), 'businesses/'.$business->id)->assertOk()->json('data');
+
+    expect($ficha['name'])->toBe('Estudio Contable Ríos')
+        ->and($ficha['removed'])->toBeFalse()
+        ->and(array_column($ficha['cards'], 'key'))->toBe(['plan', 'next', 'owes'])
+        ->and($ficha['cards'][0]['label'])->toBe(__('admin.businesses.card.plan'))
+        ->and($ficha['cards'][0]['value'])->toBe(__('plan.names.negocio'))
+        ->and($ficha['payments']['rows'])->toHaveCount(1)
+        ->and($ficha['payments']['rows'][0]['status'])->toBe(__('billing.history.statuses.pending'));
+});
+
+test('a removed business opens too, marked as removed, and one that does not exist is a 404', function (): void {
+    $business = ledgerBusiness('Kiosco El Faro');
+    $business->delete();
+    $token = screensToken();
+
+    screensGet($token, 'businesses/'.$business->id)->assertOk()->assertJsonPath('data.removed', true);
+    screensGet($token, 'businesses/99999999')->assertNotFound();
+});
+
+test('the bridge\'s orphan instances show only to whoever may manage businesses, seen and never freed from here', function (): void {
+    Cache::put(FindOrphanInstances::CACHE_KEY, ['names' => ['business-77'], 'at' => now()->toIso8601String()], now()->addDay());
+
+    $orphans = screensGet(screensToken('admin'), 'businesses')->assertOk()->json('data.orphans');
+
+    expect($orphans['names'])->toBe(['business-77'])->and($orphans['title'])->toBe(__('admin.businesses.orphans.title'));
+});
+
+test('support may look businesses up but is not shown the orphan instances', function (): void {
+    Cache::put(FindOrphanInstances::CACHE_KEY, ['names' => ['business-77'], 'at' => now()->toIso8601String()], now()->addDay());
+
+    screensGet(screensToken('support'), 'businesses')->assertOk()->assertJsonPath('data.orphans', null);
+});
+
+test('without the key of Negocios the list and the ficha are closed, and a customer reads neither', function (): void {
+    $business = ledgerBusiness('Taller Luz');
+    $nobody = User::factory()->create(['email_verified_at' => now()]);
+    $nobody->givePermissionTo('access-admin-panel');
+
+    Mail::fake();
+    $id = test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login', ['email' => $nobody->email, 'password' => 'password', 'device_name' => 'Pixel 8'])->assertStatus(202)->json('challenge.id');
+    $code = '';
+    Mail::assertQueued(DeviceChallengeCode::class, function (DeviceChallengeCode $mail) use (&$code): bool {
+        $code = $mail->code;
+
+        return true;
+    });
+    $token = test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login/challenge', ['challenge_id' => $id, 'code' => $code])->json('token');
+
+    screensGet($token, 'businesses')->assertForbidden();
+    screensGet($token, 'businesses/'.$business->id)->assertForbidden();
+});
+
+test('a customer\'s token reads no business of the platform', function (): void {
+    $token = appInstallToken(payingUser());
+
+    screensGet($token, 'businesses')->assertForbidden()->assertJsonPath('code', 'staff_only');
 });
 
 test('Inicio serves the web\'s "needs you today" card with its words, and keeps every line even when the app lacks its screen', function (): void {

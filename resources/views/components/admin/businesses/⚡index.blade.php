@@ -1,10 +1,10 @@
 <?php
 
-use App\Actions\Admin\FindOrphanInstances;
 use App\Actions\Admin\ReleaseBridgeInstance;
 use App\Actions\Admin\RemoveBusiness;
 use App\Actions\Admin\RestoreBusiness;
 use App\Actions\Billing\CancelSubscription;
+use App\Classes\Main\BusinessLedger;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Models\Business;
@@ -13,7 +13,6 @@ use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -48,44 +47,29 @@ new class extends Component
     }
 
     /** The list walks in tranches: a platform with thousands of businesses is never loaded whole. */
-    private const int PAGE = 25;
-
-    public int $visible = self::PAGE;
+    public int $visible = BusinessLedger::PAGE;
 
     public function loadMore(): void
     {
-        $this->visible += self::PAGE;
+        $this->visible += BusinessLedger::PAGE;
     }
 
     /** A new cut starts from the top again, not from wherever she had scrolled to. */
     public function updatedSearch(): void
     {
-        $this->visible = self::PAGE;
+        $this->visible = BusinessLedger::PAGE;
     }
 
     public function updatedState(): void
     {
-        $this->visible = self::PAGE;
+        $this->visible = BusinessLedger::PAGE;
     }
 
+    /** The list, its counts and its words, built once per request by the piece the mobile API reads too. */
     #[Computed]
-    public function total(): int
+    public function ledger(): BusinessLedger
     {
-        return Business::directoryTotal($this->state);
-    }
-
-    /** How many match the search and the state, of which the page shows `visible`. */
-    #[Computed]
-    public function matching(): int
-    {
-        return Business::directoryMatching($this->search, $this->state);
-    }
-
-    /** @return Collection<int, Business> */
-    #[Computed]
-    public function businesses(): Collection
-    {
-        return Business::directory($this->search, $this->state, $this->visible);
+        return new BusinessLedger($this->search, $this->state, $this->visible, $this->open);
     }
 
     /**
@@ -97,9 +81,7 @@ new class extends Component
     #[Computed]
     public function stateOptions(): array
     {
-        return collect(['problem', 'trialing', 'active', 'past_due', 'paused', 'canceling', 'ended', 'suspended', 'none', 'removed'])
-            ->mapWithKeys(fn (string $state): array => [$state => __('admin.businesses.states.'.$state)])
-            ->all();
+        return collect($this->ledger->stateOptions)->pluck('label', 'value')->all();
     }
 
     #[Computed]
@@ -155,7 +137,7 @@ new class extends Component
         }
 
         $this->open = null;
-        unset($this->businesses, $this->ficha, $this->total, $this->matching);
+        unset($this->ledger, $this->ficha);
 
         $this->dispatchNotification(new NotificationDto(__('admin.businesses.remove.done'), NotificationType::Success));
     }
@@ -195,23 +177,9 @@ new class extends Component
         app(RestoreBusiness::class)->handle($business);
 
         $this->state = '';
-        unset($this->businesses, $this->ficha, $this->total, $this->matching);
+        unset($this->ledger, $this->ficha);
 
         $this->dispatchNotification(new NotificationDto(__('admin.businesses.restore.done'), NotificationType::Success));
-    }
-
-    /**
-     * What the last look at the bridge found, with its hour: the screen never
-     * calls the bridge on a render, the sweep does.
-     *
-     * @return array{names: list<string>, at: Carbon\CarbonImmutable}|null
-     */
-    #[Computed]
-    public function orphans(): ?array
-    {
-        $seen = FindOrphanInstances::lastKnown();
-
-        return $seen === null || $seen['names'] === [] ? null : $seen;
     }
 
     public function releaseOrphan(string $instance): void
@@ -226,7 +194,7 @@ new class extends Component
             return;
         }
 
-        unset($this->orphans);
+        unset($this->ledger);
 
         $this->dispatchNotification(new NotificationDto(
             $freed ? __('admin.businesses.orphans.done') : __('admin.businesses.orphans.refused'),
@@ -250,18 +218,12 @@ new class extends Component
             ? app(CancelSubscription::class)->handle($subscription)
             : app(CancelSubscription::class)->undo($subscription);
 
-        unset($this->businesses, $this->ficha);
+        unset($this->ledger, $this->ficha);
 
         return new NotificationDto(
             $cancel ? __('admin.businesses.cancel.done') : __('admin.businesses.cancel.undone'),
             NotificationType::Success,
         );
-    }
-
-    /** The one word that names a business's situation, worst news first. */
-    public function stateOf(Business $business): string
-    {
-        return $business->situation();
     }
 
     /** What the export menu carries to the report: the very filters on screen. */
@@ -283,19 +245,19 @@ new class extends Component
             <h1 class="page-head-title">{{ __('admin.businesses.title') }}</h1>
             <p class="page-head-sub">{{ __('admin.businesses.sub') }}</p>
         </div>
-        <x-ui.result-count :shown="$this->matching" :total="$this->total" noun="admin.businesses.count" />
+        <x-ui.result-count :shown="$this->ledger->matching" :total="$this->ledger->total" noun="admin.businesses.count" />
     </div>
 
     {{-- Instances the bridge keeps running for nobody: the sweep found them, here they are freed. --}}
-    @if ($this->orphans !== null && auth()->user()->can('businesses.manage'))
+    @if ($this->ledger->orphans !== null && auth()->user()->can('businesses.manage'))
         <x-ui.card class="bp-card mb-3" data-testid="bridge-orphans">
             <div class="bp-card-head">
-                <h2>{{ __('admin.businesses.orphans.title') }}</h2>
-                <span class="text-subtle text-xs font-mono">{{ __('admin.businesses.orphans.as_of', ['date' => $this->orphans['at']->format('d/m H:i')]) }}</span>
+                <h2>{{ $this->ledger->orphans['title'] }}</h2>
+                <span class="text-subtle text-xs font-mono">{{ $this->ledger->orphans['as_of'] }}</span>
             </div>
-            <p class="bp-card-sub">{{ __('admin.businesses.orphans.sub') }}</p>
+            <p class="bp-card-sub">{{ $this->ledger->orphans['sub'] }}</p>
 
-            @foreach ($this->orphans['names'] as $instance)
+            @foreach ($this->ledger->orphans['names'] as $instance)
                 <div class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-sunken" wire:key="orphan-{{ $instance }}">
                     <span class="font-mono text-sm">{{ $instance }}</span>
                     <x-ui.button
@@ -346,54 +308,56 @@ new class extends Component
             <x-ui.export-menu report="negocios" :params="$this->exportParams" />
         </div>
 
-        @if ($this->businesses->isEmpty())
+        @php($labels = $this->ledger->labels)
+        @php($rows = $this->ledger->rows)
+
+        @if ($rows === [])
             {{-- Nothing found is not the same sentence as nothing exists. --}}
             <p class="text-muted text-sm">
-                {{ $search === '' && $state === '' ? __('admin.businesses.empty') : __('admin.businesses.no_match') }}
+                {{ $this->ledger->emptyText }}
             </p>
         @else
             <div class="pay-table-wrap">
                 <table class="pay-table" data-sortable>
                     <thead>
                         <tr>
-                            <th>{{ __('admin.businesses.name') }}</th>
-                            <th class="col-aux">{{ __('admin.businesses.plan') }}</th>
-                            <th>{{ __('admin.businesses.state') }}</th>
-                            <th class="col-aux">{{ __('admin.businesses.due') }}</th>
-                            <th>{{ __('admin.businesses.owes') }}</th>
+                            <th>{{ $labels['name'] }}</th>
+                            <th class="col-aux">{{ $labels['plan'] }}</th>
+                            <th>{{ $labels['state'] }}</th>
+                            <th class="col-aux">{{ $labels['due'] }}</th>
+                            <th>{{ $labels['owes'] }}</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($this->businesses as $business)
-                            @php($state = $this->stateOf($business))
-                            <tr wire:key="biz-{{ $business->id }}">
-                                <td class="is-key" data-label="{{ __('admin.businesses.name') }}">{{ $business->name }}</td>
-                                <td class="col-aux" data-label="{{ __('admin.businesses.plan') }}">
-                                    {{ $business->subscription ? __('plan.names.'.$business->subscription->plan) : '—' }}
+                        @foreach ($rows as $row)
+                            <tr wire:key="biz-{{ $row['id'] }}">
+                                <td class="is-key" data-label="{{ $labels['name'] }}">{{ $row['name'] }}</td>
+                                <td class="col-aux" data-label="{{ $labels['plan'] }}">
+                                    {{ $row['plan'] }}
                                 </td>
-                                <td data-label="{{ __('admin.businesses.state') }}">
+                                <td data-label="{{ $labels['state'] }}">
                                     <span @class([
                                         'status-tag',
-                                        'is-danger' => in_array($state, ['suspended', 'paused', 'ended', 'removed'], true),
-                                    ])>{{ __('admin.businesses.states.'.$state) }}</span>
+                                        'is-danger' => $row['bad'],
+                                    ])>{{ $row['state_label'] }}</span>
                                 </td>
-                                <td class="font-mono col-aux" data-label="{{ __('admin.businesses.due') }}">
-                                    {{ $business->subscription?->periodEndsAt()?->format('d/m/Y') ?? '—' }}
+                                <td class="font-mono col-aux" data-label="{{ $labels['due'] }}">
+                                    {{ $row['due'] }}
                                 </td>
                                 {{-- Zero is not the same sentence as nothing owed: a dash
                                 says there is nothing to collect, not that it measured 0. --}}
-                                <td class="font-mono" data-label="{{ __('admin.businesses.owes') }}">
-                                    {{ $business->owes() > 0 ? 'USD '.number_format($business->owes(), 2, ',', '.') : '—' }}
+                                <td class="font-mono" data-label="{{ $labels['owes'] }}">
+                                    {{ $row['owes'] }}
                                 </td>
                                 <td data-label="">
                                     <x-ui.button
                                         variant="ghost"
                                         size="sm"
-                                        wire:click="toggle({{ $business->id }})"
-                                        data-testid="biz-open-{{ $business->id }}"
+                                        wire:click="toggle({{ $row['id'] }})"
+                                        data-testid="biz-open-{{ $row['id'] }}"
                                         data-row-action
-                                    >{{ $this->open === $business->id
+                                    >{{ $this->open === $row['id']
                                         ? __('admin.businesses.close')
                                         : __('admin.businesses.open') }}</x-ui.button>
                                 </td>
@@ -403,12 +367,13 @@ new class extends Component
                 </table>
             </div>
 
-            <x-ui.load-more :shown="$this->businesses->count()" :total="$this->matching" />
+            <x-ui.load-more :shown="count($rows)" :total="$this->ledger->matching" />
         @endif
     </x-ui.card>
 
     @if ($this->ficha !== null)
         @php($subscription = $this->ficha->subscription)
+        @php($fichaData = $this->ledger->fichaOf($this->ficha))
 
         <x-ui.card class="bp-card split-detail" data-testid="biz-ficha">
             <div class="bp-card-head">
@@ -441,31 +406,15 @@ new class extends Component
             </div>
 
             <div class="stat-grid stat-grid-fill">
-                <x-ui.stat-card
-                    :label="__('admin.businesses.card.plan')"
-                    :value="$subscription ? __('plan.names.'.$subscription->plan) : '—'"
-                    icon="gem"
-                    tint="brand"
-                >{{ $subscription
-                    ? ($subscription->billing_cycle === 'yearly'
-                        ? __('admin.businesses.card.yearly')
-                        : __('admin.businesses.card.monthly'))
-                    : __('admin.businesses.states.none') }}</x-ui.stat-card>
-
-                <x-ui.stat-card
-                    :label="__('admin.businesses.card.next_amount')"
-                    :value="$subscription ? 'USD '.number_format($subscription->nextAmount(), 2, ',', '.') : '—'"
-                    icon="receipt"
-                    tint="info"
-                >{{ __('admin.businesses.card.next_date') }}:
-                    {{ $subscription?->periodEndsAt()?->format('d/m/Y') ?? '—' }}</x-ui.stat-card>
-
-                <x-ui.stat-card
-                    :label="__('admin.businesses.owes')"
-                    :value="$this->ficha->owes() > 0 ? 'USD '.number_format($this->ficha->owes(), 2, ',', '.') : '—'"
-                    icon="alert-triangle"
-                    :tint="$this->ficha->owes() > 0 ? 'warning' : 'brand'"
-                >{{ __('admin.businesses.states.'.$this->stateOf($this->ficha)) }}</x-ui.stat-card>
+                @foreach ($fichaData['cards'] as $card)
+                    <x-ui.stat-card
+                        :label="$card['label']"
+                        :value="$card['value']"
+                        :icon="$card['icon']"
+                        :tint="$card['tint']"
+                        wire:key="biz-card-{{ $card['key'] }}"
+                    >{{ $card['sub'] }}</x-ui.stat-card>
+                @endforeach
             </div>
 
             @if ($this->ficha->trashed())
@@ -524,31 +473,32 @@ new class extends Component
             @endcan
             @endif
 
-            <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.card.payments') }}</h2></div>
-            @if ($this->ficha->payments->isEmpty())
-                <p class="text-muted text-sm">{{ __('admin.businesses.card.payments_empty') }}</p>
+            @php($payments = $fichaData['payments'])
+            <div class="bp-card-head mt-3"><h2>{{ $payments['title'] }}</h2></div>
+            @if ($payments['rows'] === [])
+                <p class="text-muted text-sm">{{ $payments['empty'] }}</p>
             @else
                 <div class="pay-table-wrap">
                     <table class="pay-table">
                         <thead>
                             <tr>
-                                <th>{{ __('admin.businesses.card.date') }}</th>
-                                <th>{{ __('admin.businesses.card.concept') }}</th>
-                                <th>{{ __('admin.businesses.card.amount') }}</th>
-                                <th>{{ __('admin.businesses.card.status') }}</th>
+                                <th>{{ $payments['labels']['date'] }}</th>
+                                <th>{{ $payments['labels']['concept'] }}</th>
+                                <th>{{ $payments['labels']['amount'] }}</th>
+                                <th>{{ $payments['labels']['status'] }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($this->ficha->payments as $payment)
-                                <tr wire:key="biz-pay-{{ $payment->id }}">
-                                    <td class="font-mono" data-label="{{ __('admin.businesses.card.date') }}">{{ $payment->created_at?->format('d/m/Y') }}</td>
-                                    <td data-label="{{ __('admin.businesses.card.concept') }}">{{ __('plan.names.'.$payment->plan) }}</td>
-                                    <td class="font-mono" data-label="{{ __('admin.businesses.card.amount') }}">{{ $payment->currency }} {{ number_format((float) $payment->amount, 2, ',', '.') }}</td>
-                                    <td data-label="{{ __('admin.businesses.card.status') }}">
+                            @foreach ($payments['rows'] as $payment)
+                                <tr wire:key="biz-pay-{{ $payment['id'] }}">
+                                    <td class="font-mono" data-label="{{ $payments['labels']['date'] }}">{{ $payment['date'] }}</td>
+                                    <td data-label="{{ $payments['labels']['concept'] }}">{{ $payment['concept'] }}</td>
+                                    <td class="font-mono" data-label="{{ $payments['labels']['amount'] }}">{{ $payment['amount'] }}</td>
+                                    <td data-label="{{ $payments['labels']['status'] }}">
                                         <span @class([
                                             'status-tag',
-                                            'is-danger' => $payment->status === App\Enums\PaymentStatus::Rejected,
-                                        ])>{{ __('billing.history.statuses.'.$payment->status->value) }}</span>
+                                            'is-danger' => $payment['rejected'],
+                                        ])>{{ $payment['status'] }}</span>
                                     </td>
                                 </tr>
                             @endforeach

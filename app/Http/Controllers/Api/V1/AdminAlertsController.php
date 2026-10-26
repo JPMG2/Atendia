@@ -38,6 +38,7 @@ class AdminAlertsController extends Controller
             'events' => [
                 'title' => __('platform_events.screen.open'),
                 'sub' => __('platform_events.screen.open_sub'),
+                'go' => __('platform_events.screen.go'),
                 'empty' => ['title' => __('platform_events.screen.empty_title'), 'body' => __('platform_events.screen.empty_body')],
                 'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'])], $board->rows),
                 'has_more' => $board->hasMore,
@@ -54,6 +55,7 @@ class AdminAlertsController extends Controller
                     'fix' => __('platform_events.screen.detail_fix'),
                     'history' => __('platform_events.screen.history'),
                     'history_hint' => __('platform_events.screen.history_hint'),
+                    'open' => __('platform_events.screen.detail_open'),
                 ],
                 'groups' => array_map(
                     fn (array $group): array => [...$group, 'sensors' => array_map(fn (array $sensor): array => [...$sensor, 'target' => $this->target($sensor['target'])], $group['sensors'])],

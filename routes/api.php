@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AdminAlertsController;
+use App\Http\Controllers\Api\V1\AdminBusinessesController;
 use App\Http\Controllers\Api\V1\AdminHomeController;
 use App\Http\Controllers\Api\V1\AdminMenuController;
 use App\Http\Controllers\Api\V1\AdminSessionController;
@@ -83,6 +84,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('menu', AdminMenuController::class);
             Route::get('home', AdminHomeController::class);
             Route::get('alerts', AdminAlertsController::class)->middleware('can:alerts.view');
+            Route::get('businesses', [AdminBusinessesController::class, 'index'])->middleware('can:businesses.view');
+            Route::get('businesses/{business}', [AdminBusinessesController::class, 'show'])->where('business', '[0-9]{1,18}')->middleware('can:businesses.view');
         });
 
         // The one door both kinds of token share: it tells the app which side it is on (`staff`).
