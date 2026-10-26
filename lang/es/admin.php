@@ -419,6 +419,7 @@ return [
             'ai' => [
                 'view' => 'Ver cuánto consume la IA y qué cuesta',
                 'manage' => 'Elegir el modelo de cada tarea y sus precios',
+                'ask' => 'Usar el asistente de IA del admin, que lee todos los negocios',
             ],
             'adoption' => ['view' => 'Ver dónde se traba cada negocio nuevo'],
             'catalogs' => ['manage' => 'Entrar al hub de catálogos'],
@@ -447,7 +448,10 @@ return [
                 'service-type' => 'Tipos de servicio',
             ],
             'company' => ['manage' => 'Editar los datos de la compañía'],
-            'integrations' => ['view' => 'Ver el estado de las integraciones'],
+            'integrations' => [
+                'view' => 'Ver el estado de las integraciones',
+                'manage' => 'Vincular y desvincular la línea de WhatsApp de la plataforma',
+            ],
             'settings' => ['manage' => 'Cambiar los ajustes de la plataforma'],
             'users' => ['view' => 'Ver quién puede entrar al panel'],
             'manage-admin-users' => 'Crear usuarios y darles acceso',

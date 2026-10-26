@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Admin\FindOrphanInstances;
 use App\Classes\Main\BusinessLedger;
+use App\Classes\Main\CollectionsDesk;
 use App\Classes\Main\PlatformBoard;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
@@ -17,6 +18,7 @@ use App\Models\PlatformSensor;
 use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
+use Database\Seeders\PlanSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -190,7 +192,7 @@ test('the menu is the web\'s admin menu, in its order, cut to the screens the ap
     expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null])
         ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing')])
         ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
-        ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments']);
+        ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections']);
 });
 
 test('support holds no key for the board, so its menu has the home and the businesses it may look up', function (): void {
@@ -438,6 +440,69 @@ test('without the key of Pagos the desk is closed', function (): void {
 
 test('a customer\'s token reads nothing of Pagos', function (): void {
     screensGet(appInstallToken(payingUser()), 'payments')->assertForbidden()->assertJsonPath('code', 'staff_only');
+});
+
+test('Cobranza reads from the very piece the web screen reads: the figures, the order of the queue and the words', function (): void {
+    $this->seed(PlanSeeder::class);
+    ledgerBusiness('Kiosco La Esquina', SubscriptionStatus::PastDue, ['plan' => 'emprende', 'current_period_ends_at' => now()->subDays(60)]);
+    $big = ledgerBusiness('Centro Odontológico', SubscriptionStatus::Paused, ['plan' => 'premium', 'current_period_ends_at' => now()->subDays(3)]);
+    $data = screensGet(screensToken(), 'collections')->assertOk()->json('data');
+
+    expect($data['title'])->toBe(__('collections.title'))
+        // The biggest account first, not the one that owed longest.
+        ->and(array_column($data['rows'], 'business'))->toBe(['Centro Odontológico', 'Kiosco La Esquina'])
+        ->and($data['rows'][0])->toMatchArray([
+            'ficha' => $big->id,
+            'plan' => __('plan.names.premium'),
+            'state' => 'paused',
+            'state_label' => __('collections.states.paused'),
+            'tone' => 'danger',
+            'since' => 'hace 3 días',
+        ])
+        ->and($data['rows'][1]['tone'])->toBe('warning')
+        ->and($data['cards'][0]['value'])->toBe('USD '.CollectionsDesk::formatPrice(149 + 29))
+        ->and($data['cards'][1]['value'])->toBe('2')
+        ->and($data['cards'][1]['hint'])->toBe(__('collections.risk.owing_split', ['grace' => 1, 'paused' => 1]))
+        ->and($data['cards'][1]['target'])->toBe(['screen' => 'admin.businesses', 'query' => ['estado' => 'problem']])
+        // The first month measured says it has nothing to compare with: no delta, no arrow.
+        ->and($data['cards'][2]['delta'])->toBeNull()->and($data['cards'][2]['hint'])->toBe(__('collections.risk.no_history'));
+});
+
+test('Cobranza with nobody to ring draws the empty state and no figures, as the web does', function (): void {
+    $data = screensGet(screensToken(), 'collections')->assertOk()->json('data');
+
+    expect($data['rows'])->toBe([])
+        ->and($data['cards'])->toBe([])
+        ->and($data['empty'])->toBe(['title' => __('collections.empty_title'), 'body' => __('collections.empty_body')]);
+});
+
+test('Cobranza hands over the queue in slices without changing the figures above it', function (): void {
+    $this->seed(PlanSeeder::class);
+
+    foreach (range(1, 27) as $n) {
+        ledgerBusiness('Negocio '.$n, SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
+    }
+
+    $token = screensToken();
+    $first = screensGet($token, 'collections')->json('data');
+    $second = screensGet($token, 'collections?page=2')->json('data');
+
+    expect($first['rows'])->toHaveCount(25)->and($first['has_more'])->toBeTrue()
+        ->and($first['cards'][1]['value'])->toBe('27')
+        ->and($second['rows'])->toHaveCount(27)->and($second['has_more'])->toBeFalse()
+        ->and(array_slice(array_column($second['rows'], 'id'), 0, 25))->toBe(array_column($first['rows'], 'id'));
+
+    foreach (['page[]=2', 'page=0', 'page=-3', 'page=99999999999'] as $odd) {
+        screensGet($token, 'collections?'.$odd)->assertOk();
+    }
+});
+
+test('without the key of the payments Cobranza is closed', function (): void {
+    screensGet(screensToken('support'), 'collections')->assertForbidden();
+});
+
+test('a customer\'s token reads nothing of Cobranza', function (): void {
+    screensGet(appInstallToken(payingUser()), 'collections')->assertForbidden()->assertJsonPath('code', 'staff_only');
 });
 
 test('Inicio with nothing pending offers the clear sentence of the web', function (): void {

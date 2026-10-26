@@ -1,12 +1,7 @@
 <?php
 
-use App\Enums\SubscriptionStatus;
-use App\Models\RevenueSnapshot;
-use App\Models\Subscription;
-use App\Traits\FormatsPrice;
-use Carbon\CarbonImmutable;
+use App\Classes\Main\CollectionsDesk;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -15,64 +10,15 @@ use Livewire\Component;
  *
  * Sorted by what is at stake and not by who has owed longest: the oldest
  * debt is usually the smallest, and the call that pays for itself is the
- * one on the account about to take the most money with it.
+ * one on the account about to take the most money with it. The figures and
+ * rows come from `CollectionsDesk`, which the mobile API reads too.
  */
 new class extends Component
 {
-    use FormatsPrice;
-
-    /** @return Collection<int, Subscription> */
     #[Computed]
-    public function queue(): Collection
+    public function desk(): CollectionsDesk
     {
-        return Subscription::collectionQueue();
-    }
-
-    #[Computed]
-    public function atRisk(): float
-    {
-        return Subscription::amountAtRisk();
-    }
-
-    /**
-     * The businesses behind on a payment, split by how far behind: a bare "2"
-     * leaves her asking two of what.
-     *
-     * @return array{grace: int, paused: int}
-     */
-    #[Computed]
-    public function owing(): array
-    {
-        $behind = $this->queue->filter(fn (Subscription $row): bool => $row->isBehind());
-
-        return [
-            'grace' => $behind->where('status', SubscriptionStatus::PastDue)->count(),
-            'paused' => $behind->where('status', SubscriptionStatus::Paused)->count(),
-        ];
-    }
-
-    #[Computed]
-    public function revenue(): float
-    {
-        return Subscription::monthlyRecurringRevenue();
-    }
-
-    /**
-     * Last month's photo, or null on the first month measured. Null is not
-     * zero: comparing against a month that was never captured would print
-     * growth out of thin air.
-     */
-    #[Computed]
-    public function previous(): ?RevenueSnapshot
-    {
-        return RevenueSnapshot::before(CarbonImmutable::now());
-    }
-
-    /** What changed since that photo, in money. */
-    #[Computed]
-    public function change(): ?float
-    {
-        return $this->previous === null ? null : $this->revenue - (float) $this->previous->mrr;
+        return new CollectionsDesk;
     }
 
     public function render(): View
@@ -86,14 +32,14 @@ new class extends Component
 <div>
     <x-ui.page-head :title="__('collections.title')" :sub="__('collections.sub')">
         <div class="flex flex-wrap items-center gap-3">
-            <span class="sup-age">{{ __('collections.read_at', ['time' => now()->translatedFormat('d/m/Y H:i')]) }}</span>
-            @if ($this->queue->isNotEmpty())
+            <span class="sup-age">{{ $this->desk->readAt }}</span>
+            @if (! $this->desk->isEmpty)
                 <x-ui.export-menu report="cobranza" />
             @endif
         </div>
     </x-ui.page-head>
 
-    @if ($this->queue->isEmpty())
+    @if ($this->desk->isEmpty)
         <x-ui.card class="p-5">
             <x-ui.empty-state
                 icon="circle-check"
@@ -102,6 +48,7 @@ new class extends Component
             />
         </x-ui.card>
     @else
+        @php($cards = $this->desk->cards)
         {{-- The money first, the count second: three businesses owing is a
         number; what it costs if all three leave is a decision. --}}
         <div class="stat-grid stat-grid-fill mb-3">
@@ -109,36 +56,31 @@ new class extends Component
             trend arrow, and a green arrow up over money being lost reads as
             good news. --}}
             <x-ui.stat-card
-                :label="__('collections.risk.at_risk')"
-                :value="'USD '.$this->formatPrice($this->atRisk)"
-                icon="alert-triangle"
-                tint="accent"
-            >{{ __('collections.risk.at_risk_hint') }}</x-ui.stat-card>
+                :label="$cards[0]['label']"
+                :value="$cards[0]['value']"
+                :icon="$cards[0]['icon']"
+                :tint="$cards[0]['tint']"
+            >{{ $cards[0]['hint'] }}</x-ui.stat-card>
             {{-- A count of businesses: it says which kind, how far behind, and
             lands on exactly those rows (atendiadesign §7.2). --}}
             <x-ui.stat-card
-                :label="trans_choice('collections.risk.owing', $this->owing['grace'] + $this->owing['paused'])"
-                :value="(string) ($this->owing['grace'] + $this->owing['paused'])"
-                icon="receipt"
-                tint="warning"
+                :label="$cards[1]['label']"
+                :value="$cards[1]['value']"
+                :icon="$cards[1]['icon']"
+                :tint="$cards[1]['tint']"
                 :href="route('admin.businesses', ['estado' => 'problem'])"
-            >{{ __('collections.risk.owing_split', $this->owing) }}</x-ui.stat-card>
+            >{{ $cards[1]['hint'] }}</x-ui.stat-card>
             {{-- The comparison only exists once a month was photographed. With
             none, it says so: a first month measured against zero would read as
             growth that never happened. --}}
             <x-ui.stat-card
-                :label="__('collections.risk.mrr')"
-                :value="'USD '.$this->formatPrice($this->revenue)"
-                :delta="$this->change === null
-                    ? null
-                    : __('collections.risk.vs_month', [
-                        'amount' => ($this->change >= 0 ? '+' : '−').$this->formatPrice(abs($this->change)),
-                        'month' => $this->previous->month->translatedFormat('F'),
-                    ])"
-                :trend="$this->change === null ? null : ($this->change > 0 ? 'up' : ($this->change < 0 ? 'down' : 'flat'))"
-                icon="bar-chart-3"
-                tint="brand"
-            >@if ($this->change === null){{ __('collections.risk.no_history') }}@endif</x-ui.stat-card>
+                :label="$cards[2]['label']"
+                :value="$cards[2]['value']"
+                :delta="$cards[2]['delta']"
+                :trend="$cards[2]['trend']"
+                :icon="$cards[2]['icon']"
+                :tint="$cards[2]['tint']"
+            >{{ $cards[2]['hint'] }}</x-ui.stat-card>
         </div>
 
         <x-ui.card class="p-5">
@@ -155,42 +97,34 @@ new class extends Component
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($this->queue as $row)
-                            <tr wire:key="owing-{{ $row->id }}">
+                        @foreach ($this->desk->rows as $row)
+                            <tr wire:key="owing-{{ $row['id'] }}">
                                 {{-- data-label: stacked below 991px the header row is gone,
                                 and a cell without its name is a loose value. --}}
-                                <td class="is-key" data-label="{{ __('collections.table.business') }}">{{ $row->business?->name }}</td>
+                                <td class="is-key" data-label="{{ __('collections.table.business') }}">{{ $row['business'] }}</td>
                                 <td data-label="{{ __('collections.table.plan') }}">
-                                    {{ __('plan.names.'.$row->plan) }}
-                                    <span class="sup-age">{{ __('collections.cycle_'.$row->billing_cycle) }}</span>
+                                    {{ $row['plan'] }}
+                                    <span class="sup-age">{{ $row['cycle'] }}</span>
                                 </td>
                                 <td data-label="{{ __('collections.table.monthly') }}" class="font-mono">
-                                    {{ 'USD '.$this->formatPrice($row->monthlyValue()) }}
+                                    {{ $row['monthly'] }}
                                 </td>
                                 <td data-label="{{ __('collections.table.state') }}">
-                                    @if ($row->status === SubscriptionStatus::Paused)
-                                        <span class="status-tag is-danger">{{ __('collections.states.paused') }}</span>
-                                    @elseif ($row->status === SubscriptionStatus::PastDue)
-                                        <span class="status-tag is-warning">{{ __('collections.states.grace') }}</span>
-                                    @else
-                                        <span class="status-tag is-neutral">{{ __('collections.states.renewing') }}</span>
-                                    @endif
+                                    <span @class([
+                                        'status-tag',
+                                        'is-danger' => $row['tone'] === 'danger',
+                                        'is-warning' => $row['tone'] === 'warning',
+                                        'is-neutral' => $row['tone'] === 'neutral',
+                                    ])>{{ $row['state_label'] }}</span>
                                 </td>
                                 <td data-label="{{ __('collections.table.since') }}" class="font-mono">
-                                    @php($days = $row->daysUntilPayment())
-                                    @if ($days === null)
-                                        —
-                                    @elseif ($days < 0)
-                                        {{ trans_choice('collections.overdue', abs($days), ['count' => abs($days)]) }}
-                                    @else
-                                        {{ trans_choice('collections.due_in', $days, ['count' => $days]) }}
-                                    @endif
+                                    {{ $row['since'] }}
                                 </td>
                                 <td>
                                     <x-ui.button
                                         variant="ghost"
                                         size="sm"
-                                        :href="route('admin.businesses', ['negocio' => $row->business_id])"
+                                        :href="route('admin.businesses', ['negocio' => $row['ficha']])"
                                         wire:navigate
                                         data-row-action
                                     >{{ __('collections.open_business') }}</x-ui.button>

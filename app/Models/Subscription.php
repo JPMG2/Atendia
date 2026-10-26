@@ -240,6 +240,8 @@ class Subscription extends Model
                     ->whereNotNull('current_period_ends_at')
                     ->whereBetween('current_period_ends_at', [now(), now()->addDays($renewalDays)])))
             ->with('business:id,name')
+            // Equal values keep a fixed order: the app asks for longer slices and none may reshuffle.
+            ->orderBy('id')
             ->get()
             ->sortByDesc(fn (Subscription $subscription): float => $subscription->monthlyValue())
             ->values();
