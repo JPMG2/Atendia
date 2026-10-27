@@ -87,7 +87,14 @@ return [
             'label' => 'La plataforma está degradada',
             'hint' => 'Algo se acerca a su límite. No urge hoy, pero no lo dejes pasar.',
         ],
+        'app_brand_stale' => [
+            'label' => 'La app instalada tiene el nombre anterior',
+            'hint' => 'Cambia el nombre dentro de la app, publica la versión nueva en las tiendas y marca este aviso como atendido.',
+        ],
     ],
+
+    // What the phone app says it was built with, against what the company row says now.
+    'app_brand_stale_detail' => 'La app dice «:built» y la web dice «:web».',
 
     'whatsapp' => ":brand · :kind\n:detail:business\nÁbrelo: :url",
     'whatsapp_business' => 'Negocio: :name',

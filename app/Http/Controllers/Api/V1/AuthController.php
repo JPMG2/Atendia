@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Account\IssueAppToken;
+use App\Actions\Admin\CheckAppBrand;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Requests\Api\V1\LoginRequest;
@@ -74,8 +75,11 @@ class AuthController extends Controller
         return response()->json(['message' => __('Sesión cerrada correctamente.')]);
     }
 
-    public function me(Request $request): UserResource
+    public function me(Request $request, CheckAppBrand $brand): UserResource
     {
+        // The app opens through here: it is where an install tells which name it was built with.
+        $brand->handle($request->header('X-App-Brand'));
+
         return UserResource::make($request->user());
     }
 }

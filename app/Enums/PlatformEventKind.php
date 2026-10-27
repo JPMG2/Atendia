@@ -37,12 +37,15 @@ enum PlatformEventKind: string
     case SystemDown = 'system_down';
     case SystemDegraded = 'system_degraded';
 
+    // An install of the phone app still carries a name the web no longer uses.
+    case AppBrandStale = 'app_brand_stale';
+
     public function severity(): PlatformEventSeverity
     {
         return match ($this) {
             self::BusinessSuspended, self::PaymentPaused, self::SystemDown => PlatformEventSeverity::Critical,
             self::BusinessJoined, self::ReceiptReceived, self::PaymentLate, self::AppealReceived,
-            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled, self::MentionAccepted => PlatformEventSeverity::Important,
+            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled, self::MentionAccepted, self::AppBrandStale => PlatformEventSeverity::Important,
             self::PaymentApproved, self::PlanChanged => PlatformEventSeverity::Info,
         };
     }
@@ -54,7 +57,7 @@ enum PlatformEventKind: string
             self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::MentionAccepted => 'customers',
             self::ReceiptReceived, self::PaymentApproved, self::PlanChanged, self::PaymentLate, self::PaymentPaused => 'money',
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => 'compliance',
-            self::SystemDown, self::SystemDegraded => 'system',
+            self::SystemDown, self::SystemDegraded, self::AppBrandStale => 'system',
         };
     }
 
@@ -78,6 +81,7 @@ enum PlatformEventKind: string
     {
         return match ($this) {
             self::MentionAccepted => ['route' => 'admin.mentions', 'query' => []],
+            self::AppBrandStale => ['route' => 'admin.company', 'query' => []],
             self::ReceiptReceived, self::PaymentApproved => ['route' => 'admin.payments', 'query' => []],
             self::PaymentLate, self::PaymentPaused => ['route' => 'admin.collections', 'query' => []],
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => $businessId === null
@@ -105,6 +109,7 @@ enum PlatformEventKind: string
             self::AppealReceived => 'message-circle',
             self::ContentToReview => 'shield-alert',
             self::SystemDown, self::SystemDegraded => 'triangle-alert',
+            self::AppBrandStale => 'smartphone',
         };
     }
 
