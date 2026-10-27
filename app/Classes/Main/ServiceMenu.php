@@ -11,6 +11,7 @@ use App\Actions\Business\SaveBusinessServiceCategory;
 use App\Actions\Business\SyncOfferKnowledge;
 use App\Actions\Business\ToggleBusinessService;
 use App\Dto\ServiceDto;
+use App\Livewire\Forms\Client\ServiceCategoryForm;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\Service;
@@ -252,6 +253,7 @@ class ServiceMenu
                 'hint' => __('client.services.category_sheet_hint'),
                 'name' => __('client.services.field_category_name'),
                 'save' => __('client.services.category_save'),
+                'max' => ServiceCategoryForm::NAME_MAX,
             ],
         ];
     }

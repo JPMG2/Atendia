@@ -20,6 +20,9 @@ use Illuminate\Validation\Rule;
  */
 class ServiceCategoryForm extends BaseForm
 {
+    /** The mobile API sends it, so the phone's input stops where the rule does. */
+    public const int NAME_MAX = 30;
+
     public string $name = '';
 
     /** What the last save created — the service sheet picks it up on return. */
@@ -74,7 +77,7 @@ class ServiceCategoryForm extends BaseForm
         return [
             'name' => [
                 ...AttributeValidator::stringValid(true, '2'),
-                'max:30',
+                'max:'.self::NAME_MAX,
                 Rule::unique('service_categories', 'name')
                     ->where('business_id', $businessId)
                     ->whereNull('deleted_at'),

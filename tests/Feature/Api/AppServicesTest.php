@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Livewire\Forms\Client\ServiceCategoryForm;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\ServiceAttribute;
@@ -77,7 +78,9 @@ describe('the list', function (): void {
             ->and($data['meter'])->toBe(['label' => __('client.services.meter', ['done' => 4, 'total' => 5]), 'percent' => 80])
             ->and($data['countLabel'])->toBe(trans_choice('client.services.count', 5, ['count' => 5]))
             ->and($data['copy']['add'])->toBe(__('client.services.add'))
-            ->and($data['copy']['sheet']['fields']['priceType'])->toBe(__('client.services.field_price_type'));
+            ->and($data['copy']['sheet']['fields']['priceType'])->toBe(__('client.services.field_price_type'))
+            // The phone's category input stops where the web's rule does.
+            ->and($data['copy']['category']['max'])->toBe(ServiceCategoryForm::NAME_MAX);
     });
 
     it('groups on shelves once one exists: Destacados, then the shelves in their order, then the loose ones', function (): void {
