@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AdminAlertsController;
 use App\Http\Controllers\Api\V1\AdminBusinessesController;
+use App\Http\Controllers\Api\V1\AdminCatalogsController;
 use App\Http\Controllers\Api\V1\AdminCollectionsController;
 use App\Http\Controllers\Api\V1\AdminCompanyController;
 use App\Http\Controllers\Api\V1\AdminHomeController;
@@ -95,6 +96,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('payments', AdminPaymentsController::class)->middleware('can:payments.view');
             Route::get('collections', AdminCollectionsController::class)->middleware('can:payments.view');
             Route::get('company', AdminCompanyController::class)->middleware('can:company.manage');
+            Route::get('catalogs', [AdminCatalogsController::class, 'index'])->middleware('can:catalogs.manage');
+            Route::get('catalogs/{master}', [AdminCatalogsController::class, 'show'])->where('master', '[a-z][a-z-]{0,60}')->middleware('can:catalogs.manage');
             Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');
             Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');
             Route::get('support/{ticket}', [AdminSupportController::class, 'show'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');

@@ -8,23 +8,30 @@ use App\Classes\Main\CollectionsDesk;
 use App\Classes\Main\OpeningHours;
 use App\Classes\Main\PlatformBoard;
 use App\Classes\Main\SupportQueue;
+use App\Dto\CatalogColumnDto;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformSensorStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
+use App\Models\CatalogForm;
 use App\Models\Company;
+use App\Models\Country;
+use App\Models\CurrentStatus;
 use App\Models\HelpArticle;
+use App\Models\MentionGoal;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
+use App\Models\Province;
 use App\Models\Region;
 use App\Models\SocialLink;
 use App\Models\Subscription;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
+use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\PlanSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -211,7 +218,7 @@ test('the menu is the web\'s admin menu, in its order, cut to the screens the ap
         ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing'), __('menu.admin_support'), __('menu.admin_platform')])
         ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
         ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections'])
-        ->and(array_column($admin[5]['children'], 'screen'))->toBe(['admin.company']);
+        ->and(array_column($admin[5]['children'], 'screen'))->toBe(['admin.company', 'admin.catalogs']);
 });
 
 test('support holds no key for the board, so its menu has the home, the businesses it may look up and its own desk', function (): void {
@@ -849,4 +856,163 @@ test('a customer\'s token reads none of the three', function (): void {
     foreach (['home', 'alerts', 'menu'] as $path) {
         screensGet($token, $path)->assertForbidden()->assertJsonPath('code', 'staff_only');
     }
+});
+
+/** The slugs of every master a hub answer lists, in the order it lists them. */
+function catalogSlugs(array $groups): array
+{
+    return collect($groups)->flatMap(fn (array $group): array => array_column($group['masters'], 'slug'))->all();
+}
+
+test('Catálogos lists, grouped as the web\'s rail groups them, only the masters the app can already read', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+
+    $data = screensGet(screensToken(), 'catalogs')->assertOk()->json('data');
+
+    // Readable = its model says its own columns; the other 18 masters are not drawn until they do.
+    expect(catalogSlugs($data['groups']))->toBe(['province', 'status', 'mention-goal'])
+        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Sistema'])
+        ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'province', 'title' => 'Provincias', 'icon' => 'globe'])
+        ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
+        ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
+        ->and($data['none'])->toBe(__('catalog.hub.none'))
+        ->and($data['no_matches'])->toBe(__('catalog.hub.no_matches'));
+});
+
+test('Catálogos cuts the hub by the permission of each master, as the web\'s rail does', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    Role::findOrCreate('shelf', 'web')->givePermissionTo(['access-admin-panel', 'catalogs.manage', 'catalog.status']);
+    $token = screensToken('shelf');
+
+    expect(catalogSlugs(screensGet($token, 'catalogs')->assertOk()->json('data.groups')))->toBe(['status']);
+
+    screensGet($token, 'catalogs/status')->assertOk();
+    // A master of the hub this person may not open is not found, never "forbidden": the hub never named it.
+    screensGet($token, 'catalogs/province')->assertNotFound();
+});
+
+test('Catálogos needs the web\'s key for the screen: support and a role without it are refused', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    Role::findOrCreate('desk', 'web')->givePermissionTo(Permission::findByName('access-admin-panel', 'web'));
+
+    foreach (['support', 'desk'] as $role) {
+        $token = screensToken($role);
+
+        screensGet($token, 'catalogs')->assertForbidden();
+        screensGet($token, 'catalogs/status')->assertForbidden();
+    }
+});
+
+test('a customer\'s token reads nothing of Catálogos', function (): void {
+    $token = appInstallToken(payingUser());
+
+    screensGet($token, 'catalogs')->assertForbidden()->assertJsonPath('code', 'staff_only');
+    screensGet($token, 'catalogs/status')->assertForbidden()->assertJsonPath('code', 'staff_only');
+});
+
+test('Estados serves the web\'s columns, its rows with only what a column draws, and its words', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    CurrentStatus::factory()->create(['name' => 'Bloqueado', 'color' => 'danger']);
+    CurrentStatus::factory()->create(['name' => 'Activo', 'color' => 'success']);
+
+    $data = screensGet(screensToken(), 'catalogs/status')->assertOk()->json('data');
+    $form = CatalogForm::query()->where('component', 'catalog.status')->firstOrFail();
+
+    expect($data['title'])->toBe($form->title)
+        ->and($data['description'])->toBe($form->description)
+        ->and($data['icon'])->toBe($form->icon)
+        ->and($data['columns'])->toBe(array_map(fn (CatalogColumnDto $column): array => $column->toArray(), (new CurrentStatus)->catalogColumns()))
+        ->and(array_column($data['columns'], 'label'))->toBe(['Nombre', 'Color'])
+        ->and(array_column($data['columns'], 'cell'))->toBe(['name', 'tag'])
+        // The web's own order (by name) and nothing but the id and the columns' keys.
+        ->and(array_column($data['rows'], 'name'))->toBe(['Activo', 'Bloqueado'])
+        ->and(array_keys($data['rows'][0]))->toBe(['id', 'name', 'color'])
+        ->and($data['rows'][1]['color'])->toBe('danger')
+        ->and($data['count'])->toBe(2)
+        ->and($data['unit'])->toBe(__('catalog.status.plural'))
+        ->and($data['search'])->toBe(['label' => __('catalog.status.search_label'), 'placeholder' => __('catalog.status.search_placeholder'), 'value' => ''])
+        ->and($data['empty'])->toBe(__('catalog.status.empty'))
+        ->and($data['has_more'])->toBeFalse();
+});
+
+test('Metas de mención reads the goal column from the words, not from the bare number', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    MentionGoal::factory()->create(['threshold' => 100]);
+
+    $data = screensGet(screensToken(), 'catalogs/mention-goal')->assertOk()->json('data');
+
+    expect(array_column($data['columns'], 'key'))->toBe(['achievement', 'caption', 'active'])
+        ->and($data['rows'][0]['achievement'])->toBe(MentionGoal::achievement(100))
+        ->and($data['rows'][0])->not->toHaveKey('threshold')
+        ->and($data['columns'][2]['on'])->toBe(__('catalog.mention_goal.status.active'))
+        ->and($data['columns'][2]['off'])->toBe(__('catalog.mention_goal.status.inactive'))
+        ->and($data['unit'])->toBe(__('catalog.mention_goal.singular'));
+});
+
+test('Provincias pages in 25s and says when there is no more', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    Province::factory()->count(30)->create();
+    $token = screensToken();
+
+    $first = screensGet($token, 'catalogs/province')->assertOk()->json('data');
+    $second = screensGet($token, 'catalogs/province?page=2')->assertOk()->json('data');
+
+    expect($first['rows'])->toHaveCount(25)
+        ->and($first['count'])->toBe(30)
+        ->and($first['has_more'])->toBeTrue()
+        ->and($second['rows'])->toHaveCount(30)
+        ->and($second['has_more'])->toBeFalse()
+        ->and($first['unit'])->toBe(__('catalog.province.plural'));
+});
+
+test('the search is the editor\'s box: trimmed, any case, contained in a name or a text, never in a tag or a switch', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    $venezuela = Country::factory()->create(['name' => 'Venezuela']);
+    Province::factory()->for($venezuela)->create(['name' => 'Mérida']);
+    Province::factory()->create(['name' => 'Córdoba']);
+    $token = screensToken();
+
+    // By name, and by the country column, with the web's lowercase-and-contains.
+    $byName = screensGet($token, 'catalogs/province?search='.rawurlencode('  MÉRI '))->assertOk()->json('data');
+    $byCountry = screensGet($token, 'catalogs/province?search=venezu')->assertOk()->json('data');
+
+    expect(array_column($byName['rows'], 'name'))->toBe(['Mérida'])
+        ->and($byName['count'])->toBe(1)
+        ->and($byName['unit'])->toBe(__('catalog.province.singular'))
+        ->and($byName['search']['value'])->toBe('MÉRI')
+        ->and(array_column($byCountry['rows'], 'name'))->toBe(['Mérida']);
+
+    // A status is found by its name, not by the colour its tag is painted.
+    CurrentStatus::factory()->create(['name' => 'Activo', 'color' => 'success']);
+    expect(screensGet($token, 'catalogs/status?search=success')->assertOk()->json('data.rows'))->toBe([]);
+
+    // Nothing found says it in the web's words.
+    expect(screensGet($token, 'catalogs/status?search=zzzz')->json('data.empty'))->toBe(__('catalog.status.empty'));
+});
+
+test('odd inputs read as nothing: a list for a search, a page beyond the last, a master that is not one', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    $token = screensToken();
+
+    // `search[]=` is an array: cast it and it is a 500; read as no search it answers like the plain list.
+    screensGet($token, 'catalogs/status?search[]=x')->assertOk()->assertJsonPath('data.search.value', '');
+    screensGet($token, 'catalogs/status?page=-4')->assertOk();
+    screensGet($token, 'catalogs/status?page=999999')->assertOk();
+
+    // A master the web has but the app does not read yet, one the web has not, and a shape that is no slug at all.
+    screensGet($token, 'catalogs/country')->assertNotFound();
+    screensGet($token, 'catalogs/nonsense')->assertNotFound();
+    screensGet($token, 'catalogs/Status_1')->assertNotFound();
+});
+
+test('with the base empty the hub and a master answer, and say there is nothing, never a 500', function (): void {
+    $token = screensToken();
+
+    expect(screensGet($token, 'catalogs')->assertOk()->json('data.groups'))->toBe([]);
+    screensGet($token, 'catalogs/status')->assertNotFound();
+
+    $this->seed(CatalogFormSeeder::class);
+    $empty = screensGet($token, 'catalogs/status')->assertOk()->json('data');
+
+    expect($empty['rows'])->toBe([])->and($empty['count'])->toBe(0)->and($empty['has_more'])->toBeFalse();
 });
