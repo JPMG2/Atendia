@@ -22,6 +22,8 @@ class DeviceController extends Controller
             'label' => $device->label(),
             'location' => $device->location,
             'last_login_at' => $device->last_login_at,
+            // Said as Settings > Devices does: relative, and in the request's language.
+            'last_seen' => __('profile.devices.last_seen').': '.$device->last_login_at->diffForHumans(),
             'current' => $device->fingerprint === $current,
         ])->values()]);
     }

@@ -55,6 +55,20 @@ function otherInstall(User $user, string $deviceId = 'install-9999-bbbb-2222'): 
 }
 
 describe('account info', function (): void {
+    it('sends the profile, password and home words the way the web says them', function (): void {
+        $profile = asApp(accountOwner())->getJson('/api/v1/me')->assertOk()->json('data.profile');
+
+        expect($profile['name_label'])->toBe(__('settings.profile.name'))
+            ->and($profile['member_since_label'])->toBe(__('settings.profile.member_since'))
+            ->and($profile['member_since'])->toMatch('/^\d{2}\/\d{2}\/\d{4}$/')
+            ->and($profile['password']['sub'])->toBe(__('settings.password.sub'))
+            ->and($profile['password']['current'])->toBe(__('settings.current_password'))
+            ->and($profile['password']['submit'])->toBe(__('settings.password.submit'))
+            ->and($profile['home']['greeting'])->toStartWith('Hola, ')
+            ->and($profile['home']['sub'])->toBe(__('client.home.sub_new'))
+            ->and($profile['home']['disconnected'])->toBe(__('client.home.disconnected'));
+    });
+
     it('tells the owner they can close the account and which word confirms it', function (): void {
         asApp(accountOwner())->getJson('/api/v1/account')
             ->assertOk()

@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\ConversationStatus;
+use App\Enums\MessageAuthor;
 use App\Enums\MessageKind;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Customer;
 use App\Models\Department;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -150,6 +153,33 @@ describe('conversations', function (): void {
         ConversationMessage::factory()->create(['business_id' => $owner->business_id, 'conversation_id' => $thread->id, 'kind' => MessageKind::Note, 'body' => 'Llamarlo mañana']);
 
         asAppUser($owner)->getJson("/api/v1/conversations/{$thread->id}")->assertJsonPath('data.messages.0.kind', 'note');
+    });
+
+    it('names things as the web does: no-name title, a chip only for the team, the customer’s own name in a thread', function (): void {
+        $owner = payingUser();
+        $customer = Customer::factory()->create(['business_id' => $owner->business_id, 'name' => 'Ana Pérez']);
+        $waiting = Conversation::factory()->create(['business_id' => $owner->business_id, 'contact_name' => null, 'status' => ConversationStatus::Team, 'last_message_at' => now()]);
+        $resolved = Conversation::factory()->create(['business_id' => $owner->business_id, 'contact_name' => 'Beto', 'customer_id' => $customer->id, 'status' => ConversationStatus::Resolved, 'last_message_at' => now()->subMinute()]);
+        ConversationMessage::factory()->out()->create(['business_id' => $owner->business_id, 'conversation_id' => $waiting->id, 'author' => MessageAuthor::Human, 'body' => 'Ya te llamamos']);
+
+        $rows = collect(asAppUser($owner)->getJson('/api/v1/conversations')->json('data'))->keyBy('id');
+
+        expect($rows[$waiting->id]['title'])->toBe(__('client.conversations.anonymous'))
+            ->and($rows[$waiting->id]['badge'])->toBe(['label' => __('client.conversations.status_team_chip'), 'tone' => 'accent'])
+            ->and($rows[$waiting->id]['last_message']['prefix'])->toBe(__('client.conversations.assistant_prefix'))
+            ->and($rows[$resolved->id]['title'])->toBe('Beto')
+            ->and($rows[$resolved->id]['badge'])->toBeNull()
+            ->and($rows[$resolved->id]['when'])->toMatch('/^(\d{2}:\d{2}|\d{2}\/\d{2})$/');
+
+        $thread = asAppUser($owner)->getJson("/api/v1/conversations/{$resolved->id}")->json('data');
+        $team = asAppUser($owner)->getJson("/api/v1/conversations/{$waiting->id}")->json('data');
+
+        expect($thread['title'])->toBe('Ana Pérez')
+            ->and($thread['badge'])->toBe(['label' => __('client.conversations.status_resolved'), 'tone' => 'success'])
+            ->and($team['badge']['label'])->toBe(__('client.conversations.status_team'))
+            ->and($team['messages'][0]['tag'])->toBe(__('client.conversations.human_tag'))
+            ->and($team['messages'][0]['time'])->toMatch('/^\d{2}:\d{2}$/')
+            ->and($team['messages'][0]['day_key'])->toMatch('/^\d{4}-\d{2}-\d{2}$/');
     });
 
     it('does not open the thread of another business', function (): void {

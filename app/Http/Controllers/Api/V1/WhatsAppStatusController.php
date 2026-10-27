@@ -24,6 +24,11 @@ class WhatsAppStatusController extends Controller
             'state' => $business->linkState()->value,
             'number' => $business->whatsapp_number,
             'connected_since' => $business->whatsapp_connected_at,
+            // As the web's "connected" card says it, on the business's clock.
+            'since' => $business->whatsapp_connected_at === null ? null : [
+                'label' => __('whatsapp.connected.since'),
+                'at' => $business->whatsapp_connected_at->toImmutable()->setTimezone($business->localTimezone())->format('d/m/Y H:i'),
+            ],
         ]]);
     }
 }
