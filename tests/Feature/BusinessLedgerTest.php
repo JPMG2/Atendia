@@ -32,7 +32,7 @@ beforeEach(function (): void {
     $this->admin = $admin->refresh();
 });
 
-function businessOnPlan(string $name, SubscriptionStatus $status = SubscriptionStatus::Active, array $plan = []): Business
+function ledgerBusinessOnPlan(string $name, SubscriptionStatus $status = SubscriptionStatus::Active, array $plan = []): Business
 {
     $business = Business::factory()->create(['name' => $name]);
 
@@ -48,8 +48,8 @@ function businessOnPlan(string $name, SubscriptionStatus $status = SubscriptionS
 }
 
 test('the web list prints the very rows, words and count the piece gives the phone', function (): void {
-    businessOnPlan('Odontología Norte');
-    businessOnPlan('Panadería La Esquina', SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
+    ledgerBusinessOnPlan('Odontología Norte');
+    ledgerBusinessOnPlan('Panadería La Esquina', SubscriptionStatus::PastDue, ['current_period_ends_at' => now()->subDays(2)]);
 
     $ledger = new BusinessLedger;
     $screen = Livewire::actingAs($this->admin)->test('admin.businesses.index');
@@ -66,8 +66,8 @@ test('the web list prints the very rows, words and count the piece gives the pho
 });
 
 test('the web cuts the list by state and search as the piece does, and says nothing found in its own words', function (): void {
-    businessOnPlan('Odontología Norte');
-    businessOnPlan('Panadería La Esquina', SubscriptionStatus::Paused);
+    ledgerBusinessOnPlan('Odontología Norte');
+    ledgerBusinessOnPlan('Panadería La Esquina', SubscriptionStatus::Paused);
 
     $screen = Livewire::actingAs($this->admin)->test('admin.businesses.index')
         ->set('state', 'paused')
@@ -78,7 +78,7 @@ test('the web cuts the list by state and search as the piece does, and says noth
 });
 
 test('the web ficha prints the cards and payments of the piece, and what the plan row says about leaving', function (): void {
-    $business = businessOnPlan('Estudio Contable Ríos', SubscriptionStatus::Active, ['canceled_at' => now()->subDay()]);
+    $business = ledgerBusinessOnPlan('Estudio Contable Ríos', SubscriptionStatus::Active, ['canceled_at' => now()->subDay()]);
     Payment::factory()->for($business)->create(['plan' => 'negocio', 'status' => 'pending']);
 
     $ficha = (new BusinessLedger)->fichaOf(Business::ledger($business->id));
