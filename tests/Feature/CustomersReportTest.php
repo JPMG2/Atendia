@@ -62,7 +62,8 @@ test('what is on the screen is what the file holds, and everything when it is as
 });
 
 test('the file name says whose it is and whether it is a cut of the list', function (): void {
-    $owner = reportOwner();
+    // The factory picks a random country, whose zone can already be on another day than UTC.
+    $owner = reportOwner(['timezone' => 'UTC']);
     $date = now()->format('Y-m-d');
 
     $cut = $this->actingAs($owner)->get(route('reports.show', ['report' => 'clientes', 'format' => 'xlsx', 'buscar' => 'ana']));
