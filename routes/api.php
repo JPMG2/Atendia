@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\AdminSessionController;
 use App\Http\Controllers\Api\V1\AdminSupportController;
 use App\Http\Controllers\Api\V1\AgendaController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
 use App\Http\Controllers\Api\V1\BusinessCardController;
 use App\Http\Controllers\Api\V1\BusinessClosuresController;
@@ -62,6 +63,7 @@ Route::post('webhooks/evolution', EvolutionWebhookController::class)
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     // Public.
+    Route::get('brand', BrandController::class);
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
 
     // The second half of a sign-in from an install the account never used.
