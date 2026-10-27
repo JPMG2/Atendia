@@ -115,8 +115,8 @@ class MentionGoal extends Model implements DataTable, HasColumns, Removable
     public function catalogColumns(): array
     {
         return [
-            new CatalogColumnDto('achievement', __('catalog.mention_goal.columns.threshold'), CatalogCell::Name),
-            new CatalogColumnDto('caption', __('catalog.mention_goal.columns.caption'), CatalogCell::Text, fill: true),
+            new CatalogColumnDto('achievement', __('catalog.mention_goal.columns.threshold'), CatalogCell::Name, search: true),
+            new CatalogColumnDto('caption', __('catalog.mention_goal.columns.caption'), CatalogCell::Text, fill: true, search: true),
             new CatalogColumnDto('active', __('catalog.mention_goal.columns.status'), CatalogCell::Active, on: __('catalog.mention_goal.status.active'), off: __('catalog.mention_goal.status.inactive')),
         ];
     }

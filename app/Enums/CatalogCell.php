@@ -16,6 +16,15 @@ enum CatalogCell: string
     /** Plain text. */
     case Text = 'text';
 
+    /** The row's code or abbreviation, set in monospace. */
+    case Code = 'code';
+
+    /** A number, aligned apart from the words. */
+    case Number = 'number';
+
+    /** A yes or no said in words, with no status dot. */
+    case Flag = 'flag';
+
     /** The status tag, coloured by the row's `color` key. */
     case Tag = 'tag';
 

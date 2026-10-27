@@ -34,7 +34,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name', 'description']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 30], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -53,13 +53,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.business_sector.empty')"
-            :columns="[
-                ['label' => __('catalog.business_sector.columns.code')],
-                ['label' => __('catalog.business_sector.columns.name')],
-                ['label' => __('catalog.business_sector.columns.description'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.business_sector.columns.order')],
-                ['label' => __('catalog.business_sector.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td class="catalog-cell-name" x-text="row.name"></td>

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -20,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['country_id', 'name', 'code', 'discriminate_tax', 'is_active'])]
-class TaxCondition extends Model implements DataTable, Removable
+class TaxCondition extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -109,6 +112,18 @@ class TaxCondition extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** Here the country IS searched (a condition is looked up by where it applies), and "discriminates" is a yes or no in words. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.tax_condition.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.tax_condition.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('country', __('catalog.tax_condition.columns.country'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('discriminates', __('catalog.tax_condition.columns.discriminate_tax'), CatalogCell::Flag, on: __('catalog.tax_condition.discriminate.yes'), off: __('catalog.tax_condition.discriminate.no')),
+            new CatalogColumnDto('active', __('catalog.tax_condition.columns.status'), CatalogCell::Active, on: __('catalog.tax_condition.status.active'), off: __('catalog.tax_condition.status.inactive')),
+        ];
     }
 
     /**

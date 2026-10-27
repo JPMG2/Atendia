@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -19,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'url', 'icon', 'abbreviation', 'is_active'])]
-class SocialNetwork extends Model implements DataTable, Removable
+class SocialNetwork extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -140,6 +143,18 @@ class SocialNetwork extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** The address and the icon name are shown, but only the name and the abbreviation are searched. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.social_network.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('abbreviation', __('catalog.social_network.columns.abbreviation'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('url', __('catalog.social_network.columns.url'), CatalogCell::Text),
+            new CatalogColumnDto('icon', __('catalog.social_network.columns.icon'), CatalogCell::Text),
+            new CatalogColumnDto('active', __('catalog.social_network.columns.status'), CatalogCell::Active, on: __('catalog.social_network.status.active'), off: __('catalog.social_network.status.inactive')),
+        ];
     }
 
     /**

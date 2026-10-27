@@ -52,7 +52,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['name', 'abbreviation']"
+    :search="$this->searchKeys"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'url' => ['required', ['maxLength', 255], 'noMarkup'],
@@ -71,13 +71,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.social_network.empty')"
-            :columns="[
-                ['label' => __('catalog.social_network.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.social_network.columns.abbreviation')],
-                ['label' => __('catalog.social_network.columns.url')],
-                ['label' => __('catalog.social_network.columns.icon')],
-                ['label' => __('catalog.social_network.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td><span class="catalog-code" x-text="row.abbreviation"></span></td>

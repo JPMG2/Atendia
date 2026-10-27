@@ -103,8 +103,8 @@ class Province extends Model implements DataTable, HasColumns, Removable
     public function catalogColumns(): array
     {
         return [
-            new CatalogColumnDto('name', __('catalog.province.columns.name'), CatalogCell::Name, fill: true),
-            new CatalogColumnDto('country', __('catalog.province.columns.country'), CatalogCell::Text),
+            new CatalogColumnDto('name', __('catalog.province.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('country', __('catalog.province.columns.country'), CatalogCell::Text, search: true),
             new CatalogColumnDto('active', __('catalog.province.columns.status'), CatalogCell::Active, on: __('catalog.province.status.active'), off: __('catalog.province.status.inactive')),
         ];
     }

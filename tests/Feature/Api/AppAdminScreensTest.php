@@ -18,6 +18,7 @@ use App\Models\Business;
 use App\Models\CatalogForm;
 use App\Models\Company;
 use App\Models\Country;
+use App\Models\Currency;
 use App\Models\CurrentStatus;
 use App\Models\HelpArticle;
 use App\Models\MentionGoal;
@@ -27,9 +28,11 @@ use App\Models\PlatformSensor;
 use App\Models\Province;
 use App\Models\Region;
 use App\Models\SocialLink;
+use App\Models\SocialNetwork;
 use App\Models\Subscription;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
+use App\Models\TaxCondition;
 use App\Models\User;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\MenuSeeder;
@@ -869,9 +872,11 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     $data = screensGet(screensToken(), 'catalogs')->assertOk()->json('data');
 
-    // Readable = its model says its own columns; the other 18 masters are not drawn until they do.
-    expect(catalogSlugs($data['groups']))->toBe(['province', 'status', 'mention-goal'])
-        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Sistema'])
+    // Readable = its model says its own columns; the other 14 masters are not drawn until they do.
+    // The order is the rail's: by the master's `order`, a group appearing where its first master does.
+    expect(catalogSlugs($data['groups']))->toBe(['province', 'currency', 'tax-condition', 'business-sector', 'status', 'social-network', 'mention-goal'])
+        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Sistema'])
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['province'], ['currency', 'tax-condition'], ['business-sector'], ['status', 'social-network', 'mention-goal']])
         ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'province', 'title' => 'Provincias', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
         ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
@@ -963,6 +968,34 @@ test('Provincias pages in 25s and says when there is no more', function (): void
         ->and($second['rows'])->toHaveCount(30)
         ->and($second['has_more'])->toBeFalse()
         ->and($first['unit'])->toBe(__('catalog.province.plural'));
+});
+
+test('Monedas, Condiciones fiscales and Redes sociales serve the web\'s cell kinds and search only where the web\'s box does', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // Values no factory text can contain, so a search that must find nothing cannot match a random row.
+    Currency::factory()->create(['code' => 'QVS', 'name' => 'Bolívar', 'symbol' => 'ZQ$', 'decimal_places' => 2]);
+    TaxCondition::factory()->create(['code' => 'QRI', 'name' => 'Responsable inscripto', 'discriminate_tax' => true]);
+    SocialNetwork::factory()->create(['name' => 'Instagram', 'abbreviation' => 'QX', 'url' => 'https://zzurl.example/']);
+    $token = screensToken();
+
+    $currency = screensGet($token, 'catalogs/currency')->assertOk()->json('data');
+    $tax = screensGet($token, 'catalogs/tax-condition')->assertOk()->json('data');
+    $social = screensGet($token, 'catalogs/social-network')->assertOk()->json('data');
+
+    expect(array_column($currency['columns'], 'cell'))->toBe(['code', 'name', 'text', 'number', 'active'])
+        ->and(collect($currency['rows'])->firstWhere('code', 'QVS'))->toBe(['id' => collect($currency['rows'])->firstWhere('code', 'QVS')['id'], 'code' => 'QVS', 'name' => 'Bolívar', 'symbol' => 'ZQ$', 'decimals' => 2, 'active' => true])
+        ->and(array_column($tax['columns'], 'cell'))->toBe(['code', 'name', 'text', 'flag', 'active'])
+        // A flag says yes or no in words, as the web's table does for "discriminates tax"; it has no status dot.
+        ->and($tax['columns'][3]['on'])->toBe(__('catalog.tax_condition.discriminate.yes'))
+        ->and($tax['columns'][3]['off'])->toBe(__('catalog.tax_condition.discriminate.no'))
+        ->and(collect($tax['rows'])->firstWhere('code', 'QRI')['discriminates'])->toBeTrue()
+        ->and(array_column($social['columns'], 'cell'))->toBe(['name', 'code', 'text', 'text', 'active']);
+
+    // The web looks a currency up by code and name, never by symbol; a network by name and abbreviation, never by its address.
+    expect(screensGet($token, 'catalogs/currency?search=qvs')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/currency?search=zq$')->json('data.count'))->toBe(0)
+        ->and(screensGet($token, 'catalogs/social-network?search=qx')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/social-network?search=zzurl')->json('data.count'))->toBe(0);
 });
 
 test('the search is the editor\'s box: trimmed, any case, contained in a name or a text, never in a tag or a switch', function (): void {

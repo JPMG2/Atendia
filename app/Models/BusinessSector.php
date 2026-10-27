@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\SuggestsServiceNames;
@@ -27,7 +30,7 @@ use Illuminate\Support\Collection;
  * level the assistant works with.
  */
 #[Fillable(['code', 'name', 'description', 'sort_order', 'is_active'])]
-class BusinessSector extends Model implements DataTable, Removable
+class BusinessSector extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -169,6 +172,18 @@ class BusinessSector extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** The order is shown but not searched: nobody looks a trade up by its position. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.business_sector.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.business_sector.columns.name'), CatalogCell::Name, search: true),
+            new CatalogColumnDto('description', __('catalog.business_sector.columns.description'), CatalogCell::Text, fill: true, search: true),
+            new CatalogColumnDto('order', __('catalog.business_sector.columns.order'), CatalogCell::Text),
+            new CatalogColumnDto('active', __('catalog.business_sector.columns.status'), CatalogCell::Active, on: __('catalog.business_sector.status.active'), off: __('catalog.business_sector.status.inactive')),
+        ];
     }
 
     /**

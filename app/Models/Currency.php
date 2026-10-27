@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -21,7 +24,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['code', 'name', 'symbol', 'decimal_places', 'is_active'])]
-class Currency extends Model implements DataTable, Removable
+class Currency extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -144,6 +147,18 @@ class Currency extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** The code is what a person looks a currency up by, so it is searched with the name and the symbol is not. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.currency.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.currency.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('symbol', __('catalog.currency.columns.symbol'), CatalogCell::Text),
+            new CatalogColumnDto('decimals', __('catalog.currency.columns.decimals'), CatalogCell::Number),
+            new CatalogColumnDto('active', __('catalog.currency.columns.status'), CatalogCell::Active, on: __('catalog.currency.status.active'), off: __('catalog.currency.status.inactive')),
+        ];
     }
 
     /**

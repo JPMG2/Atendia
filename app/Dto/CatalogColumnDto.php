@@ -8,7 +8,9 @@ use App\Enums\CatalogCell;
 
 /**
  * One column of a master's table: which row key it reads, what it is called and
- * how its cell is drawn. `fill` marks the column that takes the free width.
+ * how its cell is drawn. `fill` marks the column that takes the free width, and
+ * `search` the ones the master's search box looks through (each master decides).
+ * `on` and `off` are the two words of an active or flag cell.
  */
 final readonly class CatalogColumnDto
 {
@@ -19,11 +21,11 @@ final readonly class CatalogColumnDto
         public bool $fill = false,
         public ?string $on = null,
         public ?string $off = null,
+        public bool $search = false,
     ) {}
 
     /**
-     * The row keys a search box looks through: the words on screen (a name or a
-     * text), never a tag or an on/off switch.
+     * The row keys a search box looks through, as each master declared them.
      *
      * @param  list<self>  $columns
      * @return list<string>
@@ -32,20 +34,20 @@ final readonly class CatalogColumnDto
     {
         return array_values(array_map(
             fn (self $column): string => $column->key,
-            array_filter($columns, fn (self $column): bool => in_array($column->cell, [CatalogCell::Name, CatalogCell::Text], true)),
+            array_filter($columns, fn (self $column): bool => $column->search),
         ));
     }
 
     /**
-     * The shape `<x-catalog.table>` takes for its header.
+     * The shape `<x-catalog.table>` takes for its header: the wide column and a number's alignment.
      *
      * @return array{label: string, class?: string}
      */
     public function toTableColumn(): array
     {
-        return $this->fill
-            ? ['label' => $this->label, 'class' => 'catalog-col-fill']
-            : ['label' => $this->label];
+        $class = trim(($this->fill ? 'catalog-col-fill ' : '').($this->cell === CatalogCell::Number ? 'is-num' : ''));
+
+        return $class === '' ? ['label' => $this->label] : ['label' => $this->label, 'class' => $class];
     }
 
     /**

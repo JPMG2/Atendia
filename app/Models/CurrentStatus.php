@@ -93,7 +93,7 @@ class CurrentStatus extends Model implements DataTable, HasColumns, Removable
     public function catalogColumns(): array
     {
         return [
-            new CatalogColumnDto('name', __('catalog.status.columns.name'), CatalogCell::Name),
+            new CatalogColumnDto('name', __('catalog.status.columns.name'), CatalogCell::Name, search: true),
             new CatalogColumnDto('color', __('catalog.status.columns.color'), CatalogCell::Tag, fill: true),
         ];
     }
