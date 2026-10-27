@@ -29,7 +29,6 @@ class PlanController extends Controller
             'copy' => [
                 'sub' => __('plan.sub'),
                 'current' => __('plan.current'),
-                'usage_title' => __('plan.meters.title'),
             ],
             'plan' => $usage->card,
             'meters' => $usage->meters,

@@ -65,7 +65,8 @@ describe('the plan screen', function (): void {
             ->and($data['meters'][0]['text'])->toBe('0 de 1.000')
             ->and($data['meters'][2]['text'])->toBe('0 de 200 min')
             ->and($data['meters'][4]['text'])->toBe('60 mensajes por hora')
-            ->and($data['copy']['usage_title'])->toBe('Tu uso este mes')
+            // The web prints these meters with no heading of their own, so the phone sends none either.
+            ->and($data['copy'])->not->toHaveKey('usage_title')
             ->and($data['plan'])->toMatchArray(['code' => 'negocio', 'name' => 'Negocio', 'price' => '$79', 'per_month' => '/mes']);
     });
 
