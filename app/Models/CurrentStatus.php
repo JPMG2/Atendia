@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -17,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'color'])]
-class CurrentStatus extends Model implements DataTable, Removable
+class CurrentStatus extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -84,5 +87,14 @@ class CurrentStatus extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** With two columns the colour takes the slack, so the tag stays beside the name. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.status.columns.name'), CatalogCell::Name),
+            new CatalogColumnDto('color', __('catalog.status.columns.color'), CatalogCell::Tag, fill: true),
+        ];
     }
 }

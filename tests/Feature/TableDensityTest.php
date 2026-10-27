@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Classes\Report\CatalogReport;
+use App\Dto\CatalogColumnDto;
+use App\Interfaces\Catalog\HasColumns;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -158,8 +161,14 @@ test('exactly one column of every catalog table absorbs the leftover width', fun
     // edge, and two columns taking it split the row unevenly. It is not always
     // the name: a two-column master stretches the SECOND one.
     $blade = File::get(resource_path("views/components/catalog/⚡{$editor}.blade.php"));
+    $model = CatalogReport::MASTERS[$editor];
 
-    expect(substr_count($blade, 'catalog-col-fill'))->toBe(1)
+    // A master that says its own columns declares the wide one there; the rest still write it in the Blade.
+    $wideColumns = is_subclass_of($model, HasColumns::class)
+        ? count(array_filter((new $model)->catalogColumns(), fn (CatalogColumnDto $column): bool => $column->fill))
+        : substr_count($blade, 'catalog-col-fill');
+
+    expect($wideColumns)->toBe(1)
         ->and(substr_count($blade, 'catalog-cell-fill'))->toBe(1);
 })->with(['currency', 'country', 'social-network', 'province', 'region', 'tax-condition', 'status']);
 

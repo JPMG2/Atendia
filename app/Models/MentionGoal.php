@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -22,7 +25,7 @@ use Illuminate\Support\Collection;
  * numbers and the wording.
  */
 #[Fillable(['threshold', 'caption', 'is_active'])]
-class MentionGoal extends Model implements DataTable, Removable
+class MentionGoal extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -106,5 +109,15 @@ class MentionGoal extends Model implements DataTable, Removable
                 'active' => $goal->is_active,
             ])
             ->values();
+    }
+
+    /** The goal column reads `achievement` (the words), not the bare `threshold`. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('achievement', __('catalog.mention_goal.columns.threshold'), CatalogCell::Name),
+            new CatalogColumnDto('caption', __('catalog.mention_goal.columns.caption'), CatalogCell::Text, fill: true),
+            new CatalogColumnDto('active', __('catalog.mention_goal.columns.status'), CatalogCell::Active, on: __('catalog.mention_goal.status.active'), off: __('catalog.mention_goal.status.inactive')),
+        ];
     }
 }

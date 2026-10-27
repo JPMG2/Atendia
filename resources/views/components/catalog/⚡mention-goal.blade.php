@@ -31,7 +31,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['achievement', 'caption']"
+    :search="$this->searchKeys"
     :rules="[
         'threshold' => ['required', 'integer', ['min', 1], ['max', 1000000]],
         'caption' => ['required', ['minLength', 10], ['maxLength', 280], 'noMarkup'],
@@ -49,11 +49,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.mention_goal.empty')"
-            :columns="[
-                ['label' => __('catalog.mention_goal.columns.threshold')],
-                ['label' => __('catalog.mention_goal.columns.caption'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.mention_goal.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name" x-text="row.achievement"></td>
             <td class="catalog-cell-fill" x-text="row.caption"></td>

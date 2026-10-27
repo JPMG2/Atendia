@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -20,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['country_id', 'name', 'is_active'])]
-class Province extends Model implements DataTable, Removable
+class Province extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -95,6 +98,15 @@ class Province extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.province.columns.name'), CatalogCell::Name, fill: true),
+            new CatalogColumnDto('country', __('catalog.province.columns.country'), CatalogCell::Text),
+            new CatalogColumnDto('active', __('catalog.province.columns.status'), CatalogCell::Active, on: __('catalog.province.status.active'), off: __('catalog.province.status.inactive')),
+        ];
     }
 
     /**

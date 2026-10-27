@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Traits;
 
 use App\Actions\Catalog\RemoveCatalogRecord;
+use App\Dto\CatalogColumnDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Services\NotificationService;
@@ -251,6 +253,36 @@ trait InteractsWithCatalogEditor
     public function rows(): Collection
     {
         return $this->catalogModel()->catalogRows();
+    }
+
+    /**
+     * The table header, from the model when it says its own columns: the mobile
+     * API reads the same list. An editor still on a hand-written header gets none.
+     *
+     * @return list<array{label: string, class?: string}>
+     */
+    #[Computed]
+    public function tableColumns(): array
+    {
+        $model = $this->catalogModel();
+
+        return $model instanceof HasColumns
+            ? array_map(fn (CatalogColumnDto $column): array => $column->toTableColumn(), $model->catalogColumns())
+            : [];
+    }
+
+    /**
+     * The row keys the search box looks through, from the same columns the table
+     * shows. Empty for an editor that still writes its own list.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function searchKeys(): array
+    {
+        $model = $this->catalogModel();
+
+        return $model instanceof HasColumns ? CatalogColumnDto::searchKeys($model->catalogColumns()) : [];
     }
 
     /**

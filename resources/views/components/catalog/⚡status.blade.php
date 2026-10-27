@@ -53,7 +53,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['name']"
+    :search="$this->searchKeys"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]"
@@ -73,10 +73,7 @@ new class extends Component
         right edge and leaving a hole in the middle. --}}
         <x-catalog.table
             :empty="__('catalog.status.empty')"
-            :columns="[
-                ['label' => __('catalog.status.columns.name')],
-                ['label' => __('catalog.status.columns.color'), 'class' => 'catalog-col-fill'],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name" x-text="row.name"></td>
             {{-- The tag shows exactly as it will everywhere else: the colour is
