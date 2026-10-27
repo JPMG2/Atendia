@@ -157,6 +157,14 @@ test('the list pages in SQL like the web: a page of twenty-five, and the next on
     expect($second->json('data.events.rows'))->toHaveCount(30)->and($second->json('data.events.has_more'))->toBeFalse();
 });
 
+test('the last page a call may ask for says there is no more, so the button goes away', function (): void {
+    PlatformEvent::factory()->count(210)->severity(PlatformEventSeverity::Info)->create();
+
+    $last = screensGet(screensToken(), 'alerts?filter=info&page=8')->assertOk();
+
+    expect($last->json('data.events.rows'))->toHaveCount(200)->and($last->json('data.events.has_more'))->toBeFalse();
+});
+
 test('a filter the board does not offer reads as all of them', function (): void {
     PlatformEvent::factory()->count(2)->create();
 

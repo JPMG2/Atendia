@@ -41,7 +41,7 @@ class AdminAlertsController extends Controller
                 'go' => __('platform_events.screen.go'),
                 'empty' => ['title' => __('platform_events.screen.empty_title'), 'body' => __('platform_events.screen.empty_body')],
                 'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'])], $board->rows),
-                'has_more' => $board->hasMore,
+                'has_more' => $board->hasMore && $pages < self::MAX_PAGES,
             ],
             'sensors' => [
                 'title' => __('platform_events.screen.sensors'),
