@@ -36,4 +36,7 @@ enum CatalogCell: string
 
     /** A word on a tinted ground and no dot; the column names the word and tone of each value. */
     case Badge = 'badge';
+
+    /** A list of short words, each a small pill that wraps: the web's `catalog-chip`. */
+    case List = 'list';
 }

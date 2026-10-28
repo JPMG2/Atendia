@@ -4,6 +4,7 @@
     'singular' => null,     // "currency"; the counter agrees in singular and plural
     'plural' => null,
     'create' => null,       // label of the create button
+    'chipOptions' => [],    // the chip column's values in the server's order: the selector's list when chips would not fit
 ])
 
 {{--
@@ -34,8 +35,29 @@
     @endif
 </div>
 
-{{-- The one-tap filter of a master whose model names a chip column (a country): the phone draws the same row. --}}
-<template x-if="chipKey && chips().length > 1">
+{{-- The one-tap filter of a master whose model names a chip column (a country): the phone draws the same row.
+     Past `chipsMax` values the chips would fill the screen, so one country selector stands in, on both sides. --}}
+<template x-if="chipKey && chips().length > chipsMax">
+    <div class="catalog-filter">
+        {{-- Its choice writes the browser's filter; its countries follow `chips()` after every save, since a
+             Livewire morph never redraws what a <template> already drew; a chip reset elsewhere clears it too. --}}
+        <x-inputsform.combobox
+            span="text"
+            size="s"
+            name="catalog_chip"
+            :label="__('catalog.hub.chips_label')"
+            :placeholder="__('catalog.hub.chips_placeholder')"
+            :options="$chipOptions"
+            x-on:change="chip = $event.target.value"
+            x-effect="
+                options = chips().map((value) => ({ value, label: value }));
+                chip === '' && selected && ((selected = null), (query = ''));
+            "
+        />
+    </div>
+</template>
+
+<template x-if="chipKey && chips().length > 1 && chips().length <= chipsMax">
     <div class="catalog-filter" role="group" aria-label="{{ __('catalog.hub.chips_label') }}">
         <x-ui.button
             variant="secondary"

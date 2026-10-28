@@ -51,7 +51,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name', 'description', 'type']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', ['minLength', 3], ['maxLength', 40], 'noMarkup'],
         'name' => ['required', ['minLength', 2], ['maxLength', 255], 'noMarkup'],
@@ -71,13 +71,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.service_attribute.empty')"
-            :columns="[
-                ['label' => __('catalog.service_attribute.columns.code')],
-                ['label' => __('catalog.service_attribute.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.service_attribute.columns.type')],
-                ['label' => __('catalog.service_attribute.columns.options')],
-                ['label' => __('catalog.service_attribute.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             {{-- The description sits under the name and not in a column of its own:

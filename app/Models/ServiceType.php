@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -29,7 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * exclusively.
  */
 #[Fillable(['code', 'name', 'description', 'service_modality_id', 'business_sector_id', 'sort_order', 'is_active'])]
-class ServiceType extends Model implements DataTable, Removable
+class ServiceType extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -285,5 +288,20 @@ class ServiceType extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /**
+     * The sector rides under the name as its tag, with the description, and is searched;
+     * the description is not, as the editor's box never looked through it.
+     */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.service_type.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.service_type.columns.name'), CatalogCell::Name, fill: true, search: true, sub: 'description', tag: 'sector', searchAlso: ['sector']),
+            new CatalogColumnDto('modality', __('catalog.service_type.columns.modality'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('attributes', __('catalog.service_type.columns.attributes'), CatalogCell::List, search: true),
+            new CatalogColumnDto('active', __('catalog.service_type.columns.status'), CatalogCell::Active, on: __('catalog.service_type.status.active'), off: __('catalog.service_type.status.inactive')),
+        ];
     }
 }

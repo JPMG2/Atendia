@@ -269,6 +269,7 @@ new class extends Component
             :singular="__('catalog.country_holiday.singular')"
             :plural="__('catalog.country_holiday.plural')"
             :create="__('catalog.country_holiday.create')"
+            :chip-options="$this->chipOptions"
         >
             <x-ui.button variant="secondary" icon="calendar" wire:click="openCalendar" data-testid="holiday-year">
                 {{ __('catalog.country_holiday.calendar.open') }}

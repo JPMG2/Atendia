@@ -33,6 +33,7 @@ return [
         'close' => 'Cerrar catálogo',
         'chips_all' => 'Todos',
         'chips_label' => 'Filtrar por país',
+        'chips_placeholder' => 'Todos los países',
 
         // Estado vacío: es lo primero que ve alguien que entra por primera vez,
         // así que explica QUÉ es un catálogo y PARA QUÉ sirve, en vez de repetir

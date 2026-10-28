@@ -15,6 +15,8 @@ use App\Enums\PlatformSensorStatus;
 use App\Enums\SubscriptionStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
+use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Models\CatalogForm;
 use App\Models\Company;
 use App\Models\Country;
@@ -28,6 +30,9 @@ use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\ServiceAttribute;
+use App\Models\ServiceModality;
+use App\Models\ServiceType;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use App\Models\Subscription;
@@ -874,11 +879,11 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     $data = screensGet(screensToken(), 'catalogs')->assertOk()->json('data');
 
-    // Readable = its model says its own columns; the other 11 masters are not drawn until they do.
+    // Readable = its model says its own columns; the other 7 masters are not drawn until they do.
     // The order is the rail's: by the master's `order`, a group appearing where its first master does.
-    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'status', 'social-network', 'mention-goal'])
-        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Sistema'])
-        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector'], ['status', 'social-network', 'mention-goal']])
+    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal'])
+        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema'])
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal']])
         ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'country', 'title' => 'Países', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
         ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
@@ -1063,7 +1068,7 @@ test('Feriados and Regiones offer the web\'s country chips, Feriados its next ho
     $zulOnly = screensGet($token, 'catalogs/country-holiday?chip=Zuliandia')->assertOk()->json('data');
     $unknown = screensGet($token, 'catalogs/country-holiday?chip=Nadaland')->assertOk()->json('data');
 
-    expect($all['chips'])->toBe(['label' => __('catalog.hub.chips_label'), 'all' => __('catalog.hub.chips_all'), 'value' => '', 'options' => ['Ázkaria', 'Zuliandia']])
+    expect($all['chips'])->toBe(['label' => __('catalog.hub.chips_label'), 'all' => __('catalog.hub.chips_all'), 'placeholder' => __('catalog.hub.chips_placeholder'), 'select' => false, 'value' => '', 'options' => ['Ázkaria', 'Zuliandia']])
         ->and($zulOnly['chips']['value'])->toBe('Zuliandia')
         ->and($zulOnly['count'])->toBe(2)
         ->and(array_unique(array_column($zulOnly['rows'], 'country')))->toBe(['Zuliandia'])
@@ -1087,7 +1092,11 @@ test('Feriados and Regiones offer the web\'s country chips, Feriados its next ho
     $regions = screensGet($token, 'catalogs/region')->assertOk()->json('data');
     $countries = screensGet($token, 'catalogs/country')->assertOk()->json('data');
 
-    expect($regions['chips'])->not->toBeNull()
+    // Past CHIPS_MAX countries the same filter becomes one selector, on the web and on the phone.
+    Region::factory()->count(CatalogColumnDto::CHIPS_MAX + 1)->create();
+    expect(screensGet($token, 'catalogs/region')->json('data.chips.select'))->toBeTrue();
+
+    expect($regions['chips']['select'])->toBeFalse()
         ->and($regions['highlights'])->toBeNull()
         ->and($countries['chips'])->toBeNull()
         ->and($countries['highlights'])->toBeNull()
@@ -1121,6 +1130,61 @@ test('on the holiday itself, with the platform in Caracas, the next holiday is t
 
     // And the day after, it moves on.
     expect($next('2027-01-02 09:00')['when'])->toBe('08/02/2027');
+});
+
+test('Negocio and Servicios serve a name with its line under it, its tag and glyph, and lists as pills, searched as the web\'s box', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // Values no factory text can contain, so a search that must find nothing cannot match a random row.
+    $sector = BusinessSector::factory()->create(['name' => 'Rubro Qx']);
+    BusinessActivity::factory()->create(['code' => 'act-qx', 'name' => 'Oficio Qx', 'business_sector_id' => $sector->id]);
+    $modality = ServiceModality::factory()->create(['code' => 'mod-qm', 'name' => 'Modo Qm', 'description' => 'Pregunta zzqm', 'icon' => 'heart']);
+    $type = ServiceType::factory()->create(['code' => 'tipo-qt', 'name' => 'Tipo Qt', 'description' => 'Aclara zzqt', 'service_modality_id' => $modality->id, 'business_sector_id' => $sector->id]);
+    $attribute = ServiceAttribute::factory()->create(['code' => 'atr-qa', 'name' => 'Talle Qa', 'description' => 'Explica zzqa', 'data_type' => 'list', 'options' => ['Chico Qa', 'Grande Qa']]);
+    $type->serviceAttributes()->attach($attribute->id, ['is_required' => false, 'sort_order' => 1, 'label_override' => 'Medida Qa']);
+    $token = screensToken();
+
+    $types = screensGet($token, 'catalogs/service-type')->assertOk()->json('data');
+    $attributes = screensGet($token, 'catalogs/service-attribute')->assertOk()->json('data');
+    $modalities = screensGet($token, 'catalogs/service-modality')->assertOk()->json('data');
+    $activities = screensGet($token, 'catalogs/business-activity')->assertOk()->json('data');
+
+    // The name brings its line, its tag and its glyph; the row carries those keys and nothing else extra.
+    expect(collect($types['columns'])->firstWhere('key', 'name'))->toMatchArray(['cell' => 'name', 'sub' => 'description', 'tag' => 'sector', 'icon' => null])
+        ->and(array_column($types['columns'], 'cell'))->toBe(['code', 'name', 'text', 'list', 'active'])
+        ->and(collect($types['rows'])->firstWhere('code', 'tipo-qt'))->toMatchArray(['description' => 'Aclara zzqt', 'sector' => 'Rubro Qx', 'modality' => 'Modo Qm', 'attributes' => ['Medida Qa']])
+        ->and(collect($modalities['columns'])->firstWhere('key', 'name'))->toMatchArray(['sub' => 'description', 'icon' => 'icon'])
+        ->and(collect($modalities['rows'])->firstWhere('code', 'mod-qm'))->toMatchArray(['icon' => 'heart', 'description' => 'Pregunta zzqm'])
+        ->and(collect($modalities['rows'])->firstWhere('code', 'mod-qm'))->not->toHaveKey('icon_svg')
+        ->and(array_column($attributes['columns'], 'cell'))->toBe(['code', 'name', 'text', 'list', 'active'])
+        ->and(collect($attributes['rows'])->firstWhere('code', 'atr-qa')['options'])->toBe(['Chico Qa', 'Grande Qa'])
+        ->and(array_column($activities['columns'], 'cell'))->toBe(['code', 'name', 'text', 'symbol', 'active']);
+
+    // Each box looks where the web's did: a type by its sector and its attributes, never by its description;
+    // an attribute and a modality by their description; an attribute never by its options.
+    expect(screensGet($token, 'catalogs/service-type?search=rubro qx')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/service-type?search=medida qa')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/service-type?search=zzqt')->json('data.count'))->toBe(0)
+        ->and(screensGet($token, 'catalogs/service-attribute?search=zzqa')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/service-attribute?search=grande qa')->json('data.count'))->toBe(0)
+        ->and(screensGet($token, 'catalogs/service-modality?search=zzqm')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/business-activity?search=rubro qx')->json('data.count'))->toBe(1);
+});
+
+test('Feriados lists each country\'s days as this year\'s calendar reads them, the countries in the chips\' order', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // Easter 2026 is 5 April: Carnaval lands in February and Viernes Santo on 3 April.
+    $this->travelTo(CarbonImmutable::parse('2026-10-28 12:00', 'America/Caracas'));
+    $zul = Country::factory()->create(['name' => 'Zuliandia']);
+    $azk = Country::factory()->create(['name' => 'Ázkaria']);
+    foreach ([['Viernes Qz', ['easter_offset' => -2]], ['Malvinas Qz', ['month' => 4, 'day' => 2]], ['Carnaval Qz', ['easter_offset' => -48]], ['Memoria Qz', ['month' => 3, 'day' => 24]], ['Año Qz', ['month' => 1, 'day' => 1]]] as [$name, $when]) {
+        CountryHoliday::create(['country_id' => $zul->id, 'name' => $name, ...$when]);
+    }
+    CountryHoliday::create(['country_id' => $azk->id, 'name' => 'Fiesta Qa', 'month' => 12, 'day' => 1]);
+
+    $rows = (new CountryHoliday)->catalogRows();
+
+    expect($rows->pluck('name')->all())->toBe(['Fiesta Qa', 'Año Qz', 'Carnaval Qz', 'Memoria Qz', 'Malvinas Qz', 'Viernes Qz'])
+        ->and($rows->pluck('country')->unique()->values()->all())->toBe(['Ázkaria', 'Zuliandia']);
 });
 
 test('the search is the editor\'s box: trimmed, any case, contained in a name or a text, never in a tag or a switch', function (): void {

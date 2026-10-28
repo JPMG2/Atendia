@@ -296,6 +296,18 @@ trait InteractsWithCatalogEditor
     }
 
     /**
+     * The values of the chip column in the server's Spanish order: the country selector's
+     * options when there are too many for chips. Empty when the master offers none.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function chipOptions(): array
+    {
+        return $this->chipKey === null ? [] : CatalogColumnDto::chipValues($this->rows, $this->chipKey);
+    }
+
+    /**
      * What the master tells before its list, from the model, as the mobile API says it.
      *
      * @return list<array{when: string, text: string}>

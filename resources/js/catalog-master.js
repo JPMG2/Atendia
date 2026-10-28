@@ -10,6 +10,7 @@
  *     search: ['code', 'name'],            // keys the search box filters by
  *     rules:  { code: ['required', ...] }, // mirror of getValidationRules()
  *     chipKey: 'country',                  // optional: the row key the chips filter by
+ *     chipsMax: 6,                         // more values than this: one selector instead of chips
  *   })
  *
  * It needs the global `validate()` from form-guard.js.
@@ -18,12 +19,13 @@
 // rules `CatalogColumnDto::chipValues` uses for the phone.
 const chipCollator = new Intl.Collator('es');
 
-export function catalogMaster({ items = [], path = '', search = [], rules = {}, chipKey = null } = {}) {
+export function catalogMaster({ items = [], path = '', search = [], rules = {}, chipKey = null, chipsMax = 6 } = {}) {
     return {
         view: 'list',
         mode: 'create',
         q: '',
         chipKey,
+        chipsMax,
         chip: '',
         errors: {},
         items,

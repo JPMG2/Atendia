@@ -8,13 +8,16 @@ use App\Enums\CatalogCell;
 use Collator;
 
 /**
- * One column of a master's table: which row key it reads, its name and how its cell
- * is drawn. `fill` takes the free width, `search` is looked through by the search box,
- * `on`/`off` are the words of an active or flag cell, `badges` the word and tone of each
- * value of a badge cell, and `chips` makes its values the one-tap filter over the list.
+ * One column of a master's table: which row key it reads, its name and how its cell is
+ * drawn. `fill` takes the free width; `search` and `searchAlso` are what the box looks
+ * through; `on`/`off`, `badges` and `chips` serve active, badge and filter columns; a name
+ * may bring other row keys along: a line under it (`sub`), a brand tag (`tag`), a glyph (`icon`).
  */
 final readonly class CatalogColumnDto
 {
+    /** More values than this and the chips become one country selector, on the web and on the phone alike. */
+    public const int CHIPS_MAX = 6;
+
     public function __construct(
         public string $key,
         public string $label,
@@ -26,6 +29,11 @@ final readonly class CatalogColumnDto
         /** @var array<string, array{label: string, tone: string}> */
         public array $badges = [],
         public bool $chips = false,
+        public ?string $sub = null,
+        public ?string $tag = null,
+        public ?string $icon = null,
+        /** @var list<string> */
+        public array $searchAlso = [],
     ) {}
 
     /**
@@ -79,10 +87,11 @@ final readonly class CatalogColumnDto
      */
     public static function searchKeys(array $columns): array
     {
-        return array_values(array_map(
-            fn (self $column): string => $column->key,
-            array_filter($columns, fn (self $column): bool => $column->search),
-        ));
+        return collect($columns)
+            ->filter(fn (self $column): bool => $column->search)
+            ->flatMap(fn (self $column): array => [$column->key, ...$column->searchAlso])
+            ->values()
+            ->all();
     }
 
     /**
@@ -100,7 +109,7 @@ final readonly class CatalogColumnDto
     /**
      * What the mobile API sends for this column.
      *
-     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null}
+     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null, sub: string|null, tag: string|null, icon: string|null}
      */
     public function toArray(): array
     {
@@ -111,6 +120,9 @@ final readonly class CatalogColumnDto
             'on' => $this->on,
             'off' => $this->off,
             'badges' => $this->badges === [] ? null : $this->badges,
+            'sub' => $this->sub,
+            'tag' => $this->tag,
+            'icon' => $this->icon,
         ];
     }
 }

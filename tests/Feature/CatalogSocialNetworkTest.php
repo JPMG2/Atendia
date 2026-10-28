@@ -272,7 +272,7 @@ test('the success toast names the entity instead of saying "Registro"', function
 
 test('the table listens for the refreshed rows event', function (): void {
     expect(Livewire::test('catalog.social-network')->html())
-        ->toContain('x-on:catalog-rows-refreshed="items = $event.detail.rows"');
+        ->toContain('x-on:catalog-rows-refreshed="refreshRows($event.detail.rows)"');
 });
 
 test('a failed save keeps what the user typed instead of wiping the form', function (): void {

@@ -10,6 +10,8 @@ use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\CountryHolidaySeeder;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\CurrencySeeder;
+use Database\Seeders\ProvinceSeeder;
+use Database\Seeders\RegionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -85,6 +87,61 @@ test('the list opens with the next holiday of each country and filters by countr
     'desktop-light' => ['desktop-light', 1280, false],
     'phone-dark' => ['phone-dark', 390, true],
 ]);
+
+test('Regiones, with more countries than chips fit, filters with one country selector instead, at every width', function (string $label, int $width, bool $dark): void {
+    $this->seed(ProvinceSeeder::class);
+    $this->seed(RegionSeeder::class);
+    $page = visit('/admin/catalogs')->resize($width, 900);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->click('Regiones')->wait(1)->assertNoJavaScriptErrors();
+    $count = fn (): int => (int) $page->script('document.querySelector(".catalog-count b").textContent.trim()');
+    $all = $count();
+
+    // No row of chips: past six countries there is the selector, with "Todos los países" when nothing is chosen.
+    expect($page->script('document.querySelectorAll(".catalog-filter button[aria-pressed]").length'))->toBe(0)
+        ->and($page->script('document.querySelector(".catalog-filter [role=combobox]").placeholder'))->toBe('Todos los países');
+
+    $page->click('.catalog-filter [role=combobox]')->type('.catalog-filter [role=combobox]', 'Venez')->wait(0.3);
+    $page->script('document.querySelector(".catalog-filter .combo-option").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))');
+    $page->wait(0.4)->screenshot(filename: 'catalog-regions-selector-'.$label);
+
+    $shown = (array) $page->script('[...new Set([...document.querySelectorAll(".catalog-table tbody tr")].filter((r) => r.offsetParent !== null).map((r) => r.children[2].textContent.trim()))]');
+    expect($shown)->toBe(['Venezuela'])
+        ->and($count())->toBeLessThan($all)
+        ->and((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+
+    // Clearing the box gives every region back.
+    $page->script('document.querySelector(".catalog-filter .combo-clear").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))');
+    $page->wait(0.4);
+    expect($count())->toBe($all);
+})->with([
+    'desktop-light' => ['desktop-light', 1280, false],
+    'phone-dark' => ['phone-dark', 390, true],
+]);
+
+test('the selector lists every country the rows bring after a save, not the ones of page load', function (): void {
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+    $page->click('Feriados')->wait(1);
+
+    // Copying holidays to five more countries without reloading: the rows refresh, the chips become the selector.
+    $page->script('(() => { const m = document.querySelector(".catalog-master"); const rows = Alpine.$data(m).items.slice(); ["Bolivia", "Chile", "Ecuador", "Perú", "Uruguay"].forEach((c, i) => rows.push({ id: 9000 + i, country: c, name: "Año Nuevo", kind: "fixed", when: "1 de enero", active: true })); m.dispatchEvent(new CustomEvent("catalog-rows-refreshed", { detail: { rows } })); })()');
+    $page->wait(0.5);
+
+    $page->click('.catalog-filter [role=combobox]')->wait(0.3);
+    $offered = (array) $page->script('[...document.querySelectorAll(".catalog-filter .combo-option")].map((o) => o.textContent.trim())');
+
+    expect($page->script('document.querySelectorAll(".catalog-filter button[aria-pressed]").length'))->toBe(0)
+        ->and($offered)->toBe(['Argentina', 'Bolivia', 'Chile', 'Ecuador', 'Perú', 'Uruguay', 'Venezuela']);
+
+    // Picking one of the new countries filters by it.
+    $page->script('[...document.querySelectorAll(".catalog-filter .combo-option")].find((o) => o.textContent.trim() === "Perú").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))');
+    $page->wait(0.4);
+    expect($page->script('document.querySelector(".catalog-count b").textContent.trim()'))->toBe('1');
+});
 
 test('a row saved outside the chosen chip gives "Todos" back, and so does a chip whose country is gone', function (): void {
     $page = visit('/admin/catalogs')->resize(1280, 900);

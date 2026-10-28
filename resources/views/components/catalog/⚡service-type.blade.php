@@ -97,7 +97,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name', 'modality', 'sector', 'attributes']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', ['minLength', 3], ['maxLength', 40], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -117,13 +117,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.service_type.empty')"
-            :columns="[
-                ['label' => __('catalog.service_type.columns.code')],
-                ['label' => __('catalog.service_type.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.service_type.columns.modality')],
-                ['label' => __('catalog.service_type.columns.attributes')],
-                ['label' => __('catalog.service_type.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             {{-- The sector rides along with the description on the second line

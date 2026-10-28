@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Dto\CatalogColumnDto;
 use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\HasColumns;
+use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\CountryHoliday;
@@ -13,6 +14,9 @@ use App\Models\CurrentStatus;
 use App\Models\MentionGoal;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\ServiceAttribute;
+use App\Models\ServiceModality;
+use App\Models\ServiceType;
 use App\Models\SocialNetwork;
 use App\Models\TaxCondition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +41,10 @@ dataset('masters with columns', [
     'country' => ['country', Country::class, ['code', 'name']],
     'region' => ['region', Region::class, ['name', 'province', 'country']],
     'country-holiday' => ['country-holiday', CountryHoliday::class, ['country', 'name', 'when']],
+    'business-activity' => ['business-activity', BusinessActivity::class, ['code', 'name', 'sector']],
+    'service-type' => ['service-type', ServiceType::class, ['code', 'name', 'sector', 'modality', 'attributes']],
+    'service-attribute' => ['service-attribute', ServiceAttribute::class, ['code', 'name', 'description', 'type']],
+    'service-modality' => ['service-modality', ServiceModality::class, ['code', 'name', 'description']],
 ]);
 
 /**
@@ -51,6 +59,7 @@ const CELL_CLASSES = [
     'number' => 'catalog-cell-num',
     'active' => 'catalog-status',
     'badge' => 'status-tag',
+    'list' => 'catalog-chip',
 ];
 
 /** The editor's `<td>` that paints this row key, as written in its source. */
@@ -95,7 +104,9 @@ it('only names keys the row really carries', function (string $component, string
     $keys = array_keys((new $model)->catalogRows()->firstOrFail());
 
     foreach ((new $model)->catalogColumns() as $column) {
-        expect($keys)->toContain($column->key);
+        foreach (array_filter([$column->key, $column->sub, $column->tag, $column->icon, ...$column->searchAlso]) as $key) {
+            expect($keys)->toContain($key);
+        }
     }
 })->with('masters with columns');
 
@@ -116,7 +127,12 @@ it('paints each cell on the web with the class its kind promises the phone', fun
 
     foreach ((new $model)->catalogColumns() as $column) {
         $cell = cellOf($source, $column->key);
-        $promised = CELL_CLASSES[$column->cell->value] ?? null;
+        // A name with a line under it is the web's two-line `catalog-cell-primary`, and that line reads its key.
+        $promised = $column->sub !== null ? 'catalog-cell-primary' : (CELL_CLASSES[$column->cell->value] ?? null);
+
+        foreach (array_filter([$column->sub, $column->tag]) as $carried) {
+            expect($cell)->toContain('row.'.$carried);
+        }
 
         // A cell not found would let every check below pass on an empty string.
         expect($cell)->not->toBe('');

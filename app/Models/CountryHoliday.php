@@ -77,16 +77,19 @@ class CountryHoliday extends Model implements DataTable, HasColumns, HasHighligh
     }
 
     /**
-     * The holidays as the catalog list shows them, by country and then by calendar.
+     * The holidays as the catalog list shows them: countries in the chips' Spanish order,
+     * then each country's days as this year's calendar reads them.
      *
      * @return Collection<int, array{id: int, country: string, name: string, kind: string, when: string, active: bool}>
      */
     public function catalogRows(): Collection
     {
-        return $this->newQuery()
-            ->with('country:id,name')
-            ->get()
-            ->sortBy(fn (self $holiday): string => $holiday->country?->name.'|'.$holiday->calendarOrder())
+        $holidays = $this->newQuery()->with('country:id,name')->get();
+        $year = (int) CarbonImmutable::now(Company::localTimezone())->format('Y');
+        $countries = array_flip(CatalogColumnDto::spanishOrder($holidays->map(fn (self $holiday): string => (string) $holiday->country?->name)->unique()->values()->all()));
+
+        return $holidays
+            ->sortBy(fn (self $holiday): string => sprintf('%05d', $countries[(string) $holiday->country?->name]).'|'.$holiday->calendarOrder($year))
             ->map(fn (self $holiday): array => [
                 'id' => $holiday->id,
                 'country' => (string) $holiday->country?->name,
@@ -151,10 +154,28 @@ class CountryHoliday extends Model implements DataTable, HasColumns, HasHighligh
             ->all();
     }
 
-    /** Where this row sits among its country's: by calendar day, Easter-relative ones after the fixed. */
-    private function calendarOrder(): string
+    /**
+     * Where this row sits among its country's: the day it lands on THIS year in the platform's
+     * clock, read as a calendar (month and day), so Carnaval sits between New Year and March
+     * whatever its shape. A one-year decree sits on its own day.
+     */
+    private function calendarOrder(?int $year = null): string
     {
-        return ($this->on_date?->format('Y-m-d') ?? sprintf('0000-%02d-%02d', $this->month ?? 0, $this->day ?? 0)).'|'.($this->easter_offset ?? 0);
+        $date = $this->dateIn($year ?? (int) CarbonImmutable::now(Company::localTimezone())->format('Y'));
+
+        // Two days on the same date (Viernes Santo and 19 April in 2030) keep one order: the id breaks the tie.
+        return $date->format('m-d').'|'.$date->format('Y').'|'.sprintf('%010d', $this->id ?? 0);
+    }
+
+    /** The day this holiday lands on in `$year`; a one-year decree keeps its own date. */
+    public function dateIn(int $year): CarbonImmutable
+    {
+        return match ($this->kind()) {
+            self::KIND_ONCE => $this->on_date->toImmutable(),
+            self::KIND_EASTER => self::easter($year)->addDays($this->easter_offset),
+            self::KIND_NTH => self::nthWeekday($year, $this->month, $this->weekday, $this->nth),
+            default => CarbonImmutable::create($year, $this->month, $this->day),
+        };
     }
 
     /** What makes two recurring rows "the same day" across countries; null for a one-year row, which never repeats. */
@@ -233,8 +254,6 @@ class CountryHoliday extends Model implements DataTable, HasColumns, HasHighligh
      */
     public static function forYear(int $countryId, int $year): Collection
     {
-        $easter = self::easter($year);
-
         return self::query()
             ->where('country_id', $countryId)
             ->where('is_active', true)
@@ -242,12 +261,7 @@ class CountryHoliday extends Model implements DataTable, HasColumns, HasHighligh
             // A one-year holiday belongs to its own year only: next January it is simply not there.
             ->reject(fn (self $holiday): bool => $holiday->kind() === self::KIND_ONCE && $holiday->on_date->year !== $year)
             ->map(fn (self $holiday): array => [
-                'date' => match ($holiday->kind()) {
-                    self::KIND_ONCE => $holiday->on_date->toImmutable(),
-                    self::KIND_EASTER => $easter->addDays($holiday->easter_offset),
-                    self::KIND_NTH => self::nthWeekday($year, $holiday->month, $holiday->weekday, $holiday->nth),
-                    default => CarbonImmutable::create($year, $holiday->month, $holiday->day),
-                },
+                'date' => $holiday->dateIn($year),
                 'name' => $holiday->name,
                 'kind' => $holiday->kind(),
             ])

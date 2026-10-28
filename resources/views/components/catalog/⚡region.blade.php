@@ -66,6 +66,7 @@ new class extends Component
             :singular="__('catalog.region.singular')"
             :plural="__('catalog.region.plural')"
             :create="__('catalog.region.create')"
+            :chip-options="$this->chipOptions"
         />
 
         <x-catalog.table

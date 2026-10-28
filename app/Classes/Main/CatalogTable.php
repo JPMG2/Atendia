@@ -54,7 +54,7 @@ class CatalogTable
      * The chips over the list, built from every row so they never vanish under a search;
      * a chip that names no value is read as "all", as an unknown filter is elsewhere.
      *
-     * @var array{label: string, all: string, value: string, options: list<string>}|null
+     * @var array{label: string, all: string, placeholder: string, select: bool, value: string, options: list<string>}|null
      */
     public ?array $chips {
         get {
@@ -66,7 +66,14 @@ class CatalogTable
 
             $options = CatalogColumnDto::chipValues($this->every, $key);
 
-            return ['label' => __('catalog.hub.chips_label'), 'all' => __('catalog.hub.chips_all'), 'value' => in_array($this->chip, $options, true) ? $this->chip : '', 'options' => $options];
+            return [
+                'label' => __('catalog.hub.chips_label'),
+                'all' => __('catalog.hub.chips_all'),
+                'placeholder' => __('catalog.hub.chips_placeholder'),
+                'select' => count($options) > CatalogColumnDto::CHIPS_MAX,
+                'value' => in_array($this->chip, $options, true) ? $this->chip : '',
+                'options' => $options,
+            ];
         }
     }
 
@@ -94,7 +101,7 @@ class CatalogTable
      */
     public array $rows {
         get {
-            $keys = ['id', ...array_map(fn (CatalogColumnDto $column): string => $column->key, $this->columns)];
+            $keys = ['id', ...collect($this->columns)->flatMap(fn (CatalogColumnDto $column): array => array_filter([$column->key, $column->sub, $column->tag, $column->icon]))->all()];
 
             return $this->matching
                 ->take($this->limit)
@@ -149,7 +156,8 @@ class CatalogTable
         return $needle === ''
             ? $rows
             : $rows->filter(fn (array $row): bool => collect($keys)->contains(
-                fn (string $key): bool => str_contains(mb_strtolower((string) ($row[$key] ?? '')), $needle),
+                // A list is searched as the browser reads it, `String(['a','b'])` = "a,b".
+                fn (string $key): bool => str_contains(mb_strtolower(is_array($row[$key] ?? null) ? implode(',', $row[$key]) : (string) ($row[$key] ?? '')), $needle),
             ))->values();
     }
 }

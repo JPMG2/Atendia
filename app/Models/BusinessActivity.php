@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\SuggestsServiceNames;
@@ -27,7 +30,7 @@ use Illuminate\Support\Collection;
  * It is what the business picks, and what then shapes how the assistant works.
  */
 #[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active', 'catalog_eligible'])]
-class BusinessActivity extends Model implements DataTable, Removable
+class BusinessActivity extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -189,5 +192,17 @@ class BusinessActivity extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** An activity is looked up by its key, its name or the sector it belongs to. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.business_activity.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.business_activity.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('sector', __('catalog.business_activity.columns.sector'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('order', __('catalog.business_activity.columns.order'), CatalogCell::Symbol),
+            new CatalogColumnDto('active', __('catalog.business_activity.columns.status'), CatalogCell::Active, on: __('catalog.business_activity.status.active'), off: __('catalog.business_activity.status.inactive')),
+        ];
     }
 }

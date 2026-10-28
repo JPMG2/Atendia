@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -26,7 +29,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * it — and whether it is required there — lives in the pivot, not here.
  */
 #[Fillable(['code', 'name', 'description', 'data_type', 'unit', 'options', 'is_multiple', 'sort_order', 'is_active'])]
-class ServiceAttribute extends Model implements DataTable, Removable
+class ServiceAttribute extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -233,5 +236,17 @@ class ServiceAttribute extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** The description sits under the name and is searched with it; the options are pills the box does not look through. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.service_attribute.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.service_attribute.columns.name'), CatalogCell::Name, fill: true, search: true, sub: 'description', searchAlso: ['description']),
+            new CatalogColumnDto('type', __('catalog.service_attribute.columns.type'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('options', __('catalog.service_attribute.columns.options'), CatalogCell::List),
+            new CatalogColumnDto('active', __('catalog.service_attribute.columns.status'), CatalogCell::Active, on: __('catalog.service_attribute.status.active'), off: __('catalog.service_attribute.status.inactive')),
+        ];
     }
 }

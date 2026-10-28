@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -27,7 +30,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * what the system remembers. The `code` is the hinge with the code.
  */
 #[Fillable(['code', 'name', 'description', 'icon', 'sort_order', 'is_active'])]
-class ServiceModality extends Model implements DataTable, Removable
+class ServiceModality extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -156,6 +159,17 @@ class ServiceModality extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** The glyph beside the name and what it asks for under it; the phone draws the glyph by its key, the web by its SVG. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.service_modality.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.service_modality.columns.name'), CatalogCell::Name, fill: true, search: true, sub: 'description', icon: 'icon', searchAlso: ['description']),
+            new CatalogColumnDto('order', __('catalog.service_modality.columns.order'), CatalogCell::Symbol),
+            new CatalogColumnDto('active', __('catalog.service_modality.columns.status'), CatalogCell::Active, on: __('catalog.service_modality.status.active'), off: __('catalog.service_modality.status.inactive')),
+        ];
     }
 
     /**

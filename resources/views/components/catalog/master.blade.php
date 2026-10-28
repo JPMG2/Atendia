@@ -19,7 +19,8 @@
         path: {{ \Illuminate\Support\Js::from($path) }},
         search: {{ \Illuminate\Support\Js::from($search) }},
         rules: {{ \Illuminate\Support\Js::from($rules) }},
-        chipKey: {{ \Illuminate\Support\Js::from($chip) }}
+        chipKey: {{ \Illuminate\Support\Js::from($chip) }},
+        chipsMax: {{ \App\Dto\CatalogColumnDto::CHIPS_MAX }}
     })"
     x-on:catalog-rows-refreshed="refreshRows($event.detail.rows)"
 >

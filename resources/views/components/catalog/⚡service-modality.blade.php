@@ -52,7 +52,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name', 'description']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', ['minLength', 3], ['maxLength', 30], 'noMarkup'],
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
@@ -71,12 +71,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.service_modality.empty')"
-            :columns="[
-                ['label' => __('catalog.service_modality.columns.code')],
-                ['label' => __('catalog.service_modality.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.service_modality.columns.order')],
-                ['label' => __('catalog.service_modality.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             {{-- The REAL glyph beside the name instead of a column holding its
