@@ -52,7 +52,24 @@ new class extends Component
             :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name" x-text="row.name"></td>
-            <td class="catalog-cell-fill" x-text="row.body"></td>
+            {{-- The text and, beside it, the button that copies it; `.stop` so copying never opens the row. --}}
+            <td class="catalog-cell-fill">
+                {{-- "Copiado" only once the text is really on the clipboard; a second tap restarts the two seconds. --}}
+                <span class="catalog-cell-lead" x-data="{ copied: false, timer: null }">
+                    <span class="min-w-0 flex-1" x-text="row.body"></span>
+                    <x-ui.button
+                        variant="secondary"
+                        size="sm"
+                        icon="copy"
+                        class="shrink-0"
+                        x-on:click.stop="navigator.clipboard?.writeText(row.body).then(() => { copied = true; clearTimeout(timer); timer = setTimeout(() => copied = false, 2000) }).catch(() => {})"
+                    >
+                        <span
+                            x-text="copied ? {{ \Illuminate\Support\Js::from(__('catalog.support_reply.copy.done')) }} : {{ \Illuminate\Support\Js::from(__('catalog.support_reply.copy.label')) }}"
+                        ></span>
+                    </x-ui.button>
+                </span>
+            </td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
                     <span class="dot"></span

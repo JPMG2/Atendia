@@ -117,7 +117,7 @@ class SupportReply extends Model implements DataTable, HasColumns, Removable
     {
         return [
             new CatalogColumnDto('name', __('catalog.support_reply.columns.name'), CatalogCell::Name, search: true),
-            new CatalogColumnDto('body', __('catalog.support_reply.columns.body'), CatalogCell::Text, fill: true, search: true),
+            new CatalogColumnDto('body', __('catalog.support_reply.columns.body'), CatalogCell::Text, fill: true, search: true, copy: ['label' => __('catalog.support_reply.copy.label'), 'done' => __('catalog.support_reply.copy.done')]),
             new CatalogColumnDto('active', __('catalog.support_reply.columns.status'), CatalogCell::Active, on: __('catalog.support_reply.status.active'), off: __('catalog.support_reply.status.inactive')),
         ];
     }

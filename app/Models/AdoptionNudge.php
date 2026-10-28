@@ -10,11 +10,13 @@ use App\Enums\AdoptionStep;
 use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
+use App\Interfaces\Catalog\HasHighlights;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
 use Database\Factories\AdoptionNudgeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['step', 'subject', 'body', 'is_active'])]
-class AdoptionNudge extends Model implements DataTable, HasColumns, Removable
+class AdoptionNudge extends Model implements DataTable, HasColumns, HasHighlights, Removable
 {
     use CountsUsage;
 
@@ -134,14 +136,52 @@ class AdoptionNudge extends Model implements DataTable, HasColumns, Removable
                 continue;
             }
 
-            $words = ['{nombre}' => $row->owner, '{negocio}' => $row->business ?? ''];
-
             $links[$row->email] = 'mailto:'.rawurlencode($row->email)
-                .'?subject='.rawurlencode(strtr($nudge->subject, $words))
-                .'&body='.rawurlencode(strtr($nudge->body, $words));
+                .'?subject='.rawurlencode(self::filled($nudge->subject, $row->owner, $row->business))
+                .'&body='.rawurlencode(self::filled($nudge->body, $row->owner, $row->business));
         }
 
         return $links;
+    }
+
+    /** A message with its two blanks filled the way the mail button fills them. */
+    public static function filled(string $text, string $owner, ?string $business): string
+    {
+        return strtr($text, ['{nombre}' => $owner, '{negocio}' => $business ?? '']);
+    }
+
+    /**
+     * Each active message as it reaches a real account: the newest owner with a
+     * business, so she reads her words with real names in them. One line per step,
+     * its paragraphs folded as a table shows them; nobody to show it to, no lines.
+     *
+     * @return list<array{when: string, text: string}>
+     */
+    public function catalogHighlights(): array
+    {
+        // `whereHas` and not `role()`: on a fresh base the role may not exist yet, and the screen must still open.
+        // An owner with a live business, or four of the five messages would read "Ya creaste , y…".
+        $owner = User::query()
+            ->whereHas('roles', fn (Builder $roles): Builder => $roles->where('name', 'client'))
+            ->whereHas('business')
+            ->with('business')
+            ->latest('id')
+            ->first();
+
+        if ($owner === null) {
+            return [];
+        }
+
+        return $this->newQuery()
+            ->where('is_active', true)
+            ->get()
+            ->sortBy(fn (self $nudge): int => $nudge->step->position())
+            ->map(fn (self $nudge): array => [
+                'when' => $nudge->step->label(),
+                'text' => (string) preg_replace('/\s+/u', ' ', self::filled($nudge->body, (string) $owner->name, $owner->business?->name)),
+            ])
+            ->values()
+            ->all();
     }
 
     /** The step column reads `stepLabel` (the ladder's words), not the bare key. */

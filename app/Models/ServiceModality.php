@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\RowGlyph;
 use App\Dto\CatalogColumnDto;
 use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
@@ -117,25 +118,10 @@ class ServiceModality extends Model implements DataTable, HasColumns, Removable
     }
 
     /**
-     * The inside of the glyph's SVG, empty when there is no icon or the one set
-     * is no longer in `config/icons.php`.
-     */
-    private function iconSvg(?string $icon): string
-    {
-        if ($icon === null) {
-            return '';
-        }
-
-        $svg = config("icons.{$icon}");
-
-        return is_string($svg) ? $svg : '';
-    }
-
-    /**
      * Sorted by `sort_order`: the order is the admin's, so the business sees them
      * that way when choosing.
      *
-     * @return Collection<int, array{id: int, code: string, name: string, description: string, icon: string, icon_svg: string, order: int, active: bool}>
+     * @return Collection<int, array{id: int, code: string, name: string, description: string, icon: string, icon_svg: string, icon_filled: bool, order: int, active: bool}>
      */
     public function catalogRows(): Collection
     {
@@ -153,7 +139,7 @@ class ServiceModality extends Model implements DataTable, HasColumns, Removable
                     // The SVG travels with the row so the cell paints the glyph and not
                     // its key: a key in a table is config, not a fact for whoever fills
                     // the catalog in.
-                    'icon_svg' => $this->iconSvg($modality->icon),
+                    ...RowGlyph::fields($modality->icon),
                     'order' => $modality->sort_order,
                     'active' => $modality->is_active,
                 ],

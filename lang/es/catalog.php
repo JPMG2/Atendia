@@ -449,6 +449,11 @@ return [
             'status' => 'Estado',
         ],
 
+        'copy' => [
+            'label' => 'Copiar texto',
+            'done' => 'Copiado',
+        ],
+
         'status' => [
             'active' => 'Activa',
             'inactive' => 'Inactiva',
@@ -473,6 +478,7 @@ return [
         'new_title' => 'Nuevo mensaje',
         'edit_title' => 'Editar',
         'empty' => 'No hay mensajes que coincidan con la búsqueda.',
+        'highlights_title' => 'Así le llega a un negocio real',
 
         'columns' => [
             'step' => 'Paso',

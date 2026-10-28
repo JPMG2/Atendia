@@ -1049,6 +1049,54 @@ test('Respuestas guardadas, Mensajes de adopción and Tipos de reporte serve the
         ->and(screensGet($token, 'catalogs/support-ticket-kind?search='.urlencode(SupportTicketPriority::High->label()))->json('data.count'))->toBe(0);
 });
 
+test('Soporte\'s three ideas: a kind\'s glyph beside its name, the copy words of a reply, and each message as it reaches a real account', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    SupportTicketKind::factory()->create(['code' => 'qzk', 'name' => 'Falla Wvj', 'icon' => 'life-buoy']);
+    SupportReply::factory()->create(['name' => 'Saludo Qzw']);
+    AdoptionNudge::factory()->create(['step' => AdoptionStep::Registered, 'body' => "Hola {nombre},\n\nya casi está {negocio}."]);
+    AdoptionNudge::factory()->create(['step' => AdoptionStep::BusinessCreated, 'body' => 'Apagado {nombre}.', 'is_active' => false]);
+    $token = screensToken();
+
+    // Nobody to show it to yet, or only someone who has not made a business: no lines rather than "Ya creaste , y…".
+    expect(screensGet($token, 'catalogs/adoption-nudge')->json('data.highlights.lines'))->toBe([]);
+    User::factory()->create(['name' => 'Sin Negocio', 'business_id' => null])->assignRole('client');
+    expect(screensGet($token, 'catalogs/adoption-nudge')->json('data.highlights.lines'))->toBe([]);
+
+    $owner = User::factory()->for(Business::factory()->create(['name' => 'Panadería Qxv']))->create(['name' => 'Ana Zelk']);
+    $owner->assignRole('client');
+    // A newer signup still in the wizard does not take the preview over.
+    User::factory()->create(['name' => 'Recién Llegada', 'business_id' => null])->assignRole('client');
+
+    $kinds = screensGet($token, 'catalogs/support-ticket-kind')->assertOk()->json('data');
+    $replies = screensGet($token, 'catalogs/support-reply')->assertOk()->json('data');
+    $nudges = screensGet($token, 'catalogs/adoption-nudge')->assertOk()->json('data');
+    $kind = collect($kinds['rows'])->firstWhere('code', 'qzk');
+
+    // The glyph travels by its key; the web's own SVG markup never reaches the phone.
+    expect($kinds['columns'][1]['icon'])->toBe('icon')
+        ->and($kind['icon'])->toBe('life-buoy')
+        ->and($kind)->not->toHaveKey('icon_svg')
+        ->and($replies['columns'][1]['copy'])->toBe(['label' => __('catalog.support_reply.copy.label'), 'done' => __('catalog.support_reply.copy.done')])
+        ->and($replies['columns'][0]['copy'])->toBeNull()
+        ->and($nudges['highlights']['title'])->toBe(__('catalog.adoption_nudge.highlights_title'))
+        // Only the active message, its blanks filled with the real account and its paragraphs folded.
+        ->and($nudges['highlights']['lines'])->toBe([
+            ['when' => AdoptionStep::Registered->label(), 'text' => 'Hola Ana Zelk, ya casi está Panadería Qxv.'],
+        ]);
+
+    // A brand logo is filled on the web, as `<x-icon>` draws it; a stroked glyph is not; a key gone from the registry draws nothing.
+    $glyphs = collect([['brand', 'whatsapp'], ['stroked', 'life-buoy'], ['gone', 'qzx-gone']])
+        ->mapWithKeys(fn (array $pair): array => [$pair[0] => SupportTicketKind::factory()->make(['icon' => $pair[1]])])
+        ->each(fn (SupportTicketKind $kind) => $kind->saveQuietly());
+    $rows = (new SupportTicketKind)->catalogRows()->keyBy('icon');
+
+    expect($rows['whatsapp'])->toMatchArray(['icon_filled' => true])
+        ->and($rows['whatsapp']['icon_svg'])->not->toBe('')
+        ->and($rows['life-buoy'])->toMatchArray(['icon_filled' => false])
+        ->and($rows['qzx-gone'])->toMatchArray(['icon_svg' => '', 'icon_filled' => false])
+        ->and($glyphs)->toHaveCount(3);
+});
+
 test('Países, Regiones and Feriados serve the web\'s cells, the kind of a holiday as its badge, and search where the web\'s box does', function (): void {
     $this->seed(CatalogFormSeeder::class);
     // Values no factory text can contain, so a search that must find nothing cannot match a random row.

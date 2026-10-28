@@ -78,7 +78,25 @@ new class extends Component
             :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
-            <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
+            {{-- The kind's own glyph beside its name, as Modalidades draws it. --}}
+            <td class="catalog-cell-name catalog-cell-fill">
+                <span class="catalog-cell-lead">
+                    <span class="catalog-row-icon" x-show="row.icon_svg">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            x-bind:fill="row.icon_filled ? 'currentColor' : 'none'"
+                            x-bind:stroke="row.icon_filled ? 'none' : 'currentColor'"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                            x-html="row.icon_svg"
+                        ></svg>
+                    </span>
+                    <span x-text="row.name"></span>
+                </span>
+            </td>
             <td class="catalog-cell-sym" x-text="row.priority"></td>
             <td class="catalog-cell-sym" x-text="row.clock"></td>
             <td class="catalog-cell-sym" x-text="row.sort_order"></td>

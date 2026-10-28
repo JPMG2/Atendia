@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Classes\Main\RowGlyph;
 use App\Dto\CatalogColumnDto;
 use App\Enums\CatalogCell;
 use App\Enums\SupportTicketPriority;
@@ -160,6 +161,8 @@ class SupportTicketKind extends Model implements DataTable, HasColumns, Removabl
                 'code' => $kind->code,
                 'name' => $kind->name,
                 'icon' => $kind->icon,
+                // The glyph the web draws beside the name; the phone draws it from `icon`, by its key.
+                ...RowGlyph::fields($kind->icon),
                 'priority' => $kind->starting_priority->label(),
                 'clock' => $kind->runs_clock ? __('catalog.support_ticket_kind.clock.runs') : __('catalog.support_ticket_kind.clock.none'),
                 'sort_order' => $kind->sort_order,
@@ -176,7 +179,7 @@ class SupportTicketKind extends Model implements DataTable, HasColumns, Removabl
     {
         return [
             new CatalogColumnDto('code', __('catalog.support_ticket_kind.columns.code'), CatalogCell::Code, search: true),
-            new CatalogColumnDto('name', __('catalog.support_ticket_kind.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('name', __('catalog.support_ticket_kind.columns.name'), CatalogCell::Name, fill: true, search: true, icon: 'icon'),
             new CatalogColumnDto('priority', __('catalog.support_ticket_kind.columns.priority'), CatalogCell::Symbol),
             new CatalogColumnDto('clock', __('catalog.support_ticket_kind.columns.clock'), CatalogCell::Symbol),
             new CatalogColumnDto('sort_order', __('catalog.support_ticket_kind.columns.sort_order'), CatalogCell::Symbol),

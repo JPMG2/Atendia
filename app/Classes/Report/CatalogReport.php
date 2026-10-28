@@ -133,13 +133,13 @@ class CatalogReport extends ListReport
     }
 
     /**
-     * The row keys that mean something to a person; the id is bookkeeping and the SVG is markup.
+     * The row keys that mean something to a person; the id is bookkeeping and the glyph is markup.
      *
      * @return list<string>
      */
     private function keys(): array
     {
-        return array_values(array_diff(array_keys($this->records()->first() ?? ['name' => '']), ['id', 'icon_svg']));
+        return array_values(array_diff(array_keys($this->records()->first() ?? ['name' => '']), ['id', 'icon_svg', 'icon_filled']));
     }
 
     private function heading(string $key): string

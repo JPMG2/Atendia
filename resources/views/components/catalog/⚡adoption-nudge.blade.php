@@ -56,6 +56,22 @@ new class extends Component
             :create="__('catalog.adoption_nudge.create')"
         />
 
+        {{-- Each message as it reaches a real account, worked out by the model: the phone reads the same lines. --}}
+        @if ($this->highlights !== [])
+            <div class="catalog-highlights" data-testid="nudge-preview">
+                <p class="catalog-highlights-title">{{ __('catalog.adoption_nudge.highlights_title') }}</p>
+
+                <ol class="hist-list">
+                    @foreach ($this->highlights as $line)
+                        <li class="hist-item" wire:key="preview-{{ $loop->index }}">
+                            <span class="hist-when font-mono">{{ $line['when'] }}</span>
+                            <span class="hist-on">{{ $line['text'] }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        @endif
+
         <x-catalog.table
             :empty="__('catalog.adoption_nudge.empty')"
             :columns="$this->tableColumns"

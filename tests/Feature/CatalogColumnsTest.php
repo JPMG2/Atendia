@@ -169,6 +169,24 @@ it('names the word and tone of every value of a badge column, and of no other ki
     }
 })->with('masters with columns');
 
+it('draws a copy button beside a copiable cell, with the words the phone is given', function (string $component, string $model): void {
+    $source = file_get_contents(resource_path('views/components/catalog/⚡'.$component.'.blade.php'));
+
+    foreach ((new $model)->catalogColumns() as $column) {
+        $cell = cellOf($source, $column->key);
+
+        if ($column->copy !== null) {
+            // It copies THIS column's text, and only says so once the clipboard took it.
+            expect($cell)->toContain('navigator.clipboard?.writeText(row.'.$column->key.').then(')
+                ->and($cell)->toContain('x-on:click.stop')
+                ->and($column->copy['label'])->not->toBeEmpty()
+                ->and($column->copy['done'])->not->toBeEmpty();
+        } else {
+            expect($cell)->not->toContain('navigator.clipboard');
+        }
+    }
+})->with('masters with columns');
+
 it('searches the same fields the editors searched before they shared the list', function (string $component, string $model, array $keys): void {
     expect(CatalogColumnDto::searchKeys((new $model)->catalogColumns()))->toBe($keys);
 })->with('masters with columns');
