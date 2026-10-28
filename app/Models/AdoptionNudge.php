@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Dto\AdoptionRowDto;
+use App\Dto\CatalogColumnDto;
 use App\Enums\AdoptionStep;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -19,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['step', 'subject', 'body', 'is_active'])]
-class AdoptionNudge extends Model implements DataTable, Removable
+class AdoptionNudge extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -139,5 +142,16 @@ class AdoptionNudge extends Model implements DataTable, Removable
         }
 
         return $links;
+    }
+
+    /** The step column reads `stepLabel` (the ladder's words), not the bare key. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('stepLabel', __('catalog.adoption_nudge.columns.step'), CatalogCell::Name, search: true),
+            new CatalogColumnDto('subject', __('catalog.adoption_nudge.columns.subject'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('body', __('catalog.adoption_nudge.columns.body'), CatalogCell::Text, fill: true, search: true),
+            new CatalogColumnDto('active', __('catalog.adoption_nudge.columns.status'), CatalogCell::Active, on: __('catalog.adoption_nudge.status.active'), off: __('catalog.adoption_nudge.status.inactive')),
+        ];
     }
 }

@@ -31,7 +31,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['name', 'body']"
+    :search="$this->searchKeys"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'body' => ['required', ['minLength', 10], ['maxLength', 900], 'noMarkup'],
@@ -49,11 +49,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.support_reply.empty')"
-            :columns="[
-                ['label' => __('catalog.support_reply.columns.name')],
-                ['label' => __('catalog.support_reply.columns.body'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.support_reply.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name" x-text="row.name"></td>
             <td class="catalog-cell-fill" x-text="row.body"></td>

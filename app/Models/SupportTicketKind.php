@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Enums\SupportTicketPriority;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -25,7 +28,7 @@ use Illuminate\Support\Collection;
  * first reason a ticket never gets sent.
  */
 #[Fillable(['code', 'name', 'icon', 'starting_priority', 'runs_clock', 'sort_order', 'is_active'])]
-class SupportTicketKind extends Model implements DataTable, Removable
+class SupportTicketKind extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -158,10 +161,26 @@ class SupportTicketKind extends Model implements DataTable, Removable
                 'name' => $kind->name,
                 'icon' => $kind->icon,
                 'priority' => $kind->starting_priority->label(),
-                'runs_clock' => $kind->runs_clock,
+                'clock' => $kind->runs_clock ? __('catalog.support_ticket_kind.clock.runs') : __('catalog.support_ticket_kind.clock.none'),
                 'sort_order' => $kind->sort_order,
                 'active' => $kind->is_active,
             ])
             ->values();
+    }
+
+    /**
+     * The priority and the clock travel as the web's words, so the phone never
+     * spells them; the web sets all three middle columns in `catalog-cell-sym`.
+     */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.support_ticket_kind.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('name', __('catalog.support_ticket_kind.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('priority', __('catalog.support_ticket_kind.columns.priority'), CatalogCell::Symbol),
+            new CatalogColumnDto('clock', __('catalog.support_ticket_kind.columns.clock'), CatalogCell::Symbol),
+            new CatalogColumnDto('sort_order', __('catalog.support_ticket_kind.columns.sort_order'), CatalogCell::Symbol),
+            new CatalogColumnDto('active', __('catalog.support_ticket_kind.columns.status'), CatalogCell::Active, on: __('catalog.support_ticket_kind.status.active'), off: __('catalog.support_ticket_kind.status.inactive')),
+        ];
     }
 }

@@ -39,7 +39,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['stepLabel', 'subject', 'body']"
+    :search="$this->searchKeys"
     :rules="[
         'step' => ['required'],
         'subject' => ['required', ['minLength', 3], ['maxLength', 150], 'noMarkup'],
@@ -58,12 +58,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.adoption_nudge.empty')"
-            :columns="[
-                ['label' => __('catalog.adoption_nudge.columns.step')],
-                ['label' => __('catalog.adoption_nudge.columns.subject')],
-                ['label' => __('catalog.adoption_nudge.columns.body'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.adoption_nudge.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name" x-text="row.stepLabel"></td>
             <td x-text="row.subject"></td>

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Database\Seeders\AdoptionNudgeSeeder;
 use Database\Seeders\BusinessActivitySeeder;
 use Database\Seeders\BusinessSectorSeeder;
 use Database\Seeders\CatalogFormSeeder;
@@ -10,6 +11,8 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\ServiceAttributeSeeder;
 use Database\Seeders\ServiceModalitySeeder;
 use Database\Seeders\ServiceTypeSeeder;
+use Database\Seeders\SupportReplySeeder;
+use Database\Seeders\SupportTicketKindSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -19,7 +22,7 @@ beforeEach(function (): void {
 
     foreach ([RolesAndPermissionsSeeder::class, CatalogFormSeeder::class, BusinessSectorSeeder::class,
         BusinessActivitySeeder::class, ServiceModalitySeeder::class, ServiceAttributeSeeder::class,
-        ServiceTypeSeeder::class] as $seeder) {
+        ServiceTypeSeeder::class, SupportReplySeeder::class, AdoptionNudgeSeeder::class, SupportTicketKindSeeder::class] as $seeder) {
         $this->seed($seeder);
     }
 
@@ -40,6 +43,7 @@ test('no catalog table overflows its panel on a laptop screen', function (string
     $page = visit('/admin/catalogs')->resize(1280, 800);
 
     $page->click($master)->assertNoJavaScriptErrors();
+    $page->wait(1)->screenshot(filename: 'catalog-table-1280-'.str($master)->slug());
 
     $overflow = $page->script(
         'const wrap = document.querySelector(".catalog-table-wrap");'
@@ -47,7 +51,7 @@ test('no catalog table overflows its panel on a laptop screen', function (string
     );
 
     expect($overflow)->toBe(0);
-})->with(['Tipos de servicio', 'Modalidades', 'Atributos', 'Países', 'Actividades', 'Planes', 'Feriados']);
+})->with(['Tipos de servicio', 'Modalidades', 'Atributos', 'Países', 'Actividades', 'Planes', 'Feriados', 'Respuestas guardadas', 'Mensajes de adopción', 'Tipos de reporte']);
 
 /**
  * The same rule where it was broken: on a tablet and a phone the table used to push the
@@ -75,6 +79,7 @@ test('no catalog table pushes the page sideways on a tablet or a phone', functio
 })->with([
     ['Tipos de servicio', 390], ['Modalidades', 390], ['Atributos', 390], ['Países', 390], ['Actividades', 390], ['Planes', 390], ['Feriados', 390],
     ['Tipos de servicio', 900], ['Atributos', 900], ['Países', 900], ['Planes', 900], ['Feriados', 900],
+    ['Respuestas guardadas', 390], ['Mensajes de adopción', 390], ['Tipos de reporte', 390], ['Tipos de reporte', 900],
 ]);
 
 test('the row hover is actually visible, not a 1% tint', function (): void {

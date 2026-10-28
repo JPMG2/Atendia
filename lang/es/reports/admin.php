@@ -136,7 +136,6 @@ return [
             'hero' => 'En la portada',
             'whatsapp' => 'En WhatsApp',
             'has_notice' => 'Con aviso',
-            'runs_clock' => 'Corre el reloj',
             'discriminates' => 'Discrimina IVA',
         ],
     ],

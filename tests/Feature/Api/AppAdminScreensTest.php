@@ -9,11 +9,14 @@ use App\Classes\Main\OpeningHours;
 use App\Classes\Main\PlatformBoard;
 use App\Classes\Main\SupportQueue;
 use App\Dto\CatalogColumnDto;
+use App\Enums\AdoptionStep;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformSensorStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\SupportTicketPriority;
 use App\Mail\DeviceChallengeCode;
+use App\Models\AdoptionNudge;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
@@ -36,7 +39,9 @@ use App\Models\ServiceType;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use App\Models\Subscription;
+use App\Models\SupportReply;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketKind;
 use App\Models\SupportTicketMessage;
 use App\Models\TaxCondition;
 use App\Models\User;
@@ -881,9 +886,9 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     // Readable = its model says its own columns; the other 7 masters are not drawn until they do.
     // The order is the rail's: by the master's `order`, a group appearing where its first master does.
-    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal'])
-        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema'])
-        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal']])
+    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal', 'support-reply', 'adoption-nudge', 'support-ticket-kind'])
+        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema', 'Soporte'])
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal'], ['support-reply', 'adoption-nudge', 'support-ticket-kind']])
         ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'country', 'title' => 'Países', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
         ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
@@ -1004,6 +1009,44 @@ test('Monedas, Condiciones fiscales and Redes sociales serve the web\'s cell kin
         ->and(screensGet($token, 'catalogs/currency?search=zq$')->json('data.count'))->toBe(0)
         ->and(screensGet($token, 'catalogs/social-network?search=qx')->json('data.count'))->toBe(1)
         ->and(screensGet($token, 'catalogs/social-network?search=zzurl')->json('data.count'))->toBe(0);
+});
+
+test('Respuestas guardadas, Mensajes de adopción and Tipos de reporte serve the web\'s cells and words, and search where the web\'s box does', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // Values no factory text can contain, so a search that must find nothing cannot match a random row.
+    SupportReply::factory()->create(['name' => 'Saludo Qzw', 'body' => 'Gracias por escribir, Xjvb te responde.']);
+    AdoptionNudge::factory()->create(['step' => AdoptionStep::Registered, 'subject' => 'Asunto Qpl', 'body' => 'Cuerpo del mensaje Zrk para la dueña.']);
+    SupportTicketKind::factory()->create(['code' => 'qzk', 'name' => 'Falla Wvj', 'starting_priority' => 'high', 'runs_clock' => false, 'sort_order' => 7]);
+    $token = screensToken();
+
+    $replies = screensGet($token, 'catalogs/support-reply')->assertOk()->json('data');
+    $nudges = screensGet($token, 'catalogs/adoption-nudge')->assertOk()->json('data');
+    $kinds = screensGet($token, 'catalogs/support-ticket-kind')->assertOk()->json('data');
+
+    expect(array_column($replies['columns'], 'cell'))->toBe(['name', 'text', 'active'])
+        ->and(collect($replies['rows'])->firstWhere('name', 'Saludo Qzw'))->toMatchArray(['body' => 'Gracias por escribir, Xjvb te responde.', 'active' => true])
+        ->and(array_column($nudges['columns'], 'cell'))->toBe(['name', 'text', 'text', 'active'])
+        // The step travels as the ladder's words, never as its bare key.
+        ->and($nudges['rows'][0])->toMatchArray(['stepLabel' => AdoptionStep::Registered->label(), 'subject' => 'Asunto Qpl'])
+        ->and($nudges['rows'][0])->not->toHaveKey('step')
+        ->and(array_column($kinds['columns'], 'cell'))->toBe(['code', 'name', 'symbol', 'symbol', 'symbol', 'active'])
+        // The priority and the clock come as the web's words: the phone spells neither.
+        ->and(collect($kinds['rows'])->firstWhere('code', 'qzk'))->toMatchArray([
+            'name' => 'Falla Wvj',
+            'priority' => SupportTicketPriority::High->label(),
+            'clock' => __('catalog.support_ticket_kind.clock.none'),
+            'sort_order' => 7,
+        ]);
+
+    // A reply by its name and its text; a message by its step, subject and text; a kind by its code and name only.
+    expect(screensGet($token, 'catalogs/support-reply?search=qzw')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/support-reply?search=xjvb')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/adoption-nudge?search=qpl')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/adoption-nudge?search=zrk')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/adoption-nudge?search='.urlencode(AdoptionStep::Registered->label()))->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/support-ticket-kind?search=qzk')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/support-ticket-kind?search=wvj')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/support-ticket-kind?search='.urlencode(SupportTicketPriority::High->label()))->json('data.count'))->toBe(0);
 });
 
 test('Países, Regiones and Feriados serve the web\'s cells, the kind of a holiday as its badge, and search where the web\'s box does', function (): void {

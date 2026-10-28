@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -17,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'body', 'is_active'])]
-class SupportReply extends Model implements DataTable, Removable
+class SupportReply extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -108,5 +111,14 @@ class SupportReply extends Model implements DataTable, Removable
     public static function bodyOf(int $id): ?string
     {
         return self::query()->where('is_active', true)->whereKey($id)->value('body');
+    }
+
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.support_reply.columns.name'), CatalogCell::Name, search: true),
+            new CatalogColumnDto('body', __('catalog.support_reply.columns.body'), CatalogCell::Text, fill: true, search: true),
+            new CatalogColumnDto('active', __('catalog.support_reply.columns.status'), CatalogCell::Active, on: __('catalog.support_reply.status.active'), off: __('catalog.support_reply.status.inactive')),
+        ];
     }
 }

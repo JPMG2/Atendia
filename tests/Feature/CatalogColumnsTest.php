@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Dto\CatalogColumnDto;
 use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\HasColumns;
+use App\Models\AdoptionNudge;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Country;
@@ -18,6 +19,8 @@ use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
 use App\Models\ServiceType;
 use App\Models\SocialNetwork;
+use App\Models\SupportReply;
+use App\Models\SupportTicketKind;
 use App\Models\TaxCondition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -45,6 +48,9 @@ dataset('masters with columns', [
     'service-type' => ['service-type', ServiceType::class, ['code', 'name', 'sector', 'modality', 'attributes']],
     'service-attribute' => ['service-attribute', ServiceAttribute::class, ['code', 'name', 'description', 'type']],
     'service-modality' => ['service-modality', ServiceModality::class, ['code', 'name', 'description']],
+    'support-reply' => ['support-reply', SupportReply::class, ['name', 'body']],
+    'adoption-nudge' => ['adoption-nudge', AdoptionNudge::class, ['stepLabel', 'subject', 'body']],
+    'support-ticket-kind' => ['support-ticket-kind', SupportTicketKind::class, ['code', 'name']],
 ]);
 
 /**

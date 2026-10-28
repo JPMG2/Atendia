@@ -57,7 +57,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', ['minLength', 2], ['maxLength', 30], 'noMarkup'],
         'name' => ['required', ['minLength', 2], ['maxLength', 80], 'noMarkup'],
@@ -75,23 +75,13 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.support_ticket_kind.empty')"
-            :columns="[
-                ['label' => __('catalog.support_ticket_kind.columns.code')],
-                ['label' => __('catalog.support_ticket_kind.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.support_ticket_kind.columns.priority')],
-                ['label' => __('catalog.support_ticket_kind.columns.clock')],
-                ['label' => __('catalog.support_ticket_kind.columns.sort_order')],
-                ['label' => __('catalog.support_ticket_kind.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td class="catalog-cell-sym" x-text="row.priority"></td>
-            <td
-                class="catalog-cell-sym"
-                x-text="row.runs_clock ? {{ \Illuminate\Support\Js::from(__('catalog.support_ticket_kind.clock.runs')) }} : {{ \Illuminate\Support\Js::from(__('catalog.support_ticket_kind.clock.none')) }}"
-            ></td>
-            <td class="font-mono" x-text="row.sort_order"></td>
+            <td class="catalog-cell-sym" x-text="row.clock"></td>
+            <td class="catalog-cell-sym" x-text="row.sort_order"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
                     <span class="dot"></span
