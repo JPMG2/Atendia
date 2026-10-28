@@ -33,3 +33,28 @@
         <x-ui.button variant="primary" icon="plus" x-on:click="openCreate()">{{ $create }}</x-ui.button>
     @endif
 </div>
+
+{{-- The one-tap filter of a master whose model names a chip column (a country): the phone draws the same row. --}}
+<template x-if="chipKey && chips().length > 1">
+    <div class="catalog-filter" role="group" aria-label="{{ __('catalog.hub.chips_label') }}">
+        <x-ui.button
+            variant="secondary"
+            size="sm"
+            x-on:click="chip = ''"
+            x-bind:class="{ 'btn-primary': chip === '', 'btn-secondary': chip !== '' }"
+            x-bind:aria-pressed="chip === '' ? 'true' : 'false'"
+        >
+            {{ __('catalog.hub.chips_all') }}</x-ui.button>
+
+        <template x-for="value in chips()" :key="value">
+            <x-ui.button
+                variant="secondary"
+                size="sm"
+                x-on:click="chip = value"
+                x-bind:class="{ 'btn-primary': chip === value, 'btn-secondary': chip !== value }"
+                x-bind:aria-pressed="chip === value ? 'true' : 'false'"
+                x-text="value"
+            ></x-ui.button>
+        </template>
+    </div>
+</template>

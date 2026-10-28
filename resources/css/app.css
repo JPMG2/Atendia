@@ -3289,6 +3289,13 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .catalog-toolbar .field { flex:1 1 auto; max-width:360px; }
   .catalog-count { flex:none; margin-left:auto; font-size:var(--text-xs); color:var(--text-subtle);
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
+  /* The one-tap filter of a master (a country): it wraps, never scrolls sideways. */
+  .catalog-filter { display:flex; flex-wrap:wrap; gap:8px; padding:12px 20px;
+                    border-bottom:1px solid var(--border-subtle); }
+  /* What a master tells before its list (the next holiday of each country). */
+  .catalog-highlights { padding:12px 20px 4px; border-bottom:1px solid var(--border-subtle); }
+  .catalog-highlights-title { font-size:var(--text-2xs); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+                              color:var(--text-subtle); }
   .catalog-count b { color:var(--text-body); font-weight:700; }
 
   /* Tabla "cell-less": SIN grilla. La estructura la dan la alineación de las

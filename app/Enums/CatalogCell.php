@@ -22,6 +22,9 @@ enum CatalogCell: string
     /** A number, aligned apart from the words. */
     case Number = 'number';
 
+    /** A symbol, a link or a date in monospace at body weight: the web's `catalog-cell-sym`. */
+    case Symbol = 'symbol';
+
     /** A yes or no said in words, with no status dot. */
     case Flag = 'flag';
 
@@ -30,4 +33,7 @@ enum CatalogCell: string
 
     /** On or off, said in words with a dot. */
     case Active = 'active';
+
+    /** A word on a tinted ground and no dot; the column names the word and tone of each value. */
+    case Badge = 'badge';
 }

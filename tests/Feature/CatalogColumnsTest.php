@@ -6,10 +6,13 @@ use App\Dto\CatalogColumnDto;
 use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\HasColumns;
 use App\Models\BusinessSector;
+use App\Models\Country;
+use App\Models\CountryHoliday;
 use App\Models\Currency;
 use App\Models\CurrentStatus;
 use App\Models\MentionGoal;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\SocialNetwork;
 use App\Models\TaxCondition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,7 +34,32 @@ dataset('masters with columns', [
     'business-sector' => ['business-sector', BusinessSector::class, ['code', 'name', 'description']],
     'tax-condition' => ['tax-condition', TaxCondition::class, ['code', 'name', 'country']],
     'social-network' => ['social-network', SocialNetwork::class, ['name', 'abbreviation']],
+    'country' => ['country', Country::class, ['code', 'name']],
+    'region' => ['region', Region::class, ['name', 'province', 'country']],
+    'country-holiday' => ['country-holiday', CountryHoliday::class, ['country', 'name', 'when']],
 ]);
+
+/**
+ * The class the web's cell carries for each kind: a kind is a promise the two
+ * tables keep, so a monospace cell on the web is a monospace cell on the phone.
+ * Plain text, a yes/no and the status tag carry none of these.
+ */
+const CELL_CLASSES = [
+    'name' => 'catalog-cell-name',
+    'code' => 'catalog-code',
+    'symbol' => 'catalog-cell-sym',
+    'number' => 'catalog-cell-num',
+    'active' => 'catalog-status',
+    'badge' => 'status-tag',
+];
+
+/** The editor's `<td>` that paints this row key, as written in its source. */
+function cellOf(string $source, string $key): string
+{
+    preg_match('/<td\b(?:(?!<\/td>).)*?row\.'.preg_quote($key, '/').'\b.*?<\/td>/s', $source, $found);
+
+    return $found[0] ?? '';
+}
 
 /** The table header as the editor rendered it: label, whether it takes the free width, and whether it is a number's. */
 function renderedHeader(string $component): array
@@ -59,7 +87,10 @@ it('draws the header from the model\'s columns, in order, with the wide one and 
 })->with('masters with columns');
 
 it('only names keys the row really carries', function (string $component, string $model): void {
-    $model::factory()->create();
+    // A holiday has no factory: it hangs from a country and carries one of its four date shapes.
+    $model === CountryHoliday::class
+        ? CountryHoliday::create(['country_id' => Country::factory()->create()->id, 'name' => 'Día de prueba', 'month' => 3, 'day' => 9])
+        : $model::factory()->create();
 
     $keys = array_keys((new $model)->catalogRows()->firstOrFail());
 
@@ -77,6 +108,42 @@ it('has its cells in the editor for every column, and no list of its own', funct
     // The cell of each column reads that very key of the row: a renamed key would paint an empty cell.
     foreach ((new $model)->catalogColumns() as $column) {
         expect($source)->toContain('row.'.$column->key);
+    }
+})->with('masters with columns');
+
+it('paints each cell on the web with the class its kind promises the phone', function (string $component, string $model): void {
+    $source = file_get_contents(resource_path('views/components/catalog/⚡'.$component.'.blade.php'));
+
+    foreach ((new $model)->catalogColumns() as $column) {
+        $cell = cellOf($source, $column->key);
+        $promised = CELL_CLASSES[$column->cell->value] ?? null;
+
+        // A cell not found would let every check below pass on an empty string.
+        expect($cell)->not->toBe('');
+
+        if ($promised !== null) {
+            expect($cell)->toContain($promised);
+        } elseif ($column->cell === CatalogCell::Text) {
+            // Plain text on the phone is plain on the web too: no monospace class hiding in the cell.
+            foreach (['catalog-cell-sym', 'catalog-code', 'catalog-cell-num', 'font-mono'] as $mono) {
+                expect($cell)->not->toContain($mono);
+            }
+        }
+    }
+})->with('masters with columns');
+
+it('names the word and tone of every value of a badge column, and of no other kind', function (string $component, string $model): void {
+    foreach ((new $model)->catalogColumns() as $column) {
+        if ($column->cell === CatalogCell::Badge) {
+            expect($column->badges)->not->toBeEmpty();
+
+            foreach ($column->badges as $badge) {
+                expect($badge['label'])->not->toBeEmpty()
+                    ->and($badge['tone'])->toBeIn(['neutral', 'info', 'brand', 'success', 'warning', 'danger']);
+            }
+        } else {
+            expect($column->badges)->toBe([]);
+        }
     }
 })->with('masters with columns');
 

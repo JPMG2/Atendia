@@ -18,6 +18,7 @@ use App\Models\Business;
 use App\Models\CatalogForm;
 use App\Models\Company;
 use App\Models\Country;
+use App\Models\CountryHoliday;
 use App\Models\Currency;
 use App\Models\CurrentStatus;
 use App\Models\HelpArticle;
@@ -34,6 +35,7 @@ use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\TaxCondition;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\PlanSeeder;
@@ -872,12 +874,12 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     $data = screensGet(screensToken(), 'catalogs')->assertOk()->json('data');
 
-    // Readable = its model says its own columns; the other 14 masters are not drawn until they do.
+    // Readable = its model says its own columns; the other 11 masters are not drawn until they do.
     // The order is the rail's: by the master's `order`, a group appearing where its first master does.
-    expect(catalogSlugs($data['groups']))->toBe(['province', 'currency', 'tax-condition', 'business-sector', 'status', 'social-network', 'mention-goal'])
+    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'status', 'social-network', 'mention-goal'])
         ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Sistema'])
-        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['province'], ['currency', 'tax-condition'], ['business-sector'], ['status', 'social-network', 'mention-goal']])
-        ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'province', 'title' => 'Provincias', 'icon' => 'globe'])
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector'], ['status', 'social-network', 'mention-goal']])
+        ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'country', 'title' => 'Países', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
         ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
         ->and($data['none'])->toBe(__('catalog.hub.none'))
@@ -982,20 +984,143 @@ test('Monedas, Condiciones fiscales and Redes sociales serve the web\'s cell kin
     $tax = screensGet($token, 'catalogs/tax-condition')->assertOk()->json('data');
     $social = screensGet($token, 'catalogs/social-network')->assertOk()->json('data');
 
-    expect(array_column($currency['columns'], 'cell'))->toBe(['code', 'name', 'text', 'number', 'active'])
+    // The symbol, the tax condition's country and a network's address and icon are the web's `catalog-cell-sym`: monospace.
+    expect(array_column($currency['columns'], 'cell'))->toBe(['code', 'name', 'symbol', 'number', 'active'])
         ->and(collect($currency['rows'])->firstWhere('code', 'QVS'))->toBe(['id' => collect($currency['rows'])->firstWhere('code', 'QVS')['id'], 'code' => 'QVS', 'name' => 'Bolívar', 'symbol' => 'ZQ$', 'decimals' => 2, 'active' => true])
-        ->and(array_column($tax['columns'], 'cell'))->toBe(['code', 'name', 'text', 'flag', 'active'])
+        ->and(array_column($tax['columns'], 'cell'))->toBe(['code', 'name', 'symbol', 'flag', 'active'])
         // A flag says yes or no in words, as the web's table does for "discriminates tax"; it has no status dot.
         ->and($tax['columns'][3]['on'])->toBe(__('catalog.tax_condition.discriminate.yes'))
         ->and($tax['columns'][3]['off'])->toBe(__('catalog.tax_condition.discriminate.no'))
         ->and(collect($tax['rows'])->firstWhere('code', 'QRI')['discriminates'])->toBeTrue()
-        ->and(array_column($social['columns'], 'cell'))->toBe(['name', 'code', 'text', 'text', 'active']);
+        ->and(array_column($social['columns'], 'cell'))->toBe(['name', 'code', 'symbol', 'symbol', 'active']);
 
     // The web looks a currency up by code and name, never by symbol; a network by name and abbreviation, never by its address.
     expect(screensGet($token, 'catalogs/currency?search=qvs')->json('data.count'))->toBe(1)
         ->and(screensGet($token, 'catalogs/currency?search=zq$')->json('data.count'))->toBe(0)
         ->and(screensGet($token, 'catalogs/social-network?search=qx')->json('data.count'))->toBe(1)
         ->and(screensGet($token, 'catalogs/social-network?search=zzurl')->json('data.count'))->toBe(0);
+});
+
+test('Países, Regiones and Feriados serve the web\'s cells, the kind of a holiday as its badge, and search where the web\'s box does', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // Values no factory text can contain, so a search that must find nothing cannot match a random row.
+    $country = Country::factory()->create(['code' => 'QZV', 'iso2' => 'QZ', 'name' => 'Zuliandia', 'phone_code' => '+958', 'currency_id' => Currency::factory()->create(['code' => 'QZB'])->id]);
+    Region::factory()->for(Province::factory()->for($country)->create(['name' => 'Provincia Qwy']))->create(['name' => 'Valle Xjk']);
+    CountryHoliday::create(['country_id' => $country->id, 'name' => 'Carnaval Qpo', 'easter_offset' => -48]);
+    CountryHoliday::create(['country_id' => $country->id, 'name' => 'Puente Qpa', 'on_date' => '2026-12-07']);
+    $token = screensToken();
+
+    $countries = screensGet($token, 'catalogs/country')->assertOk()->json('data');
+    $regions = screensGet($token, 'catalogs/region')->assertOk()->json('data');
+    $holidays = screensGet($token, 'catalogs/country-holiday')->assertOk()->json('data');
+    $easter = collect($holidays['rows'])->firstWhere('name', 'Carnaval Qpo');
+
+    expect(array_column($countries['columns'], 'cell'))->toBe(['code', 'code', 'name', 'symbol', 'symbol', 'number', 'number', 'active'])
+        ->and(collect($countries['rows'])->firstWhere('code', 'QZV'))->toMatchArray(['iso2' => 'QZ', 'name' => 'Zuliandia', 'phone_code' => '+958', 'currency' => 'QZB', 'provinces' => 1, 'holidays' => 2, 'active' => true])
+        ->and(array_column($regions['columns'], 'cell'))->toBe(['name', 'text', 'text', 'active'])
+        ->and(collect($regions['rows'])->firstWhere('name', 'Valle Xjk'))->toMatchArray(['province' => 'Provincia Qwy', 'country' => 'Zuliandia'])
+        ->and(array_column($holidays['columns'], 'cell'))->toBe(['text', 'name', 'symbol', 'badge', 'active'])
+        // The kind travels as its key; the column says the web's word and tone for each one.
+        ->and($easter['kind'])->toBe(CountryHoliday::KIND_EASTER)
+        ->and($easter['when'])->toBe(CountryHoliday::query()->where('name', 'Carnaval Qpo')->firstOrFail()->describeWhen())
+        ->and($holidays['columns'][3]['badges'])->toBe([
+            'fixed' => ['label' => __('catalog.country_holiday.kinds.fixed'), 'tone' => 'neutral'],
+            'easter' => ['label' => __('catalog.country_holiday.kinds.easter'), 'tone' => 'info'],
+            'nth' => ['label' => __('catalog.country_holiday.kinds.nth'), 'tone' => 'neutral'],
+            'once' => ['label' => __('catalog.country_holiday.kinds.once'), 'tone' => 'brand'],
+        ])
+        ->and($countries['columns'][0]['badges'])->toBeNull();
+
+    // A country by its 3-letter code and its name, never by the 2-letter one, its phone code or its currency.
+    expect(screensGet($token, 'catalogs/country?search=qzv')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/country?search=zulian')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/country?search=qzb')->json('data.count'))->toBe(0)
+        ->and(screensGet($token, 'catalogs/country?search=958')->json('data.count'))->toBe(0)
+        // A region by its own name, its province or its country.
+        ->and(screensGet($token, 'catalogs/region?search=xjk')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/region?search=qwy')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/region?search=zuliandia')->json('data.count'))->toBe(1)
+        // A holiday by its country and its name, never by the word of its kind.
+        ->and(screensGet($token, 'catalogs/country-holiday?search=qpa')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/country-holiday?search=zuliandia')->json('data.count'))->toBe(2)
+        ->and(screensGet($token, 'catalogs/country-holiday?search=easter')->json('data.count'))->toBe(0);
+});
+
+test('Feriados and Regiones offer the web\'s country chips, Feriados its next holiday per country, Países its counts', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    $this->travelTo(CarbonImmutable::parse('2026-10-28 12:00', 'America/Caracas'));
+    // Values no factory text can contain; "Ázkaria" sorts with the A's although its first letter has an accent.
+    $zul = Country::factory()->create(['name' => 'Zuliandia']);
+    $azk = Country::factory()->create(['name' => 'Ázkaria']);
+    CountryHoliday::create(['country_id' => $zul->id, 'name' => 'Navidad Qz', 'month' => 12, 'day' => 25]);
+    CountryHoliday::create(['country_id' => $zul->id, 'name' => 'Año Nuevo Qz', 'month' => 1, 'day' => 1]);
+    CountryHoliday::create(['country_id' => $azk->id, 'name' => 'Fiesta Qa', 'month' => 1, 'day' => 6]);
+    CountryHoliday::create(['country_id' => $azk->id, 'name' => 'Apagado Qa', 'month' => 11, 'day' => 2, 'is_active' => false]);
+    Province::factory()->count(2)->for($zul)->create();
+    $token = screensToken();
+
+    $all = screensGet($token, 'catalogs/country-holiday')->assertOk()->json('data');
+    $zulOnly = screensGet($token, 'catalogs/country-holiday?chip=Zuliandia')->assertOk()->json('data');
+    $unknown = screensGet($token, 'catalogs/country-holiday?chip=Nadaland')->assertOk()->json('data');
+
+    expect($all['chips'])->toBe(['label' => __('catalog.hub.chips_label'), 'all' => __('catalog.hub.chips_all'), 'value' => '', 'options' => ['Ázkaria', 'Zuliandia']])
+        ->and($zulOnly['chips']['value'])->toBe('Zuliandia')
+        ->and($zulOnly['count'])->toBe(2)
+        ->and(array_unique(array_column($zulOnly['rows'], 'country')))->toBe(['Zuliandia'])
+        // A chip that names no country reads as "all", as any unknown filter does.
+        ->and($unknown['chips']['value'])->toBe('')
+        ->and($unknown['count'])->toBe(4)
+        // The chips stay whole under a search, and the search works inside a chip.
+        ->and(screensGet($token, 'catalogs/country-holiday?chip=Zuliandia&search=navidad')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/country-holiday?search=fiesta')->json('data.chips.options'))->toBe(['Ázkaria', 'Zuliandia']);
+
+    // The next ACTIVE day from today, in the platform's clock: a year with nothing left looks into the next one.
+    expect($all['highlights'])->toBe([
+        'title' => __('catalog.country_holiday.highlights_title'),
+        'lines' => [
+            ['when' => '06/01/2027', 'text' => __('catalog.country_holiday.upcoming.line', ['country' => 'Ázkaria', 'name' => 'Fiesta Qa'])],
+            ['when' => '25/12/2026', 'text' => __('catalog.country_holiday.upcoming.line', ['country' => 'Zuliandia', 'name' => 'Navidad Qz'])],
+        ],
+    ]);
+
+    // Regiones filter by country too; a master without a chip column has no chips and nothing to highlight.
+    $regions = screensGet($token, 'catalogs/region')->assertOk()->json('data');
+    $countries = screensGet($token, 'catalogs/country')->assertOk()->json('data');
+
+    expect($regions['chips'])->not->toBeNull()
+        ->and($regions['highlights'])->toBeNull()
+        ->and($countries['chips'])->toBeNull()
+        ->and($countries['highlights'])->toBeNull()
+        ->and(collect($countries['rows'])->firstWhere('name', 'Zuliandia'))->toMatchArray(['provinces' => 2, 'holidays' => 2])
+        // An inactive holiday is still a holiday the country has: the list counts every row it shows.
+        ->and(collect($countries['rows'])->firstWhere('name', 'Ázkaria'))->toMatchArray(['provinces' => 0, 'holidays' => 2])
+        ->and(array_column($countries['columns'], 'cell'))->toBe(['code', 'code', 'name', 'symbol', 'symbol', 'number', 'number', 'active']);
+});
+
+test('on the holiday itself, with the platform in Caracas, the next holiday is today\'s, not the one after', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    // The platform's clock comes from the company's country: Venezuela is four hours behind the UTC the dates are built in.
+    $venezuela = Country::factory()->create(['name' => 'Zuliandia', 'iso2' => 'VE']);
+    Company::factory()->create(['region_id' => Region::factory()->for(Province::factory()->for($venezuela))]);
+    CountryHoliday::create(['country_id' => $venezuela->id, 'name' => 'Año Nuevo Qz', 'month' => 1, 'day' => 1]);
+    CountryHoliday::create(['country_id' => $venezuela->id, 'name' => 'Fiesta Qz', 'month' => 2, 'day' => 8]);
+
+    // Asked of the model the web and the API both read, across the day: a staff session would not survive the jumps.
+    $next = function (string $moment): array {
+        $this->travelTo(CarbonImmutable::parse($moment, 'America/Caracas'));
+
+        return (new CountryHoliday)->catalogHighlights()[0];
+    };
+
+    // The evening before, in Caracas, it is still the 31st: the next one is tomorrow's.
+    expect($next('2026-12-31 22:00')['when'])->toBe('01/01/2027');
+
+    foreach (['2027-01-01 00:30', '2027-01-01 12:00', '2027-01-01 23:30'] as $moment) {
+        expect($next($moment))->toBe(['when' => '01/01/2027', 'text' => __('catalog.country_holiday.upcoming.line', ['country' => 'Zuliandia', 'name' => 'Año Nuevo Qz'])]);
+    }
+
+    // And the day after, it moves on.
+    expect($next('2027-01-02 09:00')['when'])->toBe('08/02/2027');
 });
 
 test('the search is the editor\'s box: trimmed, any case, contained in a name or a text, never in a tag or a switch', function (): void {
@@ -1033,7 +1158,7 @@ test('odd inputs read as nothing: a list for a search, a page beyond the last, a
     screensGet($token, 'catalogs/status?page=999999')->assertOk();
 
     // A master the web has but the app does not read yet, one the web has not, and a shape that is no slug at all.
-    screensGet($token, 'catalogs/country')->assertNotFound();
+    screensGet($token, 'catalogs/plan')->assertNotFound();
     screensGet($token, 'catalogs/nonsense')->assertNotFound();
     screensGet($token, 'catalogs/Status_1')->assertNotFound();
 });

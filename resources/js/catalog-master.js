@@ -9,15 +9,22 @@
  *     path:   'form.data',                 // where the DTO lives in the component
  *     search: ['code', 'name'],            // keys the search box filters by
  *     rules:  { code: ['required', ...] }, // mirror of getValidationRules()
+ *     chipKey: 'country',                  // optional: the row key the chips filter by
  *   })
  *
  * It needs the global `validate()` from form-guard.js.
  */
-export function catalogMaster({ items = [], path = '', search = [], rules = {} } = {}) {
+// Alphabetical as Spanish reads it (accents ignored, the tilde n after n): the same ICU
+// rules `CatalogColumnDto::chipValues` uses for the phone.
+const chipCollator = new Intl.Collator('es');
+
+export function catalogMaster({ items = [], path = '', search = [], rules = {}, chipKey = null } = {}) {
     return {
         view: 'list',
         mode: 'create',
         q: '',
+        chipKey,
+        chip: '',
         errors: {},
         items,
         removing: false,
@@ -46,11 +53,42 @@ export function catalogMaster({ items = [], path = '', search = [], rules = {} }
             });
         },
 
+        /** Each value of the chip column once, from every row: a search never hides a chip. */
+        chips() {
+            if (!this.chipKey) return [];
+
+            const values = [...new Set(this.items.map((row) => String(row[this.chipKey] ?? '')).filter((value) => value !== ''))];
+
+            return values.sort((a, b) => chipCollator.compare(a, b));
+        },
+
+        /**
+         * New rows after a save. A chosen chip that no longer exists, or a row just saved
+         * that lands outside it, gives "Todos" back: the record she saved never hides.
+         */
+        refreshRows(rows) {
+            const before = new Map(this.items.map((row) => [row.id, String(row[this.chipKey] ?? '')]));
+            this.items = rows;
+
+            if (!this.chipKey || !this.chip) return;
+
+            const landedOutside = rows.some((row) => {
+                const now = String(row[this.chipKey] ?? '');
+
+                return before.get(row.id) !== now && now !== this.chip;
+            });
+
+            if (landedOutside || !this.chips().includes(this.chip)) {
+                this.chip = '';
+            }
+        },
+
         filtered() {
             const q = this.q.trim().toLowerCase();
-            if (!q) return this.items;
+            const rows = this.chipKey && this.chip ? this.items.filter((row) => String(row[this.chipKey] ?? '') === this.chip) : this.items;
+            if (!q) return rows;
 
-            return this.items.filter((row) =>
+            return rows.filter((row) =>
                 search.some((key) => String(row[key] ?? '').toLowerCase().includes(q)),
             );
         },

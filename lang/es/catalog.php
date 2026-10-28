@@ -31,6 +31,8 @@ return [
         'no_matches' => 'Ningún catálogo coincide con la búsqueda.',
         'none' => 'No hay catálogos disponibles.',
         'close' => 'Cerrar catálogo',
+        'chips_all' => 'Todos',
+        'chips_label' => 'Filtrar por país',
 
         // Estado vacío: es lo primero que ve alguien que entra por primera vez,
         // así que explica QUÉ es un catálogo y PARA QUÉ sirve, en vez de repetir
@@ -99,6 +101,10 @@ return [
         'new_title' => 'Nuevo feriado',
         'edit_title' => 'Editar',
         'empty' => 'No hay feriados que coincidan con la búsqueda.',
+        'highlights_title' => 'Próximo feriado de cada país',
+        'upcoming' => [
+            'line' => ':country · :name',
+        ],
         'of' => 'de',
 
         'columns' => [
@@ -358,6 +364,8 @@ return [
             'name' => 'Nombre',
             'phone_code' => 'Cód. telefónico',
             'currency' => 'Moneda',
+            'provinces' => 'Provincias',
+            'holidays' => 'Feriados',
             'status' => 'Estado',
         ],
 

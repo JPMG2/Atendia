@@ -51,7 +51,8 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['name', 'province', 'country']"
+    :search="$this->searchKeys"
+    :chip="$this->chipKey"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
         'province_id' => ['required'],
@@ -69,12 +70,7 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.region.empty')"
-            :columns="[
-                ['label' => __('catalog.region.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.region.columns.province')],
-                ['label' => __('catalog.region.columns.country')],
-                ['label' => __('catalog.region.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td x-text="row.province"></td>

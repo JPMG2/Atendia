@@ -51,7 +51,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name']"
+    :search="$this->searchKeys"
     :rules="[
         'code' => ['required', 'alpha', ['length', 3]],
         'iso2' => ['required', 'alpha', ['length', 2]],
@@ -72,20 +72,15 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.country.empty')"
-            :columns="[
-                ['label' => __('catalog.country.columns.code')],
-                ['label' => __('catalog.country.columns.iso2')],
-                ['label' => __('catalog.country.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.country.columns.phone_code')],
-                ['label' => __('catalog.country.columns.currency')],
-                ['label' => __('catalog.country.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td><span class="catalog-code" x-text="row.iso2"></span></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td class="catalog-cell-sym" x-text="row.phone_code"></td>
             <td class="catalog-cell-sym" x-text="row.currency"></td>
+            <td class="catalog-cell-num" x-text="row.provinces"></td>
+            <td class="catalog-cell-num" x-text="row.holidays"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
                     <span class="dot"></span

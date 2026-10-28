@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Dto\CatalogColumnDto;
 use App\Models\Business;
 use App\Models\Country;
 use App\Models\User;
@@ -45,6 +46,99 @@ test('the list says each day in words, with its shape', function (): void {
         ->assertSee('2 días antes de Pascua')
         ->assertSee('Desde Pascua')
         ->screenshot(filename: 'catalog-holidays-list');
+});
+
+test('the list opens with the next holiday of each country and filters by country with one tap, at every width', function (string $label, int $width, bool $dark): void {
+    $page = visit('/admin/catalogs')->resize($width, 900);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->click('Feriados')->wait(1)->assertNoJavaScriptErrors();
+
+    $count = fn (): string => (string) $page->script('document.querySelector(".catalog-count b").textContent.trim()');
+    $tap = fn (string $chip) => $page->script("[...document.querySelectorAll('.catalog-filter button')].find((b) => b.textContent.trim() === ".json_encode($chip).').click()');
+    $shown = fn (): array => (array) $page->script('[...new Set([...document.querySelectorAll(".catalog-table tbody tr")].filter((r) => r.offsetParent !== null).map((r) => r.children[0].textContent.trim()))]');
+
+    // One line per country, from the model: the same lines the phone reads.
+    $page->assertSee('Próximo feriado de cada país')->assertPresent('@holiday-upcoming');
+    expect($page->script('document.querySelectorAll("[data-testid=holiday-upcoming] li").length'))->toBe(2)
+        ->and($count())->toBe('24');
+
+    $tap('Venezuela');
+    $page->wait(0.4);
+    expect($count())->toBe('12')
+        ->and($shown())->toBe(['Venezuela'])
+        ->and($page->script("document.querySelector('.catalog-filter button[aria-pressed=\"true\"]').textContent.trim()"))->toBe('Venezuela');
+    $page->screenshot(filename: 'catalog-holidays-chips-'.$label);
+
+    // The search works inside the chip, and "Todos" gives the whole list back.
+    $page->type('q', 'navidad')->wait(0.4);
+    expect($count())->toBe('1');
+    $page->type('q', '');
+    $tap('Todos');
+    $page->wait(0.4);
+    expect($count())->toBe('24')
+        ->and((int) $page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+})->with([
+    'desktop-light' => ['desktop-light', 1280, false],
+    'phone-dark' => ['phone-dark', 390, true],
+]);
+
+test('a row saved outside the chosen chip gives "Todos" back, and so does a chip whose country is gone', function (): void {
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+    $page->click('Feriados')->wait(1);
+
+    $tap = fn (string $chip) => $page->script("[...document.querySelectorAll('.catalog-filter button')].find((b) => b.textContent.trim() === ".json_encode($chip).').click()');
+    $pressed = fn (): string => (string) $page->script("document.querySelector('.catalog-filter button[aria-pressed=\"true\"]').textContent.trim()");
+    // What the server sends after a save: every row, as `catalog-rows-refreshed` hands them over.
+    $refresh = fn (string $js) => $page->script('(() => { const m = document.querySelector(".catalog-master"); const rows = Alpine.$data(m).items.slice(); '.$js.'; m.dispatchEvent(new CustomEvent("catalog-rows-refreshed", { detail: { rows } })); })()');
+
+    $tap('Venezuela');
+    $page->wait(0.3);
+
+    // Editing a Venezuelan holiday keeps the chip: the saved row is still inside it.
+    $refresh('rows[rows.length - 1] = { ...rows[rows.length - 1], name: "Navidad editada" }');
+    $page->wait(0.3);
+    expect($pressed())->toBe('Venezuela');
+
+    // A new Argentinian holiday saved while "Venezuela" is on: the list opens up so the saved row shows.
+    $refresh('rows.push({ id: 9999, country: "Argentina", name: "Feriado nuevo", kind: "fixed", when: "1 de marzo", active: true })');
+    $page->wait(0.3);
+    expect($pressed())->toBe('Todos')
+        ->and($page->script('document.querySelector(".catalog-count b").textContent.trim()'))->toBe('25');
+
+    // A chip whose country no longer has a row reads as "Todos", never an empty list with nothing pressed.
+    $tap('Venezuela');
+    $refresh('rows.splice(0, rows.length, ...rows.filter((r) => r.country !== "Venezuela"))');
+    $page->wait(0.3);
+    expect($page->script('document.querySelector(".catalog-count b").textContent.trim()'))->toBe('13');
+});
+
+test('the chips are in the same order in the browser and on the server, the one the phone gets', function (): void {
+    $names = ['Zuliandia', 'Ñandú', 'Nicaragua', 'Guinea Ecuatorial', 'Guinea', 'Ázkaria', 'Øresund', 'Œland', 'Oeste'];
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+
+    // The web sorts with the browser's Spanish collator; the API with PHP's. One list, one order.
+    $browser = (array) $page->script('const c = new Intl.Collator("es"); '.json_encode($names).'.sort((a, b) => c.compare(a, b))');
+
+    expect($browser)->toBe(CatalogColumnDto::spanishOrder($names))
+        ->and(array_slice($browser, 0, 3))->toBe(['Ázkaria', 'Guinea', 'Guinea Ecuatorial'])
+        ->and(array_search('Ñandú', $browser, true))->toBeGreaterThan(array_search('Nicaragua', $browser, true));
+});
+
+test('Países says how many provinces and holidays each country has, so the one still missing them shows', function (): void {
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+
+    $page->click('Países')->wait(1)->assertNoJavaScriptErrors()->assertSee('Provincias');
+
+    $venezuela = (array) $page->script('[...document.querySelectorAll(".catalog-table tbody tr")].map((r) => [...r.children].map((c) => c.textContent.trim())).find((cells) => cells.includes("Venezuela"))');
+    $page->screenshot(filename: 'catalog-countries-counts');
+
+    // Holidays seeded for Venezuela only through CountryHolidaySeeder: 12 of them, and no provinces in this base.
+    expect($venezuela)->toContain('12')
+        ->and((int) $page->script('const w = document.querySelector(".catalog-table-wrap"); w.scrollWidth - w.clientWidth'))->toBeLessThanOrEqual(0);
 });
 
 test('the year view shows the twelve months and the days in words, at every width', function (string $label, int $width, bool $dark): void {

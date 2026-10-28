@@ -151,8 +151,8 @@ class SocialNetwork extends Model implements DataTable, HasColumns, Removable
         return [
             new CatalogColumnDto('name', __('catalog.social_network.columns.name'), CatalogCell::Name, fill: true, search: true),
             new CatalogColumnDto('abbreviation', __('catalog.social_network.columns.abbreviation'), CatalogCell::Code, search: true),
-            new CatalogColumnDto('url', __('catalog.social_network.columns.url'), CatalogCell::Text),
-            new CatalogColumnDto('icon', __('catalog.social_network.columns.icon'), CatalogCell::Text),
+            new CatalogColumnDto('url', __('catalog.social_network.columns.url'), CatalogCell::Symbol),
+            new CatalogColumnDto('icon', __('catalog.social_network.columns.icon'), CatalogCell::Symbol),
             new CatalogColumnDto('active', __('catalog.social_network.columns.status'), CatalogCell::Active, on: __('catalog.social_network.status.active'), off: __('catalog.social_network.status.inactive')),
         ];
     }

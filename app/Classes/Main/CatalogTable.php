@@ -8,6 +8,7 @@ use App\Classes\Report\CatalogReport;
 use App\Dto\CatalogColumnDto;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
+use App\Interfaces\Catalog\HasHighlights;
 use App\Models\CatalogForm;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -26,6 +27,7 @@ class CatalogTable
         private readonly ?User $user,
         private readonly string $search = '',
         private readonly int $limit = self::PAGE,
+        private readonly string $chip = '',
     ) {}
 
     /** The master's row of the hub when the phone can read it and this person may open it; null otherwise. */
@@ -38,9 +40,43 @@ class CatalogTable
         get => $this->columns ??= $this->model()->catalogColumns();
     }
 
-    /** @var Collection<int, array<string, mixed>> every row the search keeps */
+    /** @var Collection<int, array<string, mixed>> the whole master, asked once */
+    private Collection $every {
+        get => $this->every ??= $this->model()->catalogRows();
+    }
+
+    /** @var Collection<int, array<string, mixed>> every row the chip and the search keep */
     public Collection $matching {
         get => $this->matching ??= $this->searched();
+    }
+
+    /**
+     * The chips over the list, built from every row so they never vanish under a search;
+     * a chip that names no value is read as "all", as an unknown filter is elsewhere.
+     *
+     * @var array{label: string, all: string, value: string, options: list<string>}|null
+     */
+    public ?array $chips {
+        get {
+            $key = CatalogColumnDto::chipKey($this->columns);
+
+            if ($key === null) {
+                return null;
+            }
+
+            $options = CatalogColumnDto::chipValues($this->every, $key);
+
+            return ['label' => __('catalog.hub.chips_label'), 'all' => __('catalog.hub.chips_all'), 'value' => in_array($this->chip, $options, true) ? $this->chip : '', 'options' => $options];
+        }
+    }
+
+    /** @var array{title: string, lines: list<array{when: string, text: string}>}|null */
+    public ?array $highlights {
+        get {
+            $model = $this->model();
+
+            return $model instanceof HasHighlights ? ['title' => $this->words('highlights_title'), 'lines' => $model->catalogHighlights()] : null;
+        }
     }
 
     public int $total {
@@ -102,7 +138,13 @@ class CatalogTable
     {
         $needle = mb_strtolower(trim($this->search));
         $keys = CatalogColumnDto::searchKeys($this->columns);
-        $rows = $this->model()->catalogRows();
+        $rows = $this->every;
+        $chip = $this->chips['value'] ?? '';
+
+        if ($chip !== '') {
+            $chipKey = CatalogColumnDto::chipKey($this->columns);
+            $rows = $rows->filter(fn (array $row): bool => (string) ($row[$chipKey] ?? '') === $chip)->values();
+        }
 
         return $needle === ''
             ? $rows

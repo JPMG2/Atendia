@@ -155,7 +155,7 @@ class Currency extends Model implements DataTable, HasColumns, Removable
         return [
             new CatalogColumnDto('code', __('catalog.currency.columns.code'), CatalogCell::Code, search: true),
             new CatalogColumnDto('name', __('catalog.currency.columns.name'), CatalogCell::Name, fill: true, search: true),
-            new CatalogColumnDto('symbol', __('catalog.currency.columns.symbol'), CatalogCell::Text),
+            new CatalogColumnDto('symbol', __('catalog.currency.columns.symbol'), CatalogCell::Symbol),
             new CatalogColumnDto('decimals', __('catalog.currency.columns.decimals'), CatalogCell::Number),
             new CatalogColumnDto('active', __('catalog.currency.columns.status'), CatalogCell::Active, on: __('catalog.currency.status.active'), off: __('catalog.currency.status.inactive')),
         ];

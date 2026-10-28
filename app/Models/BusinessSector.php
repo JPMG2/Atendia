@@ -181,7 +181,7 @@ class BusinessSector extends Model implements DataTable, HasColumns, Removable
             new CatalogColumnDto('code', __('catalog.business_sector.columns.code'), CatalogCell::Code, search: true),
             new CatalogColumnDto('name', __('catalog.business_sector.columns.name'), CatalogCell::Name, search: true),
             new CatalogColumnDto('description', __('catalog.business_sector.columns.description'), CatalogCell::Text, fill: true, search: true),
-            new CatalogColumnDto('order', __('catalog.business_sector.columns.order'), CatalogCell::Text),
+            new CatalogColumnDto('order', __('catalog.business_sector.columns.order'), CatalogCell::Symbol),
             new CatalogColumnDto('active', __('catalog.business_sector.columns.status'), CatalogCell::Active, on: __('catalog.business_sector.status.active'), off: __('catalog.business_sector.status.inactive')),
         ];
     }

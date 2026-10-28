@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -20,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['province_id', 'name', 'is_active'])]
-class Region extends Model implements DataTable, Removable
+class Region extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -98,6 +101,17 @@ class Region extends Model implements DataTable, Removable
                 ],
             )
             ->values();
+    }
+
+    /** A region is looked up by its province or country as often as by its own name, so all three are searched. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.region.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('province', __('catalog.region.columns.province'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('country', __('catalog.region.columns.country'), CatalogCell::Text, search: true, chips: true),
+            new CatalogColumnDto('active', __('catalog.region.columns.status'), CatalogCell::Active, on: __('catalog.region.status.active'), off: __('catalog.region.status.inactive')),
+        ];
     }
 
     /**

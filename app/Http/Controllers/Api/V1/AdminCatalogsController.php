@@ -43,7 +43,8 @@ class AdminCatalogsController extends Controller
         $term = $request->query('search');
         $search = is_string($term) ? mb_substr(trim($term), 0, 100) : '';
         $pages = max(1, min(self::MAX_PAGES, (int) $request->query('page', 1)));
-        $table = new CatalogTable($master, $request->user(), $search, CatalogTable::PAGE * $pages);
+        $chip = $request->query('chip');
+        $table = new CatalogTable($master, $request->user(), $search, CatalogTable::PAGE * $pages, is_string($chip) ? $chip : '');
         $form = $table->form;
 
         abort_if($form === null, 404);
@@ -58,6 +59,8 @@ class AdminCatalogsController extends Controller
                 'placeholder' => $table->searchPlaceholder,
                 'value' => $search,
             ],
+            'chips' => $table->chips,
+            'highlights' => $table->highlights,
             'count' => $table->total,
             'unit' => $table->unit,
             'columns' => array_map(fn (CatalogColumnDto $column): array => $column->toArray(), $table->columns),

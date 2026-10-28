@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
+use App\Interfaces\Catalog\HasHighlights;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +24,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * carries no `business_id` — like {@see Country} itself.
  */
 #[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'weekday', 'nth', 'is_active'])]
-class CountryHoliday extends Model implements DataTable
+class CountryHoliday extends Model implements DataTable, HasColumns, HasHighlights
 {
     use LogsActivity;
 
@@ -92,6 +96,59 @@ class CountryHoliday extends Model implements DataTable
                 'active' => $holiday->is_active,
             ])
             ->values();
+    }
+
+    /** The kind is a badge whose tone tells a one-year decree and an Easter day apart from the days that always repeat. */
+    public function catalogColumns(): array
+    {
+        $tones = [self::KIND_FIXED => 'neutral', self::KIND_EASTER => 'info', self::KIND_NTH => 'neutral', self::KIND_ONCE => 'brand'];
+
+        return [
+            new CatalogColumnDto('country', __('catalog.country_holiday.columns.country'), CatalogCell::Text, search: true, chips: true),
+            new CatalogColumnDto('name', __('catalog.country_holiday.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('when', __('catalog.country_holiday.columns.when'), CatalogCell::Symbol, search: true),
+            new CatalogColumnDto(
+                'kind',
+                __('catalog.country_holiday.columns.kind'),
+                CatalogCell::Badge,
+                badges: collect($tones)->map(fn (string $tone, string $kind): array => ['label' => __('catalog.country_holiday.kinds.'.$kind), 'tone' => $tone])->all(),
+            ),
+            new CatalogColumnDto('active', __('catalog.country_holiday.columns.status'), CatalogCell::Active, on: __('catalog.country_holiday.status.active'), off: __('catalog.country_holiday.status.inactive')),
+        ];
+    }
+
+    /**
+     * The next holiday of each country that has any, from today on in the platform's
+     * own clock; a year that has no day left looks into the next one.
+     */
+    public function catalogHighlights(): array
+    {
+        // A holiday is a calendar day with no clock: compared as `Y-m-d`, so today's own holiday
+        // is still "next" in Caracas although its date was built at midnight UTC.
+        $today = CarbonImmutable::now(Company::localTimezone())->format('Y-m-d');
+
+        $countries = Country::query()
+            ->whereIn('id', self::query()->where('is_active', true)->select('country_id'))
+            ->get(['id', 'name'])
+            ->keyBy('name');
+
+        // The countries in the chips' own order, so the lines read top to bottom like the chips left to right.
+        return collect(CatalogColumnDto::spanishOrder($countries->keys()->all()))
+            ->map(fn (string $name): Country => $countries[$name])
+            ->map(function (Country $country) use ($today): ?array {
+                $year = (int) substr($today, 0, 4);
+                $next = self::forYear($country->id, $year)
+                    ->concat(self::forYear($country->id, $year + 1))
+                    ->first(fn (array $holiday): bool => $holiday['date']->format('Y-m-d') >= $today);
+
+                return $next === null ? null : [
+                    'when' => $next['date']->format('d/m/Y'),
+                    'text' => __('catalog.country_holiday.upcoming.line', ['country' => $country->name, 'name' => $next['name']]),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /** Where this row sits among its country's: by calendar day, Easter-relative ones after the fixed. */

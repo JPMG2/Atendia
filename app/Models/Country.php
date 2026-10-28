@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -16,11 +19,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['currency_id', 'name', 'code', 'iso2', 'phone_code', 'is_active'])]
-class Country extends Model implements DataTable, Removable
+class Country extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -59,6 +63,22 @@ class Country extends Model implements DataTable, Removable
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    /**
+     * @return HasMany<Province, $this>
+     */
+    public function provinces(): HasMany
+    {
+        return $this->hasMany(Province::class);
+    }
+
+    /**
+     * @return HasMany<CountryHoliday, $this>
+     */
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(CountryHoliday::class);
     }
 
     public static function normalizeCode(string $value): string
@@ -123,12 +143,15 @@ class Country extends Model implements DataTable, Removable
      * The `id` always travels: it is the only stable key for editing. The `code`
      * is user-editable, so it cannot identify the row.
      *
-     * @return Collection<int, array{id: int, code: string, iso2: string, name: string, phone_code: string|null, currency: string, active: bool}>
+     * The two counts say at a glance which country is still missing its provinces or its holidays.
+     *
+     * @return Collection<int, array{id: int, code: string, iso2: string, name: string, phone_code: string|null, currency: string, provinces: int, holidays: int, active: bool}>
      */
     public function catalogRows(): Collection
     {
         return $this->newQuery()
             ->with('currency:id,code')
+            ->withCount(['provinces', 'holidays'])
             ->orderBy('name')
             ->get()
             ->map(
@@ -139,10 +162,27 @@ class Country extends Model implements DataTable, Removable
                     'name' => $country->name,
                     'phone_code' => $country->phone_code,
                     'currency' => $country->currency?->code ?? '',
+                    'provinces' => (int) $country->provinces_count,
+                    'holidays' => (int) $country->holidays_count,
                     'active' => $country->is_active,
                 ],
             )
             ->values();
+    }
+
+    /** The 3-letter code is the visible key and is searched with the name; the 2-letter one is not. */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('code', __('catalog.country.columns.code'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('iso2', __('catalog.country.columns.iso2'), CatalogCell::Code),
+            new CatalogColumnDto('name', __('catalog.country.columns.name'), CatalogCell::Name, fill: true, search: true),
+            new CatalogColumnDto('phone_code', __('catalog.country.columns.phone_code'), CatalogCell::Symbol),
+            new CatalogColumnDto('currency', __('catalog.country.columns.currency'), CatalogCell::Symbol),
+            new CatalogColumnDto('provinces', __('catalog.country.columns.provinces'), CatalogCell::Number),
+            new CatalogColumnDto('holidays', __('catalog.country.columns.holidays'), CatalogCell::Number),
+            new CatalogColumnDto('active', __('catalog.country.columns.status'), CatalogCell::Active, on: __('catalog.country.status.active'), off: __('catalog.country.status.inactive')),
+        ];
     }
 
     /**

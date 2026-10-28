@@ -201,6 +201,13 @@ new class extends Component
         return new CountryHoliday;
     }
 
+    /** @return array<string, array{label: string, tone: string}> */
+    #[Computed]
+    public function kindBadges(): array
+    {
+        return collect((new CountryHoliday)->catalogColumns())->firstWhere('key', 'kind')->badges;
+    }
+
     /** Every country, active or not: a row of an inactive one must still read its name when edited. */
     #[Computed]
     public function countryOptions(): array
@@ -248,7 +255,8 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['country', 'name', 'when']"
+    :search="$this->searchKeys"
+    :chip="$this->chipKey"
     :rules="[
         'country_id' => ['required'],
         'name' => ['required', ['minLength', 3], ['maxLength', 80], 'noMarkup'],
@@ -271,24 +279,34 @@ new class extends Component
             </x-ui.button>
         </x-catalog.toolbar>
 
+        {{-- The next day off of each country, worked out by the model: the phone reads the same lines. --}}
+        @if ($this->highlights !== [])
+            <div class="catalog-highlights" data-testid="holiday-upcoming">
+                <p class="catalog-highlights-title">{{ __('catalog.country_holiday.highlights_title') }}</p>
+
+                <ol class="hist-list">
+                    @foreach ($this->highlights as $line)
+                        <li class="hist-item" wire:key="upcoming-{{ $loop->index }}">
+                            <span class="hist-when font-mono">{{ $line['when'] }}</span>
+                            <span class="hist-on">{{ $line['text'] }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        @endif
+
         <x-catalog.table
             :empty="__('catalog.country_holiday.empty')"
-            :columns="[
-                ['label' => __('catalog.country_holiday.columns.country')],
-                ['label' => __('catalog.country_holiday.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.country_holiday.columns.when')],
-                ['label' => __('catalog.country_holiday.columns.kind')],
-                ['label' => __('catalog.country_holiday.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td x-text="row.country"></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
-            <td class="font-mono" x-text="row.when"></td>
+            <td class="catalog-cell-sym" x-text="row.when"></td>
             <td>
-                <span class="status-tag is-neutral" x-show="row.kind === 'fixed'">{{ __('catalog.country_holiday.kinds.fixed') }}</span>
-                <span class="status-tag is-info" x-show="row.kind === 'easter'">{{ __('catalog.country_holiday.kinds.easter') }}</span>
-                <span class="status-tag is-neutral" x-show="row.kind === 'nth'">{{ __('catalog.country_holiday.kinds.nth') }}</span>
-                <span class="status-tag is-brand" x-show="row.kind === 'once'">{{ __('catalog.country_holiday.kinds.once') }}</span>
+                {{-- Word and tone of each kind come from the model's column, the same the phone reads. --}}
+                @foreach ($this->kindBadges as $kind => $badge)
+                    <span class="status-tag is-{{ $badge['tone'] }}" x-show="row.kind === @js($kind)">{{ $badge['label'] }}</span>
+                @endforeach
             </td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">

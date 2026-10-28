@@ -10,6 +10,7 @@ use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
+use App\Interfaces\Catalog\HasHighlights;
 use App\Interfaces\Catalog\Removable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Services\NotificationService;
@@ -283,6 +284,28 @@ trait InteractsWithCatalogEditor
         $model = $this->catalogModel();
 
         return $model instanceof HasColumns ? CatalogColumnDto::searchKeys($model->catalogColumns()) : [];
+    }
+
+    /** The row key the chips over the list filter by; null when the master offers none. */
+    #[Computed]
+    public function chipKey(): ?string
+    {
+        $model = $this->catalogModel();
+
+        return $model instanceof HasColumns ? CatalogColumnDto::chipKey($model->catalogColumns()) : null;
+    }
+
+    /**
+     * What the master tells before its list, from the model, as the mobile API says it.
+     *
+     * @return list<array{when: string, text: string}>
+     */
+    #[Computed]
+    public function highlights(): array
+    {
+        $model = $this->catalogModel();
+
+        return $model instanceof HasHighlights ? $model->catalogHighlights() : [];
     }
 
     /**

@@ -120,7 +120,7 @@ class TaxCondition extends Model implements DataTable, HasColumns, Removable
         return [
             new CatalogColumnDto('code', __('catalog.tax_condition.columns.code'), CatalogCell::Code, search: true),
             new CatalogColumnDto('name', __('catalog.tax_condition.columns.name'), CatalogCell::Name, fill: true, search: true),
-            new CatalogColumnDto('country', __('catalog.tax_condition.columns.country'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('country', __('catalog.tax_condition.columns.country'), CatalogCell::Symbol, search: true),
             new CatalogColumnDto('discriminates', __('catalog.tax_condition.columns.discriminate_tax'), CatalogCell::Flag, on: __('catalog.tax_condition.discriminate.yes'), off: __('catalog.tax_condition.discriminate.no')),
             new CatalogColumnDto('active', __('catalog.tax_condition.columns.status'), CatalogCell::Active, on: __('catalog.tax_condition.status.active'), off: __('catalog.tax_condition.status.inactive')),
         ];
