@@ -102,7 +102,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['code', 'name']"
+    :search="$this->searchKeys"
     :rules="[
         'price' => ['required', 'integer', ['min', 1], ['max', 99999]],
         'conversations_per_month' => ['required', 'integer', ['min', 1], ['max', 1000000]],
@@ -124,29 +124,39 @@ new class extends Component
             :plural="__('catalog.plan.plural')"
         />
 
+        {{-- What each plan brings in today, worked out by the model: the phone reads the same lines. --}}
+        @if ($this->highlights !== [])
+            <div class="catalog-highlights" data-testid="plan-revenue">
+                <p class="catalog-highlights-title">{{ __('catalog.plan.highlights_title') }}</p>
+
+                <ol class="hist-list">
+                    @foreach ($this->highlights as $line)
+                        <li class="hist-item" wire:key="plan-revenue-{{ $loop->index }}">
+                            <span class="hist-when">{{ $line['when'] }}</span>
+                            <span class="hist-on">{{ $line['text'] }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        @endif
+
         <x-catalog.table
             :empty="__('catalog.plan.empty')"
-            :columns="[
-                ['label' => __('catalog.plan.columns.plan'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.plan.columns.price'), 'class' => 'is-num'],
-                ['label' => __('catalog.plan.columns.conversations'), 'class' => 'is-num'],
-                ['label' => __('catalog.plan.columns.ask'), 'class' => 'is-num'],
-                ['label' => __('catalog.plan.columns.businesses'), 'class' => 'is-num'],
-                ['label' => __('catalog.plan.columns.tags')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name catalog-cell-fill">
                 <span x-text="row.name"></span>
                 <span class="catalog-code plan-code" x-text="row.code"></span>
             </td>
-            <td class="catalog-cell-num" x-text="'US$ ' + row.price"></td>
-            <td class="catalog-cell-num" x-text="row.conversations.toLocaleString('es')"></td>
+            {{-- Price, figure and tags come worded from the model: the phone reads the same row. --}}
+            <td class="catalog-cell-num" x-text="row.price_label"></td>
+            <td class="catalog-cell-num" x-text="row.conversations_label"></td>
             <td class="catalog-cell-num" x-text="row.ask"></td>
             <td class="catalog-cell-num" x-text="row.businesses"></td>
             <td>
-                <span class="status-tag is-brand" x-show="row.featured">{{ __('catalog.plan.tags.featured') }}</span>
-                <span class="status-tag is-info" x-show="row.trial" x-text="{{ \Illuminate\Support\Js::from(__('catalog.plan.tags.trial', ['days' => ':days'])) }}.replace(':days', row.trial)"></span>
-                <span class="status-tag is-neutral" x-show="row.archived">{{ __('catalog.plan.tags.archived') }}</span>
+                <template x-for="tag in row.tags" :key="tag.label">
+                    <span class="status-tag" x-bind:class="'is-' + tag.tone" x-text="tag.label"></span>
+                </template>
             </td>
         </x-catalog.table>
     </x-slot:list>

@@ -246,7 +246,7 @@ new class extends Component
 <div class="bp-main">
     <div class="page-head">
         <div>
-            <h1 class="page-head-title">{{ __('admin.home.title') }}</h1>
+            <h1 class="page-head-title">{{ __('admin.home.greeting', ['name' => auth()->user()?->name]) }}</h1>
             <p class="page-head-sub">{{ __('admin.home.sub') }}</p>
         </div>
     </div>

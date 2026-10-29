@@ -25,6 +25,8 @@ class MenuItemResource extends JsonResource
             'label' => __($this->label_key),
             'icon' => $this->icon,
             'screen' => $this->route_name,
+            // The live count the web's sidebar shows on this item (what waits on a reply), or null.
+            'badge' => $this->badge,
             'children' => self::collection($this->childrenRecursive),
         ];
     }

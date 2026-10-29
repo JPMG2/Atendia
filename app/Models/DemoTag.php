@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -19,7 +22,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 #[Fillable(['slug', 'seasonal_window_id', 'label', 'business_name', 'noun', 'chips', 'pool', 'sort_order', 'is_active'])]
-class DemoTag extends Model implements DataTable, Removable
+class DemoTag extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -233,20 +236,62 @@ class DemoTag extends Model implements DataTable, Removable
      */
     public function catalogRows(): Collection
     {
+        $today = SeasonalWindow::today();
+
         return $this->newQuery()
             ->with('seasonalWindow')
             ->orderBy('slug')
             ->orderBy('seasonal_window_id')
             ->get()
-            ->map(fn (self $tag): array => [
-                'id' => $tag->id,
-                'slug' => $tag->slug,
-                'label' => $tag->label ?? '',
-                'business_name' => $tag->business_name ?? '',
-                'season' => $tag->seasonalWindow?->name ?? '',
-                'sort_order' => $tag->sort_order,
-                'active' => $tag->is_active,
-            ])
+            ->map(function (self $tag) use ($today): array {
+                // Blank on a variant means "inherits", which is not the same as missing: said out loud,
+                // or the row reads as half loaded. Blank on the year-round row is simply blank.
+                $inherits = blank($tag->business_name) && $tag->seasonalWindow !== null;
+
+                return [
+                    'id' => $tag->id,
+                    'slug' => $tag->slug,
+                    'label' => $tag->label ?? '',
+                    'business_name' => $tag->business_name ?? '',
+                    'business_shown' => $inherits ? __('catalog.demo_tag.status.inherits') : ($tag->business_name ?? ''),
+                    'business_inherits' => $inherits,
+                    'season' => $tag->seasonalWindow?->name ?? '',
+                    'season_shown' => self::seasonWords($tag->seasonalWindow, $today),
+                    'sort_order' => $tag->sort_order,
+                    'active' => $tag->is_active,
+                    // The hero's own `?rubro=` door, only on the rows that are its pills: the year-round ones that
+                    // are on. A season's row has no pill of its own; it is seen ahead in the dated preview below.
+                    'landing_url' => $tag->is_active && $tag->seasonal_window_id === null ? rtrim(url('/'), '/').'/?rubro='.rawurlencode($tag->slug) : null,
+                ];
+            })
             ->values();
+    }
+
+    /** The season as the list says it: "Siempre" with none, and how far off it is while it has not started. */
+    private static function seasonWords(?SeasonalWindow $window, CarbonImmutable $today): string
+    {
+        if ($window === null) {
+            return __('catalog.demo_tag.status.evergreen');
+        }
+
+        // Calendar days, not hours: "today" is in the seasons' zone and the date was born at midnight UTC.
+        $days = $window->starts_at === null ? 0 : (int) CarbonImmutable::parse($today->format('Y-m-d'))
+            ->diffInDays(CarbonImmutable::parse($window->starts_at->format('Y-m-d')), false);
+
+        // A season that is switched off never starts: no countdown for it.
+        return $days > 0 && $window->is_active ? trans_choice('catalog.demo_tag.status.starts_in', $days, ['name' => $window->name, 'count' => $days]) : $window->name;
+    }
+
+    /** @return list<CatalogColumnDto> */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('slug', __('catalog.demo_tag.columns.slug'), CatalogCell::Code, search: true),
+            new CatalogColumnDto('label', __('catalog.demo_tag.columns.label'), CatalogCell::Name, fill: true, search: true, searchAlso: ['business_name', 'season'], link: ['key' => 'landing_url', 'label' => __('catalog.demo_tag.landing')]),
+            new CatalogColumnDto('business_shown', __('catalog.demo_tag.columns.business_name'), CatalogCell::Symbol, muted: 'business_inherits'),
+            new CatalogColumnDto('season_shown', __('catalog.demo_tag.columns.season'), CatalogCell::Symbol),
+            new CatalogColumnDto('sort_order', __('catalog.demo_tag.columns.sort_order'), CatalogCell::Symbol),
+            new CatalogColumnDto('active', __('catalog.demo_tag.columns.status'), CatalogCell::Active, on: __('catalog.demo_tag.status.active'), off: __('catalog.demo_tag.status.inactive')),
+        ];
     }
 }

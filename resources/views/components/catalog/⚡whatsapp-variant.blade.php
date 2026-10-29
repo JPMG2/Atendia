@@ -93,7 +93,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['season', 'phone', 'opening_hours']"
+    :search="$this->searchKeys"
     :rules="[
         'seasonal_window_id' => ['required'],
     ]"
@@ -110,30 +110,29 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.whatsapp_variant.empty')"
-            :columns="[
-                ['label' => __('catalog.whatsapp_variant.columns.season'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.whatsapp_variant.columns.starts_at')],
-                ['label' => __('catalog.whatsapp_variant.columns.ends_at')],
-                ['label' => __('catalog.whatsapp_variant.columns.phone')],
-                ['label' => __('catalog.whatsapp_variant.columns.opening_hours')],
-                ['label' => __('catalog.whatsapp_variant.columns.running')],
-                ['label' => __('catalog.whatsapp_variant.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
-            <td class="catalog-cell-name catalog-cell-fill" x-text="row.season"></td>
-            <td class="font-mono" x-text="row.starts_at"></td>
-            <td class="font-mono" x-text="row.ends_at"></td>
-            {{-- Blank means "inherits", which is not the same as missing. --}}
-            <td
-                class="font-mono"
-                x-bind:class="row.phone ? '' : 'text-muted'"
-                x-text="row.phone || {{ \Illuminate\Support\Js::from(__('catalog.whatsapp_variant.status.inherits')) }}"
-            ></td>
-            <td
-                class="catalog-cell-sym"
-                x-bind:class="row.opening_hours ? '' : 'text-muted'"
-                x-text="row.opening_hours || {{ \Illuminate\Support\Js::from(__('catalog.whatsapp_variant.status.inherits')) }}"
-            ></td>
+            <td class="catalog-cell-name catalog-cell-fill">
+                {{-- One child for the stacked phone cell; the line under it is the model's, and the phone reads it too. --}}
+                <span class="block">
+                    <span x-text="row.season"></span>
+                    <span class="text-sm text-muted block" x-show="row.inherits_note" x-text="row.inherits_note"></span>
+                    {{-- Where what it inherits is changed, in a tab of its own: the list stays where it was. --}}
+                    <a
+                        class="row-link text-sm"
+                        x-show="row.company_url"
+                        x-bind:href="row.company_url"
+                        target="_blank"
+                        rel="noopener"
+                        x-on:click.stop
+                    >{{ __('catalog.whatsapp_variant.inherits.edit') }}</a>
+                </span>
+            </td>
+            <td class="catalog-cell-sym" x-text="row.starts_at"></td>
+            <td class="catalog-cell-sym" x-text="row.ends_at"></td>
+            {{-- "Hereda" comes worded from the model, greyed by the key the phone also reads. --}}
+            <td class="catalog-cell-sym" x-bind:class="row.phone_inherits ? 'text-muted' : ''" x-text="row.phone_shown"></td>
+            <td class="catalog-cell-sym" x-bind:class="row.hours_inherits ? 'text-muted' : ''" x-text="row.hours_shown"></td>
             <td>
                 {{-- Switched on and inside its dates are different things, and
                 only the second one is what the visitor is reading right now. --}}

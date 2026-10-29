@@ -70,7 +70,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['name']"
+    :search="$this->searchKeys"
     :rules="[
         'name' => ['required', ['minLength', 3], ['maxLength', 255], 'noMarkup'],
     ]"
@@ -85,37 +85,41 @@ new class extends Component
             :create="__('catalog.seasonal_window.create')"
         />
 
+        {{-- The season the landing speaks with today, worked out by the model: the phone reads the same line. --}}
+        @if ($this->highlights !== [])
+            <div class="catalog-highlights" data-testid="season-today">
+                <p class="catalog-highlights-title">{{ __('catalog.seasonal_window.highlights_title') }}</p>
+
+                <ol class="hist-list">
+                    @foreach ($this->highlights as $line)
+                        <li class="hist-item" wire:key="season-today-{{ $loop->index }}">
+                            <span class="hist-when">{{ $line['when'] }}</span>
+                            <span class="hist-on">{{ $line['text'] }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        @endif
+
         <x-catalog.table
             :empty="__('catalog.seasonal_window.empty')"
-            :columns="[
-                ['label' => __('catalog.seasonal_window.columns.name'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.seasonal_window.columns.starts_at')],
-                ['label' => __('catalog.seasonal_window.columns.ends_at')],
-                ['label' => __('catalog.seasonal_window.columns.priority')],
-                ['label' => __('catalog.seasonal_window.columns.running')],
-                ['label' => __('catalog.seasonal_window.columns.status')],
-                ['label' => __('catalog.seasonal_window.columns.repeat')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td class="catalog-cell-name catalog-cell-fill">
-                <span x-text="row.name"></span>
-                {{-- What the season changes, said under its name: a season with no
-                content is dates and nothing else, and it should not look like it works. --}}
-                <span
-                    class="text-sm text-muted block"
-                    x-bind:style="row.hero + row.whatsapp === 0 && ! row.has_notice ? 'color: var(--warning)' : ''"
-                    x-text="row.hero + row.whatsapp === 0 && ! row.has_notice
-                        ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.none')) }}
-                        : {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.some', ['parts' => ':parts'])) }}.replace(':parts', [
-                            row.has_notice ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.notice')) }} : '',
-                            row.hero === 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.hero_one')) }} : (row.hero > 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.hero_many')) }}.replace(':count', row.hero) : ''),
-                            row.whatsapp === 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.whatsapp_one')) }} : (row.whatsapp > 1 ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.content.whatsapp_many')) }}.replace(':count', row.whatsapp) : ''),
-                        ].filter(Boolean).join(' · '))"
-                ></span>
+                {{-- One child for the stacked phone cell, or name and line split side by side. --}}
+                <span class="block">
+                    <span x-text="row.name"></span>
+                    {{-- What the season changes, worded by the model (the phone reads the same line); amber when nothing. --}}
+                    <span
+                        class="text-sm text-muted block"
+                        x-bind:style="row.content_empty ? 'color: var(--warning)' : ''"
+                        x-text="row.content_shown"
+                    ></span>
+                </span>
             </td>
-            <td class="font-mono" x-text="row.starts_at"></td>
-            <td class="font-mono" x-text="row.ends_at"></td>
-            <td class="font-mono" x-text="row.priority"></td>
+            <td class="catalog-cell-sym" x-text="row.starts_at"></td>
+            <td class="catalog-cell-sym" x-text="row.ends_at"></td>
+            <td class="catalog-cell-sym" x-text="row.priority"></td>
             <td>
                 {{-- Switched on and inside its dates are different things, and
                 only the second one is what the visitor is seeing right now. --}}

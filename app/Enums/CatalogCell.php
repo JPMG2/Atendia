@@ -39,4 +39,7 @@ enum CatalogCell: string
 
     /** A list of short words, each a small pill that wraps: the web's `catalog-chip`. */
     case List = 'list';
+
+    /** Several tags in one cell, no dot: the row brings each word with its tone, already decided by the model. */
+    case Badges = 'badges';
 }

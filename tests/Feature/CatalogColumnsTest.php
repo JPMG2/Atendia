@@ -12,16 +12,21 @@ use App\Models\Country;
 use App\Models\CountryHoliday;
 use App\Models\Currency;
 use App\Models\CurrentStatus;
+use App\Models\DemoTag;
 use App\Models\MentionGoal;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\SeasonalWindow;
 use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
 use App\Models\ServiceType;
 use App\Models\SocialNetwork;
+use App\Models\SubscriptionPlan;
 use App\Models\SupportReply;
 use App\Models\SupportTicketKind;
 use App\Models\TaxCondition;
+use App\Models\WhatsappVariant;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -51,6 +56,10 @@ dataset('masters with columns', [
     'support-reply' => ['support-reply', SupportReply::class, ['name', 'body']],
     'adoption-nudge' => ['adoption-nudge', AdoptionNudge::class, ['stepLabel', 'subject', 'body']],
     'support-ticket-kind' => ['support-ticket-kind', SupportTicketKind::class, ['code', 'name']],
+    'demo-tag' => ['demo-tag', DemoTag::class, ['slug', 'label', 'business_name', 'season']],
+    'plan' => ['plan', SubscriptionPlan::class, ['name', 'code']],
+    'seasonal-window' => ['seasonal-window', SeasonalWindow::class, ['name']],
+    'whatsapp-variant' => ['whatsapp-variant', WhatsappVariant::class, ['season', 'phone', 'opening_hours']],
 ]);
 
 /**
@@ -65,6 +74,7 @@ const CELL_CLASSES = [
     'number' => 'catalog-cell-num',
     'active' => 'catalog-status',
     'badge' => 'status-tag',
+    'badges' => 'status-tag',
     'list' => 'catalog-chip',
 ];
 
@@ -102,15 +112,17 @@ it('draws the header from the model\'s columns, in order, with the wide one and 
 })->with('masters with columns');
 
 it('only names keys the row really carries', function (string $component, string $model): void {
-    // A holiday has no factory: it hangs from a country and carries one of its four date shapes.
-    $model === CountryHoliday::class
-        ? CountryHoliday::create(['country_id' => Country::factory()->create()->id, 'name' => 'Día de prueba', 'month' => 3, 'day' => 9])
-        : $model::factory()->create();
+    // A holiday has no factory: it hangs from a country and carries one of its four date shapes. The plans are seeded.
+    match ($model) {
+        CountryHoliday::class => CountryHoliday::create(['country_id' => Country::factory()->create()->id, 'name' => 'Día de prueba', 'month' => 3, 'day' => 9]),
+        SubscriptionPlan::class => $this->seed(PlanSeeder::class),
+        default => $model::factory()->create(),
+    };
 
     $keys = array_keys((new $model)->catalogRows()->firstOrFail());
 
     foreach ((new $model)->catalogColumns() as $column) {
-        foreach (array_filter([$column->key, $column->sub, $column->tag, $column->icon, ...$column->searchAlso]) as $key) {
+        foreach (array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning, ...$column->searchAlso]) as $key) {
             expect($keys)->toContain($key);
         }
     }
@@ -126,6 +138,10 @@ it('has its cells in the editor for every column, and no list of its own', funct
     foreach ((new $model)->catalogColumns() as $column) {
         expect($source)->toContain('row.'.$column->key);
     }
+
+    // One cell per header: a web-only column (a button reading only `row.id`) has no key of its own to find.
+    preg_match('/<x-catalog\.table\b.*?<\/x-catalog\.table>/s', $source, $table);
+    expect(preg_match_all('/<td\b/', $table[0] ?? ''))->toBe(count((new $model)->catalogColumns()));
 })->with('masters with columns');
 
 it('paints each cell on the web with the class its kind promises the phone', function (string $component, string $model): void {
@@ -136,8 +152,30 @@ it('paints each cell on the web with the class its kind promises the phone', fun
         // A name with a line under it is the web's two-line `catalog-cell-primary`, and that line reads its key.
         $promised = $column->sub !== null ? 'catalog-cell-primary' : (CELL_CLASSES[$column->cell->value] ?? null);
 
-        foreach (array_filter([$column->sub, $column->tag]) as $carried) {
+        foreach (array_filter([$column->sub, $column->tag, $column->codeBelow, $column->muted, $column->note, $column->noteWarning]) as $carried) {
             expect($cell)->toContain('row.'.$carried);
+        }
+
+        // The code under a name is the web's `catalog-code`; a greyed cell is greyed by the key the phone reads.
+        if ($column->codeBelow !== null) {
+            expect($cell)->toContain('catalog-code');
+        }
+
+        if ($column->muted !== null) {
+            expect($cell)->toContain("row.{$column->muted} ? 'text-muted'");
+        }
+
+        // The line under a name is the model's words, turned amber by the key the phone reads.
+        if ($column->noteWarning !== null) {
+            expect($cell)->toContain("row.{$column->noteWarning} ? 'color: var(--warning)'");
+        }
+
+        // A link opens the very address the phone is given, in a tab of its own and without opening the row.
+        if ($column->link !== null) {
+            expect($cell)->toContain('x-bind:href="row.'.$column->link['key'].'"')
+                ->and($cell)->toContain('target="_blank"')
+                ->and($cell)->toContain('x-on:click.stop')
+                ->and($column->link['label'])->not->toBeEmpty();
         }
 
         // A cell not found would let every check below pass on an empty string.

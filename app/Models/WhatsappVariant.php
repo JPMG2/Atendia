@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Classes\Main\OpeningHours;
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -22,7 +25,7 @@ use Illuminate\Support\Collection;
  * Overrides {@see Company::reach()} field by field; a field left null inherits.
  */
 #[Fillable(['seasonal_window_id', 'phone', 'opening_schedule', 'is_active'])]
-class WhatsappVariant extends Model implements DataTable, Removable
+class WhatsappVariant extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
 
@@ -82,6 +85,13 @@ class WhatsappVariant extends Model implements DataTable, Removable
      */
     public function catalogRows(): Collection
     {
+        // What a blank field falls back to on the landing (`Company::reachFor()`): the company's all-year answer.
+        $company = Company::current();
+        $inheritedPhone = $company?->phone ?: config('atendia.sales_whatsapp');
+        $inheritedHours = $company?->opening_schedule === null
+            ? null
+            : (new OpeningHours(OpeningHours::normalize($company->opening_schedule), Company::localTimezone()))->summary;
+
         return $this->newQuery()
             ->with('seasonalWindow')
             ->get()
@@ -99,6 +109,45 @@ class WhatsappVariant extends Model implements DataTable, Removable
                 'running' => $variant->is_active && ($variant->seasonalWindow?->is_active ?? false) && ($variant->seasonalWindow?->coversToday() ?? false),
                 'active' => $variant->is_active,
             ])
+            // Blank means "inherits", which is not the same as missing: said out loud, and greyed.
+            ->map(fn (array $row): array => [
+                ...$row,
+                'phone_shown' => $row['phone'] === '' ? __('catalog.whatsapp_variant.status.inherits') : $row['phone'],
+                'phone_inherits' => $row['phone'] === '',
+                'hours_shown' => $row['opening_hours'] === '' ? __('catalog.whatsapp_variant.status.inherits') : $row['opening_hours'],
+                'hours_inherits' => $row['opening_hours'] === '',
+                'inherits_note' => self::inheritsNote($row['phone'] === '' ? $inheritedPhone : null, $row['opening_hours'] === '' ? $inheritedHours : null),
+            ])
+            // What it inherits is changed on the company screen: the door rides only on a row that names something inherited.
+            ->map(fn (array $row): array => [...$row, 'company_url' => $row['inherits_note'] === '' ? null : route('admin.company')])
             ->values();
+    }
+
+    /**
+     * What an inheriting row inherits, under the season's name: in its own cell it would push the table past
+     * its box at 1280. Only what the company really has is named; nothing inherited, or nothing to inherit, is ''.
+     */
+    private static function inheritsNote(?string $phone, ?string $hours): string
+    {
+        $parts = array_filter([
+            filled($phone) ? __('catalog.whatsapp_variant.inherits.phone', ['value' => $phone]) : null,
+            filled($hours) ? __('catalog.whatsapp_variant.inherits.hours', ['value' => $hours]) : null,
+        ]);
+
+        return $parts === [] ? '' : __('catalog.whatsapp_variant.inherits.note', ['parts' => implode(' · ', $parts)]);
+    }
+
+    /** @return list<CatalogColumnDto> */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('season', __('catalog.whatsapp_variant.columns.season'), CatalogCell::Name, fill: true, search: true, searchAlso: ['phone', 'opening_hours'], note: 'inherits_note', link: ['key' => 'company_url', 'label' => __('catalog.whatsapp_variant.inherits.edit')]),
+            new CatalogColumnDto('starts_at', __('catalog.whatsapp_variant.columns.starts_at'), CatalogCell::Symbol),
+            new CatalogColumnDto('ends_at', __('catalog.whatsapp_variant.columns.ends_at'), CatalogCell::Symbol),
+            new CatalogColumnDto('phone_shown', __('catalog.whatsapp_variant.columns.phone'), CatalogCell::Symbol, muted: 'phone_inherits'),
+            new CatalogColumnDto('hours_shown', __('catalog.whatsapp_variant.columns.opening_hours'), CatalogCell::Symbol, muted: 'hours_inherits'),
+            new CatalogColumnDto('running', __('catalog.whatsapp_variant.columns.running'), CatalogCell::Active, on: __('catalog.whatsapp_variant.status.running'), off: __('catalog.whatsapp_variant.status.waiting')),
+            new CatalogColumnDto('active', __('catalog.whatsapp_variant.columns.status'), CatalogCell::Active, on: __('catalog.whatsapp_variant.status.active'), off: __('catalog.whatsapp_variant.status.inactive')),
+        ];
     }
 }

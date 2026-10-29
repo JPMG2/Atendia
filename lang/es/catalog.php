@@ -259,6 +259,11 @@ return [
             'archived' => 'Archivado',
         ],
 
+        'highlights_title' => 'Lo que deja cada plan hoy',
+        'highlights' => [
+            'line' => '{0} Nadie lo paga todavía|{1} 1 negocio pagando · US$ :amount al mes|[2,*] :count negocios pagando · US$ :amount al mes',
+        ],
+
         'archive' => [
             'action' => 'Archivar el plan',
             'restore' => 'Volver a vender',
@@ -572,6 +577,14 @@ return [
             'whatsapp_many' => ':count variantes de WhatsApp',
         ],
 
+        'highlights_title' => 'La temporada de hoy en la landing',
+        'highlights' => [
+            'ends' => '{0} Termina hoy, :date|{1} Termina mañana, :date|[2,*] Termina en :count días, el :date',
+            'none_when' => 'Ninguna',
+            'none' => 'La landing muestra lo de todo el año',
+            'starts' => '{1} Viene después: empieza mañana, :date|[2,*] Viene después: empieza en :count días, el :date',
+        ],
+
         'repeat' => 'Repetir el año que viene',
         'repeated' => 'Listo: :name quedó creada y apagada, para que la revises antes.',
         'repeat_exists' => 'Esa temporada ya tiene su copia del año que viene.',
@@ -619,7 +632,10 @@ return [
             'inactive' => 'Inactivo',
             'evergreen' => 'Siempre',
             'inherits' => 'Hereda',
+            'starts_in' => '{1} :name · empieza mañana|[2,*] :name · empieza en :count días',
         ],
+
+        'landing' => 'Ver en la landing',
 
         'fields' => [
             'slug' => 'Clave',
@@ -728,6 +744,13 @@ return [
             'waiting' => 'Fuera de fechas',
             'inherits' => 'Hereda',
             'own_week' => 'Propio',
+        ],
+
+        'inherits' => [
+            'note' => 'Hereda de la Compañía: :parts',
+            'phone' => 'número :value',
+            'hours' => 'horario :value',
+            'edit' => 'Editar en Compañía',
         ],
 
         'fields' => [

@@ -3,7 +3,6 @@
 use App\Classes\Main\Client;
 use App\Classes\Main\Plan;
 use App\Models\Menu;
-use App\Models\ModerationFlag;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -42,7 +41,7 @@ new class extends Component
         $this->overlayPaymentBadge($tree);
 
         if ($this->panel === 'admin') {
-            $this->overlayModerationBadge($tree);
+            Menu::withAdminBadges($tree);
         }
 
         return $this->withoutAgendaWhenOff($tree);
@@ -62,30 +61,6 @@ new class extends Component
         }
 
         return $items->reject(fn (Menu $item): bool => $item->route_name === 'agenda')->values();
-    }
-
-    /**
-     * Unreviewed catches on "Moderación": a suspension waits on her call.
-     *
-     * @param  Collection<int, Menu>  $items
-     */
-    private function overlayModerationBadge($items, ?int $pending = null, ?Menu $parent = null): void
-    {
-        $pending ??= ModerationFlag::pendingCount();
-
-        foreach ($items as $item) {
-            if ($item->route_name === 'admin.moderation' && $pending > 0) {
-                $item->badge = (string) $pending;
-
-                // The group carries it too, or news she has to act on hides
-                // behind a branch she never opened.
-                if ($parent !== null) {
-                    $parent->badge = (string) $pending;
-                }
-            }
-
-            $this->overlayModerationBadge($item->childrenRecursive ?? collect(), $pending, $item);
-        }
     }
 
     /**

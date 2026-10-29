@@ -944,6 +944,7 @@ return [
 
     'home' => [
         'title' => 'Inicio',
+        'greeting' => 'Hola, :name',
         'sub' => 'Lo que está esperando una decisión tuya, ahora mismo.',
         'as_of' => 'Al :date',
         'live' => 'Se actualiza solo cada :seconds s',

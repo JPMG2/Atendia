@@ -53,6 +53,34 @@ test('the purge leaves the other businesses alone', function (): void {
         ->and(DB::table('users')->where('business_id', $other->id)->count())->toBe(1);
 });
 
+test('the purge takes off the radar whoever only wrote to that business, and recounts who wrote elsewhere too', function (): void {
+    $business = removedBusiness();
+    $other = Business::factory()->create();
+
+    $person = fn (string $phone, int $businesses, int $conversations): int => DB::table('platform_contacts')->insertGetId([
+        'phone' => $phone, 'businesses_count' => $businesses, 'conversations_count' => $conversations, 'first_seen_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $customer = fn (int $businessId, int $contactId, int $conversations) => DB::table('customers')->insert([
+        'business_id' => $businessId, 'platform_contact_id' => $contactId, 'phone' => (string) $contactId, 'conversations_count' => $conversations, 'first_seen_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $onlyHere = $person('5491100000001', 1, 1);
+    $shared = $person('5491100000002', 2, 3);
+    $elsewhere = $person('5491100000003', 1, 4);
+    $customer($business->id, $onlyHere, 1);
+    $customer($business->id, $shared, 1);
+    $customer($other->id, $shared, 2);
+    $customer($other->id, $elsewhere, 4);
+
+    $erased = app(PurgeBusiness::class)->handle($business);
+
+    expect($erased['platform_contacts'] ?? 0)->toBe(1)
+        ->and(DB::table('platform_contacts')->where('id', $onlyHere)->exists())->toBeFalse()
+        ->and(DB::table('platform_contacts')->where('id', $shared)->first(['businesses_count', 'conversations_count']))
+        ->toEqual((object) ['businesses_count' => 1, 'conversations_count' => 2])
+        ->and(DB::table('platform_contacts')->where('id', $elsewhere)->value('conversations_count'))->toBe(4);
+});
+
 test('the purge also erases the board events about the business, open or resolved, and only those', function (): void {
     $business = removedBusiness();
     $other = Business::factory()->create();

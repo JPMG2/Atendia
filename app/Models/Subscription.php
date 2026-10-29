@@ -131,12 +131,13 @@ class Subscription extends Model
         return self::query()->ofRealBusinesses()->where('plan', $code)->count();
     }
 
-    /** How many subscriptions the recurring revenue is actually made of. */
-    public static function payingCount(): int
+    /** How many subscriptions the recurring revenue is actually made of; with a plan, that plan's. */
+    public static function payingCount(?string $plan = null): int
     {
         return self::query()
             ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
+            ->when($plan !== null, fn (Builder $query) => $query->where('plan', $plan))
             ->count();
     }
 
@@ -150,13 +151,14 @@ class Subscription extends Model
      * Monthly recurring revenue: what a month of the paying subscriptions is
      * worth, with a yearly cycle spread over its twelve months. Past due counts
      * — it is a customer inside the grace days, not a loss yet; a trial does
-     * not, because nobody paid for it.
+     * not, because nobody paid for it. With a plan, that plan's share of the same sum.
      */
-    public static function monthlyRecurringRevenue(): float
+    public static function monthlyRecurringRevenue(?string $plan = null): float
     {
         return self::query()
             ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
+            ->when($plan !== null, fn (Builder $query) => $query->where('plan', $plan))
             ->get(['plan', 'billing_cycle'])
             ->sum(fn (Subscription $subscription): float => $subscription->monthlyValue());
     }

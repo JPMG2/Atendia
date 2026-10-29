@@ -381,6 +381,82 @@ test('the season list says what each season changes, and a season with nothing s
         ->and($empty->id)->not->toBe($full->id);
 });
 
+test('a season runs in the list on its first and last day, as on the landing', function (): void {
+    $today = SeasonalWindow::today();
+    $ending = SeasonalWindow::factory()->create(['name' => 'Termina hoy', 'is_active' => true, 'starts_at' => $today->subDays(3), 'ends_at' => $today]);
+    $starting = SeasonalWindow::factory()->create(['name' => 'Empieza hoy', 'is_active' => true, 'starts_at' => $today, 'ends_at' => $today->addDays(3)]);
+    SeasonalWindow::factory()->create(['name' => 'Terminó ayer', 'is_active' => true, 'starts_at' => $today->subDays(3), 'ends_at' => $today->subDay()]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $ending->id, 'is_active' => true]);
+
+    $rows = (new SeasonalWindow)->catalogRows()->keyBy('name');
+
+    expect($rows['Termina hoy']['running'])->toBeTrue()
+        ->and($rows['Empieza hoy']['running'])->toBeTrue()
+        ->and($rows['Terminó ayer']['running'])->toBeFalse()
+        ->and(SeasonalWindow::inForce()->pluck('id')->sort()->values()->all())->toBe(collect([$ending->id, $starting->id])->sort()->values()->all())
+        ->and((new WhatsappVariant)->catalogRows()->first()['running'])->toBeTrue();
+});
+
+test('the season list opens with the season the landing speaks with today, and says when none does', function (): void {
+    $today = SeasonalWindow::today();
+    $line = fn (): array => (new SeasonalWindow)->catalogHighlights()[0];
+
+    expect($line())->toBe(['when' => __('catalog.seasonal_window.highlights.none_when'), 'text' => __('catalog.seasonal_window.highlights.none'), 'mono' => false]);
+
+    // A switched-off season inside its dates is not the one speaking.
+    SeasonalWindow::factory()->create(['name' => 'Apagada', 'is_active' => false, 'priority' => 9, 'starts_at' => $today->subDay(), 'ends_at' => $today]);
+    $weak = SeasonalWindow::factory()->create(['name' => 'Débil', 'is_active' => true, 'priority' => 1, 'starts_at' => $today->subDay(), 'ends_at' => $today->addDay()]);
+    expect($line()['text'])->toBe(trans_choice('catalog.seasonal_window.highlights.ends', 1, ['count' => 1, 'date' => $today->addDay()->format('d/m/Y')]));
+
+    // Two in force: the strongest is the one the landing shows, and its last day is today.
+    SeasonalWindow::factory()->create(['name' => 'Fuerte', 'is_active' => true, 'priority' => 5, 'starts_at' => $today->subDays(2), 'ends_at' => $today]);
+    expect($line())->toBe(['when' => 'Fuerte', 'text' => trans_choice('catalog.seasonal_window.highlights.ends', 0, ['count' => 0, 'date' => $today->format('d/m/Y')]), 'mono' => false])
+        ->and($line()['when'])->not->toBe($weak->name);
+});
+
+test('with no season speaking today, the list says which one comes next and when, never a switched-off one', function (): void {
+    $today = SeasonalWindow::today();
+    SeasonalWindow::factory()->create(['name' => 'Apagada', 'is_active' => false, 'starts_at' => $today->addDay(), 'ends_at' => $today->addDays(3)]);
+    SeasonalWindow::factory()->create(['name' => 'Lejana', 'is_active' => true, 'starts_at' => $today->addDays(40), 'ends_at' => $today->addDays(45)]);
+    SeasonalWindow::factory()->create(['name' => 'Pasada', 'is_active' => true, 'starts_at' => $today->subDays(9), 'ends_at' => $today->subDay()]);
+    $soon = fn (): array => (new SeasonalWindow)->catalogHighlights();
+
+    expect($soon())->toBe([
+        ['when' => __('catalog.seasonal_window.highlights.none_when'), 'text' => __('catalog.seasonal_window.highlights.none'), 'mono' => false],
+        ['when' => 'Lejana', 'text' => trans_choice('catalog.seasonal_window.highlights.starts', 40, ['count' => 40, 'date' => $today->addDays(40)->format('d/m/Y')]), 'mono' => false],
+    ]);
+
+    SeasonalWindow::factory()->create(['name' => 'Mañana', 'is_active' => true, 'starts_at' => $today->addDay(), 'ends_at' => $today->addDays(2)]);
+    expect($soon()[1])->toBe(['when' => 'Mañana', 'text' => trans_choice('catalog.seasonal_window.highlights.starts', 1, ['count' => 1, 'date' => $today->addDay()->format('d/m/Y')]), 'mono' => false])
+        ->and($soon())->toHaveCount(2);
+});
+
+test('a variant that inherits says what it inherits from the company: the number and the week, and only those', function (): void {
+    Company::factory()->create(['phone' => '+58-0412-5550199', 'opening_schedule' => [1 => ['09:00', '18:00']]]);
+    $both = SeasonalWindow::factory()->create(['name' => 'Navidad', 'starts_at' => '2026-12-01']);
+    $own = SeasonalWindow::factory()->create(['name' => 'Carnaval', 'starts_at' => '2026-02-01']);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $both->id, 'phone' => null, 'opening_schedule' => null]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $own->id, 'phone' => '+58-0414-1112233', 'opening_schedule' => null]);
+    $hours = (new OpeningHours(OpeningHours::normalize(Company::current()->opening_schedule), Company::localTimezone()))->summary;
+    $rows = (new WhatsappVariant)->catalogRows()->keyBy('season');
+    $phone = __('catalog.whatsapp_variant.inherits.phone', ['value' => '+58-0412-5550199']);
+    $week = __('catalog.whatsapp_variant.inherits.hours', ['value' => $hours]);
+
+    expect($rows['Navidad'])->toMatchArray([
+        'inherits_note' => __('catalog.whatsapp_variant.inherits.note', ['parts' => $phone.' · '.$week]),
+        'phone_shown' => __('catalog.whatsapp_variant.status.inherits'),
+        'hours_inherits' => true,
+    ])
+        ->and($rows['Carnaval']['inherits_note'])->toBe(__('catalog.whatsapp_variant.inherits.note', ['parts' => $week]))
+        ->and($rows['Navidad']['company_url'])->toBe(route('admin.company'))
+        ->and($hours)->not->toBe('');
+
+    // A row that inherits nothing names nothing, and carries no door to the company screen.
+    WhatsappVariant::query()->update(['phone' => '+58-0414-1112233', 'opening_schedule' => []]);
+    expect((new WhatsappVariant)->catalogRows()->pluck('company_url')->filter()->all())->toBe([])
+        ->and((new WhatsappVariant)->catalogRows()->pluck('inherits_note')->unique()->all())->toBe(['']);
+});
+
 test('Monday is written onto Tuesday to Friday and the weekend is left alone', function (): void {
     $week = OpeningHours::applyWeekdays([
         1 => ['open' => true, 'opens_at' => '10:00', 'closes_at' => '14:00'],

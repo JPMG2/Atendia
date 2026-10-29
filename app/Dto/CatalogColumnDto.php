@@ -11,8 +11,8 @@ use Collator;
  * One column of a master's table: which row key it reads, its name and how its cell is
  * drawn. `fill` takes the free width; `search` and `searchAlso` are what the box looks
  * through; `on`/`off`, `badges` and `chips` serve active, badge and filter columns; a name
- * may bring other row keys along: a line under it (`sub`), a brand tag (`tag`), a glyph (`icon`).
- * `copy` names the button that copies the cell's text and the word it turns into once done.
+ * may bring other row keys along: a line under it (`sub`), a brand tag (`tag`), a glyph (`icon`),
+ * a code under it (`codeBelow`). `copy` names the copy button; `muted` names the row key that greys a cell out.
  */
 final readonly class CatalogColumnDto
 {
@@ -37,6 +37,15 @@ final readonly class CatalogColumnDto
         public array $searchAlso = [],
         /** @var array{label: string, done: string}|null */
         public ?array $copy = null,
+        public ?string $codeBelow = null,
+        public ?string $muted = null,
+        /** @var array{key: string, label: string}|null The row key holding an address the cell opens, and the button's words. */
+        public ?array $link = null,
+        /** A line under a name in the body's small type (the row key), and the row key that turns it amber. */
+        public ?string $note = null,
+        public ?string $noteWarning = null,
+        /** A control only the web draws (a switch, a button): the read-only phone never receives the column. */
+        public bool $webOnly = false,
     ) {}
 
     /**
@@ -112,7 +121,7 @@ final readonly class CatalogColumnDto
     /**
      * What the mobile API sends for this column.
      *
-     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null, sub: string|null, tag: string|null, icon: string|null, copy: array{label: string, done: string}|null}
+     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null, sub: string|null, tag: string|null, icon: string|null, copy: array{label: string, done: string}|null, codeBelow: string|null, muted: string|null, link: array{key: string, label: string}|null, note: string|null, noteWarning: string|null}
      */
     public function toArray(): array
     {
@@ -127,6 +136,11 @@ final readonly class CatalogColumnDto
             'tag' => $this->tag,
             'icon' => $this->icon,
             'copy' => $this->copy,
+            'codeBelow' => $this->codeBelow,
+            'muted' => $this->muted,
+            'link' => $this->link,
+            'note' => $this->note,
+            'noteWarning' => $this->noteWarning,
         ];
     }
 }

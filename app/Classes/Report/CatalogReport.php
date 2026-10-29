@@ -133,13 +133,18 @@ class CatalogReport extends ListReport
     }
 
     /**
-     * The row keys that mean something to a person; the id is bookkeeping and the glyph is markup.
+     * The row keys that mean something to a person; the id is bookkeeping, the glyph is markup, and
+     * the list's worded copies of a key already exported ("US$ 79", "Hereda", the tags) would say it twice.
      *
      * @return list<string>
      */
     private function keys(): array
     {
-        return array_values(array_diff(array_keys($this->records()->first() ?? ['name' => '']), ['id', 'icon_svg', 'icon_filled']));
+        return array_values(array_diff(array_keys($this->records()->first() ?? ['name' => '']), [
+            'id', 'icon_svg', 'icon_filled',
+            'price_label', 'conversations_label', 'tags', 'business_shown', 'business_inherits', 'season_shown', 'landing_url',
+            'content_shown', 'content_empty', 'phone_shown', 'phone_inherits', 'hours_shown', 'hours_inherits', 'inherits_note', 'company_url',
+        ]));
     }
 
     private function heading(string $key): string

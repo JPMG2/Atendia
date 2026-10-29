@@ -77,6 +77,25 @@ test('the web cuts the list by state and search as the piece does, and says noth
     $screen->set('state', '')->set('search', 'zzzz')->assertSee((new BusinessLedger('zzzz'))->emptyText);
 });
 
+test('the landing demos are never listed, counted or opened as a client, on the web or the phone', function (): void {
+    ledgerBusinessOnPlan('Odontología Norte');
+    $demo = ledgerBusinessOnPlan('Kiosco de Muestra', SubscriptionStatus::Paused);
+    $demo->forceFill(['is_demo' => true])->save();
+
+    $ledger = new BusinessLedger;
+
+    expect(collect($ledger->rows)->pluck('name')->all())->toBe(['Odontología Norte'])
+        ->and(Business::directoryTotal())->toBe(1)
+        ->and(Business::directoryMatching('', 'paused'))->toBe(0)
+        ->and($ledger->ficha($demo->id))->toBeNull();
+
+    Livewire::actingAs($this->admin)->test('admin.businesses.index')
+        ->assertSee('Odontología Norte')
+        ->assertDontSee('Kiosco de Muestra')
+        ->set('state', 'paused')
+        ->assertDontSee('Kiosco de Muestra');
+});
+
 test('the web ficha prints the cards and payments of the piece, and what the plan row says about leaving', function (): void {
     $business = ledgerBusinessOnPlan('Estudio Contable Ríos', SubscriptionStatus::Active, ['canceled_at' => now()->subDay()]);
     Payment::factory()->for($business)->create(['plan' => 'negocio', 'status' => 'pending']);

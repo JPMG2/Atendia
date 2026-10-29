@@ -10,6 +10,6 @@ namespace App\Interfaces\Catalog;
  */
 interface HasHighlights
 {
-    /** @return list<array{when: string, text: string}> */
+    /** @return list<array{when: string, text: string, mono?: bool}> `mono` false: `when` is a name, not a date, and is not set in monospace. */
     public function catalogHighlights(): array;
 }

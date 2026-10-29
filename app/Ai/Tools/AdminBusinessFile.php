@@ -48,7 +48,7 @@ class AdminBusinessFile implements AdminSkillTool
         $trialDays = $subscription?->trialDaysLeft();
 
         return implode("\n", array_filter([
-            "Negocio #{$business->id}: {$business->name}".($business->is_demo ? ' (ejemplo de la landing)' : '').'.',
+            "Negocio #{$business->id}: {$business->name}.",
             'Situación: '.__('admin.businesses.states.'.$business->situation()).'.',
             $subscription === null
                 ? 'Sin plan contratado.'

@@ -33,10 +33,12 @@ class AdminHomeController extends Controller
             ->values();
 
         return response()->json(['data' => [
-            'title' => __('admin.home.title'),
+            'title' => __('admin.home.greeting', ['name' => $request->user()->name]),
             'sub' => __('admin.home.sub'),
             'read_at' => __('admin.home.as_of', ['date' => now()->format('d/m/Y H:i:s')]),
             'poll_seconds' => PlatformBoard::POLL_SECONDS,
+            // The mascot's face on the app's home: watchful while a critical alert this person may see is open.
+            'mood' => $items->contains('key', 'alerts') ? 'alert' : 'calm',
             'attention' => [
                 'title' => __('ask_admin.today.title'),
                 'clear' => __('ask_admin.today.clear'),

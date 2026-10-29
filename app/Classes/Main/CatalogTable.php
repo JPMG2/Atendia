@@ -35,9 +35,9 @@ class CatalogTable
         get => $this->form ??= (new CatalogHub($this->user))->forms->first(fn (CatalogForm $form): bool => CatalogHub::slugOf($form) === $this->slug);
     }
 
-    /** @var list<CatalogColumnDto> */
+    /** @var list<CatalogColumnDto> the web's columns but its controls (`webOnly`): the phone is read only */
     public array $columns {
-        get => $this->columns ??= $this->model()->catalogColumns();
+        get => $this->columns ??= array_values(array_filter($this->model()->catalogColumns(), fn (CatalogColumnDto $column): bool => ! $column->webOnly));
     }
 
     /** @var Collection<int, array<string, mixed>> the whole master, asked once */
@@ -101,7 +101,7 @@ class CatalogTable
      */
     public array $rows {
         get {
-            $keys = ['id', ...collect($this->columns)->flatMap(fn (CatalogColumnDto $column): array => array_filter([$column->key, $column->sub, $column->tag, $column->icon]))->all()];
+            $keys = ['id', ...collect($this->columns)->flatMap(fn (CatalogColumnDto $column): array => array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning]))->all()];
 
             return $this->matching
                 ->take($this->limit)

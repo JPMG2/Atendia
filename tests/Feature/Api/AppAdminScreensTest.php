@@ -15,6 +15,7 @@ use App\Enums\PlatformEventSeverity;
 use App\Enums\PlatformSensorStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\SupportTicketPriority;
+use App\Enums\SupportTicketStatus;
 use App\Mail\DeviceChallengeCode;
 use App\Models\AdoptionNudge;
 use App\Models\Business;
@@ -26,25 +27,30 @@ use App\Models\Country;
 use App\Models\CountryHoliday;
 use App\Models\Currency;
 use App\Models\CurrentStatus;
+use App\Models\DemoTag;
 use App\Models\HelpArticle;
 use App\Models\MentionGoal;
+use App\Models\Menu;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\PlatformSensor;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\SeasonalWindow;
 use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
 use App\Models\ServiceType;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketKind;
 use App\Models\SupportTicketMessage;
 use App\Models\TaxCondition;
 use App\Models\User;
+use App\Models\WhatsappVariant;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\MenuSeeder;
@@ -243,6 +249,27 @@ test('support holds no key for the board, so its menu has the home, the business
         ->and(array_column($support[1]['children'], 'screen'))->toBe(['admin.businesses']);
 });
 
+test('Soporte carries the count of reports waiting on a reply, the same number on the web\'s sidebar and in the app\'s menu', function (): void {
+    SupportTicket::factory()->count(2)->create();
+    SupportTicket::factory()->resolved()->create();
+    $token = screensToken();
+
+    $support = collect(screensGet($token, 'menu')->json('data'))->firstWhere('screen', 'admin.support');
+    $this->actingAs(User::role('admin')->latest('id')->firstOrFail(), 'web');
+    $web = Menu::withAdminBadges(Menu::tree('admin'))->firstWhere('route_name', 'admin.support');
+
+    // The menu's cheap count and the queue's own tab are the same number.
+    expect(SupportTicket::queueCounts()['answer'])->toBe(2)
+        ->and(SupportTicket::awaitingReplyCount())->toBe(2)
+        ->and($support['badge'])->toBe('2')
+        ->and($web->badge)->toBe('2')
+        ->and(collect(screensGet($token, 'menu')->json('data'))->firstWhere('screen', 'admin.alerts')['badge'])->toBeNull();
+
+    SupportTicket::query()->update(['status' => SupportTicketStatus::Resolved]);
+
+    expect(collect(screensGet($token, 'menu')->json('data'))->firstWhere('screen', 'admin.support')['badge'])->toBeNull();
+});
+
 test('an alarm about a business leads to its ficha in the app, with the word of the web\'s button', function (): void {
     $business = Business::factory()->create();
     PlatformEvent::factory()->ofKind(PlatformEventKind::WhatsAppDisconnected)->create(['about_business_id' => $business->id]);
@@ -398,17 +425,23 @@ test('Inicio serves the web\'s "needs you today" card with its words, and keeps 
     $data = screensGet($token, 'home')->assertOk()->json('data');
     $alerts = collect($data['attention']['items'])->firstWhere('key', 'alerts');
 
-    expect($data['title'])->toBe(__('admin.home.title'))
+    // The same greeting the web's Inicio and the customer's home open with.
+    expect($data['title'])->toBe(__('admin.home.greeting', ['name' => User::role('admin')->latest('id')->value('name')]))
         ->and($data['attention']['title'])->toBe(__('ask_admin.today.title'))
         ->and($alerts['count'])->toBe(2)
         ->and($alerts['label'])->toBe(trans_choice('ask_admin.today.alerts', 2, ['count' => 2]))
-        ->and($alerts['screen'])->toBe('admin.alerts');
+        ->and($alerts['screen'])->toBe('admin.alerts')
+        ->and($data['mood'])->toBe('alert');
 
     // Dropping the lines whose screen the app lacks would say "all clear" over what the web lists.
     config()->set('atendia.app.admin_screens', ['admin.dashboard']);
     $kept = collect(screensGet($token, 'home')->json('data.attention.items'))->firstWhere('key', 'alerts');
 
     expect($kept['count'])->toBe(2)->and($kept['screen'])->toBeNull();
+
+    // With no critical alert open the mascot is calm; the card's line decides, not a second count.
+    PlatformEvent::query()->delete();
+    expect(screensGet($token, 'home')->json('data.mood'))->toBe('calm');
 });
 
 test('Pagos reads from the very piece the web desk reads: the queue, the reviewed and the words', function (): void {
@@ -886,9 +919,11 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     // Readable = its model says its own columns; the other 7 masters are not drawn until they do.
     // The order is the rail's: by the master's `order`, a group appearing where its first master does.
-    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal', 'support-reply', 'adoption-nudge', 'support-ticket-kind'])
-        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema', 'Soporte'])
-        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal'], ['support-reply', 'adoption-nudge', 'support-ticket-kind']])
+    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'plan', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal', 'seasonal-window', 'demo-tag', 'whatsapp-variant', 'support-reply', 'adoption-nudge', 'support-ticket-kind'])
+        ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema', 'Landing', 'Soporte'])
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition', 'plan'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal'], ['seasonal-window', 'demo-tag', 'whatsapp-variant'], ['support-reply', 'adoption-nudge', 'support-ticket-kind']])
+        // All 21 masters of the web are read now.
+        ->and(count(catalogSlugs($data['groups'])))->toBe(CatalogForm::query()->count())
         ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'country', 'title' => 'Países', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))
         ->and($data['search'])->toBe(['label' => __('catalog.hub.search_label'), 'placeholder' => __('catalog.hub.search_placeholder')])
@@ -1047,6 +1082,139 @@ test('Respuestas guardadas, Mensajes de adopción and Tipos de reporte serve the
         ->and(screensGet($token, 'catalogs/support-ticket-kind?search=qzk')->json('data.count'))->toBe(1)
         ->and(screensGet($token, 'catalogs/support-ticket-kind?search=wvj')->json('data.count'))->toBe(1)
         ->and(screensGet($token, 'catalogs/support-ticket-kind?search='.urlencode(SupportTicketPriority::High->label()))->json('data.count'))->toBe(0);
+});
+
+test('Ejemplos del hero and Planes serve the web\'s cells and words, and search where the web\'s box does', function (): void {
+    $this->seed([CatalogFormSeeder::class, PlanSeeder::class]);
+    // Values no factory text can contain, so a search that must find nothing cannot match a random row.
+    $season = SeasonalWindow::factory()->create(['name' => 'Navidad Qzv']);
+    DemoTag::factory()->create(['slug' => 'qkz', 'label' => 'Taller Wvp', 'business_name' => 'Taller Xjb', 'sort_order' => 7]);
+    DemoTag::factory()->create(['slug' => 'qkz', 'label' => 'Taller Wvp', 'business_name' => null, 'seasonal_window_id' => $season->id]);
+    SubscriptionPlan::query()->where('code', 'premium')->update(['conversations_per_month' => 12345, 'archived_at' => now()]);
+    $token = screensToken();
+
+    $tags = screensGet($token, 'catalogs/demo-tag')->assertOk()->json('data');
+    $plans = screensGet($token, 'catalogs/plan')->assertOk()->json('data');
+    $rows = collect($tags['rows'])->where('slug', 'qkz')->values();
+
+    // "Inherits" and "all year" are the model's words, and the inheriting cell says it is greyed.
+    expect(array_column($tags['columns'], 'cell'))->toBe(['code', 'name', 'symbol', 'symbol', 'symbol', 'active'])
+        ->and(collect($tags['columns'])->firstWhere('key', 'business_shown')['muted'])->toBe('business_inherits')
+        ->and($rows->firstWhere('season_shown', __('catalog.demo_tag.status.evergreen')))->toMatchArray(['business_shown' => 'Taller Xjb', 'business_inherits' => false, 'sort_order' => 7])
+        ->and($rows->firstWhere('season_shown', 'Navidad Qzv'))->toMatchArray(['business_shown' => __('catalog.demo_tag.status.inherits'), 'business_inherits' => true]);
+
+    $negocio = collect($plans['rows'])->firstWhere('code', 'negocio');
+    $premium = collect($plans['rows'])->firstWhere('code', 'premium');
+
+    // The price, the figure as the browser grouped it and every tag with its tone: the phone spells none of them.
+    expect(array_column($plans['columns'], 'cell'))->toBe(['name', 'number', 'number', 'number', 'number', 'badges'])
+        ->and($plans['columns'][0]['codeBelow'])->toBe('code')
+        ->and($negocio['price_label'])->toBe('US$ 79')
+        ->and($negocio['conversations_label'])->toBe('1000')
+        ->and($negocio['tags'])->toBe([
+            ['label' => __('catalog.plan.tags.featured'), 'tone' => 'brand'],
+            ['label' => __('catalog.plan.tags.trial', ['days' => 14]), 'tone' => 'info'],
+        ])
+        ->and($premium['conversations_label'])->toBe('12.345')
+        ->and($premium['tags'])->toBe([['label' => __('catalog.plan.tags.archived'), 'tone' => 'neutral']]);
+
+    // An example by its key, its name, its business and its season; a plan by its name and its code.
+    expect(screensGet($token, 'catalogs/demo-tag?search=xjb')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/demo-tag?search=qzv')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/demo-tag?search=wvp')->json('data.count'))->toBe(2)
+        ->and(screensGet($token, 'catalogs/plan?search=negocio')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/plan?search=79')->json('data.count'))->toBe(0);
+});
+
+test('the three ideas of Planes and Ejemplos del hero: what each plan brings in, the door to the landing, and a season on its way', function (): void {
+    $this->seed([CatalogFormSeeder::class, PlanSeeder::class]);
+    // A business opens its own subscription when it is created: that one is made to pay, as in real life.
+    $paying = ['plan' => 'negocio', 'status' => SubscriptionStatus::Active, 'billing_cycle' => 'monthly'];
+    Subscription::query()->where('business_id', Business::factory()->create()->id)->update($paying);
+    // A landing demo on the same plan is ours: it neither counts nor brings money in. A business on its trial pays nothing.
+    Subscription::query()->where('business_id', Business::factory()->create(['is_demo' => true])->id)->update($paying);
+    Business::factory()->create();
+    // An archived plan still charges whoever holds it: its line stays while someone pays.
+    Subscription::query()->where('business_id', Business::factory()->create()->id)->update([...$paying, 'plan' => 'premium']);
+    SubscriptionPlan::query()->where('code', 'premium')->update(['archived_at' => now()]);
+
+    $soon = SeasonalWindow::factory()->create(['name' => 'Carnaval Qzv', 'is_active' => true, 'starts_at' => SeasonalWindow::today()->addDays(5), 'ends_at' => SeasonalWindow::today()->addDays(9)]);
+    $off = SeasonalWindow::factory()->create(['name' => 'Pascua Wvp', 'is_active' => false, 'starts_at' => SeasonalWindow::today()->addDays(5), 'ends_at' => SeasonalWindow::today()->addDays(9)]);
+    DemoTag::factory()->create(['slug' => 'qkz']);
+    DemoTag::factory()->create(['slug' => 'qkz', 'seasonal_window_id' => $soon->id]);
+    DemoTag::factory()->create(['slug' => 'qkw', 'seasonal_window_id' => $off->id]);
+    DemoTag::factory()->create(['slug' => 'qkv', 'is_active' => false]);
+    $token = screensToken();
+
+    $lines = collect(screensGet($token, 'catalogs/plan')->assertOk()->json('data.highlights.lines'))->keyBy('when');
+    $amount = fn (string $plan): string => number_format(Subscription::monthlyRecurringRevenue($plan), 2, ',', '.');
+
+    // Those who pay, as the Inicio counts them: the trial and the demo left out, the archived plan kept while it charges.
+    expect($lines[__('plan.names.negocio')]['text'])->toBe(trans_choice('catalog.plan.highlights.line', 1, ['count' => 1, 'amount' => $amount('negocio')]))
+        ->and($lines[__('plan.names.premium')]['text'])->toBe(trans_choice('catalog.plan.highlights.line', 1, ['count' => 1, 'amount' => $amount('premium')]))
+        ->and($lines[__('plan.names.emprende')]['text'])->toBe(trans_choice('catalog.plan.highlights.line', 0))
+        ->and($lines->sum(fn (array $line): int => (int) preg_match('/pagando/', $line['text'])))->toBe(Subscription::payingCount())
+        ->and(Subscription::monthlyRecurringRevenue('negocio') + Subscription::monthlyRecurringRevenue('premium'))->toBe(Subscription::monthlyRecurringRevenue());
+
+    $rows = collect(screensGet($token, 'catalogs/demo-tag')->assertOk()->json('data.rows'));
+    $yearRound = $rows->first(fn (array $row): bool => $row['slug'] === 'qkz' && $row['season_shown'] === __('catalog.demo_tag.status.evergreen'));
+    $season = $rows->first(fn (array $row): bool => $row['slug'] === 'qkz' && $row !== $yearRound);
+
+    // The door only on the hero's own pills: the year-round row that is on; never a season's row nor one that is off.
+    expect($yearRound['landing_url'])->toBe(rtrim(url('/'), '/').'/?rubro=qkz')
+        ->and($season['landing_url'])->toBeNull()
+        ->and($rows->firstWhere('slug', 'qkv')['landing_url'])->toBeNull()
+        // A countdown only for a season that is switched on: one switched off never starts.
+        ->and($season['season_shown'])->toBe(trans_choice('catalog.demo_tag.status.starts_in', 5, ['name' => 'Carnaval Qzv', 'count' => 5]))
+        ->and($rows->firstWhere('slug', 'qkw')['season_shown'])->toBe('Pascua Wvp');
+});
+
+test('Temporadas and WhatsApp por temporada serve the web\'s cells and words, and the web\'s switches never reach the phone', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    $empty = SeasonalWindow::factory()->create(['name' => 'Pascua Qzv', 'notice' => null, 'priority' => 7, 'starts_at' => SeasonalWindow::today()->addDays(30), 'ends_at' => SeasonalWindow::today()->addDays(32)]);
+    $busy = SeasonalWindow::factory()->create(['name' => 'Verano Xjb', 'notice' => 'Atendemos hasta las 14', 'is_active' => true, 'starts_at' => SeasonalWindow::today()->subDay(), 'ends_at' => SeasonalWindow::today()->addDays(3)]);
+    DemoTag::factory()->count(2)->create(['seasonal_window_id' => $busy->id]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $busy->id, 'phone' => null, 'opening_schedule' => null, 'is_active' => true]);
+    Company::factory()->create(['phone' => '+58-0412-5550199', 'opening_schedule' => null]);
+    $token = screensToken();
+
+    $windows = screensGet($token, 'catalogs/seasonal-window')->assertOk()->json('data');
+    $variants = screensGet($token, 'catalogs/whatsapp-variant')->assertOk()->json('data');
+
+    // "Repetir" is a button of the web: the read-only phone never receives the column.
+    expect(array_column($windows['columns'], 'cell'))->toBe(['name', 'symbol', 'symbol', 'symbol', 'active', 'active'])
+        ->and(array_column($windows['columns'], 'key'))->not->toContain('id')
+        ->and($windows['columns'][0])->toMatchArray(['note' => 'content_shown', 'noteWarning' => 'content_empty'])
+        ->and(collect($windows['rows'])->firstWhere('name', 'Pascua Qzv'))->toMatchArray(['content_shown' => __('catalog.seasonal_window.content.none'), 'content_empty' => true, 'priority' => 7])
+        ->and(collect($windows['rows'])->firstWhere('name', 'Verano Xjb'))->toMatchArray([
+            'content_shown' => __('catalog.seasonal_window.content.some', ['parts' => __('catalog.seasonal_window.content.notice').' · '.__('catalog.seasonal_window.content.hero_many', ['count' => 2]).' · '.__('catalog.seasonal_window.content.whatsapp_one')]),
+            'content_empty' => false,
+            'running' => true,
+        ]);
+
+    // The season the landing speaks with today and its calendar days left; the one still to come is not it.
+    expect($windows['highlights'])->toBe([
+        'title' => __('catalog.seasonal_window.highlights_title'),
+        'lines' => [['when' => 'Verano Xjb', 'text' => trans_choice('catalog.seasonal_window.highlights.ends', 3, ['count' => 3, 'date' => SeasonalWindow::today()->addDays(3)->format('d/m/Y')]), 'mono' => false]],
+    ]);
+
+    // Blank inherits from the company row: said in words and greyed, and the line under the season names what it
+    // inherits; the company has no week, so only its number is named.
+    expect(array_column($variants['columns'], 'cell'))->toBe(['name', 'symbol', 'symbol', 'symbol', 'symbol', 'active', 'active'])
+        ->and($variants['columns'][0]['note'])->toBe('inherits_note')
+        ->and($variants['columns'][0]['link'])->toBe(['key' => 'company_url', 'label' => __('catalog.whatsapp_variant.inherits.edit')])
+        ->and($variants['rows'][0]['company_url'])->toBe(route('admin.company'))
+        ->and($variants['rows'][0])->toMatchArray([
+            'season' => 'Verano Xjb',
+            'inherits_note' => __('catalog.whatsapp_variant.inherits.note', ['parts' => __('catalog.whatsapp_variant.inherits.phone', ['value' => '+58-0412-5550199'])]),
+            'phone_shown' => __('catalog.whatsapp_variant.status.inherits'),
+            'phone_inherits' => true,
+            'hours_shown' => __('catalog.whatsapp_variant.status.inherits'),
+            'hours_inherits' => true,
+        ]);
+
+    expect(screensGet($token, 'catalogs/seasonal-window?search=qzv')->json('data.count'))->toBe(1)
+        ->and(screensGet($token, 'catalogs/whatsapp-variant?search=xjb')->json('data.count'))->toBe(1);
 });
 
 test('Soporte\'s three ideas: a kind\'s glyph beside its name, the copy words of a reply, and each message as it reaches a real account', function (): void {
@@ -1312,8 +1480,7 @@ test('odd inputs read as nothing: a list for a search, a page beyond the last, a
     screensGet($token, 'catalogs/status?page=-4')->assertOk();
     screensGet($token, 'catalogs/status?page=999999')->assertOk();
 
-    // A master the web has but the app does not read yet, one the web has not, and a shape that is no slug at all.
-    screensGet($token, 'catalogs/plan')->assertNotFound();
+    // A master the web has not, and a shape that is no slug at all (the app reads all 21 the web has).
     screensGet($token, 'catalogs/nonsense')->assertNotFound();
     screensGet($token, 'catalogs/Status_1')->assertNotFound();
 });

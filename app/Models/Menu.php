@@ -184,7 +184,50 @@ class Menu extends Model
      */
     public static function forAdminApp(): Collection
     {
-        return self::onlyScreens(self::tree('admin'), config('atendia.app.admin_screens'));
+        return self::onlyScreens(self::withAdminBadges(self::tree('admin')), config('atendia.app.admin_screens'));
+    }
+
+    /**
+     * The admin's live counts laid over the tree: what waits on her call, on
+     * its item and on the group above it (a closed branch must not hide it).
+     * One place, so the web's sidebar and the app's bar show the same number.
+     *
+     * @param  Collection<int, Menu>  $tree
+     * @return Collection<int, Menu>
+     */
+    public static function withAdminBadges(Collection $tree): Collection
+    {
+        $counts = [
+            'admin.moderation' => fn (): int => ModerationFlag::pendingCount(),
+            'admin.support' => fn (): int => SupportTicket::awaitingReplyCount(),
+        ];
+
+        foreach ($counts as $route => $count) {
+            if (self::holds($tree, $route)) {
+                self::overlayBadge($tree, $route, $count());
+            }
+        }
+
+        return $tree;
+    }
+
+    /** @param  Collection<int, Menu>  $items */
+    private static function holds(Collection $items, string $route): bool
+    {
+        return $items->contains(fn (Menu $item): bool => $item->route_name === $route || self::holds($item->childrenRecursive ?? new Collection, $route));
+    }
+
+    /** @param  Collection<int, Menu>  $items */
+    private static function overlayBadge(Collection $items, string $route, int $count, ?Menu $parent = null): void
+    {
+        foreach ($items as $item) {
+            if ($item->route_name === $route && $count > 0) {
+                $item->badge = (string) $count;
+                $parent?->setAttribute('badge', (string) $count);
+            }
+
+            self::overlayBadge($item->childrenRecursive ?? new Collection, $route, $count, $item);
+        }
     }
 
     /**

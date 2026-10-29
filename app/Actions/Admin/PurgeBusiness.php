@@ -38,9 +38,10 @@ class PurgeBusiness
         }
 
         $userIds = DB::table('users')->where('business_id', $id)->pluck('id')->all();
+        $contactIds = DB::table('customers')->where('business_id', $id)->whereNotNull('platform_contact_id')->pluck('platform_contact_id')->unique()->all();
         $erased = [];
 
-        DB::transaction(function () use ($id, $userIds, &$erased): void {
+        DB::transaction(function () use ($id, $userIds, $contactIds, &$erased): void {
             $this->eraseUserTraces($userIds);
 
             $morph = (new Business)->getMorphClass();
@@ -58,10 +59,46 @@ class PurgeBusiness
 
             DB::table('users')->whereIn('id', $userIds)->delete();
             DB::table('businesses')->where('id', $id)->delete();
+
+            $contacts = $this->settleContacts($contactIds);
+
+            if ($contacts > 0) {
+                $erased['platform_contacts'] = $contacts;
+            }
         });
 
         foreach (['public', 'local'] as $disk) {
             Storage::disk($disk)->deleteDirectory("businesses/{$id}");
+        }
+
+        return $erased;
+    }
+
+    /**
+     * The radar's people carry counters, not a business key: a person who only
+     * ever wrote to the erased business would stay listed as a client of no
+     * one. Recount the ones who wrote elsewhere; erase the rest.
+     *
+     * @param  list<int>  $contactIds
+     * @return int people erased
+     */
+    private function settleContacts(array $contactIds): int
+    {
+        $erased = 0;
+
+        foreach ($contactIds as $contactId) {
+            $customers = DB::table('customers')->where('platform_contact_id', $contactId);
+
+            if (! $customers->exists()) {
+                $erased += DB::table('platform_contacts')->where('id', $contactId)->delete();
+
+                continue;
+            }
+
+            DB::table('platform_contacts')->where('id', $contactId)->update([
+                'businesses_count' => (clone $customers)->distinct()->count('business_id'),
+                'conversations_count' => (int) (clone $customers)->sum('conversations_count'),
+            ]);
         }
 
         return $erased;

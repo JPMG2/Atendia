@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Dto\CatalogColumnDto;
+use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
+use App\Interfaces\Catalog\HasColumns;
+use App\Interfaces\Catalog\HasHighlights;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
 use App\Traits\TracksUserActions;
@@ -18,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'starts_at', 'ends_at', 'priority', 'notice', 'is_active'])]
-class SeasonalWindow extends Model implements DataTable, Removable
+class SeasonalWindow extends Model implements DataTable, HasColumns, HasHighlights, Removable
 {
     use CountsUsage;
 
@@ -158,19 +162,95 @@ class SeasonalWindow extends Model implements DataTable, Removable
                 'hero' => (int) $window->hero_count,
                 'whatsapp' => (int) $window->whatsapp_count,
                 'has_notice' => filled($window->notice),
+                'content_shown' => self::contentWords($window),
+                'content_empty' => (int) $window->hero_count + (int) $window->whatsapp_count === 0 && blank($window->notice),
             ])
             ->values();
+    }
+
+    /**
+     * What the season changes, said under its name: a season with no content is dates and nothing else,
+     * and it should not look like it works.
+     */
+    private static function contentWords(self $window): string
+    {
+        $hero = (int) $window->hero_count;
+        $whatsapp = (int) $window->whatsapp_count;
+
+        $parts = array_filter([
+            filled($window->notice) ? __('catalog.seasonal_window.content.notice') : null,
+            $hero === 1 ? __('catalog.seasonal_window.content.hero_one') : ($hero > 1 ? __('catalog.seasonal_window.content.hero_many', ['count' => $hero]) : null),
+            $whatsapp === 1 ? __('catalog.seasonal_window.content.whatsapp_one') : ($whatsapp > 1 ? __('catalog.seasonal_window.content.whatsapp_many', ['count' => $whatsapp]) : null),
+        ]);
+
+        return $parts === [] ? __('catalog.seasonal_window.content.none') : __('catalog.seasonal_window.content.some', ['parts' => implode(' · ', $parts)]);
+    }
+
+    /**
+     * The season the landing speaks with today (the strongest in force, as `Company::reach()` picks it)
+     * and how long it has left, counted in calendar days; with none, the landing is the all-year one.
+     *
+     * @return list<array{when: string, text: string, mono: bool}>
+     */
+    public function catalogHighlights(): array
+    {
+        $window = self::inForce()->first();
+        $today = CarbonImmutable::parse(self::today()->format('Y-m-d'));
+
+        if ($window === null) {
+            // With none speaking, the next one that will: switched on and still to start (an off one never starts).
+            $next = self::query()
+                ->where('is_active', true)
+                ->whereDate('starts_at', '>', $today)
+                ->orderBy('starts_at')
+                ->orderByDesc('priority')
+                ->orderByDesc('id')
+                ->first();
+            $lines = [['when' => __('catalog.seasonal_window.highlights.none_when'), 'text' => __('catalog.seasonal_window.highlights.none'), 'mono' => false]];
+
+            if ($next !== null) {
+                $wait = (int) $today->diffInDays(CarbonImmutable::parse($next->starts_at->format('Y-m-d')), false);
+                $lines[] = ['when' => $next->name, 'text' => trans_choice('catalog.seasonal_window.highlights.starts', $wait, ['count' => $wait, 'date' => $next->starts_at->format('d/m/Y')]), 'mono' => false];
+            }
+
+            return $lines;
+        }
+
+        $days = (int) $today->diffInDays(CarbonImmutable::parse($window->ends_at->format('Y-m-d')), false);
+
+        return [[
+            'when' => $window->name,
+            'text' => trans_choice('catalog.seasonal_window.highlights.ends', $days, ['count' => $days, 'date' => $window->ends_at->format('d/m/Y')]),
+            'mono' => false,
+        ]];
+    }
+
+    /** @return list<CatalogColumnDto> */
+    public function catalogColumns(): array
+    {
+        return [
+            new CatalogColumnDto('name', __('catalog.seasonal_window.columns.name'), CatalogCell::Name, fill: true, search: true, note: 'content_shown', noteWarning: 'content_empty'),
+            new CatalogColumnDto('starts_at', __('catalog.seasonal_window.columns.starts_at'), CatalogCell::Symbol),
+            new CatalogColumnDto('ends_at', __('catalog.seasonal_window.columns.ends_at'), CatalogCell::Symbol),
+            new CatalogColumnDto('priority', __('catalog.seasonal_window.columns.priority'), CatalogCell::Symbol),
+            new CatalogColumnDto('running', __('catalog.seasonal_window.columns.running'), CatalogCell::Active, on: __('catalog.seasonal_window.status.running'), off: __('catalog.seasonal_window.status.waiting')),
+            new CatalogColumnDto('active', __('catalog.seasonal_window.columns.status'), CatalogCell::Active, on: __('catalog.seasonal_window.status.active'), off: __('catalog.seasonal_window.status.inactive')),
+            // Repeating creates a season: a control of the web; the phone reads only.
+            new CatalogColumnDto('id', __('catalog.seasonal_window.columns.repeat'), CatalogCell::Text, webOnly: true),
+        ];
     }
 
     /** Whether this window is the one talking today, not merely switched on. */
     public function coversToday(): bool
     {
-        $today = self::today();
+        // Calendar days, as inForce() reads them: the dates are midnight UTC and today is midnight in the
+        // seasons' zone, so comparing moments loses the season's last day.
+        $today = self::today()->format('Y-m-d');
 
         return $this->starts_at !== null
             && $this->ends_at !== null
-            && $this->starts_at->lessThanOrEqualTo($today)
-            && $this->ends_at->greaterThanOrEqualTo($today);
+            && $this->starts_at->format('Y-m-d') <= $today
+            && $this->ends_at->format('Y-m-d') >= $today;
     }
 
     /**

@@ -265,6 +265,15 @@ class SupportTicket extends Model
     }
 
     /**
+     * The reports waiting on an answer, counted in the database: what the menu shows on
+     * "Soporte" on every page, so it never loads the rows `queueCounts` reads for `late`.
+     */
+    public static function awaitingReplyCount(): int
+    {
+        return static::query()->whereIn('status', SupportTicketStatus::inScope('answer'))->count();
+    }
+
+    /**
      * How many reports sit in each queue, in one query, plus how many of the
      * ones to answer are already late — the red dot on the first tab.
      *

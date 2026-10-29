@@ -936,7 +936,7 @@ class Business extends Model
      */
     public static function directoryTotal(string $situation = ''): int
     {
-        return $situation === 'removed' ? self::onlyTrashed()->count() : self::query()->count();
+        return ($situation === 'removed' ? self::onlyTrashed() : self::query())->where('is_demo', false)->count();
     }
 
     /**
@@ -963,13 +963,15 @@ class Business extends Model
 
     /**
      * The one filter both the page and its count read, so "4 of 34" can never
-     * count a different set than the rows it sits above.
+     * count a different set than the rows it sits above. The landing's demos
+     * are ours, not clients: they never enter the list a client is run from.
      *
      * @return Builder<self>
      */
     private static function directoryQuery(string $search, string $situation): Builder
     {
         return ($situation === 'removed' ? self::onlyTrashed() : self::query())
+            ->where('is_demo', false)
             // The term goes to the database, not to a filter in memory: that is
             // what makes "Odontologico" find "Odontológico".
             ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name'], trim($search)))
@@ -1087,6 +1089,7 @@ class Business extends Model
         // Trashed too: a removed business is opened to be restored.
         return self::withTrashed()
             ->whereKey($id)
+            ->where('is_demo', false)
             ->with(['subscription', 'payments' => fn (HasMany $query) => $query->latest()->limit($payments)])
             ->first();
     }

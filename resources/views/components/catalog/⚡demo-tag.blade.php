@@ -97,7 +97,7 @@ new class extends Component
 
 <x-catalog.master
     :rows="$initialRows"
-    :search="['slug', 'label', 'business_name', 'season']"
+    :search="$this->searchKeys"
     :rules="[
         'slug' => ['required', ['minLength', 2], ['maxLength', 40], 'noMarkup'],
     ]"
@@ -114,29 +114,27 @@ new class extends Component
 
         <x-catalog.table
             :empty="__('catalog.demo_tag.empty')"
-            :columns="[
-                ['label' => __('catalog.demo_tag.columns.slug')],
-                ['label' => __('catalog.demo_tag.columns.label'), 'class' => 'catalog-col-fill'],
-                ['label' => __('catalog.demo_tag.columns.business_name')],
-                ['label' => __('catalog.demo_tag.columns.season')],
-                ['label' => __('catalog.demo_tag.columns.sort_order')],
-                ['label' => __('catalog.demo_tag.columns.status')],
-            ]"
+            :columns="$this->tableColumns"
         >
             <td><span class="catalog-code" x-text="row.slug"></span></td>
-            <td class="catalog-cell-name catalog-cell-fill" x-text="row.label"></td>
-            {{-- Blank on a variant means "inherits", which is not the same as
-            missing: said out loud, or the row reads as half loaded. --}}
-            <td
-                class="catalog-cell-sym"
-                x-bind:class="! row.business_name && row.season ? 'text-muted' : ''"
-                x-text="row.business_name || (row.season ? {{ \Illuminate\Support\Js::from(__('catalog.demo_tag.status.inherits')) }} : '')"
-            ></td>
-            <td
-                class="catalog-cell-sym"
-                x-text="row.season || {{ \Illuminate\Support\Js::from(__('catalog.demo_tag.status.evergreen')) }}"
-            ></td>
-            <td class="font-mono" x-text="row.sort_order"></td>
+            <td class="catalog-cell-name catalog-cell-fill">
+                <span class="catalog-cell-lead">
+                    <span x-text="row.label"></span>
+                    {{-- What a visitor lands on, in a tab of its own: the row stays where it was. --}}
+                    <a
+                        class="row-link"
+                        x-show="row.landing_url"
+                        x-bind:href="row.landing_url"
+                        target="_blank"
+                        rel="noopener"
+                        x-on:click.stop
+                    >{{ __('catalog.demo_tag.landing') }}</a>
+                </span>
+            </td>
+            {{-- The model words "inherits" and "all year", so the phone reads the same. --}}
+            <td class="catalog-cell-sym" x-bind:class="row.business_inherits ? 'text-muted' : ''" x-text="row.business_shown"></td>
+            <td class="catalog-cell-sym" x-text="row.season_shown"></td>
+            <td class="catalog-cell-sym" x-text="row.sort_order"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">
                     <span class="dot"></span
