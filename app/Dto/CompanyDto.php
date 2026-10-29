@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Classes\Main\CompanyEditor;
 use App\Classes\Main\OpeningHours;
 use App\Interfaces\Catalog\FormData;
 
@@ -114,25 +115,31 @@ class CompanyDto implements FormData
      */
     public function toPayload(): array
     {
+        // The cleaning is the shared piece's, so the app's API keeps text exactly as the web does.
+        $text = CompanyEditor::clean([
+            'legal_name' => $this->legal_name,
+            'brand_name' => $this->brand_name,
+            'tagline' => $this->tagline,
+            'address' => $this->address,
+            'tax_id' => $this->tax_id,
+            'text_copyright' => $this->text_copyright,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'web' => $this->web,
+            'payment_instructions' => $this->payment_instructions,
+            'whatsapp_greeting' => $this->whatsapp_greeting,
+        ]);
+
         return [
-            'legal_name' => DtoCast::squish($this->legal_name) ?? '',
-            'brand_name' => DtoCast::squish($this->brand_name),
-            'tagline' => DtoCast::squish($this->tagline),
+            ...$text,
+            'legal_name' => $text['legal_name'] ?? '',
+            'tax_id' => $text['tax_id'] ?? '',
             'region_id' => $this->region_id,
-            'address' => DtoCast::squish($this->address),
             'tax_condition_id' => $this->tax_condition_id,
-            'tax_id' => DtoCast::squish($this->tax_id) ?? '',
             'logo_path_light' => DtoCast::toNullableString($this->logo_path_light),
             'logo_path_dark' => DtoCast::toNullableString($this->logo_path_dark),
-            'text_copyright' => DtoCast::squish($this->text_copyright),
-            'email' => DtoCast::squish($this->email),
-            'phone' => DtoCast::squish($this->phone),
-            'web' => DtoCast::squish($this->web),
-            // Not squished: the line breaks ARE the format (bank, alias, CBU...).
-            'payment_instructions' => DtoCast::toNullableString(trim((string) $this->payment_instructions)),
             // Nothing open is nothing declared: a company is not "closed" by omission.
             'opening_schedule' => OpeningHours::toStored($this->opening_schedule) ?: null,
-            'whatsapp_greeting' => DtoCast::squish($this->whatsapp_greeting),
         ];
     }
 }

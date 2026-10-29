@@ -1124,7 +1124,9 @@ test('the actions close the screen at the bottom, with the same foot as the cata
 
     // One foot for the whole screen, after both panels — not a bar per step.
     expect(substr_count($blade, 'catalog-form-foot'))->toBe(1);
-    expect(strpos($blade, 'catalog-form-foot'))->toBeGreaterThan(strrpos($blade, '</x-ui.card>'));
+    // The panels are the stepper's cards; the footer preview below it is outside the steps.
+    $stepper = substr($blade, 0, strpos($blade, '</x-ui.stepper>'));
+    expect(strpos($blade, 'catalog-form-foot'))->toBeGreaterThan(strrpos($stepper, '</x-ui.card>'));
 
     // ...and inside the stepper, which is what lets it read the current step.
     expect(strpos($blade, 'catalog-form-foot'))->toBeLessThan(strpos($blade, '</x-ui.stepper>'));

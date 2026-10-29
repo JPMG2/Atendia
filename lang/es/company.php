@@ -17,6 +17,13 @@ return [
     'subtitle' => 'Los datos de :brand: encabezan la factura y se muestran en la web.',
 
     'discard' => 'Descartar',
+    'edit' => 'Editar',
+
+    // The landing's footer as the saved data makes it.
+    'preview' => [
+        'title' => 'Así se ve en el pie de la landing',
+        'sub' => 'Con lo que está guardado: cambia al guardar.',
+    ],
 
     // The weekly schedule, in words and in the form.
     'hours' => [
@@ -25,6 +32,7 @@ return [
         'pair' => ':first y :last',
         'shift' => ':days de :opens a :closes h',
         'apply_weekdays' => 'Aplicar de lunes a viernes',
+        'apply_saturday' => 'Copiar el lunes al sábado',
         'opens' => 'Abre',
         'closes' => 'Cierra',
         'time_placeholder' => '09:00',

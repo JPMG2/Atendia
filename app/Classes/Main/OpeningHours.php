@@ -150,6 +150,21 @@ final class OpeningHours
     }
 
     /**
+     * Monday's shift written onto Saturday, open or closed: the short week's
+     * other day, so a Saturday like the weekdays is one tap too.
+     *
+     * @param  array<array-key, mixed>  $state
+     * @return array<int, array{open: bool, opens_at: string, closes_at: string}>
+     */
+    public static function applySaturday(array $state): array
+    {
+        $week = self::formState($state);
+        $week[6] = $week[1];
+
+        return $week;
+    }
+
+    /**
      * What gets stored: the open days only, times exactly as typed so the
      * validator can say which box is wrong instead of a day vanishing.
      *

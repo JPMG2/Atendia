@@ -74,6 +74,9 @@ test('with the company already saved the second step swaps the panel', function 
         // What the landing's WhatsApp says all year sits next to the number.
         ->assertSee('Horario de atención')
         ->assertSee('Aplicar de lunes a viernes')
+        ->assertSee('Copiar el lunes al sábado')
+        // The footer as a visitor reads it, under the steps.
+        ->assertSee('Así se ve en el pie de la landing')
         ->assertSee('Mensaje que escribe el visitante')
         // The main panel is the one that hides now.
         ->assertDontSee('Razón social')

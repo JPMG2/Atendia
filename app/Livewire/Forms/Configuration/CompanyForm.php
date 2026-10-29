@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms\Configuration;
 
+use App\Classes\Main\CompanyEditor;
 use App\Dto\CompanyDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
-use App\Mail\NewCompany;
-use App\Messaging\Channels\Email;
 use App\Models\Company;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
@@ -74,17 +73,6 @@ class CompanyForm extends BaseForm
         'logo_path_light' => 'logo_light_file',
         'logo_path_dark' => 'logo_dark_file',
     ];
-
-    /**
-     * Columns of `companies` the commercial step writes.
-     *
-     * The separate list is needed here: the step's rules include the networks',
-     * which are not columns of this table. In step one the rule keys already are
-     * exactly its columns.
-     *
-     * @var list<string>
-     */
-    private const array COMMERCIAL_COLUMNS = ['email', 'phone', 'web', 'payment_instructions', 'opening_schedule', 'whatsapp_greeting'];
 
     /**
      * The loaded record; `null` means nothing has been loaded yet.
@@ -252,16 +240,12 @@ class CompanyForm extends BaseForm
      */
     private function deleteSocialLink(int $id): NotificationDto
     {
-        $link = Company::query()->find($this->recordId)?->socialLinks()->find($id);
-
-        if (! $link instanceof SocialLink) {
-            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
-        }
-
         // spatie logs the delete on its own (LogsActivity on the model).
-        $link->delete();
+        $link = app(CompanyEditor::class)->removeSocialLink($id);
 
-        return $this->notificationService()->notificationFor($link, 'deleted');
+        return $link === null
+            ? new NotificationDto(__('notifications.not_found'), NotificationType::Error)
+            : $this->notificationService()->notificationFor($link, 'deleted');
     }
 
     /**
@@ -279,16 +263,10 @@ class CompanyForm extends BaseForm
 
         return $this->tryAction(function () use ($validated): NotificationDto {
 
-            // The table holds ONE row: an existing one is updated even if this form
-            // mounted before it was there (another tab, a double click). Without the
-            // `first()` fallback a second save would create a second company.
-            $company = Company::query()->find($this->recordId)
-                ?? Company::query()->first()
-                ?? new Company;
+            // Taken before the save: the logos the row points at now, to drop the ones it stops pointing at.
+            $before = Arr::only(Company::query()->first()?->getAttributes() ?? [], array_keys(self::LOGO_UPLOADS));
 
-            $before = Arr::only($company->getAttributes(), array_keys(self::LOGO_UPLOADS));
-
-            $company->fill($this->columnsWithLogos($validated))->save();
+            $company = app(CompanyEditor::class)->saveMain($this->columnsWithLogos($validated));
             $this->dropReplacedLogos($before, $company);
 
             $this->recordId = $company->id;
@@ -318,22 +296,12 @@ class CompanyForm extends BaseForm
 
         $validated = $this->validateStep(self::STEP_COMMERCIAL);
 
-        // The record leaves the closure by reference because the mail goes out
-        // OUTSIDE it: `tryAction()` can only return the screen notification.
-        $company = null;
-
-        // If it already had an address, this save is not the one giving it one.
-        $hadEmail = false;
-
-        $notification = $this->tryAction(function () use ($validated, &$company, &$hadEmail): NotificationDto {
+        return $this->tryAction(function () use ($validated): NotificationDto {
 
             $company = Company::query()->findOrFail($this->recordId);
 
-            $hadEmail = filled($company->email);
-
-            $company->fill(Arr::only($validated, self::COMMERCIAL_COLUMNS))->save();
-
-            $linksChanged = $this->syncSocialLinks($company, $validated['social'] ?? []);
+            // The screen always sends its rows: an empty list is "no networks", not "leave them".
+            $linksChanged = app(CompanyEditor::class)->saveCommercial($company, ['social' => [], ...$validated]);
 
             // If ONLY the networks changed, the `companies` row is untouched and
             // `notificationFor()` would say "nothing changed" with the networks
@@ -345,19 +313,6 @@ class CompanyForm extends BaseForm
             return $this->notificationService()->notificationFor($company, 'updated');
 
         }, __('notifications.not_updated'));
-
-        // AFTER the row is written and OUTSIDE `tryAction()`: inside, a failed
-        // send would turn a save that worked into an error toast, and a `save()`
-        // that throws leaves nobody to write to.
-
-        // Sent ONCE, when the company gets its first address. `wasChanged()` only
-        // tells the truth after a successful save, and `$hadEmail` separates
-        // getting an address from correcting one.
-        if ($company !== null && ! $hadEmail && $company->wasChanged('email') && filled($company->email)) {
-            (new Email($company, [$company->email], NewCompany::class))->send();
-        }
-
-        return $notification;
     }
 
     /**
@@ -373,7 +328,7 @@ class CompanyForm extends BaseForm
 
         $saved = $company !== null ? CompanyDto::fromArray($company->toArray()) : new CompanyDto;
 
-        foreach (self::COMMERCIAL_COLUMNS as $field) {
+        foreach (CompanyEditor::COMMERCIAL_COLUMNS as $field) {
             $this->data->{$field} = $saved->{$field};
         }
 
@@ -561,30 +516,7 @@ class CompanyForm extends BaseForm
      */
     protected function getValidationAttributes(): array
     {
-        return [
-            'legal_name' => config('nicename.legal_name'),
-            'brand_name' => config('nicename.brand_name'),
-            'tagline' => config('nicename.tagline'),
-            'region_id' => config('nicename.region_id'),
-            'address' => config('nicename.address'),
-            'tax_condition_id' => config('nicename.tax_condition_id'),
-            'tax_id' => config('nicename.tax_id'),
-            'logo_path_light' => config('nicename.logo_path_light'),
-            'logo_path_dark' => config('nicename.logo_path_dark'),
-            'logo_light_file' => config('nicename.logo_path_light'),
-            'logo_dark_file' => config('nicename.logo_path_dark'),
-            'text_copyright' => config('nicename.text_copyright'),
-            'email' => config('nicename.email'),
-            'phone' => config('nicename.phone'),
-            'web' => config('nicename.web'),
-            'payment_instructions' => __('company.fields.payment_instructions'),
-            'opening_schedule' => __('company.fields.opening_schedule'),
-            'opening_schedule.*.0' => __('company.hours.opens'),
-            'opening_schedule.*.1' => __('company.hours.closes'),
-            'whatsapp_greeting' => __('company.fields.whatsapp_greeting'),
-            'social.*.social_network_id' => config('nicename.social_network_id'),
-            'social.*.url' => config('nicename.url'),
-        ];
+        return CompanyEditor::names();
     }
 
     protected function transformServiceData(): array
@@ -612,37 +544,6 @@ class CompanyForm extends BaseForm
             $this->social,
             fn (array $row): bool => $row['social_network_id'] !== null || trim((string) $row['url']) !== '',
         ));
-    }
-
-    /**
-     * Leaves the stored networks exactly as the screen left them.
-     *
-     * Returns whether anything changed, which is what picks the toast's message.
-     *
-     * @param  array<int, array{social_network_id: int, url: string}>  $rows
-     */
-    private function syncSocialLinks(Company $company, array $rows): bool
-    {
-        $changed = false;
-        $kept = [];
-
-        foreach (array_values($rows) as $index => $row) {
-            // The network is the key — it is what the table holds unique per owner —
-            // so reordering or fixing a link edits the row instead of duplicating it.
-            $link = $company->socialLinks()->updateOrCreate(
-                ['social_network_id' => $row['social_network_id']],
-                ['url' => $row['url'], 'sort_order' => $index],
-            );
-
-            $changed = $changed || $link->wasRecentlyCreated || $link->wasChanged();
-            $kept[] = $link->id;
-        }
-
-        // Whatever left the screen leaves the table: a removed row cannot sit in
-        // the database waiting for the next render.
-        $removed = $company->socialLinks()->whereNotIn('id', $kept)->delete();
-
-        return $changed || $removed > 0;
     }
 
     /**
@@ -685,56 +586,16 @@ class CompanyForm extends BaseForm
      */
     private function rulesFor(string $step): array
     {
-        return match ($step) {
-
-            self::STEP_MAIN => [
-
-                'legal_name' => AttributeValidator::stringValid(true, '3'),
-
-                'brand_name' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
-
-                'tagline' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
-
-                'region_id' => AttributeValidator::requireAndExists('regions', 'id', 'region_id', true),
-
-                'address' => AttributeValidator::stringValid(true, '3'),
-
-                'tax_condition_id' => AttributeValidator::requireAndExists('tax_conditions', 'id', 'tax_condition_id', true),
-
-                'tax_id' => [...AttributeValidator::stringValid(true, '3'), 'max:20'],
-
+        // The shared rules, plus the logos only this screen uploads.
+        return $step === self::STEP_MAIN
+            ? [
+                ...CompanyEditor::rules(CompanyEditor::STEP_MAIN),
                 'logo_path_light' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
                 'logo_path_dark' => ['nullable', ...AttributeValidator::stringValid(false, '1')],
-
                 'logo_light_file' => self::LOGO_RULES,
                 'logo_dark_file' => self::LOGO_RULES,
-
-                'text_copyright' => ['nullable', ...AttributeValidator::stringValid(false, '3')],
-            ],
-
-            self::STEP_COMMERCIAL => [
-
-                'email' => ['nullable', 'email:rfc', 'max:255'],
-
-                'phone' => ['nullable', ...AttributeValidator::digitValid('6', false), 'max:30'],
-
-                'web' => ['nullable', 'url:http,https', 'max:255'],
-
-                'payment_instructions' => ['nullable', 'string', 'max:2000', AttributeValidator::xssFree()],
-
-                ...AttributeValidator::weekSchedule('opening_schedule'),
-
-                'whatsapp_greeting' => ['nullable', ...AttributeValidator::stringValid(false, '3'), 'max:300'],
-
-                'social' => ['array', 'max:20'],
-
-                'social.*.social_network_id' => ['required', 'integer', 'distinct', 'exists:social_networks,id'],
-
-                'social.*.url' => [...AttributeValidator::stringValid(true, '3'), 'max:255'],
-            ],
-
-            default => [],
-        };
+            ]
+            : CompanyEditor::rules($step);
     }
 
     /**

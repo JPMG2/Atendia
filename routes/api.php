@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\AdminBusinessesController;
 use App\Http\Controllers\Api\V1\AdminCatalogsController;
 use App\Http\Controllers\Api\V1\AdminCollectionsController;
 use App\Http\Controllers\Api\V1\AdminCompanyController;
+use App\Http\Controllers\Api\V1\AdminCompanyEditController;
 use App\Http\Controllers\Api\V1\AdminHomeController;
 use App\Http\Controllers\Api\V1\AdminMenuController;
 use App\Http\Controllers\Api\V1\AdminPaymentsController;
@@ -96,6 +97,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('payments', AdminPaymentsController::class)->middleware('can:payments.view');
             Route::get('collections', AdminCollectionsController::class)->middleware('can:payments.view');
             Route::get('company', AdminCompanyController::class)->middleware('can:company.manage');
+            // Editing the company: the web form's two steps over the same piece, and a network removed at once, as the web does.
+            Route::get('company/places', [AdminCompanyEditController::class, 'places'])->middleware('can:company.manage');
+            Route::get('company/{step}', [AdminCompanyEditController::class, 'sheet'])->whereIn('step', ['main', 'commercial'])->middleware('can:company.manage');
+            Route::put('company/{step}', [AdminCompanyEditController::class, 'update'])->whereIn('step', ['main', 'commercial'])->middleware('can:company.manage');
+            Route::delete('company/social/{link}', [AdminCompanyEditController::class, 'removeSocial'])->where('link', '[0-9]{1,18}')->middleware('can:company.manage');
             Route::get('catalogs', [AdminCatalogsController::class, 'index'])->middleware('can:catalogs.manage');
             Route::get('catalogs/{master}', [AdminCatalogsController::class, 'show'])->where('master', '[a-z][a-z-]{0,60}')->middleware('can:catalogs.manage');
             Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');

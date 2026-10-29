@@ -522,7 +522,11 @@ test('the company screen and the season form both copy Monday with the button', 
         ->call('applyWeekdays')
         ->assertSet('form.data.opening_schedule.4.open', true)
         ->assertSet('form.data.opening_schedule.4.closes_at', '13:00')
-        ->assertSet('form.data.opening_schedule.6.open', false);
+        ->assertSet('form.data.opening_schedule.6.open', false)
+        ->call('applySaturday')
+        ->assertSet('form.data.opening_schedule.6.open', true)
+        ->assertSet('form.data.opening_schedule.6.closes_at', '13:00')
+        ->assertSet('form.data.opening_schedule.0.open', false);
 
     Livewire::test('catalog.whatsapp-variant')
         ->call('openCreate')

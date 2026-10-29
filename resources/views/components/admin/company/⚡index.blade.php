@@ -1,13 +1,11 @@
 <?php
 
+use App\Classes\Main\CompanyEditor;
+use App\Classes\Main\CompanyFooterPreview;
 use App\Classes\Main\OpeningHours;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Configuration\CompanyForm;
-use App\Models\Country;
-use App\Models\Province;
-use App\Models\Region;
 use App\Models\SocialNetwork;
-use App\Models\TaxCondition;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Computed;
@@ -101,6 +99,23 @@ new class extends Component
         $this->form->data->opening_schedule = OpeningHours::applyWeekdays($this->form->data->opening_schedule);
     }
 
+    /** Monday onto Saturday, the short week's other day. */
+    public function applySaturday(): void
+    {
+        $this->form->data->opening_schedule = OpeningHours::applySaturday($this->form->data->opening_schedule);
+    }
+
+    /**
+     * The landing's footer as the saved company makes it, below the form.
+     *
+     * @return array<string, mixed>
+     */
+    #[Computed]
+    public function footerPreview(): array
+    {
+        return (new CompanyFooterPreview)->toArray();
+    }
+
     /**
      * Discards what was typed in the commercial step and restores what is stored.
      */
@@ -189,7 +204,7 @@ new class extends Component
     #[Computed]
     public function countryOptions(): array
     {
-        return Country::options(states: [true], label: fn (Country $country): string => $country->name);
+        return CompanyEditor::places(null, null)['countries'];
     }
 
     /**
@@ -204,7 +219,7 @@ new class extends Component
     #[Computed]
     public function provinceOptions(): array
     {
-        return $this->form->data?->country_id ? Province::options(states: [true], label: fn (Province $province): string => $province->name, countryId: $this->form->data?->country_id) : [];
+        return CompanyEditor::places($this->form->data?->country_id, null)['provinces'];
     }
 
     /**
@@ -215,7 +230,7 @@ new class extends Component
     #[Computed]
     public function regionOptions(): array
     {
-        return $this->form->data?->province_id ? Region::options(states: [true], provinceId: $this->form->data?->province_id) : [];
+        return CompanyEditor::places(null, $this->form->data?->province_id)['regions'];
     }
 
     /**
@@ -226,7 +241,7 @@ new class extends Component
     #[Computed]
     public function taxConditionOptions(): array
     {
-        return $this->form->data?->country_id ? TaxCondition::options(states: [true], countryId: $this->form->data?->country_id) : [];
+        return CompanyEditor::places($this->form->data?->country_id, null)['taxConditions'];
     }
 
     /**
@@ -549,6 +564,7 @@ field in red from an attempt you had stopped looking at. --}}
                         <x-inputsform.week-hours
                             span="full"
                             apply="applyWeekdays"
+                            apply-saturday="applySaturday"
                             name="opening_schedule"
                             model="form.data.opening_schedule"
                             :value="$form->data->opening_schedule"
@@ -712,6 +728,45 @@ field in red from an attempt you had stopped looking at. --}}
             </x-ui.button>
         </div>
     </x-ui.stepper>
+
+    {{-- What a visitor reads today, drawn from the saved row: it changes on save, never while typing. --}}
+    @if ($isRegistered)
+        @php($preview = $this->footerPreview)
+        <x-ui.card class="config-preview" data-testid="footer-preview">
+            <div>
+                <h2 class="config-block-title">{{ $preview['title'] }}</h2>
+                <p class="config-block-desc">{{ $preview['sub'] }}</p>
+            </div>
+
+            <div class="config-preview-foot">
+                <div class="flex flex-col gap-2">
+                    <p class="text-muted">{{ $preview['tagline'] }}</p>
+                    @if ($preview['networks'] !== [])
+                        <div class="text-subtle flex items-center gap-3">
+                            @foreach ($preview['networks'] as $network)
+                                <span wire:key="preview-net-{{ $loop->index }}" title="{{ $network['name'] }}" aria-label="{{ $network['name'] }}">
+                                    <x-icon :name="$network['icon']" :size="18" />
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                @if ($preview['lines'] !== [])
+                    <div class="flex flex-col gap-2">
+                        @foreach ($preview['lines'] as $line)
+                            <span wire:key="preview-line-{{ $loop->index }}" @class(['inline-flex items-start gap-2', 'text-muted' => $line['tone'] === 'muted', 'text-body' => $line['tone'] === 'body', 'config-preview-open' => $line['tone'] === 'success'])>
+                                <x-icon :name="$line['icon']" :size="15" class="mt-0.5 flex-none" />
+                                {{ $line['text'] }}
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <p class="config-preview-copy text-subtle">{{ $preview['copyright'] }}</p>
+        </x-ui.card>
+    @endif
 </div>
 
 @script

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Once;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -56,7 +57,11 @@ class Company extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn () => self::forgetReach());
+        // The request that saves goes on to draw: what it remembered of the row is stale now.
+        static::saved(function (): void {
+            self::forgetReach();
+            Once::flush();
+        });
     }
 
     /**
