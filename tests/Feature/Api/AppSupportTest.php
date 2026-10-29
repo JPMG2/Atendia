@@ -70,6 +70,8 @@ it('writes the report through the web\'s Action and says its code in the web\'s 
 
     expect($response->json('message'))->toBe(__('support.sent', ['code' => $ticket->code]))
         ->and($response->json('data.code'))->toBe($ticket->code)
+        // The phone's thank-you line is the web panel's, word for word.
+        ->and($response->json('data.thanks'))->toBe(__('support.thanks_body', ['code' => $ticket->code]))
         ->and($ticket->business_id)->toBe($owner->business_id)
         ->and($ticket->screen)->toBe('customers')
         ->and($ticket->kind->code)->toBe('problem')

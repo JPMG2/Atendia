@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Forms\Admin\PlatformSettingForm;
+use App\Models\Company;
 use App\Models\PlatformSetting;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
@@ -53,6 +54,13 @@ new class extends Component
     public function weekdays(): array
     {
         return PlatformSetting::weekdayOptions();
+    }
+
+    /** The city a platform-clock hint names, so "20:00" reads as a place and not a guess. */
+    #[Computed]
+    public function clockCity(): string
+    {
+        return Company::clockCity();
     }
 
     /** How many knobs sit away from what the code ships with. */
@@ -119,7 +127,7 @@ new class extends Component
                                     <span class="aiu-name">{{ __('admin.settings.keys.'.$setting->key.'.label') }}</span>
                                     {{-- The consequence, not the config path: a knob
                                     whose effect she has to guess gets left alone. --}}
-                                    <span class="aiu-note">{{ __('admin.settings.keys.'.$setting->key.'.hint') }}</span>
+                                    <span class="aiu-note">{{ __('admin.settings.keys.'.$setting->key.'.hint', ['city' => $this->clockCity]) }}</span>
                                 </td>
                                 <td class="is-pick" data-label="{{ __('admin.settings.columns.value') }}">
                                     @if ($setting->type === 'weekday')

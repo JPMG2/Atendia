@@ -126,6 +126,7 @@ class Team
                 'phone' => $this->phoneBoxes($member->whatsapp),
                 'isAgent' => $member->isAgent(),
                 'role' => __('team.roles.'.($member->isAgent() ? 'agent' : 'owner')),
+                'rejoined' => $member->rejoinedLabel(),
                 'isAvailable' => (bool) $member->is_available,
                 'openThreads' => (int) $member->open_threads,
                 // Removing never strands a customer: the sentence says where the open threads go.

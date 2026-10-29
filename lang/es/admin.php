@@ -628,7 +628,7 @@ return [
                 ],
                 'digest_time' => [
                     'label' => 'Correo de lo que salió mal',
-                    'hint' => 'A qué hora te llega por correo la lista del día de «Qué salió mal». Va con la hora de la plataforma, no la de cada negocio.',
+                    'hint' => 'A qué hora te llega por correo la lista del día de «Qué salió mal». Va con la hora de :city, la de la plataforma, no la de cada negocio.',
                 ],
             ],
             'schedule' => [

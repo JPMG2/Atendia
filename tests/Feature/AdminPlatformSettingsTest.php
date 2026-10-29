@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\Models\Business;
+use App\Models\Company;
+use App\Models\Country;
 use App\Models\PlatformSetting;
+use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use Database\Seeders\PlatformSettingSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -11,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Once;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -77,6 +82,16 @@ test('every knob says what it does, not where it lives in the config', function 
         ->reject(fn (string $key): bool => Lang::has('admin.settings.keys.'.$key.'.label') && Lang::has('admin.settings.keys.'.$key.'.hint'));
 
     expect($unworded->all())->toBe([]);
+});
+
+test('the hour of the mistakes mail names the city of the platform clock, from the company country', function (): void {
+    $region = Region::factory()->for(Province::factory()->for(Country::factory()->state(['iso2' => 'VE'])))->create();
+    Company::factory()->create(['region_id' => $region->id]);
+    Once::flush();
+    settingsAdmin();
+
+    Livewire::test('admin.settings.index')
+        ->assertSee('Va con la hora de Caracas, la de la plataforma');
 });
 
 test('a saved knob overrides the config the whole app reads', function (): void {

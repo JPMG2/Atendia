@@ -32,6 +32,7 @@ class AcceptTeamInvitation
                 'whatsapp' => $invitation->whatsapp,
             ]);
             $user->forceFill([
+                'rejoined_at' => $user->exists ? now() : null,
                 'deleted_at' => null,
                 'business_id' => $invitation->business_id,
                 'email_verified_at' => now(),

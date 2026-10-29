@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('avatar_path')->nullable();
             $table->string('whatsapp', 30)->nullable()->comment('Solo dígitos: dónde le llegan los avisos de derivación a esta persona del equipo');
             $table->boolean('is_available')->default(true)->comment('Disponible/ausente: los avisos solo van a quien está disponible');
+            $table->timestamp('rejoined_at')->nullable()->comment('Cuándo volvió al equipo tras ser quitada: Equipo lo dice unos días');
             $table->json('bell_muted')->nullable()->comment('Tipos de aviso que esta persona NO quiere ver en la campana');
             $table->rememberToken();
             $table->timestamps();

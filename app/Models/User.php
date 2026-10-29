@@ -44,6 +44,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, SearchesText, SoftDeletes;
 
+    /** How long the team screen says someone came back: long enough to notice, short enough not to label them for good. */
+    public const int REJOINED_DAYS = 7;
+
     /**
      * Mirrors of the column defaults: a user created in this very request
      * never read them back, and strict attributes would throw on the read.
@@ -53,6 +56,7 @@ class User extends Authenticatable
     protected $attributes = [
         'whatsapp' => null,
         'is_available' => true,
+        'rejoined_at' => null,
     ];
 
     /**
@@ -483,8 +487,17 @@ class User extends Authenticatable
             'two_factor_recovery_codes' => 'array',
             'two_factor_reset_at' => 'datetime',
             'is_available' => 'boolean',
+            'rejoined_at' => 'datetime',
             'bell_muted' => 'array',
         ];
+    }
+
+    /** "Volvió al equipo" for the first days after a teammate came back, the words web and app both print; null otherwise. */
+    public function rejoinedLabel(): ?string
+    {
+        return $this->rejoined_at !== null && $this->rejoined_at->greaterThan(now()->subDays(self::REJOINED_DAYS))
+            ? __('team.people.rejoined')
+            : null;
     }
 
     /**

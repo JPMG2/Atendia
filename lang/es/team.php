@@ -17,6 +17,7 @@ return [
         'sub' => 'Cada persona entra con su correo y su contraseña. Los agentes solo ven las conversaciones de su departamento.',
         'invite' => 'Invitar a alguien',
         'you' => 'Tú',
+        'rejoined' => 'Volvió al equipo',
         'pending' => 'Invitación pendiente',
         'sent' => 'Enviada :when',
         'resend' => 'Reenviar invitación',

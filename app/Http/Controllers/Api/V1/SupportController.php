@@ -52,7 +52,11 @@ class SupportController extends Controller
             return response()->json(['message' => __('support.failed')], 500);
         }
 
-        return response()->json(['message' => __('support.sent', ['code' => $ticket->code]), 'data' => ['code' => $ticket->code]], 201);
+        // `thanks` is the web's thank-you panel line, with how the answer will reach them.
+        return response()->json([
+            'message' => __('support.sent', ['code' => $ticket->code]),
+            'data' => ['code' => $ticket->code, 'thanks' => __('support.thanks_body', ['code' => $ticket->code])],
+        ], 201);
     }
 
     /**

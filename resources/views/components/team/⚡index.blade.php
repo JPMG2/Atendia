@@ -178,6 +178,9 @@ new class extends Component
                                         <span class="text-muted text-xs font-normal">({{ __('team.people.you') }})</span>
                                     @endif
                                     <span @class(['tm-role', 'is-owner' => ! $person->isAgent()])>{{ __('team.roles.'.($person->isAgent() ? 'agent' : 'owner')) }}</span>
+                                    @if ($person->rejoinedLabel() !== null)
+                                        <span class="status-tag is-info">{{ $person->rejoinedLabel() }}</span>
+                                    @endif
                                     <span @class(['tm-presence', 'is-away' => ! $person->is_available])>
                                         {{ $person->is_available ? __('team.people.available') : __('team.people.away') }}
                                     </span>

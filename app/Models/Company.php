@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -176,6 +177,12 @@ class Company extends Model
         $zones = $iso2 === null ? [] : DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, strtoupper($iso2));
 
         return $zones[0] ?? (string) config('app.timezone');
+    }
+
+    /** The city the platform's clock is named after ("America/Caracas" reads "Caracas"): moves with the company's country. */
+    public static function clockCity(): string
+    {
+        return str_replace('_', ' ', Str::afterLast(self::localTimezone(), '/'));
     }
 
     /**

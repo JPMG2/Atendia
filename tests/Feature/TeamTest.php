@@ -185,6 +185,14 @@ test('a teammate taken out of a team is invited again and comes back as the same
         ->and(Hash::check('Vuelta-2026!', $back->password))->toBeTrue()
         ->and(User::withTrashed()->where('email', $agent->email)->count())->toBe(1)
         ->and(Auth::id())->toBe($agent->id);
+
+    // The team says they came back, on the web and in the app's piece, for the first days only.
+    $this->actingAs($owner);
+    livewire('team.index')->assertSee(__('team.people.rejoined'));
+    expect(collect(Client::for($owner)->team->overview['members'])->firstWhere('id', $agent->id)['rejoined'])->toBe(__('team.people.rejoined'));
+
+    $this->travel(User::REJOINED_DAYS + 1)->days();
+    expect($back->refresh()->rejoinedLabel())->toBeNull();
 });
 
 test('another business cannot claim a teammate someone else took out', function (): void {
