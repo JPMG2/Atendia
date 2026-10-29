@@ -26,7 +26,7 @@ new class extends Component
     #[Url(as: 'fuertes', except: true)]
     public bool $onlyStrong = true;
 
-    /** @return Collection<int, \Spatie\Activitylog\Models\Activity> */
+    /** @return Collection<int, \App\Models\Activity> */
     #[Computed]
     public function entries(): Collection
     {

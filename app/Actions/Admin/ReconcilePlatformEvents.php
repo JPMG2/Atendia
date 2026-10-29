@@ -24,7 +24,7 @@ class ReconcilePlatformEvents
 
     public function handle(): void
     {
-        $real = Business::query()->where('is_demo', false);
+        $real = Business::query();
 
         $this->align(PlatformEventKind::WhatsAppDisconnected, (clone $real)->whereNotNull('whatsapp_instance')->whereNull('whatsapp_connected_at')->pluck('id')->all());
         $this->align(PlatformEventKind::BusinessSuspended, (clone $real)->whereNotNull('suspended_at')->pluck('id')->all());
@@ -39,7 +39,6 @@ class ReconcilePlatformEvents
     {
         return Subscription::query()
             ->where('status', $status->value)
-            ->whereIn('business_id', Business::query()->where('is_demo', false)->select('id'))
             ->pluck('business_id')
             ->unique()
             ->values()

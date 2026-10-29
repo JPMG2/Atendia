@@ -191,7 +191,7 @@ new class extends Component
         return $this->historyOf === null ? null : User::staffById($this->historyOf);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Collection<int, \Spatie\Activitylog\Models\Activity> */
+    /** @return \Illuminate\Database\Eloquent\Collection<int, \App\Models\Activity> */
     #[Computed]
     public function history(): \Illuminate\Database\Eloquent\Collection
     {

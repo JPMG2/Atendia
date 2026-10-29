@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * AND fills `business_id` on create. Both halves are needed — without the
  * second, a row is born ownerless and invisible to everyone.
  *
- * It only scopes when there IS a current business. No business means no
- * filter, on purpose: that is the admin and the background jobs. {@see Tenant}
+ * With no current business (the admin and the background jobs) it sees every
+ * real business, never the landing's examples. {@see Tenant}
  */
 trait BelongsToBusiness
 {
@@ -25,7 +25,13 @@ trait BelongsToBusiness
         static::addGlobalScope('business', function (Builder $builder): void {
             $businessId = app(Tenant::class)->id();
 
+            // With no business adopted (the admin, a job, a platform figure) the landing's
+            // examples are not there: their rows are seen only from inside their own tenant.
+            // A row with no business (the platform's own AI spend) stays: NOT IN would drop a null.
             if ($businessId === null) {
+                $column = $builder->getModel()->qualifyColumn('business_id');
+                $builder->where(fn (Builder $rows): Builder => $rows->whereNull($column)->orWhereNotIn($column, Business::demoIds()));
+
                 return;
             }
 

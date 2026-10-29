@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 #[ObservedBy(KnowledgeDocumentObserver::class)]
 class KnowledgeDocument extends Model
@@ -55,6 +56,14 @@ class KnowledgeDocument extends Model
     public function chunks(): HasMany
     {
         return $this->hasMany(KnowledgeChunk::class);
+    }
+
+    /** The business a document belongs to, read before any tenant is adopted: a worker starts with none. */
+    public static function ownerOf(int $documentId): ?int
+    {
+        $owner = DB::table((new self)->getTable())->where('id', $documentId)->value('business_id');
+
+        return $owner === null ? null : (int) $owner;
     }
 
     /**

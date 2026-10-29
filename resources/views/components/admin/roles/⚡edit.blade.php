@@ -165,7 +165,7 @@ new class extends Component
         $this->historyOpen = false;
     }
 
-    /** @return Collection<int, \Spatie\Activitylog\Models\Activity> */
+    /** @return Collection<int, \App\Models\Activity> */
     #[Computed]
     public function history(): Collection
     {

@@ -61,7 +61,6 @@ class Conversation extends Model
         return app(Tenant::class)->for(null, fn (): int => ConversationMessage::query()
             ->where('direction', MessageDirection::Out)
             ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotIn('business_id', Business::demoIds())
             ->distinct('conversation_id')
             ->count('conversation_id'));
     }
@@ -81,7 +80,6 @@ class Conversation extends Model
         return static::query()
             ->where('status', '!=', ConversationStatus::Team)
             ->where('last_message_at', '<=', now()->subMinutes($minutes))
-            ->whereNotIn('business_id', Business::demoIds())
             ->whereHas('latestMessage', fn (Builder $last): Builder => $last->where('direction', MessageDirection::In))
             ->with(['business:id,name', 'latestMessage'])
             ->orderBy('last_message_at')
@@ -101,7 +99,6 @@ class Conversation extends Model
             ->where('status', ConversationStatus::Team)
             ->whereNotNull('escalated_at')
             ->where('escalated_at', '<=', now()->subMinutes($minutes))
-            ->whereNotIn('business_id', Business::demoIds())
             ->whereDoesntHave('messages', fn (Builder $reply): Builder => $reply
                 ->where('direction', MessageDirection::Out)
                 ->where('author', MessageAuthor::Human)

@@ -61,7 +61,6 @@ class ConversationAnalysis extends Model
         return static::query()
             ->where('sentiment', CustomerSentiment::Negative)
             ->where('created_at', '>=', now()->subDays($sinceDays))
-            ->whereNotIn('business_id', Business::demoIds())
             ->whereIn('id', static::query()
                 ->selectRaw('max(id)')
                 ->where('sentiment', CustomerSentiment::Negative)

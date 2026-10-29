@@ -6,9 +6,9 @@ namespace App\Classes\Report;
 
 use App\Classes\Main\AuditTrail;
 use App\Enums\ReportAudience;
+use App\Models\Activity;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Spatie\Activitylog\Models\Activity;
 
 /** The audit trail as a file: who did what and on what, with the strong movements only when the screen shows only those. */
 class AuditReport extends ListReport

@@ -58,7 +58,6 @@ class Subscription extends Model
     public static function renewingWithin(int $days): Collection
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::Trialing])
             ->whereNotNull('current_period_ends_at')
             ->whereBetween('current_period_ends_at', [now(), now()->addDays($days)])
@@ -76,7 +75,6 @@ class Subscription extends Model
     public static function struggling(): Collection
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
             ->with('business')
             ->orderBy('current_period_ends_at')
@@ -117,7 +115,6 @@ class Subscription extends Model
     public static function scheduledCancellations(): Collection
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereNotNull('canceled_at')
             ->where('current_period_ends_at', '>=', now())
             ->with('business')
@@ -128,14 +125,13 @@ class Subscription extends Model
     /** Real businesses riding a plan, whatever the state of their subscription: they are who an edit reaches. */
     public static function countOnPlan(string $code): int
     {
-        return self::query()->ofRealBusinesses()->where('plan', $code)->count();
+        return self::query()->where('plan', $code)->count();
     }
 
     /** How many subscriptions the recurring revenue is actually made of; with a plan, that plan's. */
     public static function payingCount(?string $plan = null): int
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
             ->when($plan !== null, fn (Builder $query) => $query->where('plan', $plan))
             ->count();
@@ -144,7 +140,7 @@ class Subscription extends Model
     /** How many are still on their trial: future revenue, not current. */
     public static function trialingCount(): int
     {
-        return self::query()->ofRealBusinesses()->where('status', SubscriptionStatus::Trialing)->count();
+        return self::query()->where('status', SubscriptionStatus::Trialing)->count();
     }
 
     /**
@@ -156,7 +152,6 @@ class Subscription extends Model
     public static function monthlyRecurringRevenue(?string $plan = null): float
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
             ->when($plan !== null, fn (Builder $query) => $query->where('plan', $plan))
             ->get(['plan', 'billing_cycle'])
@@ -173,7 +168,6 @@ class Subscription extends Model
     public static function monthlyValueByBusiness(): array
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])
             ->get(['business_id', 'plan', 'billing_cycle'])
             ->mapWithKeys(fn (Subscription $subscription): array => [(int) $subscription->business_id => $subscription->monthlyValue()])
@@ -189,23 +183,10 @@ class Subscription extends Model
     public static function trialingBusinessIds(): array
     {
         return self::query()
-            ->ofRealBusinesses()
             ->where('status', SubscriptionStatus::Trialing)
             ->pluck('business_id')
             ->map(fn ($id): int => (int) $id)
             ->all();
-    }
-
-    /**
-     * Out with the landing's eight demo businesses. They carry a seeded
-     * subscription each, and counted in they were 632 of the 790 the Inicio
-     * showed as MRR: a figure 5 times its truth, read as the real one.
-     *
-     * @param  Builder<Subscription>  $query
-     */
-    public function scopeOfRealBusinesses(Builder $query): void
-    {
-        $query->whereNotIn('business_id', Business::demoIds());
     }
 
     /**
@@ -234,7 +215,6 @@ class Subscription extends Model
     public static function collectionQueue(int $renewalDays = 7): Collection
     {
         return self::query()
-            ->ofRealBusinesses()
             ->where(fn (Builder $owing): Builder => $owing
                 ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
                 ->orWhere(fn (Builder $soon): Builder => $soon
@@ -257,7 +237,6 @@ class Subscription extends Model
     public static function amountAtRisk(): float
     {
         return self::query()
-            ->ofRealBusinesses()
             ->whereIn('status', [SubscriptionStatus::PastDue, SubscriptionStatus::Paused])
             ->get(['plan', 'billing_cycle'])
             ->sum(fn (Subscription $subscription): float => $subscription->monthlyValue());

@@ -245,7 +245,7 @@ class PlatformSensors
 
     private function whatsappLinks(): SensorReadingDto
     {
-        $linked = Business::query()->where('is_demo', false)->whereNotNull('whatsapp_instance');
+        $linked = Business::query()->whereNotNull('whatsapp_instance');
         $total = (clone $linked)->count();
         $up = (clone $linked)->whereNotNull('whatsapp_connected_at')->count();
         $down = $total - $up;
@@ -267,7 +267,7 @@ class PlatformSensors
 
     private function signups(): SensorReadingDto
     {
-        $today = Business::query()->where('is_demo', false)->where('created_at', '>=', now()->startOfDay());
+        $today = Business::query()->where('created_at', '>=', now()->startOfDay());
         $count = (clone $today)->count();
         $last = (clone $today)->max('created_at');
 
@@ -295,7 +295,6 @@ class PlatformSensors
     {
         $count = Subscription::query()
             ->where('status', $state->value)
-            ->whereIn('business_id', Business::query()->where('is_demo', false)->select('id'))
             ->count();
 
         return $count === 0
@@ -305,7 +304,7 @@ class PlatformSensors
 
     private function suspended(): SensorReadingDto
     {
-        $count = Business::query()->where('is_demo', false)->whereNotNull('suspended_at')->count();
+        $count = Business::query()->whereNotNull('suspended_at')->count();
 
         return $count === 0
             ? new SensorReadingDto('suspended', 'compliance', Status::Ok, '0', __('platform_events.detail.suspended_none'))
@@ -314,7 +313,7 @@ class PlatformSensors
 
     private function appeals(): SensorReadingDto
     {
-        $count = Business::query()->where('is_demo', false)->whereNotNull('suspended_at')->whereNotNull('appeal_message')->count();
+        $count = Business::query()->whereNotNull('suspended_at')->whereNotNull('appeal_message')->count();
 
         return $count === 0
             ? new SensorReadingDto('appeals', 'compliance', Status::Ok, '0', __('platform_events.detail.appeals_none'))

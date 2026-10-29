@@ -17,8 +17,10 @@ use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\SuggestionStatus;
 use App\Enums\WhatsAppLinkState;
+use App\Models\Scopes\LandingExamplesOut;
 use App\Services\EvolutionApi;
 use App\Services\PlatformWhatsApp;
+use App\Traits\BelongsToBusiness;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
@@ -56,7 +58,9 @@ class Business extends Model
     use HasFactory;
 
     use Localizable;
-    use LogsActivity;
+    use LogsActivity {
+        shouldLogEvent as activityShouldLogEvent;
+    }
     use SearchesText;
 
     // A business is never deleted, only deactivated: the records hanging off it
@@ -78,6 +82,12 @@ class Business extends Model
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('business');
+    }
+
+    /** The landing's examples are not the platform's: nothing they do reaches the audit trail. */
+    protected function shouldLogEvent(string $eventName): bool
+    {
+        return ! $this->is_demo && $this->activityShouldLogEvent($eventName);
     }
 
     /**
@@ -109,6 +119,8 @@ class Business extends Model
      */
     protected static function booted(): void
     {
+        static::addGlobalScope(new LandingExamplesOut);
+
         static::creating(function (self $business): void {
             $business->referral_code ??= self::freshReferralCode();
             $business->booking_code ??= self::freshCode('booking_code');
@@ -284,7 +296,7 @@ class Business extends Model
     {
         $email = self::DEMO_EMAILS[$rubro] ?? null;
 
-        return $email === null ? null : self::query()->where('billing_email', $email)->first();
+        return $email === null ? null : self::query()->where('is_demo', true)->where('billing_email', $email)->first();
     }
 
     /**
@@ -297,7 +309,6 @@ class Business extends Model
     {
         return self::query()
             ->where('country_id', $countryId)
-            ->where('is_demo', false)
             ->where('is_active', true)
             ->with('users:id,business_id,email')
             ->orderBy('name')
@@ -307,17 +318,16 @@ class Business extends Model
     }
 
     /**
-     * The ids of the landing's own businesses, as a subquery to exclude.
-     *
-     * The ONE place that answers "is this ours": asking the column instead of
-     * matching the seeded email means a demo added tomorrow with any other
-     * address cannot sneak into the money. Stripe's test mode, in one flag.
+     * The ids of the landing's own businesses, as a subquery to exclude. Read by
+     * the tenant scope ({@see BelongsToBusiness}) so no table of the platform
+     * shows their rows; `Business` itself leaves them out on its own scope.
      *
      * @return Builder<self>
      */
     public static function demoIds(): Builder
     {
-        return self::query()->where('is_demo', true)->select('id');
+        // Trashed too: an example taken off the hero must not bring its rows back into the platform.
+        return self::withTrashed()->where('is_demo', true)->select('id');
     }
 
     /**
@@ -327,7 +337,7 @@ class Business extends Model
      */
     public static function servedCount(): int
     {
-        return self::query()->where('is_demo', false)->count();
+        return self::query()->count();
     }
 
     /**
@@ -936,7 +946,7 @@ class Business extends Model
      */
     public static function directoryTotal(string $situation = ''): int
     {
-        return ($situation === 'removed' ? self::onlyTrashed() : self::query())->where('is_demo', false)->count();
+        return ($situation === 'removed' ? self::onlyTrashed() : self::query())->count();
     }
 
     /**
@@ -971,7 +981,6 @@ class Business extends Model
     private static function directoryQuery(string $search, string $situation): Builder
     {
         return ($situation === 'removed' ? self::onlyTrashed() : self::query())
-            ->where('is_demo', false)
             // The term goes to the database, not to a filter in memory: that is
             // what makes "Odontologico" find "Odontológico".
             ->when(trim($search) !== '', fn (Builder $query) => $query->whereTextMatches(['name'], trim($search)))
@@ -1089,7 +1098,6 @@ class Business extends Model
         // Trashed too: a removed business is opened to be restored.
         return self::withTrashed()
             ->whereKey($id)
-            ->where('is_demo', false)
             ->with(['subscription', 'payments' => fn (HasMany $query) => $query->latest()->limit($payments)])
             ->first();
     }

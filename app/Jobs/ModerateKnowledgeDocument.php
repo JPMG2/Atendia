@@ -31,13 +31,20 @@ class ModerateKnowledgeDocument implements ShouldQueue
 
     public function handle(ContentModeration $moderation, RecordModerationFlag $record): void
     {
-        $document = KnowledgeDocument::query()->with('business')->find($this->documentId);
+        $owner = KnowledgeDocument::ownerOf($this->documentId);
 
-        if ($document === null || $document->business === null) {
+        if ($owner === null) {
             return;
         }
 
-        app(Tenant::class)->for((int) $document->business_id, function () use ($document, $moderation, $record): void {
+        // Adopted BEFORE reading: without a tenant the document of a landing example is not there.
+        app(Tenant::class)->for($owner, function () use ($moderation, $record): void {
+            $document = KnowledgeDocument::query()->with('business')->find($this->documentId);
+
+            if ($document === null || $document->business === null) {
+                return;
+            }
+
             $verdict = $moderation->text($document->title."\n".$document->content);
 
             // Unchecked is not clean: the queue retries until moderation answers.

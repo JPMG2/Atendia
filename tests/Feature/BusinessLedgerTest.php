@@ -2,14 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\AuditTrail;
 use App\Classes\Main\BusinessLedger;
 use App\Enums\SubscriptionStatus;
+use App\Models\AiUsage;
 use App\Models\Business;
+use App\Models\ComplianceEvent;
+use App\Models\Conversation;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\SupportTicket;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Database\Seeders\MenuSeeder;
+use Database\Seeders\PlatformSettingSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -94,6 +104,45 @@ test('the landing demos are never listed, counted or opened as a client, on the 
         ->assertDontSee('Kiosco de Muestra')
         ->set('state', 'paused')
         ->assertDontSee('Kiosco de Muestra');
+});
+
+test('a landing example with a whole history is in no admin screen, and the billing cycle never touches it', function (): void {
+    $this->seed([MenuSeeder::class, PlatformSettingSeeder::class]);
+    $this->travelTo(CarbonImmutable::parse('next wednesday 09:00', 'America/Caracas'));
+    config(['atendia.schedule.billing_cycle' => '09:00']);
+    $real = ledgerBusinessOnPlan('Odontología Norte', SubscriptionStatus::Active, ['current_period_ends_at' => now()->subDays(30)]);
+    $demo = ledgerBusinessOnPlan('Kiosco de Muestra', SubscriptionStatus::Active, ['current_period_ends_at' => now()->subDays(30)]);
+    $real->forceFill(['timezone' => 'America/Caracas'])->save();
+    $demo->forceFill(['is_demo' => true, 'suspended_at' => now(), 'timezone' => 'America/Caracas'])->save();
+    ComplianceEvent::factory()->create(['business_id' => $demo->id]);
+    SupportTicket::factory()->create(['business_id' => $demo->id]);
+    Conversation::factory()->create(['business_id' => $demo->id, 'contact_name' => 'Kiosco de Muestra']);
+
+    DB::table('ai_usages')->insert(['business_id' => null, 'kind' => 'AskAdmin', 'model' => 'gpt-6-luna', 'input_tokens' => 10, 'output_tokens' => 5, 'created_at' => now(), 'updated_at' => now()]);
+
+    $this->artisan('atendia:billing-cycle')->assertSuccessful();
+
+    // The platform's own spend has no business and stays; nothing logged about the example reaches the trail.
+    expect(AiUsage::query()->whereNull('business_id')->count())->toBe(1)
+        ->and(AuditTrail::rows()->where('subject_type', $demo->getMorphClass())->where('subject_id', $demo->id))->toBeEmpty();
+
+    // Read past the models on purpose: they no longer see the example at all.
+    expect($real->subscription()->latest('id')->value('status'))->toBe(SubscriptionStatus::Paused)
+        ->and(DB::table('subscriptions')->where('business_id', $demo->id)->pluck('status')->unique()->all())->not->toContain(SubscriptionStatus::Paused->value)
+        ->and(DB::table('compliance_events')->where('business_id', $demo->id)->count())->toBe(1)
+        ->and(Subscription::query()->where('business_id', $demo->id)->count())->toBe(0)
+        ->and(ComplianceEvent::query()->where('business_id', $demo->id)->count())->toBe(0);
+
+    $screens = collect(Route::getRoutes()->getRoutesByName())
+        ->filter(fn ($route, string $name): bool => str_starts_with($name, 'admin.') && in_array('GET', $route->methods(), true) && $route->parameterNames() === [] && $name !== 'admin.ws-demo');
+
+    expect($screens)->not->toBeEmpty();
+
+    $this->actingAs($this->admin);
+
+    foreach ($screens as $name => $route) {
+        $this->get(route($name))->assertOk()->assertDontSee('Kiosco de Muestra');
+    }
 });
 
 test('the web ficha prints the cards and payments of the piece, and what the plan row says about leaving', function (): void {

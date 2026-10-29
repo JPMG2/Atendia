@@ -112,7 +112,6 @@ class ConversationQuestion extends Model
         return static::query()
             ->whereIn('conversation_id', $threads)
             ->where('resolved_by', QuestionResolution::Nobody)
-            ->whereNotIn('business_id', Business::demoIds())
             ->with(['business:id,name', 'conversation:id,contact_name,contact_phone'])
             ->latest('id')
             ->get()

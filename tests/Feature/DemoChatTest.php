@@ -6,6 +6,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
 use App\Models\DemoMetric;
 use App\Models\KnowledgeDocument;
+use App\Services\Tenant;
 use Database\Seeders\DemoBusinessSeeder;
 use Database\Seeders\DemoTagSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -113,12 +114,17 @@ test('the demo seeder is idempotent and feeds the clinic knowledge', function ()
     $this->seed(DemoBusinessSeeder::class);
     $this->seed(DemoBusinessSeeder::class);
 
-    expect(Business::query()->whereIn('billing_email', Business::DEMO_EMAILS)->count())->toBe(8)
+    // The examples are reached by name and their knowledge from inside their own tenant; the platform sees neither.
+    $knowledge = fn (string $rubro): int => app(Tenant::class)->for(Business::demo($rubro)->id, fn (): int => KnowledgeDocument::query()->count());
+
+    expect(Business::query()->where('is_demo', true)->whereIn('billing_email', Business::DEMO_EMAILS)->count())->toBe(8)
+        ->and(Business::query()->count())->toBe(0)
+        ->and(KnowledgeDocument::query()->count())->toBe(0)
         ->and(Business::demo()->name)->toBe('Clínica Vida')
-        ->and(KnowledgeDocument::query()->where('business_id', Business::demo()->id)->count())->toBe(6)
-        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('peluqueria')->id)->count())->toBe(4)
-        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('panaderia')->id)->count())->toBe(4)
-        ->and(KnowledgeDocument::query()->where('business_id', Business::demo('kiosco')->id)->count())->toBe(4);
+        ->and($knowledge('clinica'))->toBe(6)
+        ->and($knowledge('peluqueria'))->toBe(4)
+        ->and($knowledge('panaderia'))->toBe(4)
+        ->and($knowledge('kiosco'))->toBe(4);
 });
 
 test('the demo businesses never inflate the landing social proof', function (): void {

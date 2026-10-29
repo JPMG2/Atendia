@@ -53,7 +53,6 @@ class AiUsage extends Model
             ->whereNotNull('business_id')
             ->where('created_at', '>=', $since)
             ->when($until !== null, fn ($query) => $query->where('created_at', '<', $until))
-            ->whereNotIn('business_id', Business::demoIds())
             ->groupBy('business_id')
             ->orderByDesc('total')
             ->orderBy('business_id')

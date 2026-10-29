@@ -71,7 +71,6 @@ class AssistantRating extends Model
         return static::query()
             ->where('is_good', false)
             ->where('created_at', '>=', now()->subDays($sinceDays))
-            ->whereNotIn('business_id', Business::demoIds())
             ->with(['business:id,name', 'message:id,conversation_id,body', 'message.conversation:id,contact_name,contact_phone'])
             ->latest()
             ->get();

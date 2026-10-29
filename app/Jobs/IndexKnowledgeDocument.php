@@ -23,20 +23,28 @@ class IndexKnowledgeDocument implements ShouldQueue
      */
     public function handle(KnowledgeIndexer $indexer): void
     {
-        $document = KnowledgeDocument::find($this->documentId);
+        $owner = KnowledgeDocument::ownerOf($this->documentId);
 
-        if ($document === null) {
+        if ($owner === null) {
             return;
         }
 
-        // The worker has no session: the job adopts the document's business so
-        // both the Eloquent scope and the RLS fence apply while it runs.
-        try {
-            app(Tenant::class)->for((int) $document->business_id, fn () => $indexer->index($document));
-        } catch (Throwable $e) {
-            $document->forceFill(['status' => 'failed'])->save();
+        // The worker has no session: the job adopts the document's business BEFORE
+        // reading it, so the Eloquent scope and the RLS fence apply while it runs.
+        app(Tenant::class)->for($owner, function () use ($indexer): void {
+            $document = KnowledgeDocument::find($this->documentId);
 
-            throw $e;
-        }
+            if ($document === null) {
+                return;
+            }
+
+            try {
+                $indexer->index($document);
+            } catch (Throwable $e) {
+                $document->forceFill(['status' => 'failed'])->save();
+
+                throw $e;
+            }
+        });
     }
 }

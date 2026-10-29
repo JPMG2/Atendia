@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Classes\Main;
 
+use App\Models\Activity;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Lang;
-use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Models\Activity as SpatieActivity;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -122,7 +123,7 @@ final class AuditTrail
     }
 
     /** Whether this entry is one she should not have to look for. */
-    public static function isStrong(Activity $entry): bool
+    public static function isStrong(SpatieActivity $entry): bool
     {
         return $entry->log_name === self::ACCESS
             || in_array((string) $entry->description, self::STRONG, true);
@@ -134,7 +135,7 @@ final class AuditTrail
      * The row survives its subject — that is the point of an audit — so a
      * deleted business still has to read as something, not as a blank.
      */
-    public static function subjectOf(Activity $entry): string
+    public static function subjectOf(SpatieActivity $entry): string
     {
         $kind = __('admin.audit.subjects.'.class_basename((string) $entry->subject_type));
         // Not every subject has a name (a plan has a code): reading a missing attribute throws under strict models.

@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\Business;
 use App\Models\Country;
 use App\Models\KnowledgeDocument;
+use App\Services\Tenant;
 use Illuminate\Database\Seeder;
 
 /**
@@ -27,7 +28,7 @@ class DemoBusinessSeeder extends Seeder
             ?? Country::factory()->create()->id;
 
         foreach ($this->rubros() as $rubro => $definition) {
-            $business = Business::query()->updateOrCreate(
+            $business = Business::query()->where('is_demo', true)->updateOrCreate(
                 ['billing_email' => Business::DEMO_EMAILS[$rubro]],
                 // `is_demo` is written on every run on purpose: it is what
                 // keeps these eight out of the money, and a demo that lost the
@@ -35,12 +36,15 @@ class DemoBusinessSeeder extends Seeder
                 ['name' => $definition['name'], 'city' => 'Buenos Aires', 'country_id' => $countryId, 'is_active' => true, 'is_demo' => true],
             );
 
-            foreach ($definition['faqs'] as $faq) {
-                KnowledgeDocument::query()->updateOrCreate(
-                    ['business_id' => $business->id, 'title' => $faq['title']],
-                    ['source_type' => 'faq', 'content' => $faq['content']],
-                );
-            }
+            // An example's rows are seen only from inside its own tenant.
+            app(Tenant::class)->for($business->id, function () use ($business, $definition): void {
+                foreach ($definition['faqs'] as $faq) {
+                    KnowledgeDocument::query()->updateOrCreate(
+                        ['business_id' => $business->id, 'title' => $faq['title']],
+                        ['source_type' => 'faq', 'content' => $faq['content']],
+                    );
+                }
+            });
         }
     }
 
