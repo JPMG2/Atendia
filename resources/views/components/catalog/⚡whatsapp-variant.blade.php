@@ -115,7 +115,11 @@ new class extends Component
             <td class="catalog-cell-name catalog-cell-fill">
                 {{-- One child for the stacked phone cell; the line under it is the model's, and the phone reads it too. --}}
                 <span class="block">
-                    <span x-text="row.season"></span>
+                    {{-- The season's dates under its name: as columns they pushed the table past its box at 1280. --}}
+                    <span class="catalog-cell-primary">
+                        <span class="name" x-text="row.season"></span>
+                        <span class="sub" x-text="row.dates"></span>
+                    </span>
                     <span class="text-sm text-muted block" x-show="row.inherits_note" x-text="row.inherits_note"></span>
                     {{-- Where what it inherits is changed, in a tab of its own: the list stays where it was. --}}
                     <a
@@ -128,19 +132,15 @@ new class extends Component
                     >{{ __('catalog.whatsapp_variant.inherits.edit') }}</a>
                 </span>
             </td>
-            <td class="catalog-cell-sym" x-text="row.starts_at"></td>
-            <td class="catalog-cell-sym" x-text="row.ends_at"></td>
             {{-- "Hereda" comes worded from the model, greyed by the key the phone also reads. --}}
             <td class="catalog-cell-sym" x-bind:class="row.phone_inherits ? 'text-muted' : ''" x-text="row.phone_shown"></td>
             <td class="catalog-cell-sym" x-bind:class="row.hours_inherits ? 'text-muted' : ''" x-text="row.hours_shown"></td>
             <td>
-                {{-- Switched on and inside its dates are different things, and
-                only the second one is what the visitor is reading right now. --}}
+                {{-- Switched on and inside its dates are different things, and only the second one is what the
+                visitor is reading right now; when grey, the model's word says which one is missing (the phone reads it too). --}}
                 <span class="catalog-status" x-bind:class="row.running ? 'is-on' : 'is-off'">
                     <span class="dot"></span
-                    ><span
-                        x-text="row.running ? {{ \Illuminate\Support\Js::from(__('catalog.whatsapp_variant.status.running')) }} : {{ \Illuminate\Support\Js::from(__('catalog.whatsapp_variant.status.waiting')) }}"
-                    ></span>
+                    ><span x-text="row.running_shown"></span>
                 </span>
             </td>
             {{-- The switch IS the cell: `.stop` so it does not also open the editor. --}}

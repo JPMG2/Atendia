@@ -101,7 +101,7 @@ class CatalogTable
      */
     public array $rows {
         get {
-            $keys = ['id', ...collect($this->columns)->flatMap(fn (CatalogColumnDto $column): array => array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning]))->all()];
+            $keys = ['id', ...collect($this->columns)->flatMap(fn (CatalogColumnDto $column): array => array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning, $column->offFrom]))->all()];
 
             return $this->matching
                 ->take($this->limit)

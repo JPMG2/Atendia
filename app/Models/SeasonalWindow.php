@@ -158,6 +158,12 @@ class SeasonalWindow extends Model implements DataTable, HasColumns, HasHighligh
                 'ends_at' => $window->ends_at?->format('d/m/Y') ?? '',
                 'priority' => $window->priority,
                 'running' => $window->is_active && $window->coversToday(),
+                // A grey pill says why it is not showing: the switch, or the dates. Two causes, two fixes.
+                'running_shown' => match (true) {
+                    ! $window->is_active => __('catalog.seasonal_window.status.off'),
+                    $window->coversToday() => __('catalog.seasonal_window.status.running'),
+                    default => __('catalog.seasonal_window.status.waiting'),
+                },
                 'active' => $window->is_active,
                 'hero' => (int) $window->hero_count,
                 'whatsapp' => (int) $window->whatsapp_count,
@@ -233,7 +239,7 @@ class SeasonalWindow extends Model implements DataTable, HasColumns, HasHighligh
             new CatalogColumnDto('starts_at', __('catalog.seasonal_window.columns.starts_at'), CatalogCell::Symbol),
             new CatalogColumnDto('ends_at', __('catalog.seasonal_window.columns.ends_at'), CatalogCell::Symbol),
             new CatalogColumnDto('priority', __('catalog.seasonal_window.columns.priority'), CatalogCell::Symbol),
-            new CatalogColumnDto('running', __('catalog.seasonal_window.columns.running'), CatalogCell::Active, on: __('catalog.seasonal_window.status.running'), off: __('catalog.seasonal_window.status.waiting')),
+            new CatalogColumnDto('running', __('catalog.seasonal_window.columns.running'), CatalogCell::Active, on: __('catalog.seasonal_window.status.running'), off: __('catalog.seasonal_window.status.waiting'), offFrom: 'running_shown'),
             new CatalogColumnDto('active', __('catalog.seasonal_window.columns.status'), CatalogCell::Active, on: __('catalog.seasonal_window.status.active'), off: __('catalog.seasonal_window.status.inactive')),
             // Repeating creates a season: a control of the web; the phone reads only.
             new CatalogColumnDto('id', __('catalog.seasonal_window.columns.repeat'), CatalogCell::Text, webOnly: true),

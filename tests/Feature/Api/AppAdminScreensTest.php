@@ -1200,7 +1200,10 @@ test('Temporadas and WhatsApp por temporada serve the web\'s cells and words, an
 
     // Blank inherits from the company row: said in words and greyed, and the line under the season names what it
     // inherits; the company has no week, so only its number is named.
-    expect(array_column($variants['columns'], 'cell'))->toBe(['name', 'symbol', 'symbol', 'symbol', 'symbol', 'active', 'active'])
+    // The season's dates ride under its name (`sub`), not as columns: with its own number and week a row fits at 1280.
+    expect(array_column($variants['columns'], 'cell'))->toBe(['name', 'symbol', 'symbol', 'active', 'active'])
+        ->and($variants['columns'][0]['sub'])->toBe('dates')
+        ->and($variants['rows'][0]['dates'])->toBe(__('catalog.whatsapp_variant.dates', ['from' => SeasonalWindow::today()->subDay()->format('d/m/Y'), 'to' => SeasonalWindow::today()->addDays(3)->format('d/m/Y')]))
         ->and($variants['columns'][0]['note'])->toBe('inherits_note')
         ->and($variants['columns'][0]['link'])->toBe(['key' => 'company_url', 'label' => __('catalog.whatsapp_variant.inherits.edit')])
         ->and($variants['rows'][0]['company_url'])->toBe(route('admin.company'))

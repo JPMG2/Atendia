@@ -122,7 +122,7 @@ it('only names keys the row really carries', function (string $component, string
     $keys = array_keys((new $model)->catalogRows()->firstOrFail());
 
     foreach ((new $model)->catalogColumns() as $column) {
-        foreach (array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning, ...$column->searchAlso]) as $key) {
+        foreach (array_filter([$column->key, $column->sub, $column->tag, $column->icon, $column->codeBelow, $column->muted, $column->link['key'] ?? null, $column->note, $column->noteWarning, $column->offFrom, ...$column->searchAlso]) as $key) {
             expect($keys)->toContain($key);
         }
     }
@@ -152,7 +152,7 @@ it('paints each cell on the web with the class its kind promises the phone', fun
         // A name with a line under it is the web's two-line `catalog-cell-primary`, and that line reads its key.
         $promised = $column->sub !== null ? 'catalog-cell-primary' : (CELL_CLASSES[$column->cell->value] ?? null);
 
-        foreach (array_filter([$column->sub, $column->tag, $column->codeBelow, $column->muted, $column->note, $column->noteWarning]) as $carried) {
+        foreach (array_filter([$column->sub, $column->tag, $column->codeBelow, $column->muted, $column->note, $column->noteWarning, $column->offFrom]) as $carried) {
             expect($cell)->toContain('row.'.$carried);
         }
 

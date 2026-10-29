@@ -208,18 +208,7 @@ class Company extends Model
     {
         $company = self::current();
         $windows = SeasonalWindow::inForce($day);
-
-        $variants = $windows->isEmpty()
-            ? collect()
-            : WhatsappVariant::query()
-                ->where('is_active', true)
-                ->whereIn('seasonal_window_id', $windows->pluck('id'))
-                ->get();
-
-        // Windows come strongest first, so the first one with a row wins.
-        $variant = $windows
-            ->map(fn (SeasonalWindow $window): ?WhatsappVariant => $variants->firstWhere('seasonal_window_id', $window->id))
-            ->first(fn (?WhatsappVariant $row): bool => $row !== null);
+        $variant = WhatsappVariant::speaking($windows);
 
         // The strongest season that wrote a notice; its name is the one the footer shows,
         // since the visible text belongs to it. With no notice, the one whose variant speaks.

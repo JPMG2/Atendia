@@ -9,14 +9,17 @@ use App\Models\Business;
 use App\Models\Company;
 use App\Models\ComplianceEvent;
 use App\Models\Country;
+use App\Models\DemoTag;
 use App\Models\ModerationFlag;
 use App\Models\Payment;
 use App\Models\PlatformContact;
 use App\Models\Province;
 use App\Models\Region;
+use App\Models\SeasonalWindow;
 use App\Models\Subscription;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Models\WhatsappVariant;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -108,6 +111,23 @@ test('every master of the catalog hub exports with real headings and obeys its o
     $client = User::factory()->create();
     $client->syncRoles(['client']);
     $this->actingAs($client)->get(route('reports.show', ['report' => 'catalogo', 'format' => 'csv', 'maestro' => 'currency']))->assertForbidden();
+});
+
+test('a season, its WhatsApp and its examples export what the screen says: why one is off, and «Hereda» rather than a blank', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    $today = SeasonalWindow::today();
+    $off = SeasonalWindow::factory()->create(['name' => 'Navidad Qzv', 'is_active' => false, 'starts_at' => $today->subDay(), 'ends_at' => $today->addDays(5)]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $off->id, 'phone' => null, 'opening_schedule' => null, 'is_active' => true]);
+    DemoTag::factory()->create(['slug' => 'qzv', 'label' => 'Taller Qzv', 'business_name' => null, 'seasonal_window_id' => $off->id]);
+    DemoTag::factory()->create(['slug' => 'qzy', 'label' => 'Kiosco Qzy', 'business_name' => 'Kiosco Wvp', 'seasonal_window_id' => null]);
+    $line = fn (string $master, string $needle): string => collect(explode("\n", platformCsv('catalogo', ['maestro' => $master])))->first(fn (string $row): bool => str_contains($row, $needle)) ?? '';
+
+    expect($line('seasonal-window', 'Navidad Qzv'))->toContain(__('catalog.seasonal_window.status.off'))->not->toContain(__('catalog.seasonal_window.status.waiting'))
+        ->and($line('whatsapp-variant', 'Navidad Qzv'))->toContain(__('catalog.whatsapp_variant.status.season_off'))
+        ->and(substr_count($line('whatsapp-variant', 'Navidad Qzv'), __('catalog.whatsapp_variant.status.inherits')))->toBe(2)
+        ->and($line('demo-tag', 'Taller Qzv'))->toContain(__('catalog.demo_tag.status.inherits'))
+        // A year-round example says so instead of leaving its season blank.
+        ->and($line('demo-tag', 'Kiosco Qzy'))->toContain(__('catalog.demo_tag.status.evergreen'));
 });
 
 test('a platform report is stamped on the platform clock, not on UTC', function (): void {

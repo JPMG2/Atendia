@@ -17,6 +17,7 @@ use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -412,6 +413,40 @@ test('the season list opens with the season the landing speaks with today, and s
     SeasonalWindow::factory()->create(['name' => 'Fuerte', 'is_active' => true, 'priority' => 5, 'starts_at' => $today->subDays(2), 'ends_at' => $today]);
     expect($line())->toBe(['when' => 'Fuerte', 'text' => trans_choice('catalog.seasonal_window.highlights.ends', 0, ['count' => 0, 'date' => $today->format('d/m/Y')]), 'mono' => false])
         ->and($line()['when'])->not->toBe($weak->name);
+});
+
+test('a grey pill says why it is off: the switch, the season\'s switch, or the dates', function (): void {
+    $today = SeasonalWindow::today();
+    $offInside = SeasonalWindow::factory()->create(['name' => 'Apagada dentro', 'is_active' => false, 'starts_at' => $today->subDay(), 'ends_at' => $today->addDay()]);
+    $onOutside = SeasonalWindow::factory()->create(['name' => 'Prendida fuera', 'is_active' => true, 'starts_at' => $today->addDays(5), 'ends_at' => $today->addDays(9)]);
+    $running = SeasonalWindow::factory()->create(['name' => 'En curso', 'is_active' => true, 'starts_at' => $today, 'ends_at' => $today->addDay()]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $offInside->id, 'is_active' => true]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $onOutside->id, 'is_active' => true]);
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $running->id, 'is_active' => false]);
+
+    $windows = (new SeasonalWindow)->catalogRows()->keyBy('name');
+    $variants = (new WhatsappVariant)->catalogRows()->keyBy('season');
+
+    expect($windows['Apagada dentro']['running_shown'])->toBe(__('catalog.seasonal_window.status.off'))
+        ->and($windows['Prendida fuera']['running_shown'])->toBe(__('catalog.seasonal_window.status.waiting'))
+        ->and($windows['En curso']['running_shown'])->toBe(__('catalog.seasonal_window.status.running'))
+        ->and($variants['Apagada dentro']['running_shown'])->toBe(__('catalog.whatsapp_variant.status.season_off'))
+        ->and($variants['Prendida fuera']['running_shown'])->toBe(__('catalog.whatsapp_variant.status.waiting'))
+        ->and($variants['En curso']['running_shown'])->toBe(__('catalog.whatsapp_variant.status.off'));
+
+    WhatsappVariant::query()->update(['is_active' => true]);
+    expect((new WhatsappVariant)->catalogRows()->keyBy('season')['En curso']['running_shown'])->toBe(__('catalog.whatsapp_variant.status.running'));
+
+    // Two seasons in force: only the stronger one's variant is what the landing reads; the other says who wins.
+    $stronger = SeasonalWindow::factory()->create(['name' => 'Más fuerte', 'is_active' => true, 'priority' => 9, 'starts_at' => $today, 'ends_at' => $today->addDay()]);
+    $winner = WhatsappVariant::factory()->create(['seasonal_window_id' => $stronger->id, 'phone' => '+58-0414-9990000', 'is_active' => true]);
+    Cache::flush();
+    $variants = (new WhatsappVariant)->catalogRows()->keyBy('season');
+
+    expect($variants['Más fuerte']['running'])->toBeTrue()
+        ->and($variants['En curso']['running'])->toBeFalse()
+        ->and($variants['En curso']['running_shown'])->toBe(__('catalog.whatsapp_variant.status.outranked'))
+        ->and(Company::reach()['phone'])->toBe(preg_replace('/\D+/', '', $winner->phone));
 });
 
 test('with no season speaking today, the list says which one comes next and when, never a switched-off one', function (): void {

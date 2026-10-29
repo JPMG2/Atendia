@@ -95,12 +95,17 @@ test('Temporadas says what a season changes, amber when nothing, and WhatsApp po
     $quiet = SeasonalWindow::factory()->create(['name' => 'Pascua', 'notice' => null]);
     $busy = SeasonalWindow::factory()->create(['name' => 'Navidad', 'notice' => 'Atendemos hasta las 14']);
     WhatsappVariant::factory()->create(['seasonal_window_id' => $busy->id, 'phone' => null, 'opening_schedule' => null]);
+    $carnival = SeasonalWindow::factory()->create(['name' => 'Carnaval', 'notice' => 'Cerramos el lunes', 'is_active' => false, 'starts_at' => SeasonalWindow::today(), 'ends_at' => SeasonalWindow::today()->addDay()]);
+    // Its own number and week: the longest grey pill («Temporada apagada») without adding greyed cells.
+    WhatsappVariant::factory()->create(['seasonal_window_id' => $carnival->id, 'phone' => '+58-0414-1112233', 'opening_schedule' => [1 => ['09:00', '13:00']], 'is_active' => true]);
     // The company row is read once per process and the seeders already read it empty. A blank field names what it inherits from it.
     Company::factory()->create(['phone' => '+58-0412-5550199', 'opening_schedule' => [1 => ['09:00', '18:00']]]);
     Once::flush();
 
     $page = visit('/admin/catalogs')->resize($width, 900);
-    $page->click('Temporadas')->assertNoJavaScriptErrors()->assertSee(__('catalog.seasonal_window.content.none'));
+    $page->click('Temporadas')->assertNoJavaScriptErrors()->assertSee(__('catalog.seasonal_window.content.none'))
+        // Switched off inside its dates: the grey pill names the switch, not the dates.
+        ->assertSee(__('catalog.seasonal_window.status.off'));
     $page->script('document.querySelector(".catalog-view").scrollIntoView()');
     $page->wait(1)->screenshot(filename: 'catalog-seasons-'.$width);
 
@@ -110,7 +115,8 @@ test('Temporadas says what a season changes, amber when nothing, and WhatsApp po
 
     $variants = visit('/admin/catalogs')->resize($width, 900);
     $variants->click('WhatsApp por temporada')->assertNoJavaScriptErrors()
-        ->assertSee(__('catalog.whatsapp_variant.inherits.phone', ['value' => '+58-0412-5550199']));
+        ->assertSee(__('catalog.whatsapp_variant.inherits.phone', ['value' => '+58-0412-5550199']))
+        ->assertSee(__('catalog.whatsapp_variant.status.season_off'));
     $variants->script('document.querySelector(".catalog-view").scrollIntoView()');
     $variants->wait(1)->screenshot(filename: 'catalog-variants-'.$width);
 

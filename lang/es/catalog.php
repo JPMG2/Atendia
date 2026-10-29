@@ -565,6 +565,7 @@ return [
             'inactive' => 'Inactiva',
             'running' => 'En curso',
             'waiting' => 'Fuera de fecha',
+            'off' => 'Apagada',
         ],
 
         'content' => [
@@ -726,6 +727,7 @@ return [
         'empty' => 'No hay variantes que coincidan con la búsqueda.',
         'toggled_on' => 'La variante de :name quedó encendida.',
         'toggled_off' => 'La variante de :name quedó apagada.',
+        'dates' => ':from – :to',
 
         'columns' => [
             'season' => 'Temporada',
@@ -742,6 +744,9 @@ return [
             'inactive' => 'Apagada',
             'running' => 'En curso',
             'waiting' => 'Fuera de fechas',
+            'off' => 'Variante apagada',
+            'season_off' => 'Temporada apagada',
+            'outranked' => 'Manda otra temporada',
             'inherits' => 'Hereda',
             'own_week' => 'Propio',
         ],

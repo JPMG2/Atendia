@@ -92,6 +92,9 @@ class WhatsappVariant extends Model implements DataTable, HasColumns, Removable
             ? null
             : (new OpeningHours(OpeningHours::normalize($company->opening_schedule), Company::localTimezone()))->summary;
 
+        // The one the landing reads today, chosen as `Company::reachFor()` chooses it: overlapping seasons speak through one.
+        $speakingId = self::speaking(SeasonalWindow::inForce())?->id;
+
         return $this->newQuery()
             ->with('seasonalWindow')
             ->get()
@@ -101,12 +104,25 @@ class WhatsappVariant extends Model implements DataTable, HasColumns, Removable
                 'season' => $variant->seasonalWindow?->name ?? '',
                 'starts_at' => $variant->seasonalWindow?->starts_at?->format('d/m/Y') ?? '',
                 'ends_at' => $variant->seasonalWindow?->ends_at?->format('d/m/Y') ?? '',
+                // The season's dates, not the variant's: under the name, so a variant with its own number and week fits at 1280.
+                'dates' => $variant->seasonalWindow === null ? '' : __('catalog.whatsapp_variant.dates', [
+                    'from' => $variant->seasonalWindow->starts_at?->format('d/m/Y') ?? '',
+                    'to' => $variant->seasonalWindow->ends_at?->format('d/m/Y') ?? '',
+                ]),
                 'phone' => $variant->phone ?? '',
                 // null inherits; a stored week, even an empty one, is its own.
                 'opening_hours' => $variant->opening_schedule === null
                     ? ''
                     : (new OpeningHours(OpeningHours::normalize($variant->opening_schedule), Company::localTimezone()))->summary,
-                'running' => $variant->is_active && ($variant->seasonalWindow?->is_active ?? false) && ($variant->seasonalWindow?->coversToday() ?? false),
+                'running' => $variant->id === $speakingId,
+                // A grey pill says why it is not speaking: its own switch, its season's switch, the dates, or a stronger season.
+                'running_shown' => match (true) {
+                    $variant->id === $speakingId => __('catalog.whatsapp_variant.status.running'),
+                    ! $variant->is_active => __('catalog.whatsapp_variant.status.off'),
+                    ! ($variant->seasonalWindow?->is_active ?? false) => __('catalog.whatsapp_variant.status.season_off'),
+                    ! $variant->seasonalWindow->coversToday() => __('catalog.whatsapp_variant.status.waiting'),
+                    default => __('catalog.whatsapp_variant.status.outranked'),
+                },
                 'active' => $variant->is_active,
             ])
             // Blank means "inherits", which is not the same as missing: said out loud, and greyed.
@@ -137,16 +153,36 @@ class WhatsappVariant extends Model implements DataTable, HasColumns, Removable
         return $parts === [] ? '' : __('catalog.whatsapp_variant.inherits.note', ['parts' => implode(' · ', $parts)]);
     }
 
+    /**
+     * The variant that speaks on the landing among the seasons in force: they come strongest first,
+     * so the first one with a variant switched on wins. The landing and the list ask this same question.
+     *
+     * @param  Collection<int, SeasonalWindow>  $windows
+     */
+    public static function speaking(Collection $windows): ?self
+    {
+        if ($windows->isEmpty()) {
+            return null;
+        }
+
+        $variants = self::query()
+            ->where('is_active', true)
+            ->whereIn('seasonal_window_id', $windows->pluck('id'))
+            ->get();
+
+        return $windows
+            ->map(fn (SeasonalWindow $window): ?self => $variants->firstWhere('seasonal_window_id', $window->id))
+            ->first(fn (?self $variant): bool => $variant !== null);
+    }
+
     /** @return list<CatalogColumnDto> */
     public function catalogColumns(): array
     {
         return [
-            new CatalogColumnDto('season', __('catalog.whatsapp_variant.columns.season'), CatalogCell::Name, fill: true, search: true, searchAlso: ['phone', 'opening_hours'], note: 'inherits_note', link: ['key' => 'company_url', 'label' => __('catalog.whatsapp_variant.inherits.edit')]),
-            new CatalogColumnDto('starts_at', __('catalog.whatsapp_variant.columns.starts_at'), CatalogCell::Symbol),
-            new CatalogColumnDto('ends_at', __('catalog.whatsapp_variant.columns.ends_at'), CatalogCell::Symbol),
+            new CatalogColumnDto('season', __('catalog.whatsapp_variant.columns.season'), CatalogCell::Name, fill: true, search: true, searchAlso: ['phone', 'opening_hours'], sub: 'dates', note: 'inherits_note', link: ['key' => 'company_url', 'label' => __('catalog.whatsapp_variant.inherits.edit')]),
             new CatalogColumnDto('phone_shown', __('catalog.whatsapp_variant.columns.phone'), CatalogCell::Symbol, muted: 'phone_inherits'),
             new CatalogColumnDto('hours_shown', __('catalog.whatsapp_variant.columns.opening_hours'), CatalogCell::Symbol, muted: 'hours_inherits'),
-            new CatalogColumnDto('running', __('catalog.whatsapp_variant.columns.running'), CatalogCell::Active, on: __('catalog.whatsapp_variant.status.running'), off: __('catalog.whatsapp_variant.status.waiting')),
+            new CatalogColumnDto('running', __('catalog.whatsapp_variant.columns.running'), CatalogCell::Active, on: __('catalog.whatsapp_variant.status.running'), off: __('catalog.whatsapp_variant.status.waiting'), offFrom: 'running_shown'),
             new CatalogColumnDto('active', __('catalog.whatsapp_variant.columns.status'), CatalogCell::Active, on: __('catalog.whatsapp_variant.status.active'), off: __('catalog.whatsapp_variant.status.inactive')),
         ];
     }

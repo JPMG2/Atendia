@@ -65,6 +65,19 @@ class CatalogReport extends ListReport
         'whatsapp-variant' => WhatsappVariant::class,
     ];
 
+    /**
+     * A key whose cell the screen draws from its worded copy, so the file says that word in its place:
+     * "inherits" or "all year" rather than a blank, "switched off" rather than a bare no. The switch of
+     * every master stays a yes or no, as in all the other exports.
+     *
+     * @var array<string, array<string, string>>
+     */
+    private const array EXPORTED_AS_SHOWN = [
+        'demo-tag' => ['business_name' => 'business_shown', 'season' => 'season_shown'],
+        'seasonal-window' => ['running' => 'running_shown'],
+        'whatsapp-variant' => ['phone' => 'phone_shown', 'opening_hours' => 'hours_shown', 'running' => 'running_shown'],
+    ];
+
     public string $title {
         get => __('reports/admin.catalog.title', ['master' => $this->form()?->title ?? '']);
     }
@@ -95,9 +108,10 @@ class CatalogReport extends ListReport
     protected function rows(ReportScope $scope): array
     {
         $keys = $this->keys();
+        $shown = self::EXPORTED_AS_SHOWN[$this->master()] ?? [];
 
         return $this->records()
-            ->map(fn (array $row): array => array_map(fn (string $key): string|int|float => $this->cell($row[$key] ?? null), $keys))
+            ->map(fn (array $row): array => array_map(fn (string $key): string|int|float => $this->cell($row[$shown[$key] ?? $key] ?? $row[$key] ?? null), $keys))
             ->all();
     }
 
@@ -143,7 +157,7 @@ class CatalogReport extends ListReport
         return array_values(array_diff(array_keys($this->records()->first() ?? ['name' => '']), [
             'id', 'icon_svg', 'icon_filled',
             'price_label', 'conversations_label', 'tags', 'business_shown', 'business_inherits', 'season_shown', 'landing_url',
-            'content_shown', 'content_empty', 'phone_shown', 'phone_inherits', 'hours_shown', 'hours_inherits', 'inherits_note', 'company_url',
+            'content_shown', 'content_empty', 'phone_shown', 'phone_inherits', 'hours_shown', 'hours_inherits', 'inherits_note', 'company_url', 'running_shown', 'dates',
         ]));
     }
 

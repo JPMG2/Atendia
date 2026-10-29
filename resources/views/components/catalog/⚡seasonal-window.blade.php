@@ -121,13 +121,11 @@ new class extends Component
             <td class="catalog-cell-sym" x-text="row.ends_at"></td>
             <td class="catalog-cell-sym" x-text="row.priority"></td>
             <td>
-                {{-- Switched on and inside its dates are different things, and
-                only the second one is what the visitor is seeing right now. --}}
+                {{-- Switched on and inside its dates are different things, and only the second one is what the
+                visitor is seeing right now; when grey, the model's word says which one is missing (the phone reads it too). --}}
                 <span class="catalog-status" x-bind:class="row.running ? 'is-on' : 'is-off'">
                     <span class="dot"></span
-                    ><span
-                        x-text="row.running ? {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.status.running')) }} : {{ \Illuminate\Support\Js::from(__('catalog.seasonal_window.status.waiting')) }}"
-                    ></span>
+                    ><span x-text="row.running_shown"></span>
                 </span>
             </td>
             {{-- The switch IS the cell: a season going wrong in front of a

@@ -46,6 +46,8 @@ final readonly class CatalogColumnDto
         public ?string $noteWarning = null,
         /** A control only the web draws (a switch, a button): the read-only phone never receives the column. */
         public bool $webOnly = false,
+        /** An on/off pill whose off word depends on the row (why it is off): the row key holding that word. */
+        public ?string $offFrom = null,
     ) {}
 
     /**
@@ -121,7 +123,7 @@ final readonly class CatalogColumnDto
     /**
      * What the mobile API sends for this column.
      *
-     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null, sub: string|null, tag: string|null, icon: string|null, copy: array{label: string, done: string}|null, codeBelow: string|null, muted: string|null, link: array{key: string, label: string}|null, note: string|null, noteWarning: string|null}
+     * @return array{key: string, label: string, cell: string, on: string|null, off: string|null, badges: array<string, array{label: string, tone: string}>|null, sub: string|null, tag: string|null, icon: string|null, copy: array{label: string, done: string}|null, codeBelow: string|null, muted: string|null, link: array{key: string, label: string}|null, note: string|null, noteWarning: string|null, offFrom: string|null}
      */
     public function toArray(): array
     {
@@ -141,6 +143,7 @@ final readonly class CatalogColumnDto
             'link' => $this->link,
             'note' => $this->note,
             'noteWarning' => $this->noteWarning,
+            'offFrom' => $this->offFrom,
         ];
     }
 }
