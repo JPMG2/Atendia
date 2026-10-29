@@ -211,6 +211,20 @@ class User extends Authenticatable
     }
 
     /**
+     * A teammate taken out of THIS business's team: its new invitation brings the
+     * same person back, history and all. Another business cannot claim them: their
+     * devices, second factor and signed history belong to the team they left.
+     */
+    public static function removedTeammate(string $email, ?int $businessId): ?self
+    {
+        return $businessId === null ? null : self::onlyTrashed()
+            ->whereHas('roles', fn ($roles) => $roles->where('name', 'agent'))
+            ->where('email', mb_strtolower(trim($email)))
+            ->where('business_id', $businessId)
+            ->first();
+    }
+
+    /**
      * The platform's OWN people: whoever may open the admin panel.
      *
      * Not every row of `users`. A business owner is a CLIENT and lives in
@@ -505,10 +519,11 @@ class User extends Authenticatable
         return $this->hasMany(Conversation::class, 'assigned_user_id');
     }
 
-    /** One login, one business: an address with any account (closed ones too) can't take a new seat. */
-    public static function emailHasAccount(string $email): bool
+    /** One login, one business: an address with any account (closed ones too) can't take a new seat, save a teammate this business took out. */
+    public static function emailHasAccount(string $email, ?int $businessId = null): bool
     {
-        return self::withTrashed()->where('email', mb_strtolower(trim($email)))->exists();
+        return self::withTrashed()->where('email', mb_strtolower(trim($email)))->exists()
+            && self::removedTeammate($email, $businessId) === null;
     }
 
     /** The app follows the business's standing; the admin's own door opens in a later wave. */

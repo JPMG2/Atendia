@@ -10,6 +10,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Lang;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -69,7 +70,13 @@ test('every knob says what it does, not where it lives in the config', function 
         ->assertSee('Silencio para dar por terminada una charla')
         ->assertSee('Horas sin que nadie escriba')
         // The config path is for the code, never for her.
-        ->assertDontSee('analysis.idle_hours');
+        ->assertDontSee('analysis.idle_hours')
+        ->assertDontSee('admin.settings.keys.');
+
+    $unworded = PlatformSetting::query()->pluck('key')
+        ->reject(fn (string $key): bool => Lang::has('admin.settings.keys.'.$key.'.label') && Lang::has('admin.settings.keys.'.$key.'.hint'));
+
+    expect($unworded->all())->toBe([]);
 });
 
 test('a saved knob overrides the config the whole app reads', function (): void {

@@ -286,7 +286,10 @@ class CompanyForm extends BaseForm
                 ?? Company::query()->first()
                 ?? new Company;
 
-            $company->fill($this->columnsWithLogos($validated, $company))->save();
+            $before = Arr::only($company->getAttributes(), array_keys(self::LOGO_UPLOADS));
+
+            $company->fill($this->columnsWithLogos($validated))->save();
+            $this->dropReplacedLogos($before, $company);
 
             $this->recordId = $company->id;
 
@@ -419,7 +422,7 @@ class CompanyForm extends BaseForm
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
-    private function columnsWithLogos(array $validated, Company $company): array
+    private function columnsWithLogos(array $validated): array
     {
         $columns = Arr::except($validated, array_values(self::LOGO_UPLOADS));
 
@@ -430,27 +433,25 @@ class CompanyForm extends BaseForm
                 continue;
             }
 
-            $columns[$column] = $this->storeLogo($file, $company->{$column});
+            $columns[$column] = (string) $file->store('logos', 'public');
         }
 
         return $columns;
     }
 
     /**
-     * Stores a logo and drops the one it replaces.
+     * Drops the logos the saved row no longer points at. Only after the save:
+     * a save that fails must leave the company on a file that still exists.
      *
-     * The old file goes as soon as the new path is written: nothing points at it
-     * any more, and an orphan on a public disk is nobody's to find later.
+     * @param  array<string, mixed>  $before
      */
-    private function storeLogo(UploadedFile $file, ?string $previous): string
+    private function dropReplacedLogos(array $before, Company $company): void
     {
-        $path = (string) $file->store('logos', 'public');
-
-        if ($previous !== null && $previous !== $path) {
-            Storage::disk('public')->delete($previous);
+        foreach ($before as $column => $previous) {
+            if (is_string($previous) && $previous !== $company->{$column}) {
+                Storage::disk('public')->delete($previous);
+            }
         }
-
-        return $path;
     }
 
     /**

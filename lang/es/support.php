@@ -39,7 +39,7 @@ return [
     'no_screen' => 'Sin pantalla en particular',
 
     'thanks_title' => 'Lo recibimos',
-    'thanks_body' => 'Tu reporte es el :code. Te escribimos por aquí mismo cuando lo revisemos.',
+    'thanks_body' => 'Tu reporte es el :code. Cuando lo revisemos te respondemos por WhatsApp, o por correo si no te encontramos ahí.',
     'thanks_close' => 'Cerrar',
 
     'mail' => [

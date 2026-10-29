@@ -288,7 +288,7 @@ new class extends Component
                                         <p class="text-muted text-xs">{{ __('team.departments.when') }}: {{ $room->routing_hint }}</p>
                                         <p class="tm-dept-hours">
                                             <x-icon name="clock" :size="12" />
-                                            {{ $room->usesBusinessHours() ? __('team.hours.business') : __('team.hours.own', ['hours' => $room->scheduleLabel()]) }}
+                                            {{ $room->hoursLine() }}
                                         </p>
                                     </div>
                                     <x-ui.icon-button icon="pencil" size="sm" variant="ghost" :label="__('team.departments.edit', ['name' => $room->name])" wire:click="openDepartment({{ $room->id }})" />

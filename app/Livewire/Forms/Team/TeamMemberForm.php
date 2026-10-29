@@ -11,6 +11,7 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\User;
 use App\Rules\AttributeValidator;
+use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -106,9 +107,13 @@ class TeamMemberForm extends BaseForm
     public static function fieldRules(bool $editing, ?int $businessId): array
     {
         return [
-            // The login address: taken by any account, it cannot be offered again.
+            // The login address: taken by any account, it cannot be offered again; a teammate this business took out can.
             'email' => ! $editing
-                ? ['required', ...AttributeValidator::emailValid((new User)->getTable(), 'email')]
+                ? ['required', 'email:rfc', AttributeValidator::xssFree(), 'max:255', function (string $attribute, mixed $value, Closure $fail) use ($businessId): void {
+                    if (is_string($value) && User::emailHasAccount($value, $businessId)) {
+                        $fail('validation.unique')->translate();
+                    }
+                }]
                 : ['required', 'email:rfc'],
             'name' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
             'whatsapp' => ['nullable', ...AttributeValidator::digitValid('8', false), 'max:30'],

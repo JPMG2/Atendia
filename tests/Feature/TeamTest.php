@@ -14,6 +14,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -154,6 +155,67 @@ test('removing an agent sends their open threads back to the department and ends
         ->and(User::query()->find($agent->id))->toBeNull();
 });
 
+test('a teammate taken out of a team is invited again and comes back as the same person, with the new password', function (): void {
+    $owner = teamOwner();
+    $agent = teamAgent($owner->business);
+    Client::for($owner)->team->remove($agent->id);
+    $this->actingAs($owner);
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', $agent->email)
+        ->call('saveMember')
+        ->assertHasNoErrors();
+
+    TeamInvitation::query()->sole()->update(['token_hash' => TeamInvitation::hashToken('come-back')]);
+    Auth::logout();
+
+    livewire('team.join', ['token' => 'come-back'])
+        ->set('form.name', 'Lucía Paredes')
+        ->set('form.password', 'Vuelta-2026!')
+        ->set('form.password_confirmation', 'Vuelta-2026!')
+        ->call('join')
+        ->assertRedirect(route('conversations'));
+
+    $back = User::query()->where('email', $agent->email)->sole();
+
+    expect($back->id)->toBe($agent->id)
+        ->and($back->business_id)->toBe($owner->business_id)
+        ->and($back->isAgent())->toBeTrue()
+        ->and(Hash::check('Vuelta-2026!', $back->password))->toBeTrue()
+        ->and(User::withTrashed()->where('email', $agent->email)->count())->toBe(1)
+        ->and(Auth::id())->toBe($agent->id);
+});
+
+test('another business cannot claim a teammate someone else took out', function (): void {
+    $before = teamOwner();
+    $agent = teamAgent($before->business);
+    Client::for($before)->team->remove($agent->id);
+    $this->actingAs(teamOwner());
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', $agent->email)
+        ->call('saveMember')
+        ->assertHasErrors('email');
+
+    expect(TeamInvitation::query()->count())->toBe(0);
+});
+
+test('an owner who closed the account still cannot be invited into a team', function (): void {
+    $closed = teamOwner();
+    $closed->delete();
+    $this->actingAs(teamOwner());
+
+    livewire('team.index')
+        ->call('openMember')
+        ->set('member.data.email', $closed->email)
+        ->call('saveMember')
+        ->assertHasErrors('email');
+
+    expect(TeamInvitation::query()->count())->toBe(0);
+});
+
 test('the owner seat is never removed from the team screen', function (): void {
     $owner = teamOwner();
     $this->actingAs($owner);
@@ -181,6 +243,18 @@ test('a department keeps its own hours and the week reads in one line', function
         ->and($department->hours)->not->toHaveKey('6')
         ->and($department->scheduleLabel())->toBe('lun a vie · 09:00–18:00')
         ->and($department->users->pluck('id')->all())->toBe([$agent->id]);
+});
+
+test('a department closed every day says so on the team screen and in the app, never a cut phrase', function (): void {
+    $owner = teamOwner();
+    Department::factory()->create(['business_id' => $owner->business_id, 'name' => 'Pagos', 'hours' => []]);
+    $this->actingAs($owner);
+
+    livewire('team.index')
+        ->assertSee(__('team.hours.closed'))
+        ->assertDontSee(trim(__('team.hours.own', ['hours' => ''])).'</p>', false);
+
+    expect(Client::for($owner)->team->overview['departments'][0]['hours'])->toBe(__('team.hours.closed'));
 });
 
 test('a closing time before the opening one is refused', function (): void {

@@ -153,9 +153,7 @@ class Team
                 'id' => $department->id,
                 'name' => $department->name,
                 'hint' => $department->routing_hint,
-                'hours' => $department->usesBusinessHours()
-                    ? __('team.hours.business')
-                    : __('team.hours.own', ['hours' => $department->scheduleLabel()]),
+                'hours' => $department->hoursLine(),
                 'waiting' => (int) $department->waiting,
                 'waitingLabel' => $department->waiting > 0
                     ? trans_choice('team.departments.waiting', $department->waiting, ['count' => $department->waiting])

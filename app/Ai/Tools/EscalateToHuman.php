@@ -54,9 +54,14 @@ class EscalateToHuman implements AssistantSkillTool
 
         // Out of the room's hours the promise changes: say WHEN, from its schedule, never "right away".
         if ($department !== null && ! $department->isOpenAt(now($this->business->localTimezone()))) {
-            $answer .= " El departamento {$department->name} está fuera de horario ("
-                .($department->scheduleLabel() ?? 'el horario del negocio')
-                .'): decile cuándo le van a responder según ese horario y tu reloj, sin inventar.';
+            $hours = $department->scheduleLabel();
+
+            // A room closed every day has no hour to promise: saying one would be an invention.
+            $answer .= $hours === ''
+                ? " El departamento {$department->name} no atiende ningún día: decile que el equipo le responde apenas pueda, sin prometer día ni hora."
+                : " El departamento {$department->name} está fuera de horario ("
+                    .($hours ?? 'el horario del negocio')
+                    .'): decile cuándo le van a responder según ese horario y tu reloj, sin inventar.';
         }
 
         return $answer;

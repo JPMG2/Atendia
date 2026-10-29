@@ -57,15 +57,11 @@ class IdentityForm extends BaseForm
 
         return $this->tryAction(function () use ($validated): NotificationDto {
 
-            $payload = ['name' => $validated['name'], 'description' => $validated['description']];
-
-            // A picked file becomes the path; with none picked the column is not
-            // sent at all, so the stored logo stays.
-            if ($validated['logo_file'] instanceof UploadedFile) {
-                $payload['logo_path'] = $this->client()->personalData->storeLogo($validated['logo_file']);
-            }
-
-            $business = $this->client()->personalData->saveIdentity($payload);
+            // With no file picked the logo column is not sent at all, so the stored logo stays.
+            $business = $this->client()->personalData->saveIdentity(
+                ['name' => $validated['name'], 'description' => $validated['description']],
+                $validated['logo_file'] instanceof UploadedFile ? $validated['logo_file'] : null,
+            );
 
             $this->logo_path = $business->logo_path;
             $this->logo_file = null;

@@ -46,26 +46,27 @@ class PersonalData
     /**
      * @param  array<string, mixed>  $validated
      */
-    public function saveIdentity(array $validated): Business
+    public function saveIdentity(array $validated, ?UploadedFile $logo = null): Business
     {
-        return app(SaveBusinessIdentity::class)->handle($this->user, $validated);
-    }
-
-    /**
-     * Stores a new logo and drops the file it replaces: nothing points at the
-     * old one any more, and an orphan on a public disk is nobody's to find.
-     * The caller has already put the file through the moderation rule.
-     */
-    public function storeLogo(UploadedFile $file): string
-    {
-        $path = (string) $file->store('logos', 'public');
-        $previous = $this->user->business?->logo_path;
-
-        if ($previous !== null && $previous !== $path) {
-            Storage::disk('public')->delete($previous);
+        if ($logo === null) {
+            return app(SaveBusinessIdentity::class)->handle($this->user, $validated);
         }
 
-        return $path;
+        // The caller already put the file through the moderation rule; it lives with its business.
+        $previous = $this->user->business?->logo_path;
+        $stored = (string) $logo->store('businesses/'.$this->user->business_id.'/logo', 'public');
+
+        try {
+            return app(SaveBusinessIdentity::class)->handle($this->user, [...$validated, 'logo_path' => $stored]);
+        } finally {
+            // The row decides which file goes: a save that never reached it keeps the old logo.
+            $kept = $this->user->business?->fresh()?->logo_path;
+            $orphan = $kept === $stored ? $previous : $stored;
+
+            if ($orphan !== null && $orphan !== $kept) {
+                Storage::disk('public')->delete($orphan);
+            }
+        }
     }
 
     /**

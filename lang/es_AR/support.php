@@ -13,8 +13,6 @@ return [
     'failed' => 'No pudimos enviar tu reporte. Intentá de nuevo en un momento.',
     'no_business' => 'Primero completá el alta de tu negocio.',
 
-    'thanks_body' => 'Tu reporte es el :code. Te escribimos por acá mismo cuando lo revisemos.',
-
     'admin' => [
         'opened_by' => 'Abierto por :name',
     ],

@@ -66,6 +66,16 @@ class Department extends Model
         return is_array($shift) && $at->format('H:i') >= $shift[0] && $at->format('H:i') <= $shift[1];
     }
 
+    /** The hours as the team screen says them, web and app alike: a week with no open day says so. */
+    public function hoursLine(): string
+    {
+        return match (true) {
+            $this->usesBusinessHours() => __('team.hours.business'),
+            $this->scheduleLabel() === '' => __('team.hours.closed'),
+            default => __('team.hours.own', ['hours' => $this->scheduleLabel()]),
+        };
+    }
+
     /**
      * The week in one short line, equal consecutive days folded:
      * "lun a vie · 09:00–18:00, sáb · 08:00–13:00". Null on business hours.

@@ -621,6 +621,16 @@ return [
         // Anidadas, no con el punto en la clave: `__()` lee el punto como
         // profundidad, así que 'analysis.idle_hours' nunca se encontraría.
         'keys' => [
+            'incidents' => [
+                'unanswered_minutes' => [
+                    'label' => 'Cliente sin respuesta',
+                    'hint' => 'Cuántos minutos puede esperar el último mensaje de un cliente antes de que «Qué salió mal» lo cuente como una falla.',
+                ],
+                'digest_time' => [
+                    'label' => 'Correo de lo que salió mal',
+                    'hint' => 'A qué hora te llega por correo la lista del día de «Qué salió mal». Va con la hora de la plataforma, no la de cada negocio.',
+                ],
+            ],
             'schedule' => [
                 'birthday_greetings' => [
                     'label' => 'Saludo de cumpleaños',

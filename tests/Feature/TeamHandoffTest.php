@@ -100,6 +100,14 @@ test('out of the department hours the model is told to say when they will answer
     expect($answer)->toContain('fuera de horario')->toContain('lun · 09:00–18:00');
 });
 
+test('a department closed every day is never given an hour to promise', function (): void {
+    [$business, , , $thread] = roomWithAgent(hours: []);
+
+    $answer = (string) (new EscalateToHuman($business, $thread))->handle(new Request(['reason' => 'Reclamo.', 'department' => 'Pagos']));
+
+    expect($answer)->toContain('no atiende ningún día')->not->toContain('()');
+});
+
 test('the tool offers the business rooms as its only choices, and the briefing says when each applies', function (): void {
     [$business, , , $thread] = roomWithAgent();
 

@@ -21,6 +21,7 @@ beforeEach(function (): void {
 
     $sales = Department::factory()->create(['business_id' => $this->business->id, 'name' => 'Ventas', 'routing_hint' => 'Quiere comprar, pide una cotización o un precio especial.']);
     Department::factory()->create(['business_id' => $this->business->id, 'name' => 'Pagos', 'routing_hint' => 'Reclama un cobro, manda un comprobante o pide un reintegro.', 'hours' => ['1' => ['09:00', '18:00'], '2' => ['09:00', '18:00'], '3' => ['09:00', '18:00'], '4' => ['09:00', '18:00'], '5' => ['09:00', '18:00']]]);
+    Department::factory()->create(['business_id' => $this->business->id, 'name' => 'Mayorista', 'routing_hint' => 'Compra por bulto o pide una lista de precios.', 'hours' => []]);
 
     $this->agent = User::factory()->create(['business_id' => $this->business->id, 'name' => 'Martín Ruiz', 'whatsapp' => '5491155550101']);
     $this->agent->syncRoles(['agent']);
@@ -41,6 +42,7 @@ test('the owner sees the real team, invites, edits a department, and nothing ove
     $page->assertSee('Martín Ruiz')
         ->assertSee('sofia@shop.test')
         ->assertSee('lun a vie · 09:00–18:00')
+        ->assertSee(__('team.hours.closed'))
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'team-desktop')
         ->click(__('team.people.invite'))

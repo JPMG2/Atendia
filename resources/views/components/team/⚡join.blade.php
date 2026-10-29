@@ -32,7 +32,7 @@ new class extends Component
 
     public function emailTaken(TeamInvitation $invitation): bool
     {
-        return User::emailHasAccount($invitation->email);
+        return User::emailHasAccount($invitation->email, $invitation->business_id);
     }
 
     /** The plan shrank after the mail left: said on arrival, not after typing a password. */

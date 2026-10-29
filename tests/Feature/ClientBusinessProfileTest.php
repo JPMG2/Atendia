@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Business\SaveBusinessIdentity;
 use App\Models\Business;
 use App\Models\BusinessHour;
 use App\Models\Currency;
@@ -447,9 +448,26 @@ test('a new logo lands on disk and the replaced file leaves it', function (): vo
 
     $stored = $business->fresh()->logo_path;
 
-    expect($stored)->not->toBe($previous);
+    expect($stored)->not->toBe($previous)
+        ->and($stored)->toStartWith('businesses/'.$business->id.'/logo/');
     Storage::disk('public')->assertExists($stored);
     Storage::disk('public')->assertMissing($previous);
+});
+
+test('a logo save that fails keeps the business on its old file and leaves no new one behind', function (): void {
+    Storage::fake('public');
+    $previous = UploadedFile::fake()->image('viejo.png')->store('logos', 'public');
+    $business = Business::factory()->create(['logo_path' => $previous]);
+    $this->actingAs(User::factory()->create(['business_id' => $business->id])->refresh());
+    $this->mock(SaveBusinessIdentity::class)->shouldReceive('handle')->andThrow(new RuntimeException('The save failed.'));
+
+    Livewire::test('client.section-identity')
+        ->set('form.logo_file', UploadedFile::fake()->image('nuevo.png'))
+        ->call('save');
+
+    expect($business->fresh()->logo_path)->toBe($previous)
+        ->and(Storage::disk('public')->allFiles('businesses'))->toBe([]);
+    Storage::disk('public')->assertExists($previous);
 });
 
 test('the identity card rejects a nameless save and a non-image logo', function (): void {

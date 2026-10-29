@@ -80,7 +80,7 @@ return [
             'title' => 'Identidad',
             'sub' => 'Cómo te ve un cliente cuando tu asistente lo atiende.',
             'logo' => 'Logo',
-            'logo_hint' => 'PNG o JPG. Aparece en tu perfil y junto a las respuestas del asistente.',
+            'logo_hint' => 'PNG, JPG o WebP. Aparece en tu perfil y junto a las respuestas del asistente.',
             'name' => 'Nombre del negocio',
             'name_hint' => 'Escríbelo tal como aparece en tu marca: así lo va a mostrar WhatsApp.',
             'description' => 'Descripción',

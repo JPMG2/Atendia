@@ -61,7 +61,7 @@ class BusinessCardController extends Controller
 
         $validated = Validator::make($request->only('logo_file'), ['logo_file' => ['required', ...IdentityForm::fieldRules()['logo_file']]], [], IdentityForm::fieldNames())->validate();
 
-        $business = $client->personalData->saveIdentity(['logo_path' => $client->personalData->storeLogo($validated['logo_file'])]);
+        $business = $client->personalData->saveIdentity([], $validated['logo_file']);
 
         return response()->json(['message' => $notifications->notificationFor($business, 'updated')->message, 'data' => $client->businessCards->card('identity')]);
     }

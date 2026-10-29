@@ -52,6 +52,7 @@ return [
     'hours' => [
         'business' => 'Mismo horario del negocio',
         'own' => 'Atiende :hours',
+        'closed' => 'Cerrado toda la semana',
         'label' => 'Horario del departamento',
         'use_business' => 'Usar el horario del negocio',
         'switch_on' => 'El mismo que el negocio',
