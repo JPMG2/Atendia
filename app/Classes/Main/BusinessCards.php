@@ -228,6 +228,8 @@ class BusinessCards
                 $bookable === 0 => __('client.business.appointments.needs_services'),
                 default => trans_choice('client.business.appointments.ready', $bookable, ['count' => $bookable]),
             },
+            // The web's "Ver mi agenda" at the card's head: only with the agenda on.
+            'open' => $data->appointments_enabled ? ['label' => __('client.business.appointments.open'), 'screen' => 'agenda'] : null,
             'share' => $data->appointments_enabled ? [
                 'label' => __('agenda.public.link_label'),
                 'hint' => __('agenda.public.link_hint'),

@@ -93,14 +93,19 @@ describe('reading a card', function (): void {
     it('says which piece of the agenda is still missing, and hands over the booking link, only with the agenda on', function (): void {
         $owner = payingUser(business: ['appointments_enabled' => false]);
 
-        expect(asCardsApp($owner)->getJson('/api/v1/business/appointments')->assertOk()->json('data.share'))->toBeNull();
+        $off = asCardsApp($owner)->getJson('/api/v1/business/appointments')->assertOk()->json('data');
+
+        expect($off['share'])->toBeNull()
+            ->and($off['open'])->toBeNull();
 
         $owner->business->forceFill(['appointments_enabled' => true])->save();
         $card = asCardsApp($owner)->getJson('/api/v1/business/appointments')->assertOk()->json('data');
 
         expect($card['note'])->toBe(__('client.business.appointments.needs_hours'))
             ->and($card['share']['url'])->toBe($owner->business->bookingLink())
-            ->and($card['share']['url'])->not->toBe('');
+            ->and($card['share']['url'])->not->toBe('')
+            // The web's "Ver mi agenda", to the agenda screen.
+            ->and($card['open'])->toBe(['label' => __('client.business.appointments.open'), 'screen' => 'agenda']);
     });
 
     it('offers only the active currencies and the tax conditions of the business\'s own country', function (): void {
