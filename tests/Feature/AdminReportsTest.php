@@ -9,6 +9,7 @@ use App\Models\Business;
 use App\Models\Company;
 use App\Models\ComplianceEvent;
 use App\Models\Country;
+use App\Models\CountryHoliday;
 use App\Models\DemoTag;
 use App\Models\ModerationFlag;
 use App\Models\Payment;
@@ -17,10 +18,12 @@ use App\Models\Province;
 use App\Models\Region;
 use App\Models\SeasonalWindow;
 use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\Testimonial;
 use App\Models\User;
 use App\Models\WhatsappVariant;
 use Database\Seeders\CatalogFormSeeder;
+use Database\Seeders\PlanSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Once;
@@ -111,6 +114,50 @@ test('every master of the catalog hub exports with real headings and obeys its o
     $client = User::factory()->create();
     $client->syncRoles(['client']);
     $this->actingAs($client)->get(route('reports.show', ['report' => 'catalogo', 'format' => 'csv', 'maestro' => 'currency']))->assertForbidden();
+});
+
+test('every master with a switch exports it as its screen draws it: «Estado» and its own word, never a bare yes or no', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    CountryHoliday::query()->create(['country_id' => Country::factory()->create()->id, 'name' => 'Día Qzv', 'month' => 6, 'day' => 17]);
+    $checked = 0;
+
+    foreach (CatalogReport::MASTERS as $master => $model) {
+        $row = (new $model)->catalogRows()->first() ?? (function () use ($model): ?array {
+            $model::factory()->create();
+
+            return (new $model)->catalogRows()->first();
+        })();
+
+        if ($row === null || ! array_key_exists('active', $row)) {
+            continue;
+        }
+
+        $wording = 'catalog.'.str_replace('-', '_', $master);
+        $lines = explode("\n", trim(ltrim(platformCsv('catalogo', ['maestro' => $master]), "\u{FEFF}")));
+        $column = array_search(__("{$wording}.columns.status"), str_getcsv($lines[0], ';', '"', ''), true);
+        $word = str_getcsv($lines[1], ';', '"', '')[$column === false ? 0 : $column] ?? '';
+
+        expect($column)->not->toBeFalse("{$master} exports no «Estado» heading")
+            ->and($word)->toBe(__("{$wording}.status.".($row['active'] ? 'active' : 'inactive')), "{$master} exports «{$word}»");
+        $checked++;
+    }
+
+    expect($checked)->toBeGreaterThanOrEqual(19);
+});
+
+test('a holiday exports its kind and a plan its tags in the words the screen draws, not a code or a yes or no', function (): void {
+    $this->seed(CatalogFormSeeder::class);
+    CountryHoliday::query()->create(['country_id' => Country::factory()->create()->id, 'name' => 'Día Qzv', 'month' => 6, 'day' => 17]);
+    $this->seed(PlanSeeder::class);
+    $featured = SubscriptionPlan::query()->where('is_featured', true)->firstOrFail();
+    $featured->update(['trial_days' => 9]);
+    $holidays = platformCsv('catalogo', ['maestro' => 'country-holiday']);
+    $plans = platformCsv('catalogo', ['maestro' => 'plan']);
+    $plan = collect(explode("\n", $plans))->first(fn (string $row): bool => str_starts_with($row, $featured->code.';')) ?? '';
+
+    expect($holidays)->toContain(__('catalog.country_holiday.kinds.fixed'))->not->toContain(';fixed;')
+        ->and(strtok(ltrim($plans, "\u{FEFF}"), "\n"))->toContain(__('catalog.plan.columns.tags'))->not->toContain(__('catalog.plan.tags.archived'))
+        ->and($plan)->toContain(__('catalog.plan.tags.featured'))->toContain(__('catalog.plan.tags.trial', ['days' => 9]))->not->toContain(';'.__('reports/admin.yes'));
 });
 
 test('a season, its WhatsApp and its examples export what the screen says: why one is off, and «Hereda» rather than a blank', function (): void {
