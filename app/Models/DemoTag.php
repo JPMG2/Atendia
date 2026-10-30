@@ -10,6 +10,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
 use Database\Factories\DemoTagFactory;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Cache;
 class DemoTag extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<DemoTagFactory> */
     use HasFactory;

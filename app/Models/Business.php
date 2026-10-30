@@ -859,6 +859,36 @@ class Business extends Model
     }
 
     /**
+     * The person behind the phone: an existing customer of this business, or
+     * a new record. A name written here never overwrites a curated one.
+     */
+    public function customerWithPhone(string $phone, string $name): Customer
+    {
+        $customer = $this->customers()->firstOrCreate(
+            ['phone' => $phone],
+            ['business_id' => $this->id, 'name' => $name, 'first_seen_at' => now()],
+        );
+
+        if ($customer->name === null) {
+            $customer->update(['name' => $name]);
+        }
+
+        return $customer;
+    }
+
+    /** Whether the first real thread has arrived: the home's day-to-day view is earned by it. */
+    public function hasConversations(): bool
+    {
+        return $this->conversations()->exists();
+    }
+
+    /** A service of this business a visitor may book; null when it is not one. */
+    public function bookableService(int $id): ?Service
+    {
+        return $this->services()->where('is_bookable', true)->find($id);
+    }
+
+    /**
      * @return HasMany<Appointment, $this>
      */
     public function appointments(): HasMany

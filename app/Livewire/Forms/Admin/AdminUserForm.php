@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Admin;
 
 use App\Actions\Account\SendEmailVerificationLink;
+use App\Classes\Main\Access;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
@@ -44,11 +45,7 @@ class AdminUserForm extends BaseForm
      */
     public static function assignableRoles(): array
     {
-        return Role::query()
-            ->whereHas('permissions', fn ($query) => $query->where('name', 'access-admin-panel'))
-            ->where('name', '!=', 'admin')
-            ->orderBy('name')
-            ->pluck('name')
+        return collect(Access::assignableStaffRoleNames())
             ->mapWithKeys(fn (string $name): array => [$name => __('admin.users.roles.'.$name)])
             ->all();
     }
@@ -58,7 +55,7 @@ class AdminUserForm extends BaseForm
         $validated = $this->validateServiceData();
 
         return $this->tryAction(function () use ($validated): NotificationDto {
-            $user = User::query()->create([
+            $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 // Never a password chosen by somebody else: the account is

@@ -36,7 +36,7 @@ class TestimonialForm extends BaseForm
 
         return $this->tryAction(function () use ($business, $validated): NotificationDto {
 
-            Testimonial::query()->create([
+            Testimonial::create([
                 'business_id' => $business->id,
                 'quote' => $validated['quote'],
                 'rating' => $validated['rating'],

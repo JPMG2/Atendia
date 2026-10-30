@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\EditedByForm;
 use App\Traits\EmbedsName;
 use App\Traits\FormatsPrice;
 use App\Traits\SearchesText;
@@ -30,6 +31,8 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['service_type_id', 'service_category_id', 'name', 'description', 'prep_note', 'price_type', 'price', 'deposit', 'duration_minutes', 'is_bookable', 'attribute_values', 'is_active', 'is_featured'])]
 class Service extends Model
 {
+    use EditedByForm;
+
     /**
      * Fresha's price semantics. Config-free on purpose: each value needs its
      * own rendering and the amount only means something for the first two.
@@ -84,6 +87,17 @@ class Service extends Model
     public function photos(): MorphMany
     {
         return $this->morphMany(CatalogPhoto::class, 'photoable')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function photoCount(): int
+    {
+        return $this->photos()->count();
+    }
+
+    /** One photo of THIS service: another item's id finds nothing. */
+    public function photo(int $id): ?CatalogPhoto
+    {
+        return $this->photos()->find($id);
     }
 
     /**

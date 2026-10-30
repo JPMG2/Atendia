@@ -1,10 +1,12 @@
-# Un Blade jamás arma una query
+# Las queries viven en el modelo
 
-- Ni el template ni el bloque PHP de un SFC construyen una consulta. Le piden el dato al
-  MODELO por su nombre de dominio: `options()`, `serviceNames()`, `phoneFlags()`,
-  `dialCode()`, `visibleTo()`…
-- Prohibido en un `.blade.php`: `::query(`, `DB::`, los estáticos de query
-  (`Modelo::where/find/all/first/firstWhere/pluck/orderBy/latest/oldest`) y `->orderBy(`.
+- Ni un Blade (template o bloque PHP de un SFC), ni un Form (`app/Livewire/Forms`), ni un
+  form request, ni un controlador construyen una consulta. Le piden el dato al MODELO por su
+  nombre de dominio: `options()`, `forEditing()`, `editable()`, `visibleTo()`…
+- Prohibido ahí: `::query(`, `DB::`, `->orderBy(`, una cadena de relación
+  (`->services()->where(`) y todo estático de un modelo que el modelo no declara (`with`,
+  `where`, `find`, `count`, `firstOrCreate`…). Guardar en `tryAction()` (`Modelo::create`) no
+  es una consulta.
 - Puede quedar en el componente el armado de UI de UNA pantalla: filtrar una Collection ya
   cargada, `firstWhere` sobre opciones, `groupBy` para pintar. Filtrar en memoria es
   presentación, no query.

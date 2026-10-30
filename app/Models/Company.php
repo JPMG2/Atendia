@@ -77,6 +77,28 @@ class Company extends Model
     }
 
     /**
+     * The single row as the database holds it now, for whoever is about to
+     * change it. Not `current()`: that copy lives for the whole request, and
+     * an editor must not build on a row another save already replaced.
+     */
+    public static function forEditing(): ?self
+    {
+        return self::query()->first();
+    }
+
+    /** The same row with what the edit form draws: the chained place and the networks. */
+    public static function forScreen(): ?self
+    {
+        return self::query()->with(['region.province', 'socialLinks'])->first();
+    }
+
+    /** Whether the screen has been saved once: until then only the first step exists. */
+    public static function isCreated(): bool
+    {
+        return self::query()->exists();
+    }
+
+    /**
      * The name the user reads, everywhere. The brand is being renamed (the
      * current one is taken), so it is a row and not a constant: the day it
      * changes, one field changes with it. Falls back to the configured name
@@ -281,6 +303,7 @@ class Company extends Model
             'region_id' => 'integer',
             'tax_condition_id' => 'integer',
             'opening_schedule' => 'array',
+            'welcomed_at' => 'immutable_datetime',
         ];
     }
 

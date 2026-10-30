@@ -9,6 +9,7 @@ use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
+use App\Traits\EditedByForm;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['country_id', 'name', 'month', 'day', 'easter_offset', 'on_date', 'weekday', 'nth', 'is_active'])]
 class CountryHoliday extends Model implements DataTable, HasColumns, HasHighlights
 {
+    use EditedByForm;
     use LogsActivity;
 
     public const string KIND_FIXED = 'fixed';

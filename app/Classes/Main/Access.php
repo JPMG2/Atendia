@@ -254,6 +254,34 @@ final class Access
         return $id === null ? null : self::staffRole((int) $id);
     }
 
+    /**
+     * The roles a new staff user may be given: any that opens the panel,
+     * except the super-admin.
+     *
+     * @return list<string>
+     */
+    public static function assignableStaffRoleNames(): array
+    {
+        return Role::query()
+            ->whereHas('permissions', fn ($query) => $query->where('name', self::PANEL))
+            ->where('name', '!=', self::OWNER)
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+    }
+
+    /** The staff role with this key, created on its first save. */
+    public static function roleNamed(string $name): Role
+    {
+        return Role::findOrCreate($name, 'web');
+    }
+
+    /** Whether the role with this id is the one no screen may touch. */
+    public static function isProtectedId(int $id): bool
+    {
+        return self::isProtected((string) Role::query()->whereKey($id)->value('name'));
+    }
+
     /** Whether this role is the one no screen may touch. */
     public static function isProtected(string $role): bool
     {

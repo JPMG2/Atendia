@@ -33,6 +33,8 @@ class CompanyFactory extends Factory
             'web' => $this->faker->url(),
             'text_copyright' => $this->faker->sentence(),
             'tagline' => $this->faker->catchPhrase(),
+            // A company that already has an address was already welcomed.
+            'welcomed_at' => fn (array $attributes): ?string => filled($attributes['email'] ?? null) ? now()->toDateTimeString() : null,
         ];
     }
 }

@@ -31,7 +31,7 @@ class AdminCompanyController extends Controller
                 'label' => __('company.edit'),
                 'steps' => [
                     'identity' => 'main', 'address' => 'main', 'tax' => 'main', 'footer' => 'main',
-                    ...(Company::query()->exists() ? ['contact' => 'commercial', 'social' => 'commercial'] : []),
+                    ...(Company::isCreated() ? ['contact' => 'commercial', 'social' => 'commercial'] : []),
                 ],
             ],
         ]]);

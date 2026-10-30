@@ -48,6 +48,10 @@ class AdminCompanyEditController extends Controller
 
     public function update(Request $request, CompanyEditor $editor, NotificationService $notifications, string $step): JsonResponse
     {
+        if (CompanyEditor::changedSince($request->input('version'))) {
+            return $this->changedMeanwhile();
+        }
+
         if ($step === CompanyEditor::STEP_MAIN) {
             $validated = $this->validated($step, CompanyEditor::clean([
                 ...CompanyEditor::current($step),
@@ -60,7 +64,7 @@ class AdminCompanyEditController extends Controller
         }
 
         // The second step never creates the company: the first one does, as on the web.
-        $company = Company::query()->first();
+        $company = Company::forEditing();
 
         abort_if($company === null, 404, __('notifications.not_found'));
 
@@ -98,8 +102,12 @@ class AdminCompanyEditController extends Controller
     }
 
     /** Removes a saved network at once, as the web's row does after asking. */
-    public function removeSocial(CompanyEditor $editor, NotificationService $notifications, int $link): JsonResponse
+    public function removeSocial(Request $request, CompanyEditor $editor, NotificationService $notifications, int $link): JsonResponse
     {
+        if (CompanyEditor::changedSince($request->query('version'))) {
+            return $this->changedMeanwhile();
+        }
+
         $removed = $editor->removeSocialLink($link);
 
         abort_if($removed === null, 404, __('notifications.not_found'));
@@ -108,6 +116,12 @@ class AdminCompanyEditController extends Controller
             'message' => $notifications->notificationFor($removed, 'deleted')->message,
             'data' => $editor->sheet(CompanyEditor::STEP_COMMERCIAL),
         ]);
+    }
+
+    /** Someone else saved since the sheet was read: nothing is written, the phone reloads. */
+    private function changedMeanwhile(): JsonResponse
+    {
+        return response()->json(['message' => __('company.changed_meanwhile'), 'code' => 'changed_meanwhile'], 409);
     }
 
     /**

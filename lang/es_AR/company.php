@@ -27,4 +27,6 @@ return [
         'tax_condition_placeholder' => 'Elegí la condición',
         'region_placeholder' => 'Elegí la región',
     ],
+
+    'changed_meanwhile' => 'Esto cambió mientras lo editabas; recargá para ver lo último.',
 ];

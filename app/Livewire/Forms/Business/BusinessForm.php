@@ -343,7 +343,7 @@ class BusinessForm extends BaseForm
                     'required',
                     Rule::exists('business_activities', 'code')
                         ->where('is_active', true)
-                        ->where('business_sector_id', BusinessSector::query()->where('code', (string) $this->data?->sector)->value('id')),
+                        ->where('business_sector_id', BusinessSector::idFromCode((string) $this->data?->sector)),
                 ],
             ],
 

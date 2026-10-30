@@ -13,6 +13,7 @@ use App\Models\Company;
 use App\Models\SocialLink;
 use App\Models\SocialNetwork;
 use App\Rules\AttributeValidator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -83,6 +84,10 @@ class CompanyForm extends BaseForm
     #[Locked]
     public ?int $recordId = null;
 
+    /** The row's version when this screen read it (`CompanyEditor::versionOf`). */
+    #[Locked]
+    public ?string $version = null;
+
     /**
      * The DTO holding the form state.
      *
@@ -134,7 +139,7 @@ class CompanyForm extends BaseForm
         // The table holds one row: the first one IS the company. The country is
         // not fetched — its id already lives on the province. The networks are,
         // since asking for them later is the same query made late.
-        $company = Company::with(['region.province', 'socialLinks'])->first();
+        $company = Company::forScreen();
 
         if ($company === null) {
             $this->data = new CompanyDto;
@@ -144,6 +149,7 @@ class CompanyForm extends BaseForm
         }
 
         $this->recordId = $company->id;
+        $this->version = CompanyEditor::versionOf($company);
         $this->data = CompanyDto::fromArray($this->stateFrom($company));
         $this->social = $this->socialStateFrom($company);
     }
@@ -216,6 +222,10 @@ class CompanyForm extends BaseForm
             return null;
         }
 
+        if ($row['id'] !== null && CompanyEditor::changedSince($this->version)) {
+            return $this->changedMeanwhile();
+        }
+
         $notification = $row['id'] !== null ? $this->deleteSocialLink($row['id']) : null;
 
         if (count($this->social) === 1) {
@@ -242,6 +252,7 @@ class CompanyForm extends BaseForm
     {
         // spatie logs the delete on its own (LogsActivity on the model).
         $link = app(CompanyEditor::class)->removeSocialLink($id);
+        $this->version = CompanyEditor::versionOf(Company::forEditing());
 
         return $link === null
             ? new NotificationDto(__('notifications.not_found'), NotificationType::Error)
@@ -259,12 +270,16 @@ class CompanyForm extends BaseForm
     {
         $validated = $this->validateStep(self::STEP_MAIN);
 
+        if (CompanyEditor::changedSince($this->version)) {
+            return $this->changedMeanwhile();
+        }
+
         $creating = $this->recordId === null;
 
         return $this->tryAction(function () use ($validated): NotificationDto {
 
             // Taken before the save: the logos the row points at now, to drop the ones it stops pointing at.
-            $before = Arr::only(Company::query()->first()?->getAttributes() ?? [], array_keys(self::LOGO_UPLOADS));
+            $before = Arr::only(Company::forEditing()?->getAttributes() ?? [], array_keys(self::LOGO_UPLOADS));
 
             $company = app(CompanyEditor::class)->saveMain($this->columnsWithLogos($validated));
             $this->dropReplacedLogos($before, $company);
@@ -272,6 +287,7 @@ class CompanyForm extends BaseForm
             $this->recordId = $company->id;
 
             $this->settleLogos($company);
+            $this->version = CompanyEditor::versionOf(Company::forEditing());
 
             return $this->notificationService()->notificationFor(
                 $company,
@@ -296,12 +312,17 @@ class CompanyForm extends BaseForm
 
         $validated = $this->validateStep(self::STEP_COMMERCIAL);
 
+        if (CompanyEditor::changedSince($this->version)) {
+            return $this->changedMeanwhile();
+        }
+
         return $this->tryAction(function () use ($validated): NotificationDto {
 
-            $company = Company::query()->findOrFail($this->recordId);
+            $company = Company::forEditing() ?? throw (new ModelNotFoundException)->setModel(Company::class, [$this->recordId]);
 
             // The screen always sends its rows: an empty list is "no networks", not "leave them".
             $linksChanged = app(CompanyEditor::class)->saveCommercial($company, ['social' => [], ...$validated]);
+            $this->version = CompanyEditor::versionOf(Company::forEditing());
 
             // If ONLY the networks changed, the `companies` row is untouched and
             // `notificationFor()` would say "nothing changed" with the networks
@@ -324,7 +345,7 @@ class CompanyForm extends BaseForm
             return;
         }
 
-        $company = Company::with('socialLinks')->find($this->recordId);
+        $company = $this->loadedCompany();
 
         $saved = $company !== null ? CompanyDto::fromArray($company->toArray()) : new CompanyDto;
 
@@ -351,7 +372,7 @@ class CompanyForm extends BaseForm
             return;
         }
 
-        $company = Company::with('region.province')->find($this->recordId);
+        $company = $this->loadedCompany();
 
         $saved = $company !== null
             ? CompanyDto::fromArray($this->stateFrom($company))
@@ -369,6 +390,22 @@ class CompanyForm extends BaseForm
         foreach (self::LOGO_UPLOADS as $upload) {
             $this->{$upload} = null;
         }
+    }
+
+    /** Another tab or the app saved first: nothing is written, the screen asks for a reload. */
+    private function changedMeanwhile(): NotificationDto
+    {
+        return new NotificationDto(__('company.changed_meanwhile'), NotificationType::Warning);
+    }
+
+    /**
+     * The row this screen loaded. Null while the screen was opened before any
+     * company existed, even if another tab or the app created one since: a
+     * row this screen never showed must not be discarded into or stripped.
+     */
+    private function loadedCompany(): ?Company
+    {
+        return $this->recordId === null ? null : Company::forScreen();
     }
 
     /**
@@ -443,16 +480,21 @@ class CompanyForm extends BaseForm
         $this->{self::LOGO_UPLOADS[$column]} = null;
         $this->data->{$column} = null;
 
-        $company = Company::query()->find($this->recordId);
+        $company = $this->loadedCompany();
 
         if ($company === null || $company->{$column} === null) {
             return null;
+        }
+
+        if (CompanyEditor::changedSince($this->version)) {
+            return $this->changedMeanwhile();
         }
 
         return $this->tryAction(function () use ($company, $column): NotificationDto {
             $path = $company->{$column};
 
             $company->fill([$column => null])->save();
+            $this->version = CompanyEditor::versionOf($company);
 
             // Only once nothing points at it: deleting first would leave a
             // saved path with no file behind it if the save failed.

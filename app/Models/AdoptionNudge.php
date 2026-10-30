@@ -13,6 +13,7 @@ use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Database\Factories\AdoptionNudgeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,6 +28,7 @@ use Illuminate\Support\Collection;
 class AdoptionNudge extends Model implements DataTable, HasColumns, HasHighlights, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<AdoptionNudgeFactory> */
     use HasFactory;

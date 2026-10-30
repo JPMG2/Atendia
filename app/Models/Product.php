@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\EditedByForm;
 use App\Traits\EmbedsName;
 use App\Traits\FormatsPrice;
 use App\Traits\SearchesText;
@@ -31,6 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class Product extends Model
 {
     use BelongsToBusiness, FormatsPrice;
+    use EditedByForm;
     use EmbedsName;
 
     /** @use HasFactory<ProductFactory> */
@@ -73,6 +75,17 @@ class Product extends Model
     public function photos(): MorphMany
     {
         return $this->morphMany(CatalogPhoto::class, 'photoable')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function photoCount(): int
+    {
+        return $this->photos()->count();
+    }
+
+    /** One photo of THIS product: another item's id finds nothing. */
+    public function photo(int $id): ?CatalogPhoto
+    {
+        return $this->photos()->find($id);
     }
 
     /**

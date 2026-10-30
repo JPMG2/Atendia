@@ -30,8 +30,6 @@ class PushTokenController extends Controller
     /** Scoped to the caller: a device row of another person is never reachable from here. */
     private function currentDevice(Request $request): LoginDevice
     {
-        return $request->user()->loginDevices()
-            ->where('fingerprint', LoginDevice::fingerprintForApp((string) $request->header('X-Device-Id')))
-            ->firstOrFail();
+        return $request->user()->appDeviceOrFail((string) $request->header('X-Device-Id'));
     }
 }

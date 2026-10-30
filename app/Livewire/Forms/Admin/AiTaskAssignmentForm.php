@@ -61,7 +61,7 @@ class AiTaskAssignmentForm extends BaseForm
 
         return $this->tryAction(function () use ($payloads): NotificationDto {
             foreach ($payloads as $id => $data) {
-                AiTask::find($id)?->update($data);
+                AiTask::editable($id)?->update($data);
             }
 
             $this->setup();
@@ -117,7 +117,7 @@ class AiTaskAssignmentForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        $needs = AiTask::find($this->taskId)?->capability;
+        $needs = AiTask::editable((int) $this->taskId)?->capability;
 
         return [
             'model' => ['nullable', 'string', Rule::in($needs === null ? [] : array_keys(AiModel::assignable($needs)))],

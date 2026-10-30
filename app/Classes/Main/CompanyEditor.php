@@ -130,7 +130,7 @@ class CompanyEditor
      */
     public function saveMain(array $columns): Company
     {
-        $company = Company::query()->first() ?? new Company;
+        $company = Company::forEditing() ?? new Company;
         $company->fill($columns)->save();
 
         return $company;
@@ -138,22 +138,26 @@ class CompanyEditor
 
     /**
      * Writes the commercial step and its networks; says whether the networks
-     * changed, which is what tells "saved" from "nothing changed" when the
-     * row itself did not move. The welcome mail goes once, when the company
-     * gets its first address; the channel reports a failed send, it never
-     * turns a save that worked into an error.
+     * changed, which tells "saved" from "nothing changed". The welcome mail
+     * goes ONCE in the company's life, stamped in `welcomed_at` with the same
+     * save: a new address later never sends it again.
      *
      * @param  array<string, mixed>  $validated
      */
     public function saveCommercial(Company $company, array $validated): bool
     {
-        $hadEmail = filled($company->email);
+        $company->fill(Arr::only($validated, self::COMMERCIAL_COLUMNS));
+        $welcome = $company->welcomed_at === null && filled($company->email);
 
-        $company->fill(Arr::only($validated, self::COMMERCIAL_COLUMNS))->save();
+        if ($welcome) {
+            $company->forceFill(['welcomed_at' => now()]);
+        }
+
+        $company->save();
 
         $linksChanged = array_key_exists('social', $validated) && $this->syncSocialLinks($company, $validated['social']);
 
-        if (! $hadEmail && $company->wasChanged('email') && filled($company->email)) {
+        if ($welcome) {
             (new Email($company, [$company->email], NewCompany::class))->send();
         }
 
@@ -185,7 +189,7 @@ class CompanyEditor
      */
     public function sheet(string $step): array
     {
-        $company = Company::query()->with(['region.province', 'socialLinks'])->first();
+        $company = Company::forScreen();
         $copy = [
             'title' => __("company.steps.{$step}.label"),
             'sub' => __("company.steps.{$step}.desc"),
@@ -194,14 +198,33 @@ class CompanyEditor
             'leave_title' => __('company.discard_confirm.title'),
             'leave_message' => __('company.discard_confirm.message'),
             'leave_accept' => __('company.discard_confirm.accept'),
+            'reload' => __('company.reload'),
         ];
 
         // The footer as a visitor reads it, under the form as on the web: only once there is a row to draw it from.
         $preview = $company === null ? null : (new CompanyFooterPreview)->toArray();
 
+        $head = ['key' => $step, 'copy' => $copy, 'version' => self::versionOf($company), 'preview' => $preview];
+
         return $step === self::STEP_MAIN
-            ? ['key' => $step, 'copy' => $copy, 'preview' => $preview, ...$this->mainSheet($company)]
-            : ['key' => $step, 'copy' => $copy, 'exists' => $company !== null, 'preview' => $preview, ...$this->commercialSheet($company)];
+            ? [...$head, ...$this->mainSheet($company)]
+            : [...$head, 'exists' => $company !== null, ...$this->commercialSheet($company)];
+    }
+
+    /**
+     * The row's version as an editor opened it. A save carrying an older one
+     * writes nothing: two editors (two tabs, the web and the phone) never
+     * silently overwrite each other. Null while there is no company yet.
+     */
+    public static function versionOf(?Company $company): ?string
+    {
+        return $company?->updated_at?->format('Y-m-d H:i:s');
+    }
+
+    /** Whether the row moved since the editor read `$version`. */
+    public static function changedSince(?string $version): bool
+    {
+        return self::versionOf(Company::forEditing()) !== $version;
     }
 
     /**
@@ -212,7 +235,7 @@ class CompanyEditor
      */
     public static function current(string $step): array
     {
-        $company = Company::query()->with('socialLinks')->first();
+        $company = Company::forScreen();
 
         return $step === self::STEP_MAIN
             ? collect(array_keys(self::rules(self::STEP_MAIN)))->mapWithKeys(fn (string $key): array => [$key => $company?->{$key}])->all()
@@ -316,13 +339,15 @@ class CompanyEditor
     /** Deletes a network of THIS company: an id from outside reaches its own owner only. */
     public function removeSocialLink(int $id): ?SocialLink
     {
-        $link = Company::query()->first()?->socialLinks()->find($id);
+        $company = Company::forEditing();
+        $link = $company?->socialLinks()->find($id);
 
         if (! $link instanceof SocialLink) {
             return null;
         }
 
         $link->delete();
+        Company::query()->whereKey($company->id)->update(['updated_at' => now()]);
 
         return $link;
     }
@@ -351,6 +376,14 @@ class CompanyEditor
 
         $removed = $company->socialLinks()->whereNotIn('id', $kept)->delete();
 
-        return $changed || $removed > 0;
+        // The networks live in another table: the row's version moves with them,
+        // or an editor holding the old list would never be told.
+        if ($changed || $removed > 0) {
+            Company::query()->whereKey($company->id)->update(['updated_at' => now()]);
+
+            return true;
+        }
+
+        return false;
     }
 }

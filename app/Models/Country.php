@@ -10,6 +10,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Closure;
 use Database\Factories\CountryFactory;
@@ -27,6 +28,7 @@ use Illuminate\Support\Collection;
 class Country extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<CountryFactory> */
     use HasFactory;

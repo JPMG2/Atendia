@@ -10,6 +10,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,6 +28,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class Currency extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;

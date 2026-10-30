@@ -1024,19 +1024,21 @@ test('the form keeps the id of the record it just created', function (): void {
         ->and(Company::query()->sole()->legal_name)->toBe('AtendIa SA');
 });
 
-test('a save from a screen that mounted before the company existed still updates it', function (): void {
-    // Two tabs open, or a double click: this form has recordId null but the row
-    // is already there. Without the fallback lookup it would insert a second one.
+test('a screen that mounted before the company existed never overwrites the one another tab created', function (): void {
+    // Two tabs open: this form saw no company, another tab created it. Saving
+    // here would silently replace that work, so nothing is written and the
+    // screen asks for a reload; still one single row.
     $this->actingAs(companyAdmin());
 
     $component = fillMainStep();
 
     Company::factory()->create(['legal_name' => 'Cargada en otra pestaña']);
 
-    $component->call('saveMain');
+    $component->call('saveMain')
+        ->assertDispatched('notify', type: 'warning', message: __('company.changed_meanwhile'));
 
     expect(Company::query()->count())->toBe(1)
-        ->and(Company::query()->sole()->legal_name)->toBe('AtendIa SRL');
+        ->and(Company::query()->sole()->legal_name)->toBe('Cargada en otra pestaña');
 });
 
 test('saving the main step leaves the commercial columns alone', function (): void {
@@ -1232,6 +1234,24 @@ test('the welcome is not sent again on later saves', function (): void {
         ->assertReturned(true);
 
     Mail::assertNothingOutgoing();
+});
+
+test('emptying the address and typing another never welcomes the company twice', function (): void {
+    Mail::fake();
+
+    Company::factory()->create(['email' => 'hola@atendia.app']);
+
+    $this->actingAs(companyAdmin());
+
+    Livewire::test('admin.company.index')
+        ->set('form.data.email', '')
+        ->call('saveCommercial')
+        ->set('form.data.email', 'otro@atendia.app')
+        ->call('saveCommercial')
+        ->assertReturned(true);
+
+    Mail::assertNothingOutgoing();
+    expect(Company::query()->firstOrFail()->email)->toBe('otro@atendia.app');
 });
 
 test('the main step never sends the welcome', function (): void {
@@ -1470,6 +1490,49 @@ test('removing a logo drops a pick that was never saved, quietly', function (): 
         ->assertNotDispatched('notify');
 
     expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+test('a screen opened before the company existed never strips a logo another session saved', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(companyAdmin());
+
+    $stale = Livewire::test('admin.company.index');
+
+    // Another tab, or the app, creates the company with its logo meanwhile.
+    fillMainStep()->set('form.logo_light_file', fakeLogo())->call('saveMain');
+    $saved = Company::query()->firstOrFail()->logo_path_light;
+
+    $stale->set('form.logo_light_file', fakeLogo())
+        ->call('removeLogo', 'logo_path_light')
+        ->assertNotDispatched('notify');
+
+    expect(Company::query()->firstOrFail()->logo_path_light)->toBe($saved);
+    Storage::disk('public')->assertExists($saved);
+});
+
+test('a tab that saves after another tab saved writes nothing and says it changed meanwhile', function (): void {
+    Company::factory()->create(['legal_name' => 'Primera SA', 'phone' => '1111111']);
+
+    $this->actingAs(companyAdmin());
+
+    $first = Livewire::test('admin.company.index');
+    $second = Livewire::test('admin.company.index');
+
+    $this->travel(2)->seconds();
+    $first->set('form.data.phone', '2222222')->call('saveCommercial')->assertHasNoErrors();
+    expect(Company::query()->firstOrFail()->phone)->toBe('2222222');
+
+    $second->set('form.data.phone', '3333333')
+        ->call('saveCommercial')
+        ->assertDispatched('notify', type: 'warning', message: __('company.changed_meanwhile'));
+
+    expect(Company::query()->firstOrFail()->phone)->toBe('2222222');
+
+    // The tab that saved keeps going: its own save moved its version too.
+    $this->travel(2)->seconds();
+    $first->set('form.data.phone', '4444444')->call('saveCommercial')->assertHasNoErrors();
+    expect(Company::query()->firstOrFail()->phone)->toBe('4444444');
 });
 
 test('only a logo column can be emptied through remove', function (): void {

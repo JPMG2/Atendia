@@ -8,6 +8,7 @@ use App\Dto\DailyDigestDto;
 use App\Traits\BelongsToBusiness;
 use Database\Factories\DailyDigestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -52,5 +53,15 @@ class DailyDigest extends Model
                 'appointments_tomorrow' => $digest->appointmentsTomorrow,
             ],
         );
+    }
+
+    /**
+     * The newest digests of the business, newest first.
+     *
+     * @return Collection<int, self>
+     */
+    public static function latestDays(int $days): Collection
+    {
+        return self::query()->latest('for_day')->limit($days)->get();
     }
 }

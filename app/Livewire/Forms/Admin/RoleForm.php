@@ -43,14 +43,14 @@ class RoleForm extends BaseForm
 
     public function save(): NotificationDto
     {
-        if ($this->id !== null && Access::isProtected((string) Role::query()->whereKey($this->id)->value('name'))) {
+        if ($this->id !== null && Access::isProtectedId($this->id)) {
             return new NotificationDto(__('admin.roles.protected'), NotificationType::Error);
         }
 
         $validated = $this->validateServiceData();
 
         return $this->tryAction(function () use ($validated): NotificationDto {
-            $role = Role::findOrCreate($validated['name'], 'web');
+            $role = Access::roleNamed($validated['name']);
 
             // The panel key is implicit, never ticked: a staff role without it
             // is a set of keys to a building nobody may walk into.

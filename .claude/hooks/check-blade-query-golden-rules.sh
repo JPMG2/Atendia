@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Hook PostToolUse (Write|Edit): un Blade (template O el bloque PHP de un SFC
-# de Livewire) jamás arma una query — pide el dato al MODELO por vocabulario
-# de dominio (options(), suggestionsName(), serviceNames()...). Si el archivo
-# recién escrito arma una, devuelve el error en el momento (exit 2).
+# Hook PostToolUse (Write|Edit): un Blade, un Form de Livewire o un controlador
+# jamás arma una query — pide el dato al MODELO por vocabulario de dominio
+# (options(), forEditing(), editable()...). Si el archivo recién escrito arma
+# una, devuelve el error en el momento (exit 2).
 #
-# Es la capa C de la receta de enforcement. La garantía permanente es el test
-# guardián tests/Feature/GoldenRulesBladeQueriesTest.php (capa B), que espeja
-# este mismo allowlist y estos patrones. Si tocás uno, tocá el otro.
+# Es la capa C. La garantía permanente es tests/Feature/GoldenRulesBladeQueriesTest.php
+# (capa B). Las dos comparten el MISMO scanner (tests/Support/QueryScanner.php),
+# con su allowlist y sus patrones, así que no pueden divergir.
 #
 # Receta: .ai/guidelines/reglas-de-oro-enforcement.md
 #
@@ -15,35 +15,24 @@ set -u
 
 file=$(jq -r '.tool_input.file_path // ""' 2>/dev/null)
 
-# Solo vistas Blade dentro de resources/views.
-case "$file" in
-    *resources/views/*.blade.php) ;;
+# La ruta puede llegar desde el host o desde dentro del contenedor.
+rel="${file#/var/www/atendia/}"
+rel="${rel#/var/www/html/}"
+file="/var/www/atendia/$rel"
+
+case "$rel" in
+    resources/views/*.blade.php|app/Livewire/Forms/*.php|app/Http/Controllers/*.php|app/Http/Requests/*.php) target="$rel" ;;
+    # Un modelo decide qué es vocabulario: al tocarlo se juzga todo, como el guardián.
+    app/Models/*.php|app/Traits/*.php) target="--all" ;;
     *) exit 0 ;;
 esac
 
 [ -f "$file" ] || exit 0
 
-rel="${file##*resources/views/}"
+output=$(docker exec -w /var/www/html atendia-app php tests/Support/query_check.php "$target" 2>&1)
 
-# Deuda pre-existente congelada con su razón. NO agregar nada nuevo: arreglar.
-query_allow="
-components/⚡ws-demo.blade.php
-"
-
-in_list() { printf '%s\n' "$2" | grep -qxF "$1"; }
-
-in_list "$rel" "$query_allow" && exit 0
-
-# Puntos de entrada de query que un Blade no puede contener. Los verbos que
-# comparte la Collection (->where, ->pluck) NO se prohíben: filtrar una lista
-# en memoria en un template es presentación, no una query.
-if grep -qE '::query\(|\bDB::|::(where[A-Za-z_]*|find|findOrFail|all|first|firstWhere|pluck|orderBy|latest|oldest)\(|->orderBy\(' "$file"; then
-    {
-        printf 'Regla de oro incumplida en %s: un Blade no arma queries.\n' "$rel"
-        printf 'Mové la consulta a un método del MODELO con nombre de dominio\n'
-        printf '(patrón options()/suggestionsName()) y llamalo desde el componente.\n'
-        printf 'Guía: .ai/guidelines/queries-en-el-modelo.md\n'
-    } >&2
+if [ $? -ne 0 ]; then
+    echo "$output" >&2
     exit 2
 fi
 

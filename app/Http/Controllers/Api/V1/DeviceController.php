@@ -30,8 +30,7 @@ class DeviceController extends Controller
 
     public function destroy(Request $request, int $device): JsonResponse
     {
-        // Scoped to the caller: another person's id is simply not found.
-        $row = $request->user()->loginDevices()->findOrFail($device);
+        $row = $request->user()->loginDeviceOrFail($device);
 
         // Signing out the install in use would strand the very screen asking: that is `logout`.
         if ($row->fingerprint === $this->currentFingerprint($request)) {
@@ -39,7 +38,7 @@ class DeviceController extends Controller
         }
 
         // The row going is what kills a token on its next call; dropping the token too makes it immediate.
-        $request->user()->tokens()->where('name', $row->fingerprint)->delete();
+        $request->user()->revokeTokensOf($row->fingerprint);
         $row->delete();
 
         return response()->json(['message' => __('profile.devices.revoked')]);
@@ -52,7 +51,7 @@ class DeviceController extends Controller
         $current = $this->currentFingerprint($request);
         $user = $request->user();
 
-        $user->tokens()->where('name', '!=', $current)->delete();
+        $user->revokeOtherTokens($current);
         $user->revokeOtherDevices($current);
 
         return response()->json(['message' => __('profile.devices.revoke_all_done')]);

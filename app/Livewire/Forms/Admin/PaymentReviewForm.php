@@ -8,7 +8,6 @@ use App\Actions\Billing\ApprovePayment;
 use App\Actions\Billing\RejectPayment;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
-use App\Enums\PaymentStatus;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Payment;
 use App\Rules\AttributeValidator;
@@ -28,7 +27,7 @@ class PaymentReviewForm extends BaseForm
 
     public function approve(int $paymentId): NotificationDto
     {
-        $payment = $this->pending($paymentId);
+        $payment = Payment::pendingReceipt($paymentId);
 
         if ($payment === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -44,7 +43,7 @@ class PaymentReviewForm extends BaseForm
     public function reject(): NotificationDto
     {
         $validated = $this->validateServiceData();
-        $payment = $this->rejectingId === null ? null : $this->pending($this->rejectingId);
+        $payment = $this->rejectingId === null ? null : Payment::pendingReceipt($this->rejectingId);
 
         if ($payment === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
@@ -56,12 +55,6 @@ class PaymentReviewForm extends BaseForm
 
             return new NotificationDto(__('billing.admin.rejected'), NotificationType::Success);
         }, __('notifications.not_updated'));
-    }
-
-    /** Only a receipt still waiting can be reviewed: a double click never credits twice. */
-    private function pending(int $paymentId): ?Payment
-    {
-        return Payment::query()->whereKey($paymentId)->where('status', PaymentStatus::Pending)->first();
     }
 
     protected function transformServiceData(): array

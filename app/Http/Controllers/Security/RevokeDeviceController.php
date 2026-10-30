@@ -19,7 +19,7 @@ class RevokeDeviceController extends Controller
     {
         // A second click finds nothing and that is fine: the page reassures
         // either way instead of throwing a 404 at a worried user.
-        LoginDevice::query()->whereKey($device)->delete();
+        LoginDevice::revoke($device);
 
         return view('security.device-revoked');
     }

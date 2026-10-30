@@ -109,4 +109,10 @@ class LoginDevice extends Model
     {
         return hash('sha256', 'app:'.mb_strtolower($deviceId));
     }
+
+    /** Forgets one device; a second call finds nothing and does nothing. */
+    public static function revoke(int $id): void
+    {
+        self::query()->whereKey($id)->delete();
+    }
 }

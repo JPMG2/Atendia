@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\CompanyEditor;
 use App\Mail\DeviceChallengeCode;
 use App\Mail\NewCompany;
 use App\Models\Business;
@@ -52,8 +53,14 @@ function companyEditToken(string $role = 'admin'): string
     return test()->withHeaders(apiDeviceHeaders())->postJson('/api/v1/login/challenge', ['challenge_id' => $id, 'code' => $code])->assertOk()->json('token');
 }
 
+/** A write carries the version of the sheet it was read from, as the phone does; `version` in the body overrides it. */
 function companyEditCall(string $token, string $method, string $path, array $body = []): TestResponse
 {
+    if (in_array($method, ['PUT', 'DELETE'], true) && ! array_key_exists('version', $body)) {
+        $version = CompanyEditor::versionOf(Company::forEditing());
+        $method === 'DELETE' ? $path .= '?version='.urlencode((string) $version) : $body['version'] = $version;
+    }
+
     return test()->withToken($token)->withHeaders(apiDeviceHeaders())->json($method, '/api/v1/admin/company'.$path, $body);
 }
 
@@ -180,13 +187,53 @@ test('the commercial step refuses a bad hour under its day, and never creates th
 
 test('the first address the company gets sends the welcome mail through the channel, once', function (): void {
     ['company' => $company] = companyEditPlace();
-    $company->forceFill(['email' => null])->save();
+    $company->forceFill(['email' => null, 'welcomed_at' => null])->save();
     $token = companyEditToken();
 
     companyEditCall($token, 'PUT', '/commercial', ['email' => 'hola@qzv.test'])->assertOk();
     companyEditCall($token, 'PUT', '/commercial', ['email' => 'otra@qzv.test'])->assertOk();
+    // Emptied and typed again: still the same company, never welcomed twice.
+    companyEditCall($token, 'PUT', '/commercial', ['email' => ''])->assertOk();
+    companyEditCall($token, 'PUT', '/commercial', ['email' => 'tercera@qzv.test'])->assertOk();
 
     Mail::assertQueued(NewCompany::class, 1);
+    expect($company->fresh()->welcomed_at)->not->toBeNull();
+});
+
+test('a save read from an older sheet writes nothing and says the company changed meanwhile', function (): void {
+    ['company' => $company] = companyEditPlace();
+    $token = companyEditToken();
+
+    $old = companyEditCall($token, 'GET', '/main')->assertOk()->json('data.version');
+
+    // Somebody else saves first: the web, another phone, or a network added.
+    $this->travel(2)->seconds();
+    $company->forceFill(['legal_name' => 'Otra Qzv SA'])->save();
+
+    companyEditCall($token, 'PUT', '/main', ['legal_name' => 'Pisada Qzv', 'version' => $old])
+        ->assertStatus(409)
+        ->assertJson(['code' => 'changed_meanwhile', 'message' => __('company.changed_meanwhile')]);
+    companyEditCall($token, 'PUT', '/commercial', ['phone' => '000', 'version' => $old])->assertStatus(409);
+
+    expect($company->fresh()->legal_name)->toBe('Otra Qzv SA');
+
+    // Reloaded, the sheet carries the new version and the save goes through.
+    companyEditCall($token, 'PUT', '/main', ['legal_name' => 'Pisada Qzv'])->assertOk();
+    expect($company->fresh()->legal_name)->toBe('Pisada Qzv');
+});
+
+test('changing the networks moves the version, so a phone holding the old list is told', function (): void {
+    companyEditPlace();
+    $token = companyEditToken();
+    $network = SocialNetwork::factory()->create(['is_active' => true]);
+
+    $old = companyEditCall($token, 'GET', '/commercial')->assertOk()->json('data.version');
+
+    $this->travel(2)->seconds();
+    companyEditCall($token, 'PUT', '/commercial', ['social' => [['social_network_id' => $network->id, 'url' => 'https://qzv.test/a']]])->assertOk();
+
+    companyEditCall($token, 'PUT', '/commercial', ['social' => [], 'version' => $old])->assertStatus(409);
+    expect(SocialLink::query()->count())->toBe(1);
 });
 
 test('a saved network is removed at once, and only one of this company', function (): void {

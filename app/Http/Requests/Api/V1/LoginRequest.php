@@ -66,7 +66,7 @@ class LoginRequest extends FormRequest
         $email = (string) $this->string('email');
         $password = (string) $this->string('password');
 
-        $user = User::query()->where('email', $email)->first();
+        $user = User::withEmail($email);
 
         if ($user !== null && Hash::check($password, $user->password)) {
             return $user;

@@ -41,7 +41,7 @@ new class extends Component
     #[Computed]
     public function isActive(): bool
     {
-        return Auth::user()?->business?->conversations()->exists() ?? false;
+        return Auth::user()?->business?->hasConversations() ?? false;
     }
 
     /** @return array{conversations: int, new_contacts: int, questions: int, audio_minutes: int, resolution: int}|null */

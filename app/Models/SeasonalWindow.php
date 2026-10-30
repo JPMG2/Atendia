@@ -11,6 +11,7 @@ use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Carbon\CarbonImmutable;
 use Database\Factories\SeasonalWindowFactory;
@@ -25,6 +26,7 @@ use Illuminate\Support\Collection;
 class SeasonalWindow extends Model implements DataTable, HasColumns, HasHighlights, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<SeasonalWindowFactory> */
     use HasFactory;

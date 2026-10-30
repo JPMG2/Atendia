@@ -39,8 +39,8 @@ class CatalogPhotoForm extends BaseForm
     public function item(): Product|Service
     {
         return $this->itemType === 'service'
-            ? Service::query()->findOrFail($this->itemId)
-            : Product::query()->findOrFail($this->itemId);
+            ? Service::editableOrFail($this->itemId)
+            : Product::editableOrFail($this->itemId);
     }
 
     /** @return array{used: int, cap: int, itemUsed: int, perItem: int} */
@@ -52,7 +52,7 @@ class CatalogPhotoForm extends BaseForm
         return [
             'used' => $business->catalogPhotosCount(),
             'cap' => $plan->catalogPhotos,
-            'itemUsed' => $this->item()->photos()->count(),
+            'itemUsed' => $this->item()->photoCount(),
             'perItem' => $plan->photosPerItem,
         ];
     }
@@ -85,7 +85,7 @@ class CatalogPhotoForm extends BaseForm
 
     public function remove(int $photoId): NotificationDto
     {
-        $photo = $this->item()->photos()->find($photoId);
+        $photo = $this->item()->photo($photoId);
 
         if ($photo === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);

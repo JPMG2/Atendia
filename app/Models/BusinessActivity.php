@@ -10,6 +10,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\SuggestsServiceNames;
 use App\Traits\TracksUserActions;
 use Closure;
@@ -33,6 +34,7 @@ use Illuminate\Support\Collection;
 class BusinessActivity extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<BusinessActivityFactory> */
     use HasFactory;

@@ -9,6 +9,7 @@ use App\Enums\CatalogCell;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
+use App\Traits\EditedByForm;
 use Closure;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'daily_digest', 'trial_days', 'is_featured', 'ai_alert_share'])]
 class SubscriptionPlan extends Model implements DataTable, HasColumns, HasHighlights
 {
+    use EditedByForm;
     use LogsActivity;
 
     private const string CACHE_KEY = 'plans.catalog';

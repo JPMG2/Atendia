@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\MessageDirection;
 use App\Traits\BelongsToBusiness;
+use App\Traits\EditedByForm;
 use App\Traits\SearchesText;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,6 +30,7 @@ use Illuminate\Support\Str;
 class Customer extends Model
 {
     use BelongsToBusiness;
+    use EditedByForm;
 
     /** @use HasFactory<CustomerFactory> */
     use HasFactory;

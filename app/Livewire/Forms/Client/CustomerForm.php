@@ -43,7 +43,7 @@ class CustomerForm extends BaseForm
 
     public function save(): NotificationDto
     {
-        $customer = Customer::query()->find($this->customerId);
+        $customer = Customer::editable((int) $this->customerId);
 
         if ($customer === null) {
             return new NotificationDto(__('notifications.not_found'), NotificationType::Error);

@@ -42,7 +42,7 @@ class ServiceAttributeForm extends BaseCatalogForm
             'data_type' => [
                 'required',
                 'string',
-                'in:'.implode(',', $this->editableDataTypes($excludeId)),
+                'in:'.implode(',', ServiceAttribute::dataTypesFor($excludeId)),
             ],
 
             'unit' => [
@@ -63,32 +63,6 @@ class ServiceAttributeForm extends BaseCatalogForm
 
             'is_active' => AttributeValidator::booleanValue(true),
         ];
-    }
-
-    /**
-     * Which data types validation accepts.
-     *
-     * The ones in config, unless the attribute is already in use: then the only
-     * valid one is the one it has, so an attempt to change it surfaces as a
-     * field error and not as broken values months later.
-     *
-     * @return array<int, string>
-     */
-    private function editableDataTypes(?int $excludeId): array
-    {
-        $all = array_keys(ServiceAttribute::dataTypes());
-
-        if ($excludeId === null) {
-            return $all;
-        }
-
-        $attribute = ServiceAttribute::query()->find($excludeId);
-
-        if ($attribute === null || ! $attribute->isInUse()) {
-            return $all;
-        }
-
-        return [$attribute->data_type];
     }
 
     protected function getValidationAttributes(): array

@@ -175,6 +175,45 @@ class User extends Authenticatable
         return $this->loginDevices()->where('fingerprint', '!=', $currentFingerprint)->delete();
     }
 
+    /** The row of the app install that sent this `X-Device-Id`, among THIS account's devices. */
+    public function appDevice(string $deviceId): ?LoginDevice
+    {
+        return $this->loginDevices()->where('fingerprint', LoginDevice::fingerprintForApp($deviceId))->first();
+    }
+
+    public function appDeviceOrFail(string $deviceId): LoginDevice
+    {
+        return $this->loginDevices()->where('fingerprint', LoginDevice::fingerprintForApp($deviceId))->firstOrFail();
+    }
+
+    /** One of THIS account's devices: another account's id is a 404. */
+    public function loginDeviceOrFail(int $id): LoginDevice
+    {
+        return $this->loginDevices()->findOrFail($id);
+    }
+
+    /** App tokens are named by the install's fingerprint: these die with that install. */
+    public function revokeTokensOf(string $fingerprint): void
+    {
+        $this->tokens()->where('name', $fingerprint)->delete();
+    }
+
+    public function revokeOtherTokens(string $currentFingerprint): void
+    {
+        $this->tokens()->where('name', '!=', $currentFingerprint)->delete();
+    }
+
+    public function revokeAllTokens(): void
+    {
+        $this->tokens()->delete();
+    }
+
+    /** The live account behind an e-mail; a closed one is `restorableByEmail()`. */
+    public static function withEmail(string $email): ?self
+    {
+        return self::query()->where('email', $email)->first();
+    }
+
     /**
      * True when the account already tracks devices and this browser is not
      * among them. Two doors key on it: the login gate (unknown device →

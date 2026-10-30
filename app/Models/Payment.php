@@ -138,4 +138,10 @@ class Payment extends Model
     {
         return $this->currency.' '.number_format((float) $this->amount, 2, ',', '.');
     }
+
+    /** Only a receipt still waiting can be reviewed: a double click never credits twice. */
+    public static function pendingReceipt(int $id): ?self
+    {
+        return self::query()->whereKey($id)->where('status', PaymentStatus::Pending)->first();
+    }
 }

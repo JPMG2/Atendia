@@ -50,9 +50,9 @@ class PublicBookingForm extends BaseForm
         return app(Tenant::class)->for($business->id, function () use ($business, $validated): NotificationDto|Appointment {
             $service = $validated['service_id'] === null
                 ? null
-                : $business->services()->where('is_bookable', true)->find($validated['service_id']);
+                : $business->bookableService((int) $validated['service_id']);
 
-            $customer = $this->customerFor($business, $validated['phone'], $validated['name']);
+            $customer = $business->customerWithPhone($validated['phone'], $validated['name']);
 
             try {
                 return app(BookAppointment::class)->handle(
@@ -67,24 +67,6 @@ class PublicBookingForm extends BaseForm
                 return new NotificationDto(__('agenda.public.taken'), NotificationType::Warning);
             }
         });
-    }
-
-    /**
-     * The person behind the phone: an existing customer of this business, or
-     * a new record. A name written here never overwrites a curated one.
-     */
-    private function customerFor(Business $business, string $phone, string $name): Customer
-    {
-        $customer = $business->customers()->firstOrCreate(
-            ['phone' => $phone],
-            ['business_id' => $business->id, 'name' => $name, 'first_seen_at' => now()],
-        );
-
-        if ($customer->name === null) {
-            $customer->update(['name' => $name]);
-        }
-
-        return $customer;
     }
 
     protected function transformServiceData(): array

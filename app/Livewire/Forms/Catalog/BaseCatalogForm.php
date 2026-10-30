@@ -114,7 +114,7 @@ abstract class BaseCatalogForm extends BaseForm
     {
         $model = $this->wiring()->model;
 
-        return $model::query()->find($id);
+        return $model::editable($id);
     }
 
     protected function transformServiceData(): array

@@ -48,6 +48,9 @@ return [
     ],
 
     'save' => 'Guardar cambios',
+    // Otra pestaña o la app guardó antes: no se pisa nada.
+    'changed_meanwhile' => 'Esto cambió mientras lo editabas; recarga para ver lo último.',
+    'reload' => 'Recargar',
     // Sin compañía cargada, guardar el paso 1 es lo que abre el 2: el botón lo dice.
     'save_continue' => 'Guardar y continuar',
 

@@ -10,6 +10,7 @@ use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\Removable;
 use App\Traits\CountsUsage;
+use App\Traits\EditedByForm;
 use App\Traits\TracksUserActions;
 use Database\Factories\ServiceAttributeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -32,6 +33,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class ServiceAttribute extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
+    use EditedByForm;
 
     /** @use HasFactory<ServiceAttributeFactory> */
     use HasFactory;
@@ -248,5 +250,23 @@ class ServiceAttribute extends Model implements DataTable, HasColumns, Removable
             new CatalogColumnDto('options', __('catalog.service_attribute.columns.options'), CatalogCell::List),
             new CatalogColumnDto('active', __('catalog.service_attribute.columns.status'), CatalogCell::Active, on: __('catalog.service_attribute.status.active'), off: __('catalog.service_attribute.status.inactive')),
         ];
+    }
+
+    /**
+     * The data types an attribute may take: all of them, unless it is already
+     * in use; then only the one it has, so an attempt to change it surfaces as
+     * a field error and not as broken values months later.
+     *
+     * @return array<int, string>
+     */
+    public static function dataTypesFor(?int $id): array
+    {
+        $attribute = $id === null ? null : self::editable($id);
+
+        if ($attribute === null || ! $attribute->isInUse()) {
+            return array_keys(self::dataTypes());
+        }
+
+        return [$attribute->data_type];
     }
 }

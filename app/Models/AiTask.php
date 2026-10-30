@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AiCapability;
+use App\Traits\EditedByForm;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -14,6 +15,8 @@ use Laravel\Ai\Ai;
 #[Fillable(['key', 'label', 'capability', 'connection_key', 'model_code', 'fallback_connection_key', 'fallback_model_code', 'is_mechanical'])]
 class AiTask extends Model
 {
+    use EditedByForm;
+
     /** The task that turns a customer's voice note into text; it is not an agent. */
     public const string TRANSCRIPTION = 'Transcription';
 

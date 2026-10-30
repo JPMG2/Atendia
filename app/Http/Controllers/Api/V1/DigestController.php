@@ -19,10 +19,7 @@ class DigestController extends Controller
 
     public function __invoke(): JsonResponse
     {
-        return response()->json(['data' => DailyDigest::query()
-            ->latest('for_day')
-            ->limit(self::DAYS)
-            ->get()
+        return response()->json(['data' => DailyDigest::latestDays(self::DAYS)
             ->map(fn (DailyDigest $digest): array => [
                 'id' => $digest->id,
                 'day' => $digest->for_day->toDateString(),

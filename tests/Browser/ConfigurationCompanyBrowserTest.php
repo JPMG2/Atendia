@@ -83,6 +83,29 @@ test('with the company already saved the second step swaps the panel', function 
         ->screenshot(filename: 'company-commercial-step');
 });
 
+test('saving after another session saved writes nothing and says so on screen', function (): void {
+    $company = Company::factory()->create(['phone' => '1111111']);
+
+    $page = visit('/admin/company')->resize(390, 900);
+
+    $page->click('Datos comerciales')->fill('#if-email', 'pisado@atendia.app');
+
+    // Another tab, or the phone, saves while this one is open.
+    Company::query()->whereKey($company->id)->update(['phone' => '2222222', 'updated_at' => now()->addMinute()]);
+
+    $page->click('Guardar cambios')->wait(2);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Esto cambió mientras lo editabas; recarga para ver lo último.')
+        ->screenshot(filename: 'company-changed-meanwhile-phone');
+
+    $page->script('document.documentElement.classList.add("dark")');
+    $page->screenshot(filename: 'company-changed-meanwhile-phone-dark');
+
+    expect($company->fresh()->phone)->toBe('2222222')
+        ->and($company->fresh()->email)->not->toBe('pisado@atendia.app');
+});
+
 test('deleting a network asks first, through the system dialog', function (): void {
     // Golden rule: no native confirm anywhere. What proves it is that the warning
     // is IN the page — a browser confirm would not be in the DOM at all.
