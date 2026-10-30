@@ -7,12 +7,19 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateBusinessActivity;
 use App\Actions\Catalog\UpdateBusinessActivity;
 use App\Dto\BusinessActivityDto;
+use App\Interfaces\Catalog\EditableFromPhone;
 use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Rules\AttributeValidator;
 
-class BusinessActivityForm extends BaseCatalogForm
+class BusinessActivityForm extends BaseCatalogForm implements EditableFromPhone
 {
     protected function catalog(): CatalogWiring
+    {
+        return self::wiring();
+    }
+
+    public static function wiring(): CatalogWiring
     {
         return new CatalogWiring(
             dto: BusinessActivityDto::class,
@@ -27,6 +34,29 @@ class BusinessActivityForm extends BaseCatalogForm
         /** @var BusinessActivityDto|null $data */
         $data = $this->data;
 
+        return self::fieldRules($excludeId, ['business_sector_id' => $data?->business_sector_id]);
+    }
+
+    protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    public static function phoneFields(): array
+    {
+        return [
+            ['key' => 'code', 'type' => 'text', 'label' => __('catalog.business_activity.fields.code'), 'hint' => __('catalog.business_activity.fields.code_hint'), 'required' => true, 'max' => 40, 'mono' => true],
+            ['key' => 'name', 'type' => 'text', 'label' => __('catalog.business_activity.fields.name'), 'placeholder' => __('catalog.business_activity.fields.name_placeholder'), 'required' => true],
+            ['key' => 'business_sector_id', 'type' => 'select', 'label' => __('catalog.business_activity.fields.sector'), 'placeholder' => __('catalog.business_activity.fields.sector_placeholder'), 'required' => true, 'options' => BusinessSector::options()],
+            ['key' => 'description', 'type' => 'text', 'label' => __('catalog.business_activity.fields.description'), 'placeholder' => __('catalog.business_activity.fields.description_placeholder'), 'hint' => __('catalog.business_activity.fields.description_hint'), 'max' => 255],
+            ['key' => 'sort_order', 'type' => 'number', 'label' => __('catalog.business_activity.fields.order'), 'hint' => __('catalog.business_activity.fields.order_hint'), 'min' => 0, 'max' => 32767],
+            ['key' => 'is_active', 'type' => 'switch', 'label' => __('catalog.business_activity.fields.status'), 'on_label' => __('catalog.business_activity.status.active'), 'off_label' => __('catalog.business_activity.status.inactive')],
+            ['key' => 'catalog_eligible', 'type' => 'switch', 'label' => __('catalog.business_activity.fields.catalog'), 'hint' => __('catalog.business_activity.fields.catalog_hint'), 'on_label' => __('catalog.business_activity.catalog.on'), 'off_label' => __('catalog.business_activity.catalog.off')],
+        ];
+    }
+
+    public static function fieldRules(?int $excludeId = null, array $data = []): array
+    {
         return [
 
             'business_sector_id' => AttributeValidator::requireAndExists('business_sectors', 'id', 'business_sector_id', true),
@@ -40,7 +70,7 @@ class BusinessActivityForm extends BaseCatalogForm
                 'business_activities',
                 'name',
                 'business_sector_id',
-                $data?->business_sector_id,
+                $data['business_sector_id'] ?? null,
                 $excludeId,
             ),
 
@@ -61,7 +91,7 @@ class BusinessActivityForm extends BaseCatalogForm
         ];
     }
 
-    protected function getValidationAttributes(): array
+    public static function fieldNames(): array
     {
         return [
             'business_sector_id' => config('nicename.business_sector_id'),

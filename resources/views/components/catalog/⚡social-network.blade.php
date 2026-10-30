@@ -1,5 +1,6 @@
 <?php
 
+use App\Classes\Main\Icons;
 use App\Interfaces\Catalog\DataTable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
 use App\Livewire\Forms\Catalog\SocialNetworkForm;
@@ -31,21 +32,11 @@ new class extends Component
         return new SocialNetwork;
     }
 
-    /**
-     * Icon options for the combobox: the KEYS of config/icons.php, which is the
-     * real glyph catalog. Free text will not do — <x-icon> with a name that
-     * does not exist draws nothing and the network silently ends up iconless.
-     *
-     * @return array<int, array{value: string, label: string}>
-     */
+    /** @return list<array{value: string, label: string}> */
     #[Computed]
     public function iconOptions(): array
     {
-        return collect(array_keys(config('icons')))
-            ->sort()
-            ->map(fn (string $icon): array => ['value' => $icon, 'label' => $icon])
-            ->values()
-            ->all();
+        return Icons::options();
     }
 };
 ?>

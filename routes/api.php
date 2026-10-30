@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AdminAlertsController;
 use App\Http\Controllers\Api\V1\AdminBusinessesController;
+use App\Http\Controllers\Api\V1\AdminCatalogEditController;
 use App\Http\Controllers\Api\V1\AdminCatalogsController;
 use App\Http\Controllers\Api\V1\AdminCollectionsController;
 use App\Http\Controllers\Api\V1\AdminCompanyController;
@@ -104,6 +105,14 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::delete('company/social/{link}', [AdminCompanyEditController::class, 'removeSocial'])->where('link', '[0-9]{1,18}')->middleware('can:company.manage');
             Route::get('catalogs', [AdminCatalogsController::class, 'index'])->middleware('can:catalogs.manage');
             Route::get('catalogs/{master}', [AdminCatalogsController::class, 'show'])->where('master', '[a-z][a-z-]{0,60}')->middleware('can:catalogs.manage');
+            Route::prefix('catalogs/{master}')->where(['master' => '[a-z][a-z-]{0,60}', 'id' => '[0-9]{1,18}'])->middleware('can:catalogs.manage')->group(function (): void {
+                Route::get('form/{id?}', [AdminCatalogEditController::class, 'sheet']);
+                Route::post('/', [AdminCatalogEditController::class, 'store']);
+                Route::put('{id}', [AdminCatalogEditController::class, 'update']);
+                Route::get('{id}/removal', [AdminCatalogEditController::class, 'removal']);
+                Route::delete('{id}', [AdminCatalogEditController::class, 'destroy']);
+                Route::post('{id}/deactivate', [AdminCatalogEditController::class, 'deactivate']);
+            });
             Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');
             Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');
             Route::get('support/{ticket}', [AdminSupportController::class, 'show'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');

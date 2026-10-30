@@ -31,22 +31,11 @@ new class extends Component
         return new CurrentStatus;
     }
 
-    /**
-     * Palette for the combobox, out of `CurrentStatus::COLORS` rather than a
-     * list written in the Blade: the key that gets stored, the one the CSS can
-     * paint and the one validation checks all have to be the SAME.
-     *
-     * @return array<int, array{value: string, label: string}>
-     */
+    /** @return list<array{value: string, label: string}> */
     #[Computed]
     public function colorOptions(): array
     {
-        return collect(CurrentStatus::COLORS)
-            ->map(fn (string $color): array => [
-                'value' => $color,
-                'label' => __('catalog.status.colors.'.$color),
-            ])
-            ->all();
+        return CurrentStatus::colorOptions();
     }
 };
 ?>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Classes\Main\CatalogEditor;
 use App\Classes\Main\CatalogHub;
 use App\Classes\Main\CatalogTable;
 use App\Dto\CatalogColumnDto;
@@ -12,9 +13,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * "Catálogos" of the admin as the web prints it, from the same models and the same words. Read only:
- * creating, editing and removing a row are the delivery of actions, and a button for them is not drawn
- * until it works. The lock is the web's: the hub's permission on the route, and each master's own after it.
+ * "Catálogos" of the admin as the web prints it, from the same models and the same words. The masters
+ * `CatalogEditor` lists are also edited from the phone (`AdminCatalogEditController`); the rest stay
+ * read only. The lock is the web's: the hub's permission on the route, and each master's own after it.
  */
 class AdminCatalogsController extends Controller
 {
@@ -49,7 +50,12 @@ class AdminCatalogsController extends Controller
 
         abort_if($form === null, 404);
 
+        $editor = new CatalogEditor($master, $request->user());
+
         return response()->json(['data' => [
+            // Only a master the phone edits says how to create one and lets a row open: no dead control.
+            'editable' => $editor->form !== null,
+            'create' => $editor->form !== null ? $editor->createLabel : null,
             'slug' => $master,
             'title' => $form->title,
             'description' => $form->description,

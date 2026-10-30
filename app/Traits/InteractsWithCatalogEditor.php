@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace App\Traits;
 
 use App\Actions\Catalog\RemoveCatalogRecord;
+use App\Classes\Main\CatalogRemoval;
 use App\Dto\CatalogColumnDto;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Interfaces\Catalog\DataTable;
 use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
-use App\Interfaces\Catalog\Removable;
 use App\Livewire\Forms\Catalog\BaseCatalogForm;
-use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -93,70 +92,15 @@ trait InteractsWithCatalogEditor
      */
     public function removalCheck(int $id): array
     {
-        $model = $this->catalogModel();
-
-        if (! $model instanceof Model || ! $model instanceof Removable) {
-            return $this->removalAnswer(RemoveCatalogRecord::MISSING, __('catalog.remove.unsupported'));
-        }
-
-        $inspection = app(RemoveCatalogRecord::class)->inspect($model, $id);
-
-        if ($inspection['status'] === RemoveCatalogRecord::MISSING) {
-            return $this->removalAnswer(RemoveCatalogRecord::MISSING, __('catalog.remove.missing'));
-        }
-
-        $name = $this->removalName($inspection['record'], $model);
-
-        if ($inspection['status'] === RemoveCatalogRecord::IN_USE) {
-            $answer = $this->removalAnswer(
-                RemoveCatalogRecord::IN_USE,
-                __('catalog.remove.in_use', ['name' => $name, 'uses' => $this->removalWords($inspection['usage'])]),
-                __('catalog.remove.blocked_title'),
-            );
-
-            // The way out the message suggests, one click away: only offered
-            // while the record is on, since "switch it off" is the whole point.
-            if ($inspection['record']?->getAttribute('is_active') === true) {
-                $answer['deactivate'] = __('catalog.remove.deactivate');
-                $answer['dismiss'] = __('catalog.remove.understood');
-            }
-
-            return $answer;
-        }
-
-        $entity = app(NotificationService::class)->entityName($model);
-        $message = __('catalog.remove.confirm', ['name' => $name]);
-
-        if ($inspection['owns'] !== []) {
-            $message .= ' '.__('catalog.remove.confirm_owns', ['owns' => $this->removalWords($inspection['owns'])]);
-        }
-
-        return $this->removalAnswer(
-            RemoveCatalogRecord::REMOVED,
-            $message,
-            __('catalog.remove.confirm_title', ['entity' => mb_strtolower($entity)]),
-            __('catalog.remove.accept', ['entity' => mb_strtolower($entity)]),
-        );
+        return $this->removal()->check($id);
     }
 
     /** Deletes after the person confirmed. Returns whether the record is gone, so the front can leave the form. */
     public function removeRecord(int $id): bool
     {
-        $model = $this->catalogModel();
+        ['result' => $result, 'notification' => $notification] = $this->removal()->remove($id);
 
-        if (! $model instanceof Model || ! $model instanceof Removable) {
-            $this->dispatchNotification(new NotificationDto(__('catalog.remove.unsupported'), NotificationType::Error));
-
-            return false;
-        }
-
-        $result = app(RemoveCatalogRecord::class)->handle($model, $id);
-
-        $this->dispatchNotification(match ($result) {
-            RemoveCatalogRecord::REMOVED => app(NotificationService::class)->deleted($model),
-            RemoveCatalogRecord::IN_USE => new NotificationDto(__('catalog.remove.blocked_title'), NotificationType::Warning),
-            default => new NotificationDto(__('notifications.not_found'), NotificationType::Error),
-        });
+        $this->dispatchNotification($notification);
 
         if ($result === RemoveCatalogRecord::REMOVED) {
             $this->resetForm();
@@ -173,26 +117,15 @@ trait InteractsWithCatalogEditor
      */
     public function deactivateRecord(int $id): bool
     {
-        $model = $this->catalogModel();
+        $notification = $this->removal()->deactivate($id);
 
-        if (! $model instanceof Model || ! $model instanceof Removable) {
-            return false;
-        }
-
-        $record = $model->newQuery()->find($id);
-
-        if ($record === null || $record->getAttribute('is_active') !== true) {
+        if ($notification === null) {
             $this->dispatchNotification(new NotificationDto(__('notifications.not_found'), NotificationType::Error));
 
             return false;
         }
 
-        $record->forceFill(['is_active' => false])->save();
-
-        $this->dispatchNotification(new NotificationDto(
-            __('catalog.remove.deactivated', ['name' => $this->removalName($record, $model)]),
-            NotificationType::Success,
-        ));
+        $this->dispatchNotification($notification);
 
         $this->resetForm();
 
@@ -201,37 +134,10 @@ trait InteractsWithCatalogEditor
         return true;
     }
 
-    /** @return array{status: string, title: string, message: string, accept: string, deactivate?: string, dismiss?: string} */
-    private function removalAnswer(string $status, string $message, string $title = '', string $accept = ''): array
+    /** The removal the phone shares: one place decides what deleting a row asks and does. */
+    private function removal(): CatalogRemoval
     {
-        return ['status' => $status, 'title' => $title, 'message' => $message, 'accept' => $accept];
-    }
-
-    /** The name the dialog quotes: whatever identifies the row to a person. */
-    private function removalName(?Model $record, Model $fallback): string
-    {
-        foreach (['name', 'label', 'subject', 'code', 'step'] as $column) {
-            $value = $record?->getAttribute($column);
-
-            if (is_string($value) && trim($value) !== '') {
-                return $value;
-            }
-        }
-
-        return app(NotificationService::class)->entityName($fallback);
-    }
-
-    /**
-     * "14 negocios y 3 países", from `usage` counts keyed by their noun.
-     *
-     * @param  array<string, int>  $counts
-     */
-    private function removalWords(array $counts): string
-    {
-        return collect($counts)
-            ->map(fn (int $count, string $noun): string => trans_choice('catalog.usage.'.$noun, $count, ['count' => $count]))
-            ->values()
-            ->join(', ', __('catalog.remove.and'));
+        return new CatalogRemoval($this->catalogModel());
     }
 
     /**

@@ -54,6 +54,17 @@ class CurrentStatus extends Model implements DataTable, HasColumns, Removable
     public const DEFAULT_COLOR = 'neutral';
 
     /**
+     * The palette a person picks from, worded: out of `COLORS`, so the key
+     * stored, the one the CSS paints and the one validation checks stay the same.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public static function colorOptions(): array
+    {
+        return array_map(fn (string $color): array => ['value' => $color, 'label' => __('catalog.status.colors.'.$color)], self::COLORS);
+    }
+
+    /**
      * A proper name, kept as typed with only the spacing cleaned. The column is
      * UNIQUE, so normalising BEFORE validating is what turns a duplicate into a
      * field error instead of a Postgres crash.
