@@ -116,6 +116,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');
             Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');
             Route::get('support/{ticket}', [AdminSupportController::class, 'show'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
+            Route::get('support/saved-replies/{reply}', [AdminSupportController::class, 'savedReply'])->where('reply', '[0-9]{1,18}')->middleware('can:support.view');
+            Route::post('support/{ticket}/reply', [AdminSupportController::class, 'reply'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
+            Route::post('support/{ticket}/resolve', [AdminSupportController::class, 'resolve'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
         });
 
         // The one door both kinds of token share: it tells the app which side it is on (`staff`).

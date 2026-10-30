@@ -55,16 +55,34 @@ class SupportReplyForm extends BaseForm
         return ['body' => trim($this->body)];
     }
 
+    /** Under the WhatsApp ceiling: a longer text would be cut on the way. */
+    public const int MAX = 900;
+
     protected function getValidationRules(?int $excludeId = null): array
     {
-        return [
-            // Under the WhatsApp ceiling: a longer text would be cut on the way.
-            'body' => ['required', 'string', 'min:2', 'max:900', AttributeValidator::xssFree()],
-        ];
+        return self::fieldRules();
     }
 
     /** @return array<string, string> */
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    /**
+     * The web's rules, read by the app's answer too.
+     *
+     * @return array<string, mixed>
+     */
+    public static function fieldRules(): array
+    {
+        return [
+            'body' => ['required', 'string', 'min:2', 'max:'.self::MAX, AttributeValidator::xssFree()],
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function fieldNames(): array
     {
         return ['body' => __('support.admin.reply')];
     }

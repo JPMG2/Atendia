@@ -6,7 +6,9 @@ namespace App\Classes\Main;
 
 use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
+use App\Livewire\Forms\Admin\SupportReplyForm;
 use App\Models\HelpArticle;
+use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketKind;
 use App\Models\SupportTicketMessage;
@@ -247,6 +249,28 @@ class SupportCase
         get => in_array($this->ticket->status, [SupportTicketStatus::Resolved, SupportTicketStatus::Closed], true)
             ? __('support.admin.resolved_in', ['time' => $this->ticket->resolvedInLabel() ?? '—'])
             : null;
+    }
+
+    /**
+     * The web's answer box, for a report still open: its words and what each
+     * help article and saved reply pastes into the answer (the article as the
+     * web writes its line). Null once the report is settled.
+     *
+     * @var array<string, mixed>|null
+     */
+    public ?array $composer {
+        get => $this->settled !== null ? null : [
+            'label' => __('support.admin.reply'),
+            'hint' => __('support.admin.reply_hint'),
+            'max' => SupportReplyForm::MAX,
+            'send' => __('support.admin.send_reply'),
+            'resolve' => __('support.admin.resolve'),
+            'use_draft' => __('support.admin.ai.use'),
+            'article' => ['label' => __('support.admin.article'), 'placeholder' => __('support.admin.article_placeholder'), 'options' => HelpArticle::shelf()
+                ->map(fn (HelpArticle $article): array => ['value' => $article->slug, 'label' => $article->title, 'text' => __('support.admin.article_line', ['title' => $article->title, 'url' => route('help', ['buscar' => $article->title])])])
+                ->values()->all()],
+            'saved' => ['label' => __('support.admin.saved_reply'), 'placeholder' => __('support.admin.saved_reply_placeholder'), 'options' => SupportReply::shelfWithBodies()],
+        ];
     }
 
     /** @return array{label: string, value: string, tone: string|null} */

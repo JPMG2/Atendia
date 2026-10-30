@@ -109,6 +109,22 @@ class SupportReply extends Model implements DataTable, HasColumns, Removable
             ->all();
     }
 
+    /**
+     * The active replies with what each pastes into an answer, in one read:
+     * the phone inserts the text itself, without asking for it reply by reply.
+     *
+     * @return list<array{value: int, label: string, text: string}>
+     */
+    public static function shelfWithBodies(): array
+    {
+        return self::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'body'])
+            ->map(fn (self $reply): array => ['value' => $reply->id, 'label' => $reply->name, 'text' => $reply->body])
+            ->all();
+    }
+
     /** The text to paste for one reply, or null when it is gone or switched off. */
     public static function bodyOf(int $id): ?string
     {
