@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms\Client;
 
+use App\Classes\Main\AskDesk;
 use App\Livewire\Forms\BaseForm;
 
 /** The owner's question to "Ask AtendIa": bounded, so one message cannot carry a novel to the model. */
@@ -23,7 +24,7 @@ class AskAtendiaForm extends BaseForm
 
     protected function getValidationRules(?int $excludeId = null): array
     {
-        return ['question' => ['required', 'string', 'max:500']];
+        return ['question' => ['required', 'string', 'max:'.AskDesk::QUESTION_MAX]];
     }
 
     /** @return array<string, string> */

@@ -5,11 +5,13 @@ declare(strict_types=1);
 // Solo overrides de voseo; lo que no está cae a lang/es/ask.php.
 return [
     'button' => 'Preguntale a :brand',
+    'tab' => 'Preguntale',
     'title' => 'Preguntale a :brand',
     'intro' => 'Soy el :assistant: te respondo con los datos de tu negocio y te explico cómo usar cada módulo del panel. ¿Qué querés saber?',
     'suggestions_title' => 'Podés preguntar, por ejemplo:',
     'placeholder' => 'Escribí tu pregunta…',
     'failed' => 'No pude responder ahora. Intentá de nuevo en un momento.',
+    'busy' => 'Esperá la respuesta anterior y volvé a preguntar.',
 
     'chart' => [
         'topics' => 'Explicame el bloque de temas de Estadísticas con mis números: ¿qué preguntan más mis clientes y qué me conviene hacer?',

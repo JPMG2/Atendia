@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\AdminPaymentsController;
 use App\Http\Controllers\Api\V1\AdminSessionController;
 use App\Http\Controllers\Api\V1\AdminSupportController;
 use App\Http\Controllers\Api\V1\AgendaController;
+use App\Http\Controllers\Api\V1\AskController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\BroadcastAuthController;
@@ -158,6 +159,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->where('conversation', '[0-9]{1,18}');
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
             Route::get('plan', PlanController::class)->middleware('can:manage-business');
+            Route::get('ask', [AskController::class, 'show'])->middleware('can:manage-business');
+            Route::post('ask', [AskController::class, 'ask'])->middleware('can:manage-business');
+            Route::post('ask/rate', [AskController::class, 'rate'])->middleware('can:manage-business');
             Route::get('business', BusinessController::class)->middleware('can:manage-business');
             Route::get('business/{card}', [BusinessCardController::class, 'show'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');
             Route::put('business/{card}', [BusinessCardController::class, 'update'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');

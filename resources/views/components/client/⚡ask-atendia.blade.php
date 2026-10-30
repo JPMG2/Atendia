@@ -1,13 +1,12 @@
 <?php
 
-use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\AnswerHtml;
+use App\Classes\Main\AskDesk;
 use App\Classes\Main\Plan;
 use App\Livewire\Forms\Client\AskAtendiaForm;
 use App\Models\AskFeedback;
 use App\Models\Business;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -32,73 +31,49 @@ new class extends Component
         return Auth::user()?->business;
     }
 
+    /** The same piece the app reads: quota, card, suggestions and answer cannot differ between the two. */
+    #[Computed]
+    public function desk(): AskDesk
+    {
+        return new AskDesk($this->business, Auth::user());
+    }
+
     #[Computed]
     public function plan(): Plan
     {
-        return $this->business?->plan() ?? Plan::named(null);
+        return $this->desk->plan;
     }
 
-    /** The cheapest tier that opens the feature: what the locked panel sells. */
     #[Computed]
     public function unlockingPlan(): ?Plan
     {
-        return collect(Plan::ladder())->first(fn (Plan $tier): bool => $tier->allowsAsk);
+        return $this->desk->unlockingPlan;
     }
 
     #[Computed]
     public function questionsLeft(): int
     {
-        return max(0, $this->plan->askPerMonth - ($this->business?->askQuestionsThisMonth() ?? 0));
+        return $this->desk->questionsLeft;
     }
 
     #[Computed]
     public function firstName(): string
     {
-        return Str::before(Auth::user()?->name ?? '', ' ');
+        return $this->desk->firstName;
     }
 
-    /**
-     * Picked by the business's local clock: a morning opens with last night,
-     * a Monday with last week — the question most likely to be asked.
-     *
-     * @return list<array{key: string, question: string}>
-     */
+    /** @return list<array{key: string, question: string}> */
     #[Computed]
     public function suggestions(): array
     {
-        $now = now($this->business?->localTimezone() ?? config('app.timezone'));
-
-        return array_map(fn (string $key): array => ['key' => $key, 'question' => __('ask.suggestions.'.$key)], [
-            $now->hour < 12 ? 'overnight' : 'today',
-            'unresolved',
-            'birthdays',
-            $now->isMonday() ? 'last_week' : 'top_topic',
-        ]);
+        return $this->desk->suggestions;
     }
 
-    /**
-     * The "needs you today" card: counts with the screen that solves each,
-     * only what is above zero.
-     *
-     * @return list<array{key: string, count: int, icon: string, url: string}>
-     */
+    /** @return list<array{key: string, count: int, icon: string, route: string, url: string}> */
     #[Computed]
     public function attention(): array
     {
-        $counts = $this->business?->attentionToday() ?? [];
-        $doors = [
-            'waiting' => ['message-circle', route('conversations')],
-            'appointments' => ['calendar-check', route('agenda')],
-            'to_teach' => ['graduation-cap', route('assistant')],
-            'birthdays' => ['cake', route('customers')],
-            'conversations' => ['zap', route('conversations')],
-        ];
-
-        return collect($doors)
-            ->filter(fn (array $door, string $key): bool => ($counts[$key] ?? 0) > 0)
-            ->map(fn (array $door, string $key): array => ['key' => $key, 'count' => $counts[$key], 'icon' => $door[0], 'url' => $door[1]])
-            ->values()
-            ->all();
+        return array_map(fn (array $item): array => [...$item, 'url' => route($item['route'])], $this->desk->attention);
     }
 
     public function open(): void
@@ -114,7 +89,7 @@ new class extends Component
     #[Computed]
     public function renewsOn(): string
     {
-        return ($this->business?->quotaRenewsOn() ?? now()->startOfMonth()->addMonthNoOverflow())->format('d/m/Y');
+        return $this->desk->renewsOn;
     }
 
     /** The gate lives in the action: a hidden form is UX, the plan and the quota are the lock. */
@@ -124,9 +99,9 @@ new class extends Component
         // manage-business, not access-client-app: an invited agent has the
         // second one, and the panel already answers 403 to the screens this
         // assistant would read out loud — while spending the business's quota.
-        abort_unless(Auth::user()?->can('manage-business') && $this->business !== null, 403);
+        abort_unless($this->desk->mayAsk, 403);
 
-        if (! $this->plan->allowsAsk || $this->questionsLeft === 0) {
+        if (! $this->desk->canAsk) {
             return;
         }
 
@@ -140,21 +115,18 @@ new class extends Component
         $this->messages[] = ['role' => 'owner', 'text' => $question];
         $this->form->reset('question');
 
-        $answer = rescue(
-            fn (): string => (new AskAtendia($this->business, $this->firstName, $history))->answer($question),
-            report: true,
-        );
+        $answer = $this->desk->answer($question, $history);
 
-        $this->messages[] = filled($answer)
+        $this->messages[] = $answer !== null
             ? ['role' => 'ai', 'text' => $answer, 'rating' => null]
             : ['role' => 'ai', 'text' => __('ask.failed'), 'failed' => true];
-        unset($this->questionsLeft);
+        unset($this->desk, $this->questionsLeft);
     }
 
     /** One thumb per answer, kept with its question: the thread itself is never stored. */
     public function rate(int $index, string $rating): void
     {
-        abort_unless(Auth::user()?->can('manage-business') && $this->business !== null, 403);
+        abort_unless($this->desk->mayAsk, 403);
 
         $answer = $this->messages[$index] ?? null;
         $question = $this->messages[$index - 1] ?? null;

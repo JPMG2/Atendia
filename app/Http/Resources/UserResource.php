@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Classes\Main\AskDesk;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -35,6 +36,8 @@ class UserResource extends JsonResource
                 'key' => config('broadcasting.connections.reverb.key'),
                 'channel' => 'business.'.$this->business_id,
             ],
+            // The bar's last tab, with its word, only for the owner of a plan that opens it: Emprende draws no icon.
+            'ask' => ! $staff && $this->askDesk()->mayAsk && $this->askDesk()->plan->allowsAsk ? ['tab' => __('ask.tab')] : null,
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             // Settings > Profile as the web says it: its labels, and the date on the business's own clock.
@@ -60,5 +63,12 @@ class UserResource extends JsonResource
                 ],
             ],
         ];
+    }
+
+    private ?AskDesk $desk = null;
+
+    private function askDesk(): AskDesk
+    {
+        return $this->desk ??= new AskDesk($this->resource->business, $this->resource);
     }
 }

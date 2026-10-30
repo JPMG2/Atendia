@@ -6,6 +6,7 @@ declare(strict_types=1);
 // dueña con los datos de su negocio. Solo consultas; el cupo va por plan.
 return [
     'button' => 'Pregúntale a :brand',
+    'tab' => 'Pregúntale',
     'title' => 'Pregúntale a :brand',
     'subtitle' => 'Te respondo con los datos de tu negocio.',
     'hello' => 'Hola, :name',
@@ -17,6 +18,7 @@ return [
     'placeholder' => 'Escribe tu pregunta…',
     'send' => 'Preguntar',
     'thinking' => 'Buscando en tus datos…',
+    'busy' => 'Espera la respuesta anterior y vuelve a preguntar.',
     'failed' => 'No pude responder ahora. Intenta de nuevo en un momento.',
     'used_up' => 'Usaste tus :cap consultas de este mes. Se renuevan el :date.',
 
