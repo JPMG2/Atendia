@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\ComplianceEventKind;
 use App\Enums\SubscriptionStatus;
 use App\Traits\BelongsToBusiness;
+use Carbon\CarbonInterface;
 use Database\Factories\ComplianceEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -107,6 +108,7 @@ class ComplianceEvent extends Model
                 'complianceEvents as events_recent' => fn (Builder $query): Builder => $query->where('occurred_at', '>=', $since),
             ])
             ->withMax('complianceEvents as last_at', 'occurred_at')
+            ->tap(fn (Builder $query): Builder => self::worstFirst($query, $since))
             ->orderByDesc('last_at')
             ->limit($limit)
             ->get();
@@ -130,6 +132,25 @@ class ComplianceEvent extends Model
             ])
             ->sortBy(fn (array $row): int => array_search($row['standing'], [self::SUSPENDED, self::DEBT, self::OBSERVED, self::CLEAR], true))
             ->values();
+    }
+
+    /**
+     * The order of `standingOf()` in SQL, before the limit: sorted after it, a
+     * suspended business whose last event is old sat past the first page and
+     * jumped to the top on "show more".
+     *
+     * @param  Builder<Business>  $query
+     * @return Builder<Business>
+     */
+    private static function worstFirst(Builder $query, CarbonInterface $since): Builder
+    {
+        $status = Subscription::query()->select('status')->whereColumn('subscriptions.business_id', 'businesses.id')->orderByDesc('id')->limit(1);
+        $recent = self::query()->selectRaw('1')->whereColumn('compliance_events.business_id', 'businesses.id')->where('occurred_at', '>=', $since);
+
+        return $query->orderByRaw(
+            'case when businesses.suspended_at is not null then 0 when ('.$status->toSql().') in (?, ?) then 1 when exists ('.$recent->toSql().') then 2 else 3 end',
+            [...$status->getBindings(), SubscriptionStatus::PastDue->value, SubscriptionStatus::Paused->value, ...$recent->getBindings()],
+        );
     }
 
     /** How many businesses the filter matches, for the "show more" that counts what is left. */

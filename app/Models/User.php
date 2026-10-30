@@ -599,13 +599,15 @@ class User extends Authenticatable
     /**
      * The accounts of one adoption tab: the longest-waiting first, since that
      * is who loses most to a day more; the active ones, newest first. The
-     * screen and its export both read the tab through here.
+     * screen and its export both read the tab through here; a caller that
+     * already holds every account passes it, so they are not read twice.
      *
+     * @param  Collection<int, AdoptionRowDto>|null  $accounts
      * @return Collection<int, AdoptionRowDto>
      */
-    public static function adoptionTab(AdoptionSituation $situation): Collection
+    public static function adoptionTab(AdoptionSituation $situation, ?Collection $accounts = null): Collection
     {
-        $rows = self::adoptionRows()->filter(fn (AdoptionRowDto $row): bool => $row->situation === $situation);
+        $rows = ($accounts ?? self::adoptionRows())->filter(fn (AdoptionRowDto $row): bool => $row->situation === $situation);
 
         return ($situation === AdoptionSituation::Active
             ? $rows->sortByDesc(fn (AdoptionRowDto $row) => $row->registeredAt)

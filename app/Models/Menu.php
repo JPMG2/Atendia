@@ -188,6 +188,29 @@ class Menu extends Model
     }
 
     /**
+     * The admin screens this person may open in the app: its admin menu,
+     * flattened. A door to any other screen would end in a 403.
+     *
+     * @return list<string>
+     */
+    public static function adminAppScreens(): array
+    {
+        return self::routesOf(self::onlyScreens(self::tree('admin'), config('atendia.app.admin_screens')));
+    }
+
+    /**
+     * @param  Collection<int, Menu>  $items
+     * @return list<string>
+     */
+    private static function routesOf(Collection $items): array
+    {
+        return $items->flatMap(fn (Menu $item): array => [
+            ...($item->route_name === null ? [] : [$item->route_name]),
+            ...self::routesOf($item->childrenRecursive),
+        ])->values()->all();
+    }
+
+    /**
      * The admin's live counts laid over the tree: what waits on her call, on
      * its item and on the group above it (a closed branch must not hide it).
      * One place, so the web's sidebar and the app's bar show the same number.

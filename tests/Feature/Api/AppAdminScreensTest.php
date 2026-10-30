@@ -237,7 +237,7 @@ test('the menu is the web\'s admin menu, in its order, cut to the screens the ap
     // "Negocios" and "Cobros" are groups in the web's menu: they keep their place and hold only the screens the app has.
     expect(array_column($admin, 'screen'))->toBe(['admin.dashboard', 'admin.alerts', null, null, 'admin.support', null])
         ->and(array_column($admin, 'label'))->toBe([__('menu.admin_home'), __('menu.admin_alerts'), __('menu.admin_businesses'), __('menu.admin_billing'), __('menu.admin_support'), __('menu.admin_platform')])
-        ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses'])
+        ->and(array_column($admin[2]['children'], 'screen'))->toBe(['admin.businesses', 'admin.adoption', 'admin.incidents', 'admin.contacts', 'admin.compliance'])
         ->and(array_column($admin[3]['children'], 'screen'))->toBe(['admin.payments', 'admin.collections'])
         ->and(array_column($admin[5]['children'], 'screen'))->toBe(['admin.company', 'admin.catalogs']);
 });

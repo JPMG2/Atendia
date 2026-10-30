@@ -34,36 +34,17 @@ new class extends Component
         return $this->desk->ofKind($kind);
     }
 
-    /**
-     * The tabs, severity first, each with what it holds.
-     *
-     * @return list<array{value: string, label: string, icon: string, badge: int}>
-     */
+    /** @return list<array{value: string, label: string, icon: string, badge: int}> */
     #[Computed]
     public function tabs(): array
     {
-        return collect(IncidentKind::cases())
-            ->sortByDesc(fn (IncidentKind $kind): int => $kind->weight())
-            ->map(fn (IncidentKind $kind): array => [
-                'value' => $kind->value,
-                'label' => __('incidents.kinds.'.$kind->value.'.tab'),
-                'icon' => $kind->icon(),
-                'badge' => $this->desk->countOf($kind),
-            ])
-            ->values()
-            ->all();
+        return $this->desk->tabs;
     }
 
-    /**
-     * It opens on the worst thing that has something, not on the first tab:
-     * a desk that opens empty hides the one row that needed her.
-     */
     #[Computed]
     public function openTab(): string
     {
-        $firstWithRows = collect($this->tabs())->firstWhere(fn (array $tab): bool => $tab['badge'] > 0);
-
-        return $firstWithRows['value'] ?? IncidentKind::Unanswered->value;
+        return $this->desk->openTab;
     }
 
     public function render(): View
@@ -112,11 +93,7 @@ new class extends Component
                     the customers to win back, this is who to call about them. --}}
                     @if ($concentrated !== null)
                         <x-ui.alert variant="warning" icon="triangle-alert" class="mb-3">
-                            @if ($concentrated['count'] === $concentrated['total'])
-                                {{ __('incidents.concentrated_all', ['count' => $concentrated['count'], 'business' => $concentrated['business']]) }}
-                            @else
-                                {{ __('incidents.concentrated', $concentrated) }}
-                            @endif
+                            {{ $this->desk->concentrationLine($kind) }}
                             <x-ui.button
                                 variant="ghost"
                                 size="sm"
@@ -158,13 +135,7 @@ new class extends Component
                                                 {{ $row->customer ?? '—' }}
                                             </td>
                                             <td data-label="{{ __('incidents.table.waiting') }}" class="font-mono">
-                                                @if ($row->minutesWaiting < 60)
-                                                    {{ trans_choice('incidents.waiting_minutes', $row->minutesWaiting, ['count' => $row->minutesWaiting]) }}
-                                                @elseif ($row->minutesWaiting < 1440)
-                                                    {{ trans_choice('incidents.waiting_hours', intdiv($row->minutesWaiting, 60), ['count' => intdiv($row->minutesWaiting, 60)]) }}
-                                                @else
-                                                    {{ trans_choice('incidents.waiting_days', intdiv($row->minutesWaiting, 1440), ['count' => intdiv($row->minutesWaiting, 1440)]) }}
-                                                @endif
+                                                {{ $row->waiting }}
                                             </td>
                                             <td data-label="{{ __('incidents.table.last') }}">
                                                 <span class="inc-excerpt">{{ $row->excerpt ?? '—' }}</span>

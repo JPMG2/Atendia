@@ -38,4 +38,13 @@ class IncidentRowDto
     public int $minutesWaiting {
         get => (int) $this->happenedAt->diffInMinutes(CarbonImmutable::now());
     }
+
+    /** That age in words, in the unit that reads at a glance: minutes, then hours, then days. */
+    public string $waiting {
+        get => match (true) {
+            $this->minutesWaiting < 60 => trans_choice('incidents.waiting_minutes', $this->minutesWaiting, ['count' => $this->minutesWaiting]),
+            $this->minutesWaiting < 1440 => trans_choice('incidents.waiting_hours', intdiv($this->minutesWaiting, 60), ['count' => intdiv($this->minutesWaiting, 60)]),
+            default => trans_choice('incidents.waiting_days', intdiv($this->minutesWaiting, 1440), ['count' => intdiv($this->minutesWaiting, 1440)]),
+        };
+    }
 }

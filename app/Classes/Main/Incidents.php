@@ -82,6 +82,41 @@ final class Incidents
         ];
     }
 
+    /**
+     * The tabs, severity first, each with what it holds.
+     *
+     * @var list<array{value: string, label: string, icon: string, badge: int}>
+     */
+    public array $tabs {
+        get => collect(IncidentKind::cases())
+            ->sortByDesc(fn (IncidentKind $kind): int => $kind->weight())
+            ->map(fn (IncidentKind $kind): array => [
+                'value' => $kind->value,
+                'label' => __('incidents.kinds.'.$kind->value.'.tab'),
+                'icon' => $kind->icon(),
+                'badge' => $this->countOf($kind),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** The tab it opens on: the worst one holding something, since a desk opening empty hides the row that needed her. */
+    public string $openTab {
+        get => collect($this->tabs)->firstWhere(fn (array $tab): bool => $tab['badge'] > 0)['value'] ?? IncidentKind::Unanswered->value;
+    }
+
+    /** The concentration warning in words, or null: the same sentence on every screen that prints it. */
+    public function concentrationLine(IncidentKind $kind): ?string
+    {
+        $concentrated = $this->concentration($kind);
+
+        return match (true) {
+            $concentrated === null => null,
+            $concentrated['count'] === $concentrated['total'] => __('incidents.concentrated_all', ['count' => $concentrated['count'], 'business' => $concentrated['business']]),
+            default => __('incidents.concentrated', $concentrated),
+        };
+    }
+
     /** @var Collection<int, IncidentRowDto> */
     public function ofKind(?IncidentKind $kind): Collection
     {

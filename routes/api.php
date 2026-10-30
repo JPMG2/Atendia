@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AdminAdoptionController;
 use App\Http\Controllers\Api\V1\AdminAlertsController;
 use App\Http\Controllers\Api\V1\AdminBusinessesController;
 use App\Http\Controllers\Api\V1\AdminCatalogEditController;
@@ -10,7 +11,10 @@ use App\Http\Controllers\Api\V1\AdminCatalogsController;
 use App\Http\Controllers\Api\V1\AdminCollectionsController;
 use App\Http\Controllers\Api\V1\AdminCompanyController;
 use App\Http\Controllers\Api\V1\AdminCompanyEditController;
+use App\Http\Controllers\Api\V1\AdminComplianceController;
+use App\Http\Controllers\Api\V1\AdminContactsController;
 use App\Http\Controllers\Api\V1\AdminHomeController;
+use App\Http\Controllers\Api\V1\AdminIncidentsController;
 use App\Http\Controllers\Api\V1\AdminMenuController;
 use App\Http\Controllers\Api\V1\AdminPaymentsController;
 use App\Http\Controllers\Api\V1\AdminSessionController;
@@ -95,6 +99,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('alerts', AdminAlertsController::class)->middleware('can:alerts.view');
             // Both keys, as the web: its button lives inside the board, behind `alerts.view`.
             Route::post('alerts/{event}/acknowledge', [AdminAlertsController::class, 'acknowledge'])->where('event', '[0-9]{1,18}')->middleware(['can:alerts.view', 'can:alerts.acknowledge']);
+            Route::get('adoption', AdminAdoptionController::class)->middleware('can:adoption.view');
+            Route::get('incidents', AdminIncidentsController::class)->middleware('can:incidents.view');
+            Route::get('contacts', AdminContactsController::class)->middleware('can:contacts.view');
+            Route::get('compliance', [AdminComplianceController::class, 'index'])->middleware('can:compliance.view');
+            Route::get('compliance/{business}', [AdminComplianceController::class, 'show'])->where('business', '[0-9]{1,18}')->middleware('can:compliance.view');
             Route::get('businesses', [AdminBusinessesController::class, 'index'])->middleware('can:businesses.view');
             Route::get('businesses/{business}', [AdminBusinessesController::class, 'show'])->where('business', '[0-9]{1,18}')->middleware('can:businesses.view');
             Route::get('payments', AdminPaymentsController::class)->middleware('can:payments.view');

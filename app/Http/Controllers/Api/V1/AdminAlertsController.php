@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Classes\Main\PlatformBoard;
 use App\Http\Controllers\Controller;
+use App\Models\Menu;
 use App\Models\PlatformEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class AdminAlertsController extends Controller
         $filter = in_array($request->query('filter'), PlatformBoard::FILTERS, true) ? (string) $request->query('filter') : 'all';
         $pages = max(1, min(self::MAX_PAGES, (int) $request->query('page', 1)));
         $board = new PlatformBoard($filter, PlatformBoard::PAGE * $pages);
+        $screens = Menu::adminAppScreens();
 
         return response()->json(['data' => [
             'title' => __('platform_events.screen.title'),
@@ -43,7 +45,7 @@ class AdminAlertsController extends Controller
                 // The button's word, only for whoever may press it (the web's `@can`): no dead control.
                 'ack' => $request->user()?->can('alerts.acknowledge') ? __('platform_events.screen.ack') : null,
                 'empty' => ['title' => __('platform_events.screen.empty_title'), 'body' => __('platform_events.screen.empty_body')],
-                'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'])], $board->rows),
+                'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'], $screens)], $board->rows),
                 'has_more' => $board->hasMore && $pages < self::MAX_PAGES,
             ],
             'sensors' => [
@@ -61,7 +63,7 @@ class AdminAlertsController extends Controller
                     'open' => __('platform_events.screen.detail_open'),
                 ],
                 'groups' => array_map(
-                    fn (array $group): array => [...$group, 'sensors' => array_map(fn (array $sensor): array => [...$sensor, 'target' => $this->target($sensor['target'])], $group['sensors'])],
+                    fn (array $group): array => [...$group, 'sensors' => array_map(fn (array $sensor): array => [...$sensor, 'target' => $this->target($sensor['target'], $screens)], $group['sensors'])],
                     $board->sensorGroups,
                 ),
             ],
@@ -77,14 +79,16 @@ class AdminAlertsController extends Controller
     }
 
     /**
-     * Where an alarm or a sensor leads, only when the app has that screen.
+     * Where an alarm or a sensor leads, only when the app has that screen and
+     * this person may open it: no door that ends in a 403.
      *
      * @param  array{route: string, query: array<string, mixed>}|null  $target
+     * @param  list<string>  $screens
      * @return array{screen: string, query: array<string, mixed>}|null
      */
-    private function target(?array $target): ?array
+    private function target(?array $target, array $screens): ?array
     {
-        return $target !== null && in_array($target['route'], (array) config('atendia.app.admin_screens'), true)
+        return $target !== null && in_array($target['route'], $screens, true)
             ? ['screen' => $target['route'], 'query' => $target['query']]
             : null;
     }
