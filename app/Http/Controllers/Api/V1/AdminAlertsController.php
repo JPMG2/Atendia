@@ -6,13 +6,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Classes\Main\PlatformBoard;
 use App\Http\Controllers\Controller;
+use App\Models\PlatformEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * The "Tablero de avisos" as the web prints it, from the same piece and in the
- * same words. Read only: marking an alarm as seen is the next delivery, and a
- * button for it is not drawn until it works.
+ * same words, and its "Marcar visto": offered and accepted only with the web's
+ * key (`alerts.acknowledge`), marked by the model's own `acknowledgeById`.
  */
 class AdminAlertsController extends Controller
 {
@@ -39,6 +40,8 @@ class AdminAlertsController extends Controller
                 'title' => __('platform_events.screen.open'),
                 'sub' => __('platform_events.screen.open_sub'),
                 'go' => __('platform_events.screen.go'),
+                // The button's word, only for whoever may press it (the web's `@can`): no dead control.
+                'ack' => $request->user()?->can('alerts.acknowledge') ? __('platform_events.screen.ack') : null,
                 'empty' => ['title' => __('platform_events.screen.empty_title'), 'body' => __('platform_events.screen.empty_body')],
                 'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'])], $board->rows),
                 'has_more' => $board->hasMore && $pages < self::MAX_PAGES,
@@ -63,6 +66,14 @@ class AdminAlertsController extends Controller
                 ),
             ],
         ]]);
+    }
+
+    /** Marks one alarm seen; a second look, or one resolved meanwhile, changes nothing, as on the web. */
+    public function acknowledge(Request $request, int $event): JsonResponse
+    {
+        PlatformEvent::acknowledgeById($event, $request->user());
+
+        return response()->json(['data' => ['state' => PlatformEvent::stateOf($event)]]);
     }
 
     /**

@@ -93,6 +93,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('menu', AdminMenuController::class);
             Route::get('home', AdminHomeController::class);
             Route::get('alerts', AdminAlertsController::class)->middleware('can:alerts.view');
+            // Both keys, as the web: its button lives inside the board, behind `alerts.view`.
+            Route::post('alerts/{event}/acknowledge', [AdminAlertsController::class, 'acknowledge'])->where('event', '[0-9]{1,18}')->middleware(['can:alerts.view', 'can:alerts.acknowledge']);
             Route::get('businesses', [AdminBusinessesController::class, 'index'])->middleware('can:businesses.view');
             Route::get('businesses/{business}', [AdminBusinessesController::class, 'show'])->where('business', '[0-9]{1,18}')->middleware('can:businesses.view');
             Route::get('payments', AdminPaymentsController::class)->middleware('can:payments.view');

@@ -122,6 +122,12 @@ class PlatformEvent extends Model
         self::query()->whereKey($id)->first()?->acknowledge($by);
     }
 
+    /** The line's state after an action on it (`open`, `acknowledged`, `resolved`); null when it is gone. */
+    public static function stateOf(int $id): ?string
+    {
+        return self::query()->whereKey($id)->first()?->state->value;
+    }
+
     /** Somebody saw it. A second look changes nothing: the first one is the one that counts. */
     public function acknowledge(User $by): void
     {
