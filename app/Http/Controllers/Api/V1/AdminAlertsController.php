@@ -27,6 +27,7 @@ class AdminAlertsController extends Controller
         $pages = max(1, min(self::MAX_PAGES, (int) $request->query('page', 1)));
         $board = new PlatformBoard($filter, PlatformBoard::PAGE * $pages);
         $screens = Menu::adminAppScreens();
+        $asks = $request->user()?->can('ai.ask') === true;
 
         return response()->json(['data' => [
             'title' => __('platform_events.screen.title'),
@@ -45,7 +46,13 @@ class AdminAlertsController extends Controller
                 // The button's word, only for whoever may press it (the web's `@can`): no dead control.
                 'ack' => $request->user()?->can('alerts.acknowledge') ? __('platform_events.screen.ack') : null,
                 'empty' => ['title' => __('platform_events.screen.empty_title'), 'body' => __('platform_events.screen.empty_body')],
-                'rows' => array_map(fn (array $row): array => [...$row, 'target' => $this->target($row['target'], $screens)], $board->rows),
+                // Each row's "Preguntar", as the web's: the word once, the question per row, only for whoever may ask.
+                'ask' => $asks ? __('ask_admin.ask_button') : null,
+                'rows' => array_map(fn (array $row): array => [
+                    ...$row,
+                    'target' => $this->target($row['target'], $screens),
+                    'question' => $asks ? __('ask_admin.ask.alert', ['kind' => $row['title'], 'business' => $row['business']]) : null,
+                ], $board->rows),
                 'has_more' => $board->hasMore && $pages < self::MAX_PAGES,
             ],
             'sensors' => [

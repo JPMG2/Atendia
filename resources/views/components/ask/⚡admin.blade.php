@@ -1,20 +1,18 @@
 <?php
 
-use App\Ai\Agents\AskAdmin;
+use App\Classes\Main\AdminAskDesk;
 use App\Classes\Main\AdminAttention;
 use App\Livewire\Forms\Admin\AskAdminForm;
-use App\Models\AiUsage;
 use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
  * The admin's AI assistant: the topbar button and the side panel where she asks
- * about the platform, its businesses and every screen of both panels. Read-only
- * answers from the AskAdmin agent, capped per day; the thread is stored by the
- * SDK itself and this component only remembers which conversation it is in.
+ * about the platform, its businesses and every screen of both panels. The cap,
+ * the words and the answer come from `AdminAskDesk`, the piece the phone reads
+ * too; this component only remembers which stored conversation it is in.
  */
 new class extends Component
 {
@@ -29,35 +27,43 @@ new class extends Component
     /** True while the panel is open: it is drawn only then, never on every page the topbar rides. */
     public bool $opened = false;
 
+    #[Computed]
+    public function desk(): ?AdminAskDesk
+    {
+        $user = Auth::user();
+
+        return $user === null ? null : new AdminAskDesk($user);
+    }
+
     /** The lock is the key, not the button: a hidden button is only courtesy. */
     public function allowed(): bool
     {
-        return Auth::user()?->can('ai.ask') === true;
+        return $this->desk?->mayAsk === true;
     }
 
     #[Computed]
     public function dailyCap(): int
     {
-        return (int) config('atendia.admin_assistant.daily_questions');
+        return $this->desk?->dailyCap ?? 0;
     }
 
     #[Computed]
     public function questionsLeft(): int
     {
-        return max(0, $this->dailyCap - AiUsage::adminQuestionsToday());
+        return $this->desk?->questionsLeft ?? 0;
     }
 
     #[Computed]
     public function firstName(): string
     {
-        return Str::before(Auth::user()?->name ?? '', ' ');
+        return $this->desk?->firstName ?? '';
     }
 
     /** @return list<array{key: string, question: string}> */
     #[Computed]
     public function suggestions(): array
     {
-        return array_map(fn (string $key): array => ['key' => $key, 'question' => __('ask_admin.suggestions.'.$key)], ['pulse', 'alerts', 'payments', 'trouble']);
+        return $this->desk?->suggestions ?? [];
     }
 
     /**
@@ -98,7 +104,7 @@ new class extends Component
 
         // The panel may be a stale tab that still offers the input: say it, never swallow the question.
         if ($this->questionsLeft === 0) {
-            $this->messages[] = ['role' => 'ai', 'text' => __('ask_admin.used_up', ['cap' => $this->dailyCap]), 'failed' => true];
+            $this->messages[] = ['role' => 'ai', 'text' => $this->desk->usedUp, 'failed' => true];
 
             return;
         }
@@ -112,17 +118,11 @@ new class extends Component
         $this->messages[] = ['role' => 'owner', 'text' => $question];
         $this->form->reset('question');
 
-        $user = Auth::user();
+        $reply = $this->desk->answer($question, $this->conversationId);
+        $this->conversationId = $reply['conversation'] ?? $this->conversationId;
 
-        $answer = rescue(function () use ($user, $question): string {
-            $response = (new AskAdmin($user))->resume($this->conversationId)->answer($question);
-            $this->conversationId = $response->conversationId ?? $this->conversationId;
-
-            return $response->text;
-        }, report: true);
-
-        $this->messages[] = filled($answer)
-            ? ['role' => 'ai', 'text' => $answer]
+        $this->messages[] = $reply !== null
+            ? ['role' => 'ai', 'text' => $reply['text']]
             : ['role' => 'ai', 'text' => __('ask_admin.failed'), 'failed' => true];
         unset($this->questionsLeft);
     }

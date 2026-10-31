@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AdminAdoptionController;
 use App\Http\Controllers\Api\V1\AdminAlertsController;
+use App\Http\Controllers\Api\V1\AdminAskController;
 use App\Http\Controllers\Api\V1\AdminBusinessesController;
 use App\Http\Controllers\Api\V1\AdminCatalogEditController;
 use App\Http\Controllers\Api\V1\AdminCatalogsController;
@@ -97,6 +98,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('me', AdminSessionController::class);
             Route::get('menu', AdminMenuController::class);
             Route::get('home', AdminHomeController::class);
+            Route::get('ask', [AdminAskController::class, 'show'])->middleware('can:ai.ask');
+            Route::post('ask', [AdminAskController::class, 'ask'])->middleware('can:ai.ask');
             Route::get('alerts', AdminAlertsController::class)->middleware('can:alerts.view');
             // Both keys, as the web: its button lives inside the board, behind `alerts.view`.
             Route::post('alerts/{event}/acknowledge', [AdminAlertsController::class, 'acknowledge'])->where('event', '[0-9]{1,18}')->middleware(['can:alerts.view', 'can:alerts.acknowledge']);

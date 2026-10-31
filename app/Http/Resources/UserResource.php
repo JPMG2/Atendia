@@ -36,8 +36,11 @@ class UserResource extends JsonResource
                 'key' => config('broadcasting.connections.reverb.key'),
                 'channel' => 'business.'.$this->business_id,
             ],
-            // The bar's last tab, with its word, only for the owner of a plan that opens it: Emprende draws no icon.
-            'ask' => ! $staff && $this->askDesk()->mayAsk && $this->askDesk()->plan->allowsAsk ? ['tab' => __('ask.tab')] : null,
+            // The bar's last tab, with its word: the owner of a plan that opens it (Emprende draws no icon),
+            // or a member of the team who holds the admin assistant's key.
+            'ask' => $staff
+                ? ($this->resource->can('ai.ask') ? ['tab' => __('ask_admin.button')] : null)
+                : ($this->askDesk()->mayAsk && $this->askDesk()->plan->allowsAsk ? ['tab' => __('ask.tab')] : null),
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             // Settings > Profile as the web says it: its labels, and the date on the business's own clock.

@@ -39,6 +39,8 @@ class AdminHomeController extends Controller
             'poll_seconds' => PlatformBoard::POLL_SECONDS,
             // The mascot's face on the app's home: watchful while a critical alert this person may see is open.
             'mood' => $items->contains('key', 'alerts') ? 'alert' : 'calm',
+            // The web head's "Preguntar": the question it says, only for whoever may ask (its `@can`).
+            'ask' => $request->user()->can('ai.ask') ? ['label' => __('ask_admin.ask_button'), 'question' => __('ask_admin.ask.pulse')] : null,
             'attention' => [
                 'title' => __('ask_admin.today.title'),
                 'clear' => __('ask_admin.today.clear'),
