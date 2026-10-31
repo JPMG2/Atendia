@@ -176,13 +176,14 @@ class AttributeValidator
     /**
      * Every image a business uploads, ONE definition: only formats moderation
      * can see (no SVG/PDF), and the moderation gate itself. Guarded by
-     * GoldenRulesUploadModerationTest.
+     * GoldenRulesUploadModerationTest. `bail`: a file already refused for its
+     * kind or weight never reaches the paid moderation, nor adds a second message.
      *
      * @return list<mixed>
      */
     public static function imageUpload(string $source, bool $required, int $maxKilobytes): array
     {
-        return [$required ? 'required' : 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:'.$maxKilobytes, new SafeUpload($source)];
+        return ['bail', $required ? 'required' : 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:'.$maxKilobytes, new SafeUpload($source)];
     }
 
     /**

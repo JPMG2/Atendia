@@ -376,6 +376,44 @@ describe('the social networks', function (): void {
 });
 
 describe('the logo', function (): void {
+    it('comes with the web card\'s own words for its field: label, note, button and the logo of today', function (): void {
+        Storage::fake('public');
+        $stored = UploadedFile::fake()->image('hoy.png')->store('logos', 'public');
+        $owner = payingUser(business: ['logo_path' => $stored]);
+
+        $logo = asCardsApp($owner)->getJson('/api/v1/business/identity')->assertOk()->json('data.logo');
+
+        expect($logo)->toBe([
+            'label' => __('client.business.identity.logo').' · '.__('client.business.optional'),
+            'note' => __('client.business.identity.logo_hint'),
+            'choose' => __('forms.file.upload'),
+            'url' => Storage::disk('public')->url($stored),
+        ]);
+    });
+
+    it('refuses a picture over the web\'s 2 MB or of another kind, keeps the one it had, and never pays the moderation for it', function (): void {
+        Storage::fake('public');
+        config()->set('ai.providers.openai.url', 'http://openai.test/v1');
+        config()->set('ai.providers.openai.key', 'test-openai');
+        app()->instance(ContentModeration::class, new ContentModeration);
+        Http::fake(['http://openai.test/*' => Http::response(['results' => [['categories' => [], 'category_scores' => []]]])]);
+        $stored = UploadedFile::fake()->image('hoy.png')->store('logos', 'public');
+        $owner = payingUser(business: ['logo_path' => $stored]);
+
+        // What an iPhone hands over untouched: a HEIC photo; and a camera JPEG past the 2 MB.
+        foreach ([UploadedFile::fake()->image('grande.jpg')->size(2049), UploadedFile::fake()->create('foto.heic', 300, 'image/heic')] as $refused) {
+            $errors = asCardsApp($owner)->post('/api/v1/business/identity/logo', ['logo_file' => $refused], ['Accept' => 'application/json'])
+                ->assertUnprocessable()->json('errors.logo_file');
+
+            // One sentence, the one about the file: never a second one from a moderation that should not have run.
+            expect($errors)->toHaveCount(1);
+        }
+
+        expect($owner->business->fresh()->logo_path)->toBe($stored);
+        Storage::disk('public')->assertExists($stored);
+        Http::assertNothingSent();
+    });
+
     it('is stored under the public disk and the file it replaces leaves it', function (): void {
         Storage::fake('public');
         $previous = UploadedFile::fake()->image('viejo.png')->store('logos', 'public');

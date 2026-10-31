@@ -190,8 +190,17 @@ class BusinessCards
     /** @return array<string, mixed> */
     private function identity(BusinessDto $data): array
     {
+        $url = $data->logo_path !== null ? Storage::disk('public')->url($data->logo_path) : null;
+
         return [
-            'logo_url' => $data->logo_path !== null ? Storage::disk('public')->url($data->logo_path) : null,
+            'logo_url' => $url,
+            // The web card's logo field in its own words: label, the note inside the zone and the upload button.
+            'logo' => [
+                'label' => __('client.business.identity.logo').' · '.__('client.business.optional'),
+                'note' => __('client.business.identity.logo_hint'),
+                'choose' => __('forms.file.upload'),
+                'url' => $url,
+            ],
             'fields' => [
                 $this->field('name', 'text', __('client.business.identity.name'), $data->name, hint: __('client.business.identity.name_hint'), required: true, max: 255),
                 $this->field('description', 'textarea', __('client.business.identity.description'), $data->description, hint: __('client.business.identity.description_hint'), max: 500),
