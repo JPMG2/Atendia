@@ -6,14 +6,20 @@ namespace App\Classes\Main;
 
 use App\Ai\Agents\AskAdmin;
 use App\Ai\Tools\AdminAlerts;
+use App\Ai\Tools\AdminEmailBusiness;
 use App\Ai\Tools\AdminFindBusiness;
 use App\Ai\Tools\AdminPaymentQueue;
 use App\Ai\Tools\AdminPlatformPulse;
 use App\Interfaces\Main\AdminSkillTool;
 use App\Models\AiUsage;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Laravel\Ai\Approvals\Decision;
+use Laravel\Ai\Approvals\Decisions;
+use Laravel\Ai\Approvals\PendingApproval;
 use Laravel\Ai\Contracts\ConversationStore;
+use Laravel\Ai\Contracts\ResolvesPendingApprovals;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
 
@@ -128,8 +134,9 @@ final class AdminAskDesk
      * One pass of the agent, continuing the stored conversation only when it is
      * this admin's (`AskAdmin::resume` checks it). Null when it could not answer:
      * the cap is read again first, as a stale screen may still offer the box.
+     * A run that paused on an e-mail comes back with its draft and maybe no text.
      *
-     * @return array{text: string, conversation: string|null}|null
+     * @return array{text: string, conversation: string|null, draft: array<string, mixed>|null}|null
      */
     public function answer(string $question, ?string $conversationId): ?array
     {
@@ -142,11 +149,115 @@ final class AdminAskDesk
         $reply = rescue(function () use ($question, $conversationId): array {
             $response = (new AskAdmin($this->admin))->resume($conversationId)->answer($question);
 
-            return ['text' => $response->text, 'conversation' => $response->conversationId ?? $conversationId];
+            return [
+                'text' => (string) $response->text,
+                'conversation' => $response->conversationId ?? $conversationId,
+                'draft' => $this->draftOf(collect($response->pendingApprovals)->first()),
+            ];
         }, report: true);
 
         $this->left = null;
 
-        return is_array($reply) && filled($reply['text']) ? $reply : null;
+        return is_array($reply) && (filled($reply['text']) || $reply['draft'] !== null) ? $reply : null;
+    }
+
+    /**
+     * The e-mail the stored conversation is waiting on, to draw its card again; null when it waits on nothing.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function pendingDraft(?string $conversationId): ?array
+    {
+        $store = resolve(ConversationStore::class);
+
+        if (! (new AskAdmin($this->admin))->owns($conversationId) || ! $store instanceof ResolvesPendingApprovals) {
+            return null;
+        }
+
+        return $this->draftOf($store->pendingApprovalsFor((string) $conversationId)[0] ?? null);
+    }
+
+    /**
+     * Her decision on the draft, and the run resumed with it: sent as she left
+     * it (an edit when she corrected it) or not sent at all. Null when that
+     * draft is no longer waiting (decided in another tab, by the other device
+     * at the same moment, or not hers). `sent` is what the channel answered:
+     * a send that did not leave says `failed`, never "Enviado".
+     *
+     * @return array{text: string, conversation: string, outcome: 'sent'|'dropped'|'failed', draft: array<string, mixed>|null}|null
+     */
+    public function decide(?string $conversationId, string $draftId, bool $send, string $subject = '', string $message = ''): ?array
+    {
+        // One decision per draft: the SDK runs the tool before it records the result, so two taps (or the web
+        // and the phone at once) would both send. The second one waits for nothing and finds the draft gone.
+        $lock = Cache::lock('ask-admin-draft:'.$conversationId.':'.$draftId, 120);
+
+        if (! $lock->get()) {
+            return null;
+        }
+
+        try {
+            $draft = $this->pendingDraft($conversationId);
+
+            if ($draft === null || $draft['id'] !== $draftId || ($send && $draft['recipients'] === 0)) {
+                return null;
+            }
+
+            $decisions = $send
+                // Anything else the model asked for in the same step does not go out with it: one letter at a time.
+                ? Decisions::from([$draftId => $subject === $draft['subject'] && $message === $draft['message']
+                    ? Decision::approve()
+                    : Decision::edit([...$draft['arguments'], 'subject' => $subject, 'message' => $message]),
+                ])->rejectRemaining(__('ask_admin.draft.rejected'))
+                // A bare "no" ends the run there: the model is not called and no question is spent.
+                : Decisions::from([$draftId => Decision::reject()])->rejectRemaining();
+
+            AdminEmailBusiness::$sent = null;
+
+            $reply = rescue(function () use ($conversationId, $decisions): array {
+                $response = (new AskAdmin($this->admin))->resume($conversationId)->prompt($decisions);
+
+                return ['text' => (string) $response->text, 'draft' => $this->draftOf(collect($response->pendingApprovals)->first())];
+            }, report: true);
+
+            $this->left = null;
+
+            return [
+                'text' => is_array($reply) ? $reply['text'] : '',
+                'conversation' => (string) $conversationId,
+                'outcome' => ! $send ? 'dropped' : (AdminEmailBusiness::$sent === true ? 'sent' : 'failed'),
+                'draft' => is_array($reply) ? $reply['draft'] : null,
+            ];
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * A paused call drawn as the card she decides on. Only the e-mail tool ever pauses; the business and
+     * who receives it are read from the database, never from what the model wrote.
+     *
+     * @return array{id: string, business: string, recipients: int, to: string, subject: string, message: string, arguments: array<string, mixed>}|null
+     */
+    private function draftOf(?PendingApproval $pending): ?array
+    {
+        // Without the key to write to businesses (taken away while it waited) there is nothing for her to send.
+        if ($pending === null || $pending->tool !== class_basename(AdminEmailBusiness::class) || ! $this->admin->can('businesses.manage')) {
+            return null;
+        }
+
+        $to = AdminEmailBusiness::recipients((int) ($pending->arguments['business_id'] ?? 0));
+        $name = $to['business']->name ?? '—';
+        $count = count($to['emails'] ?? []);
+
+        return [
+            'id' => $pending->id,
+            'business' => $name,
+            'recipients' => $count,
+            'to' => trans_choice('ask_admin.draft.recipients', $count, ['business' => $name, 'count' => $count]),
+            'subject' => (string) ($pending->arguments['subject'] ?? ''),
+            'message' => (string) ($pending->arguments['message'] ?? ''),
+            'arguments' => $pending->arguments,
+        ];
     }
 }

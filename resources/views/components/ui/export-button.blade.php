@@ -1,6 +1,6 @@
-{{-- One format in the export menu, and the ONLY place that links a report (guarded by
-GoldenRulesReportsTest). It reads `scope` and `open` from the menu around it: "all" sends the
-same URL with alcance=todo, so the report ignores every filter. --}}
+{{-- One format in the export menu; its URL comes from ReportMaker::link, the only place that builds
+one (guarded by GoldenRulesReportsTest). It reads `scope` and `open` from the menu around it: "all"
+sends the same URL with alcance=todo, so the report ignores every filter. --}}
 @props([
     'report',
     'format' => 'pdf',
@@ -10,9 +10,8 @@ same URL with alcance=todo, so the report ignores every filter. --}}
 @php
     $format = in_array($format, ['pdf', 'xlsx', 'csv'], true) ? $format : 'pdf';
     $icon = ['pdf' => 'printer', 'xlsx' => 'file-spreadsheet', 'csv' => 'file-text'][$format];
-    $query = array_filter($params, fn (mixed $value): bool => $value !== '' && $value !== null);
-    $viewUrl = route('reports.show', array_merge(['report' => $report, 'format' => $format], $query));
-    $allUrl = route('reports.show', array_merge(['report' => $report, 'format' => $format], $query, ['alcance' => 'todo']));
+    $viewUrl = \App\Services\Report\ReportMaker::link($report, \App\Enums\ReportFormat::from($format), $params);
+    $allUrl = \App\Services\Report\ReportMaker::link($report, \App\Enums\ReportFormat::from($format), [...$params, 'alcance' => 'todo']);
 @endphp
 
 <a

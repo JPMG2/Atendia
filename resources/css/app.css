@@ -2968,6 +2968,19 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .ask-form-row { display:flex; align-items:center; gap:8px; }
   .ask-form-row .field { flex:1; margin:0; }
   .ask-left { font-size:var(--text-xs); color:var(--text-subtle); }
+  /* The admin assistant's e-mail draft: it waits for her decision before anything leaves. */
+  .ask-draft { display:flex; flex-direction:column; gap:10px; padding:16px; border:1px solid var(--brand);
+               border-radius:var(--radius-lg); background:var(--surface-card); }
+  .ask-draft-title { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--text-strong); }
+  .ask-draft-title svg { color:var(--brand); }
+  .ask-draft-hint { font-size:var(--text-xs); color:var(--text-muted); }
+  .ask-draft-to { font-size:var(--text-sm); color:var(--text-body); }
+  .ask-draft-to span { font-weight:600; color:var(--text-strong); }
+  .ask-draft .field { margin:0; }
+  .ask-draft-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+  .ask-note { align-self:stretch; display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:var(--text-xs);
+              color:var(--text-muted); border:1px solid var(--border-subtle); border-radius:var(--radius-md); }
+  .ask-note svg { color:var(--brand); flex-shrink:0; }
   .ask-locked { display:flex; flex-direction:column; align-items:flex-start; gap:12px; }
   .ask-locked-icon { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px;
                      border-radius:var(--radius-md); background:var(--brand-soft); color:var(--brand); }

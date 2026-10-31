@@ -29,13 +29,17 @@ class AiUsage extends Model
     /** The admin's panel assistant: it belongs to no business, so its rows carry none. */
     public const string ASK_ADMIN = 'AskAdmin';
 
-    /** Questions the admin side asked today, on the platform's own clock: what the daily ceiling counts. */
+    /**
+     * Questions the admin side asked today, on the platform's own clock: what the daily ceiling counts.
+     * A run that never reached the model (an e-mail draft she chose not to send) spent nothing and is no question.
+     */
     public static function adminQuestionsToday(): int
     {
         return self::query()
             ->whereNull('business_id')
             ->where('kind', self::ASK_ADMIN)
             ->where('created_at', '>=', now(Company::localTimezone())->startOfDay()->utc())
+            ->where(fn ($query) => $query->where('input_tokens', '>', 0)->orWhere('output_tokens', '>', 0)->orWhere('cached_tokens', '>', 0))
             ->count();
     }
 

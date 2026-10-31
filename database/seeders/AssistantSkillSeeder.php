@@ -62,6 +62,8 @@ class AssistantSkillSeeder extends Seeder
             ['key' => 'admin_business_file', 'name' => 'Ficha de un negocio', 'description' => 'Plan, cobros, uso del mes, WhatsApp y avisos de un negocio, sin lo que escriben sus clientes'],
             ['key' => 'admin_alerts', 'name' => 'Avisos del tablero', 'description' => 'Los avisos abiertos, los más graves primero, de la plataforma o de un negocio'],
             ['key' => 'admin_payment_queue', 'name' => 'Comprobantes por verificar', 'description' => 'Los pagos que esperan su verificación, el más viejo primero'],
+            ['key' => 'admin_reports', 'name' => 'Reportes', 'description' => 'El enlace en PDF, Excel o CSV a un reporte del panel de administración'],
+            ['key' => 'admin_email_business', 'name' => 'Correo a un negocio', 'description' => 'Redacta un correo del equipo a un negocio; sale solo si ella lo aprueba'],
         ];
 
         foreach ($adminSkills as $order => $skill) {

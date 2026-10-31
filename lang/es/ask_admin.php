@@ -60,6 +60,37 @@ return [
         'critical_alert' => '{1}¿Qué hago con el aviso crítico abierto?|[2,*]¿Qué hago con los :count avisos críticos abiertos?',
     ],
 
+    // A report the assistant hands over: the same links as each screen's Imprimir / Excel / CSV buttons.
+    'report' => [
+        'formats' => ['pdf' => 'PDF', 'xlsx' => 'Excel', 'csv' => 'CSV'],
+        'browser' => 'Se abre en el navegador con tu sesión de la web.',
+    ],
+
+    // The e-mail the assistant drafts: it waits for her before anything leaves.
+    'draft' => [
+        'title' => 'Correo listo para enviar',
+        'hint' => 'No sale hasta que lo apruebes. Puedes corregirlo antes.',
+        'to' => 'Para',
+        'recipients' => '{0} :business · nadie del equipo tiene correo|{1} :business · 1 persona del equipo|[2,*] :business · :count personas del equipo',
+        'subject' => 'Asunto',
+        'message' => 'Mensaje',
+        'send' => 'Enviar correo',
+        'drop' => 'No enviar',
+        'sent' => 'Enviado',
+        'dropped' => 'No enviado',
+        'failed' => 'No se envió',
+        'waiting' => 'Decide el correo para seguir',
+        'gone' => 'Ese borrador ya no espera respuesta.',
+        'rejected' => 'Ella decidió no enviar el correo. No lo envíes ni lo vuelvas a proponer salvo que lo pida.',
+    ],
+
+    'letter' => [
+        'eyebrow' => 'Mensaje del equipo',
+        'intro' => 'Hola, equipo de :name.',
+        'cta' => 'Ir a mi panel',
+        'closing' => 'Si tienes dudas, responde este correo: lo lee una persona.',
+    ],
+
     'skills' => [
         'admin' => 'Panel de administración',
         'client' => 'Panel del cliente (lo que ve cada negocio)',

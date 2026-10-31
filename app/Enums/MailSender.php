@@ -32,6 +32,7 @@ use App\Mail\NewBusinessJoined;
 use App\Mail\NewCompany;
 use App\Mail\NewDeviceLogin;
 use App\Mail\PlatformAlertMail;
+use App\Mail\PlatformLetter;
 use App\Mail\ReferralLink;
 use App\Mail\StaffTwoFactorDeadline;
 use App\Mail\StalledAdoptionReport;
@@ -139,6 +140,7 @@ enum MailSender: string
             self::Support => [
                 AccountClosed::class,
                 BusinessSuspended::class,
+                PlatformLetter::class,
                 SupportTicketAnswered::class,
                 SupportTicketOpened::class,
             ],

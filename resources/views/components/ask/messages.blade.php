@@ -3,6 +3,13 @@
 {{-- The thread of both assistants (client and admin): one bubble per turn, the owner's plain and the AI's with its own links live.
 Rating is the client's alone: it feeds a table that belongs to a business. --}}
 @foreach ($messages as $index => $message)
+    {{-- A decided e-mail draft leaves a settled line, not a bubble. --}}
+    @if ($message['role'] === 'note')
+        <div class="ask-note" wire:key="ask-message-{{ $index }}">
+            <x-icon name="mail" :size="14" /> {{ $message['text'] }}
+        </div>
+        @continue
+    @endif
     <div
         wire:key="ask-message-{{ $index }}"
         @class(['ask-msg', 'ask-msg-owner' => $message['role'] === 'owner', 'ask-msg-ai' => $message['role'] !== 'owner'])

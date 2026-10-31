@@ -8,6 +8,7 @@ use App\Ai\Agents\AskAtendia;
 use App\Models\AskFeedback;
 use App\Models\Business;
 use App\Models\User;
+use App\Services\Report\ReportMaker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -208,10 +209,12 @@ final class AskDesk
 
     /**
      * The answer for the phone: a link becomes a door to the app screen of
-     * the route it names, and stays words when the app has no such screen.
+     * the route it names, and stays words when the app has no such screen. A
+     * report (`reports.show`) has no screen: it opens in the browser, whose web
+     * session the report's own lock checks again.
      *
      * @param  list<string>  $screens
-     * @return list<array{kind: string, text: string, target?: array{screen: string, query: array<string, mixed>}}>
+     * @return list<array{kind: string, text: string, target?: array{screen: string, query: array<string, mixed>}, url?: string}>
      */
     public static function appParts(string $answer, array $screens): array
     {
@@ -221,6 +224,10 @@ final class AskDesk
             }
 
             $name = rescue(fn (): ?string => Route::getRoutes()->match(Request::create($part['url']))->getName(), report: false);
+
+            if ($name === ReportMaker::ROUTE) {
+                return ['kind' => 'web', 'text' => $part['text'], 'url' => $part['url']];
+            }
 
             if (! in_array($name, $screens, true)) {
                 return ['kind' => 'text', 'text' => $part['text']];

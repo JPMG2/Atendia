@@ -3,9 +3,11 @@
 declare(strict_types=1);
 use App\Ai\Tools\AdminAlerts;
 use App\Ai\Tools\AdminBusinessFile;
+use App\Ai\Tools\AdminEmailBusiness;
 use App\Ai\Tools\AdminFindBusiness;
 use App\Ai\Tools\AdminPaymentQueue;
 use App\Ai\Tools\AdminPlatformPulse;
+use App\Ai\Tools\AdminReports;
 use App\Ai\Tools\BookCustomerAppointment;
 use App\Ai\Tools\CheckBusinessHours;
 use App\Ai\Tools\CheckFreeSlots;
@@ -498,6 +500,8 @@ return [
             'admin_business_file' => AdminBusinessFile::class,
             'admin_alerts' => AdminAlerts::class,
             'admin_payment_queue' => AdminPaymentQueue::class,
+            'admin_reports' => AdminReports::class,
+            'admin_email_business' => AdminEmailBusiness::class,
         ],
     ],
 

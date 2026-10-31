@@ -37,10 +37,11 @@ test('no file is generated outside the report layer', function (): void {
     expect($offenders->implode("\n"))->toBe('');
 });
 
-test('only the export button links a report', function (): void {
+test('only the report layer builds a report link', function (): void {
+    // ReportMaker::link is the one builder: the export button and the admin's assistant both ask it.
     $offenders = collect(reportScopedSources())
-        ->reject(fn (string $code, string $path): bool => $path === 'resources/views/components/ui/export-button.blade.php' || str_starts_with($path, 'routes/'))
-        ->filter(fn (string $code): bool => str_contains($code, "'reports.show'"))
+        ->reject(fn (string $code, string $path): bool => $path === 'app/Services/Report/ReportMaker.php' || str_starts_with($path, 'routes/'))
+        ->filter(fn (string $code): bool => preg_match('/[\'"]reports\.show[\'"]|route\(\s*\\\\?(App\\\\Services\\\\Report\\\\)?ReportMaker::ROUTE/', $code) === 1)
         ->keys();
 
     expect($offenders->implode("\n"))->toBe('');

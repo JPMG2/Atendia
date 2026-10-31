@@ -26,10 +26,10 @@ grep -qP 'Barryvdh\\DomPDF|\bPdf::|PhpSpreadsheet\\Writer|IOFactory::createWrite
     && problems="${problems}- genera un archivo fuera de la capa de reportes: armá un Report (App\\\\Interfaces\\\\Main\\\\Report) y dejá el formato a ReportFormat\n"
 
 case "$file" in
-    */resources/views/components/ui/export-button.blade.php|*/routes/*) ;;
+    */app/Services/Report/ReportMaker.php|*/routes/*) ;;
     *)
-        grep -qF "'reports.show'" "$file" \
-            && problems="${problems}- enlaza un reporte a mano: el único botón es <x-ui.export-button report=\"clave\" format=\"pdf|xlsx|csv\" />\n"
+        grep -qE "['\"]reports\.show['\"]|route\(\s*\\\\?(App\\\\Services\\\\Report\\\\)?ReportMaker::ROUTE" "$file" \
+            && problems="${problems}- enlaza un reporte a mano: el botón es <x-ui.export-button report=\"clave\" format=\"pdf|xlsx|csv\" /> y la URL la arma solo ReportMaker::link\n"
         ;;
 esac
 

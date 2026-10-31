@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AskAdmin;
 use App\Enums\PlatformEventSeverity;
+use App\Models\Business;
 use App\Models\Company;
 use App\Models\PlatformEvent;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Ai\Approvals\PendingApproval;
+use Laravel\Ai\Responses\AgentResponse;
 
 uses(RefreshDatabase::class);
 
@@ -68,6 +71,45 @@ test('the thread survives a change of screen, and a waiting critical alert sharp
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'ask-admin-thread-kept');
 });
+
+test('an e-mail it drafts waits as a card she can correct, and settles into a line once she decides', function (string $label, int $width, bool $dark): void {
+    $business = Business::factory()->create(['name' => 'Panadería Sol']);
+    User::factory()->count(2)->create(['business_id' => $business->id]);
+    AskAdmin::fake([
+        AgentResponse::fakeWithPendingApprovals([new PendingApproval('call_mail_1', 'AdminEmailBusiness', [
+            'business_id' => $business->id,
+            'subject' => 'Tu comprobante está en revisión',
+            'message' => 'Hola, recibimos tu comprobante de USD 79,00 y lo estamos verificando. Te avisamos apenas quede acreditado.',
+        ])]),
+    ]);
+
+    $page = visit('/admin')->resize($width, 900);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->click('@ask-admin')
+        ->click(__('ask_admin.suggestions.pulse'))
+        ->wait(1)
+        ->assertSee(__('ask_admin.draft.title'))
+        ->assertSee('Panadería Sol · 2 personas del equipo')
+        ->assertSee(__('ask_admin.draft.send'))
+        ->assertSee(__('ask_admin.draft.waiting'))
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'ask-admin-draft-'.$label);
+
+    $page->click(__('ask_admin.draft.drop'))
+        ->wait(1.5)
+        ->assertSee(__('ask_admin.draft.dropped').' · Tu comprobante está en revisión · Panadería Sol')
+        ->assertDontSee(__('ask_admin.draft.title'))
+        ->assertSee(__('ask_admin.new_chat'))
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'ask-admin-draft-settled-'.$label);
+})->with([
+    'desktop-light' => ['desktop-light', 1280, false],
+    'phone-dark' => ['phone-dark', 390, true],
+]);
 
 test('the panel closes with Escape and with its X, and opens again', function (): void {
     $page = visit('/admin')->resize(1280, 900);

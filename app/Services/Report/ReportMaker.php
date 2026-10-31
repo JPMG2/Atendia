@@ -18,6 +18,22 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ReportMaker
 {
+    /** The route every report link goes through; named here only, so nothing else can build one by hand. */
+    public const string ROUTE = 'reports.show';
+
+    /**
+     * The one place a report's URL is built: the export button and the admin's
+     * assistant both ask here, so the door and its lock (`reports.show`) stay one.
+     *
+     * @param  array<string, mixed>  $query  What the report needs to answer; empty values are dropped.
+     */
+    public static function link(string $report, ReportFormat $format, array $query = []): string
+    {
+        $query = array_filter($query, fn (mixed $value): bool => $value !== '' && $value !== null);
+
+        return route(self::ROUTE, array_merge(['report' => $report, 'format' => $format->value], $query));
+    }
+
     public function respond(ReportDto $report, ReportFormat $format): Response
     {
         $exporter = $format->exporter();

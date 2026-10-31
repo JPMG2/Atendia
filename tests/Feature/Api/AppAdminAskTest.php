@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AskAdmin;
 use App\Enums\PlatformEventSeverity;
+use App\Enums\ReportFormat;
 use App\Mail\DeviceChallengeCode;
 use App\Models\AiUsage;
+use App\Models\Business;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\User;
+use App\Services\Report\ReportMaker;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Laravel\Ai\Approvals\PendingApproval;
+use Laravel\Ai\Responses\AgentResponse;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -66,7 +72,7 @@ function adminAskCall(string $token, string $method, string $path, array $body =
 function spendAdminQuestions(int $count): void
 {
     foreach (range(1, $count) as $ignored) {
-        AiUsage::query()->create(['model' => 'gpt-6-luna', 'input_tokens' => 0, 'cached_tokens' => 0, 'output_tokens' => 0, 'kind' => AiUsage::ASK_ADMIN]);
+        AiUsage::query()->create(['model' => 'gpt-6-luna', 'input_tokens' => 900, 'cached_tokens' => 0, 'output_tokens' => 60, 'kind' => AiUsage::ASK_ADMIN]);
     }
 }
 
@@ -258,5 +264,136 @@ describe('the Preguntar buttons', function (): void {
 
         $support = adminAskToken('support');
         expect(adminAskCall($support, 'GET', 'admin/home')->json('data.ask'))->toBeNull();
+    });
+});
+
+describe('an e-mail it drafts', function (): void {
+    /** A run that pauses on the e-mail tool, as the model asks for it. */
+    function pausedOnEmail(int $businessId, string $subject = 'Tu comprobante está en revisión'): void
+    {
+        AskAdmin::fake([
+            AgentResponse::fakeWithPendingApprovals([new PendingApproval('call_mail_1', 'AdminEmailBusiness', ['business_id' => $businessId, 'subject' => $subject, 'message' => 'Lo estamos verificando.'])]),
+            'Listo: salió.',
+        ]);
+    }
+
+    test('the answer brings the draft, with the business and its team read from the database', function (): void {
+        $business = Business::factory()->create(['name' => 'Panadería Sol']);
+        User::factory()->count(2)->create(['business_id' => $business->id]);
+        pausedOnEmail($business->id);
+        $token = adminAskToken();
+
+        $data = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile a Panadería Sol'])->assertOk()->json('data');
+
+        expect($data['draft'])->toMatchArray([
+            'id' => 'call_mail_1',
+            'business' => 'Panadería Sol',
+            'recipients' => 2,
+            'to' => 'Panadería Sol · 2 personas del equipo',
+            'subject' => 'Tu comprobante está en revisión',
+        ])->and($data['draft'])->not->toHaveKey('arguments')
+            ->and($data['answer'])->toBeNull();
+
+        // Drawn again from the stored conversation when the sheet is opened later.
+        $sheet = adminAskCall($token, 'GET', 'admin/ask?conversation='.$data['conversation'])->assertOk()->json('data');
+        expect($sheet['draft']['id'])->toBe('call_mail_1')
+            ->and($sheet['draft_words']['send'])->toBe(__('ask_admin.draft.send'));
+    });
+
+    test('a decision on a draft that is not waiting is refused, and an empty subject never goes out', function (): void {
+        $business = Business::factory()->create();
+        User::factory()->create(['business_id' => $business->id]);
+        pausedOnEmail($business->id);
+        $token = adminAskToken();
+        $conversation = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile'])->json('data.conversation');
+
+        adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_otro', 'send' => true, 'subject' => 'Hola', 'message' => 'Texto'])
+            ->assertStatus(409)->assertJsonPath('code', 'draft_gone');
+
+        adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => true, 'subject' => '  ', 'message' => 'Texto'])
+            ->assertStatus(422)->assertJsonValidationErrors('subject');
+
+        // Somebody else's conversation: no draft of hers to decide.
+        adminAskCall(adminAskToken(), 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => false])
+            ->assertStatus(409);
+
+        $decided = adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => false])->assertOk()->json('data');
+        expect($decided['outcome'])->toBe('dropped')->and($decided['note'])->toBe(__('ask_admin.draft.dropped'));
+    });
+
+    test('one draft, one decision: a second at the same moment, a new question meanwhile or a send past the cap are refused', function (): void {
+        $business = Business::factory()->create();
+        User::factory()->create(['business_id' => $business->id]);
+        pausedOnEmail($business->id);
+        $token = adminAskToken();
+        $conversation = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile'])->json('data.conversation');
+        $body = ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => true, 'subject' => 'Hola', 'message' => 'Texto'];
+
+        // While a draft waits, a new question would drop it unseen.
+        adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Otra cosa', 'conversation' => $conversation])
+            ->assertStatus(409)->assertJsonPath('code', 'draft_waiting');
+
+        // The other device holds the decision right now: this one finds the draft gone, nothing goes twice.
+        $held = Cache::lock("ask-admin-draft:{$conversation}:call_mail_1", 120);
+        $held->get();
+        adminAskCall($token, 'POST', 'admin/ask/draft', $body)->assertStatus(409);
+        $held->release();
+
+        spendAdminQuestions((int) config('atendia.admin_assistant.daily_questions'));
+        adminAskCall($token, 'POST', 'admin/ask/draft', $body)->assertStatus(429)->assertJsonPath('code', 'ask_used_up');
+
+        // Not sending is always possible.
+        adminAskCall($token, 'POST', 'admin/ask/draft', [...$body, 'send' => false])->assertOk()->assertJsonPath('data.outcome', 'dropped');
+    });
+
+    test('a send that did not leave says so, never "Enviado"', function (): void {
+        $business = Business::factory()->create();
+        User::factory()->create(['business_id' => $business->id]);
+        pausedOnEmail($business->id);
+        $token = adminAskToken();
+        $conversation = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile'])->json('data.conversation');
+
+        // The faked gateway runs no tool, as a run that broke before the channel: nothing was handed over.
+        adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => true, 'subject' => 'Hola', 'message' => 'Texto'])
+            ->assertOk()
+            ->assertJsonPath('data.outcome', 'failed')
+            ->assertJsonPath('data.note', __('ask_admin.draft.failed'));
+    });
+
+    test('a draft is offered only while she holds the key to write to businesses', function (): void {
+        $business = Business::factory()->create();
+        User::factory()->create(['business_id' => $business->id]);
+        pausedOnEmail($business->id);
+        $token = adminAskToken();
+        $conversation = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile'])->json('data.conversation');
+
+        $admin = User::query()->whereHas('tokens')->latest('id')->firstOrFail();
+        $admin->syncRoles([]);
+        $admin->givePermissionTo(['access-admin-panel', 'ai.ask', 'businesses.view']);
+
+        expect(adminAskCall($token, 'GET', 'admin/ask?conversation='.$conversation)->json('data.draft'))->toBeNull();
+        adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => true, 'subject' => 'Hola', 'message' => 'Texto'])
+            ->assertStatus(409);
+    });
+
+    test('a report link reaches the phone as one to open in the browser, with the web\'s note', function (): void {
+        $pdf = ReportMaker::link('cobranza', ReportFormat::Pdf);
+        AskAdmin::fake(["Aquí está: [PDF]({$pdf})."]);
+        $token = adminAskToken();
+
+        $parts = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Pasame el reporte de cobranza'])->assertOk()->json('data.answer.parts');
+
+        expect(collect($parts)->firstWhere('kind', 'web'))->toBe(['kind' => 'web', 'text' => 'PDF', 'url' => $pdf])
+            ->and(adminAskCall($token, 'GET', 'admin/ask')->json('data.report_browser'))->toBe(__('ask_admin.report.browser'));
+    });
+
+    test('without the key to manage businesses the assistant has no e-mail to draft', function (): void {
+        $reader = User::factory()->create(['email_verified_at' => now()]);
+        $reader->givePermissionTo(['access-admin-panel', 'ai.ask', 'businesses.view']);
+
+        $tools = collect((new AskAdmin($reader->refresh()))->tools())->map(fn ($tool): string => class_basename($tool));
+
+        expect($tools)->toContain('AdminFindBusiness')->not->toContain('AdminEmailBusiness')
+            ->and($tools)->toContain('AdminReports');
     });
 });

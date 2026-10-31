@@ -6,15 +6,19 @@ use App\Actions\Admin\RaisePlatformEvent;
 use App\Ai\Agents\AskAdmin;
 use App\Ai\Tools\AdminAlerts;
 use App\Ai\Tools\AdminBusinessFile;
+use App\Ai\Tools\AdminEmailBusiness;
 use App\Ai\Tools\AdminFindBusiness;
 use App\Ai\Tools\AdminPaymentQueue;
 use App\Ai\Tools\AdminPlatformPulse;
+use App\Ai\Tools\AdminReports;
 use App\Classes\Main\AdminAttention;
 use App\Classes\Main\AnswerHtml;
 use App\Classes\Main\AssistantContract;
 use App\Classes\Main\ScreenTexts;
 use App\Enums\PlatformEventKind;
+use App\Enums\ReportFormat;
 use App\Interfaces\Main\AdminSkillTool;
+use App\Mail\PlatformLetter;
 use App\Models\AiUsage;
 use App\Models\Business;
 use App\Models\ConversationMessage;
@@ -22,11 +26,16 @@ use App\Models\Menu;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\Report\ReportMaker;
 use Database\Seeders\AssistantSkillSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Laravel\Ai\Approvals\PendingApproval;
+use Laravel\Ai\Contracts\Approvable;
+use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Tools\Request;
 use Livewire\Livewire;
 
@@ -161,6 +170,73 @@ describe('its tools say exact things', function (): void {
     });
 });
 
+describe('reports and an e-mail', function (): void {
+    test('a report is the same link as its screen\'s export button, and only one this person\'s keys open', function (): void {
+        $admin = asAdminTool(AdminReports::class, ['report' => 'cobranza']);
+
+        expect($admin)->toContain('['.__('ask_admin.report.formats.pdf').']('.ReportMaker::link('cobranza', ReportFormat::Pdf).')')
+            ->toContain(ReportMaker::link('cobranza', ReportFormat::Csv))
+            ->and(asAdminTool(AdminReports::class, ['report' => 'clientes']))->toStartWith('No tengo ese reporte');
+
+        $support = User::factory()->create(['email_verified_at' => now()]);
+        $support->givePermissionTo(['access-admin-panel', 'ai.ask', 'support.view']);
+        $tool = AdminReports::forAdmin(new AskAdmin($support->refresh()));
+
+        expect((string) $tool->description())->toContain('soporte')->not->toContain('cobranza')
+            ->and((string) $tool->handle(new Request(['report' => 'cobranza'])))->toStartWith('No tengo ese reporte');
+    });
+
+    test('the e-mail always waits for her, and once approved goes to the business\'s team through the channel', function (): void {
+        Mail::fake();
+        $business = Business::factory()->create(['name' => 'Panadería Sol']);
+        User::factory()->create(['business_id' => $business->id, 'email' => 'duena@sol.test']);
+        User::factory()->create(['business_id' => $business->id, 'email' => 'caja@sol.test']);
+
+        $tool = AdminEmailBusiness::forAdmin(new AskAdmin(askAdminUser()));
+        $request = new Request(['business_id' => $business->id, 'subject' => 'Tu comprobante', 'message' => "Lo estamos verificando.\n\nTe avisamos <b>pronto</b>."]);
+
+        expect($tool)->toBeInstanceOf(Approvable::class)
+            ->and($tool->shouldRequestApproval($request))->not->toBeNull()
+            ->and((string) $tool->handle($request))->toBe('Enviado a 2 persona(s) del equipo de Panadería Sol.')
+            ->and(AdminEmailBusiness::$sent)->toBeTrue();
+
+        // Its paragraphs keep their breaks, read from the left; what the model wrote is text, never markup.
+        Mail::assertQueued(PlatformLetter::class, fn (PlatformLetter $mail): bool => $mail->hasTo('duena@sol.test') && $mail->hasTo('caja@sol.test')
+            && $mail->heading === 'Tu comprobante'
+            && str_contains($mail->render(), 'Lo estamos verificando.<br />')
+            && str_contains($mail->render(), 'text-align:left')
+            && str_contains($mail->render(), '&lt;b&gt;pronto&lt;/b&gt;'));
+
+        expect((string) $tool->handle(new Request(['business_id' => 999999, 'subject' => 'A', 'message' => 'B'])))->toStartWith('No existe')
+            ->and((string) $tool->handle(new Request(['business_id' => $business->id, 'subject' => '', 'message' => 'B'])))->toStartWith('El correo necesita');
+        Mail::assertQueuedCount(1);
+    });
+
+    test('the panel shows the draft, refuses an empty subject and settles the card once she decides', function (): void {
+        $business = Business::factory()->create(['name' => 'Panadería Sol']);
+        User::factory()->create(['business_id' => $business->id]);
+        AskAdmin::fake([
+            AgentResponse::fakeWithPendingApprovals([new PendingApproval('call_mail_1', 'AdminEmailBusiness', ['business_id' => $business->id, 'subject' => 'Tu comprobante', 'message' => 'Lo verificamos.'])]),
+            'No lo envié.',
+        ]);
+
+        $panel = Livewire::actingAs(askAdminUser())->test('ask.admin')->call('open')
+            ->set('form.question', 'Escribile a Panadería Sol')->call('ask')
+            ->assertSet('draft.business', 'Panadería Sol')
+            ->assertSet('draftForm.subject', 'Tu comprobante')
+            ->assertSee(__('ask_admin.draft.waiting'));
+
+        $panel->set('draftForm.subject', ' ')->call('sendDraft')->assertHasErrors('subject')->assertSet('draft.id', 'call_mail_1');
+
+        // A new question while it waits would drop it unseen: she decides it first, and no question is spent.
+        $panel->set('form.question', 'Otra cosa')->call('ask')->assertSet('draft.id', 'call_mail_1');
+        expect(collect($panel->get('messages'))->last()['text'])->toBe(__('ask_admin.draft.waiting'));
+
+        $panel->call('dropDraft')->assertSet('draft', null);
+        expect(collect($panel->get('messages'))->firstWhere('role', 'note')['text'])->toBe(__('ask_admin.draft.dropped').' · Tu comprobante · Panadería Sol');
+    });
+});
+
 describe('the three touches that make it welcome', function (): void {
     test('an alert comes with what the board says to do and the screen that does it', function (): void {
         $business = Business::factory()->create(['name' => 'Kiosco El Faro']);
@@ -258,12 +334,14 @@ describe('what each key opens', function (): void {
             return collect((new AskAdmin($user->refresh()))->tools())->map(fn ($tool): string => class_basename($tool))->sort()->values()->all();
         };
 
+        // Every screen with a report brings the reports; writing to a business takes the key that manages them.
         expect($with([]))->toBe([])
-            ->and($with(['businesses.view']))->toBe(['AdminBusinessFile', 'AdminFindBusiness'])
-            ->and($with(['payments.view']))->toBe(['AdminPaymentQueue'])
-            ->and($with(['alerts.view']))->toBe(['AdminAlerts'])
-            ->and($with(['businesses.view', 'payments.view', 'alerts.view']))->toHaveCount(5)
-            ->and(collect((new AskAdmin(askAdminUser()))->tools())->count())->toBe(5);
+            ->and($with(['businesses.view']))->toBe(['AdminBusinessFile', 'AdminFindBusiness', 'AdminReports'])
+            ->and($with(['payments.view']))->toBe(['AdminPaymentQueue', 'AdminReports'])
+            ->and($with(['alerts.view']))->toBe(['AdminAlerts', 'AdminReports'])
+            ->and($with(['businesses.view', 'businesses.manage']))->toBe(['AdminBusinessFile', 'AdminEmailBusiness', 'AdminFindBusiness', 'AdminReports'])
+            ->and($with(['businesses.view', 'payments.view', 'alerts.view']))->toHaveCount(6)
+            ->and(collect((new AskAdmin(askAdminUser()))->tools())->count())->toBe(7);
     });
 
     test('a link in an answer goes live only when a browser would also read it as ours', function (): void {
@@ -288,7 +366,7 @@ describe('what it knows', function (): void {
         $instructions = trim((string) $agent->instructions());
         $tools = collect($agent->tools());
 
-        expect($tools)->toHaveCount(5)
+        expect($tools)->toHaveCount(7)
             ->and($tools->every(fn ($tool): bool => $tool instanceof AdminSkillTool))->toBeTrue()
             ->and(str_starts_with($instructions, trim($contract->grounding)))->toBeTrue()
             ->and(str_ends_with($instructions, trim($contract->clock)))->toBeTrue()
@@ -393,9 +471,11 @@ describe('the panel', function (): void {
         AskAdmin::fake()->preventStrayPrompts();
         config()->set('atendia.admin_assistant.daily_questions', 2);
 
-        $row = ['model' => 'gpt-6-luna', 'input_tokens' => 0, 'cached_tokens' => 0, 'output_tokens' => 0];
+        $row = ['model' => 'gpt-6-luna', 'input_tokens' => 900, 'cached_tokens' => 0, 'output_tokens' => 60];
         AiUsage::query()->create([...$row, 'kind' => AiUsage::ASK_ADMIN]);
         AiUsage::query()->create([...$row, 'kind' => AiUsage::ASK_ATENDIA]);
+        // A draft she chose not to send ends the run before the model: it spent nothing and is no question.
+        AiUsage::query()->create([...$row, 'input_tokens' => 0, 'output_tokens' => 0, 'kind' => AiUsage::ASK_ADMIN]);
 
         expect(AiUsage::adminQuestionsToday())->toBe(1);
 

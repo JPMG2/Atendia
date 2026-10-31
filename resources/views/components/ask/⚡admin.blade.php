@@ -1,6 +1,7 @@
 <?php
 
 use App\Classes\Main\AdminAskDesk;
+use App\Livewire\Forms\Admin\AskAdminDraftForm;
 use App\Livewire\Forms\Admin\AskAdminForm;
 use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
@@ -20,8 +21,17 @@ new class extends Component
 
     public AskAdminForm $form;
 
+    public AskAdminDraftForm $draftForm;
+
     /** @var list<array{role: string, text: string, failed?: bool}> */
     public array $messages = [];
+
+    /**
+     * The e-mail the run paused on, waiting for her: drawn as a card until she decides.
+     *
+     * @var array{id: string, business: string, recipients: int, to: string, subject: string, message: string}|null
+     */
+    public ?array $draft = null;
 
     /** The SDK's conversation this panel continues, null until the first answer is stored. */
     public ?string $conversationId = null;
@@ -93,7 +103,66 @@ new class extends Component
         if ($this->messages === []) {
             $this->conversationId = session(self::FOLLOWING);
             $this->messages = $this->desk->thread($this->conversationId);
+            $this->showDraft($this->desk->pendingDraft($this->conversationId));
         }
+    }
+
+    /** Sends the draft as she left it: corrected, it goes as an edit of what the assistant wrote. */
+    public function sendDraft(): void
+    {
+        abort_unless($this->allowed() && $this->draft !== null, 403);
+
+        ['subject' => $subject, 'message' => $message] = $this->draftForm->validatedDraft();
+
+        // Sending runs the model once more: with today's cap spent it waits for tomorrow; not sending is always free.
+        if ($this->desk->questionsLeft === 0) {
+            $this->messages[] = ['role' => 'ai', 'text' => $this->desk->usedUp, 'failed' => true];
+
+            return;
+        }
+
+        $this->settleDraft($this->desk->decide($this->conversationId, $this->draft['id'], true, $subject, $message), $subject);
+        unset($this->questionsLeft);
+    }
+
+    public function dropDraft(): void
+    {
+        abort_unless($this->allowed() && $this->draft !== null, 403);
+
+        $this->settleDraft($this->desk->decide($this->conversationId, $this->draft['id'], false), $this->draft['subject']);
+    }
+
+    /** @param  array<string, mixed>|null  $draft */
+    private function showDraft(?array $draft): void
+    {
+        $this->draft = $draft === null ? null : array_diff_key($draft, ['arguments' => true]);
+        $this->draftForm->subject = $draft['subject'] ?? '';
+        $this->draftForm->message = $draft['message'] ?? '';
+    }
+
+    /**
+     * @param  array{text: string, outcome: string, draft: array<string, mixed>|null}|null  $decided
+     * @param  string  $subject  The subject as it went (or would have gone), corrected or not.
+     */
+    private function settleDraft(?array $decided, string $subject): void
+    {
+        $draft = $this->draft;
+
+        if ($decided === null) {
+            // Decided elsewhere already, or gone: the card goes and says so, nothing is sent twice.
+            $this->messages[] = ['role' => 'ai', 'text' => __('ask_admin.draft.gone'), 'failed' => true];
+            $this->showDraft(null);
+
+            return;
+        }
+
+        $this->messages[] = ['role' => 'note', 'text' => __('ask_admin.draft.'.$decided['outcome']).' · '.$subject.' · '.$draft['business']];
+
+        if (filled($decided['text'])) {
+            $this->messages[] = ['role' => 'ai', 'text' => $decided['text']];
+        }
+
+        $this->showDraft($decided['draft']);
     }
 
     public function close(): void
@@ -105,6 +174,7 @@ new class extends Component
     public function newChat(): void
     {
         $this->reset('messages', 'conversationId');
+        $this->showDraft(null);
         $this->form->reset('question');
         session()->forget(self::FOLLOWING);
     }
@@ -113,6 +183,13 @@ new class extends Component
     public function ask(?string $suggested = null): void
     {
         abort_unless($this->allowed(), 403);
+
+        // A run paused on an e-mail is decided first: a new question would silently drop the draft.
+        if ($this->draft !== null) {
+            $this->messages[] = ['role' => 'ai', 'text' => __('ask_admin.draft.waiting'), 'failed' => true];
+
+            return;
+        }
 
         // The panel may be a stale tab that still offers the input: say it, never swallow the question.
         if ($this->questionsLeft === 0) {
@@ -134,9 +211,17 @@ new class extends Component
         $this->conversationId = $reply['conversation'] ?? $this->conversationId;
         session([self::FOLLOWING => $this->conversationId]);
 
-        $this->messages[] = $reply !== null
-            ? ['role' => 'ai', 'text' => $reply['text']]
-            : ['role' => 'ai', 'text' => __('ask_admin.failed'), 'failed' => true];
+        if ($reply === null) {
+            $this->messages[] = ['role' => 'ai', 'text' => __('ask_admin.failed'), 'failed' => true];
+        } else {
+            // A run that paused on an e-mail may say nothing yet: the draft card is its answer.
+            if (filled($reply['text'])) {
+                $this->messages[] = ['role' => 'ai', 'text' => $reply['text']];
+            }
+
+            $this->showDraft($reply['draft']);
+        }
+
         unset($this->questionsLeft);
     }
 };
@@ -181,8 +266,31 @@ new class extends Component
 
                             <x-ask.pending :thinking="__('ask_admin.thinking')" />
 
-                            {{-- Only the questions a tool of this person answers: with none, no title over an empty row. --}}
-                            @if ($this->suggestions !== [])
+                            {{-- The e-mail the run paused on: nothing leaves until she decides here. --}}
+                            @if ($draft !== null)
+                                <div class="ask-draft" data-testid="ask-admin-draft" wire:key="ask-draft-{{ $draft['id'] }}">
+                                    <p class="ask-draft-title"><x-icon name="mail" :size="16" /> {{ __('ask_admin.draft.title') }}</p>
+                                    <p class="ask-draft-hint">{{ __('ask_admin.draft.hint') }}</p>
+                                    <p class="ask-draft-to"><span>{{ __('ask_admin.draft.to') }}:</span> {{ $draft['to'] }}</p>
+                                    <x-ui.input name="subject" :label="__('ask_admin.draft.subject')" wire:model="draftForm.subject" maxlength="120" />
+                                    <x-ui.textarea name="message" :label="__('ask_admin.draft.message')" wire:model="draftForm.message" :rows="5" maxlength="2000" />
+                                    {{-- Resuming the run takes the model a few seconds: say so instead of a frozen card. --}}
+                                    <p class="ask-thinking" wire:loading wire:target="sendDraft,dropDraft">
+                                        <span class="ask-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                                        {{ __('ask_admin.thinking') }}
+                                    </p>
+                                    <div class="ask-draft-actions">
+                                        <x-ui.button variant="danger" size="sm" wire:click="dropDraft" wire:loading.attr="disabled">{{ __('ask_admin.draft.drop') }}</x-ui.button>
+                                        @if ($draft['recipients'] > 0)
+                                            <x-ui.button variant="primary" size="sm" icon="send" wire:click="sendDraft" wire:loading.attr="disabled">{{ __('ask_admin.draft.send') }}</x-ui.button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Only the questions a tool of this person answers: with none, no title over an empty row.
+                            While a draft waits there is nothing to ask: she decides it first. --}}
+                            @if ($this->suggestions !== [] && $draft === null)
                             <div class="ask-suggestions" x-show="pending === ''">
                                 <p class="ask-suggestions-title">{{ __('ask_admin.suggestions_title') }}</p>
                                 @foreach ($this->suggestions as $suggestion)
@@ -202,7 +310,9 @@ new class extends Component
                         </div>
 
                         <x-slot:footer>
-                            @if ($this->questionsLeft > 0)
+                            @if ($draft !== null)
+                                <p class="ask-left">{{ __('ask_admin.draft.waiting') }}</p>
+                            @elseif ($this->questionsLeft > 0)
                                 <form class="ask-form" x-on:submit.prevent="send()">
                                     <div class="ask-form-row">
                                         <x-ui.input
