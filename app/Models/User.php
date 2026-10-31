@@ -14,6 +14,7 @@ use App\Enums\AppAccess;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
 use App\Enums\PanelNotificationType;
+use App\Services\Tenant;
 use App\Traits\SearchesText;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -46,6 +47,20 @@ class User extends Authenticatable
 
     /** How long the team screen says someone came back: long enough to notice, short enough not to label them for good. */
     public const int REJOINED_DAYS = 7;
+
+    /**
+     * The signed-in person gaining (or losing) a business mid-request, as the
+     * onboarding does: Postgres still holds the tenant this request began with
+     * (`0`, "no business"), and its row policies would refuse the new rows.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (self $user): void {
+            if ($user->wasChanged('business_id') && auth()->id() === $user->getKey()) {
+                app(Tenant::class)->syncDatabase();
+            }
+        });
+    }
 
     /**
      * Mirrors of the column defaults: a user created in this very request

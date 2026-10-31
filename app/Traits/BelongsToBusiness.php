@@ -23,7 +23,15 @@ trait BelongsToBusiness
     public static function bootBelongsToBusiness(): void
     {
         static::addGlobalScope('business', function (Builder $builder): void {
-            $businessId = app(Tenant::class)->id();
+            $tenant = app(Tenant::class);
+            $businessId = $tenant->id();
+
+            // A signed-in client with no business yet (just registered) is not the admin: nothing at all.
+            if ($businessId === null && ! $tenant->unrestricted()) {
+                $builder->whereRaw('1 = 0');
+
+                return;
+            }
 
             // With no business adopted (the admin, a job, a platform figure) the landing's
             // examples are not there: their rows are seen only from inside their own tenant.

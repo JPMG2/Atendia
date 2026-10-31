@@ -31,6 +31,9 @@ class Tenant
     /** @var array<int, string> business id => its clock, resolved once per request */
     private array $timezones = [];
 
+    /** @var array<int|string, bool> user id => whether they are platform staff, asked once per request */
+    private array $staff = [];
+
     /** The current business's clock, for showing times the way its owner lives them. */
     public function timezone(): string
     {
@@ -53,6 +56,28 @@ class Tenant
         return auth()->user()?->business_id;
     }
 
+    /**
+     * With no business, who may still see every business's rows: the platform's
+     * staff, a job or the console (nobody signed in, or "act as admin" set by
+     * hand). A signed-in client who has no business yet sees NONE: having no
+     * business is not being the admin.
+     */
+    public function unrestricted(): bool
+    {
+        if ($this->overridden) {
+            return $this->businessId === null;
+        }
+
+        $user = auth()->user();
+
+        if ($user === null) {
+            return true;
+        }
+
+        return $user->business_id === null
+            && ($this->staff[$user->getAuthIdentifier()] ??= $user->can('access-admin-panel'));
+    }
+
     public function set(?int $businessId): void
     {
         $this->businessId = $businessId;
@@ -72,12 +97,14 @@ class Tenant
     /**
      * Pushes the current tenant into the DATABASE session, where the RLS
      * policies read it: from there even raw SQL is fenced by Postgres
-     * itself. Empty string means "no tenant" — admin, console, seeders —
-     * and the policies open up, mirroring the Eloquent scope.
+     * itself. Empty means "no tenant" (staff, console, seeders) and opens them;
+     * a client with no business gets `0`, an id nobody has, and they close.
      */
     public function syncDatabase(): void
     {
-        DB::selectOne('select set_config(?, ?, false)', ['app.current_tenant', (string) $this->id()]);
+        $id = $this->id();
+
+        DB::selectOne('select set_config(?, ?, false)', ['app.current_tenant', $id !== null ? (string) $id : ($this->unrestricted() ? '' : '0')]);
     }
 
     /**
@@ -97,6 +124,9 @@ class Tenant
     {
         $previousId = $this->businessId;
         $previousOverridden = $this->overridden;
+        // The database's own value, not one worked out again: a business born inside a request (its trial
+        // subscription) must leave Postgres exactly as it found it.
+        $previousFence = (string) DB::selectOne("select current_setting('app.current_tenant', true) as tenant")?->tenant;
 
         $this->set($businessId);
 
@@ -106,7 +136,7 @@ class Tenant
             $this->businessId = $previousId;
             $this->overridden = $previousOverridden;
 
-            $this->syncDatabase();
+            DB::selectOne('select set_config(?, ?, false)', ['app.current_tenant', $previousFence]);
         }
     }
 }

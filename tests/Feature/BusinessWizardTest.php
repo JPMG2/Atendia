@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Events\BusinessCreated;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
@@ -10,6 +11,8 @@ use App\Models\SuggestedService;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
@@ -321,6 +324,34 @@ test('finishing the business step creates the tenant and advances', function ():
     expect(Business::sole()->name)->toBe('Clínica Vida')
         ->and(Business::sole()->primaryActivity()->code)->toBe('consultorio-medico')
         ->and($client->refresh()->business_id)->toBe(Business::sole()->id);
+});
+
+test('the first save of a brand-new owner works under the database fence a real request already closed', function (): void {
+    Event::fake([BusinessCreated::class]);
+    actingAsClient();
+    $sector = BusinessSector::factory()->create(['code' => 'salud']);
+    $activity = BusinessActivity::factory()->create(['code' => 'consultorio-medico', 'business_sector_id' => $sector->id]);
+    $province = Province::factory()->create();
+
+    // A real page of the onboarding: with no business yet, the request hands Postgres "0", the closed fence.
+    $this->get('/alta')->assertOk();
+    expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe('0');
+
+    Livewire::test('business.step-business')
+        ->set('form.data.name', 'Clínica Vida')
+        ->set('form.data.country_id', $province->country_id)
+        ->set('form.data.province_id', $province->id)
+        ->call('choose', $sector->code)
+        ->call('chooseActivity', $activity->code)
+        ->call('finish')
+        ->assertDispatched('wizard:step-completed', step: 2);
+
+    $business = Business::sole();
+
+    // The business is born whole: its profile document written under its own fence, and its birth announced once.
+    expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe((string) $business->id)
+        ->and(DB::table('knowledge_documents')->where('business_id', $business->id)->where('source_type', 'profile')->exists())->toBeTrue();
+    Event::assertDispatchedTimes(BusinessCreated::class, 1);
 });
 
 test('a business step without sector shows the error and stays put', function (): void {

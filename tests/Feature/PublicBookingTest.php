@@ -6,7 +6,11 @@ use App\Enums\AppointmentSource;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
+use App\Models\Service;
+use App\Models\User;
+use App\Services\Tenant;
 use Carbon\CarbonImmutable;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Livewire\livewire;
@@ -138,4 +142,28 @@ test('the public page opens with no session at all', function (): void {
         ->assertOk()
         ->assertSee($business->name)
         ->assertSee(__('agenda.public.title'));
+});
+
+test('a service is booked from the link even with somebody signed in who has no business yet', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $business = bookableBusiness();
+    $service = Service::factory()->create(['business_id' => $business->id, 'is_bookable' => true, 'is_active' => true]);
+    [$day, $time] = tomorrowAt($business, '10:00');
+
+    // Somebody who registered and left the onboarding half way: their requests close the database fence ("0").
+    $client = User::factory()->create(['business_id' => null]);
+    $client->assignRole('client');
+    $this->actingAs($client->refresh())->get(route('dashboard'));
+
+    livewire('booking.public', ['code' => $business->booking_code])
+        ->set('form.service_id', $service->id)
+        ->set('form.day', $day)
+        ->call('pick', $time)
+        ->set('form.name', 'Ana Gómez')
+        ->set('form.phone', '+54 9 11 5555-0101')
+        ->call('book')
+        ->assertHasNoErrors();
+
+    // Read from inside the business: this test's own connection still carries the client's closed fence.
+    expect(app(Tenant::class)->for($business->id, fn (): ?int => Appointment::query()->sole()->service_id))->toBe($service->id);
 });

@@ -20,6 +20,7 @@ use App\Enums\WhatsAppLinkState;
 use App\Models\Scopes\LandingExamplesOut;
 use App\Services\EvolutionApi;
 use App\Services\PlatformWhatsApp;
+use App\Services\Tenant;
 use App\Traits\BelongsToBusiness;
 use App\Traits\SearchesText;
 use App\Traits\TracksUserActions;
@@ -142,13 +143,15 @@ class Business extends Model
                 ? (int) config('atendia.referral.invited_trial_days')
                 : (int) $trial->trialDays;
 
-            $business->subscription()->create([
+            // Written under the new business's own fence: whoever is creating it (a client with no business
+            // yet, whose request closed the database) may not write another business's rows otherwise.
+            app(Tenant::class)->for($business->id, fn () => $business->subscription()->create([
                 'business_id' => $business->id,
                 'plan' => $trial->code,
                 'trial_ends_at' => now()->addDays($days),
                 // The trial's end is the first payment date.
                 'current_period_ends_at' => now()->addDays($days),
-            ]);
+            ]));
         });
     }
 

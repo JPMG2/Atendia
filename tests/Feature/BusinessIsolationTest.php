@@ -22,7 +22,9 @@ use App\Models\User;
 use App\Services\Tenant;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -76,15 +78,55 @@ test('a new record gets stamped with the current business without anyone passing
     expect($document->business_id)->toBe($business->id);
 });
 
-test('the owner has no business and therefore sees everything', function (): void {
-    // business_id null is what tells the admin apart from a client, and it is
-    // what turns the filter off. Queue workers and console commands land here too.
+test('the platform owner has no business and sees everything; so do jobs and the console', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
     KnowledgeDocument::factory()->create(['business_id' => Business::factory()->create()->id]);
     KnowledgeDocument::factory()->create(['business_id' => Business::factory()->create()->id]);
 
-    $this->actingAs(User::factory()->create(['business_id' => null]));
+    // Nobody signed in: a queue worker or a console command.
+    expect(KnowledgeDocument::count())->toBe(2);
+
+    $admin = User::factory()->create(['business_id' => null]);
+    $admin->assignRole('admin');
+    $this->actingAs($admin->refresh());
 
     expect(KnowledgeDocument::count())->toBe(2);
+});
+
+test('a client with no business yet is not the admin: every tenant model shows nothing, not even by id', function (string $model): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $row = $model::factory()->create(['business_id' => Business::factory()->create()->id]);
+
+    // What the public sign-up leaves: the client role, a verified e-mail and no business until the onboarding.
+    $client = User::factory()->create(['business_id' => null, 'email_verified_at' => now()]);
+    $client->assignRole('client');
+    $this->actingAs($client->refresh());
+
+    expect($model::query()->count())->toBe(0)
+        ->and($model::query()->find($row->id))->toBeNull();
+})->with('tenant models');
+
+test('a client with no business gets no customer file and no payment receipt of any business, and postgres stays closed', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    Storage::fake('local');
+    $other = Business::factory()->create();
+
+    Storage::disk('local')->put('receipts/ajeno.png', 'png');
+    $payment = Payment::factory()->create(['business_id' => $other->id]);
+    $payment->forceFill(['receipt_path' => 'receipts/ajeno.png'])->save();
+    $message = ConversationMessage::factory()->create(['business_id' => $other->id]);
+
+    $client = User::factory()->create(['business_id' => null, 'email_verified_at' => now()]);
+    $client->assignRole('client');
+    $this->actingAs($client->refresh());
+
+    $this->get(route('my-payments.receipt', $payment))->assertNotFound();
+    $this->get(route('conversations.media', [$message, 0]))->assertNotFound();
+
+    // The database fence too: a raw select during that client's request finds nothing.
+    $this->get(route('dashboard'));
+    expect(DB::selectOne("select current_setting('app.current_tenant', true) as tenant")->tenant)->toBe('0')
+        ->and(DB::select('select id from payments'))->toBe([]);
 });
 
 test('every tenant model hides the other business rows, even by id', function (string $model): void {

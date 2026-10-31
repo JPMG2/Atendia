@@ -45,7 +45,9 @@ class PublicBookingForm extends BaseForm
     /** @return NotificationDto|Appointment the booking, or why it could not be made */
     public function book(Business $business): NotificationDto|Appointment
     {
-        $validated = $this->validateServiceData();
+        // Checked inside the business being booked: its services are the only ones that exist here,
+        // whoever happens to be signed in on this browser (another business, or none yet).
+        $validated = app(Tenant::class)->for($business->id, fn (): array => $this->validateServiceData());
 
         return app(Tenant::class)->for($business->id, function () use ($business, $validated): NotificationDto|Appointment {
             $service = $validated['service_id'] === null
