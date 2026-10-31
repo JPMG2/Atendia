@@ -52,6 +52,15 @@ function createHoliday(array $fields)
     return $component->call('create');
 }
 
+test('a holiday cannot be removed by calling the editor, though no button offers it', function (): void {
+    $holiday = CountryHoliday::factory()->create(['country_id' => holidayCountry()->id]);
+
+    Livewire::test('catalog.country-holiday')->call('removeRecord', $holiday->id)->assertStatus(404);
+    Livewire::test('catalog.country-holiday')->call('removalCheck', $holiday->id)->assertStatus(404);
+
+    expect(CountryHoliday::query()->whereKey($holiday->id)->exists())->toBeTrue();
+});
+
 test('the master is a row of the hub, behind its own permission', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(CatalogFormSeeder::class);
@@ -425,6 +434,32 @@ test('marking a bridge offers the mail only when a business of the country can b
 
     Mail::assertQueued(HolidayBridgeNotice::class, 1);
     Mail::assertQueued(HolidayBridgeNotice::class, fn (HolidayBridgeNotice $mail): bool => $mail->hasTo($owner->email) && $mail->dates === ['2026-12-07']);
+});
+
+test('a one-year day saved from the form asks to tell the country, and its mail says feriado, not puente', function (): void {
+    Mail::fake();
+
+    $argentina = holidayCountry('ARG');
+    $business = Business::factory()->create(['country_id' => $argentina->id, 'is_demo' => false]);
+    User::factory()->create(['business_id' => $business->id, 'email' => 'duena@kiosco.test']);
+
+    $view = createHoliday(['country_id' => $argentina->id, 'name' => 'Feriado por decreto', 'kind' => 'once', 'on_date' => '2026-11-23'])
+        ->assertDispatched('holiday-notice-offer', fn (string $event, array $params): bool => $params['offer']['marked'] === ['2026-11-23']
+            && $params['offer']['title'] === '¿Avisar a 1 negocio de '.$argentina->name.'?'
+            && $params['country'] === $argentina->id);
+
+    Mail::assertNothingQueued();
+
+    $view->call('noticeHoliday', $argentina->id, ['2026-11-23'])
+        ->assertDispatched('notify', type: 'success', message: 'Listo. Se avisó a 1 negocio.');
+
+    Mail::assertQueued(HolidayBridgeNotice::class, fn (HolidayBridgeNotice $mail): bool => ! $mail->bridge
+        && $mail->envelope()->subject === 'Hay un feriado nuevo en tu país'
+        && str_contains($mail->render(), 'es feriado en '.$argentina->name));
+
+    // A holiday that repeats every year is in every calendar already: nothing is offered.
+    createHoliday(['country_id' => $argentina->id, 'name' => 'Día del trabajador', 'kind' => 'fixed', 'month' => 5, 'day' => 1])
+        ->assertNotDispatched('holiday-notice-offer');
 });
 
 test('the notice mails nothing for a day that is not an active bridge of the country', function (): void {

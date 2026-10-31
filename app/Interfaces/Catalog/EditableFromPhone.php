@@ -27,7 +27,10 @@ interface EditableFromPhone
      * The fields the web form draws, in its order and with its words; the
      * value is laid in by `CatalogEditor`.
      *
-     * @return list<array{key: string, type: string, label: string, hint?: string, placeholder?: string, required?: bool, min?: int, max?: int, mono?: bool, options?: list<array{value: int|string|bool, label: string}>, on_label?: string, off_label?: string}>
+     * A key may repeat when the web draws one value in two places; `show_when`
+     * says which is on screen, and `error_keys` names the columns a control speaks for.
+     *
+     * @return list<array{key: string, type: string, label: string, hint?: string, placeholder?: string, required?: bool, min?: int, max?: int, mono?: bool, options?: list<array{value: int|string|bool, label: string}>, on_label?: string, off_label?: string, show_when?: array{key: string, value: bool|string}, error_keys?: list<string>, from_label?: string, to_label?: string, days?: list<array{day: int, label: string}>, words?: array<string, string>}>
      */
     public static function phoneFields(): array;
 }

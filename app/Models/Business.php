@@ -310,6 +310,8 @@ class Business extends Model
         return self::query()
             ->where('country_id', $countryId)
             ->where('is_active', true)
+            // A suspended business is cut off from every send, a platform notice included.
+            ->whereNull('suspended_at')
             ->with('users:id,business_id,email')
             ->orderBy('name')
             ->get()

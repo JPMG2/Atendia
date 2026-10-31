@@ -12,17 +12,26 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-/** Tells a business that a bridge day was marked for its country, so its schedule is no surprise. */
+/** Tells a business that a one-year day off (a bridge, or a day a decree moved) counts in its country, so its schedule is no surprise. */
 class HolidayBridgeNotice extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    /** @param list<string> $dates One day per bridge, oldest first. */
-    public function __construct(public Business $business, public array $dates) {}
+    /**
+     * @param  list<string>  $dates  One day each, oldest first.
+     * @param  bool  $bridge  Every day is a bridge; otherwise the mail says "feriado" and not "feriado puente".
+     */
+    public function __construct(public Business $business, public array $dates, public bool $bridge = true) {}
+
+    /** Where the subject and body words live: the rest of the mail is the same for both. */
+    public static function wordsFor(bool $bridge): string
+    {
+        return $bridge ? 'catalog.country_holiday.bridge.mail' : 'catalog.country_holiday.decree.mail';
+    }
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: trans_choice('catalog.country_holiday.bridge.mail.subject', count($this->dates)));
+        return new Envelope(subject: trans_choice(self::wordsFor($this->bridge).'.subject', count($this->dates)));
     }
 
     public function content(): Content

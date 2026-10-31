@@ -127,6 +127,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
                 Route::get('{id}/removal', [AdminCatalogEditController::class, 'removal']);
                 Route::delete('{id}', [AdminCatalogEditController::class, 'destroy']);
                 Route::post('{id}/deactivate', [AdminCatalogEditController::class, 'deactivate']);
+                Route::post('{id}/notice', [AdminCatalogEditController::class, 'notice']);
             });
             Route::get('support', [AdminSupportController::class, 'index'])->middleware('can:support.view');
             Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');

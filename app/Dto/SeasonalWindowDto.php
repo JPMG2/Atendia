@@ -80,19 +80,26 @@ class SeasonalWindowDto implements FormData
     /**
      * A range closed on one date is a season of one day — Flatpickr hands back
      * a single value for it, and taking that as "no end" would leave a season
-     * that never stops.
+     * that never stops. An end left blank beside a typed one ("..2026-12-31",
+     * from the phone's two boxes) stays blank, so its rule names it.
      *
      * @return array{0: ?string, 1: ?string}
      */
     private function ends(): array
     {
-        $parts = array_values(array_filter(explode('..', (string) $this->range)));
+        $range = (string) $this->range;
 
-        return match (count($parts)) {
-            0 => [null, null],
-            1 => [$parts[0], $parts[0]],
-            default => [$parts[0], $parts[1]],
-        };
+        if (trim($range) === '') {
+            return [null, null];
+        }
+
+        if (! str_contains($range, '..')) {
+            return [$range, $range];
+        }
+
+        [$from, $to] = explode('..', $range, 2);
+
+        return [$from === '' ? null : $from, $to === '' ? null : $to];
     }
 
     /**

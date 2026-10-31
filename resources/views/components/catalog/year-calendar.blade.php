@@ -58,7 +58,7 @@
                 }
             },
             async offer(found) {
-                if (found && await dialog.confirm({ title: found.title, message: found.message, accept: found.accept })) {
+                if (found && await dialog.confirm({ title: found.title, message: found.message, accept: found.accept, cancel: found.dismiss })) {
                     $wire.noticeBridge(found.marked);
                 }
             },

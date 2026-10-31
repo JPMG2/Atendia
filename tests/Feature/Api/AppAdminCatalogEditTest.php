@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 use App\Classes\Main\CatalogEditor;
 use App\Mail\DeviceChallengeCode;
+use App\Mail\HolidayBridgeNotice;
+use App\Models\Business;
 use App\Models\Country;
+use App\Models\CountryHoliday;
 use App\Models\Currency;
+use App\Models\SeasonalWindow;
 use App\Models\SocialNetwork;
 use App\Models\User;
+use App\Models\WhatsappVariant;
 use Database\Seeders\CatalogFormSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -192,14 +197,199 @@ test('every master the phone edits declares exactly the fields and labels its we
     $blade = File::get(resource_path("views/components/catalog/⚡{$slug}.blade.php"));
     $form = substr($blade, (int) strpos($blade, '<x-slot:form>'));
 
-    preg_match_all('/<x-inputsform\.[a-z-]+\b[^>]*?\bname="([a-z_0-9]+)"/s', $form, $names);
-    preg_match_all('/<x-inputsform\.[a-z-]+\b[^>]*?:label="__\(\'([^\']+)\'\)"/s', $form, $labels);
+    // An attribute may hold `->` (`:value="$form->data->…"`): it does not close the tag.
+    preg_match_all('/<x-inputsform\.[a-z-]+\b(?:->|[^>])*?\bname="([a-z_0-9]+)"/s', $form, $names);
+    preg_match_all('/<x-inputsform\.[a-z-]+\b(?:->|[^>])*?:label="__\(\'([^\']+)\'\)"/s', $form, $labels);
 
     $fields = CatalogEditor::FORMS[$slug]::phoneFields();
 
     preg_match('/title-key="([a-z_]+)"/', $form, $title);
 
-    expect(array_column($fields, 'key'))->toBe($names[1])
+    // The asterisk too: a field the web marks required, and only those.
+    preg_match_all('/<x-inputsform\.[a-z-]+\b((?:->|[^>])*?)\/?>/s', $form, $tags);
+    $required = collect($tags[1])->filter(fn (string $tag): bool => (bool) preg_match('/\srequired(\s|$)/', $tag))
+        ->map(fn (string $tag): string => preg_match('/\bname="([a-z_0-9]+)"/', $tag, $name) ? $name[1] : '')->values()->all();
+
+    expect(array_values(array_unique(array_column(array_filter($fields, fn (array $field): bool => $field['required'] ?? false), 'key'))))->toBe(array_values(array_unique($required)))
+        ->and(array_column($fields, 'key'))->toBe($names[1])
         ->and(array_column($fields, 'label'))->toBe(array_map(fn (string $key): string => __($key), $labels[1]))
         ->and(CatalogEditor::TITLE_KEYS[$slug] ?? 'name')->toBe($title[1] ?? 'name');
 })->with(array_keys(CatalogEditor::FORMS));
+
+test('a season is saved from its two ends, and one that ends before it starts is refused on its end', function (): void {
+    $token = catalogEditToken();
+
+    $id = catalogEditCall($token, 'POST', 'seasonal-window', ['name' => 'Navidad 2026', 'range' => '2026-12-20..2026-12-26', 'priority' => 1, 'is_active' => true])
+        ->assertCreated()->json('data.id');
+
+    $season = SeasonalWindow::query()->findOrFail($id);
+    expect($season->starts_at->toDateString())->toBe('2026-12-20')->and($season->ends_at->toDateString())->toBe('2026-12-26');
+
+    // A range closed on one date is a season of one day, as on the web.
+    catalogEditCall($token, 'PUT', "seasonal-window/{$id}", ['range' => '2026-12-24'])->assertOk();
+    expect($season->fresh()->ends_at->toDateString())->toBe('2026-12-24');
+
+    catalogEditCall($token, 'PUT', "seasonal-window/{$id}", ['range' => '2026-12-26..2026-12-20'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('ends_at');
+
+    // "Desde" erased on the phone: refused under it, never saved as a one-day season on "Hasta".
+    catalogEditCall($token, 'PUT', "seasonal-window/{$id}", ['range' => '..2026-12-31'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('starts_at');
+
+    // A date typed half or impossible is said the way the phone types it.
+    catalogEditCall($token, 'PUT', "seasonal-window/{$id}", ['range' => '24/12/202..2026-12-31'])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.starts_at.0', __('validation.custom.starts_at.date_format'));
+    expect($season->fresh()->starts_at->toDateString())->toBe('2026-12-24');
+});
+
+test('the phone cannot save what the web\'s browser would have refused', function (array $body, string $field): void {
+    $token = catalogEditToken();
+    $country = Country::factory()->create();
+
+    catalogEditCall($token, 'POST', 'country-holiday', ['country_id' => $country->id, 'name' => 'Feriado', 'kind' => 'fixed', 'month' => 5, 'day' => 1, ...$body])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors($field);
+
+    expect(CountryHoliday::query()->count())->toBe(0);
+})->with([
+    'markup in the name' => [['name' => '<b>Carnaval</b>'], 'name'],
+    'a shape that does not exist' => [['kind' => 'xyz'], 'kind'],
+    'a date that does not exist' => [['kind' => 'once', 'on_date' => '2026-02-31'], 'on_date'],
+]);
+
+test('a season\'s week with a day that is not one is refused, not dropped', function (array $week): void {
+    $token = catalogEditToken();
+    $season = SeasonalWindow::factory()->create();
+
+    catalogEditCall($token, 'POST', 'whatsapp-variant', ['seasonal_window_id' => $season->id, 'override_schedule' => true, 'opening_schedule' => $week])
+        ->assertStatus(422);
+
+    expect(WhatsappVariant::query()->count())->toBe(0);
+})->with([
+    'a ninth day' => [['9' => ['open' => true, 'opens_at' => '09:00', 'closes_at' => '14:00']]],
+    'a day that is a word' => [['1' => 'x']],
+]);
+
+test('a season\'s own week is kept only while it is switched on, and a half-typed hour names its box', function (): void {
+    $token = catalogEditToken();
+    $season = SeasonalWindow::factory()->create();
+    $week = ['1' => ['open' => true, 'opens_at' => '09:00', 'closes_at' => '14:00'], '6' => ['open' => false, 'opens_at' => '09:00', 'closes_at' => '18:00']];
+
+    // A new variant's week is the web's grid: seven closed days that open at 09:00–18:00.
+    $blank = collect(catalogEditCall($token, 'GET', 'whatsapp-variant/form')->assertOk()->json('data.fields'))->firstWhere('key', 'opening_schedule')['value'];
+    expect($blank)->toHaveCount(7)->and($blank[1])->toBe(['open' => false, 'opens_at' => '09:00', 'closes_at' => '18:00']);
+
+    $id = catalogEditCall($token, 'POST', 'whatsapp-variant', ['seasonal_window_id' => $season->id, 'override_schedule' => true, 'opening_schedule' => $week, 'is_active' => true])
+        ->assertCreated()->json('data.id');
+
+    expect(WhatsappVariant::query()->findOrFail($id)->opening_schedule)->toBe([1 => ['09:00', '14:00']]);
+
+    catalogEditCall($token, 'PUT', "whatsapp-variant/{$id}", ['opening_schedule' => ['1' => ['open' => true, 'opens_at' => '9', 'closes_at' => '14:00']]])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('opening_schedule.1.0');
+
+    catalogEditCall($token, 'PUT', "whatsapp-variant/{$id}", ['override_schedule' => false])->assertOk();
+    expect(WhatsappVariant::query()->findOrFail($id)->opening_schedule)->toBeNull();
+
+    catalogEditCall($token, 'POST', 'whatsapp-variant', ['seasonal_window_id' => $season->id])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('seasonal_window_id');
+});
+
+test('a holiday demands the date of the shape it is and keeps none of the others', function (): void {
+    $token = catalogEditToken();
+    $country = Country::factory()->create();
+
+    catalogEditCall($token, 'POST', 'country-holiday', ['country_id' => $country->id, 'name' => 'Día de la Madre', 'kind' => 'nth', 'month' => 5, 'day' => 10, 'is_active' => true])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['nth', 'weekday']);
+
+    $id = catalogEditCall($token, 'POST', 'country-holiday', ['country_id' => $country->id, 'name' => 'Día de la Madre', 'kind' => 'nth', 'month' => 5, 'day' => 10, 'nth' => 2, 'weekday' => 0, 'is_active' => true])
+        ->assertCreated()->json('data.id');
+
+    $holiday = CountryHoliday::query()->findOrFail($id);
+    expect($holiday->kind())->toBe('nth')->and($holiday->day)->toBeNull();
+
+    catalogEditCall($token, 'PUT', "country-holiday/{$id}", ['kind' => 'fixed', 'month' => 4, 'day' => 31])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.day.0', __('catalog.country_holiday.errors.no_such_day'));
+
+    catalogEditCall($token, 'PUT', "country-holiday/{$id}", ['kind' => 'once', 'on_date' => '2026-11-02'])->assertOk();
+    expect($holiday->fresh())->kind()->toBe('once')->month->toBeNull()->weekday->toBeNull();
+});
+
+test('a one-year day saved from the phone brings the web\'s question, and the mail leaves only when accepted', function (): void {
+    Mail::fake();
+    $token = catalogEditToken();
+    $country = Country::factory()->create();
+    $business = Business::factory()->create(['country_id' => $country->id, 'is_demo' => false]);
+    User::factory()->create(['business_id' => $business->id, 'email' => 'duena@kiosco.test']);
+
+    $saved = catalogEditCall($token, 'POST', 'country-holiday', ['country_id' => $country->id, 'name' => 'Feriado por decreto', 'kind' => 'once', 'on_date' => '2026-11-23', 'is_active' => true])
+        ->assertCreated()
+        ->assertJsonPath('data.offer.marked', ['2026-11-23'])
+        ->assertJsonPath('data.offer.dismiss', __('catalog.country_holiday.bridge.notify_skip'))
+        ->json('data');
+
+    Mail::assertNotQueued(HolidayBridgeNotice::class);
+
+    // Saved again without moving it: not news twice.
+    catalogEditCall($token, 'PUT', "country-holiday/{$saved['id']}", ['name' => 'Feriado nacional por decreto'])->assertOk()->assertJsonPath('data.offer', null);
+
+    catalogEditCall($token, 'POST', "country-holiday/{$saved['id']}/notice")->assertOk()->assertJsonPath('message', 'Listo. Se avisó a 1 negocio.');
+    Mail::assertQueued(HolidayBridgeNotice::class, fn (HolidayBridgeNotice $mail): bool => $mail->dates === ['2026-11-23'] && ! $mail->bridge);
+
+    // A holiday that repeats asks nothing, and no other master has a notice.
+    $yearly = CountryHoliday::factory()->create(['country_id' => $country->id]);
+    catalogEditCall($token, 'POST', "country-holiday/{$yearly->id}/notice")->assertNotFound();
+    catalogEditCall($token, 'POST', 'currency/1/notice')->assertNotFound();
+});
+
+test('the notice tells each business once, never a suspended one, never about a day gone, and follows the live row of a date', function (): void {
+    Mail::fake();
+    $token = catalogEditToken();
+    $country = Country::factory()->create();
+    $open = Business::factory()->create(['country_id' => $country->id, 'is_demo' => false]);
+    User::factory()->create(['business_id' => $open->id, 'email' => 'abierto@kiosco.test']);
+    $suspended = Business::factory()->create(['country_id' => $country->id, 'is_demo' => false, 'suspended_at' => now()]);
+    User::factory()->create(['business_id' => $suspended->id, 'email' => 'suspendido@kiosco.test']);
+
+    // A bridge marked and switched off on that date first: the decree typed in later is the live one.
+    CountryHoliday::factory()->create(['country_id' => $country->id, 'name' => __('catalog.country_holiday.bridge.name'), 'month' => null, 'day' => null, 'on_date' => '2026-12-24', 'is_active' => false]);
+
+    $id = catalogEditCall($token, 'POST', 'country-holiday', ['country_id' => $country->id, 'name' => 'Feriado por decreto', 'kind' => 'once', 'on_date' => '2026-12-24', 'is_active' => true])
+        ->assertCreated()
+        ->assertJsonPath('data.offer.title', '¿Avisar a 1 negocio de '.$country->name.'?')
+        ->json('data.id');
+
+    catalogEditCall($token, 'POST', "country-holiday/{$id}/notice")->assertOk()->assertJsonPath('message', 'Listo. Se avisó a 1 negocio.');
+    catalogEditCall($token, 'POST', "country-holiday/{$id}/notice")->assertOk()->assertJsonPath('message', __('catalog.country_holiday.bridge.repeated'));
+
+    Mail::assertQueued(HolidayBridgeNotice::class, 1);
+    Mail::assertQueued(HolidayBridgeNotice::class, fn (HolidayBridgeNotice $mail): bool => $mail->hasTo('abierto@kiosco.test') && ! $mail->bridge);
+
+    // Moved to another country on the same date: news for that country.
+    $other = Country::factory()->create();
+    $there = Business::factory()->create(['country_id' => $other->id, 'is_demo' => false]);
+    User::factory()->create(['business_id' => $there->id, 'email' => 'otro@kiosco.test']);
+    catalogEditCall($token, 'PUT', "country-holiday/{$id}", ['country_id' => $other->id])->assertOk()->assertJsonPath('data.offer.marked', ['2026-12-24']);
+
+    // A day already gone is no news.
+    catalogEditCall($token, 'PUT', "country-holiday/{$id}", ['on_date' => '2026-03-01'])->assertOk()->assertJsonPath('data.offer', null);
+    catalogEditCall($token, 'POST', "country-holiday/{$id}/notice")->assertNotFound();
+});
+
+test('a holiday is never removed from the phone, as the web offers no delete for it', function (): void {
+    $token = catalogEditToken();
+    $holiday = CountryHoliday::factory()->create();
+
+    expect(catalogEditCall($token, 'GET', "country-holiday/form/{$holiday->id}")->assertOk()->json('data.deletable'))->toBeFalse();
+
+    catalogEditCall($token, 'GET', "country-holiday/{$holiday->id}/removal")->assertNotFound();
+    catalogEditCall($token, 'DELETE', "country-holiday/{$holiday->id}")->assertNotFound();
+    catalogEditCall($token, 'POST', "country-holiday/{$holiday->id}/deactivate")->assertNotFound();
+    expect(CountryHoliday::query()->whereKey($holiday->id)->exists())->toBeTrue();
+});

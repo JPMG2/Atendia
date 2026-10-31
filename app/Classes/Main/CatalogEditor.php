@@ -9,17 +9,20 @@ use App\Livewire\Forms\Catalog\AdoptionNudgeForm;
 use App\Livewire\Forms\Catalog\BusinessActivityForm;
 use App\Livewire\Forms\Catalog\BusinessSectorForm;
 use App\Livewire\Forms\Catalog\CountryForm;
+use App\Livewire\Forms\Catalog\CountryHolidayForm;
 use App\Livewire\Forms\Catalog\CurrencyForm;
 use App\Livewire\Forms\Catalog\CurrentStatusForm;
 use App\Livewire\Forms\Catalog\MentionGoalForm;
 use App\Livewire\Forms\Catalog\ProvinceForm;
 use App\Livewire\Forms\Catalog\RegionForm;
+use App\Livewire\Forms\Catalog\SeasonalWindowForm;
 use App\Livewire\Forms\Catalog\ServiceAttributeForm;
 use App\Livewire\Forms\Catalog\ServiceModalityForm;
 use App\Livewire\Forms\Catalog\SocialNetworkForm;
 use App\Livewire\Forms\Catalog\SupportReplyForm;
 use App\Livewire\Forms\Catalog\SupportTicketKindForm;
 use App\Livewire\Forms\Catalog\TaxConditionForm;
+use App\Livewire\Forms\Catalog\WhatsappVariantForm;
 use App\Models\CatalogForm;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -51,7 +54,13 @@ final class CatalogEditor
         'support-ticket-kind' => SupportTicketKindForm::class,
         'adoption-nudge' => AdoptionNudgeForm::class,
         'service-attribute' => ServiceAttributeForm::class,
+        'seasonal-window' => SeasonalWindowForm::class,
+        'whatsapp-variant' => WhatsappVariantForm::class,
+        'country-holiday' => CountryHolidayForm::class,
     ];
+
+    /** Masters whose web form offers no delete (a holiday is switched off, never removed): nor does the phone. */
+    public const array UNDELETABLE = ['country-holiday'];
 
     /** The field the web form's header shows next to "Editar" (its `title-key`); `name` when it says none. */
     public const array TITLE_KEYS = [
@@ -80,6 +89,11 @@ final class CatalogEditor
         get => $this->spec::wiring()->model;
     }
 
+    /** Whether a row of this master may be removed at all: an edit-only master or one the web never deletes may not. */
+    public bool $deletable {
+        get => $this->spec::wiring()->create !== null && ! in_array($this->slug, self::UNDELETABLE, true);
+    }
+
     /** The words the list adds when the master is editable: its create button. */
     public string $createLabel {
         get => __('catalog.'.$this->words.'.create');
@@ -102,7 +116,11 @@ final class CatalogEditor
 
         $dto = $this->spec::wiring()->dto;
         $state = ($record === null ? new $dto : $dto::fromArray($record->toArray()))->toArray();
-        $fields = array_map(fn (array $field): array => [...$field, 'value' => $state[$field['key']] ?? null], $this->spec::phoneFields());
+        // A week is always its seven days, as the web's grid draws it: a blank one opens a day at 09:00–18:00, not two empty boxes.
+        $fields = array_map(fn (array $field): array => [
+            ...$field,
+            'value' => $field['type'] === 'week' ? OpeningHours::formState($state[$field['key']] ?? null) : ($state[$field['key']] ?? null),
+        ], $this->spec::phoneFields());
         // A master with no `name` (a goal is a number) is named by its first field, never by a blank.
         $titleKey = self::TITLE_KEYS[$this->slug] ?? (array_key_exists('name', $state) ? 'name' : $fields[0]['key']);
 
@@ -112,7 +130,7 @@ final class CatalogEditor
             'title' => $record === null ? __('catalog.'.$this->words.'.new_title') : $this->titleOf($fields, $titleKey, $state[$titleKey] ?? null),
             'eyebrow' => $record === null ? null : __('catalog.common.editing'),
             'fields' => $fields,
-            'deletable' => $record !== null && $this->spec::wiring()->create !== null,
+            'deletable' => $record !== null && $this->deletable,
             'copy' => [
                 'save' => $record === null ? $this->createLabel : __('catalog.common.save'),
                 'delete' => __('catalog.common.delete'),
@@ -131,7 +149,7 @@ final class CatalogEditor
      * validate it (a 422 keyed by field) and its Action writes it.
      *
      * @param  array<string, mixed>  $body
-     * @return array{model: Model, message: string}|null null when the record to update is gone
+     * @return array{model: Model, message: string, offer: array<string, mixed>|null}|null null when the record to update is gone
      */
     public function save(?int $id, array $body): ?array
     {
@@ -144,15 +162,28 @@ final class CatalogEditor
 
         $dto = $wiring->dto;
         $state = ($record === null ? new $dto : $dto::fromArray($record->toArray()))->toArray();
-        $payload = $dto::fromArray([...$state, ...$this->shaped($body)])->toPayload();
+        $draft = $dto::fromArray([...$state, ...$this->shaped($body)]);
+        $payload = $draft->toPayload();
 
-        $validated = Validator::make($payload, $this->spec::fieldRules($id, $payload), [], $this->spec::fieldNames())->validate();
+        // The form's own state rides along: a holiday's `kind` is not a column, yet it decides which date is demanded.
+        $whole = [...$draft->toArray(), ...$payload];
+        $rules = $this->spec::fieldRules($id, $whole);
+        // A ruled form field that is no column (a holiday's `kind`) is checked too: the phone, unlike the browser, can send anything.
+        $checked = [...array_intersect_key($whole, $rules), ...$payload];
+
+        // The Action gets only the columns: the rest was checked, never written.
+        $validated = array_intersect_key(Validator::make($checked, $rules, [], $this->spec::fieldNames())->validate(), $payload);
 
         $model = $record === null
             ? app($wiring->create)->handle($validated)
             : app($wiring->update)->handle($id, $validated);
 
-        return ['model' => $model, 'message' => app(NotificationService::class)->notificationFor($model, $record === null ? 'created' : 'updated')->message];
+        return [
+            'model' => $model,
+            'message' => app(NotificationService::class)->notificationFor($model, $record === null ? 'created' : 'updated')->message,
+            // What the web asks after this save, if the master asks anything (a holiday: tell the country's businesses?).
+            'offer' => method_exists($this->spec, 'offerAfterSave') ? $this->spec::offerAfterSave($record, $model->refresh()) : null,
+        ];
     }
 
     /**
@@ -172,9 +203,21 @@ final class CatalogEditor
         $kinds = $fields->map(fn (array $field): array => match ($field['type']) {
             'number' => ['sometimes', 'nullable', 'integer'],
             'switch' => ['sometimes', 'boolean'],
+            'week' => ['sometimes', 'nullable', 'array'],
             'select' => ['sometimes', 'nullable', is_int($field['options'][0]['value'] ?? null) ? 'integer' : 'string'],
             default => ['sometimes', 'nullable', 'string'],
         })->all();
+
+        // A week is seven days at most, each a switch and two hours: a day that is not one is refused, not dropped.
+        foreach ($fields->where('type', 'week')->keys() as $week) {
+            $kinds[$week][] = fn (string $attribute, mixed $value, \Closure $fail): mixed => is_array($value) && array_diff(array_map('strval', array_keys($value)), ['0', '1', '2', '3', '4', '5', '6']) !== []
+                ? $fail(__('validation.array', ['attribute' => $this->spec::fieldNames()[$week] ?? $week]))
+                : null;
+            $kinds["{$week}.*"] = ['array'];
+            $kinds["{$week}.*.open"] = ['sometimes', 'boolean'];
+            $kinds["{$week}.*.opens_at"] = ['sometimes', 'nullable', 'string'];
+            $kinds["{$week}.*.closes_at"] = ['sometimes', 'nullable', 'string'];
+        }
 
         Validator::make($sent, $kinds, [], $this->spec::fieldNames())->validate();
 

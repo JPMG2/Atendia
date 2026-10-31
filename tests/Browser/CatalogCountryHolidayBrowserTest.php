@@ -265,6 +265,10 @@ test('dragging over the days marks a long bridge at once and then offers the mai
 
     $page->click('Feriados')->wait(0.8)->click('@holiday-year')->wait(1);
 
+    // Next year: a day already gone is no news, so no mail would be offered for it.
+    $page->script('document.querySelector(\'[aria-label="'.__('catalog.country_holiday.calendar.next').'"]\').click()');
+    $page->wait(1);
+
     $before = (int) $page->script('document.querySelectorAll(".ycal-day.is-holiday").length');
 
     // Mouse down on the first free weekday and move to the sixth: a week and a weekend in between.
@@ -290,6 +294,37 @@ test('dragging over the days marks a long bridge at once and then offers the mai
     $page->click('Marcar los días')->wait(1.2)->assertSee('¿Avisar a 1 negocio de')->screenshot(filename: 'catalog-holidays-bridge-notify');
 
     expect((int) $page->script('document.querySelectorAll(".ycal-day.is-holiday").length'))->toBe($before + 6);
+
+    $page->click('Enviar el aviso')->wait(1)->assertSee('Se avisó a 1 negocio')->assertNoJavaScriptErrors();
+});
+
+test('a one-year day saved from the form offers the mail to the country, as the year view does', function (): void {
+    $argentina = Country::query()->where('code', 'ARG')->value('id');
+    $business = Business::factory()->create(['country_id' => $argentina, 'is_demo' => false]);
+    User::factory()->create(['business_id' => $business->id, 'email' => 'arg@kiosco.test']);
+
+    $page = visit('/admin/catalogs')->resize(1280, 900);
+
+    $page->click('Feriados')->wait(0.8)->click('Crear feriado')->wait(0.6);
+
+    // The comboboxes and the picker write these same values; typing through them is covered elsewhere.
+    $page->script(<<<JS
+        (() => {
+            const wire = Livewire.all().find((component) => component.name.includes('country-holiday')).\$wire;
+            wire.set('form.data.country_id', {$argentina}, false);
+            wire.set('form.data.name', 'Feriado por decreto', false);
+            wire.set('form.data.kind', 'once', false);
+            wire.set('form.data.on_date', '2026-11-23', false);
+        })()
+    JS);
+
+    // The list's own "Crear feriado" is still in the page, hidden: the visible one is the form's.
+    $page->script("[...document.querySelectorAll('button')].filter((b) => b.offsetParent !== null && b.textContent.includes('Crear feriado')).pop().click()");
+
+    $page->wait(1.6)
+        ->assertSee('¿Avisar a 1 negocio de')
+        ->assertSee('Ahora no')
+        ->screenshot(filename: 'catalog-holidays-form-notify');
 
     $page->click('Enviar el aviso')->wait(1)->assertSee('Se avisó a 1 negocio')->assertNoJavaScriptErrors();
 });

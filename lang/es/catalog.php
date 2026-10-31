@@ -179,6 +179,14 @@ return [
             'failed' => 'No pudimos copiar los feriados. Intenta de nuevo.',
         ],
 
+        // The same mail as a bridge's, for a one-year day that is not one (a day a decree moved).
+        'decree' => [
+            'mail' => [
+                'subject' => '{1} Hay un feriado nuevo en tu país|[2,*] Hay feriados nuevos en tu país',
+                'body' => '{1} El :dates es feriado en :country: tu horario de atención lo toma como día no laborable.|[2,*] Los días :dates son feriado en :country: tu horario de atención los toma como no laborables.',
+            ],
+        ],
+
         'bridge' => [
             'name' => 'Día puente',
             'create_title' => 'Marcar el :date como feriado puente',
@@ -202,6 +210,7 @@ return [
             'notify_accept' => 'Enviar el aviso',
             'notify_skip' => 'Ahora no',
             'notified' => '{0} Ningún negocio para avisar.|{1} Listo. Se avisó a 1 negocio.|[2,*] Listo. Se avisó a :count negocios.',
+            'repeated' => 'Ese aviso ya salió hoy: no se mandó de nuevo.',
             'mail' => [
                 'eyebrow' => 'Calendario',
                 'subject' => '{1} Hay un feriado puente en tu país|[2,*] Hay feriados puente en tu país',

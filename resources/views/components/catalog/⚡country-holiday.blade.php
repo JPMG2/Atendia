@@ -44,6 +44,17 @@ new class extends Component
 
     public int $calendarYear = 0;
 
+    /** A holiday is switched off, never removed: the lock is here, not only in the form without a delete button. */
+    public function removalCheck(int $id): array
+    {
+        abort(404);
+    }
+
+    public function removeRecord(int $id): bool
+    {
+        abort(404);
+    }
+
     protected function catalogForm(): BaseCatalogForm
     {
         return $this->form;
@@ -120,12 +131,16 @@ new class extends Component
     /** The mail to the businesses, once she accepted the offer the marking returned. */
     public function noticeBridge(array $dates): void
     {
-        $sent = app(NotifyBridgeHolidays::class)->handle((int) $this->calendarCountry, $dates);
+        $this->tell((int) $this->calendarCountry, $dates);
+    }
 
-        $this->dispatchNotification(new NotificationDto(
-            trans_choice('catalog.country_holiday.bridge.notified', $sent, ['count' => $sent]),
-            $sent > 0 ? NotificationType::Success : NotificationType::Info,
-        ));
+    /** One way to mail and say so: the year view and the form both end here. */
+    private function tell(int $country, array $dates): void
+    {
+        $notice = app(NotifyBridgeHolidays::class);
+        $sent = $notice->handle($country, $dates);
+
+        $this->dispatchNotification(new NotificationDto($notice->told($sent), $sent > 0 ? NotificationType::Success : NotificationType::Info));
     }
 
     private function refreshYear(): void
@@ -143,23 +158,50 @@ new class extends Component
      */
     private function noticeOffer(array $marked): ?array
     {
-        $reach = $marked === [] || $this->calendarCountry === ''
-            ? 0
-            : Business::reachableInCountry((int) $this->calendarCountry)->count();
+        return $this->calendarCountry === '' ? null : app(NotifyBridgeHolidays::class)->offer((int) $this->calendarCountry, $marked);
+    }
 
-        if ($reach === 0) {
-            return null;
+    /**
+     * Saving from the form: a one-year day that is new, or moved, or switched
+     * on, asks the same question as the year view (the phone asks it too).
+     */
+    public function create(): bool
+    {
+        return $this->persistOffering(fn (): NotificationDto => $this->form->store(), null);
+    }
+
+    public function update(): bool
+    {
+        $before = $this->form->recordId === null ? null : CountryHoliday::editable($this->form->recordId);
+
+        return $this->persistOffering(fn (): NotificationDto => $this->form->update(), $before);
+    }
+
+    /** The holiday's notice offer, after a save: to the browser, which asks before anything is mailed. */
+    private function persistOffering(\Closure $save, ?CountryHoliday $before): bool
+    {
+        $country = $this->form->data?->country_id;
+        $date = $this->form->data?->kind === CountryHoliday::KIND_ONCE ? $this->form->data->on_date : null;
+
+        if (! $this->persist($save())) {
+            return false;
         }
 
-        return [
-            'marked' => $marked,
-            'title' => trans_choice('catalog.country_holiday.bridge.notify_title', $reach, [
-                'count' => $reach,
-                'country' => $this->countryName,
-            ]),
-            'message' => __('catalog.country_holiday.bridge.notify_message'),
-            'accept' => __('catalog.country_holiday.bridge.notify_accept'),
-        ];
+        // The row just written: an edit knows its id; a new one is the newest live row of that date.
+        $saved = $country === null || $date === null ? null : ($before !== null ? CountryHoliday::editable($before->id) : CountryHoliday::onceOn((int) $country, $date));
+        $offer = $saved === null ? null : CountryHolidayForm::offerAfterSave($before, $saved);
+
+        if ($offer !== null) {
+            $this->dispatch('holiday-notice-offer', offer: $offer, country: (int) $country);
+        }
+
+        return true;
+    }
+
+    /** The mail for a day saved from the form, once she accepted; the Action re-checks the date against the table. */
+    public function noticeHoliday(int $country, array $dates): void
+    {
+        $this->tell($country, $dates);
     }
 
     public function shiftYear(int $step): void
@@ -215,40 +257,29 @@ new class extends Component
         return Country::options(label: fn (Country $country): string => $country->name);
     }
 
-    /** @return list<array{value: string, label: string}> */
+    /** The Form's lists: the phone draws the same ones. */
     #[Computed]
     public function kindOptions(): array
     {
-        return collect([CountryHoliday::KIND_FIXED, CountryHoliday::KIND_NTH, CountryHoliday::KIND_EASTER, CountryHoliday::KIND_ONCE])
-            ->map(fn (string $kind): array => ['value' => $kind, 'label' => __('catalog.country_holiday.kinds.'.$kind)])
-            ->all();
+        return CountryHolidayForm::kindOptions();
     }
 
-    /** "First", "second"… "last": a fifth Monday is not there every month, so it is not offered. */
     #[Computed]
     public function nthOptions(): array
     {
-        return collect([1, 2, 3, 4, CountryHoliday::LAST])
-            ->map(fn (int $nth): array => ['value' => $nth, 'label' => ucfirst(__('catalog.country_holiday.nth.'.$nth))])
-            ->all();
+        return CountryHolidayForm::nthOptions();
     }
 
-    /** Monday first, the way the week is read. */
     #[Computed]
     public function weekdayOptions(): array
     {
-        return collect([1, 2, 3, 4, 5, 6, 0])
-            ->map(fn (int $day): array => ['value' => $day, 'label' => __('catalog.country_holiday.weekdays.'.$day)])
-            ->all();
+        return CountryHolidayForm::weekdayOptions();
     }
 
-    /** @return list<array{value: int, label: string}> */
     #[Computed]
     public function monthOptions(): array
     {
-        return collect(range(1, 12))
-            ->map(fn (int $month): array => ['value' => $month, 'label' => __('catalog.country_holiday.months.'.$month)])
-            ->all();
+        return CountryHolidayForm::monthOptions();
     }
 };
 ?>
@@ -263,6 +294,18 @@ new class extends Component
     ]"
 >
     <x-slot:list>
+        {{-- A one-year day saved from the form: ask before mailing the country's businesses, as the year view does. --}}
+        <div
+            hidden
+            x-data
+            x-on:holiday-notice-offer.window="
+                const { offer, country } = $event.detail;
+                if (await dialog.confirm({ title: offer.title, message: offer.message, accept: offer.accept, cancel: offer.dismiss })) {
+                    $wire.noticeHoliday(country, offer.marked);
+                }
+            "
+        ></div>
+
         <x-catalog.toolbar
             :search-placeholder="__('catalog.country_holiday.search_placeholder')"
             :search-label="__('catalog.country_holiday.search_label')"

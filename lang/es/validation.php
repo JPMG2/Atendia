@@ -185,6 +185,10 @@ return [
         'attribute-name' => [
             'rule-name' => 'custom-message',
         ],
+        // Typed on the phone (the web's picker always sends a whole date): said the way it is typed.
+        'on_date' => ['date_format' => 'Revisa la fecha: va como dd/mm/aaaa y tiene que existir, por ejemplo 24/12/2026.'],
+        'starts_at' => ['date_format' => 'Revisa la fecha: va como dd/mm/aaaa y tiene que existir, por ejemplo 24/12/2026.'],
+        'ends_at' => ['date_format' => 'Revisa la fecha: va como dd/mm/aaaa y tiene que existir, por ejemplo 24/12/2026.'],
     ],
 
     /*

@@ -11,7 +11,9 @@ use App\Interfaces\Catalog\HasColumns;
 use App\Interfaces\Catalog\HasHighlights;
 use App\Traits\EditedByForm;
 use Carbon\CarbonImmutable;
+use Database\Factories\CountryHolidayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
@@ -28,6 +30,10 @@ use Spatie\Activitylog\Support\LogOptions;
 class CountryHoliday extends Model implements DataTable, HasColumns, HasHighlights
 {
     use EditedByForm;
+
+    /** @use HasFactory<CountryHolidayFactory> */
+    use HasFactory;
+
     use LogsActivity;
 
     public const string KIND_FIXED = 'fixed';
@@ -285,10 +291,15 @@ class CountryHoliday extends Model implements DataTable, HasColumns, HasHighligh
             : $first->nthOfMonth($nth, $weekday);
     }
 
-    /** The one-year holiday a country has on an exact date, switched on or off; null when there is none. */
+    /**
+     * The one-year holiday a country has on an exact date, switched on or off;
+     * null when there is none. Nothing stops two rows on one date (a bridge
+     * switched off, then a decree typed in): the one that counts, the live one, comes first.
+     */
     public static function onceOn(int $countryId, string $date): ?self
     {
-        return self::query()->where('country_id', $countryId)->whereDate('on_date', $date)->first();
+        return self::query()->where('country_id', $countryId)->whereDate('on_date', $date)
+            ->orderByDesc('is_active')->orderByDesc('id')->first();
     }
 
     /**

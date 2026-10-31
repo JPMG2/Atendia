@@ -7,12 +7,18 @@ namespace App\Livewire\Forms\Catalog;
 use App\Actions\Catalog\CreateSeasonalWindow;
 use App\Actions\Catalog\UpdateSeasonalWindow;
 use App\Dto\SeasonalWindowDto;
+use App\Interfaces\Catalog\EditableFromPhone;
 use App\Models\SeasonalWindow;
 use App\Rules\AttributeValidator;
 
-class SeasonalWindowForm extends BaseCatalogForm
+class SeasonalWindowForm extends BaseCatalogForm implements EditableFromPhone
 {
     protected function catalog(): CatalogWiring
+    {
+        return self::wiring();
+    }
+
+    public static function wiring(): CatalogWiring
     {
         return new CatalogWiring(
             dto: SeasonalWindowDto::class,
@@ -23,6 +29,23 @@ class SeasonalWindowForm extends BaseCatalogForm
     }
 
     protected function getValidationRules(?int $excludeId = null): array
+    {
+        return self::fieldRules($excludeId);
+    }
+
+    public static function phoneFields(): array
+    {
+        return [
+            ['key' => 'name', 'type' => 'text', 'label' => __('catalog.seasonal_window.fields.name'), 'placeholder' => __('catalog.seasonal_window.fields.name_placeholder'), 'required' => true, 'max' => 255],
+            ['key' => 'notice', 'type' => 'text', 'label' => __('catalog.seasonal_window.fields.notice'), 'placeholder' => __('catalog.seasonal_window.fields.notice_placeholder'), 'hint' => __('catalog.seasonal_window.fields.notice_hint'), 'max' => 200],
+            // One control for two columns: their errors come back under each end.
+            ['key' => 'range', 'type' => 'daterange', 'label' => __('catalog.seasonal_window.fields.range'), 'hint' => __('catalog.seasonal_window.fields.range_hint'), 'from_label' => __('catalog.seasonal_window.fields.starts_at'), 'to_label' => __('catalog.seasonal_window.fields.ends_at'), 'error_keys' => ['starts_at', 'ends_at']],
+            ['key' => 'priority', 'type' => 'number', 'label' => __('catalog.seasonal_window.fields.priority'), 'hint' => __('catalog.seasonal_window.fields.priority_hint'), 'required' => true, 'min' => 0],
+            ['key' => 'is_active', 'type' => 'switch', 'label' => __('catalog.seasonal_window.fields.status'), 'on_label' => __('catalog.seasonal_window.status.active'), 'off_label' => __('catalog.seasonal_window.status.inactive')],
+        ];
+    }
+
+    public static function fieldRules(?int $excludeId = null, array $data = []): array
     {
         return [
 
@@ -44,6 +67,11 @@ class SeasonalWindowForm extends BaseCatalogForm
     }
 
     protected function getValidationAttributes(): array
+    {
+        return self::fieldNames();
+    }
+
+    public static function fieldNames(): array
     {
         return [
             'name' => config('nicename.name'),

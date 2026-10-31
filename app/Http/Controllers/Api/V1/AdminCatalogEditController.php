@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Catalog\NotifyBridgeHolidays;
 use App\Actions\Catalog\RemoveCatalogRecord;
 use App\Classes\Main\CatalogEditor;
 use App\Http\Controllers\Controller;
+use App\Models\CountryHoliday;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,7 +33,7 @@ class AdminCatalogEditController extends Controller
     {
         $saved = $this->editor($request, $master)->save(null, $request->all());
 
-        return response()->json(['message' => $saved['message'], 'data' => ['id' => $saved['model']->getKey()]], 201);
+        return response()->json(['message' => $saved['message'], 'data' => ['id' => $saved['model']->getKey(), 'offer' => $saved['offer']]], 201);
     }
 
     public function update(Request $request, string $master, int $id): JsonResponse
@@ -40,18 +42,37 @@ class AdminCatalogEditController extends Controller
 
         abort_if($saved === null, 404, __('notifications.not_found'));
 
-        return response()->json(['message' => $saved['message'], 'data' => ['id' => $id]]);
+        return response()->json(['message' => $saved['message'], 'data' => ['id' => $id, 'offer' => $saved['offer']]]);
+    }
+
+    /**
+     * The mail the save offered, once she accepted it. The date and the country
+     * are the holiday's own, read from the table: nothing of them comes from the phone.
+     */
+    public function notice(Request $request, string $master, int $id): JsonResponse
+    {
+        abort_unless($this->editor($request, $master)->slug === 'country-holiday', 404);
+
+        $holiday = CountryHoliday::editable($id);
+        $offer = $holiday === null ? null : app(NotifyBridgeHolidays::class)->offerFor($holiday);
+
+        abort_if($offer === null, 404, __('notifications.not_found'));
+
+        $notice = app(NotifyBridgeHolidays::class);
+        $sent = $notice->handle($holiday->country_id, $offer['marked']);
+
+        return response()->json(['message' => $notice->told($sent)]);
     }
 
     /** What the delete button asks, decided by the server as on the web. */
     public function removal(Request $request, string $master, int $id): JsonResponse
     {
-        return response()->json(['data' => $this->editor($request, $master)->removal->check($id)]);
+        return response()->json(['data' => $this->removable($request, $master)->removal->check($id)]);
     }
 
     public function destroy(Request $request, string $master, int $id): JsonResponse
     {
-        ['result' => $result, 'notification' => $notification] = $this->editor($request, $master)->removal->remove($id);
+        ['result' => $result, 'notification' => $notification] = $this->removable($request, $master)->removal->remove($id);
 
         return response()->json(['message' => $notification->message, 'data' => ['status' => $result]], match ($result) {
             RemoveCatalogRecord::REMOVED => 200,
@@ -62,11 +83,21 @@ class AdminCatalogEditController extends Controller
 
     public function deactivate(Request $request, string $master, int $id): JsonResponse
     {
-        $notification = $this->editor($request, $master)->removal->deactivate($id);
+        $notification = $this->removable($request, $master)->removal->deactivate($id);
 
         abort_if($notification === null, 404, __('notifications.not_found'));
 
         return response()->json(['message' => $notification->message]);
+    }
+
+    /** The lock is here, not in hiding the button: a master the web never deletes answers like an unknown route. */
+    private function removable(Request $request, string $master): CatalogEditor
+    {
+        $editor = $this->editor($request, $master);
+
+        abort_unless($editor->deletable, 404);
+
+        return $editor;
     }
 
     private function editor(Request $request, string $master): CatalogEditor
