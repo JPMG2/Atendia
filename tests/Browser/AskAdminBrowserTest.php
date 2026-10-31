@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\AskAdmin;
+use App\Enums\PlatformEventSeverity;
 use App\Models\Company;
+use App\Models\PlatformEvent;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -43,6 +45,28 @@ test('a Preguntar button on the home opens the panel with that question already 
         ->assertSee(__('ask_admin.today.title'))
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'ask-admin-from-chip');
+});
+
+test('the thread survives a change of screen, and a waiting critical alert sharpens its suggestion', function (): void {
+    AskAdmin::fake(['Hay 3 negocios.']);
+    PlatformEvent::factory()->severity(PlatformEventSeverity::Critical)->create();
+
+    $page = visit('/admin')->resize(1280, 900);
+
+    $page->click('@ask-admin')
+        ->assertSee(trans_choice('ask_admin.suggestions.critical_alert', 1))
+        ->assertDontSee(__('ask_admin.suggestions.alerts'))
+        ->click(__('ask_admin.suggestions.pulse'))
+        ->assertSee('Hay 3 negocios.');
+
+    $again = visit('/admin/negocios')->resize(1280, 900);
+
+    $again->click('@ask-admin')
+        ->assertSee(__('ask_admin.suggestions.pulse'))
+        ->assertSee('Hay 3 negocios.')
+        ->assertSee(__('ask_admin.new_chat'))
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'ask-admin-thread-kept');
 });
 
 test('the panel closes with Escape and with its X, and opens again', function (): void {

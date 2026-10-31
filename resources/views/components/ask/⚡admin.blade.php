@@ -1,7 +1,6 @@
 <?php
 
 use App\Classes\Main\AdminAskDesk;
-use App\Classes\Main\AdminAttention;
 use App\Livewire\Forms\Admin\AskAdminForm;
 use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +15,9 @@ use Livewire\Component;
  */
 new class extends Component
 {
+    /** The session key of the stored conversation this admin's panel is following. */
+    private const string FOLLOWING = 'ask_admin.conversation';
+
     public AskAdminForm $form;
 
     /** @var list<array{role: string, text: string, failed?: bool}> */
@@ -75,14 +77,23 @@ new class extends Component
     #[Computed]
     public function attention(): array
     {
-        return (new AdminAttention(Auth::user()))->links;
+        return $this->desk?->attention->links ?? [];
     }
 
+    /**
+     * Opening finds the thread it was following: the conversation id rides the session, so closing the
+     * panel or moving to another screen does not lose it, and the words are read back from the SDK's store.
+     */
     public function open(): void
     {
         abort_unless($this->allowed(), 403);
 
         $this->opened = true;
+
+        if ($this->messages === []) {
+            $this->conversationId = session(self::FOLLOWING);
+            $this->messages = $this->desk->thread($this->conversationId);
+        }
     }
 
     public function close(): void
@@ -95,6 +106,7 @@ new class extends Component
     {
         $this->reset('messages', 'conversationId');
         $this->form->reset('question');
+        session()->forget(self::FOLLOWING);
     }
 
     /** A suggestion passes its question; typing goes through the input. */
@@ -120,6 +132,7 @@ new class extends Component
 
         $reply = $this->desk->answer($question, $this->conversationId);
         $this->conversationId = $reply['conversation'] ?? $this->conversationId;
+        session([self::FOLLOWING => $this->conversationId]);
 
         $this->messages[] = $reply !== null
             ? ['role' => 'ai', 'text' => $reply['text']]
@@ -168,6 +181,8 @@ new class extends Component
 
                             <x-ask.pending :thinking="__('ask_admin.thinking')" />
 
+                            {{-- Only the questions a tool of this person answers: with none, no title over an empty row. --}}
+                            @if ($this->suggestions !== [])
                             <div class="ask-suggestions" x-show="pending === ''">
                                 <p class="ask-suggestions-title">{{ __('ask_admin.suggestions_title') }}</p>
                                 @foreach ($this->suggestions as $suggestion)
@@ -183,6 +198,7 @@ new class extends Component
                                     </button>
                                 @endforeach
                             </div>
+                            @endif
                         </div>
 
                         <x-slot:footer>

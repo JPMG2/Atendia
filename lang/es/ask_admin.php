@@ -55,6 +55,9 @@ return [
         'alerts' => '¿Qué avisos tengo abiertos?',
         'payments' => '¿Qué comprobantes esperan verificación?',
         'trouble' => '¿Qué negocios les cuesta pagar?',
+        // The sharper ones, in place of the two above while what they ask about is waiting today.
+        'oldest_receipt' => '{1}¿Qué hago con el comprobante que espera verificación?|[2,*]¿Qué comprobante lleva más tiempo esperando?',
+        'critical_alert' => '{1}¿Qué hago con el aviso crítico abierto?|[2,*]¿Qué hago con los :count avisos críticos abiertos?',
     ],
 
     'skills' => [

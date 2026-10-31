@@ -6,6 +6,7 @@ use App\Ai\Agents\AskAdmin;
 use App\Enums\PlatformEventSeverity;
 use App\Mail\DeviceChallengeCode;
 use App\Models\AiUsage;
+use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -102,8 +104,9 @@ describe('the sheet', function (): void {
             ->and($sheet['subtitle'])->toBe(__('ask_admin.subtitle'))
             ->and($sheet['placeholder'])->toBe(__('ask_admin.placeholder'))
             ->and($sheet['new_chat'])->toBe(__('ask_admin.new_chat'))
+            // A critical alert is open, so its suggestion is the sharper one.
             ->and(array_column($sheet['suggestions'], 'question'))->toBe([
-                __('ask_admin.suggestions.pulse'), __('ask_admin.suggestions.alerts'), __('ask_admin.suggestions.payments'), __('ask_admin.suggestions.trouble'),
+                __('ask_admin.suggestions.pulse'), trans_choice('ask_admin.suggestions.critical_alert', 1), __('ask_admin.suggestions.payments'), __('ask_admin.suggestions.trouble'),
             ])
             ->and($sheet['quota'])->toBe(['left' => 7, 'line' => trans_choice('ask_admin.left', 7, ['count' => 7])])
             ->and($sheet['used_up'])->toBeNull();
@@ -111,6 +114,50 @@ describe('the sheet', function (): void {
         $alerts = collect($sheet['today']['rows'])->firstWhere('key', 'alerts');
         expect($alerts['label'])->toBe(trans_choice('ask_admin.today.alerts', 1, ['count' => 1]))
             ->and($alerts['target'])->toBe(['screen' => 'admin.alerts', 'query' => []]);
+    });
+
+    test('a suggestion turns sharper while what it asks about waits today, and only into a question a tool answers', function (): void {
+        $token = adminAskToken();
+        $plain = array_column(adminAskCall($token, 'GET', 'admin/ask')->json('data.suggestions'), 'key');
+
+        Payment::factory()->create();
+        PlatformEvent::factory()->severity(PlatformEventSeverity::Critical)->create();
+        $sharp = adminAskCall($token, 'GET', 'admin/ask')->json('data.suggestions');
+
+        expect($plain)->toBe(['pulse', 'alerts', 'payments', 'trouble'])
+            ->and(array_column($sharp, 'key'))->toBe(['pulse', 'critical_alert', 'oldest_receipt', 'trouble'])
+            ->and(array_column($sharp, 'question'))->toContain('¿Qué hago con el aviso crítico abierto?', '¿Qué hago con el comprobante que espera verificación?');
+
+        // It agrees with the card above it: three critical alerts are spoken of as three.
+        PlatformEvent::factory()->count(2)->severity(PlatformEventSeverity::Critical)->create();
+        expect(adminAskCall($token, 'GET', 'admin/ask')->json('data.suggestions.1.question'))->toBe('¿Qué hago con los 3 avisos críticos abiertos?');
+    });
+
+    test('only questions a tool of this person answers are offered: a narrow role gets only its own', function (): void {
+        $role = Role::findOrCreate('soporte-ia', 'web');
+        $role->syncPermissions(['access-admin-panel', 'ai.ask', 'support.view', 'businesses.view']);
+        $token = adminAskToken('soporte-ia');
+
+        // Only the business search is its tool: the pulse, the alerts and the receipts are not offered.
+        expect(array_column(adminAskCall($token, 'GET', 'admin/ask')->json('data.suggestions'), 'key'))->toBe(['trouble']);
+    });
+
+    test('the sheet draws back the conversation it was following, and nothing of somebody else\'s', function (): void {
+        AskAdmin::fake(['Hay **3** negocios.']);
+        $token = adminAskToken();
+        $followed = adminAskCall($token, 'POST', 'admin/ask', ['question' => '¿Cuántos negocios hay?'])->json('data.conversation');
+
+        $sheet = adminAskCall($token, 'GET', 'admin/ask?conversation='.$followed)->json('data');
+
+        expect($sheet['conversation'])->toBe($followed)
+            ->and($sheet['thread'])->toBe([
+                ['role' => 'admin', 'text' => '¿Cuántos negocios hay?'],
+                ['role' => 'ai', 'text' => 'Hay **3** negocios.', 'parts' => [['kind' => 'text', 'text' => 'Hay '], ['kind' => 'bold', 'text' => '3'], ['kind' => 'text', 'text' => ' negocios.']]],
+            ]);
+
+        $theirs = adminAskCall(adminAskToken(), 'GET', 'admin/ask?conversation='.$followed)->json('data');
+        expect($theirs['thread'])->toBe([])->and($theirs['conversation'])->toBeNull()
+            ->and(adminAskCall($token, 'GET', 'admin/ask?conversation=not-an-id')->json('data.thread'))->toBe([]);
     });
 
     test('with the cap reached the box gives way to the web\'s sentence', function (): void {

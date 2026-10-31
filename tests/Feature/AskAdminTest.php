@@ -409,6 +409,25 @@ describe('the panel', function (): void {
         AskAdmin::assertNeverPrompted();
     });
 
+    test('closing the panel or changing screen keeps the thread: opening again draws it back from the store', function (): void {
+        AskAdmin::fake(['Hay 3 negocios.']);
+        $admin = askAdminUser();
+
+        Livewire::actingAs($admin)->test('ask.admin')->call('open')->set('form.question', '¿Cuántos negocios hay?')->call('ask');
+
+        // A fresh panel, as on the next screen the topbar rides.
+        $again = Livewire::actingAs($admin)->test('ask.admin')->call('open');
+
+        expect($again->get('messages'))->toBe([
+            ['role' => 'owner', 'text' => '¿Cuántos negocios hay?'],
+            ['role' => 'ai', 'text' => 'Hay 3 negocios.'],
+        ])->and($again->get('conversationId'))->toBe(session('ask_admin.conversation'));
+
+        $again->call('newChat');
+        expect(session('ask_admin.conversation'))->toBeNull()
+            ->and(Livewire::actingAs($admin)->test('ask.admin')->call('open')->get('messages'))->toBe([]);
+    });
+
     test('a new chat clears the thread without erasing anything stored', function (): void {
         AskAdmin::fake(['Listo.']);
 

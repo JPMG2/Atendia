@@ -64,16 +64,19 @@ class AskAdmin implements Agent, Conversational, HasSkills, HasTools
      */
     public function resume(?string $conversationId): static
     {
+        return $this->owns($conversationId) ? $this->continue($conversationId, as: $this->admin) : $this->forUser($this->admin);
+    }
+
+    /** Whether a stored thread is this admin's; a store that cannot say who owns a thread is not trusted with one. */
+    public function owns(?string $conversationId): bool
+    {
         $store = resolve(ConversationStore::class);
 
-        // A store that cannot say who owns a thread is not trusted with one: it fails closed.
-        $owned = $conversationId !== null && $store instanceof VerifiesConversationOwnership && $store->conversationBelongsTo(
+        return $conversationId !== null && $store instanceof VerifiesConversationOwnership && $store->conversationBelongsTo(
             $conversationId,
             Conversation::participantType($this->admin),
             Conversation::participantKey($this->admin),
         );
-
-        return $owned ? $this->continue($conversationId, as: $this->admin) : $this->forUser($this->admin);
     }
 
     /** One capped pass: the response also says which stored conversation the turn joined. */

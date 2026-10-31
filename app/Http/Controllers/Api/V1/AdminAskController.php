@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Classes\Main\AdminAskDesk;
-use App\Classes\Main\AdminAttention;
 use App\Classes\Main\AskDesk;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AdminAskQuestionRequest;
@@ -13,6 +12,7 @@ use App\Models\Company;
 use App\Models\Menu;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * The admin's "Asistente IA" on the phone: the web panel's own piece, words
@@ -25,6 +25,9 @@ class AdminAskController extends Controller
     {
         $desk = new AdminAskDesk($request->user());
         $screens = Menu::adminAppScreens();
+        // The conversation the phone was following, read back from the SDK's store; anything not hers is no thread at all.
+        $following = Str::isUuid($request->query('conversation')) ? (string) $request->query('conversation') : null;
+        $thread = $desk->thread($following);
 
         return response()->json(['data' => [
             'title' => __('ask_admin.title'),
@@ -40,8 +43,12 @@ class AdminAskController extends Controller
                     'label' => trans_choice('ask_admin.today.'.$item['key'], $item['count'], ['count' => $item['count']]),
                     // Only to a screen the app has and this person may open: a row that leads nowhere is drawn without its arrow.
                     'target' => in_array($item['route'], $screens, true) ? ['screen' => $item['route'], 'query' => []] : null,
-                ], (new AdminAttention($request->user()))->items),
+                ], $desk->attention->items),
             ],
+            'thread' => array_map(fn (array $turn): array => $turn['role'] === 'owner'
+                ? ['role' => 'admin', 'text' => $turn['text']]
+                : ['role' => 'ai', 'text' => $turn['text'], 'parts' => AskDesk::appParts($turn['text'], $screens)], $thread),
+            'conversation' => $thread === [] ? null : $following,
             'suggestions_title' => __('ask_admin.suggestions_title'),
             'suggestions' => $desk->suggestions,
             'placeholder' => __('ask_admin.placeholder'),
