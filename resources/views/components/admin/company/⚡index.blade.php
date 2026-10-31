@@ -542,6 +542,7 @@ field in red from an attempt you had stopped looking at. --}}
                             class="font-mono"
                             :label="__('company.fields.phone')"
                             :placeholder="__('company.fields.phone_placeholder')"
+                            :hint="__('company.fields.phone_hint')"
                             maxlength="30"
                             wire:model="form.data.phone"
                         />

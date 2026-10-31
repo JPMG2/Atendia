@@ -170,6 +170,7 @@ return [
 
         'phone' => 'WhatsApp / teléfono',
         'phone_placeholder' => '+54 9 11 5555-1234',
+        'phone_hint' => 'Los «Escríbenos por WhatsApp» del sitio llevan a la línea de WhatsApp de la plataforma mientras está conectada; si se cae, a este número. Aquí te llegan también los avisos de tickets nuevos.',
 
         'web' => 'Sitio web',
         'opening_schedule' => 'Horario de atención',

@@ -119,7 +119,8 @@ class CreateSupportTicket
             }
         }
 
-        $whatsapp = (string) Company::whatsapp();
+        // The team's own phone: the platform line sends this notice and must not be told it.
+        $whatsapp = (string) Company::teamWhatsapp();
 
         if ($whatsapp !== '') {
             try {

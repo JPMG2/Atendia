@@ -772,7 +772,7 @@ return [
             'season_placeholder' => 'Elige la temporada',
             'season_hint' => 'Las fechas salen de Temporadas. Una temporada tiene una sola variante',
             'phone' => 'Número de WhatsApp',
-            'phone_hint' => 'En blanco usa el de Compañía',
+            'phone_hint' => 'En blanco usa la línea de WhatsApp de la plataforma',
             'phone_placeholder' => '+54 9 11 5555-1234',
             'override_schedule' => 'Horario propio',
             'override_schedule_hint' => 'Apagado usa la semana de Compañía. Encendido y sin ningún día abierto, la temporada queda cerrada.',

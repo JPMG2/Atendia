@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Classes\Main\OpeningHours;
 use App\Classes\Main\SendWindow;
+use App\Services\PlatformWhatsApp;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
 use DateTimeZone;
@@ -158,6 +159,28 @@ class Company extends Model
     }
 
     /**
+     * The number the platform's TEAM is told on (a new support ticket): the
+     * company's own phone, never the platform line, which sends those notices
+     * and would only be writing to itself.
+     */
+    public static function teamWhatsapp(): ?string
+    {
+        return Country::whatsappDigits(self::current()?->phone ?: config('atendia.sales_whatsapp'));
+    }
+
+    /**
+     * The all-year "write to us": the platform's own WhatsApp line while it is
+     * connected, one voice for every notice; the company's typed phone while
+     * the line is down or was never linked, so nobody writes to a dead number.
+     */
+    public static function allYearWhatsapp(?string $line, ?string $phone): ?string
+    {
+        $connected = filled($line) && PlatformWhatsApp::lastKnown()['state']->isConnected();
+
+        return ($connected ? $line : $phone) ?: config('atendia.sales_whatsapp');
+    }
+
+    /**
      * How the landing's WhatsApp reads on a day: the company's own number,
      * hours and opening message, with what the strongest season in force
      * writes over them. `open` is null with no schedule declared (a missing
@@ -181,10 +204,10 @@ class Company extends Model
             ? null
             : new OpeningHours(OpeningHours::normalize($resolved['schedule']), self::localTimezone());
 
-        $digits = preg_replace('/\D+/', '', (string) ($resolved['phone'] ?: config('atendia.sales_whatsapp'))) ?? '';
-
         return [
-            'phone' => $digits === '' ? null : $digits,
+            // A season's own number speaks for its days; otherwise the all-year one, chosen OUTSIDE the cache: a line
+            // that just dropped must stop being dialled at once. As wa.me takes it (no trunk zero after the country code).
+            'phone' => Country::whatsappDigits(($resolved['variant_phone'] ?? null) ?: self::allYearWhatsapp($resolved['line'] ?? null, $resolved['phone'] ?? null)),
             'hours' => $hours?->summary,
             'open' => $isToday ? $hours?->isOpenAt(CarbonImmutable::now()) : null,
             'greeting' => $resolved['greeting'],
@@ -251,7 +274,10 @@ class Company extends Model
 
         return [
             // Raw: the env fallback is applied outside the cache, where a changed value shows at once.
-            'phone' => $variant?->phone ?: $company?->phone,
+            // Raw: which one is dialled is decided outside the cache (`allYearWhatsapp`), where the line's state is live.
+            'variant_phone' => $variant?->phone,
+            'line' => $company?->whatsapp_line,
+            'phone' => $company?->phone,
             // [] on a variant is "closed all week", so only null inherits.
             'schedule' => $variant?->opening_schedule ?? $company?->opening_schedule,
             'greeting' => $company?->whatsapp_greeting,

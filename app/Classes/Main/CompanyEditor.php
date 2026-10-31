@@ -275,7 +275,7 @@ class CompanyEditor
         return [
             'fields' => [
                 $this->field('email', 'email', __('company.fields.email'), $company?->email, placeholder: __('company.fields.email_placeholder')),
-                $this->field('phone', 'text', __('company.fields.phone'), $company?->phone, placeholder: __('company.fields.phone_placeholder'), max: 30, mono: true),
+                $this->field('phone', 'text', __('company.fields.phone'), $company?->phone, hint: __('company.fields.phone_hint'), placeholder: __('company.fields.phone_placeholder'), max: 30, mono: true),
                 $this->field('web', 'url', __('company.fields.web'), $company?->web, placeholder: __('company.fields.web_placeholder')),
                 $this->field('whatsapp_greeting', 'text', __('company.fields.whatsapp_greeting'), $company?->whatsapp_greeting, hint: __('company.fields.whatsapp_greeting_hint'), placeholder: __('company.fields.whatsapp_greeting_placeholder'), max: 300),
                 $this->field('payment_instructions', 'textarea', __('company.fields.payment_instructions'), $company?->payment_instructions, hint: __('company.fields.payment_instructions_hint'), max: 2000),

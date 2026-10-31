@@ -128,7 +128,13 @@ class PlatformSensors
             return new SensorReadingDto('platform_whatsapp', 'system', Status::Unknown, null, __('platform_events.detail.no_instance'));
         }
 
-        $state = app(EvolutionApi::class)->connectionState($instance);
+        $evolution = app(EvolutionApi::class);
+        $state = $evolution->connectionState($instance);
+
+        // While it answers, its number is kept: the site's "write to us" dials the line, even after a re-link.
+        if ($state === 'open') {
+            rescue(fn () => PlatformWhatsApp::rememberNumber($evolution->profile($instance)['number'] ?? null), report: false);
+        }
 
         return $state === 'open'
             ? new SensorReadingDto('platform_whatsapp', 'system', Status::Ok, 'open', __('platform_events.detail.instance_open'))

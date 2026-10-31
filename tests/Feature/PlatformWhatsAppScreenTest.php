@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Actions\Admin\ReadPlatformWhatsApp;
 use App\Enums\PlatformWhatsAppState;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Company;
 use App\Models\Menu;
 use App\Models\PlatformSensor;
+use App\Models\SeasonalWindow;
 use App\Models\User;
+use App\Models\WhatsappVariant;
+use App\Services\PlatformSensors;
 use App\Services\PlatformWhatsApp;
 use Carbon\CarbonImmutable;
 use Database\Seeders\MenuSeeder;
@@ -448,5 +452,69 @@ describe('the line only speaks', function (): void {
         ], ['X-Webhook-Secret' => 'test-secret'])->assertOk()->assertJson(['handled' => false]);
 
         Queue::assertNotPushed(ProcessIncomingWhatsAppMessage::class);
+    });
+});
+
+describe('the number every "write to us" dials', function (): void {
+    test('it is the line\'s own number as the bridge reports it, never a phone typed in Compañía', function (): void {
+        Company::factory()->create(['phone' => '+58-0424-8131833']);
+        platformBridgeSays('open');
+
+        app(ReadPlatformWhatsApp::class)->handle();
+
+        expect(Company::current()->whatsapp_line)->toBe('5492995243890')
+            ->and(Company::whatsapp())->toBe('5492995243890');
+        $this->get('/')->assertSee('wa.me/5492995243890', false)->assertDontSee('wa.me/58', false);
+    });
+
+    test('the board\'s periodic probe keeps it too, so a re-linked number reaches the site without anyone opening a screen', function (): void {
+        Company::factory()->create(['whatsapp_line' => '5491100000000']);
+        platformBridgeSays('open');
+
+        app(PlatformSensors::class)->read();
+
+        expect(Company::current()->whatsapp_line)->toBe('5492995243890');
+    });
+
+    test('a line that dropped stops being dialled at once: the site falls back to the typed phone', function (): void {
+        Company::factory()->create(['phone' => '+54 9 11 5555-1234', 'whatsapp_line' => '5492995243890']);
+
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Connected, CarbonImmutable::now());
+        expect(Company::whatsapp())->toBe('5492995243890');
+
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Closed, CarbonImmutable::now());
+        expect(Company::whatsapp())->toBe('5491155551234');
+        $this->get('/')->assertSee('wa.me/5491155551234', false)->assertDontSee('wa.me/5492995243890', false);
+    });
+
+    test('a new support ticket tells the team\'s own phone, never the line that sends the notice', function (): void {
+        Company::factory()->create(['phone' => '+54 9 11 5555-1234', 'whatsapp_line' => '5492995243890']);
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Connected, CarbonImmutable::now());
+
+        expect(Company::teamWhatsapp())->toBe('5491155551234')
+            ->and(Company::whatsapp())->toBe('5492995243890');
+    });
+
+    test('the seasonal catalog names the number a blank variant really inherits', function (): void {
+        Company::factory()->create(['phone' => '+54 9 11 5555-1234', 'whatsapp_line' => '5492995243890']);
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Connected, CarbonImmutable::now());
+        WhatsappVariant::factory()->create(['seasonal_window_id' => SeasonalWindow::factory()->create()->id, 'phone' => null]);
+
+        expect((new WhatsappVariant)->catalogRows()->first()['inherits_note'])->toContain('5492995243890')->not->toContain('5555');
+    });
+
+    test('a season\'s own number still speaks for its days; the typed phone only while the line never answered', function (): void {
+        $company = Company::factory()->create(['phone' => '+54 9 11 5555-1234', 'whatsapp_line' => null]);
+        expect(Company::whatsapp())->toBe('5491155551234');
+
+        $company->forceFill(['whatsapp_line' => '5492995243890'])->save();
+        Company::forgetReach();
+        PlatformWhatsApp::remember(PlatformWhatsAppState::Connected, CarbonImmutable::now());
+        expect(Company::whatsapp())->toBe('5492995243890');
+
+        $season = SeasonalWindow::factory()->create();
+        WhatsappVariant::factory()->create(['seasonal_window_id' => $season->id, 'phone' => '+54 9 351 600-0000']);
+        Company::forgetReach();
+        expect(Company::whatsapp())->toBe('5493516000000');
     });
 });

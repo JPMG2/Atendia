@@ -109,6 +109,33 @@ class Country extends Model implements DataTable, HasColumns, Removable
         return $normalized === '' ? null : $normalized;
     }
 
+    /**
+     * A phone as WhatsApp's links take it: digits only, the country code first
+     * and NO national trunk zero after it. "+58-0424-8131833" is how people write
+     * it, and wa.me/5804248131833 is refused; the dialling codes of this table
+     * say where the country code ends, the longest one first (1787 before 1).
+     */
+    public static function whatsappDigits(?string $phone): ?string
+    {
+        $digits = (string) preg_replace('/\D+/', '', (string) $phone);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        $codes = once(fn (): array => self::query()->whereNotNull('phone_code')->pluck('phone_code')
+            ->map(fn (string $code): string => (string) preg_replace('/\D+/', '', $code))
+            ->filter()->unique()->sortByDesc(fn (string $code): int => strlen($code))->values()->all());
+
+        foreach ($codes as $code) {
+            if (str_starts_with($digits, $code.'0')) {
+                return $code.substr($digits, strlen($code) + 1);
+            }
+        }
+
+        return $digits;
+    }
+
     protected function name(): Attribute
     {
         return Attribute::make(

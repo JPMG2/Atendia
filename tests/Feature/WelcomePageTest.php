@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 use App\Classes\Main\Plan;
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\ConversationMessage;
+use App\Models\Country;
 use Database\Seeders\DemoTagSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -283,6 +286,22 @@ test('the closing pitch shows the product still talking: a pocket phone mid-chat
     $this->get('/')
         ->assertSee('closing-phone', false)
         ->assertSee(__('landing.phone.b6'));
+});
+
+test('every WhatsApp door of the landing dials the number as WhatsApp takes it: no trunk zero after the country code', function (): void {
+    Country::factory()->create(['phone_code' => '58']);
+    Country::factory()->create(['phone_code' => '54']);
+    Company::factory()->create(['phone' => '+58-0424-8131833']);
+    Cache::flush();
+
+    $page = $this->get('/');
+
+    // The pricing card, the faq and the footer: one number, and never the refused 5804…
+    expect(substr_count($page->getContent(), 'wa.me/584248131833'))->toBeGreaterThanOrEqual(2)
+        ->and($page->getContent())->not->toContain('wa.me/5804248131833')
+        ->and(Country::whatsappDigits('+54 9 11 5555-1234'))->toBe('5491155551234')
+        ->and(Country::whatsappDigits('+54 0299 4552 3890'))->toBe('5429945523890')
+        ->and(Country::whatsappDigits('  '))->toBeNull();
 });
 
 test('the Pro CTA opens a WhatsApp chat with sales, or falls back to register', function (): void {

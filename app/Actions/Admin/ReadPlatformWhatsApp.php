@@ -64,6 +64,7 @@ class ReadPlatformWhatsApp
         }
 
         $jid = (string) ($row['ownerJid'] ?? '');
+        PlatformWhatsApp::rememberNumber($jid === '' ? null : (string) strstr($jid, '@', true));
 
         return new PlatformWhatsAppDto(
             $instance,

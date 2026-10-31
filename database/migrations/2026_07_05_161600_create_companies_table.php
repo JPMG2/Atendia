@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('email')->nullable();
             $table->string('phone', 30)->nullable();
+            $table->string('whatsapp_line', 30)->nullable()->comment('Número de la línea de WhatsApp de la plataforma, como lo informa el puente; lo escribe el sistema, nadie lo tipea');
             $table->jsonb('opening_schedule')->nullable()->comment('Semana de atención del WhatsApp de la landing: {"1":["09:00","18:00"],...}, un turno por día; el día que falta está cerrado');
             $table->string('whatsapp_greeting', 300)->nullable()->comment('Mensaje con el que se abre el chat desde la landing');
             $table->string('web')->nullable();

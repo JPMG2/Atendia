@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\PlatformSensorStatus;
 use App\Enums\PlatformWhatsAppState;
+use App\Models\Company;
 use App\Models\PlatformSensor;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -33,6 +34,24 @@ final class PlatformWhatsApp
         $platform = self::instance();
 
         return $platform !== '' && $instance === $platform;
+    }
+
+    /**
+     * Keeps the number the bridge says the line answers on, so every "write to us"
+     * of the site dials this line and no number typed by hand. Written only when
+     * it changed: the landing's cached reach is forgotten then, not on every probe.
+     */
+    public static function rememberNumber(?string $number): void
+    {
+        $digits = (string) preg_replace('/\D+/', '', (string) $number);
+        $company = Company::current();
+
+        if ($digits === '' || $company === null || $company->whatsapp_line === $digits) {
+            return;
+        }
+
+        $company->forceFill(['whatsapp_line' => $digits])->save();
+        Company::forgetReach();
     }
 
     /** Remembers what the bridge just said, so the topbar agrees with the screen that asked. */

@@ -89,7 +89,7 @@ class WhatsappVariant extends Model implements DataTable, HasColumns, Removable
     {
         // What a blank field falls back to on the landing (`Company::reachFor()`): the company's all-year answer.
         $company = Company::current();
-        $inheritedPhone = $company?->phone ?: config('atendia.sales_whatsapp');
+        $inheritedPhone = Company::allYearWhatsapp($company?->whatsapp_line, $company?->phone);
         $inheritedHours = $company?->opening_schedule === null
             ? null
             : (new OpeningHours(OpeningHours::normalize($company->opening_schedule), Company::localTimezone()))->summary;
