@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Ai\Agents\AsistenteAtendia;
 use App\Models\Business;
+use App\Models\Country;
+use App\Models\Currency;
 use App\Models\DemoMetric;
 use App\Models\KnowledgeDocument;
 use App\Services\Tenant;
@@ -127,6 +129,35 @@ test('the demo seeder is idempotent and feeds the clinic knowledge', function ()
         ->and($knowledge('kiosco'))->toBe(4);
 });
 
+test('the demo examples live in the venezuelan pilot, quote in dollars and drop a renamed answer', function (): void {
+    Queue::fake();
+    Country::factory()->create(['iso2' => 'AR']);
+    $venezuela = Country::factory()->create(['iso2' => 'VE']);
+    $dollar = Currency::factory()->create(['code' => 'USD']);
+    $this->seed(DemoBusinessSeeder::class);
+
+    $clinic = Business::demo('clinica');
+    $stale = app(Tenant::class)->for($clinic->id, fn (): KnowledgeDocument => KnowledgeDocument::query()->create([
+        'business_id' => $clinic->id, 'title' => 'Turnos y cómo reservar', 'source_type' => 'faq', 'content' => 'Turno con obra social: $45.000.',
+    ]));
+    // A trashed row still has searchable chunks, so a current title in the bin goes too.
+    $trashed = app(Tenant::class)->for($clinic->id, fn (): KnowledgeDocument => KnowledgeDocument::query()->where('title', 'Dónde estamos')->first());
+    app(Tenant::class)->for($clinic->id, fn () => $trashed->delete());
+
+    $this->seed(DemoBusinessSeeder::class);
+
+    $documents = app(Tenant::class)->for($clinic->id, fn () => KnowledgeDocument::withTrashed()->pluck('content', 'id'));
+
+    expect($clinic->fresh()->country_id)->toBe($venezuela->id)
+        ->and($clinic->fresh()->currency_id)->toBe($dollar->id)
+        ->and($documents->has($stale->id))->toBeFalse()
+        ->and($documents->has($trashed->id))->toBeFalse()
+        ->and($documents)->toHaveCount(6)
+        ->and($documents->implode(' '))->not->toContain('.000')
+        ->not->toContain('obra social')
+        ->not->toContain('turno');
+});
+
 test('the demo businesses never inflate the landing social proof', function (): void {
     Queue::fake();
     $this->seed(DemoBusinessSeeder::class);
@@ -142,7 +173,7 @@ test('the hero phone offers the interactive composer', function (): void {
 
     $this->get('/')
         ->assertSee(__('landing.demo.try_label'))
-        ->assertSee('¿Cuánto sale una ecografía?')
+        ->assertSee('¿Cuánto cuesta una ecografía?')
         ->assertSee(route('demo.message'), false)
         ->assertSee('csrf-token', false);
 });
@@ -154,7 +185,7 @@ test('the hero phone offers the rubro selector and the english chip', function (
         ->assertSee(__('landing.demo.rubro_label'))
         ->assertSee('Peluquería')
         ->assertSee('Kiosco')
-        ->assertSee('¿Cuánto sale el corte?')
+        ->assertSee('¿Cuánto cuesta el corte?')
         ->assertSee('How much is an ultrasound?')
         ->assertSee(trans_choice('landing.demo.left', 2, ['count' => '__N__']));
 });

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\Country;
+use App\Models\Currency;
 use App\Models\KnowledgeDocument;
 use App\Services\Tenant;
 use Illuminate\Database\Seeder;
@@ -21,11 +22,13 @@ class DemoBusinessSeeder extends Seeder
 {
     public function run(): void
     {
-        // The catalog holds the countries in production; the factory only
-        // steps in on a bare test database.
-        $countryId = Country::query()->where('iso2', 'AR')->value('id')
+        // Venezuela is the pilot and the plans sell in dollars, so the
+        // examples live there and quote in dollars. The factory only steps in
+        // on a bare test database.
+        $countryId = Country::query()->where('iso2', 'VE')->value('id')
             ?? Country::query()->value('id')
             ?? Country::factory()->create()->id;
+        $currencyId = Currency::query()->where('code', 'USD')->value('id');
 
         foreach ($this->rubros() as $rubro => $definition) {
             $business = Business::query()->where('is_demo', true)->updateOrCreate(
@@ -33,11 +36,23 @@ class DemoBusinessSeeder extends Seeder
                 // `is_demo` is written on every run on purpose: it is what
                 // keeps these eight out of the money, and a demo that lost the
                 // flag would be counted as a paying client.
-                ['name' => $definition['name'], 'city' => 'Buenos Aires', 'country_id' => $countryId, 'is_active' => true, 'is_demo' => true],
+                ['name' => $definition['name'], 'city' => 'Caracas', 'country_id' => $countryId, 'currency_id' => $currencyId, 'is_active' => true, 'is_demo' => true],
             );
 
             // An example's rows are seen only from inside its own tenant.
             app(Tenant::class)->for($business->id, function () use ($business, $definition): void {
+                // A renamed FAQ must not keep answering under its old title.
+                // The retriever reads chunks without looking at the parent's
+                // soft delete, so a trashed row goes for good too.
+                KnowledgeDocument::withTrashed()
+                    ->where('business_id', $business->id)
+                    ->where('source_type', 'faq')
+                    ->where(fn ($stale) => $stale
+                        ->whereNotIn('title', array_column($definition['faqs'], 'title'))
+                        ->orWhereNotNull('deleted_at'))
+                    ->get()
+                    ->each->forceDelete();
+
                 foreach ($definition['faqs'] as $faq) {
                     KnowledgeDocument::query()->updateOrCreate(
                         ['business_id' => $business->id, 'title' => $faq['title']],
@@ -58,28 +73,28 @@ class DemoBusinessSeeder extends Seeder
                 'name' => 'Clínica Vida',
                 'faqs' => [
                     [
-                        'title' => 'Turnos y cómo reservar',
-                        'content' => 'Pregunta: ¿Cómo saco un turno?'."\n".'Respuesta: Atendemos con turno de lunes a viernes de 8 a 20 y sábados de 9 a 13. Decime qué estudio necesitás y te ofrezco los próximos horarios libres; esta semana suele haber lugar jueves y viernes por la mañana.',
+                        'title' => 'Citas y cómo reservar',
+                        'content' => 'Pregunta: ¿Cómo pido una cita?'."\n".'Respuesta: Atendemos con cita de lunes a viernes de 8 a 20 y sábados de 9 a 13. Dime qué estudio necesitas y te ofrezco los próximos horarios libres; esta semana suele haber cupo jueves y viernes en la mañana.',
                     ],
                     [
                         'title' => 'Precio de la ecografía',
-                        'content' => 'Pregunta: ¿Cuánto sale una ecografía?'."\n".'Respuesta: La ecografía abdominal cuesta $45.000 y la ecografía doppler $60.000. Con obra social suele tener cobertura total o un copago menor, según el plan.',
+                        'content' => 'Pregunta: ¿Cuánto cuesta una ecografía?'."\n".'Respuesta: La ecografía abdominal cuesta $25 y la ecografía doppler $40. Con seguro suele tener cobertura total o un copago menor, según la póliza.',
                     ],
                     [
                         'title' => 'Precio del electrocardiograma',
-                        'content' => 'Pregunta: ¿Cuánto cuesta un electro?'."\n".'Respuesta: El electrocardiograma cuesta $30.000 e incluye el informe del cardiólogo en el día.',
+                        'content' => 'Pregunta: ¿Cuánto cuesta un electro?'."\n".'Respuesta: El electrocardiograma cuesta $20 e incluye el informe del cardiólogo el mismo día.',
                     ],
                     [
                         'title' => 'Dónde estamos',
-                        'content' => 'Pregunta: ¿Dónde están ubicados?'."\n".'Respuesta: Estamos en Av. Siempreviva 742, Buenos Aires, a dos cuadras de la estación. Hay estacionamiento propio para pacientes.',
+                        'content' => 'Pregunta: ¿Dónde están ubicados?'."\n".'Respuesta: Estamos en Av. Libertad 742, Caracas, a una cuadra de la plaza. Hay estacionamiento propio para pacientes.',
                     ],
                     [
                         'title' => 'Preparación y ayuno',
                         'content' => 'Pregunta: ¿Necesito ayuno?'."\n".'Respuesta: Para la ecografía abdominal se piden 6 horas de ayuno. El electrocardiograma no necesita ninguna preparación.',
                     ],
                     [
-                        'title' => 'Obras sociales y medios de pago',
-                        'content' => 'Pregunta: ¿Qué obras sociales aceptan?'."\n".'Respuesta: Trabajamos con las principales obras sociales y prepagas. También podés abonar en efectivo, débito o crédito en hasta 3 cuotas sin interés.',
+                        'title' => 'Seguros y medios de pago',
+                        'content' => 'Pregunta: ¿Qué seguros aceptan?'."\n".'Respuesta: Trabajamos con los principales seguros y pólizas de salud. También puedes pagar con tarjeta, transferencia o efectivo, y además con pago móvil o Zelle.',
                     ],
                 ],
             ],
@@ -88,19 +103,19 @@ class DemoBusinessSeeder extends Seeder
                 'faqs' => [
                     [
                         'title' => 'Precio del corte',
-                        'content' => 'Pregunta: ¿Cuánto sale el corte?'."\n".'Respuesta: El corte de dama cuesta $18.000 y el de caballero $12.000, con lavado incluido. Los viernes hay 20% de descuento en cortes por la mañana.',
+                        'content' => 'Pregunta: ¿Cuánto cuesta el corte?'."\n".'Respuesta: El corte de dama cuesta $10 y el de caballero $6, con lavado incluido. Los viernes hay 20% de descuento en cortes en la mañana.',
                     ],
                     [
                         'title' => 'Color y mechas',
-                        'content' => 'Pregunta: ¿Hacen color y mechas?'."\n".'Respuesta: Sí: color completo desde $35.000 y mechas balayage desde $55.000, según largo. Incluyen tratamiento de hidratación.',
+                        'content' => 'Pregunta: ¿Hacen color y mechas?'."\n".'Respuesta: Sí: color completo desde $25 y mechas balayage desde $40, según el largo. Incluyen tratamiento de hidratación.',
                     ],
                     [
-                        'title' => 'Turnos y sin turno',
-                        'content' => 'Pregunta: ¿Atienden sin turno?'."\n".'Respuesta: Con turno asegurás tu horario, pero también recibimos sin turno según disponibilidad. Martes a sábado de 9 a 19.',
+                        'title' => 'Citas y sin cita',
+                        'content' => 'Pregunta: ¿Atienden sin cita?'."\n".'Respuesta: Con cita aseguras tu horario, pero también recibimos sin cita según disponibilidad. Martes a sábado de 9 a 19.',
                     ],
                     [
                         'title' => 'Dónde estamos',
-                        'content' => 'Pregunta: ¿Dónde están ubicados?'."\n".'Respuesta: Estamos en Calle Luna 123, Buenos Aires, frente a la plaza. Podés venir en bici: hay bicicletero en la puerta.',
+                        'content' => 'Pregunta: ¿Dónde están ubicados?'."\n".'Respuesta: Estamos en Calle Luna 123, Caracas, frente a la plaza. Hay estacionamiento en la misma cuadra.',
                     ],
                 ],
             ],
@@ -108,20 +123,20 @@ class DemoBusinessSeeder extends Seeder
                 'name' => 'Dr. Juan Herrera',
                 'faqs' => [
                     [
-                        'title' => 'Días y turnos del doctor',
-                        'content' => 'Pregunta: ¿Qué días atiende el doctor?'."\n".'Respuesta: El Dr. Juan Herrera atiende lunes, miércoles y viernes de 14 a 19 en su consultorio. Decime qué día te queda cómodo y te reservo el turno por acá.',
+                        'title' => 'Días y citas del doctor',
+                        'content' => 'Pregunta: ¿Qué días atiende el doctor?'."\n".'Respuesta: El Dr. Juan Herrera atiende lunes, miércoles y viernes de 14 a 19 en su consultorio. Dime qué día te queda cómodo y te reservo la cita por aquí.',
                     ],
                     [
                         'title' => 'Precio de la consulta',
-                        'content' => 'Pregunta: ¿Cuánto sale la consulta?'."\n".'Respuesta: La consulta particular cuesta $25.000. Con obra social o prepaga puede tener cobertura total o un copago menor, según el plan.',
+                        'content' => 'Pregunta: ¿Cuánto cuesta la consulta?'."\n".'Respuesta: La consulta particular cuesta $30. Con seguro puede tener cobertura total o un copago menor, según la póliza.',
                     ],
                     [
                         'title' => 'Dónde atiende',
-                        'content' => 'Pregunta: ¿Dónde queda el consultorio?'."\n".'Respuesta: El consultorio está en Av. Callao 456, piso 2, Buenos Aires, a una cuadra del subte.',
+                        'content' => 'Pregunta: ¿Dónde queda el consultorio?'."\n".'Respuesta: El consultorio está en Av. Urdaneta 456, piso 2, Caracas, a una cuadra del Metro.',
                     ],
                     [
-                        'title' => 'Recetas y estudios',
-                        'content' => 'Pregunta: ¿Puedo renovar una receta sin turno?'."\n".'Respuesta: Si sos paciente en seguimiento, el doctor renueva recetas sin turno presencial: pedila por acá y la retirás en secretaría. Los resultados de estudios se revisan en la consulta.',
+                        'title' => 'Récipes y estudios',
+                        'content' => 'Pregunta: ¿Puedo renovar un récipe sin cita?'."\n".'Respuesta: Si eres paciente en seguimiento, el doctor renueva récipes sin cita presencial: pídelo por aquí y lo retiras en secretaría. Los resultados de estudios se revisan en la consulta.',
                     ],
                 ],
             ],
@@ -130,19 +145,19 @@ class DemoBusinessSeeder extends Seeder
                 'faqs' => [
                     [
                         'title' => 'Horarios',
-                        'content' => 'Pregunta: ¿A qué hora abren?'."\n".'Respuesta: Abrimos todos los días de 7 a 21, con pan recién horneado a la mañana y a media tarde.',
+                        'content' => 'Pregunta: ¿A qué hora abren?'."\n".'Respuesta: Abrimos todos los días de 7 a 21, con pan recién horneado en la mañana y a media tarde.',
                     ],
                     [
                         'title' => 'Tortas por encargo',
-                        'content' => 'Pregunta: ¿Hacen tortas por encargo?'."\n".'Respuesta: Sí, tortas personalizadas desde $28.000 el kilo. Pedilas con 48 horas de anticipación; se señan con transferencia.',
+                        'content' => 'Pregunta: ¿Hacen tortas por encargo?'."\n".'Respuesta: Sí, tortas personalizadas desde $15 el kilo. Pídelas con 48 horas de anticipación; se apartan con un abono por pago móvil o transferencia.',
                     ],
                     [
-                        'title' => 'Productos sin TACC',
-                        'content' => 'Pregunta: ¿Tienen productos sin TACC?'."\n".'Respuesta: Sí: pan y facturas sin TACC los martes y jueves. Conviene reservarlos por acá porque vuelan.',
+                        'title' => 'Productos sin gluten',
+                        'content' => 'Pregunta: ¿Tienen productos sin gluten?'."\n".'Respuesta: Sí: pan y dulces sin gluten los martes y jueves. Conviene apartarlos por aquí porque se acaban rápido.',
                     ],
                     [
                         'title' => 'Envíos',
-                        'content' => 'Pregunta: ¿Hacen envíos?'."\n".'Respuesta: Hacemos envíos hasta 15 cuadras con un mínimo de $10.000. Los pedidos antes de las 11 llegan al mediodía.',
+                        'content' => 'Pregunta: ¿Hacen envíos?'."\n".'Respuesta: Hacemos envíos hasta 15 cuadras con un mínimo de $8. Los pedidos antes de las 11 llegan al mediodía.',
                     ],
                 ],
             ],
@@ -151,7 +166,7 @@ class DemoBusinessSeeder extends Seeder
                 'faqs' => [
                     [
                         'title' => 'Reservas',
-                        'content' => 'Pregunta: ¿Puedo reservar para hoy?'."\n".'Respuesta: Sí, tomamos reservas hasta las 21:30. Decime cuántos son y a qué hora vienen y te confirmo la mesa.',
+                        'content' => 'Pregunta: ¿Puedo reservar para hoy?'."\n".'Respuesta: Sí, tomamos reservas hasta las 21:30. Dime cuántos son y a qué hora vienen y te confirmo la mesa.',
                     ],
                     [
                         'title' => 'Horarios',
@@ -159,11 +174,11 @@ class DemoBusinessSeeder extends Seeder
                     ],
                     [
                         'title' => 'Menú del día',
-                        'content' => 'Pregunta: ¿Tienen menú del día?'."\n".'Respuesta: Sí, el menú ejecutivo cuesta $22.000 e incluye entrada, principal y postre. Va de martes a viernes al mediodía.',
+                        'content' => 'Pregunta: ¿Tienen menú del día?'."\n".'Respuesta: Sí, el menú ejecutivo cuesta $8 e incluye entrada, principal y postre. Va de martes a viernes al mediodía.',
                     ],
                     [
                         'title' => 'Delivery',
-                        'content' => 'Pregunta: ¿Hacen delivery?'."\n".'Respuesta: Sí, delivery propio hasta 20 cuadras y también por las apps. La demora ronda los 40 minutos.',
+                        'content' => 'Pregunta: ¿Hacen delivery?'."\n".'Respuesta: Sí, delivery propio en la zona y también por las apps. La demora ronda los 40 minutos.',
                     ],
                 ],
             ],
@@ -176,15 +191,15 @@ class DemoBusinessSeeder extends Seeder
                     ],
                     [
                         'title' => 'Copias de llaves',
-                        'content' => 'Pregunta: ¿Hacen copias de llaves?'."\n".'Respuesta: Sí, en el momento: la llave común cuesta $4.000 y la de auto $9.000.',
+                        'content' => 'Pregunta: ¿Hacen copias de llaves?'."\n".'Respuesta: Sí, en el momento: la llave común cuesta $2 y la de carro $5.',
                     ],
                     [
                         'title' => 'Envíos a obra',
-                        'content' => 'Pregunta: ¿Llevan pedidos a obra?'."\n".'Respuesta: Sí, el envío es gratis desde $50.000 dentro del barrio. Pedidos antes de las 14 salen el mismo día.',
+                        'content' => 'Pregunta: ¿Llevan pedidos a obra?'."\n".'Respuesta: Sí, el envío es gratis desde $30 dentro de la zona. Los pedidos antes de las 14 salen el mismo día.',
                     ],
                     [
                         'title' => 'Medios de pago',
-                        'content' => 'Pregunta: ¿Cómo puedo pagar?'."\n".'Respuesta: Aceptamos efectivo, tarjetas y billeteras por QR. Desde $30.000 tenés 3 cuotas sin interés.',
+                        'content' => 'Pregunta: ¿Cómo puedo pagar?'."\n".'Respuesta: Aceptamos efectivo, tarjetas, pago móvil y Zelle.',
                     ],
                 ],
             ],
@@ -192,20 +207,20 @@ class DemoBusinessSeeder extends Seeder
                 'name' => 'Veterinaria Patitas',
                 'faqs' => [
                     [
-                        'title' => 'Turnos y urgencias',
-                        'content' => 'Pregunta: ¿Atienden urgencias?'."\n".'Respuesta: Consultas con turno de lunes a sábado de 9 a 20. Las urgencias se atienden en el día: avisá por acá y te esperamos.',
+                        'title' => 'Citas y urgencias',
+                        'content' => 'Pregunta: ¿Atienden urgencias?'."\n".'Respuesta: Consultas con cita de lunes a sábado de 9 a 20. Las urgencias se atienden en el día: avisa por aquí y te esperamos.',
                     ],
                     [
                         'title' => 'Precio de la consulta',
-                        'content' => 'Pregunta: ¿Cuánto sale la consulta?'."\n".'Respuesta: La consulta cuesta $20.000 e incluye el control general de tu mascota.',
+                        'content' => 'Pregunta: ¿Cuánto cuesta la consulta?'."\n".'Respuesta: La consulta cuesta $15 e incluye el control general de tu mascota.',
                     ],
                     [
                         'title' => 'Vacunas',
-                        'content' => 'Pregunta: ¿Qué vacunas aplican?'."\n".'Respuesta: Aplicamos todas: la antirrábica cuesta $15.000 y la quíntuple $25.000. Te recordamos el refuerzo cuando toca.',
+                        'content' => 'Pregunta: ¿Qué vacunas aplican?'."\n".'Respuesta: Aplicamos todas: la antirrábica cuesta $10 y la quíntuple $20. Te recordamos el refuerzo cuando toca.',
                     ],
                     [
                         'title' => 'Baño y peluquería canina',
-                        'content' => 'Pregunta: ¿Hacen baño y corte?'."\n".'Respuesta: Sí, baño y corte desde $18.000 según el tamaño, siempre con turno. Retiramos y llevamos a domicilio en la zona.',
+                        'content' => 'Pregunta: ¿Hacen baño y corte?'."\n".'Respuesta: Sí, baño y corte desde $12 según el tamaño, siempre con cita. Buscamos y llevamos a domicilio en la zona.',
                     ],
                 ],
             ],
@@ -218,15 +233,15 @@ class DemoBusinessSeeder extends Seeder
                     ],
                     [
                         'title' => 'Envíos',
-                        'content' => 'Pregunta: ¿Hacen envíos?'."\n".'Respuesta: Sí, envíos propios hasta 10 cuadras con un mínimo de $8.000; llegan en menos de 30 minutos.',
+                        'content' => 'Pregunta: ¿Hacen envíos?'."\n".'Respuesta: Sí, envíos propios hasta 10 cuadras con un mínimo de $5; llegan en menos de 30 minutos.',
                     ],
                     [
-                        'title' => 'Promos del día',
-                        'content' => 'Pregunta: ¿Qué promos tienen hoy?'."\n".'Respuesta: Hoy hay 2x1 en alfajores y la gaseosa de 1,5 L a mitad de precio llevando dos. Las promos cambian todos los días.',
+                        'title' => 'Ofertas del día',
+                        'content' => 'Pregunta: ¿Qué ofertas tienen hoy?'."\n".'Respuesta: Hoy hay 2x1 en chocolates y el refresco de 2 litros a mitad de precio llevando dos. Las ofertas cambian todos los días.',
                     ],
                     [
                         'title' => 'Medios de pago',
-                        'content' => 'Pregunta: ¿Cómo puedo pagar?'."\n".'Respuesta: Aceptamos efectivo, tarjetas y billeteras virtuales por QR. No hay mínimo para pagar con QR.',
+                        'content' => 'Pregunta: ¿Cómo puedo pagar?'."\n".'Respuesta: Aceptamos efectivo, tarjetas, pago móvil y Zelle.',
                     ],
                 ],
             ],

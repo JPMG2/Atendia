@@ -38,9 +38,6 @@ return [
         'catalog' => [
             'body' => 'Cargá productos con precio y stock. Si preguntan, responde qué hay, cuánto sale y cuántas quedan — y cuando alguien lo quiere, le avisa a tu equipo.',
         ],
-        'always' => [
-            'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea. Vos lo leés todo en español.',
-        ],
         'alerts' => [
             'body' => 'Recibís un resumen de turnos y conversaciones. Intervenís solo cuando hace falta.',
         ],
@@ -63,7 +60,6 @@ return [
         'subtitle' => 'Probá gratis :days días, sin tarjeta. Cambiá o cancelá cuando quieras.',
         'trial_note' => ':days días gratis, sin tarjeta',
         'trust' => 'Sin tarjeta para empezar · Cancelás cuando quieras',
-        'multilang' => 'En cualquier idioma — vos lo leés todo en español',
         'ask_title' => 'Preguntale a :brand',
         'ask' => 'Preguntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',
         'calculator' => [
@@ -84,7 +80,7 @@ return [
             ],
             [
                 'q' => '¿Qué pasa si me escriben en otro idioma?',
-                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio. Los avisos para tu equipo llegan siempre en español.',
+                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio.',
             ],
             [
                 'q' => '¿Puede decirle algo equivocado a mis clientes?',

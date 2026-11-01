@@ -68,7 +68,7 @@ return [
                     ['side' => 'in', 'text' => '¿Tienen cinta de teflón y llave del 14?'],
                     ['side' => 'out', 'text' => 'Sí, las dos en stock. ¿Te las aparto en el mostrador?'],
                     ['side' => 'in', 'text' => '¿Llevan pedidos a obra?'],
-                    ['side' => 'out', 'text' => 'Sí: gratis desde $50.000 en el barrio. Antes de las 14 sale el mismo día 🚚'],
+                    ['side' => 'out', 'text' => 'Sí: gratis desde $30 en la zona. Antes de las 14 sale el mismo día 🚚'],
                 ],
             ],
             'kiosco' => [
@@ -77,14 +77,14 @@ return [
                 'noun' => 'kiosco',
                 'chips' => [
                     '¿Hacen envíos?',
-                    '¿Qué promos tienen hoy?',
+                    '¿Qué ofertas tienen hoy?',
                     'What time do you open?',
                 ],
                 'pool' => [
                     ['side' => 'in', 'text' => '¿Están abiertos ahora?'],
                     ['side' => 'out', 'text' => '¡Sí! Hasta las 23 ⏰ ¿Te llevamos algo?'],
-                    ['side' => 'in', 'text' => '¿Qué promos hay hoy?'],
-                    ['side' => 'out', 'text' => 'Hoy 2x1 en alfajores y la gaseosa de 1,5 L a mitad de precio llevando dos 🎉'],
+                    ['side' => 'in', 'text' => '¿Qué ofertas hay hoy?'],
+                    ['side' => 'out', 'text' => 'Hoy 2x1 en chocolates y el refresco de 2 litros a mitad de precio llevando dos 🎉'],
                 ],
             ],
             'panaderia' => [
@@ -93,14 +93,14 @@ return [
                 'noun' => 'panadería',
                 'chips' => [
                     '¿Hacen tortas por encargo?',
-                    '¿Tienen productos sin TACC?',
+                    '¿Tienen productos sin gluten?',
                     'Do you deliver?',
                 ],
                 'pool' => [
-                    ['side' => 'in', 'text' => '¿Hay medialunas para las 9?'],
-                    ['side' => 'out', 'text' => '¡Recién horneadas! 🥐 ¿Docena o media docena?'],
+                    ['side' => 'in', 'text' => '¿Hay cachitos para las 9?'],
+                    ['side' => 'out', 'text' => '¡Recién horneados! 🥐 ¿Docena o media docena?'],
                     ['side' => 'in', 'text' => 'Do you make custom cakes?'],
-                    ['side' => 'out', 'text' => 'Yes! From $28.000 per kilo — just order 48h ahead 🎂'],
+                    ['side' => 'out', 'text' => 'Yes! From $15 per kilo — just order 48h ahead 🎂'],
                 ],
             ],
             'restaurante' => [
@@ -116,7 +116,7 @@ return [
                     ['side' => 'in', 'text' => '¿Mesa para 4 hoy a las 21?'],
                     ['side' => 'out', 'text' => '¡Confirmada! Mesa para 4 a las 21, a tu nombre 🍷'],
                     ['side' => 'in', 'text' => '¿Tienen menú del día?'],
-                    ['side' => 'out', 'text' => 'Sí: entrada, principal y postre por <b>$22.000</b>, de martes a viernes al mediodía.'],
+                    ['side' => 'out', 'text' => 'Sí: entrada, principal y postre por <b>$8</b>, de martes a viernes al mediodía.'],
                 ],
             ],
             'peluqueria' => [
@@ -124,15 +124,15 @@ return [
                 'name' => 'Peluquería Lumen',
                 'noun' => 'peluquería',
                 'chips' => [
-                    '¿Cuánto sale el corte?',
+                    '¿Cuánto cuesta el corte?',
                     '¿Hacen color y mechas?',
                     'Do you take walk-ins?',
                 ],
                 'pool' => [
-                    ['side' => 'in', 'text' => '¿Tienen turno el sábado a la tarde?'],
-                    ['side' => 'out', 'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te lo reservo? 😊'],
+                    ['side' => 'in', 'text' => '¿Tienen cita el sábado en la tarde?'],
+                    ['side' => 'out', 'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te la reservo? 😊'],
                     ['side' => 'in', 'text' => 'Do you do balayage?'],
-                    ['side' => 'out', 'text' => 'Yes! Balayage from $55.000, hydration treatment included ✨'],
+                    ['side' => 'out', 'text' => 'Yes! Balayage from $40, hydration treatment included ✨'],
                 ],
             ],
             'veterinaria' => [
@@ -141,14 +141,14 @@ return [
                 'noun' => 'veterinaria',
                 'chips' => [
                     '¿Atienden urgencias?',
-                    '¿Cuánto sale la consulta?',
+                    '¿Cuánto cuesta la consulta?',
                     'Do you do grooming?',
                 ],
                 'pool' => [
                     ['side' => 'in', 'text' => 'Mi gato no quiere comer 😿'],
-                    ['side' => 'out', 'text' => 'Pobre 💚 Hoy a las 18:00 hay lugar con la doctora, ¿te lo agendo?'],
+                    ['side' => 'out', 'text' => 'Pobre 💚 Hoy a las 18:00 hay cupo con la doctora, ¿te lo agendo?'],
                     ['side' => 'in', 'text' => 'Do you do grooming?'],
-                    ['side' => 'out', 'text' => 'Yes! Bath & cut from $18.000, with appointment 🐾'],
+                    ['side' => 'out', 'text' => 'Yes! Bath & cut from $12, with appointment 🐾'],
                 ],
             ],
             'clinica' => [
@@ -156,8 +156,8 @@ return [
                 'name' => 'Clínica Vida',
                 'noun' => 'consultorio',
                 'chips' => [
-                    '¿Tienen turno esta semana?',
-                    '¿Cuánto sale una ecografía?',
+                    '¿Tienen cita esta semana?',
+                    '¿Cuánto cuesta una ecografía?',
                     'How much is an ultrasound?',
                 ],
             ],
@@ -167,14 +167,14 @@ return [
                 'noun' => 'consultorio',
                 'chips' => [
                     '¿Qué días atiende el doctor?',
-                    '¿Cuánto sale la consulta?',
+                    '¿Cuánto cuesta la consulta?',
                     'How much is a consultation?',
                 ],
                 'pool' => [
                     ['side' => 'in', 'text' => '¿El doctor atiende mañana?'],
-                    ['side' => 'out', 'text' => 'Sí, de 14 a 19. Tengo libre 15:30, ¿te lo reservo?'],
-                    ['side' => 'in', 'text' => '¿Cuánto sale la consulta?'],
-                    ['side' => 'out', 'text' => 'La consulta particular sale <b>$25.000</b>. Con obra social suele tener cobertura 😊'],
+                    ['side' => 'out', 'text' => 'Sí, de 14 a 19. Tengo libre 15:30, ¿te la reservo?'],
+                    ['side' => 'in', 'text' => '¿Cuánto cuesta la consulta?'],
+                    ['side' => 'out', 'text' => 'La consulta particular cuesta <b>$30</b>. Con seguro suele tener cobertura 😊'],
                 ],
             ],
         ],
@@ -207,11 +207,11 @@ return [
         ],
         'catalog' => [
             'title' => 'Muestra tu catálogo',
-            'body' => 'Carga productos con precio y stock. Si preguntan, responde qué hay, cuánto sale y cuántas quedan — y cuando alguien lo quiere, le avisa a tu equipo.',
+            'body' => 'Carga productos con precio y stock. Si preguntan, responde qué hay, cuánto cuesta y cuántas quedan — y cuando alguien lo quiere, le avisa a tu equipo.',
         ],
         'always' => [
             'title' => 'Responde 24/7 en cualquier idioma',
-            'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea. Tú lo lees todo en español.',
+            'body' => 'Contesta en segundos y en el idioma en que le escriban — inglés, portugués o el que sea.',
         ],
         'alerts' => [
             'title' => 'Te avisa lo importante',
@@ -241,7 +241,7 @@ return [
             'schedule_badge' => 'Confirmado',
             'catalog_ask' => '¿Tienen taladro percutor?',
             'catalog_product' => 'Taladro percutor Bosch GSB 13 RE',
-            'catalog_price' => '$89.000',
+            'catalog_price' => '$85',
             'catalog_stock' => 'quedan 3',
             'catalog_offer' => 'Sí, lo tenemos. ¿Te lo aparto?',
             'catalog_want' => 'Sí, lo quiero',
@@ -266,7 +266,7 @@ return [
         ],
         'step3' => [
             'title' => 'Responde por ti',
-            'body' => 'Contesta, agenda o cotiza al instante, con tu tono y tus datos.',
+            'body' => 'Contesta, agenda o cotiza en segundos, con tu tono y tus datos.',
         ],
         'step4' => [
             'title' => 'Tú supervisas',
@@ -327,7 +327,7 @@ return [
             'cta' => 'Recuperar mis horas — :days días gratis',
             'assumption' => 'Estimación con :minutes min por consulta. Son tus números, sin estadísticas inventadas.',
         ],
-        'multilang' => 'En cualquier idioma — tú lo lees todo en español',
+        'multilang' => 'Responde en el idioma en que le escriban',
         'ask_eyebrow' => 'Asistente IA incluido',
         'ask_title' => 'Pregúntale a :brand',
         'ask' => 'Pregúntale lo que quieras de tu negocio y te responde al instante con tus datos reales.',
@@ -365,11 +365,11 @@ return [
         'items' => [
             [
                 'q' => '¿Sirve si vendo productos y no doy turnos?',
-                'a' => 'Sí. Cargas tu catálogo con precio y stock, y el asistente responde qué hay, cuánto sale y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres tú.',
+                'a' => 'Sí. Cargas tu catálogo con precio y stock, y el asistente responde qué hay, cuánto cuesta y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres tú.',
             ],
             [
                 'q' => '¿Qué pasa si me escriben en otro idioma?',
-                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio. Los avisos para tu equipo llegan siempre en español.',
+                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio.',
             ],
             [
                 'q' => '¿Puede decirle algo equivocado a mis clientes?',
@@ -430,9 +430,9 @@ return [
         'header' => 'Clínica Vida · Asistente',
         'online' => 'en línea',
         'b1' => 'Hola, ¿hacen copias de llaves?',
-        'b2' => '¡Hola! Sí, en el momento 😊 La llave común sale $4.000 y la de auto $9.000.',
+        'b2' => '¡Hola! Sí, en el momento 😊 La llave común cuesta $2 y la de carro $5.',
         'b3' => 'Hi! Do you deliver to construction sites?',
-        'b4' => 'Yes! Free delivery in the neighborhood from <b>$50.000</b>. Orders before 2 pm go out the same day 🚚',
+        'b4' => 'Yes! Free delivery in the area from <b>$30</b>. Orders before 2 pm go out the same day 🚚',
         'b5' => '¿Puedo pagar con tarjeta?',
         'b6' => '¡Claro! Aceptamos tarjeta, transferencia o efectivo 😊',
         'b7' => '¿Me pasas la dirección?',

@@ -47,7 +47,7 @@ return [
         'title' => 'Automatiza tu WhatsApp y no pierdas más clientes.',
         'sub' => 'Tu asistente responde, agenda turnos y muestra tus productos. Día y noche, en segundos.',
         'points' => [
-            'fast' => 'Responde en 2 segundos, las 24 horas',
+            'fast' => 'Responde en segundos, las 24 horas',
             'schedule' => 'Agenda turnos sin que muevas un dedo',
             'catalog' => 'Muestra tu catálogo dentro del chat',
         ],

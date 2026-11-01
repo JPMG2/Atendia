@@ -6,37 +6,6 @@ declare(strict_types=1);
 
 return [
     'meta_description' => ':brand conecta tu WhatsApp con un asistente de IA que responde, agenda citas y muestra tu catálogo.',
-    'demo' => [
-        'rubros' => [
-            'peluqueria' => [
-                'pool' => [
-                    0 => [
-                        'side' => 'in',
-                        'text' => '¿Tienen cita el sábado a la tarde?',
-                    ],
-                    1 => [
-                        'side' => 'out',
-                        'text' => '¡Sí! Me queda 16:30 con Sofi. ¿Te lo reservo? 😊',
-                    ],
-                    2 => [
-                        'side' => 'in',
-                        'text' => 'Do you do balayage?',
-                    ],
-                    3 => [
-                        'side' => 'out',
-                        'text' => 'Yes! Balayage from $55.000, hydration treatment included ✨',
-                    ],
-                ],
-            ],
-            'clinica' => [
-                'chips' => [
-                    0 => '¿Tienen cita esta semana?',
-                    1 => '¿Cuánto sale una ecografía?',
-                    2 => 'How much is an ultrasound?',
-                ],
-            ],
-        ],
-    ],
     'features' => [
         'schedule' => [
             'title' => 'Agenda citas sola',
@@ -63,11 +32,11 @@ return [
         'items' => [
             0 => [
                 'q' => '¿Sirve si vendo productos y no doy citas?',
-                'a' => 'Sí. Cargas tu catálogo con precio y stock, y el asistente responde qué hay, cuánto sale y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres tú.',
+                'a' => 'Sí. Cargas tu catálogo con precio y stock, y el asistente responde qué hay, cuánto cuesta y cuántas quedan. Cuando alguien quiere comprar, te avisa para que lo cierres tú.',
             ],
             1 => [
                 'q' => '¿Qué pasa si me escriben en otro idioma?',
-                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio. Los avisos para tu equipo llegan siempre en español.',
+                'a' => 'Responde en el idioma en que le escriben — inglés, portugués o el que sea — con los datos de tu negocio.',
             ],
             2 => [
                 'q' => '¿Puede decirle algo equivocado a mis clientes?',

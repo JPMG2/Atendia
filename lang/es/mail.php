@@ -62,7 +62,7 @@ return [
         'gains_title' => 'Esto es lo que tu negocio acaba de ganar',
         'gains_intro' => 'Dos ventajas que empiezan a trabajar desde el primer día.',
         'gain_always_title' => 'Atención 24 horas',
-        'gain_always_body' => 'Tu asistente no duerme ni se toma feriados: responde al instante a las 3 de la tarde o a las 3 de la mañana, siempre con la voz de tu negocio.',
+        'gain_always_body' => 'Tu asistente no duerme ni se toma feriados: responde en segundos a las 3 de la tarde o a las 3 de la mañana, siempre con la voz de tu negocio.',
         'gain_always_cta' => 'Activar mi asistente',
         'gain_inbox_title' => 'Tus mensajes, a un solo click',
         'gain_inbox_body' => 'Cada conversación vive en tu panel: se lee y se responde con un click, desde el negocio, tu casa o la playa.',
