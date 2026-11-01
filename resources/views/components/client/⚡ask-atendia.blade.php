@@ -8,6 +8,7 @@ use App\Models\AskFeedback;
 use App\Models\Business;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -19,7 +20,13 @@ new class extends Component
 {
     public AskAtendiaForm $form;
 
-    /** @var list<array{role: string, text: string, rating?: ?string, failed?: bool}> */
+    /**
+     * Locked: the history goes to the model as context, so a browser that
+     * rewrote it could put words in the assistant's mouth.
+     *
+     * @var list<array{role: string, text: string, rating?: ?string, failed?: bool}>
+     */
+    #[Locked]
     public array $messages = [];
 
     /** True while the panel is open: it is drawn (and the day card read) only then, never on every page the topbar rides. */

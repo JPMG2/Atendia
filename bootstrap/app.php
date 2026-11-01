@@ -13,11 +13,13 @@ use App\Http\Middleware\TrustCloudflareVisitorIp;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -85,4 +87,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->is('demo/*'),
         );
+
+        // The app prints the server's message as is: the framework's "Too Many
+        // Attempts." and "Server Error" would reach the phone in English.
+        // With debug on, a 500 keeps its trace for whoever is developing.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request): Response {
+            if (! $request->is('api/*') || ! $response instanceof JsonResponse) {
+                return $response;
+            }
+
+            $status = $response->getStatusCode();
+
+            if ($status === 429) {
+                return $response->setData(['message' => __('errors.too_many_requests.message'), 'code' => 'too_many_requests']);
+            }
+
+            if ($status >= 500 && ! config('app.debug')) {
+                return $response->setData(['message' => __('errors.server_error.message'), 'code' => 'server_error']);
+            }
+
+            return $response;
+        });
     })->create();
