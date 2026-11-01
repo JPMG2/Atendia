@@ -100,8 +100,17 @@ return [
 
     // Se cierra el día y alguien tenía la hora tomada: enterarse al llegar a
     // la puerta cerrada es lo único que no se puede permitir.
-    'closure_notice' => '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos. Escríbenos y lo reprogramamos.',
-    'closure_notice_reason' => '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos (:reason). Escríbenos y lo reprogramamos.',
+    // Varias redacciones: el mismo texto a muchos es lo primero que aprende un filtro de spam.
+    'closure_notice' => [
+        '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos. Escríbenos y lo reprogramamos.',
+        'Hola, te escribimos de *:business*: ese día no vamos a abrir, así que tu turno del :when queda cancelado. Respóndenos y buscamos otro horario.',
+        '*:business* te avisa: el :when no abrimos y tuvimos que cancelar tu turno. Escríbenos cuando quieras y lo reprogramamos.',
+    ],
+    'closure_notice_reason' => [
+        '*:business*: tenemos que cancelar tu turno del :when porque ese día no abrimos (:reason). Escríbenos y lo reprogramamos.',
+        'Hola, te escribimos de *:business*: ese día no vamos a abrir (:reason), así que tu turno del :when queda cancelado. Respóndenos y buscamos otro horario.',
+        '*:business* te avisa: el :when no abrimos (:reason) y tuvimos que cancelar tu turno. Escríbenos cuando quieras y lo reprogramamos.',
+    ],
 
     'notify' => [
         'booked' => 'Turno reservado.',

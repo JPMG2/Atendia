@@ -17,6 +17,18 @@ use Illuminate\Support\Facades\Http;
 class EvolutionApi
 {
     /**
+     * Typing time a person would need: base plus per-character, jittered so
+     * no two messages land with machine-perfect cadence, capped at 4 s so it
+     * stays well inside the 10 s this client waits for the bridge.
+     */
+    public static function typingFor(string $text): int
+    {
+        $millis = (1200 + mb_strlen($text) * 55) * random_int(75, 125) / 100;
+
+        return (int) min($millis, 4000);
+    }
+
+    /**
      * A positive delay makes Evolution hold the message that long while
      * showing "typing…": the human cadence WhatsApp expects from a person.
      *

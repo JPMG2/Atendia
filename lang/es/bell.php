@@ -23,6 +23,7 @@ return [
         'mention_needs_follow' => '{1}1 aviso por seguir nuestra cuenta|[2,*]:count avisos por seguir nuestra cuenta',
         'mention_published' => '{1}1 mención publicada|[2,*]:count menciones publicadas',
         'plan_usage_high' => '{1}1 aviso de tu plan|[2,*]:count avisos de tu plan',
+        'closure_notice_held' => '{1}1 cliente por llamar|[2,*]:count clientes por llamar',
     ],
     'unread' => ':count sin leer',
 
@@ -52,6 +53,7 @@ return [
             'mention_needs_follow' => 'Falta que sigas nuestra cuenta para mencionarte',
             'mention_published' => 'Mencionamos tu negocio en nuestras redes',
             'plan_usage_high' => 'Tu plan va por el 80 % de las conversaciones del mes',
+            'closure_notice_held' => 'No se pudo avisar por WhatsApp de un día de cierre',
         ],
     ],
 
@@ -67,6 +69,7 @@ return [
         'mention_needs_follow' => ':count avisos por seguir nuestra cuenta',
         'mention_published' => ':count menciones publicadas',
         'plan_usage_high' => ':count avisos de tu plan',
+        'closure_notice_held' => ':count clientes por llamar: su turno sigue en pie en un día que no abres',
     ],
 
     'lines' => [
@@ -83,5 +86,7 @@ return [
         'mention_needs_follow' => 'Para mencionar tu negocio necesitamos que sigas nuestras cuentas de :accounts',
         'mention_published' => 'Mencionamos tu negocio en nuestras redes por haber alcanzado :achievement',
         'plan_usage_high' => 'Tu plan lleva :used de :cap conversaciones este mes (:percent %)',
+        // Sin imperativo (ver arriba): dice qué falta, no le ordena.
+        'closure_notice_held' => 'No se pudo avisar a :name por WhatsApp: su turno del :when sigue en pie en un día que no abres',
     ],
 ];

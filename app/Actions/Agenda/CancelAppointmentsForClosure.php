@@ -5,82 +5,70 @@ declare(strict_types=1);
 namespace App\Actions\Agenda;
 
 use App\Enums\AppointmentStatus;
-use App\Enums\MessageAuthor;
-use App\Enums\MessageDirection;
-use App\Messaging\WhatsApp\AppointmentCancelledByClosure;
+use App\Jobs\TellClosureBooking;
 use App\Models\Appointment;
 use App\Models\BusinessClosure;
-use App\Models\Conversation;
-use App\Services\EvolutionApi;
+use App\Services\ProactiveSends;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
  * The hours someone was holding on a day that is no longer going to happen.
- *
- * The notice is the point and the cancellation its side effect: an hour is
- * cancelled only once its notice left. It is the business's word to its own
- * customer, so it leaves from the business's number, never the platform's.
+ * An hour is cancelled only once its notice left (`TellClosureBooking`), from
+ * the business's own number. The customer did not just write, so it passes the
+ * outbound gate like a reminder: written or consented, under the day's cap,
+ * never to someone who stopped answering, spaced by a random gap.
  */
 class CancelAppointmentsForClosure
 {
-    /** Milliseconds between two notices, so a business with many bookings does not burst from its number. */
-    private const int STAGGER_MS = 3000;
-
-    public function __construct(
-        private readonly CancelAppointment $cancel,
-        private readonly EvolutionApi $evolution,
-    ) {}
+    public function __construct(private readonly CancelAppointment $cancel) {}
 
     /**
-     * @return int How many people were told. Nothing is cancelled when the business
-     *             may not message customers or has no linked WhatsApp line of its own.
+     * Nothing is queued when the business may not message customers or has no
+     * linked WhatsApp line of its own.
+     *
+     * @return array{queued: int, unreachable: int} People with a notice on its way, and the people the gate
+     *                                              held back (their hours stay: she calls them).
      */
-    public function handle(BusinessClosure $closure): int
+    public function handle(BusinessClosure $closure): array
     {
         $business = $closure->business;
 
         // The same gate every outgoing message passes: a suspended business does not get to message anyone.
         if (! $business->canMessageCustomers() || ! $business->hasOwnWhatsAppLine()) {
-            return 0;
+            return ['queued' => 0, 'unreachable' => 0];
         }
 
-        $told = 0;
+        $gate = ProactiveSends::for($business);
+        $room = $gate->leftToday();
+        $queued = 0;
+        $unreachable = 0;
+        $delay = 0;
 
-        foreach ($this->pending($closure) as $appointment) {
-            $phone = preg_replace('/\D+/', '', (string) $appointment->customer?->phone) ?? '';
+        // One notice per PERSON: two near-identical messages seconds apart is what gets a number banned.
+        $byPerson = $this->pending($closure)->groupBy(fn (Appointment $appointment): string => preg_replace('/\D+/', '', (string) $appointment->customer?->phone) ?? '');
 
-            // Nobody to tell: the hour is freed all the same.
-            if (strlen($phone) < 8) {
-                $this->cancel->handle($appointment);
+        foreach ($byPerson as $phone => $bookings) {
+            // Nobody to tell: the hours are freed all the same.
+            if (strlen((string) $phone) < 8) {
+                $bookings->each(fn (Appointment $appointment) => $this->cancel->handle($appointment));
 
                 continue;
             }
 
-            $text = $business->speaking(fn (): string => (new AppointmentCancelledByClosure($appointment, $closure->reason))->text());
+            $customer = $bookings->first()->customer;
 
-            // A failed send leaves the hour standing: she can try again, and the customer is not left at a closed door.
-            $sent = rescue(function () use ($business, $phone, $text, $told): bool {
-                $this->evolution->sendText((string) $business->whatsapp_instance, $phone, $text, $told * self::STAGGER_MS);
+            if ($customer->blocked_at !== null || $gate->refusal((string) $customer->phone, $customer) !== null || $queued >= $room) {
+                $unreachable++;
 
-                return true;
-            }, false);
-
-            if (! $sent) {
                 continue;
             }
 
-            $this->cancel->handle($appointment);
-            $told++;
-
-            // In the thread too: a reply to the notice needs the assistant to know why.
-            Conversation::query()->where('contact_phone', $appointment->customer->phone)->first()?->messages()->create([
-                'direction' => MessageDirection::Out,
-                'author' => MessageAuthor::Assistant,
-                'body' => $text,
-            ]);
+            TellClosureBooking::dispatch($business->id, $bookings->pluck('id')->sort()->values()->all(), $closure->reason)->delay(now()->addSeconds($delay));
+            $queued++;
+            $delay += ProactiveSends::gapSeconds();
         }
 
-        return $told;
+        return ['queued' => $queued, 'unreachable' => $unreachable];
     }
 
     /**

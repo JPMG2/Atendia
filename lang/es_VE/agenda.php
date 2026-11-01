@@ -31,8 +31,16 @@ return [
         'title' => 'Reserva tu cita',
         'submit' => 'Reservar mi cita',
     ],
-    'closure_notice' => '*:business*: tenemos que cancelar tu cita del :when porque ese día no abrimos. Escríbenos y lo reprogramamos.',
-    'closure_notice_reason' => '*:business*: tenemos que cancelar tu cita del :when porque ese día no abrimos (:reason). Escríbenos y lo reprogramamos.',
+    'closure_notice' => [
+        '*:business*: tenemos que cancelar tu cita del :when porque ese día no abrimos. Escríbenos y la reprogramamos.',
+        'Hola, te escribimos de *:business*: ese día no vamos a abrir, así que tu cita del :when queda cancelada. Respóndenos y buscamos otro horario.',
+        '*:business* te avisa: el :when no abrimos y tuvimos que cancelar tu cita. Escríbenos cuando quieras y la reprogramamos.',
+    ],
+    'closure_notice_reason' => [
+        '*:business*: tenemos que cancelar tu cita del :when porque ese día no abrimos (:reason). Escríbenos y la reprogramamos.',
+        'Hola, te escribimos de *:business*: ese día no vamos a abrir (:reason), así que tu cita del :when queda cancelada. Respóndenos y buscamos otro horario.',
+        '*:business* te avisa: el :when no abrimos (:reason) y tuvimos que cancelar tu cita. Escríbenos cuando quieras y la reprogramamos.',
+    ],
     'notify' => [
         'booked' => 'Cita reservada.',
         'moved' => 'La cita quedó en su nuevo horario.',

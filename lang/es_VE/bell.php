@@ -18,9 +18,11 @@ return [
     ],
     'bundles' => [
         'appointment_booked' => ':count citas nuevas',
+        'closure_notice_held' => ':count clientes por llamar: su cita sigue en pie en un día que no abres',
     ],
     'lines' => [
         'appointment_booked' => 'Cita nueva de :name: :when, :service',
         'appointment_booked_plain' => 'Cita nueva de :name: :when',
+        'closure_notice_held' => 'No se pudo avisar a :name por WhatsApp: su cita del :when sigue en pie en un día que no abres',
     ],
 ];

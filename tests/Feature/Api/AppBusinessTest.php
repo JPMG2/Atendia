@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\AppointmentStatus;
+use App\Jobs\TellClosureBooking;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\BusinessClosure;
@@ -502,7 +503,8 @@ describe('the days she does not open', function (): void {
         $owner = profileOwner();
         $business = $owner->business;
         $business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
-        $customer = Customer::factory()->create(['business_id' => $business->id, 'phone' => '5493415557788']);
+        // The outbound gate writes only to whoever wrote or consented.
+        $customer = Customer::factory()->create(['business_id' => $business->id, 'phone' => '5493415557788', 'marketing_opt_in_at' => now()]);
         $closure = $business->closures()->create(['starts_on' => '2099-12-24', 'ends_on' => '2099-12-24', 'reason' => 'Nochebuena']);
         $appointment = Appointment::factory()->create([
             'business_id' => $business->id,
@@ -514,11 +516,39 @@ describe('the days she does not open', function (): void {
 
         $listed = asProfileApp($owner)->getJson('/api/v1/business/closures')->json('data.closures.0');
         $told = asProfileApp($owner)->postJson("/api/v1/business/closures/{$closure->id}/tell")->assertOk();
+        // The worker's turn: the notice is queued, never sent inside the request.
+        Queue::pushed(TellClosureBooking::class)->each(fn (TellClosureBooking $job) => app()->call([$job, 'handle']));
 
         expect($listed['booked'])->toBe(1)
             ->and($listed['booked_label'])->toBe('1 turno reservado')
-            ->and($told->json('message'))->toBe('Avisamos a 1 persona y su turno quedó cancelado')
+            ->and($told->json('message'))->toBe('Estamos avisando a 1 persona por WhatsApp; su turno se cancela cuando sale el aviso.')
             ->and($appointment->fresh()->status)->toBe(AppointmentStatus::Cancelled);
+    });
+
+    it('leaves the hour standing and says to call whoever the outbound gate holds back', function (): void {
+        $whatsapp = mock(EvolutionApi::class);
+        $whatsapp->shouldReceive('sendText')->never();
+        app()->instance(EvolutionApi::class, $whatsapp);
+
+        $owner = profileOwner();
+        $business = $owner->business;
+        $business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+        // Booked through the link and never wrote: a cold message is what gets an uncertified number banned.
+        $customer = Customer::factory()->create(['business_id' => $business->id, 'phone' => '5493415557788']);
+        $closure = $business->closures()->create(['starts_on' => '2099-12-24', 'ends_on' => '2099-12-24']);
+        $appointment = Appointment::factory()->create([
+            'business_id' => $business->id,
+            'customer_id' => $customer->id,
+            'starts_at' => CarbonImmutable::parse('2099-12-24 10:00', $business->localTimezone()),
+            'ends_at' => CarbonImmutable::parse('2099-12-24 11:00', $business->localTimezone()),
+            'status' => AppointmentStatus::Confirmed,
+        ]);
+
+        $told = asProfileApp($owner)->postJson("/api/v1/business/closures/{$closure->id}/tell")->assertOk();
+
+        expect($told->json('message'))->toContain('A 1 persona no le escribimos para cuidar tu número')
+            ->and($told->json('kind'))->toBe('info')
+            ->and($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
     });
 
     it('refuses to tell while the business\'s own WhatsApp is down, and cancels nothing', function (): void {

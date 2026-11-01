@@ -87,17 +87,45 @@ class ProactiveSends
             return;
         }
 
+        $gap = self::gapSeconds();
+
+        if ($gap > 0) {
+            Sleep::for($gap)->seconds();
+        }
+    }
+
+    /**
+     * One random gap between two sends. A queued batch adds them up as job
+     * delays instead of sleeping, so a request never waits on the pacing.
+     */
+    public static function gapSeconds(): int
+    {
         [$min, $max] = array_map(intval(...), (array) config('atendia.outbound.gap_seconds'));
 
-        if ($max > 0) {
-            Sleep::for(random_int(min($min, $max), $max))->seconds();
-        }
+        return $max > 0 ? random_int(min($min, $max), $max) : 0;
+    }
+
+    /** What is left of today's cap, so a batch never queues past it. */
+    public function leftToday(): int
+    {
+        return max(0, $this->dailyCap() - $this->sentToday());
+    }
+
+    /**
+     * Seconds until this number may send again. A queued notice that a busy
+     * worker ran late must still keep the gap from the last send, not from
+     * when it was queued.
+     */
+    public function secondsUntilNext(): int
+    {
+        return max(0, (int) Cache::get($this->nextKey(), 0) - now()->getTimestamp());
     }
 
     /** Counts a send that went out: against today's cap and the person's streak. */
     public function sent(string $phone): void
     {
         $this->sentOnce = true;
+        Cache::put($this->nextKey(), now()->addSeconds(self::gapSeconds())->getTimestamp(), now()->addHour());
 
         Cache::add($this->dayKey(), 0, now()->addDays(2));
         Cache::increment($this->dayKey());
@@ -146,6 +174,11 @@ class ProactiveSends
             ->min('occurred_at') ?? $this->business->whatsapp_connected_at;
 
         return $since === null ? 0 : (int) Carbon::parse($since)->diffInDays(now());
+    }
+
+    private function nextKey(): string
+    {
+        return 'wa:out:next:'.$this->business->id;
     }
 
     private function dayKey(): string

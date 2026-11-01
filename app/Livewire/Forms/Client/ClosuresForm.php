@@ -135,8 +135,8 @@ class ClosuresForm extends BaseForm
             }
 
             return new NotificationDto(
-                trans_choice('client.business.hours.closure_notified', $told, ['count' => $told]),
-                $told === 0 ? NotificationType::Info : NotificationType::Success,
+                $closures->toldLine($told),
+                $told['queued'] === 0 ? NotificationType::Info : NotificationType::Success,
             );
 
         }, __('notifications.not_updated'));

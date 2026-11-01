@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\V1\SupportController;
 use App\Http\Controllers\Api\V1\TeamController;
 use App\Http\Controllers\Api\V1\WhatsAppStatusController;
 use App\Http\Controllers\Webhooks\EvolutionWebhookController;
+use App\Http\Middleware\AnswerRepeatOnce;
 use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Middleware\ExpireIdleStaffToken;
 use App\Http\Middleware\RejectRevokedDevice;
@@ -84,7 +85,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
 
     // Behind a bearer token. Authentication comes first, so the business
     // (Postgres row security) and the device check can read who is calling.
-    Route::middleware(['auth:sanctum', ExpireIdleStaffToken::class, SetTenantDatabaseContext::class, RejectRevokedDevice::class])->group(function (): void {
+    // Every write is remembered as this person's last one, so a guarded creation can tell a retry from a new act.
+    Route::middleware(['auth:sanctum', ExpireIdleStaffToken::class, SetTenantDatabaseContext::class, RejectRevokedDevice::class, AnswerRepeatOnce::class])->group(function (): void {
         // Signing out stays open to everyone: a lapsed plan must not trap a token.
         Route::post('logout', [AuthController::class, 'logout']);
 
@@ -123,7 +125,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('catalogs/{master}', [AdminCatalogsController::class, 'show'])->where('master', '[a-z][a-z-]{0,60}')->middleware('can:catalogs.manage');
             Route::prefix('catalogs/{master}')->where(['master' => '[a-z][a-z-]{0,60}', 'id' => '[0-9]{1,18}'])->middleware('can:catalogs.manage')->group(function (): void {
                 Route::get('form/{id?}', [AdminCatalogEditController::class, 'sheet']);
-                Route::post('/', [AdminCatalogEditController::class, 'store']);
+                Route::post('/', [AdminCatalogEditController::class, 'store'])->middleware(AnswerRepeatOnce::class.':guard');
                 Route::put('{id}', [AdminCatalogEditController::class, 'update']);
                 Route::get('{id}/removal', [AdminCatalogEditController::class, 'removal']);
                 Route::delete('{id}', [AdminCatalogEditController::class, 'destroy']);
@@ -134,7 +136,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('support/help', [AdminSupportController::class, 'help'])->middleware('can:support.view');
             Route::get('support/{ticket}', [AdminSupportController::class, 'show'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
             Route::get('support/saved-replies/{reply}', [AdminSupportController::class, 'savedReply'])->where('reply', '[0-9]{1,18}')->middleware('can:support.view');
-            Route::post('support/{ticket}/reply', [AdminSupportController::class, 'reply'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
+            Route::post('support/{ticket}/reply', [AdminSupportController::class, 'reply'])->where('ticket', '[0-9]{1,18}')->middleware(['can:support.view', AnswerRepeatOnce::class.':guard']);
             Route::post('support/{ticket}/resolve', [AdminSupportController::class, 'resolve'])->where('ticket', '[0-9]{1,18}')->middleware('can:support.view');
         });
 
@@ -179,25 +181,27 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::post('business/closures/{closure}/tell', [BusinessClosuresController::class, 'tell'])->where('closure', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('business/closures/{closure}', [BusinessClosuresController::class, 'destroy'])->where('closure', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::get('team', [TeamController::class, 'show'])->middleware('can:manage-business');
-            Route::post('team/invitations', [TeamController::class, 'invite'])->middleware('can:manage-business');
+            // A creation or a send that the phone may retry after a lost answer: done once (`AnswerRepeatOnce`).
+            Route::post('team/invitations', [TeamController::class, 'invite'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
+            // Not guarded: resending on purpose ("it never arrived") must send again.
             Route::post('team/invitations/{invitation}/resend', [TeamController::class, 'resend'])->where('invitation', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('team/invitations/{invitation}', [TeamController::class, 'cancel'])->where('invitation', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::put('team/members/{member}', [TeamController::class, 'update'])->where('member', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('team/members/{member}', [TeamController::class, 'remove'])->where('member', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::get('support', [SupportController::class, 'show']);
             // Each report tells the team by mail and WhatsApp: the account limiter keeps a stuck button from flooding it.
-            Route::post('support', [SupportController::class, 'store'])->middleware('throttle:app-account');
+            Route::post('support', [SupportController::class, 'store'])->middleware(['throttle:app-account', AnswerRepeatOnce::class.':guard']);
             Route::get('agenda', [AgendaController::class, 'show'])->middleware('can:manage-business');
             Route::get('agenda/hours', [AgendaController::class, 'hours'])->middleware('can:manage-business');
             Route::get('agenda/sheet', [AgendaController::class, 'sheet'])->middleware('can:manage-business');
-            Route::post('agenda/bookings', [AgendaController::class, 'book'])->middleware('can:manage-business');
+            Route::post('agenda/bookings', [AgendaController::class, 'book'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
             Route::put('agenda/bookings/{booking}', [AgendaController::class, 'move'])->where('booking', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::post('agenda/bookings/{booking}/cancel', [AgendaController::class, 'cancel'])->where('booking', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::post('agenda/bookings/{booking}/done', [AgendaController::class, 'done'])->where('booking', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::get('products', [ProductController::class, 'index'])->middleware('can:manage-business');
             Route::get('products/new', [ProductController::class, 'blank'])->middleware('can:manage-business');
             Route::get('products/types/{type}', [ProductController::class, 'type'])->where('type', '[0-9]{1,18}')->middleware('can:manage-business');
-            Route::post('products', [ProductController::class, 'store'])->middleware('can:manage-business');
+            Route::post('products', [ProductController::class, 'store'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
             Route::get('products/{product}', [ProductController::class, 'show'])->where('product', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::put('products/{product}', [ProductController::class, 'update'])->where('product', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('products/{product}', [ProductController::class, 'destroy'])->where('product', '[0-9]{1,18}')->middleware('can:manage-business');
@@ -206,8 +210,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('services', [ServiceController::class, 'index'])->middleware('can:manage-business');
             Route::get('services/new', [ServiceController::class, 'blank'])->middleware('can:manage-business');
             Route::get('services/types/{type}', [ServiceController::class, 'type'])->where('type', '[0-9]{1,18}')->middleware('can:manage-business');
-            Route::post('services', [ServiceController::class, 'store'])->middleware('can:manage-business');
-            Route::post('services/categories', [ServiceController::class, 'storeCategory'])->middleware('can:manage-business');
+            Route::post('services', [ServiceController::class, 'store'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
+            Route::post('services/categories', [ServiceController::class, 'storeCategory'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
             Route::put('services/categories/{category}/position', [ServiceController::class, 'moveCategory'])->where('category', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::get('services/{service}', [ServiceController::class, 'show'])->where('service', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::put('services/{service}', [ServiceController::class, 'update'])->where('service', '[0-9]{1,18}')->middleware('can:manage-business');
@@ -217,9 +221,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('customers', [CustomerController::class, 'index']);
             Route::get('customers/{customer}', [CustomerController::class, 'show'])->where('customer', '[0-9]{1,18}');
             Route::put('customers/{customer}', [CustomerController::class, 'update'])->where('customer', '[0-9]{1,18}');
-            Route::post('customers/{customer}/opt-in', [CustomerController::class, 'optIn'])->where('customer', '[0-9]{1,18}');
+            Route::post('customers/{customer}/opt-in', [CustomerController::class, 'optIn'])->where('customer', '[0-9]{1,18}')->middleware(AnswerRepeatOnce::class.':guard');
             Route::post('customers/{customer}/merge', [CustomerController::class, 'merge'])->where('customer', '[0-9]{1,18}');
-            Route::post('team/departments', [TeamController::class, 'storeDepartment'])->middleware('can:manage-business');
+            Route::post('team/departments', [TeamController::class, 'storeDepartment'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
             Route::put('team/departments/{department}', [TeamController::class, 'updateDepartment'])->where('department', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('team/departments/{department}', [TeamController::class, 'removeDepartment'])->where('department', '[0-9]{1,18}')->middleware('can:manage-business');
         });

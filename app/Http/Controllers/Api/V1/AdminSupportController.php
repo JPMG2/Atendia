@@ -13,7 +13,6 @@ use App\Livewire\Forms\Admin\SupportReplyForm;
 use App\Models\SupportReply;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -95,31 +94,17 @@ class AdminSupportController extends Controller
 
     /**
      * Answers the business, as the web's box: the outcome says by which road it left, or that it did not.
-     * The phone names each answer (`request_id`): the same one sent again after a lost response gets the
-     * first outcome back and is never sent twice.
+     * The phone names each answer (`request_id`), so the same one sent again after a lost response is the
+     * same request and `AnswerRepeatOnce` hands back the first outcome: it is never sent twice.
      */
     public function reply(Request $request, AnswerSupportTicket $answer, int $ticket): JsonResponse
     {
         $case = $this->openCase($ticket);
         $validated = Validator::make(['body' => trim((string) (is_string($request->input('body')) ? $request->input('body') : ''))], SupportReplyForm::fieldRules(), [], SupportReplyForm::fieldNames())->validate();
 
-        $send = function () use ($answer, $case, $validated, $request): array {
-            $delivery = $answer->reply($case->ticket, $validated['body'], $request->user());
+        $delivery = $answer->reply($case->ticket, $validated['body'], $request->user());
 
-            return ['message' => $delivery->outcome(), 'reached' => $delivery->reached()];
-        };
-
-        $requestId = $request->input('request_id');
-
-        if (! is_string($requestId) || preg_match('/^[A-Za-z0-9-]{8,64}$/', $requestId) !== 1) {
-            return response()->json($send());
-        }
-
-        // Two taps at once wait on the same lock: the second reads the first one's outcome.
-        $key = "support-reply:{$ticket}:{$requestId}";
-        $outcome = Cache::lock($key.':lock', 30)->block(20, fn (): array => Cache::get($key) ?? tap($send(), fn (array $sent) => Cache::put($key, $sent, now()->addHour())));
-
-        return response()->json($outcome);
+        return response()->json(['message' => $delivery->outcome(), 'reached' => $delivery->reached()]);
     }
 
     /** A saved reply's text as it is NOW, as the web reads it when it is picked; null once it was switched off. */

@@ -140,7 +140,8 @@ return [
             'closure_booked' => '{1} 1 turno reservado|[2,*] :count turnos reservados',
             'closure_notify' => 'Avisar y cancelar',
             'closure_line_down' => 'Tu WhatsApp está desconectado, así que no se pudo avisar y no se canceló ninguna cita. Vuelve a vincularlo e inténtalo de nuevo.',
-            'closure_notified' => '{0} No había a quién avisar|{1} Avisamos a 1 persona y su turno quedó cancelado|[2,*] Avisamos a :count personas y sus turnos quedaron cancelados',
+            'closure_notified' => '{0} No había a quién avisar.|{1} Estamos avisando a 1 persona por WhatsApp; su turno se cancela cuando sale el aviso.|[2,*] Estamos avisando a :count personas por WhatsApp, de a una para cuidar tu número; cada turno se cancela cuando sale su aviso.',
+            'closure_unreachable' => '{1} A 1 persona no le escribimos para cuidar tu número (nunca te escribió, no responde, está bloqueada o llegaste al tope de hoy): su turno sigue en pie, llámala.|[2,*] A :count personas no les escribimos para cuidar tu número (nunca te escribieron, no responden, están bloqueadas o llegaste al tope de hoy): sus turnos siguen en pie, llámalas.',
 
             // The mobile app types dates instead of dragging a calendar, and carries a few conveniences of its own.
             'closure_from' => 'Desde',

@@ -887,15 +887,11 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
     }
 
     /**
-     * Typing time a person would need: base plus per-character, jittered so
-     * no two replies land with machine-perfect cadence, capped at 4 s: the
-     * 2026 market median answers in under 5 s, and fast replies to inbound
-     * chats carry no ban risk — only mass outbound does.
+     * The 4 s cap answers fast: the 2026 market median replies in under 5 s,
+     * and fast replies to inbound chats carry no ban risk — only mass outbound does.
      */
     private function humanDelay(string $bubble): int
     {
-        $millis = (1200 + mb_strlen($bubble) * 55) * random_int(75, 125) / 100;
-
-        return (int) min($millis, 4000);
+        return EvolutionApi::typingFor($bubble);
     }
 }

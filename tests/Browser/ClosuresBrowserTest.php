@@ -102,6 +102,37 @@ test('the three ways a day can be different read together', function (): void {
         ->screenshot(filename: 'closures-full');
 });
 
+test('"Avisar" says who is being told and who she has to call herself', function (): void {
+    $this->business->forceFill(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()])->save();
+    $closed = $this->business->closures()->create([
+        'starts_on' => now()->addMonth()->format('Y-m-d'),
+        'ends_on' => now()->addMonth()->format('Y-m-d'),
+        'reason' => 'Mudanza del local',
+    ]);
+
+    // One gave consent; the other booked through the link and never wrote: the gate holds that one back.
+    foreach ([['5493415557788', now()], ['5493415559900', null]] as $hour => [$phone, $consent]) {
+        $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => $phone, 'marketing_opt_in_at' => $consent]);
+        Appointment::factory()->create([
+            'business_id' => $this->business->id,
+            'customer_id' => $customer->id,
+            'starts_at' => $closed->starts_on->setTime(10 + $hour, 0),
+            'ends_at' => $closed->starts_on->setTime(10 + $hour, 30),
+            'status' => AppointmentStatus::Confirmed,
+        ]);
+    }
+
+    $page = visit(route('my-business.horarios'))->resize(1280, 1100);
+
+    $page->click('text='.__('client.business.hours.closure_notify'))
+        ->waitForText('Estamos avisando a 1 persona')
+        ->assertSee('A 1 persona no le escribimos para cuidar tu número')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'closures-notified');
+
+    $page->resize(390, 844)->screenshot(filename: 'closures-notified-phone');
+});
+
 test('picking a day on the calendar turns into a closure', function (): void {
     $page = visit(route('my-business.horarios'))->resize(1280, 1100);
 

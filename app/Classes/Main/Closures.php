@@ -172,13 +172,29 @@ class Closures
      * Cancels those hours AND tells the people holding them. Her call, not an
      * automatic one: a message to a customer is never sent behind her back.
      *
-     * @return int|null How many people were told; null when the closure is not this business's.
+     * @return array{queued: int, unreachable: int}|null Null when the closure is not this business's.
      */
-    public function cancelAndTell(int $id): ?int
+    public function cancelAndTell(int $id): ?array
     {
         $closure = $this->find($id);
 
         return $closure === null ? null : app(CancelAppointmentsForClosure::class)->handle($closure);
+    }
+
+    /**
+     * What the owner reads after pressing "Avisar", the same on the web and the
+     * phone: who is being told, and who she has to call herself.
+     *
+     * @param  array{queued: int, unreachable: int}  $told
+     */
+    public function toldLine(array $told): string
+    {
+        $lines = array_filter([
+            $told['queued'] > 0 || $told['unreachable'] === 0 ? trans_choice('client.business.hours.closure_notified', $told['queued'], ['count' => $told['queued']]) : null,
+            $told['unreachable'] > 0 ? trans_choice('client.business.hours.closure_unreachable', $told['unreachable'], ['count' => $told['unreachable']]) : null,
+        ]);
+
+        return implode(' ', $lines);
     }
 
     /** Reached THROUGH the business: an id from the front can never point at another tenant's row. */

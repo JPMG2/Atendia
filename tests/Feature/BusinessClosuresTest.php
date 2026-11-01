@@ -5,15 +5,19 @@ declare(strict_types=1);
 use App\Actions\Business\SyncProfileKnowledge;
 use App\Ai\Tools\CheckBusinessHours;
 use App\Enums\AppointmentStatus;
+use App\Enums\PanelNotificationType;
+use App\Jobs\TellClosureBooking;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\BusinessClosure;
 use App\Models\CountryHoliday;
 use App\Models\Customer;
 use App\Models\KnowledgeDocument;
+use App\Models\PanelNotification;
 use App\Models\User;
 use App\Services\Agenda\SlotFinder;
 use App\Services\EvolutionApi;
+use App\Services\ProactiveSends;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountryHolidaySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -38,6 +42,8 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     app()->setLocale('es');
     Queue::fake();
+    // The worker runs the queued notices back to back here; the gap has its own test.
+    config()->set('atendia.outbound.gap_seconds', [0, 0]);
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $this->business = Business::factory()->create([
@@ -307,7 +313,8 @@ test('the people holding an hour on a closed day are told, and the hour is freed
     app()->instance(EvolutionApi::class, $whatsapp);
 
     $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
-    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788']);
+    // The outbound gate writes only to whoever wrote or consented.
+    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788', 'marketing_opt_in_at' => now()]);
 
     $closure = $this->business->closures()->create([
         'starts_on' => '2026-12-24',
@@ -326,6 +333,8 @@ test('the people holding an hour on a closed day are told, and the hour is freed
     Livewire::actingAs($this->owner)
         ->test('client.section-hours')
         ->call('notifyClosure', $closure->id);
+
+    runQueuedNotices();
 
     expect($appointment->fresh()->status)->toBe(AppointmentStatus::Cancelled);
 });
@@ -360,7 +369,7 @@ test('an hour is cancelled only once its notice left: a failed send leaves it st
     app()->instance(EvolutionApi::class, $whatsapp);
 
     $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
-    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788']);
+    $customer = Customer::factory()->create(['business_id' => $this->business->id, 'phone' => '5493415557788', 'marketing_opt_in_at' => now()]);
     $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
     $appointment = Appointment::factory()->create([
         'business_id' => $this->business->id,
@@ -371,6 +380,7 @@ test('an hour is cancelled only once its notice left: a failed send leaves it st
     ]);
 
     Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+    runQueuedNotices();
 
     expect($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
 });
@@ -396,6 +406,181 @@ test('a suspended business tells nobody anything', function (): void {
     Livewire::actingAs($this->owner)
         ->test('client.section-hours')
         ->call('notifyClosure', $closure->id);
+});
+
+/** The worker's turn: every notice queued so far runs, the ones already sent included (they must not send again). */
+function runQueuedNotices(): void
+{
+    Queue::pushed(TellClosureBooking::class)->each(fn (TellClosureBooking $job) => app()->call([$job, 'handle']));
+}
+
+/**
+ * A closure on Christmas Eve with one confirmed booking per customer given.
+ *
+ * @return list<Appointment>
+ */
+function bookingsOnClosedDay(Business $business, array $customers): array
+{
+    return array_map(fn (Customer $customer, int $hour): Appointment => Appointment::factory()->create([
+        'business_id' => $business->id,
+        'customer_id' => $customer->id,
+        // Stored in UTC, as the app saves it: a local hour written as is would read back shifted.
+        'starts_at' => CarbonImmutable::parse(sprintf('2026-12-24 %02d:00', 9 + $hour), $business->localTimezone())->utc(),
+        'ends_at' => CarbonImmutable::parse(sprintf('2026-12-24 %02d:30', 9 + $hour), $business->localTimezone())->utc(),
+        'status' => AppointmentStatus::Confirmed,
+    ]), $customers, array_keys($customers));
+}
+
+function consentingCustomers(Business $business, int $count): array
+{
+    return array_map(fn (int $n): Customer => Customer::factory()->create([
+        'business_id' => $business->id, 'phone' => '549341555'.str_pad((string) $n, 4, '0', STR_PAD_LEFT), 'marketing_opt_in_at' => now(),
+    ]), range(1, $count));
+}
+
+test('the notices queue one per booking, spaced by the random outbound gap, and the request never waits on them', function (): void {
+    Queue::fake();
+    $this->freezeTime();
+    config()->set('atendia.outbound.gap_seconds', [4, 12]);
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    $appointments = bookingsOnClosedDay($this->business, consentingCustomers($this->business, 3));
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+
+    $delays = Queue::pushed(TellClosureBooking::class)
+        ->map(fn (TellClosureBooking $job): int => (int) now()->diffInSeconds($job->delay))
+        ->sort()->values()->all();
+
+    expect($delays)->toHaveCount(3)
+        ->and($delays[0])->toBe(0)
+        ->and($delays[1] - $delays[0])->toBeBetween(4, 12)
+        ->and($delays[2] - $delays[1])->toBeBetween(4, 12)
+        // Queued, not sent: nothing is cancelled until its own notice leaves.
+        ->and(collect($appointments)->every(fn (Appointment $a): bool => $a->fresh()->status === AppointmentStatus::Confirmed))->toBeTrue();
+});
+
+test('each notice shows a human few seconds of typing and the batch does not repeat one text', function (): void {
+    $sent = [];
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->times(3)->andReturnUsing(function (string $instance, string $phone, string $text, int $typing) use (&$sent): string {
+        $sent[] = [$text, $typing];
+
+        return 'MSG';
+    });
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    bookingsOnClosedDay($this->business, consentingCustomers($this->business, 3));
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+    runQueuedNotices();
+
+    // Under the bridge client's 10 s, and never zero: "typing…" is part of looking like a person.
+    expect(collect($sent)->every(fn (array $one): bool => $one[1] > 0 && $one[1] <= 4000))->toBeTrue()
+        ->and(collect($sent)->pluck(0)->unique()->count())->toBeGreaterThan(1);
+});
+
+test('a second tap tells nobody again', function (): void {
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->once()->andReturn('MSG');
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    bookingsOnClosedDay($this->business, consentingCustomers($this->business, 1));
+
+    // Two taps before the worker reaches the first: the unique job is queued once.
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+    expect(Queue::pushed(TellClosureBooking::class))->toHaveCount(1);
+
+    runQueuedNotices();
+    runQueuedNotices();
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')
+        ->call('notifyClosure', $closure->id)
+        ->assertDispatched('notify', type: 'info', message: 'No había a quién avisar.');
+});
+
+test('the day\'s cap leaves the rest standing and says to call them', function (): void {
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->once()->andReturn('MSG');
+    app()->instance(EvolutionApi::class, $whatsapp);
+    // A number linked today may send one message a day in this test.
+    config()->set('atendia.outbound.warmup', [7 => 1]);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    $bookings = bookingsOnClosedDay($this->business, consentingCustomers($this->business, 2));
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')
+        ->call('notifyClosure', $closure->id)
+        ->assertDispatched('notify', type: 'success', message: 'Estamos avisando a 1 persona por WhatsApp; su turno se cancela cuando sale el aviso. A 1 persona no le escribimos para cuidar tu número (nunca te escribió, no responde, está bloqueada o llegaste al tope de hoy): su turno sigue en pie, llámala.');
+
+    runQueuedNotices();
+
+    expect(collect($bookings)->map(fn (Appointment $a): string => $a->fresh()->status->value)->sort()->values()->all())
+        ->toBe([AppointmentStatus::Cancelled->value, AppointmentStatus::Confirmed->value]);
+});
+
+test('a notice the busy worker ran late still waits out the gap from the number\'s last send', function (): void {
+    config()->set('atendia.outbound.gap_seconds', [8, 8]);
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    // A reminder, or the previous notice, just left from this number.
+    ProactiveSends::for($this->business)->sent('5490000000000');
+
+    $customers = consentingCustomers($this->business, 1);
+    [$booking] = bookingsOnClosedDay($this->business, $customers);
+
+    $job = (new TellClosureBooking($this->business->id, [$booking->id]))->withFakeQueueInteractions();
+    app()->call([$job, 'handle']);
+
+    $job->assertReleased();
+    expect($booking->fresh()->status)->toBe(AppointmentStatus::Confirmed);
+});
+
+test('a person holding several hours in the closure hears about all of them in one message', function (): void {
+    $sent = [];
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->once()->andReturnUsing(function (string $instance, string $phone, string $text) use (&$sent): string {
+        $sent[] = $text;
+
+        return 'MSG';
+    });
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    [$customer] = consentingCustomers($this->business, 1);
+    $bookings = bookingsOnClosedDay($this->business, [$customer, $customer, $customer]);
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')
+        ->call('notifyClosure', $closure->id)
+        ->assertDispatched('notify', type: 'success', message: 'Estamos avisando a 1 persona por WhatsApp; su turno se cancela cuando sale el aviso.');
+    runQueuedNotices();
+
+    expect($sent[0])->toContain('09:00')->toContain('10:00')->toContain('11:00')
+        ->and(collect($bookings)->every(fn (Appointment $a): bool => $a->fresh()->status === AppointmentStatus::Cancelled))->toBeTrue();
+});
+
+test('what the worker holds back reaches the owner\'s bell, and the hour stands', function (): void {
+    $whatsapp = mock(EvolutionApi::class);
+    $whatsapp->shouldReceive('sendText')->once()->andThrow(new RuntimeException('bridge down'));
+    app()->instance(EvolutionApi::class, $whatsapp);
+
+    $this->business->update(['whatsapp_instance' => 'business-1', 'whatsapp_connected_at' => now()]);
+    $closure = $this->business->closures()->create(['starts_on' => '2026-12-24', 'ends_on' => '2026-12-24']);
+    [$booking] = bookingsOnClosedDay($this->business, consentingCustomers($this->business, 1));
+
+    Livewire::actingAs($this->owner)->test('client.section-hours')->call('notifyClosure', $closure->id);
+    runQueuedNotices();
+
+    $notice = PanelNotification::query()->where('business_id', $this->business->id)->sole();
+
+    expect($notice->type)->toBe(PanelNotificationType::ClosureNoticeHeld)
+        ->and($booking->fresh()->status)->toBe(AppointmentStatus::Confirmed);
 });
 
 test('another business cannot be reached by passing its closure id', function (): void {

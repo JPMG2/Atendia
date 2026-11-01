@@ -21,6 +21,7 @@ enum PanelNotificationType: string
     case MentionNeedsFollow = 'mention_needs_follow';
     case MentionPublished = 'mention_published';
     case PlanUsageHigh = 'plan_usage_high';
+    case ClosureNoticeHeld = 'closure_notice_held';
 
     /** The row's glyph, from the central registry. */
     public function icon(): string
@@ -34,6 +35,7 @@ enum PanelNotificationType: string
             self::TaughtByTeammate => 'graduation-cap',
             self::SupportResolved => 'life-buoy',
             self::PlanUsageHigh => 'gem',
+            self::ClosureNoticeHeld => 'phone',
         };
     }
 
@@ -48,7 +50,7 @@ enum PanelNotificationType: string
     public function tintStyle(): string
     {
         [$background, $glyph] = match ($this) {
-            self::CustomerWaiting, self::WhatsAppDisconnected, self::MentionNeedsFollow, self::PlanUsageHigh => ['var(--warning-soft)', 'var(--warning)'],
+            self::CustomerWaiting, self::WhatsAppDisconnected, self::MentionNeedsFollow, self::PlanUsageHigh, self::ClosureNoticeHeld => ['var(--warning-soft)', 'var(--warning)'],
             self::HandedToTeam, self::TaughtByTeammate => ['var(--info-soft)', 'var(--info)'],
             self::AppointmentBooked, self::SupportResolved, self::MentionOffered, self::MentionPublished => ['var(--success-soft)', 'var(--success)'],
         };

@@ -68,11 +68,7 @@ class BusinessClosuresController extends Controller
 
         abort_if($told === null, 404);
 
-        return $this->done(
-            $closures,
-            trans_choice('client.business.hours.closure_notified', $told, ['count' => $told]),
-            $told === 0 ? 'info' : 'success',
-        );
+        return $this->done($closures, $closures->toldLine($told), $told['queued'] === 0 ? 'info' : 'success');
     }
 
     public function destroy(Request $request, int $closure): JsonResponse
