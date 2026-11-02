@@ -34,6 +34,8 @@ class ServiceDto implements FormData
         public array $attribute_values = [],
         public bool $is_active = true,
         public bool $is_featured = false,
+        // Off by default: only what the owner marks is offered as a turn by the agenda and the booking link.
+        public bool $is_bookable = false,
     ) {}
 
     /**
@@ -67,6 +69,7 @@ class ServiceDto implements FormData
             'attribute_values' => $this->attribute_values,
             'is_active' => $this->is_active,
             'is_featured' => $this->is_featured,
+            'is_bookable' => $this->is_bookable,
         ];
     }
 
@@ -87,6 +90,7 @@ class ServiceDto implements FormData
             attribute_values: is_array($data['attribute_values'] ?? null) ? $data['attribute_values'] : [],
             is_active: $data['is_active'] ?? true,
             is_featured: $data['is_featured'] ?? false,
+            is_bookable: (bool) ($data['is_bookable'] ?? false),
         );
     }
 
@@ -111,6 +115,7 @@ class ServiceDto implements FormData
             'attribute_values' => $this->attribute_values,
             'is_active' => $this->is_active,
             'is_featured' => $this->is_featured,
+            'is_bookable' => $this->is_bookable,
         ];
     }
 }

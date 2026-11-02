@@ -100,29 +100,57 @@ class Schedule
      */
     public static function overlapErrors(array $week): array
     {
+        // Every shift laid on one week of minutes, Monday first: a shift that
+        // closes after midnight runs into the NEXT day, so Monday 22:00–02:00
+        // meets Tuesday 01:00–05:00 and no longer meets Monday's own morning.
+        $placed = [];
+
+        foreach (self::DAYS as $position => $day) {
+            foreach ($week[$day] ?? [] as $index => $shift) {
+                $opens = BusinessHour::minutes($shift['opens_at']);
+                $closes = BusinessHour::minutes($shift['closes_at']);
+                $start = $position * 1440 + $opens;
+
+                $placed[] = ['key' => "week.{$day}.{$index}.opens_at", 'day' => $day, 'shift' => $shift, 'start' => $start, 'end' => $start + ($closes > $opens ? $closes - $opens : 1440 - $opens + $closes)];
+            }
+        }
+
         $errors = [];
 
-        foreach ($week as $day => $shifts) {
-            foreach ($shifts as $index => $shift) {
-                $pieces = BusinessHour::pieces($shift['opens_at'], $shift['closes_at']);
+        foreach ($placed as $at => $current) {
+            foreach (array_slice($placed, 0, $at) as $earlier) {
+                if (self::meet($earlier, $current)) {
+                    $shift = $earlier['shift']['opens_at'].'–'.$earlier['shift']['closes_at'];
 
-                foreach (array_slice($shifts, 0, $index, true) as $earlier) {
-                    $collides = collect(BusinessHour::pieces($earlier['opens_at'], $earlier['closes_at']))
-                        ->crossJoin($pieces)
-                        ->contains(fn (array $pair): bool => $pair[0][0] < $pair[1][1] && $pair[1][0] < $pair[0][1]);
+                    // Another day's shift is named with its day, or "el de 22:00–02:00" reads as one of this day.
+                    $errors[$current['key']] = $earlier['day'] === $current['day']
+                        ? __('client.business.hours.overlaps', ['shift' => $shift])
+                        : __('client.business.hours.overlaps_day', ['day' => __('client.business.hours.day_names.'.$earlier['day']), 'shift' => $shift]);
 
-                    if ($collides) {
-                        $errors["week.{$day}.{$index}.opens_at"] = __('client.business.hours.overlaps', [
-                            'shift' => $earlier['opens_at'].'–'.$earlier['closes_at'],
-                        ]);
-
-                        break;
-                    }
+                    break;
                 }
             }
         }
 
         return $errors;
+    }
+
+    /**
+     * Whether two placed shifts share a minute, the week being a circle:
+     * Sunday's night shift runs into Monday morning.
+     *
+     * @param  array{start: int, end: int}  $a
+     * @param  array{start: int, end: int}  $b
+     */
+    private static function meet(array $a, array $b): bool
+    {
+        foreach ([-10080, 0, 10080] as $shift) {
+            if ($b['end'] > $a['start'] + $shift && $b['start'] < $a['end'] + $shift) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -81,6 +81,7 @@ return [
     'notify' => [
         'invited' => 'Invitación enviada a :email.',
         'resent' => 'Invitación reenviada.',
+        'too_many_mails' => 'Ya le enviamos varias invitaciones a este correo hoy. Pídele que revise su bandeja y su correo no deseado, y vuelve a intentarlo mañana.',
         'cancelled' => 'Invitación cancelada.',
         'member_saved' => 'Cambios guardados.',
         'removed' => 'Quedó fuera del equipo.',

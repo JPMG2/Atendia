@@ -40,6 +40,10 @@ class TeamController extends Controller
             ])]);
         }
 
+        if (! $team->canMailInvitationTo($validated['email'])) {
+            throw ValidationException::withMessages(['email' => __('team.notify.too_many_mails')]);
+        }
+
         $team->invite($validated, $request->user());
 
         return $this->done($request, __('team.notify.invited', ['email' => $validated['email']]), 201);
@@ -47,7 +51,14 @@ class TeamController extends Controller
 
     public function resend(Request $request, int $invitation): JsonResponse
     {
-        $this->team($request)->resend($invitation, $request->user());
+        $team = $this->team($request);
+
+        // The same daily cap as a new invitation: a resend is one more mail to that inbox.
+        if (! $team->canMailInvitationTo($team->invitationEmail($invitation))) {
+            throw ValidationException::withMessages(['invitation' => __('team.notify.too_many_mails')]);
+        }
+
+        $team->resend($invitation, $request->user());
 
         return $this->done($request, __('team.notify.resent'));
     }

@@ -215,6 +215,8 @@ describe('the open offers', function (): void {
         $owner = payingUser();
         $offer = TeamInvitation::factory()->create(['business_id' => $owner->business_id, 'email' => 'lucia@shop.test']);
         $before = $offer->token_hash;
+        // A resend in the same seconds as the invitation is a double tap; a minute later it is on purpose.
+        $this->travel(1)->minutes();
 
         asTeamApp($owner)->postJson("/api/v1/team/invitations/{$offer->id}/resend")
             ->assertOk()->assertJsonPath('message', __('team.notify.resent'));

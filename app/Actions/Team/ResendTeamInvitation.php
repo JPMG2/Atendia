@@ -17,6 +17,6 @@ class ResendTeamInvitation
             'email' => $invitation->email,
             'whatsapp' => $invitation->whatsapp,
             'department_ids' => $invitation->department_ids ?? [],
-        ], $inviter);
+        ], $inviter, resend: true);
     }
 }

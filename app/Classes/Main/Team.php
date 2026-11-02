@@ -202,6 +202,18 @@ class Team
         return $this->business->canOfferSeatTo($email);
     }
 
+    /** Whether another invitation mail may go to this address today (resends included). */
+    public function canMailInvitationTo(string $email): bool
+    {
+        return InviteTeamMember::mailsLeft($this->business, $email) > 0;
+    }
+
+    /** The address a pending invitation was sent to, for the same check on a resend. */
+    public function invitationEmail(int $invitationId): string
+    {
+        return $this->business->teamInvitations()->findOrFail($invitationId)->email;
+    }
+
     /** @param  array{name: string, email: string, whatsapp: ?string, department_ids: list<int>}  $validated */
     public function invite(array $validated, User $inviter): TeamInvitation
     {

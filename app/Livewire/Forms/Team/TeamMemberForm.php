@@ -64,6 +64,10 @@ class TeamMemberForm extends BaseForm
                     ]), NotificationType::Warning);
                 }
 
+                if (! $team->canMailInvitationTo($validated['email'])) {
+                    return new NotificationDto(__('team.notify.too_many_mails'), NotificationType::Warning);
+                }
+
                 $team->invite($validated, Auth::user());
 
                 return new NotificationDto(__('team.notify.invited', ['email' => $validated['email']]), NotificationType::Success);

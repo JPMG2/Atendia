@@ -142,6 +142,7 @@ class ServiceForm extends BaseForm
             'prep_note' => ['nullable', ...AttributeValidator::stringValid(false, '2')],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            'is_bookable' => ['boolean'],
             ...AttributeValueRules::rules($attributeSet),
         ];
     }
@@ -172,6 +173,7 @@ class ServiceForm extends BaseForm
             'prep_note' => __('client.services.field_prep'),
             'is_active' => __('client.services.offered'),
             'is_featured' => __('client.services.featured'),
+            'is_bookable' => __('client.services.bookable'),
             ...AttributeValueRules::attributes($attributeSet),
         ];
     }

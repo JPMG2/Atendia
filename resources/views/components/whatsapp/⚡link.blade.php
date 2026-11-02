@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Business\StartWhatsAppLink;
+use App\Actions\Business\UnlinkBusinessWhatsApp;
 use App\Actions\Business\VerifyWhatsAppLink;
 use App\Classes\Main\MetaDisplayName;
 use App\Dto\NotificationDto;
@@ -158,6 +159,29 @@ new class extends Component
         $this->qr = null;
     }
 
+    /** "Desconéctalo y vincula el correcto": the hint names it, so the card does it. */
+    public function disconnect(): void
+    {
+        $business = $this->business;
+
+        if ($business === null || ! $this->connected) {
+            return;
+        }
+
+        try {
+            app(UnlinkBusinessWhatsApp::class)->handle($business);
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatchNotification(new NotificationDto(__('whatsapp.disconnect.failed'), NotificationType::Error));
+
+            return;
+        }
+
+        unset($this->business, $this->connected, $this->profile, $this->reliability);
+        $this->state = WhatsAppLinkState::Disconnected;
+        $this->dispatchNotification(new NotificationDto(__('whatsapp.disconnect.done'), NotificationType::Success));
+    }
+
     private function verify(): WhatsAppLinkState
     {
         $business = $this->business;
@@ -214,6 +238,24 @@ new class extends Component
                         </div>
                         <p class="text-subtle text-xs">{{ __('whatsapp.connected.identity_hint') }}</p>
                     @endif
+
+                    {{-- Reversible with a new QR, so a warning and not danger. --}}
+                    <div
+                        x-data="{
+                            async ask() {
+                                if (! await dialog.confirm({
+                                    title: @js(__('whatsapp.disconnect.title')),
+                                    message: @js(__('whatsapp.disconnect.message')),
+                                    accept: @js(__('whatsapp.disconnect.accept')),
+                                    type: 'warning',
+                                })) return;
+                                await $wire.disconnect();
+                            },
+                        }"
+                    >
+                        <x-ui.button variant="secondary" size="sm" icon="log-out" x-on:click="ask()">
+                            {{ __('whatsapp.disconnect.button') }}</x-ui.button>
+                    </div>
                 </div>
             </div>
 

@@ -118,6 +118,8 @@ return [
             'time_placeholder' => '09:00',
             'remove_shift' => 'Quitar este turno',
             'overlaps' => 'Este turno se pisa con el de :shift. Si se superponen, la misma hora se ofrece dos veces.',
+            'overlaps_day' => 'Este turno se pisa con el del :day de :shift: uno de los dos pasa la medianoche. Si se superponen, la misma hora se ofrece dos veces.',
+            'day_names' => [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves', 5 => 'viernes', 6 => 'sábado', 0 => 'domingo'],
             'overnight_hint' => 'Si cierras después de medianoche, escribe la hora igual: 22:00 – 02:00.',
 
             'closures_title' => 'Días que no abres',
@@ -295,6 +297,8 @@ return [
         'featured_title' => 'Destacados',
         'featured' => 'Destacado',
         'featured_help' => 'Va primero en la lista y cuando tu asistente ofrece por WhatsApp.',
+        'bookable' => 'Se reserva con turno',
+        'bookable_help' => 'Aparece en tu Agenda y en tu enlace de reservas, y tu asistente puede dar turno para este servicio.',
         'search_placeholder' => 'Busca por nombre',
         'filter_label' => 'Filtrar por estado',
         'filter_all' => 'Todos',

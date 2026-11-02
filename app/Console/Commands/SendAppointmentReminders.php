@@ -74,6 +74,8 @@ class SendAppointmentReminders extends Command
         }
 
         // Left due, not stamped: a person who writes in later, or tomorrow's cap, lets it go.
+        // A number typed in the public link is not proof it belongs to whoever typed it: the
+        // person writes first from the confirmation screen, and only then is the turn reminded.
         if (($why = $gate->refusal($customer->phone, $customer)) !== null) {
             $this->line("Reminder held for {$business->name} ({$why})");
 

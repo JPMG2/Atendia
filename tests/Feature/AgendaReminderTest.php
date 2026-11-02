@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\AppointmentSource;
 use App\Enums\AppointmentStatus;
 use App\Enums\MessageDirection;
 use App\Models\Appointment;
@@ -143,4 +144,23 @@ test('a business without the agenda is skipped', function (): void {
     $this->artisan('atendia:appointment-reminders')->assertSuccessful();
 
     Http::assertNothingSent();
+});
+
+test('a number typed in the booking link is not written to until that person writes', function (): void {
+    $business = remindingBusiness();
+    // Anyone can type someone else's number in the link: the business line must not write first.
+    $stranger = Customer::factory()->create(['business_id' => $business->id]);
+    $booking = bookingIn($business, 20, ['customer_id' => $stranger->id, 'source' => AppointmentSource::Link]);
+
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+    Http::assertNothingSent();
+
+    // The confirmation screen's button: the person sends the ready message from their own phone.
+    $thread = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => $stranger->phone]);
+    ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $thread->id, 'direction' => MessageDirection::In]);
+
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+
+    Http::assertSentCount(1);
+    expect($booking->fresh()->reminder_sent_at)->not->toBeNull();
 });

@@ -34,7 +34,8 @@ beforeEach(function (): void {
 it('tells anyone the platform name, as the row the web reads says it', function (): void {
     Company::factory()->create(['brand_name' => 'Conversa']);
 
-    $this->getJson('/api/v1/brand')->assertOk()->assertExactJson(['data' => ['name' => Company::brand()]]);
+    // The web's words the app used to copy travel beside it (PreLaunchFixesTest checks them).
+    $this->getJson('/api/v1/brand')->assertOk()->assertJsonPath('data.name', Company::brand())->assertJsonStructure(['data' => ['name', 'copy']]);
 });
 
 it('raises one line when an install carries a name the web no longer uses, and counts it again', function (): void {

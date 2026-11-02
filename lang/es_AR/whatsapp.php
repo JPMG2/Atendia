@@ -11,6 +11,11 @@ return [
         'identity_hint' => 'Este es el número que quedó vinculado. Si no es el de tu negocio, desconectalo y vinculá el correcto.',
     ],
 
+    'disconnect' => [
+        'done' => 'Listo. El número quedó desconectado; vinculá el correcto con el código QR.',
+        'failed' => 'No pudimos desconectar el número ahora. Probá de nuevo en un momento.',
+    ],
+
     'connect' => [
         'title' => 'Conectá tu WhatsApp',
         'body' => 'Vinculá el número de tu negocio y tu asistente empieza a responder por vos, las 24 horas.',

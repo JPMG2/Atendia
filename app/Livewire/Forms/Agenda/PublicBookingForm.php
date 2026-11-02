@@ -15,6 +15,8 @@ use App\Models\Customer;
 use App\Rules\AttributeValidator;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
@@ -25,6 +27,12 @@ use RuntimeException;
  */
 class PublicBookingForm extends BaseForm
 {
+    /** @var array{int, int} turns one address may book at one business, and in how many seconds */
+    public const array PER_ADDRESS = [5, 600];
+
+    /** @var array{int, int} turns one WhatsApp number may book at one business in a day */
+    public const array PER_PHONE = [3, 86400];
+
     public ?int $service_id = null;
 
     public string $day = '';
@@ -49,21 +57,56 @@ class PublicBookingForm extends BaseForm
         // whoever happens to be signed in on this browser (another business, or none yet).
         $validated = app(Tenant::class)->for($business->id, fn (): array => $this->validateServiceData());
 
-        return app(Tenant::class)->for($business->id, function () use ($business, $validated): NotificationDto|Appointment {
+        // The page has its own throttle, but each tap goes through /livewire/update: without this
+        // one stranger could fill a business's agenda with made-up turns. Each key says its own why.
+        $keys = [
+            'public-booking:ip:'.$business->id.':'.request()->ip() => [...self::PER_ADDRESS, 'agenda.public.too_many'],
+            'public-booking:phone:'.$business->id.':'.$validated['phone'] => [...self::PER_PHONE, 'agenda.public.too_many_phone'],
+        ];
+
+        // One booking at a time per business: taps sent together would all pass the count before any adds to it.
+        return Cache::lock('public-booking:'.$business->id, 10)->block(5, fn (): NotificationDto|Appointment => $this->bookChecked($business, $validated, $keys));
+    }
+
+    /**
+     * @param  array{service_id: int|null, day: string, time: string, name: string, phone: string}  $validated
+     * @param  array<string, array{int, int, string}>  $keys
+     */
+    private function bookChecked(Business $business, array $validated, array $keys): NotificationDto|Appointment
+    {
+        foreach ($keys as $key => [$attempts, $seconds, $why]) {
+            if (RateLimiter::tooManyAttempts($key, $attempts)) {
+                return new NotificationDto(__($why), NotificationType::Warning);
+            }
+        }
+
+        return app(Tenant::class)->for($business->id, function () use ($business, $validated, $keys): NotificationDto|Appointment {
             $service = $validated['service_id'] === null
                 ? null
                 : $business->bookableService((int) $validated['service_id']);
 
+            // Paused, removed or another business's since the page was loaded: never booked as a bare hour.
+            if ($validated['service_id'] !== null && $service === null) {
+                return new NotificationDto(__('agenda.public.service_gone'), NotificationType::Warning);
+            }
+
             $customer = $business->customerWithPhone($validated['phone'], $validated['name']);
 
             try {
-                return app(BookAppointment::class)->handle(
+                $appointment = app(BookAppointment::class)->handle(
                     $business,
                     $customer,
                     CarbonImmutable::parse($validated['day'].' '.$validated['time'], $business->localTimezone()),
                     $service,
                     AppointmentSource::Link,
                 );
+
+                // Only a turn really made counts: a taken hour or a typo does not use up the allowance.
+                foreach ($keys as $key => [$attempts, $seconds, $why]) {
+                    RateLimiter::hit($key, $seconds);
+                }
+
+                return $appointment;
             } catch (RuntimeException) {
                 // Somebody took the hour between the page load and the tap.
                 return new NotificationDto(__('agenda.public.taken'), NotificationType::Warning);
@@ -85,7 +128,7 @@ class PublicBookingForm extends BaseForm
     protected function getValidationRules(?int $excludeId = null): array
     {
         return [
-            'service_id' => ['nullable', 'integer', Rule::exists('services', 'id')->where('is_bookable', true)],
+            'service_id' => ['nullable', 'integer', Rule::exists('services', 'id')->where('is_bookable', true)->where('is_active', true)->whereNull('deleted_at')],
             'day' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
             'name' => [...AttributeValidator::stringValid(true, '2'), 'max:60'],

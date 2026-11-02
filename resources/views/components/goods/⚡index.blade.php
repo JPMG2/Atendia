@@ -592,6 +592,11 @@ new class extends Component
                         wire:model="form.data.is_featured" :checked="$form->data->is_featured" />
                     <p class="mt-1 text-sm text-muted">{{ __('client.services.featured_help') }}</p>
                 </div>
+                <div>
+                    <x-ui.switch name="is_bookable" :label="__('client.services.bookable')"
+                        wire:model="form.data.is_bookable" :checked="$form->data->is_bookable" />
+                    <p class="mt-1 text-sm text-muted">{{ __('client.services.bookable_help') }}</p>
+                </div>
             </div>
 
             <x-slot:footer>

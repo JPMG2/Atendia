@@ -27,6 +27,9 @@ new class extends Component
     /** The booked slot, once it exists: the screen then only celebrates. */
     public ?string $booked = null;
 
+    /** The chat that turns on the reminder, once booked; null when the line is not linked. */
+    public ?string $reminderLink = null;
+
     public ?string $warning = null;
 
     public function mount(string $code): void
@@ -105,6 +108,13 @@ new class extends Component
         }
 
         $this->booked = $this->when($result);
+
+        // The person writes first, from their own phone: a number typed in the form proves
+        // nothing, and the business line never writes first to someone who did not ask.
+        $this->reminderLink = $this->business->whatsAppChatLink(__('agenda.public.reminder_text', [
+            'business' => $this->business->name,
+            'when' => $this->booked,
+        ]));
     }
 
     /** "lunes 6/10 a las 09:00", on the business's own clock. */
@@ -127,6 +137,11 @@ new class extends Component
                 <span class="bk-done-icon"><x-icon name="calendar-check" :size="28" /></span>
                 <h1 class="font-display text-strong text-2xl">{{ __('agenda.public.done_title') }}</h1>
                 <p class="text-body text-sm">{{ __('agenda.public.done_body', ['business' => $business->name, 'when' => $booked]) }}</p>
+                @if ($reminderLink !== null)
+                    <p class="text-muted text-sm">{{ __('agenda.public.reminder_hint') }}</p>
+                    <x-ui.button variant="primary" icon="whatsapp" :href="$reminderLink" target="_blank" rel="noopener">
+                        {{ __('agenda.public.reminder_button') }}</x-ui.button>
+                @endif
             </div>
         @else
             <div class="bk-head">

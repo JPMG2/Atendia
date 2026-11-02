@@ -22,6 +22,15 @@ return [
         'identity_hint' => 'Este es el número que quedó vinculado. Si no es el de tu negocio, desconéctalo y vincula el correcto.',
     ],
 
+    'disconnect' => [
+        'button' => 'Desconectar este número',
+        'title' => 'Desconectar tu WhatsApp',
+        'message' => 'Tu asistente deja de responder por este número hasta que vincules uno con el código QR. Las conversaciones guardadas no se borran.',
+        'accept' => 'Desconectar el número',
+        'done' => 'Listo. El número quedó desconectado; vincula el correcto con el código QR.',
+        'failed' => 'No pudimos desconectar el número ahora. Intenta de nuevo en un momento.',
+    ],
+
     'history' => [
         'title' => 'Los últimos :days días',
         'since' => 'Desde el :date',

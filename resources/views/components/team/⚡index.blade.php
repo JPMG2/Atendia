@@ -102,6 +102,12 @@ new class extends Component
 
     public function resend(int $invitationId): void
     {
+        if ($this->team !== null && ! $this->team->canMailInvitationTo($this->team->invitationEmail($invitationId))) {
+            $this->dispatchNotification(new NotificationDto(__('team.notify.too_many_mails'), NotificationType::Warning));
+
+            return;
+        }
+
         $this->team?->resend($invitationId, Auth::user());
         unset($this->team);
         $this->dispatchNotification(new NotificationDto(__('team.notify.resent'), NotificationType::Success));
@@ -243,7 +249,7 @@ new class extends Component
                                 </p>
                             </div>
                             <div class="flex flex-none items-center gap-1">
-                                <x-ui.icon-button icon="refresh-cw" size="sm" variant="ghost" :label="__('team.people.resend')" wire:click="resend({{ $invitation->id }})" />
+                                <x-ui.icon-button icon="refresh-cw" size="sm" variant="ghost" :label="__('team.people.resend')" wire:click="resend({{ $invitation->id }})" wire:loading.attr="disabled" />
                                 {{-- Asks like its neighbours: the link already
                                 left, so cancelling it cannot be undone. --}}
                                 <x-ui.icon-button

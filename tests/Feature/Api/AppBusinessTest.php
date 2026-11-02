@@ -236,10 +236,19 @@ describe('the opening hours', function (): void {
         expect(storedShifts($owner))->toBe(['1 09:00-12:00', '1 12:00-18:00', '5 22:00-02:00']);
     });
 
-    it('refuses a night shift that runs into another shift of the same day', function (): void {
-        asProfileApp(profileOwner())->putJson('/api/v1/business/hours', weekOf([
+    it('refuses a night shift that runs into the next morning shift, as the agenda reads it', function (): void {
+        $owner = profileOwner();
+
+        // The agenda carries Monday 22:00–02:00 into Tuesday: Tuesday 01:00 would be offered twice.
+        asProfileApp($owner)->putJson('/api/v1/business/hours', weekOf([
+            1 => [['opens_at' => '22:00', 'closes_at' => '02:00']],
+            2 => [['opens_at' => '01:00', 'closes_at' => '03:00']],
+        ]))->assertUnprocessable()->assertJsonValidationErrors(['week.2.0.opens_at']);
+
+        // Monday's own early morning is another night: it does not touch Monday's 22:00 shift.
+        asProfileApp($owner)->putJson('/api/v1/business/hours', weekOf([
             1 => [['opens_at' => '22:00', 'closes_at' => '02:00'], ['opens_at' => '01:00', 'closes_at' => '03:00']],
-        ]))->assertUnprocessable()->assertJsonValidationErrors(['week.1.1.opens_at']);
+        ]))->assertOk();
     });
 
     it('refuses what is not an hour, equal times and a missing week', function (): void {

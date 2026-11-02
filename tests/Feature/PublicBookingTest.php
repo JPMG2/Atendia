@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\AppointmentSource;
+use App\Livewire\Forms\Agenda\PublicBookingForm;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
@@ -12,6 +13,8 @@ use App\Services\Tenant;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Livewire\Features\SupportTesting\Testable;
 
 use function Pest\Livewire\livewire;
 
@@ -166,4 +169,91 @@ test('a service is booked from the link even with somebody signed in who has no 
 
     // Read from inside the business: this test's own connection still carries the client's closed fence.
     expect(app(Tenant::class)->for($business->id, fn (): ?int => Appointment::query()->sole()->service_id))->toBe($service->id);
+});
+
+/** One tap of "Reservar mi turno" at the given hour, from a fresh page. */
+function bookFromLink(Business $business, string $time, string $phone): Testable
+{
+    [$day] = tomorrowAt($business, $time);
+
+    return livewire('booking.public', ['code' => $business->booking_code])
+        ->set('form.day', $day)
+        ->call('pick', $time)
+        ->set('form.name', 'Ana Gómez')
+        ->set('form.phone', $phone)
+        ->call('book');
+}
+
+test('one WhatsApp number cannot fill a business agenda through the link', function (): void {
+    $business = bookableBusiness();
+
+    foreach (['10:00', '10:30', '11:00'] as $time) {
+        bookFromLink($business, $time, '+54 9 11 5555-0101')->assertHasNoErrors();
+    }
+
+    // The number's own reason, not "from here": a mother booking for her children reads why.
+    bookFromLink($business, '11:30', '+54 9 11 5555-0101')->assertSet('warning', __('agenda.public.too_many_phone'));
+
+    expect(Appointment::withoutGlobalScopes()->count())->toBe(PublicBookingForm::PER_PHONE[0]);
+});
+
+test('one address cannot fill a business agenda with different numbers', function (): void {
+    $business = bookableBusiness();
+
+    foreach (['10:00', '10:30', '11:00', '11:30', '12:00'] as $index => $time) {
+        bookFromLink($business, $time, '+54 9 11 5555-010'.$index)->assertHasNoErrors();
+    }
+
+    bookFromLink($business, '12:30', '+54 9 11 5555-0109')->assertSet('warning', __('agenda.public.too_many'));
+
+    expect(Appointment::withoutGlobalScopes()->count())->toBe(PublicBookingForm::PER_ADDRESS[0]);
+});
+
+test('a paused service is not booked through a page opened before the pause', function (): void {
+    $business = bookableBusiness();
+    $service = app(Tenant::class)->for($business->id, fn (): Service => Service::factory()->create(['business_id' => $business->id, 'is_bookable' => true, 'is_active' => true]));
+    [$day] = tomorrowAt($business, '10:00');
+
+    $page = livewire('booking.public', ['code' => $business->booking_code])
+        ->set('form.service_id', $service->id)
+        ->set('form.day', $day)
+        ->call('pick', '10:00')
+        ->set('form.name', 'Ana Gómez')
+        ->set('form.phone', '+54 9 11 5555-0301');
+
+    app(Tenant::class)->for($business->id, fn () => $service->update(['is_active' => false]));
+
+    $page->call('book');
+
+    expect(Appointment::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('the confirmation offers to turn on the reminder from the person own WhatsApp', function (): void {
+    $business = bookableBusiness(['whatsapp_instance' => 'negocio-9', 'whatsapp_connected_at' => now()]);
+    Cache::put('wa:profile:'.$business->id, ['number' => '584121234567', 'name' => 'Consultorio Vida', 'picture' => null], 600);
+
+    $page = bookFromLink($business, '10:00', '+54 9 11 5555-0401')
+        ->assertSee(__('agenda.public.reminder_button'));
+
+    expect($page->get('reminderLink'))->toStartWith('https://wa.me/584121234567?text=')
+        ->and(rawurldecode((string) $page->get('reminderLink')))->toContain('Consultorio Vida');
+});
+
+test('without a linked line the confirmation promises no reminder', function (): void {
+    bookFromLink(bookableBusiness(), '10:00', '+54 9 11 5555-0501')
+        ->assertSee(__('agenda.public.done_title'))
+        ->assertDontSee(__('agenda.public.reminder_button'));
+});
+
+test('an hour that was taken does not use up the allowance', function (): void {
+    $business = bookableBusiness();
+    bookFromLink($business, '10:00', '+54 9 11 5555-0201');
+
+    foreach (range(1, 6) as $try) {
+        bookFromLink($business, '10:00', '+54 9 11 5555-0202');
+    }
+
+    bookFromLink($business, '10:30', '+54 9 11 5555-0202')->assertHasNoErrors();
+
+    expect(Appointment::withoutGlobalScopes()->count())->toBe(2);
 });

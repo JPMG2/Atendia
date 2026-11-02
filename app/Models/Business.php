@@ -899,10 +899,10 @@ class Business extends Model
         return $this->conversations()->exists();
     }
 
-    /** A service of this business a visitor may book; null when it is not one. */
+    /** A service of this business a visitor may book; null when it is not one, or when it is paused. */
     public function bookableService(int $id): ?Service
     {
-        return $this->services()->where('is_bookable', true)->find($id);
+        return $this->services()->where('is_active', true)->where('is_bookable', true)->find($id);
     }
 
     /**
@@ -1379,6 +1379,19 @@ class Business extends Model
                 false,
             ),
         );
+    }
+
+    /**
+     * A wa.me link that opens a chat with the number the assistant answers on,
+     * the text already typed. Null when the line is not linked: nothing would
+     * answer, and the reminder it is for could not leave either.
+     */
+    public function whatsAppChatLink(string $text): ?string
+    {
+        $number = $this->isConnected() ? ($this->whatsAppProfile()['number'] ?? null) : null;
+        $digits = $number === null ? '' : (string) preg_replace('/\D+/', '', $number);
+
+        return $digits === '' ? null : 'https://wa.me/'.$digits.'?text='.rawurlencode($text);
     }
 
     /**

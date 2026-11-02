@@ -22,6 +22,9 @@ class WhatsAppLinkEvent extends Model
 {
     use BelongsToBusiness;
 
+    /** The reason when the owner unlinks the phone herself, from her WhatsApp screen. */
+    public const string OWNER_UNLINKED = 'owner_unlinked';
+
     /** Laravel would snake_case the class into `whats_app_link_events`. */
     protected $table = 'whatsapp_link_events';
 
@@ -66,6 +69,13 @@ class WhatsAppLinkEvent extends Model
         $lastReason = null;
 
         foreach ($events as $event) {
+            // The owner unlinking on purpose is no failure of the line: it is neither a fall nor time down.
+            if ($event->reason === self::OWNER_UNLINKED) {
+                $fellAt = null;
+
+                continue;
+            }
+
             if (! $event->connected && $fellAt === null) {
                 $fellAt = $event->occurred_at;
                 $lastFall = $event->occurred_at;

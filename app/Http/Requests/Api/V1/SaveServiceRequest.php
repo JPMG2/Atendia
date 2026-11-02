@@ -41,7 +41,7 @@ class SaveServiceRequest extends FormRequest
         $sent = array_filter($this->only([...self::TEXT, ...self::NUMBERS]), fn (mixed $value): bool => $value === null || (is_scalar($value) && ! is_bool($value)));
         $sent = array_map(fn (mixed $value): mixed => is_int($value) || is_float($value) ? (string) $value : $value, array_intersect_key($sent, array_flip(self::TEXT))) + $sent;
 
-        foreach (['is_active', 'is_featured'] as $switch) {
+        foreach (['is_active', 'is_featured', 'is_bookable'] as $switch) {
             if ($this->has($switch)) {
                 $sent[$switch] = $this->boolean($switch);
             }

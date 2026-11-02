@@ -46,7 +46,8 @@ class AdminUserForm extends BaseForm
     public static function assignableRoles(): array
     {
         return collect(Access::assignableStaffRoleNames())
-            ->mapWithKeys(fn (string $name): array => [$name => __('admin.users.roles.'.$name)])
+            // A role made in the role editor has no text of its own: it reads by the name she gave it.
+            ->mapWithKeys(fn (string $name): array => [$name => User::roleLabel($name)])
             ->all();
     }
 
