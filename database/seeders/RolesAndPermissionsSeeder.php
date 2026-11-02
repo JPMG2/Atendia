@@ -39,7 +39,8 @@ class RolesAndPermissionsSeeder extends Seeder
         // support could not work a ticket without reaching the settings.
         $adminPermissions = [
             'businesses.view', 'businesses.manage',
-            'payments.view', 'payments.verify',
+            // `payments.rate` types the bolivar rate by hand: it changes what every payment in bolivars is charged.
+            'payments.view', 'payments.verify', 'payments.rate',
             'moderation.view', 'testimonials.moderate', 'mentions.manage',
             'support.view',
             // `ai.ask` opens the admin's AI assistant, which reads across every business: its own key, not support's by default.

@@ -51,6 +51,10 @@ Route::livewire('/menciones', 'admin.mentions.index')->name('mentions')->middlew
 Route::livewire('/pagos', 'admin.payments.index')->name('payments')->middleware('permission:payments.view');
 Route::get('/pagos/{payment}/comprobante', PaymentReceiptController::class)->name('payments.receipt')->middleware('permission:payments.view');
 
+// The bolivar rate payments are charged with. Seeing it is part of seeing the
+// payments; typing one by hand asks for its own key (`payments.rate`) in the form.
+Route::livewire('/tasa-de-cambio', 'admin.exchange-rate.index')->name('exchange-rate')->middleware('permission:payments.view');
+
 // AI: which model answers each task, and what each model costs. Under Cobros
 // because a model change is a cost change before it is anything else.
 Route::livewire('/ia', 'admin.ai.index')->name('ai')->middleware('permission:ai.manage');

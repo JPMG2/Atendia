@@ -30,7 +30,7 @@ class Billing
     /**
      * The running period as the screen draws it.
      *
-     * @var array{plan: string, plan_name: string, cycle: string, status: SubscriptionStatus, starts_at: CarbonInterface|null, ends_at: CarbonInterface|null, length: int, used: int, days_left: int|null, amount: string}|null
+     * @var array{plan: string, plan_name: string, cycle: string, status: SubscriptionStatus, starts_at: CarbonInterface|null, ends_at: CarbonInterface|null, length: int, used: int, days_left: int|null, amount: string, dollars: float}|null
      */
     public ?array $period {
         get {
@@ -51,6 +51,7 @@ class Billing
                 'used' => $subscription->daysUsed(),
                 'days_left' => $subscription->daysUntilPayment(),
                 'amount' => config('atendia.billing.currency').' '.number_format($subscription->nextAmount(), 2, ',', '.'),
+                'dollars' => (float) $subscription->nextAmount(),
             ];
         }
     }

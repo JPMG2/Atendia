@@ -100,6 +100,7 @@ class MenuSeeder extends Seeder
         $billing = Menu::create(['panel' => 'admin', 'label_key' => 'menu.admin_billing', 'icon' => 'credit-card', 'sort_order' => 4]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_payments', 'icon' => 'receipt', 'route_name' => 'admin.payments', 'permission' => 'payments.view', 'sort_order' => 1]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_collections', 'icon' => 'alert-triangle', 'route_name' => 'admin.collections', 'permission' => 'payments.view', 'sort_order' => 2]);
+        Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_exchange_rate', 'icon' => 'landmark', 'route_name' => 'admin.exchange-rate', 'permission' => 'payments.view', 'sort_order' => 2]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai', 'icon' => 'bot', 'route_name' => 'admin.ai', 'permission' => 'ai.manage', 'sort_order' => 2]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_usage', 'icon' => 'bar-chart-3', 'route_name' => 'admin.ai-usage', 'permission' => 'ai.view', 'sort_order' => 3]);
         Menu::create(['parent_id' => $billing->id, 'panel' => 'admin', 'label_key' => 'menu.admin_ai_quality', 'icon' => 'thumbs-up', 'route_name' => 'admin.ai-quality', 'permission' => 'ai.view', 'sort_order' => 4]);

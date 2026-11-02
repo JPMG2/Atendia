@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 
 /** One payment of a business to Atendia: a money record, never deleted. */
-#[Fillable(['business_id', 'subscription_id', 'plan', 'billing_cycle', 'amount', 'currency', 'method', 'reference', 'receipt_path'])]
+#[Fillable(['business_id', 'subscription_id', 'plan', 'billing_cycle', 'amount', 'currency', 'exchange_rate', 'exchange_rate_on', 'method', 'reference', 'receipt_path'])]
 class Payment extends Model
 {
     use BelongsToBusiness;
@@ -32,6 +32,8 @@ class Payment extends Model
         return [
             'status' => PaymentStatus::class,
             'amount' => 'decimal:2',
+            'exchange_rate' => 'decimal:4',
+            'exchange_rate_on' => 'immutable_date',
             'period_starts_at' => 'datetime',
             'period_ends_at' => 'datetime',
             'paid_at' => 'datetime',
@@ -137,6 +139,20 @@ class Payment extends Model
     public function formattedAmount(): string
     {
         return $this->currency.' '.number_format((float) $this->amount, 2, ',', '.');
+    }
+
+    /**
+     * "Bs 70.276,46" at the rate stored with the payment, or null when it was
+     * made before any rate was kept: converting it at today's rate would show
+     * an amount nobody paid.
+     */
+    public function formattedBolivares(): ?string
+    {
+        if ($this->exchange_rate === null || $this->currency !== 'USD') {
+            return null;
+        }
+
+        return ExchangeRate::formatBolivares(round((float) $this->amount * (float) $this->exchange_rate, 2));
     }
 
     /** Only a receipt still waiting can be reviewed: a double click never credits twice. */

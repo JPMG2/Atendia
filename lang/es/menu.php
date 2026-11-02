@@ -64,6 +64,7 @@ return [
     'admin_compliance' => 'Cumplimiento',
     'admin_ai_quality' => 'Calidad de la IA',
     'admin_collections' => 'Cobranza',
+    'admin_exchange_rate' => 'Tasa de cambio',
     'help' => 'Ayuda',
 
     // Panel admin (configuración)

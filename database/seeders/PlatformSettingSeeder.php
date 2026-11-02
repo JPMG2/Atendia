@@ -43,6 +43,12 @@ class PlatformSettingSeeder extends Seeder
             // keeps answering after the date went by.
             ['key' => 'billing.grace_days', 'group' => 'billing', 'type' => 'integer', 'default_value' => '5', 'min' => 0, 'max' => 30, 'sort_order' => 1],
 
+            // The bolivar rate: when it is looked up, when it counts as old, and how big a jump waits for her.
+            ['key' => 'exchange_rate.first_check', 'group' => 'exchange_rate', 'type' => 'time', 'default_value' => '08:00', 'sort_order' => 1],
+            ['key' => 'exchange_rate.last_check', 'group' => 'exchange_rate', 'type' => 'time', 'default_value' => '18:00', 'sort_order' => 2],
+            ['key' => 'exchange_rate.stale_business_days', 'group' => 'exchange_rate', 'type' => 'integer', 'default_value' => '2', 'min' => 1, 'max' => 10, 'sort_order' => 3],
+            ['key' => 'exchange_rate.max_jump_percent', 'group' => 'exchange_rate', 'type' => 'integer', 'default_value' => '10', 'min' => 1, 'max' => 50, 'sort_order' => 4],
+
             // How long a report may wait for an answer before the queue paints it.
             ['key' => 'support.overdue_hours_high', 'group' => 'support', 'type' => 'integer', 'default_value' => '8', 'min' => 1, 'max' => 720, 'sort_order' => 1],
             ['key' => 'support.overdue_hours', 'group' => 'support', 'type' => 'integer', 'default_value' => '24', 'min' => 1, 'max' => 720, 'sort_order' => 2],

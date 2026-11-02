@@ -1739,6 +1739,28 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .pay-line { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:var(--text-sm);
               border-bottom:1px dashed var(--border-subtle); }
   .pay-line b { color:var(--text-strong); }
+  /* Dollars by default; one tap shows the same money in bolivars at the rate each payment kept. */
+  .money-toggle { display:inline-flex; align-items:center; gap:8px; font-size:var(--text-sm); color:var(--text-muted); }
+  .money-toggle-seg { display:inline-flex; gap:2px; padding:3px; border-radius:var(--radius-md);
+                      background:var(--surface-sunken); border:1px solid var(--border-subtle); }
+  .money-toggle-seg button { font:600 var(--text-sm)/1 var(--font-sans); padding:6px 12px; border-radius:calc(var(--radius-md) - 3px);
+                             color:var(--text-muted); transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+  .money-toggle-seg button:hover { color:var(--text-strong); }
+  .money-toggle-seg button[aria-pressed="true"] { background:var(--surface-card); color:var(--text-strong); box-shadow:var(--shadow-sm); }
+  /* Where the rate comes from, in the order it is tried: the badge wraps under the text on a phone. */
+  .rate-chain { display:flex; flex-direction:column; margin-top:8px; }
+  .rate-chain-row { display:flex; flex-wrap:wrap; align-items:flex-start; gap:4px 12px; padding:10px 8px;
+                    border-top:1px solid var(--border-subtle); border-radius:var(--radius-sm);
+                    transition:background var(--dur-fast) var(--ease-out); }
+  .rate-chain-row:hover { background:var(--surface-sunken); }
+  .rate-chain-step { flex:none; width:1.25rem; color:var(--text-muted); font-size:var(--text-sm); }
+  .rate-chain-row .status-tag { flex:none; margin-left:auto; }
+  /* The month's shape under each rate, with where it started and where it is. */
+  .rate-trend { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:8px;
+                font-size:var(--text-xs); color:var(--text-muted); }
+  .rate-trend .sparkline { color:var(--brand); }
+  .money-note { display:block; font-family:var(--font-sans); font-size:var(--text-xs); color:var(--text-subtle); font-weight:500;
+                letter-spacing:normal; margin-top:2px; }
   .pay-howto { padding:12px 14px; border-radius:var(--radius-md); background:var(--surface-sunken); }
   .pay-howto-title { font-size:var(--text-xs); font-weight:700; color:var(--text-strong); margin-bottom:4px; }
   .pay-howto-body { font-size:var(--text-sm); white-space:pre-line; color:var(--text-body); }

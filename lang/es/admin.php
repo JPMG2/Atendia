@@ -412,6 +412,7 @@ return [
             'payments' => [
                 'view' => 'Ver los pagos y sus comprobantes',
                 'verify' => 'Acreditar o rechazar un pago',
+                'rate' => 'Cargar la tasa de cambio a mano o confirmar un salto',
             ],
             'support' => ['view' => 'Atender los reportes de los negocios'],
             'moderation' => ['view' => 'Ver lo que atrapó el filtro de contenido'],
@@ -584,6 +585,10 @@ return [
                 'title' => 'Cobros',
                 'sub' => 'Cuánto aire tiene un negocio después de la fecha de pago antes de que su asistente calle.',
             ],
+            'exchange_rate' => [
+                'title' => 'Tasa de cambio',
+                'sub' => 'Cuándo se consulta sola la tasa del BCV, cuándo se da por vieja y qué salto espera tu confirmación.',
+            ],
             'support' => [
                 'title' => 'Soporte',
                 'sub' => 'Cuánto puede esperar un reporte antes de que la cola lo marque como atrasado.',
@@ -679,6 +684,24 @@ return [
                 'grace_days' => [
                     'label' => 'Días de gracia',
                     'hint' => 'Días después del vencimiento en los que el asistente sigue atendiendo. Pasados, se pausa.',
+                ],
+            ],
+            'exchange_rate' => [
+                'first_check' => [
+                    'label' => 'Primera consulta del día',
+                    'hint' => 'Desde esta hora (:city) se consulta la tasa cada hora.',
+                ],
+                'last_check' => [
+                    'label' => 'Última consulta del día',
+                    'hint' => 'Hasta esta hora (:city). El BCV publica por la tarde la tasa del día hábil siguiente.',
+                ],
+                'stale_business_days' => [
+                    'label' => 'Días hábiles para darla por vieja',
+                    'hint' => 'Días de lunes a viernes sin una fecha valor nueva antes del aviso rojo en Tasa de cambio y en el Tablero de avisos.',
+                ],
+                'max_jump_percent' => [
+                    'label' => 'Salto que pide confirmación (%)',
+                    'hint' => 'Un valor que se aleja más que esto del anterior no cobra hasta que lo confirmes en Tasa de cambio.',
                 ],
             ],
             'ai_optimize' => [

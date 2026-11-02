@@ -214,9 +214,16 @@ return [
         'appeals' => ['name' => 'Apelaciones'],
         'content' => ['name' => 'Contenido por revisar'],
         'heartbeat' => ['name' => 'Monitor de disponibilidad', 'fix' => 'Si no llega: revisar la URL de latido en el .env y la cuenta del servicio externo.'],
+        'exchange_rate' => ['name' => 'Tasa de cambio', 'fix' => 'Si es vieja o fallaron las fuentes: cargarla a mano en Cobros › Tasa de cambio. Si la página del BCV dejó de leerse, cambió su diseño y hay que ajustar el lector.'],
     ],
 
     'detail' => [
+        'rate_none' => 'Todavía no hay ninguna tasa guardada',
+        'rate_stale' => 'Vieja: se cobra con la fecha valor :date',
+        'rate_jump' => 'Un salto de :percent % espera tu confirmación',
+        'rate_sources_down' => 'Fallaron las dos fuentes; se cobra con la fecha valor :date',
+        'rate_bcv_down' => 'La página del BCV no se pudo leer; se cobra con «:source», fecha valor :date',
+        'rate_ok' => 'Fecha valor :date, de :source',
         'no_answer' => 'No respondió: :reason',
         'queue_none' => 'Aún no hay latido de la cola',
         'queue_beat' => 'último trabajo hace :age',

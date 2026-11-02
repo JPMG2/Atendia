@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DigestController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PaymentsController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PushTokenController;
@@ -166,6 +167,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->where('conversation', '[0-9]{1,18}');
             Route::get('whatsapp', WhatsAppStatusController::class)->middleware('can:manage-business');
             Route::get('plan', PlanController::class)->middleware('can:manage-business');
+            // The business's own payments, read only: the same lock as "Mis pagos" on the web.
+            Route::get('payments', PaymentsController::class)->middleware('can:manage-business');
             Route::get('ask', [AskController::class, 'show'])->middleware('can:manage-business');
             Route::post('ask', [AskController::class, 'ask'])->middleware('can:manage-business');
             Route::post('ask/rate', [AskController::class, 'rate'])->middleware('can:manage-business');

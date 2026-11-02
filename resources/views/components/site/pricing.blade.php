@@ -175,6 +175,12 @@
             // owner sets a reference rate for the visitor's region, one line
             // grounds the featured plan in the local currency.
             $reference = config('atendia.pricing_reference.'.app()->getLocale());
+
+            // Venezuela reads the official rate the platform charges with, kept
+            // up to date by itself, instead of a number typed into the .env.
+            if (app()->getLocale() === 'es_VE') {
+                $reference = ['symbol' => 'Bs.', 'rate' => \App\Models\ExchangeRate::charging()?->official];
+            }
         @endphp
 
         @if ($reference && $reference['rate'])

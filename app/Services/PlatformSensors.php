@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Actions\Admin\FindOrphanInstances;
+use App\Actions\Billing\FetchExchangeRate;
 use App\Dto\SensorReadingDto;
+use App\Enums\ExchangeRateSource;
 use App\Enums\PaymentStatus;
 use App\Enums\PlatformEventKind;
 use App\Enums\PlatformSensorStatus as Status;
@@ -13,6 +15,7 @@ use App\Enums\SubscriptionStatus;
 use App\Jobs\PlatformHeartbeat;
 use App\Models\AiUsage;
 use App\Models\Business;
+use App\Models\ExchangeRate;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
 use App\Models\Subscription;
@@ -57,7 +60,54 @@ class PlatformSensors
             $this->guard('appeals', 'compliance', fn (): SensorReadingDto => $this->appeals()),
             $this->guard('content', 'compliance', fn (): SensorReadingDto => $this->content()),
             $this->guard('heartbeat', 'external', fn (): SensorReadingDto => $this->externalHeartbeat()),
+            $this->guard('exchange_rate', 'system', fn (): SensorReadingDto => $this->exchangeRate()),
         ];
+    }
+
+    /**
+     * The rate payments are charged with. Read from what is stored, never by
+     * calling the sources: the sweep runs every two minutes and the BCV must
+     * not be asked that often.
+     */
+    private function exchangeRate(): SensorReadingDto
+    {
+        $charging = ExchangeRate::charging();
+
+        if ($charging === null) {
+            return new SensorReadingDto('exchange_rate', 'system', Status::Unknown, null, __('platform_events.detail.rate_none'));
+        }
+
+        $date = $charging->rate_date->format('d/m');
+        $value = ExchangeRate::formatRate($charging->official);
+        $stale = $charging->isStale((int) config('atendia.exchange_rate.stale_business_days'));
+        $waiting = ExchangeRate::awaitingConfirmation();
+
+        // A jump waiting is named first even when the rate got old: the fix is one click, not typing a rate.
+        if ($waiting !== null) {
+            $percent = number_format(ExchangeRate::jumpPercent((float) $waiting->official, (float) $charging->official), 1, ',', '.');
+
+            return new SensorReadingDto('exchange_rate', 'system', $stale ? Status::Crit : Status::Warn, $value, __('platform_events.detail.rate_jump', ['percent' => $percent]));
+        }
+
+        if ($stale) {
+            return new SensorReadingDto('exchange_rate', 'system', Status::Crit, $value, __('platform_events.detail.rate_stale', ['date' => $date]));
+        }
+
+        if ($charging->source === ExchangeRateSource::Manual) {
+            return new SensorReadingDto('exchange_rate', 'system', Status::Ok, $value, __('platform_events.detail.rate_ok', ['date' => $date, 'source' => $charging->source->label()]));
+        }
+
+        $check = (array) Cache::get(FetchExchangeRate::LAST_CHECK, []);
+
+        if (($check['bcv'] ?? null) !== null && ($check['dolarapi'] ?? null) !== null) {
+            return new SensorReadingDto('exchange_rate', 'system', Status::Warn, $value, __('platform_events.detail.rate_sources_down', ['date' => $date]));
+        }
+
+        if (($check['bcv'] ?? null) !== null) {
+            return new SensorReadingDto('exchange_rate', 'system', Status::Warn, $value, __('platform_events.detail.rate_bcv_down', ['date' => $date, 'source' => $charging->source->label()]));
+        }
+
+        return new SensorReadingDto('exchange_rate', 'system', Status::Ok, $value, __('platform_events.detail.rate_ok', ['date' => $date, 'source' => $charging->source->label()]));
     }
 
     private function guard(string $key, string $group, Closure $probe): SensorReadingDto

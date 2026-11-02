@@ -247,6 +247,14 @@ class Company extends Model
         return $now->format('H:i') === $time && ($weekday === null || $now->dayOfWeek === $weekday);
     }
 
+    /** Whether the platform's clock reads between two "H:i" times, both included. */
+    public static function isNowBetween(string $from, string $to): bool
+    {
+        $now = now(self::localTimezone())->format('H:i');
+
+        return $now >= $from && $now <= $to;
+    }
+
     /** Whether the admin's phone may be buzzed right now, on the platform's clock. */
     public static function inSendWindow(): bool
     {

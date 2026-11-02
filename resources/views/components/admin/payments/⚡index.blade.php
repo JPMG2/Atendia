@@ -56,14 +56,17 @@ new class extends Component
 };
 ?>
 
-<div>
+<div x-data="{ ves: false }">
     <div class="page-head">
         <div>
             <h1 class="page-head-title">{{ __('billing.admin.title') }}</h1>
             <p class="page-head-sub">{{ __('billing.admin.sub') }}</p>
         </div>
-        {{-- The desk shows what needs a decision; the file is the whole ledger. --}}
-        <x-ui.export-menu report="cobros" />
+        <div class="flex flex-wrap items-center gap-3">
+            <x-ui.money-toggle remember="admin-payments" />
+            {{-- The desk shows what needs a decision; the file is the whole ledger. --}}
+            <x-ui.export-menu report="cobros" />
+        </div>
     </div>
 
     {{-- The desk moves by itself, but stands still while a reason is being typed: a refresh must not eat it. --}}
@@ -95,7 +98,9 @@ new class extends Component
                                 <td class="font-mono" data-label="{{ __('billing.history.date') }}">{{ $payment['date'] }}</td>
                                 <td class="is-key" data-label="{{ __('billing.admin.business') }}">{{ $payment['business'] }}</td>
                                 <td data-label="{{ __('billing.history.concept') }}">{{ $payment['concept'] }}</td>
-                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment['amount'] }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">
+                                    <x-billing.amount-cell :row="$payment" />
+                                </td>
                                 <td class="font-mono" data-label="{{ __('billing.admin.reference') }}">{{ $payment['reference'] }}</td>
                                 <td data-label="{{ __('billing.history.receipt') }}">
                                     @if ($payment['receipt'])
@@ -155,7 +160,7 @@ new class extends Component
                             <tr wire:key="recent-{{ $payment['id'] }}">
                                 <td class="font-mono">{{ $payment['date'] }}</td>
                                 <td>{{ $payment['business'] }}</td>
-                                <td class="font-mono">{{ $payment['amount'] }}</td>
+                                <td class="font-mono"><x-billing.amount-cell :row="$payment" /></td>
                                 <td>
                                     <span @class([
                                         'status-tag',

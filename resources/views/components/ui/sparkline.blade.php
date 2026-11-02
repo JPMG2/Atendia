@@ -3,28 +3,28 @@
     'label' => null,    // what the shape is of, read by a screen reader
     'width' => 104,
     'height' => 20,
+    // zero | min. A count starts at zero; a price that never nears zero (an
+    // exchange rate) is drawn between its own low and high, or 1 % reads flat.
+    'baseline' => 'zero',
 ])
 
 @php
     $values = array_values(array_map('floatval', $values));
     $count = count($values);
     $top = $count > 0 ? max($values) : 0.0;
+    $floor = $baseline === 'min' && $count > 0 ? min($values) : 0.0;
+    $span = $top - $floor;
 
     // A flat run has no shape to scale: drawn against its own maximum it would
     // swing like a mountain range over rounding noise, so it stays a flat line.
-    $points = $count < 2 ? '' : collect($values)
-        ->map(function (float $value, int $index) use ($count, $top, $width, $height): string {
-            $x = $index * ($width / ($count - 1));
-            $y = $top > 0 ? $height - ($value / $top) * ($height - 2) - 1 : $height / 2;
+    $yOf = fn (float $value): float => $span > 0 ? $height - (($value - $floor) / $span) * ($height - 2) - 1 : $height / 2;
 
-            return round($x, 1).','.round($y, 1);
-        })
+    $points = $count < 2 ? '' : collect($values)
+        ->map(fn (float $value, int $index): string => round($index * ($width / ($count - 1)), 1).','.round($yOf($value), 1))
         ->implode(' ');
 
     $lastX = $width;
-    $lastY = $count > 1 && $top > 0
-        ? round($height - ($values[$count - 1] / $top) * ($height - 2) - 1, 1)
-        : $height / 2;
+    $lastY = $count > 1 ? round($yOf($values[$count - 1]), 1) : $height / 2;
 @endphp
 
 @if ($points !== '')

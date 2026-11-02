@@ -6,6 +6,7 @@ use App\Enums\SubscriptionStatus;
 use App\Livewire\Forms\Billing\PaymentReceiptForm;
 use App\Models\Business;
 use App\Models\Company;
+use App\Models\ExchangeRate;
 use App\Models\Payment;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Collection;
@@ -41,6 +42,20 @@ new class extends Component
     public function business(): ?Business
     {
         return Auth::user()->business;
+    }
+
+    /** Only a business that lives in bolivars is offered to read its money in Bs. */
+    #[Computed]
+    public function showsBolivares(): bool
+    {
+        return (bool) $this->business?->livesInBolivares();
+    }
+
+    /** The rate a payment made today is charged with; null when none was ever stored. */
+    #[Computed]
+    public function todayRate(): ?ExchangeRate
+    {
+        return $this->showsBolivares ? ExchangeRate::charging() : null;
     }
 
     #[Computed]
@@ -117,11 +132,16 @@ new class extends Component
 };
 ?>
 
-<div>
+<div x-data="{ ves: false }">
     <x-ui.page-head :title="__('billing.title')" :sub="__('billing.sub')">
-        @if ($this->history->isNotEmpty())
-            <x-ui.export-menu report="pagos" :params="$this->exportParams" />
-        @endif
+        <div class="flex flex-wrap items-center gap-3">
+            @if ($this->showsBolivares)
+                <x-ui.money-toggle remember="my-payments" />
+            @endif
+            @if ($this->history->isNotEmpty())
+                <x-ui.export-menu report="pagos" :params="$this->exportParams" />
+            @endif
+        </div>
     </x-ui.page-head>
 
     @php
@@ -203,10 +223,27 @@ new class extends Component
                         {{ __('billing.next.due', ['date' => $period['ends_at']?->inBusinessTime()->format('d/m/Y')]) }}
                     </p>
                 </div>
-                <b class="pay-amount font-mono">{{ $period['amount'] }}</b>
+                @php
+                    // Today's rate: what the client would transfer if they paid now.
+                    $todayBs = $this->todayRate ? ExchangeRate::formatBolivares($this->todayRate->toBolivares($period['dollars'])) : null;
+                    $todayNote = $this->todayRate
+                        ? __('exchange_rate.toggle.today', ['date' => $this->todayRate->rate_date->format('d/m/Y')])
+                        : __('exchange_rate.toggle.no_rate');
+                @endphp
+                <b class="pay-amount font-mono">
+                    <span x-show="! ves">{{ $period['amount'] }}</span>
+                    @if ($this->showsBolivares)
+                        <span x-show="ves" x-cloak>{{ $todayBs ?? '—' }}<small class="money-note">{{ $todayNote }}</small></span>
+                    @endif
+                </b>
                 <div class="pay-line">
                     <span>{{ __('billing.next.line', ['plan' => $period['plan_name'], 'cycle' => __('billing.next.cycle_'.$period['cycle'])]) }}</span>
-                    <b class="font-mono">{{ $period['amount'] }}</b>
+                    <b class="font-mono">
+                        <span x-show="! ves">{{ $period['amount'] }}</span>
+                        @if ($this->showsBolivares)
+                            <span x-show="ves" x-cloak>{{ $todayBs ?? '—' }}</span>
+                        @endif
+                    </b>
                 </div>
 
                 <div class="pay-howto">
@@ -278,7 +315,20 @@ new class extends Component
                                         —
                                     @endif
                                 </td>
-                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">{{ $payment->formattedAmount() }}</td>
+                                <td class="font-mono" data-label="{{ __('billing.history.amount') }}">
+                                    <span x-show="! ves">{{ $payment->formattedAmount() }}</span>
+                                    @if ($this->showsBolivares)
+                                        {{-- The rate the payment kept, never today's: the bolivars they sent do not move. --}}
+                                        <span x-show="ves" x-cloak>
+                                            @if ($payment->formattedBolivares() !== null)
+                                                {{ $payment->formattedBolivares() }}
+                                                <small class="money-note">{{ __('exchange_rate.toggle.paid_at', ['date' => $payment->exchange_rate_on?->format('d/m/Y')]) }}</small>
+                                            @else
+                                                —<small class="money-note">{{ __('exchange_rate.toggle.no_rate') }}</small>
+                                            @endif
+                                        </span>
+                                    @endif
+                                </td>
                                 <td data-label="{{ __('billing.history.method') }}">{{ __('billing.history.methods.'.$payment->method) }}</td>
                                 <td data-label="{{ __('billing.history.status') }}">
                                     <span
@@ -343,8 +393,26 @@ new class extends Component
                 @if ($period !== null)
                     <div class="pay-line">
                         <span>{{ __('billing.receipt.amount') }}</span>
-                        <b class="font-mono">{{ $period['amount'] }}</b>
+                        <b class="font-mono">
+                            <span x-show="! ves">{{ $period['amount'] }}</span>
+                            @if ($this->showsBolivares)
+                                <span x-show="ves" x-cloak>{{ $todayBs ?? '—' }}</span>
+                            @endif
+                        </b>
                     </div>
+                    {{-- The exact bolivars to send, whatever the toggle shows: the transfer is in Bs. --}}
+                    @if ($todayBs !== null)
+                        <div class="pay-howto">
+                            <p class="pay-howto-title">{{ __('exchange_rate.receipt.title') }}</p>
+                            <p class="pay-howto-body">
+                                {!! __('exchange_rate.receipt.body', [
+                                    'amount' => '<b class="text-strong font-mono">'.e($todayBs).'</b>',
+                                    'date' => e($this->todayRate->rate_date->format('d/m/Y')),
+                                    'rate' => e(ExchangeRate::formatRate($this->todayRate->official)),
+                                ]) !!}
+                            </p>
+                        </div>
+                    @endif
                 @endif
                 <x-catalog.form-row>
                     <x-inputsform.file

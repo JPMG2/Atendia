@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('billing_cycle', 10)->default('monthly')->comment('monthly | yearly');
             $table->decimal('amount', 10, 2)->comment('Monto a pagar del período');
             $table->string('currency', 3)->default('USD');
+            $table->decimal('exchange_rate', 14, 4)->nullable()->comment('Bs por dólar con los que se cobró (tasa oficial al enviar el comprobante)');
+            $table->date('exchange_rate_on')->nullable()->comment('Fecha valor de esa tasa');
             $table->string('method', 20)->default('transfer')->comment('transfer hoy; el medio definitivo llega tras la reunión fiscal');
             $table->string('reference', 60)->nullable()->comment('Número de operación que informó el cliente');
             $table->string('receipt_path')->nullable()->comment('Comprobante subido, en businesses/{id}/payments (disco privado)');

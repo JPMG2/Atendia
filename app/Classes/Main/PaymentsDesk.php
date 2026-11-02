@@ -39,7 +39,7 @@ class PaymentsDesk
         get => $this->queue->count() < $this->pendingTotal;
     }
 
-    /** @var list<array{id: int, date: string, business: string, concept: string, amount: string, reference: string, receipt: bool}> */
+    /** @var list<array{id: int, date: string, business: string, concept: string, amount: string, amount_ves: string|null, rate_note: string, reference: string, receipt: bool}> */
     public array $pendingRows {
         get => $this->queue->map(fn (Payment $payment): array => [
             'id' => $payment->id,
@@ -49,17 +49,19 @@ class PaymentsDesk
             'business' => (string) $payment->business?->name,
             'concept' => __('billing.history.concept_line', ['plan' => __('plan.names.'.$payment->plan)]),
             'amount' => $payment->formattedAmount(),
+            ...$this->bolivares($payment),
             'reference' => $payment->reference ?? '—',
         ])->all();
     }
 
-    /** @var list<array{id: int, date: string, business: string, amount: string, status: string, tone: string, reason: string|null}> */
+    /** @var list<array{id: int, date: string, business: string, amount: string, amount_ves: string|null, rate_note: string, status: string, tone: string, reason: string|null}> */
     public array $recentRows {
         get => $this->recent->map(fn (Payment $payment): array => [
             'id' => $payment->id,
             'date' => $payment->updated_at->format('d/m/Y'),
             'business' => (string) $payment->business?->name,
             'amount' => $payment->formattedAmount(),
+            ...$this->bolivares($payment),
             'status' => __('billing.history.statuses.'.$payment->status->value),
             'tone' => match ($payment->status) {
                 PaymentStatus::Paid => 'brand',
@@ -68,6 +70,24 @@ class PaymentsDesk
             },
             'reason' => $payment->rejection_reason,
         ])->all();
+    }
+
+    /**
+     * The same money in bolivars at the rate the payment kept, with the line
+     * that says which rate; a payment made before rates were kept says so.
+     *
+     * @return array{amount_ves: string|null, rate_note: string}
+     */
+    private function bolivares(Payment $payment): array
+    {
+        $amount = $payment->formattedBolivares();
+
+        return [
+            'amount_ves' => $amount,
+            'rate_note' => $amount === null
+                ? __('exchange_rate.toggle.no_rate')
+                : __('exchange_rate.toggle.paid_at', ['date' => $payment->exchange_rate_on?->format('d/m/Y')]),
+        ];
     }
 
     /** @var array{date: string, business: string, concept: string, amount: string, reference: string} */

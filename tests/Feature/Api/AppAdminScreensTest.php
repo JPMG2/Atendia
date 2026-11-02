@@ -451,6 +451,7 @@ test('Pagos reads from the very piece the web desk reads: the queue, the reviewe
 
     expect($data['title'])->toBe(__('billing.admin.title'))
         ->and($data['poll_seconds'])->toBe(PlatformBoard::POLL_SECONDS)
+        ->and($data['money'])->toBe(['label' => __('exchange_rate.toggle.label'), 'usd' => 'USD', 'ves' => 'Bs'])
         ->and($data['pending']['total'])->toBe(1)
         ->and($data['pending']['rows'])->toBe([[
             'id' => $waiting->id,
@@ -458,6 +459,9 @@ test('Pagos reads from the very piece the web desk reads: the queue, the reviewe
             'business' => $waiting->business->name,
             'concept' => __('billing.history.concept_line', ['plan' => __('plan.names.negocio')]),
             'amount' => 'USD 79,00',
+            // Made before any rate was kept: no bolivars invented at today's rate.
+            'amount_ves' => null,
+            'rate_note' => __('exchange_rate.toggle.no_rate'),
             'reference' => '55512345',
         ]])
         ->and($data['recent']['rows'][0])->toMatchArray([

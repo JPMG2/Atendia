@@ -30,6 +30,12 @@ class AdminPaymentsController extends Controller
             'sub' => __('billing.admin.sub'),
             'poll_seconds' => PlatformBoard::POLL_SECONDS,
             'labels' => $desk->labels,
+            // The USD | Bs toggle in the web's words; each row already carries both amounts.
+            'money' => [
+                'label' => __('exchange_rate.toggle.label'),
+                'usd' => __('exchange_rate.toggle.usd'),
+                'ves' => __('exchange_rate.toggle.ves'),
+            ],
             'pending' => [
                 'title' => __('billing.admin.pending'),
                 'empty' => __('billing.admin.empty'),

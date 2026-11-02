@@ -56,7 +56,7 @@ describe('menu', function (): void {
             ->assertJsonPath('data.3.screen', 'customers')
             ->assertJsonPath('data.4.screen', 'agenda')
             ->assertJsonPath('data.6.screen', null)
-            ->assertJsonPath('data.6.children.*.screen', ['my-plan']);
+            ->assertJsonPath('data.6.children.*.screen', ['my-plan', 'my-payments']);
     });
 
     it('keeps the web nesting and order as the app grows a screen', function (): void {

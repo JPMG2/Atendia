@@ -395,6 +395,18 @@ class Business extends Model
     }
 
     /**
+     * Whether this business lives in bolivars: its own currency, or its
+     * country's when it never picked one. Only then does "Mis pagos" offer
+     * to show the money in Bs.
+     */
+    public function livesInBolivares(): bool
+    {
+        $code = $this->currency?->code ?? $this->country?->currency?->code;
+
+        return $code === ExchangeRate::CURRENCY;
+    }
+
+    /**
      * Null is a valid answer: a seamstress with no tax registration gets her
      * invoice as a natural person.
      *

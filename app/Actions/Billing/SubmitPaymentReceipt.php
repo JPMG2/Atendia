@@ -8,6 +8,7 @@ use App\Actions\Admin\RaisePlatformEvent;
 use App\Classes\Main\Plan;
 use App\Enums\PlatformEventKind;
 use App\Models\Business;
+use App\Models\ExchangeRate;
 use App\Models\Payment;
 use Illuminate\Http\UploadedFile;
 
@@ -22,7 +23,13 @@ class SubmitPaymentReceipt
     {
         $subscription = $business->subscription;
 
+        // The rate in force when the client paid: the bolivars they transferred
+        // must not change later with tomorrow's rate.
+        $rate = ExchangeRate::charging();
+
         $payment = $business->payments()->create([
+            'exchange_rate' => $rate?->official,
+            'exchange_rate_on' => $rate?->rate_date,
             'subscription_id' => $subscription?->id,
             'plan' => $subscription?->plan ?? Plan::trial()->code,
             'billing_cycle' => $subscription?->billing_cycle ?? 'monthly',

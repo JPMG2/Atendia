@@ -48,6 +48,12 @@ Schedule::command('atendia:platform-digest')
 // Payment reminders (10 and 5 days), grace days and pausing unpaid assistants.
 Schedule::command('atendia:billing-cycle')->everyFifteenMinutes()->withoutOverlapping(15);
 
+// The bolivar rate, every hour inside her window (Ajustes > Tasa de cambio).
+Schedule::command('atendia:exchange-rate')
+    ->hourly()
+    ->when(fn (): bool => Company::isNowBetween((string) config('atendia.exchange_rate.first_check'), (string) config('atendia.exchange_rate.last_check')))
+    ->withoutOverlapping(10);
+
 // Nightly, off the busy hours: the bell's inbox drops what aged out of its
 // window (config atendia.bell.keep_days). Nobody empties it by hand.
 Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dailyAt('04:20');

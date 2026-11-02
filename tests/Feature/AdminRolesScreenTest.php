@@ -303,7 +303,8 @@ test('a screen that shares its permission says so and keeps the actions on the f
     $payments = collect($billing->children)->first(fn ($node) => $node->label === 'Pagos');
     $collections = collect($billing->children)->first(fn ($node) => $node->label === 'Cobranza');
 
-    expect($payments->actions)->toBe(['payments.verify'])
+    // The exchange rate screen opens with the same key, so typing a rate travels with Pagos.
+    expect($payments->actions)->toBe(['payments.rate', 'payments.verify'])
         ->and($payments->sharedWith)->toBeNull()
         ->and($collections->sharedWith)->toBe('Pagos')
         ->and($collections->actions)->toBe([]);

@@ -96,12 +96,12 @@ return [
     | Prices stay in USD (LatAm buyers read USD as stable). Per visitor
     | locale, an optional rate (local units per USD) adds one reference
     | line under the landing pricing. Null rate = no line, nothing shown.
+    | Venezuela is not here: it reads the stored BCV rate (exchange_rates).
     |
     */
 
     'pricing_reference' => [
         'es_AR' => ['symbol' => 'AR$', 'rate' => env('PRICING_REFERENCE_RATE_AR')],
-        'es_VE' => ['symbol' => 'Bs.', 'rate' => env('PRICING_REFERENCE_RATE_VE')],
     ],
 
     /*
@@ -276,6 +276,20 @@ return [
         'currency_symbol' => '$',
         'reminder_days' => [10, 5],
         'grace_days' => 5,
+    ],
+
+    /*
+    | The bolivar rate: checked every hour inside this window on the platform's
+    | clock; old after this many business days without a new value date; and a
+    | jump bigger than this percent waits for her before it charges. Each one
+    | is a row in Ajustes that overrides the value written here.
+    */
+    'exchange_rate' => [
+        'first_check' => '08:00',
+        'last_check' => '18:00',
+        'stale_business_days' => 2,
+        'max_jump_percent' => 10,
+        'history_rows' => 30,
     ],
     'email_change_minutes' => 60,
 
@@ -574,6 +588,7 @@ return [
             'admin.compliance' => ['menu.admin_compliance', 'compliance'],
             'admin.payments' => ['menu.admin_payments', 'billing'],
             'admin.collections' => ['menu.admin_collections', 'collections'],
+            'admin.exchange-rate' => ['menu.admin_exchange_rate', 'exchange_rate'],
             'admin.ai' => ['menu.admin_ai', 'admin.ai'],
             'admin.ai-usage' => ['menu.admin_ai_usage', 'admin.ai_usage'],
             'admin.ai-quality' => ['menu.admin_ai_quality', 'ai_quality'],
@@ -607,7 +622,7 @@ return [
 
     'app' => [
         // Client-menu route names the mobile app already has a screen for.
-        'screens' => ['conversations', 'customers', 'my-services', 'my-products', 'agenda', 'whatsapp', 'my-plan', 'my-business'],
+        'screens' => ['conversations', 'customers', 'my-services', 'my-products', 'agenda', 'whatsapp', 'my-plan', 'my-payments', 'my-business'],
         // The same for the platform's staff: admin-menu route names the app has a screen for. It grows with each delivery.
         'admin_screens' => ['admin.dashboard', 'admin.alerts', 'admin.businesses', 'admin.payments', 'admin.collections', 'admin.company', 'admin.catalogs', 'admin.support', 'admin.adoption', 'admin.incidents', 'admin.contacts', 'admin.compliance'],
         'conversations_per_page' => 20,
