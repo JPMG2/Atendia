@@ -12,8 +12,8 @@ use App\Models\User;
 
 /**
  * Closing is a soft delete of the account AND its business: nobody signs
- * in, the assistant stops answering, and not one row is erased — the data
- * is worth keeping, and the owner may come back.
+ * in and the assistant stops answering. The owner may come back inside the
+ * restore window; after it, `EraseClosedAccount` erases everything for good.
  */
 class CloseAccount
 {
@@ -37,6 +37,7 @@ class CloseAccount
 
         $user->business?->delete();
         $user->pending_email = null;
+        $user->closed_at = now();
         $user->save();
         $user->delete();
 

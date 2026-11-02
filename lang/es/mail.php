@@ -303,7 +303,7 @@ return [
             'eyebrow' => 'Cuenta cerrada',
             'title' => 'Tu cuenta quedó cerrada',
             'intro' => 'Hola :name, cerramos tu cuenta y tu asistente dejó de atender.',
-            'body' => 'Guardamos todo tal como estaba durante :days días: si cambias de idea, vuelves con un clic o simplemente iniciando sesión.',
+            'body' => 'Guardamos todo tal como estaba durante :days días: si cambias de idea, vuelves con un clic o simplemente iniciando sesión. Pasado ese plazo, tu cuenta, tu negocio y sus datos se borran para siempre; solo quedan tus pagos, que la ley nos pide conservar.',
             'alert' => 'Si no fuiste tú, restaura tu cuenta ahora y cambia tu contraseña.',
             'cta' => 'Restaurar mi cuenta',
             'closing' => 'Gracias por el tiempo que atendimos juntos.',

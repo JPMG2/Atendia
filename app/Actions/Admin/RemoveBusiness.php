@@ -57,7 +57,12 @@ class RemoveBusiness
             ])->save();
 
             // Same as closing an account: nobody of this business keeps a session.
-            $business->users()->each(fn ($user) => $user->delete());
+            // An admin removal is reversible: it never counts as the owner closing, so nothing is erased later.
+            $business->users()->each(function ($user): void {
+                $user->closed_at = null;
+                $user->save();
+                $user->delete();
+            });
 
             $business->delete();
 

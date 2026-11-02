@@ -12,6 +12,7 @@ use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -155,6 +156,20 @@ test('a removed business is found under Quitado and restored from its ficha', fu
     expect(Business::query()->find($this->paying->id))->not->toBeNull();
 
     $page->assertNoJavaScriptErrors();
+});
+
+test('a business erased at its owner\'s request says so and offers no restore', function (): void {
+    $this->paying->delete();
+    DB::table('businesses')->where('id', $this->paying->id)->update(['billing_email' => 'erased-'.$this->paying->id.Business::ERASED_EMAIL_DOMAIN]);
+    DB::table('subscriptions')->where('business_id', $this->paying->id)->update(['canceled_at' => now()->subDay(), 'current_period_ends_at' => now()->subMinute()]);
+
+    $page = visit(route('admin.businesses', ['estado' => 'removed']))->resize(1280, 1400);
+
+    $page->click('[data-testid="biz-open-'.$this->paying->id.'"]')
+        ->waitForText(__('admin.businesses.erased.title'))
+        ->assertMissing('[data-testid="biz-restore-'.$this->paying->id.'"]')
+        ->screenshot(filename: 'admin-businesses-erased-ficha')
+        ->assertNoJavaScriptErrors();
 });
 
 test('the instances nobody holds are listed with their hour and can be freed', function (): void {

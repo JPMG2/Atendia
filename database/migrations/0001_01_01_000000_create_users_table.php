@@ -38,8 +38,9 @@ return new class extends Migration
             $table->json('bell_muted')->nullable()->comment('Tipos de aviso que esta persona NO quiere ver en la campana');
             $table->rememberToken();
             $table->timestamps();
-            // Closing an account never erases it: the data stays for the
-            // restore window and, after it, for the admin.
+            // Set only when the owner closes the account herself (not an admin removal):
+            // once the restore window is over, that account is erased for good.
+            $table->timestamp('closed_at')->nullable();
             $table->softDeletes();
         });
 

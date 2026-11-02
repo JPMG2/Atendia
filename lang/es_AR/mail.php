@@ -89,7 +89,7 @@ return [
         ],
         'closed' => [
             'preheader' => 'Tenés :days días para volver con todo tal como estaba.',
-            'body' => 'Guardamos todo tal como estaba durante :days días: si cambiás de idea, volvés con un clic o simplemente iniciando sesión.',
+            'body' => 'Guardamos todo tal como estaba durante :days días: si cambiás de idea, volvés con un clic o simplemente iniciando sesión. Pasado ese plazo, tu cuenta, tu negocio y sus datos se borran para siempre; solo quedan tus pagos, que la ley nos pide conservar.',
             'alert' => 'Si no fuiste vos, restaurá tu cuenta ahora y cambiá tu contraseña.',
         ],
     ],

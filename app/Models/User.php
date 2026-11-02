@@ -269,6 +269,20 @@ class User extends Authenticatable
     }
 
     /**
+     * Accounts their owner closed whose restore window is over: they are erased
+     * for good. An admin removal leaves `closed_at` empty and is never in here.
+     *
+     * @return Collection<int, self>
+     */
+    public static function closedPastRestoreWindow(): Collection
+    {
+        return self::onlyTrashed()
+            ->whereNotNull('closed_at')
+            ->where('closed_at', '<', now()->subDays((int) config('atendia.account_restore_days')))
+            ->get();
+    }
+
+    /**
      * A teammate taken out of THIS business's team: its new invitation brings the
      * same person back, history and all. Another business cannot claim them: their
      * devices, second factor and signed history belong to the team they left.
@@ -543,6 +557,7 @@ class User extends Authenticatable
             'is_available' => 'boolean',
             'rejoined_at' => 'datetime',
             'bell_muted' => 'array',
+            'closed_at' => 'datetime',
         ];
     }
 

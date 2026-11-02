@@ -28,16 +28,17 @@ class RestoreBusiness
 
         $removedAt = $business->deleted_at;
 
-        if ($removedAt === null) {
+        if ($removedAt === null || $business->isErased()) {
             return;
         }
 
         DB::transaction(function () use ($business, $removedAt): void {
             $business->restore();
 
+            // Brought back by the admin, the owner's old closing is void: it must not erase her later.
             $business->users()->onlyTrashed()
                 ->where('deleted_at', '>=', $removedAt->copy()->subSeconds(self::TOGETHER))
-                ->restore();
+                ->update(['deleted_at' => null, 'closed_at' => null]);
 
             $subscription = $business->refresh()->subscription;
 

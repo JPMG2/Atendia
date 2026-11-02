@@ -58,6 +58,9 @@ Schedule::command('atendia:exchange-rate')
 // window (config atendia.bell.keep_days). Nobody empties it by hand.
 Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dailyAt('04:20');
 
+// After the nightly backup on purpose: a closed account past its restore window is erased for good.
+Schedule::command('atendia:erase-closed-accounts')->dailyAt('04:40')->withoutOverlapping(30);
+
 // Weekly on purpose: an account that went quiet is a call to make this week,
 // and a daily copy of the same list stops being read by the second one.
 Schedule::command('atendia:adoption-alert')

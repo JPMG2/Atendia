@@ -278,6 +278,15 @@ class Business extends Model
         return route('booking.public', ['code' => $this->booking_code]);
     }
 
+    /** The billing address an erased business keeps: it answers nothing, and it marks the row as erased. */
+    public const string ERASED_EMAIL_DOMAIN = '@invalid.invalid';
+
+    /** Erased at its owner's request: only its money records are left, so it can never come back. */
+    public function isErased(): bool
+    {
+        return $this->trashed() && str_ends_with((string) $this->billing_email, self::ERASED_EMAIL_DOMAIN);
+    }
+
     /**
      * The sentinels that mark the landing's demo businesses — seeded data,
      * one per rubro of the hero's selector, never clients. One constant so

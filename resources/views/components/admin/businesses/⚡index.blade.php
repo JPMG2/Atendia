@@ -417,7 +417,10 @@ new class extends Component
                 @endforeach
             </div>
 
-            @if ($this->ficha->trashed())
+            @if ($this->ficha->isErased())
+                <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.erased.title') }}</h2></div>
+                <p class="bp-card-sub">{{ __('admin.businesses.erased.hint') }}</p>
+            @elseif ($this->ficha->trashed())
                 @can('businesses.manage')
                     <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.restore.title') }}</h2></div>
                     <p class="bp-card-sub">{{ __('admin.businesses.restore.hint', ['date' => $this->ficha->deleted_at?->format('d/m/Y')]) }}</p>

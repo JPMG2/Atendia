@@ -177,6 +177,9 @@ Route::get('/equipo', fn () => view('team'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('team');
 
+// Public on purpose: Google Play requires a page anyone can open to ask for an account's deletion.
+Route::get('/borrar-cuenta', fn () => view('account-deletion'))->name('account.deletion');
+
 // Help: the answers before a ticket. Reachable by an invited agent too — they
 // hit the same problems and the articles hold no business data.
 Route::get('/ayuda', fn () => view('help'))

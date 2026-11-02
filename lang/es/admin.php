@@ -954,6 +954,11 @@ return [
             'failed' => 'No se pudo liberar la instancia de WhatsApp. No se cambió nada: vuelve a intentarlo.',
         ],
 
+        'erased' => [
+            'title' => 'Borrado a pedido de su titular',
+            'hint' => 'Pasados los días para volver, se borraron la cuenta y sus datos. Solo quedan los pagos, por ley: no se puede restaurar.',
+        ],
+
         'restore' => [
             'title' => 'Restaurar el negocio',
             'hint' => 'Quitado el :date. Vuelve con su equipo y su plan; su WhatsApp hay que vincularlo de nuevo.',

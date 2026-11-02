@@ -15,8 +15,8 @@ use RuntimeException;
  * Deliberately a console command and not a button: erasing cannot be undone,
  * and the admin screen only ever does the reversible removal.
  */
-#[Signature('atendia:purge-business {id : The id of a business that was already removed}')]
-#[Description('Erases a removed test business, its people and its e-mail for good')]
+#[Signature('atendia:purge-business {id : The id of a business that was already removed} {--owner-request : The owner asked by mail to be erased: the payments are kept, by law}')]
+#[Description('Erases a removed business, its people and its e-mail for good')]
 class PurgeBusinessFromConsole extends Command
 {
     public function handle(PurgeBusiness $purge): int
@@ -38,7 +38,7 @@ class PurgeBusinessFromConsole extends Command
         }
 
         try {
-            $erased = $purge->handle($business);
+            $erased = $purge->handle($business, keepMoney: (bool) $this->option('owner-request'));
         } catch (RuntimeException $e) {
             $this->error($e->getMessage());
 

@@ -15,6 +15,7 @@ class RestoreAccount
             return false;
         }
 
+        $user->closed_at = null;
         $user->restore();
         $user->business()->onlyTrashed()->first()?->restore();
 

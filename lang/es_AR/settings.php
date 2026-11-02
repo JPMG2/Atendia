@@ -28,10 +28,10 @@ return [
     ],
 
     'close' => [
-        'sub' => 'Se cierran tu acceso y tu negocio: tu asistente deja de atender. Guardamos todo durante :days días por si querés volver.',
-        'sub_no_business' => 'Se cierra tu acceso. Guardamos todo durante :days días por si querés volver.',
+        'sub' => 'Se cierran tu acceso y tu negocio: tu asistente deja de atender. Guardamos todo durante :days días por si querés volver; después se borra para siempre, salvo tus pagos, que la ley nos pide conservar.',
+        'sub_no_business' => 'Se cierra tu acceso. Guardamos todo durante :days días por si querés volver; después se borra para siempre.',
         'confirmation' => 'Escribí :keyword para confirmar',
-        'confirm_message' => 'Tu asistente deja de atender ahora mismo. Tenés :days días para volver con todo tal como estaba.',
+        'confirm_message' => 'Tu asistente deja de atender ahora mismo. Tenés :days días para volver con todo tal como estaba; después se borra para siempre.',
     ],
 
     'links' => [
