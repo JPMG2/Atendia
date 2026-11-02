@@ -666,6 +666,7 @@ return [
         'merge_confirm_title' => '¿Fusionar las fichas?',
         'merge_confirm_body' => 'Las conversaciones de ambas quedan en esta ficha y la otra se elimina. Esto no se puede deshacer.',
         'merged' => 'Fichas fusionadas.',
+        'owner_only' => 'Fusionar fichas y pedir el permiso de ofertas lo hace quien administra el negocio.',
         'birthday_greeting' => [
             '¡Feliz cumpleaños:name! 🎂 Todo el equipo de :business te desea un gran día.',
             '🎉 :business te manda un abrazo y te desea un feliz cumpleaños:name. ¡Que lo disfrutes mucho!',

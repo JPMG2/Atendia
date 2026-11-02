@@ -32,11 +32,11 @@ trait ManagesCustomerSheet
         return $this->sheetCustomer();
     }
 
-    /** The sibling record sharing this email, if any: the merge suggestion. */
+    /** The sibling record sharing this email, if any: the merge suggestion, which only the owner may act on. */
     #[Computed]
     public function customerDuplicate(): ?Customer
     {
-        return $this->customer?->duplicateOf();
+        return Auth::user()?->can('manage-business') === true ? $this->customer?->duplicateOf() : null;
     }
 
     public function openCustomer(): void
@@ -59,12 +59,27 @@ trait ManagesCustomerSheet
         $this->dispatchNotification($this->customerForm->save());
     }
 
+    /**
+     * Asking for the offers permit writes from the business line, and merging cannot be undone:
+     * both are the owner's (2026-11-02). An agent sees and edits the fiche, and is told why not.
+     */
+    private function ownerOnly(): bool
+    {
+        if (Auth::user()?->can('manage-business') === true) {
+            return false;
+        }
+
+        $this->dispatchNotification(new NotificationDto(__('client.customers.owner_only'), NotificationType::Warning));
+
+        return true;
+    }
+
     public function requestOptIn(): void
     {
         $customer = $this->customer;
         $business = Auth::user()?->business;
 
-        if ($customer === null || $business === null) {
+        if ($customer === null || $business === null || $this->ownerOnly()) {
             return;
         }
 
@@ -81,7 +96,7 @@ trait ManagesCustomerSheet
         $customer = $this->customer;
         $duplicate = $this->customerDuplicate;
 
-        if ($customer === null || $duplicate === null) {
+        if ($customer === null || $duplicate === null || $this->ownerOnly()) {
             return;
         }
 

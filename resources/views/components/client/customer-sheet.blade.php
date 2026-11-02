@@ -91,23 +91,29 @@ component must use the ManagesCustomerSheet trait: every wire call and the
                 />
             </x-catalog.form-row>
 
-            <div class="bd-subtle border-t pt-3">
-                @if ($customer->marketing_opt_in_at !== null)
-                    <p class="text-body flex items-center gap-1.5 text-sm">
-                        <x-icon name="check" :size="16" style="color: var(--success)" />
-                        {{ __('client.customers.opt_in_yes', ['date' => $customer->marketing_opt_in_at->inBusinessTime()->format('d/m/Y')]) }}
-                    </p>
-                @else
-                    @if ($customer->marketing_opt_in_requested_at !== null)
-                        <p class="text-muted mb-2 text-xs">
-                            {{ __('client.customers.opt_in_requested', ['date' => $customer->marketing_opt_in_requested_at->inBusinessTime()->format('d/m/Y')]) }}
+            {{-- Asking for the permit writes from the business line: the owner's button. An agent
+            still reads whether the customer said yes or was asked. --}}
+            @if ($customer->marketing_opt_in_at !== null || $customer->marketing_opt_in_requested_at !== null || auth()->user()?->can('manage-business'))
+                <div class="bd-subtle border-t pt-3">
+                    @if ($customer->marketing_opt_in_at !== null)
+                        <p class="text-body flex items-center gap-1.5 text-sm">
+                            <x-icon name="check" :size="16" style="color: var(--success)" />
+                            {{ __('client.customers.opt_in_yes', ['date' => $customer->marketing_opt_in_at->inBusinessTime()->format('d/m/Y')]) }}
                         </p>
+                    @else
+                        @if ($customer->marketing_opt_in_requested_at !== null)
+                            <p class="text-muted mb-2 text-xs">
+                                {{ __('client.customers.opt_in_requested', ['date' => $customer->marketing_opt_in_requested_at->inBusinessTime()->format('d/m/Y')]) }}
+                            </p>
+                        @endif
+                        @can('manage-business')
+                            <x-ui.button variant="secondary" size="sm" icon="gift" wire:click="requestOptIn">
+                                {{ __('client.customers.opt_in_button') }}
+                            </x-ui.button>
+                        @endcan
                     @endif
-                    <x-ui.button variant="secondary" size="sm" icon="gift" wire:click="requestOptIn">
-                        {{ __('client.customers.opt_in_button') }}
-                    </x-ui.button>
-                @endif
-            </div>
+                </div>
+            @endif
         </div>
 
         <x-slot:footer>

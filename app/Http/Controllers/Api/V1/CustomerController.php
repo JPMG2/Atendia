@@ -47,7 +47,7 @@ class CustomerController extends Controller
     {
         $directory = $this->directory($request);
 
-        return response()->json(['data' => ['copy' => $directory->copy, 'sheet' => $directory->sheetOf($this->customer($directory, $customer))]]);
+        return response()->json(['data' => ['copy' => $directory->copy, 'sheet' => $directory->sheetOf($this->customer($directory, $customer), $this->mayDecide($request))]]);
     }
 
     public function update(SaveCustomerRequest $request, int $customer): JsonResponse
@@ -62,6 +62,8 @@ class CustomerController extends Controller
 
     public function optIn(Request $request, int $customer): JsonResponse
     {
+        // Writes from the business line: the owner's, as on the web (2026-11-02).
+        abort_unless($this->mayDecide($request), 403, __('client.customers.owner_only'));
         $directory = $this->directory($request);
         $record = $this->customer($directory, $customer);
 
@@ -78,6 +80,8 @@ class CustomerController extends Controller
 
     public function merge(Request $request, int $customer): JsonResponse
     {
+        // Cannot be undone: the owner's, as on the web (2026-11-02).
+        abort_unless($this->mayDecide($request), 403, __('client.customers.owner_only'));
         $shown = $request->validate(['duplicate_id' => ['required', 'integer']])['duplicate_id'];
         $directory = $this->directory($request);
         $record = $this->customer($directory, $customer);
@@ -94,7 +98,12 @@ class CustomerController extends Controller
 
     private function done(Directory $directory, Customer $customer, string $message): JsonResponse
     {
-        return response()->json(['message' => $message, 'data' => ['copy' => $directory->copy, 'sheet' => $directory->sheetOf($customer->refresh())]]);
+        return response()->json(['message' => $message, 'data' => ['copy' => $directory->copy, 'sheet' => $directory->sheetOf($customer->refresh(), $this->mayDecide(request()))]]);
+    }
+
+    private function mayDecide(Request $request): bool
+    {
+        return $request->user()->can('manage-business');
     }
 
     private function customer(Directory $directory, int $id): Customer

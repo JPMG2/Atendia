@@ -150,9 +150,10 @@ class Directory
      *
      * @return array<string, mixed>
      */
-    public function sheetOf(Customer $customer): array
+    public function sheetOf(Customer $customer, bool $mayDecide = true): array
     {
-        $duplicate = $customer->duplicateOf();
+        // Merging and asking for the offers permit are the owner's: an agent's fiche carries neither button.
+        $duplicate = $mayDecide ? $customer->duplicateOf() : null;
         $consent = $customer->marketing_opt_in_at;
         $asked = $customer->marketing_opt_in_requested_at;
 
@@ -186,7 +187,7 @@ class Directory
                 'text' => $consent !== null
                     ? __('client.customers.opt_in_yes', ['date' => $consent->inBusinessTime()->format('d/m/Y')])
                     : ($asked !== null ? __('client.customers.opt_in_requested', ['date' => $asked->inBusinessTime()->format('d/m/Y')]) : null),
-                'button' => $consent === null ? __('client.customers.opt_in_button') : null,
+                'button' => $consent === null && $mayDecide ? __('client.customers.opt_in_button') : null,
             ],
         ];
     }

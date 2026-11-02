@@ -141,7 +141,10 @@ new class extends Component
                 <p class="font-mono text-sm text-subtle">
                     {{ trans_choice('client.customers.count', $this->filtered->count(), ['count' => $this->filtered->count()]) }}
                 </p>
-                <x-ui.export-menu report="clientes" :params="$this->exportParams" />
+                {{-- The whole directory leaves with whoever downloads it: the owner's (2026-11-02). --}}
+                @can('manage-business')
+                    <x-ui.export-menu report="clientes" :params="$this->exportParams" />
+                @endcan
             </div>
 
             @if ($this->rows->isEmpty())

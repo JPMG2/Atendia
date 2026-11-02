@@ -47,7 +47,8 @@ class CustomersReport extends ListReport
 
     public function authorize(User $user): bool
     {
-        return $user->can('access-client-app') && $user->business !== null;
+        // The whole directory leaves with whoever downloads it: the owner's, not every agent's (owner's call, 2026-11-02).
+        return $user->can('access-client-app') && $user->can('manage-business') && $user->business !== null;
     }
 
     protected function rows(ReportScope $scope): array
