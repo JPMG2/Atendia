@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Agenda;
 
 use App\Actions\Agenda\BookAppointment;
+use App\Classes\Main\AddressBucket;
 use App\Dto\NotificationDto;
 use App\Enums\AppointmentSource;
 use App\Enums\NotificationType;
@@ -12,7 +13,9 @@ use App\Livewire\Forms\BaseForm;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
+use App\Models\Service;
 use App\Rules\AttributeValidator;
+use App\Services\Agenda\SlotFinder;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -60,8 +63,9 @@ class PublicBookingForm extends BaseForm
         // The page has its own throttle, but each tap goes through /livewire/update: without this
         // one stranger could fill a business's agenda with made-up turns. Each key says its own why.
         $keys = [
-            'public-booking:ip:'.$business->id.':'.request()->ip() => [...self::PER_ADDRESS, 'agenda.public.too_many'],
-            'public-booking:phone:'.$business->id.':'.$validated['phone'] => [...self::PER_PHONE, 'agenda.public.too_many_phone'],
+            'public-booking:ip:'.$business->id.':'.AddressBucket::of(request()->ip()) => [...self::PER_ADDRESS, 'agenda.public.too_many'],
+            // The number as it will be stored: 0412… and 58412… are one person, and one count.
+            'public-booking:phone:'.$business->id.':'.$business->internationalPhone($validated['phone']) => [...self::PER_PHONE, 'agenda.public.too_many_phone'],
         ];
 
         // One booking at a time per business: taps sent together would all pass the count before any adds to it.
@@ -96,7 +100,7 @@ class PublicBookingForm extends BaseForm
                 $appointment = app(BookAppointment::class)->handle(
                     $business,
                     $customer,
-                    CarbonImmutable::parse($validated['day'].' '.$validated['time'], $business->localTimezone()),
+                    $this->startsAt($business, $validated, $service),
                     $service,
                     AppointmentSource::Link,
                 );
@@ -114,6 +118,21 @@ class PublicBookingForm extends BaseForm
         });
     }
 
+    /**
+     * The picked hour as the day's list offered it: "00:00" under Friday is Saturday's first
+     * hour of Friday's night shift, never Friday at dawn.
+     *
+     * @param  array{day: string, time: string}  $validated
+     */
+    private function startsAt(Business $business, array $validated, ?Service $service): CarbonImmutable
+    {
+        $day = CarbonImmutable::parse($validated['day'], $business->localTimezone());
+        $offered = collect(app(SlotFinder::class)->freeSlots($business, $day, $service))
+            ->first(fn (CarbonImmutable $slot): bool => $slot->format('H:i') === $validated['time']);
+
+        return $offered ?? CarbonImmutable::parse($validated['day'].' '.$validated['time'], $business->localTimezone());
+    }
+
     protected function transformServiceData(): array
     {
         return [
@@ -121,7 +140,8 @@ class PublicBookingForm extends BaseForm
             'day' => $this->day,
             'time' => $this->time,
             'name' => $this->name,
-            'phone' => preg_replace('/\D/', '', $this->phone),
+            // Digits only, but a leading "+" says "international": kept as its "00" twin.
+            'phone' => (str_starts_with(ltrim($this->phone), '+') ? '00' : '').preg_replace('/\D/', '', $this->phone),
         ];
     }
 

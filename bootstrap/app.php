@@ -10,6 +10,7 @@ use App\Http\Middleware\RequireSupportedAppBuild;
 use App\Http\Middleware\SetApiLocale;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantDatabaseContext;
+use App\Http\Middleware\ThrottleByAddressBucket;
 use App\Http\Middleware\TrustCloudflareVisitorIp;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
@@ -85,6 +86,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'staff.two-factor' => RequireStaffTwoFactor::class,
+            // Every `throttle:` counts an IPv6 visitor by its /64, not by an address it can rotate.
+            'throttle' => ThrottleByAddressBucket::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

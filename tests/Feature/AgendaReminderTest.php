@@ -5,11 +5,14 @@ declare(strict_types=1);
 use App\Enums\AppointmentSource;
 use App\Enums\AppointmentStatus;
 use App\Enums\MessageDirection;
+use App\Enums\PanelNotificationType;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Country;
 use App\Models\Customer;
+use App\Models\PanelNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -163,4 +166,71 @@ test('a number typed in the booking link is not written to until that person wri
 
     Http::assertSentCount(1);
     expect($booking->fresh()->reminder_sent_at)->not->toBeNull();
+});
+
+test('a reminder held for a person who never wrote tells the owner once, whatever the ticks', function (): void {
+    $business = remindingBusiness();
+    $stranger = Customer::factory()->create(['business_id' => $business->id, 'name' => 'Lucía']);
+    bookingIn($business, 20, ['customer_id' => $stranger->id, 'source' => AppointmentSource::Link]);
+
+    // Right after booking the person may still write from the confirmation screen: no row yet.
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+    expect(PanelNotification::query()->where('business_id', $business->id)->count())->toBe(0);
+
+    $this->travel(61)->minutes();
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+
+    $notice = PanelNotification::query()->where('business_id', $business->id)->sole();
+
+    expect($notice->type)->toBe(PanelNotificationType::ReminderHeld)
+        ->and($notice->payload['why'])->toBe('cold')
+        ->and(__('bell.lines.reminder_held', $notice->payload))->toContain('Lucía')->toContain('todavía no le escribió');
+});
+
+test('the held row is taken back once the reminder goes after all', function (): void {
+    $business = remindingBusiness();
+    $stranger = Customer::factory()->create(['business_id' => $business->id]);
+    $booking = bookingIn($business, 2, ['customer_id' => $stranger->id, 'source' => AppointmentSource::Link]);
+
+    // Two hours from the turn the owner hears it at once.
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+    expect(PanelNotification::query()->where('business_id', $business->id)->count())->toBe(1);
+
+    $thread = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => $stranger->phone]);
+    ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $thread->id, 'direction' => MessageDirection::In]);
+
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+
+    expect($booking->fresh()->reminder_sent_at)->not->toBeNull()
+        ->and(PanelNotification::query()->where('business_id', $business->id)->count())->toBe(0);
+});
+
+test('a reminder held only by the day cap tells the owner nothing: it leaves at the next tick', function (): void {
+    config(['atendia.outbound.daily_cap' => 0, 'atendia.outbound.warmup' => []]);
+    $business = remindingBusiness();
+    bookingIn($business, 20);
+
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+
+    expect(PanelNotification::query()->where('business_id', $business->id)->count())->toBe(0);
+});
+
+test('a booking typed the local way is the same person who then writes from WhatsApp', function (): void {
+    $business = remindingBusiness(['country_id' => Country::factory()->create(['phone_code' => '+58'])->id]);
+
+    // The public link stores what the visitor typed, the local way.
+    $customer = $business->customerWithPhone('0412-555 1234', 'Pedro');
+    expect($customer->phone)->toBe('584125551234');
+
+    // WhatsApp sends the international digits: the same thread, so the reminder goes.
+    $thread = Conversation::factory()->create(['business_id' => $business->id, 'contact_phone' => '584125551234']);
+    ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $thread->id, 'direction' => MessageDirection::In]);
+    $booking = bookingIn($business, 20, ['customer_id' => $customer->id, 'source' => AppointmentSource::Link]);
+
+    $this->artisan('atendia:appointment-reminders')->assertSuccessful();
+
+    expect($booking->fresh()->reminder_sent_at)->not->toBeNull()
+        ->and($business->customerWithPhone('+58 0412 5551234', 'Pedro')->id)->toBe($customer->id)
+        ->and($business->customerWithPhone('0058 412 5551234', 'Pedro')->id)->toBe($customer->id);
 });

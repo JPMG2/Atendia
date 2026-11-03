@@ -7,9 +7,12 @@ namespace App\Console\Commands;
 use App\Enums\AppointmentStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
+use App\Messaging\Channels\Panel;
+use App\Messaging\Panel\ReminderHeld;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\PanelNotification;
 use App\Services\EvolutionApi;
 use App\Services\ProactiveSends;
 use App\Services\Tenant;
@@ -79,6 +82,11 @@ class SendAppointmentReminders extends Command
         if (($why = $gate->refusal($customer->phone, $customer)) !== null) {
             $this->line("Reminder held for {$business->name} ({$why})");
 
+            // A cap clears by itself at the next tick; a stranger or a silent customer does not, so the owner can call.
+            if (($why === 'cold' || $why === 'ignored') && $this->ownerShouldKnow($appointment)) {
+                (new Panel($appointment, [], ReminderHeld::class, [$why]))->send();
+            }
+
             return;
         }
 
@@ -97,6 +105,9 @@ class SendAppointmentReminders extends Command
         // Stamped after the send: a failure leaves it due for the next tick.
         $appointment->update(['reminder_sent_at' => now()]);
 
+        // It went after all (the person wrote in): the "not sent" row would send the owner to call for nothing.
+        PanelNotification::withdraw($business, (new ReminderHeld($appointment))->dedupeKey());
+
         // In the thread too: a "confirmo" back needs the assistant to know why.
         Conversation::query()->where('contact_phone', $customer->phone)->first()?->messages()->create([
             'direction' => MessageDirection::Out,
@@ -105,5 +116,15 @@ class SendAppointmentReminders extends Command
         ]);
 
         $this->info("Appointment reminder sent for {$business->name} to {$customer->phone}");
+    }
+
+    /**
+     * The confirmation screen asks the person to write first: an hour after booking is time
+     * enough to have done it. Closer than three hours to the turn, the owner hears it at once.
+     */
+    private function ownerShouldKnow(Appointment $appointment): bool
+    {
+        return $appointment->created_at->lessThanOrEqualTo(now()->subHour())
+            || $appointment->starts_at->lessThanOrEqualTo(now()->addHours(3));
     }
 }

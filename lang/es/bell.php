@@ -24,6 +24,7 @@ return [
         'mention_published' => '{1}1 mención publicada|[2,*]:count menciones publicadas',
         'plan_usage_high' => '{1}1 aviso de tu plan|[2,*]:count avisos de tu plan',
         'closure_notice_held' => '{1}1 cliente por llamar|[2,*]:count clientes por llamar',
+        'reminder_held' => '{1}1 recordatorio sin enviar|[2,*]:count recordatorios sin enviar',
     ],
     'unread' => ':count sin leer',
 
@@ -54,6 +55,7 @@ return [
             'mention_published' => 'Mencionamos tu negocio en nuestras redes',
             'plan_usage_high' => 'Tu plan va por el 80 % de las conversaciones del mes',
             'closure_notice_held' => 'No se pudo avisar por WhatsApp de un día de cierre',
+            'reminder_held' => 'No se pudo enviar el recordatorio de un turno',
         ],
     ],
 
@@ -70,6 +72,7 @@ return [
         'mention_published' => ':count menciones publicadas',
         'plan_usage_high' => ':count avisos de tu plan',
         'closure_notice_held' => ':count clientes por llamar: su turno sigue en pie en un día que no abres',
+        'reminder_held' => ':count recordatorios de turno sin enviar por WhatsApp',
     ],
 
     'lines' => [
@@ -88,5 +91,8 @@ return [
         'plan_usage_high' => 'Tu plan lleva :used de :cap conversaciones este mes (:percent %)',
         // Sin imperativo (ver arriba): dice qué falta, no le ordena.
         'closure_notice_held' => 'No se pudo avisar a :name por WhatsApp: su turno del :when sigue en pie en un día que no abres',
+        // Sin imperativo, como la de arriba: dice por qué no salió.
+        'reminder_held' => 'El recordatorio del turno de :name (:when) no se envió: todavía no le escribió a tu WhatsApp',
+        'reminder_held_ignored' => 'El recordatorio del turno de :name (:when) no se envió: no respondió tus últimos mensajes',
     ],
 ];

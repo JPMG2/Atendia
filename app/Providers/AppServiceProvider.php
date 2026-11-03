@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Classes\Main\AddressBucket;
 use App\Http\Middleware\RequireStaffTwoFactor;
 use App\Models\PlatformSetting;
 use App\Models\User;
@@ -197,25 +198,26 @@ class AppServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         // General: 60 req/min per authenticated user, or per IP when anonymous.
+        // An anonymous caller is counted by its IPv6 /64, not by an address it can rotate.
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
-            ->by($request->user()?->id ?: $request->ip()));
+            ->by($request->user()?->id ?: AddressBucket::of($request->ip())));
 
         // Login: strict, to slow brute force down (email + IP).
         // A crafted request can send email as an array: never let it 500 the limiter.
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(6)
-            ->by((is_string($request->input('email')) ? $request->input('email') : '').'|'.$request->ip()));
+            ->by((is_string($request->input('email')) ? $request->input('email') : '').'|'.AddressBucket::of($request->ip())));
 
         // Account actions (password, closing, ending sessions) sit behind a token, so the
         // person is the key; the password re-check has its own, finer throttle inside.
         RateLimiter::for('app-account', fn (Request $request) => Limit::perMinute(10)
-            ->by('account:'.($request->user()?->id ?: $request->ip())));
+            ->by('account:'.($request->user()?->id ?: AddressBucket::of($request->ip()))));
 
         // The code gate sends no e-mail: keyed on e-mail|IP it was ONE bucket per address,
         // locking out strangers behind a carrier's NAT. Per challenge is the fine net, per
         // address the wide one against invented ids.
         RateLimiter::for('app-challenge', fn (Request $request) => [
-            Limit::perMinute(10)->by('challenge:'.(is_string($request->input('challenge_id')) ? $request->input('challenge_id') : '').'|'.$request->ip()),
-            Limit::perMinute(60)->by('challenge-ip:'.$request->ip()),
+            Limit::perMinute(10)->by('challenge:'.(is_string($request->input('challenge_id')) ? $request->input('challenge_id') : '').'|'.AddressBucket::of($request->ip())),
+            Limit::perMinute(60)->by('challenge-ip:'.AddressBucket::of($request->ip())),
         ]);
     }
 }

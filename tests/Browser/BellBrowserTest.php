@@ -55,6 +55,24 @@ test('the bell sits on the same line as its topbar siblings', function (): void 
     expect((int) (is_array($drift) ? end($drift) : $drift))->toBe(0);
 });
 
+test('a held reminder reads in the bell with why it did not go, in both themes', function (): void {
+    PanelNotification::raise($this->business, PanelNotificationType::ReminderHeld, 'reminder-held:1', ['name' => 'Lucía Pérez', 'when' => '04/11/2026 10:30', 'why' => 'cold'], '/agenda');
+    PanelNotification::raise($this->business, PanelNotificationType::ReminderHeld, 'reminder-held:2', ['name' => 'Tomás Díaz', 'when' => '04/11/2026 16:00', 'why' => 'ignored'], '/agenda');
+
+    visit('/dashboard')->resize(1280, 900)
+        ->assertNoJavaScriptErrors()
+        ->click('@bell')
+        ->assertSee('El recordatorio del turno de Lucía Pérez (04/11/2026 10:30) no se envió: todavía no le escribió a tu WhatsApp')
+        ->assertSee('El recordatorio del turno de Tomás Díaz (04/11/2026 16:00) no se envió: no respondió tus últimos mensajes')
+        ->screenshot(filename: 'bell-reminder-held-light');
+
+    visit('/dashboard')->resize(390, 844)
+        ->click('@theme-toggle')
+        ->click('@bell')
+        ->assertSee('Lucía Pérez')
+        ->screenshot(filename: 'bell-reminder-held-phone-dark');
+});
+
 test('an empty inbox leaves the bell without a count', function (): void {
     visit('/dashboard')->resize(1280, 900)
         ->assertNoJavaScriptErrors()

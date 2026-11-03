@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Classes\Main\AddressBucket;
 use App\Enums\AppointmentSource;
 use App\Livewire\Forms\Agenda\PublicBookingForm;
 use App\Models\Appointment;
 use App\Models\Business;
+use App\Models\Country;
 use App\Models\Customer;
 use App\Models\Service;
 use App\Models\User;
@@ -207,6 +209,86 @@ test('one address cannot fill a business agenda with different numbers', functio
     bookFromLink($business, '12:30', '+54 9 11 5555-0109')->assertSet('warning', __('agenda.public.too_many'));
 
     expect(Appointment::withoutGlobalScopes()->count())->toBe(PublicBookingForm::PER_ADDRESS[0]);
+});
+
+test('rotating addresses inside one IPv6 /64 does not reset the allowance', function (): void {
+    $business = bookableBusiness();
+
+    // One home line hands out a whole /64: each booking from a different address inside it.
+    foreach (['10:00', '10:30', '11:00', '11:30', '12:00'] as $index => $time) {
+        request()->server->set('REMOTE_ADDR', '2800:a4:1234:5678::'.dechex($index + 1));
+        bookFromLink($business, $time, '+54 9 11 5555-010'.$index)->assertHasNoErrors();
+    }
+
+    request()->server->set('REMOTE_ADDR', '2800:a4:1234:5678:ffff:ffff:ffff:ffff');
+    bookFromLink($business, '12:30', '+54 9 11 5555-0109')->assertSet('warning', __('agenda.public.too_many'));
+
+    expect(Appointment::withoutGlobalScopes()->count())->toBe(PublicBookingForm::PER_ADDRESS[0]);
+});
+
+test('an address is counted by its /64 on IPv6 and as is on IPv4', function (string $ip, string $bucket): void {
+    expect(AddressBucket::of($ip))->toBe($bucket);
+})->with([
+    'IPv6' => ['2800:a4:1234:5678:9abc::1', '2800:a4:1234:5678::/64'],
+    'IPv6, same /64' => ['2800:a4:1234:5678:ffff:1:2:3', '2800:a4:1234:5678::/64'],
+    'IPv4' => ['190.12.34.56', '190.12.34.56'],
+    'IPv4 written as IPv6' => ['::ffff:190.12.34.56', '190.12.34.56'],
+    'nothing' => ['', ''],
+]);
+
+test('every numeric throttle counts an IPv6 visitor by its /64, not by the exact address', function (): void {
+    $business = bookableBusiness();
+    $page = route('booking.public', $business->booking_code);
+
+    foreach (range(1, 20) as $index) {
+        $this->withServerVariables(['REMOTE_ADDR' => '2800:a4:1234:5678::'.dechex($index)])->get($page)->assertOk();
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '2800:a4:1234:5678::ffff'])->get($page)->assertStatus(429);
+    $this->withServerVariables(['REMOTE_ADDR' => '2800:a4:1234:9999::1'])->get($page)->assertOk();
+});
+
+test('a typed number becomes the one WhatsApp sends, however the visitor wrote it', function (string $code, string $typed, string $stored): void {
+    $business = bookableBusiness(['country_id' => Country::factory()->create(['phone_code' => $code])->id]);
+
+    expect($business->internationalPhone($typed))->toBe($stored);
+})->with([
+    'Venezuela, with the trunk 0' => ['+58', '0412-555 1234', '584125551234'],
+    'Venezuela, without the 0' => ['+58', '412 5551234', '584125551234'],
+    'Venezuela, already international' => ['+58', '584125551234', '584125551234'],
+    'Venezuela, with + and the 0' => ['+58', '+58 0412 5551234', '584125551234'],
+    'Venezuela, with 00' => ['+58', '0058 412 5551234', '584125551234'],
+    'Argentina, a mobile the local way' => ['+54', '11 5555 0101', '5491155550101'],
+    'Argentina, with + as WhatsApp shows it' => ['+54', '+54 9 11 5555-0101', '5491155550101'],
+    'Mexico' => ['+52', '55 1234 5678', '525512345678'],
+    'Colombia' => ['+57', '300 123 4567', '573001234567'],
+    'Guatemala, a national number that looks like another code' => ['+502', '5803 1234', '50258031234'],
+]);
+
+test('a customer saved with the typed number before is found again, not duplicated', function (): void {
+    $business = bookableBusiness(['country_id' => Country::factory()->create(['phone_code' => '+58'])->id]);
+    $old = Customer::factory()->create(['business_id' => $business->id, 'phone' => '04125551234']);
+
+    expect($business->customerWithPhone('04125551234', 'Ana')->id)->toBe($old->id)
+        ->and(Customer::withoutGlobalScopes()->where('business_id', $business->id)->count())->toBe(1);
+});
+
+test('an hour after midnight of a night shift is offered and really booked', function (): void {
+    $business = bookableBusiness(['appointment_slot_minutes' => 60]);
+    $business->hours()->delete();
+    $friday = CarbonImmutable::now($business->localTimezone())->next(CarbonImmutable::FRIDAY);
+    $business->hours()->create(['day_of_week' => 5, 'opens_at' => '22:00', 'closes_at' => '02:00']);
+
+    // Picked from Friday's list: "01:00" there is Saturday 01:00.
+    livewire('booking.public', ['code' => $business->booking_code])
+        ->set('form.day', $friday->format('Y-m-d'))
+        ->call('pick', '01:00')
+        ->set('form.name', 'Noche')
+        ->set('form.phone', '+54 9 11 5555-0199')
+        ->call('book')
+        ->assertHasNoErrors();
+
+    expect(Appointment::withoutGlobalScopes()->sole()->starts_at->setTimezone($business->localTimezone())->format('D H:i'))->toBe('Sat 01:00');
 });
 
 test('a paused service is not booked through a page opened before the pause', function (): void {

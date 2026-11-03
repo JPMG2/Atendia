@@ -131,13 +131,18 @@ class Bell
     /**
      * A booking taken without choosing a service (the public link allows it)
      * has no tail to print, and the line that names one would end in a comma
-     * and nothing. Resolved here, where the reader's locale is the one in use.
+     * and nothing. A held reminder says why it is held. Resolved here, where
+     * the reader's locale is the one in use.
      */
     private function lineFor(PanelNotification $notice): string
     {
         $key = 'bell.lines.'.$notice->type->value;
         $plain = $notice->type === PanelNotificationType::AppointmentBooked
             && trim((string) ($notice->payload['service'] ?? '')) === '';
+
+        if ($notice->type === PanelNotificationType::ReminderHeld && ($notice->payload['why'] ?? '') === 'ignored') {
+            return $key.'_ignored';
+        }
 
         return $plain ? $key.'_plain' : $key;
     }

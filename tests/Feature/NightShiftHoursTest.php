@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\User;
 use App\Services\Agenda\SlotFinder;
@@ -77,9 +78,16 @@ test('a shift that closes after midnight can finally be loaded', function (): vo
 test('a night shift still cannot be stepped on by the hours it runs into', function (): void {
     $user = hoursOwner();
 
-    // 22:00-02:00 occupies 00:00-02:00 of the next day, so 01:00-03:00 collides.
-    saveMonday($user, [['22:00', '02:00'], ['01:00', '03:00']])
-        ->assertHasErrors('week.1.1.opens_at');
+    // Monday 22:00-02:00 occupies 00:00-02:00 of TUESDAY, so Tuesday 01:00-03:00 collides;
+    // Monday's own small hours come before the shift and are free (Schedule::overlapErrors).
+    $week = array_fill_keys([1, 2, 3, 4, 5, 6, 0], []);
+    $week[1] = [['opens_at' => '22:00', 'closes_at' => '02:00']];
+    $week[2] = [['opens_at' => '01:00', 'closes_at' => '03:00']];
+
+    Livewire::actingAs($user)->test('client.section-hours')->set('form.week', $week)->call('save')
+        ->assertHasErrors('week.2.0.opens_at');
+
+    saveMonday($user, [['22:00', '02:00'], ['01:00', '03:00']])->assertHasNoErrors();
 });
 
 test('a shift that opens and closes at the same time means nothing', function (): void {
@@ -124,4 +132,46 @@ test('the agenda offers the hours after midnight as slots of the night shift', f
 
     expect(array_map(fn (CarbonImmutable $slot): string => $slot->format('d/m H:i'), $slots))
         ->toBe(['09/10 22:00', '09/10 23:00', '10/10 00:00']);
+});
+
+test('a closure on the next day cuts the night shift at midnight, and special hours keep only their own window', function (array $closure, array $expected): void {
+    $user = hoursOwner(['appointments_enabled' => true, 'appointment_slot_minutes' => 60]);
+    $business = $user->business;
+    // Friday 22:00 to Saturday 02:00; the closure falls on Saturday.
+    $business->hours()->create(['day_of_week' => 5, 'opens_at' => '22:00', 'closes_at' => '02:00']);
+    $business->closures()->create(['starts_on' => '2026-10-10', 'ends_on' => '2026-10-10', ...$closure]);
+
+    $friday = CarbonImmutable::parse('2026-10-09 00:00', $business->localTimezone());
+    $slots = app(SlotFinder::class)->freeSlots($business->fresh(), $friday, null, $friday->setTime(8, 0));
+
+    expect(array_map(fn (CarbonImmutable $slot): string => $slot->format('d/m H:i'), $slots))->toBe($expected);
+})->with([
+    'closed all Saturday' => [[], ['09/10 22:00', '09/10 23:00']],
+    'Saturday opens at 01:00 only' => [['opens_at' => '01:00', 'closes_at' => '12:00'], ['09/10 22:00', '09/10 23:00', '10/10 01:00']],
+]);
+
+test('one closure with night hours over several days keeps every night whole', function (): void {
+    $user = hoursOwner(['appointments_enabled' => true, 'appointment_slot_minutes' => 60]);
+    $business = $user->business;
+    $business->closures()->create(['starts_on' => '2026-10-09', 'ends_on' => '2026-10-11', 'opens_at' => '22:00', 'closes_at' => '02:00']);
+
+    $friday = CarbonImmutable::parse('2026-10-09 00:00', $business->localTimezone());
+    $slots = app(SlotFinder::class)->freeSlots($business->fresh(), $friday, null, $friday->setTime(8, 0));
+
+    expect(array_map(fn (CarbonImmutable $slot): string => $slot->format('d/m H:i'), $slots))
+        ->toBe(['09/10 22:00', '09/10 23:00', '10/10 00:00', '10/10 01:00']);
+});
+
+test('special hours past midnight see what is already booked in those hours', function (): void {
+    $user = hoursOwner(['appointments_enabled' => true, 'appointment_slot_minutes' => 60, 'appointment_capacity' => 1]);
+    $business = $user->business;
+    $business->closures()->create(['starts_on' => '2026-10-09', 'ends_on' => '2026-10-09', 'opens_at' => '22:00', 'closes_at' => '02:00']);
+    $taken = CarbonImmutable::parse('2026-10-10 00:00', $business->localTimezone());
+    Appointment::factory()->create(['business_id' => $business->id, 'starts_at' => $taken->utc(), 'ends_at' => $taken->addHour()->utc()]);
+
+    $friday = CarbonImmutable::parse('2026-10-09 00:00', $business->localTimezone());
+    $slots = app(SlotFinder::class)->freeSlots($business->fresh(), $friday, null, $friday->setTime(8, 0));
+
+    expect(array_map(fn (CarbonImmutable $slot): string => $slot->format('d/m H:i'), $slots))
+        ->toBe(['09/10 22:00', '09/10 23:00', '10/10 01:00']);
 });

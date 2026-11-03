@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Classes\Main\AddressBucket;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -58,7 +59,7 @@ trait ThrottlesLogins
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')).'|'.AddressBucket::of($this->ip()));
     }
 
     private function recordFailedLogin(): void
@@ -86,7 +87,7 @@ trait ThrottlesLogins
     {
         return [
             $this->emailKey() => 25,
-            'login-ip:'.$this->ip() => 30,
+            'login-ip:'.AddressBucket::of($this->ip()) => 30,
         ];
     }
 

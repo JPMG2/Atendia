@@ -45,13 +45,17 @@ class SlotFinder
         $now ??= CarbonImmutable::now($timezone);
         $minutes = $this->slotMinutes($business, $service);
 
-        // A night shift ends on the next calendar day, so what is already
-        // booked in those early hours has to come along or it gets offered twice.
-        $dayEnd = $business->hours
-            ->where('day_of_week', (int) $day->format('w'))
-            ->contains(fn (BusinessHour $shift): bool => $shift->runsPastMidnight())
-                ? $day->addDay()->endOfDay()
-                : $day->endOfDay();
+        // Special hours REPLACE the weekly ones for that day: offering both
+        // would hand out the very hours she decided not to work.
+        $shifts = $special === null
+            ? $business->hours->where('day_of_week', (int) $day->format('w'))
+            : collect([new BusinessHour(['opens_at' => $special->opens_at, 'closes_at' => $special->closes_at])]);
+
+        // A night shift (weekly or special) ends on the next calendar day, so what is
+        // already booked in those early hours has to come along or it gets offered twice.
+        $dayEnd = $shifts->contains(fn (BusinessHour $shift): bool => $shift->runsPastMidnight())
+            ? $day->addDay()->endOfDay()
+            : $day->endOfDay();
 
         // A booking being MOVED must not block its own new hour.
         $booked = Appointment::between($business, $day, $dayEnd)
@@ -67,11 +71,23 @@ class SlotFinder
         $capacity = max(1, (int) $business->appointment_capacity);
         $slots = [];
 
-        // Special hours REPLACE the weekly ones for that day: offering both
-        // would hand out the very hours she decided not to work.
-        $shifts = $special === null
-            ? $business->hours->where('day_of_week', (int) $day->format('w'))
-            : collect([new BusinessHour(['opens_at' => $special->opens_at, 'closes_at' => $special->closes_at])]);
+        // The hours past midnight belong to the next day's calendar: a closure there (whole day, or
+        // special hours) wins over tonight's shift, or its first hours are sold on a day she closed.
+        // The same closure running over several nights is tonight's own shift, and keeps its tail.
+        $nextDay = $day->addDay();
+        $nextClosure = $business->closureOn($nextDay);
+        $tailAllowed = function (CarbonImmutable $slot, CarbonImmutable $ends) use ($nextDay, $nextClosure, $special): bool {
+            if ($nextClosure === null || $ends->lessThanOrEqualTo($nextDay) || $nextClosure->is($special)) {
+                return true;
+            }
+
+            if ($nextClosure->isFullDay()) {
+                return false;
+            }
+
+            return $slot->greaterThanOrEqualTo($this->at($nextDay, (string) $nextClosure->opens_at))
+                && $ends->lessThanOrEqualTo($this->at($nextDay, (string) $nextClosure->closes_at));
+        };
 
         foreach ($shifts as $shift) {
             $opens = $this->at($day, (string) $shift->opens_at);
@@ -87,6 +103,11 @@ class SlotFinder
                 }
 
                 $ends = $slot->addMinutes($minutes);
+
+                if (! $tailAllowed($slot, $ends)) {
+                    continue;
+                }
+
                 $overlapping = $booked->filter(
                     fn (Appointment $taken): bool => $taken->starts_at->setTimezone($timezone)->lessThan($ends)
                         && $taken->ends_at->setTimezone($timezone)->greaterThan($slot)
@@ -133,8 +154,18 @@ class SlotFinder
     {
         $startsAt = $startsAt->setTimezone($business->localTimezone());
 
-        return collect($this->freeSlots($business, $startsAt, $service, $startsAt->subSecond(), $ignoringId))
-            ->contains(fn (CarbonImmutable $slot): bool => $slot->equalTo($startsAt));
+        // Saturday 01:00 may be an hour of Friday's night shift: it is offered in Friday's list,
+        // so it is looked for there too, or the slot shown would never book.
+        foreach ([$startsAt, $startsAt->subDay()] as $day) {
+            $free = collect($this->freeSlots($business, $day, $service, $startsAt->subSecond(), $ignoringId))
+                ->contains(fn (CarbonImmutable $slot): bool => $slot->equalTo($startsAt));
+
+            if ($free) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** The service's own duration, or the business's default for a plain slot. */

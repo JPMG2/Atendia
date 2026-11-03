@@ -890,16 +890,53 @@ class Business extends Model
      */
     public function customerWithPhone(string $phone, string $name): Customer
     {
-        $customer = $this->customers()->firstOrCreate(
-            ['phone' => $phone],
-            ['business_id' => $this->id, 'name' => $name, 'first_seen_at' => now()],
-        );
+        $international = $this->internationalPhone($phone);
+        $typed = (string) preg_replace('/\D+/', '', $phone);
+
+        // A customer saved before numbers were made international still holds what was typed.
+        $customer = $this->customers()->whereIn('phone', array_unique([$international, $typed]))->first()
+            ?? $this->customers()->create(['phone' => $international, 'name' => $name, 'first_seen_at' => now()]);
 
         if ($customer->name === null) {
             $customer->update(['name' => $name]);
         }
 
         return $customer;
+    }
+
+    /**
+     * A typed number as WhatsApp sends it (58412…). A visitor writes it the
+     * local way (0412…, 412…, 55 1234…), and the two must be the same person,
+     * or whoever booked and then writes in stays a stranger with no reminder.
+     * "+" or "00" first means it is already international.
+     */
+    public function internationalPhone(string $typed): string
+    {
+        $international = str_starts_with(ltrim($typed), '+');
+        $digits = (string) preg_replace('/\D+/', '', $typed);
+        $code = (string) preg_replace('/\D+/', '', (string) $this->country?->phone_code);
+
+        if (! $international && str_starts_with($digits, '00')) {
+            [$international, $digits] = [true, substr($digits, 2)];
+        }
+
+        // Already carrying this country's code: the national number behind it has at least 8 digits.
+        if (! $international && $code !== '' && str_starts_with($digits, $code) && strlen($digits) >= strlen($code) + 8) {
+            $international = true;
+        }
+
+        if ($international) {
+            return Country::whatsappDigits($digits) ?? $digits;
+        }
+
+        if ($code === '') {
+            return $digits;
+        }
+
+        $national = str_starts_with($digits, '0') ? substr($digits, 1) : $digits;
+
+        // Argentina: WhatsApp writes a mobile as 54 9 + its 10 digits.
+        return $code === '54' && strlen($national) === 10 ? '549'.$national : $code.$national;
     }
 
     /** Whether the first real thread has arrived: the home's day-to-day view is earned by it. */

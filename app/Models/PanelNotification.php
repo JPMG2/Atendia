@@ -98,6 +98,14 @@ class PanelNotification extends Model
         return $notice;
     }
 
+    /** Takes a fact back once it stopped being true (the held reminder went out after all). */
+    public static function withdraw(Business $business, string $dedupeKey): void
+    {
+        if (self::query()->where('business_id', $business->id)->where('dedupe_key', $dedupeKey)->delete() > 0) {
+            PanelNotificationRaised::dispatch((int) $business->id);
+        }
+    }
+
     /**
      * How many the bell has to light up for: what this person has not opened.
      * Zero means the dot stays off — a badge that is always lit teaches people
