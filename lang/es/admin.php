@@ -621,11 +621,21 @@ return [
                 'title' => 'Menciones',
                 'sub' => 'Cuánto espera la oferta de mencionar a un negocio después de un "ahora no", y cuándo deja de ofrecerse.',
             ],
+            'app' => [
+                'title' => 'La app del teléfono',
+                'sub' => 'Qué versión de la app sigue funcionando. Un teléfono con una más vieja ve una pantalla que le pide actualizarla, y nada más, hasta que lo hace.',
+            ],
         ],
 
         // Anidadas, no con el punto en la clave: `__()` lee el punto como
         // profundidad, así que 'analysis.idle_hours' nunca se encontraría.
         'keys' => [
+            'app' => [
+                'min_build' => [
+                    'label' => 'Versión mínima de la app',
+                    'hint' => 'El número de compilación que Google Play Console muestra entre paréntesis, por ejemplo 4 (1.0.0). Vale solo para Android: el iPhone lleva su propia numeración. Súbelo recién cuando la versión nueva ya esté disponible en la tienda. Con 0 funcionan todas.',
+                ],
+            ],
             'incidents' => [
                 'unanswered_minutes' => [
                     'label' => 'Cliente sin respuesta',

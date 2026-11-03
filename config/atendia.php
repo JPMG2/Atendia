@@ -621,6 +621,9 @@ return [
     */
 
     'app' => [
+        // The oldest phone build the API still serves (the number Play Console shows in brackets);
+        // an older install gets "update the app" instead of data. 0 serves every build.
+        'min_build' => 0,
         // Client-menu route names the mobile app already has a screen for.
         'screens' => ['conversations', 'customers', 'my-services', 'my-products', 'agenda', 'whatsapp', 'my-plan', 'my-payments', 'my-business'],
         // The same for the platform's staff: admin-menu route names the app has a screen for. It grows with each delivery.

@@ -51,7 +51,11 @@ test('the settings screen holds at every width in both themes', function (string
         ->assertSee('Usos por día y negocio')
         // The consequence is on screen; the config path never is.
         ->assertSee('puede cortar una charla viva')
+        // The phone app's build floor, said as Play Console shows the number.
+        ->assertSee('Versión mínima de la app')
+        ->assertSee('entre paréntesis, por ejemplo 4 (1.0.0)')
         ->assertDontSee('analysis.idle_hours')
+        ->assertDontSee('app.min_build')
         ->screenshot(filename: 'admin-settings-'.$label.'-'.($dark ? 'dark' : 'light'));
 
     $overflow = $page->script('document.documentElement.scrollWidth - window.innerWidth');

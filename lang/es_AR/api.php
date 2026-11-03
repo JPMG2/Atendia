@@ -5,6 +5,11 @@ declare(strict_types=1);
 return [
     'device_required' => 'Falta identificar este dispositivo. Actualizá la app e intentá de nuevo.',
     'device_revoked' => 'Cerraste la sesión en este dispositivo. Iniciá sesión de nuevo.',
+    'update' => [
+        'title' => 'Actualizá :brand',
+        'message' => 'Esta versión de la app ya no funciona. Instalá la nueva desde Google Play: tu cuenta y tus datos siguen ahí.',
+        'detail' => 'Tenés la compilación :build · se necesita la :min o más',
+    ],
     'invalid_cursor' => 'No pudimos continuar la lista. Volvé a abrirla desde el principio.',
     'challenge_expired' => 'El código venció. Iniciá sesión de nuevo para recibir uno nuevo.',
     'access' => [

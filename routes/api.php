@@ -49,6 +49,7 @@ use App\Http\Middleware\AnswerRepeatOnce;
 use App\Http\Middleware\EnsureAppAccess;
 use App\Http\Middleware\ExpireIdleStaffToken;
 use App\Http\Middleware\RejectRevokedDevice;
+use App\Http\Middleware\RequireSupportedAppBuild;
 use App\Http\Middleware\SetTenantDatabaseContext;
 use App\Http\Middleware\StaffTokenGate;
 use App\Http\Middleware\VerifyEvolutionWebhook;
@@ -72,7 +73,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('webhooks/evolution', EvolutionWebhookController::class)
     ->middleware(VerifyEvolutionWebhook::class);
 
-Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
+// The build floor runs before the token check (its priority is set in bootstrap/app.php), sign-in included:
+// an outdated phone hears "update" and nothing else, except the ways out (sign out, close the account, mute it).
+Route::prefix('v1')->middleware(['throttle:api', RequireSupportedAppBuild::class])->group(function (): void {
     // Public.
     Route::get('brand', BrandController::class);
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
@@ -88,12 +91,12 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     // (Postgres row security) and the device check can read who is calling.
     // Every write is remembered as this person's last one, so a guarded creation can tell a retry from a new act.
     Route::middleware(['auth:sanctum', ExpireIdleStaffToken::class, SetTenantDatabaseContext::class, RejectRevokedDevice::class, AnswerRepeatOnce::class])->group(function (): void {
-        // Signing out stays open to everyone: a lapsed plan must not trap a token.
-        Route::post('logout', [AuthController::class, 'logout']);
+        // Signing out stays open to everyone: a lapsed plan or an outdated build must not trap a token.
+        Route::post('logout', [AuthController::class, 'logout'])->withoutMiddleware(RequireSupportedAppBuild::class);
 
         // Closing the account stays open too: leaving is a right a lapsed plan does not suspend.
         // A staff token never closes an account: it would take the admin's own with it.
-        Route::delete('account', [AccountController::class, 'close'])->middleware(['throttle:app-account', StaffTokenGate::class.':never']);
+        Route::delete('account', [AccountController::class, 'close'])->middleware(['throttle:app-account', StaffTokenGate::class.':never'])->withoutMiddleware(RequireSupportedAppBuild::class);
 
         // The platform's own people. The lock is on the server: a staff token (born only from the second
         // step) AND the area permission, then the key of each screen (`can:`: spatie's middleware reads the web guard).
@@ -156,7 +159,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
 
             Route::put('account/push-token', [PushTokenController::class, 'update']);
-            Route::delete('account/push-token', [PushTokenController::class, 'destroy']);
+            // Stopping a phone's notifications is part of leaving, whatever its build.
+            Route::delete('account/push-token', [PushTokenController::class, 'destroy'])->withoutMiddleware(RequireSupportedAppBuild::class);
 
             Route::get('account', [AccountController::class, 'show']);
             Route::post('account/password', [AccountController::class, 'password'])->middleware('throttle:app-account');

@@ -6,10 +6,12 @@ use App\Http\Middleware\ContentSecurityPolicy;
 use App\Http\Middleware\ExpireIdleStaffSession;
 use App\Http\Middleware\LogoutRevokedDevice;
 use App\Http\Middleware\RequireStaffTwoFactor;
+use App\Http\Middleware\RequireSupportedAppBuild;
 use App\Http\Middleware\SetApiLocale;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantDatabaseContext;
 use App\Http\Middleware\TrustCloudflareVisitorIp;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -72,6 +74,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // The app has no session: its language comes from the phone's header.
         $middleware->api(append: [SetApiLocale::class]);
+
+        // Laravel sorts the token check first; an outdated phone must hear "update" (in its language) even with a dead token.
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, SetApiLocale::class);
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, RequireSupportedAppBuild::class);
 
         // Aliases de spatie/laravel-permission para usar en rutas.
         $middleware->alias([

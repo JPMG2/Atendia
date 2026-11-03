@@ -5,6 +5,12 @@ declare(strict_types=1);
 return [
     'device_required' => 'Falta identificar este dispositivo. Actualiza la app e intenta de nuevo.',
     'device_revoked' => 'Cerraste la sesión en este dispositivo. Inicia sesión de nuevo.',
+    'update' => [
+        'title' => 'Actualiza :brand',
+        'message' => 'Esta versión de la app ya no funciona. Instala la nueva desde Google Play: tu cuenta y tus datos siguen ahí.',
+        'action' => 'Abrir Google Play',
+        'detail' => 'Tienes la compilación :build · se necesita la :min o más',
+    ],
     'access' => [
         'no_business' => 'Tu cuenta todavía no tiene un negocio. Termina de crearlo desde la web para usar la app.',
         'no_plan' => 'Tu negocio todavía no tiene un plan. Contrátalo desde la web para usar la app.',

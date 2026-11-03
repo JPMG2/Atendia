@@ -16,6 +16,11 @@ return [
 
     'settings' => [
         'keys' => [
+            'app' => [
+                'min_build' => [
+                    'hint' => 'El número de compilación que Google Play Console muestra entre paréntesis, por ejemplo 4 (1.0.0). Vale solo para Android: el iPhone lleva su propia numeración. Subilo recién cuando la versión nueva ya esté disponible en la tienda. Con 0 funcionan todas.',
+                ],
+            ],
             'costs' => [
                 'fixed_monthly_usd' => [
                     'hint' => 'Servidor, WhatsApp, dominio y lo demás que pagás por mes, en dólares y sin contar la IA. En cero, el resultado neto no se muestra.',
