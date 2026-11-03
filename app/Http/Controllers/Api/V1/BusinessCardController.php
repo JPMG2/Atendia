@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Business\WriteBusinessBio;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Classes\Main\BusinessCards;
 use App\Classes\Main\Client;
 use App\Http\Controllers\Controller;
@@ -48,6 +50,32 @@ class BusinessCardController extends Controller
         };
 
         return response()->json(['message' => $message, 'data' => $client->businessCards->card($card)]);
+    }
+
+    /**
+     * "Optimizar con IA" of the description, the web's `writeBio`: a proposal the
+     * phone puts in the box and never saves; the owner reads it and taps "Guardar".
+     */
+    public function writeBio(Request $request, WriteBusinessBio $writer): JsonResponse
+    {
+        $name = $request->validate(['name' => ['sometimes', 'nullable', 'string', 'max:255']])['name'] ?? null;
+        $business = $request->user()->business;
+        $limit = AiOptimizeLimit::for($business);
+
+        if ($limit->reached) {
+            return response()->json(['message' => $limit->message, 'code' => 'ai_limit', 'ai' => $limit->toApi()], 429);
+        }
+
+        $written = $writer->handle($business, $name);
+
+        if ($written === null) {
+            return response()->json(['message' => __('client.business.identity.ai_failed'), 'code' => 'ai_failed', 'ai' => AiOptimizeLimit::for($business)->toApi()], 502);
+        }
+
+        return response()->json([
+            'message' => __('client.business.identity.ai_done'),
+            'data' => ['description' => $written, 'ai' => AiOptimizeLimit::for($business)->toApi()],
+        ]);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Business\DeleteBusinessService;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Classes\Main\Client;
 use App\Classes\Main\ServiceMenu;
 use App\Dto\DtoCast;
@@ -14,6 +15,7 @@ use App\Livewire\Forms\Client\ServiceCategoryForm;
 use App\Models\Service;
 use App\Rules\AttributeValueRules;
 use App\Services\NotificationService;
+use App\Traits\AnswersAiDescriptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -26,6 +28,8 @@ use Illuminate\Validation\ValidationException;
  */
 class ServiceController extends Controller
 {
+    use AnswersAiDescriptions;
+
     public const int WINDOW = 8;
 
     public function index(Request $request): JsonResponse
@@ -43,6 +47,8 @@ class ServiceController extends Controller
 
         return response()->json(['data' => [
             'copy' => $menu->copy,
+            // The counter beside the banner's button, as the web's `metered` banner shows it.
+            'ai' => AiOptimizeLimit::for($request->user()->business)->toApi(),
             ...$menu->page((string) ($query['search'] ?? ''), $query['filter'] ?? 'all', (int) ($query['visible'] ?? self::WINDOW), $collapsed),
         ]]);
     }
@@ -151,6 +157,12 @@ class ServiceController extends Controller
             : $menu->moveCategory($category, (int) $body['position']), 404);
 
         return response()->json(['data' => new \stdClass]);
+    }
+
+    /** "Optimizar con IA": writes and saves the descriptions the menu is missing, as the web's list does. */
+    public function writeDescriptions(Request $request): JsonResponse
+    {
+        return $this->writeMissing($request->user()->business, $this->menu($request)->services, 'client.services');
     }
 
     private function saved(SaveServiceRequest $request, NotificationService $notifications, ?int $id): JsonResponse

@@ -632,6 +632,7 @@ return [
         // takes them from GET /brand at start; its src/copy.ts only paints the first frame.
         'copy' => [
             'password' => 'auth.fields.password',
+            'timePlaceholder' => 'client.business.hours.time_placeholder',
             'lockCancel' => 'dialog.cancel',
             'confirm' => 'auth.confirm.submit',
             'back' => 'client.conversations.back',

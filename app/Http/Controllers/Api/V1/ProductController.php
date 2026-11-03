@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Business\DeleteBusinessProduct;
+use App\Classes\Main\AiOptimizeLimit;
 use App\Classes\Main\Client;
 use App\Classes\Main\Inventory;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ use App\Http\Requests\Api\V1\SaveProductRequest;
 use App\Models\Product;
 use App\Rules\AttributeValueRules;
 use App\Services\NotificationService;
+use App\Traits\AnswersAiDescriptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +25,8 @@ use Illuminate\Validation\ValidationException;
  */
 class ProductController extends Controller
 {
+    use AnswersAiDescriptions;
+
     public const int WINDOW = 8;
 
     public function index(Request $request): JsonResponse
@@ -36,6 +40,8 @@ class ProductController extends Controller
 
         return response()->json(['data' => [
             'copy' => $inventory->copy,
+            // The counter beside the banner's button, as the web's `metered` banner shows it.
+            'ai' => AiOptimizeLimit::for($request->user()->business)->toApi(),
             ...$inventory->page((string) ($query['search'] ?? ''), $query['filter'] ?? 'all', (int) ($query['visible'] ?? self::WINDOW)),
         ]]);
     }
@@ -129,6 +135,12 @@ class ProductController extends Controller
         abort_if($product === null, 404);
 
         return $product;
+    }
+
+    /** "Optimizar con IA": writes and saves the descriptions the inventory is missing, as the web's list does. */
+    public function writeDescriptions(Request $request): JsonResponse
+    {
+        return $this->writeMissing($request->user()->business, $this->inventory($request)->products, 'client.products');
     }
 
     private function inventory(Request $request): Inventory

@@ -205,6 +205,13 @@ class BusinessCards
                 $this->field('name', 'text', __('client.business.identity.name'), $data->name, hint: __('client.business.identity.name_hint'), required: true, max: 255),
                 $this->field('description', 'textarea', __('client.business.identity.description'), $data->description, hint: __('client.business.identity.description_hint'), max: 500),
             ],
+            // The web's "Optimizar con IA" beside the description: its words and today's counter.
+            'ai' => [
+                'field' => 'description',
+                'action' => __('client.business.identity.ai_action'),
+                'redo' => __('client.business.identity.ai_redo'),
+                ...AiOptimizeLimit::for($this->business)->toApi(),
+            ],
         ];
     }
 

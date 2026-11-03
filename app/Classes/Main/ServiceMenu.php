@@ -198,6 +198,12 @@ class ServiceMenu
         get => [
             'title' => __('client.services.title'),
             'sub' => __('client.services.sub'),
+            // The web's banner over the list: the button writes the missing descriptions.
+            'ai' => [
+                'title' => __('client.services.ai_title'),
+                'body' => __('client.services.ai_body'),
+                'action' => __('client.services.ai_action'),
+            ],
             'add' => __('client.services.add'),
             'addCategory' => __('client.services.add_category'),
             'search' => __('client.services.search_placeholder'),

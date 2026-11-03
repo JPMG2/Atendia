@@ -7,6 +7,7 @@ namespace App\Actions\Business;
 use App\Ai\Agents\BusinessBioWriter;
 use App\Classes\Main\AiOptimizeLimit;
 use App\Models\Business;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Throwable;
 
 /**
@@ -26,8 +27,23 @@ class WriteBusinessBio
     {
         $name = trim($name ?? '') !== '' ? trim((string) $name) : $business->name;
 
+        if (trim((string) $name) === '') {
+            return null;
+        }
+
+        // One call at a time per business: the meter writes its row only once the model answers,
+        // so two taps at once would both read "one left" and both be paid for.
+        try {
+            return AiOptimizeLimit::serially($business, fn (): ?string => $this->write($business, $name));
+        } catch (LockTimeoutException) {
+            return null;
+        }
+    }
+
+    private function write(Business $business, string $name): ?string
+    {
         // The ceiling is checked here too, not only by the screens: whoever calls this pays for it.
-        if (trim((string) $name) === '' || AiOptimizeLimit::for($business)->reached) {
+        if (AiOptimizeLimit::for($business)->reached) {
             return null;
         }
 

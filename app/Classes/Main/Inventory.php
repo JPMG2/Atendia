@@ -136,6 +136,12 @@ class Inventory
         get => [
             'title' => __('client.products.title'),
             'sub' => __('client.products.sub'),
+            // The web's banner over the list: the button writes the missing descriptions.
+            'ai' => [
+                'title' => __('client.products.ai_title'),
+                'body' => __('client.products.ai_body'),
+                'action' => __('client.products.ai_action'),
+            ],
             'add' => __('client.products.add'),
             'search' => __('client.products.search_placeholder'),
             'filters' => [

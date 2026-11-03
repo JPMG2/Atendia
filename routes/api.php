@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\V1\DigestController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PaymentsController;
+use App\Http\Controllers\Api\V1\PhoneCountriesController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PushTokenController;
@@ -180,6 +181,12 @@ Route::prefix('v1')->middleware(['throttle:api', RequireSupportedAppBuild::class
             Route::get('business/{card}', [BusinessCardController::class, 'show'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');
             Route::put('business/{card}', [BusinessCardController::class, 'update'])->where('card', 'identity|location|appointments|contact|billing|social')->middleware('can:manage-business');
             Route::post('business/identity/logo', [BusinessCardController::class, 'logo'])->middleware('can:manage-business');
+            // "Optimizar con IA": the client's AI the platform pays for, under the web's shared daily ceiling.
+            Route::post('business/identity/description', [BusinessCardController::class, 'writeBio'])->middleware('can:manage-business');
+            Route::post('services/descriptions', [ServiceController::class, 'writeDescriptions'])->middleware('can:manage-business');
+            Route::post('products/descriptions', [ProductController::class, 'writeDescriptions'])->middleware('can:manage-business');
+            // The country list of a phone field, as the web's picker opens it.
+            Route::get('phone-countries', PhoneCountriesController::class);
             Route::get('business/hours', [BusinessHoursController::class, 'show'])->middleware('can:manage-business');
             Route::put('business/hours', [BusinessHoursController::class, 'update'])->middleware('can:manage-business');
             Route::get('business/closures', [BusinessClosuresController::class, 'show'])->middleware('can:manage-business');

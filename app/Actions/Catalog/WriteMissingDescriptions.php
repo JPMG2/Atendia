@@ -7,6 +7,7 @@ namespace App\Actions\Catalog;
 use App\Ai\Agents\CatalogCopywriter;
 use App\Classes\Main\AiOptimizeLimit;
 use App\Models\Business;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Throwable;
@@ -31,6 +32,26 @@ class WriteMissingDescriptions
         $pending = $items
             ->filter(fn (Model $item): bool => trim((string) $item->getAttribute('description')) === '')
             ->take(self::BATCH);
+
+        if ($pending->isEmpty()) {
+            return 0;
+        }
+
+        // One call at a time per business (see AiOptimizeLimit::serially): two taps would both be paid for.
+        try {
+            return AiOptimizeLimit::serially($business, fn (): ?int => $this->write($business, $pending));
+        } catch (LockTimeoutException) {
+            return null;
+        }
+    }
+
+    /**
+     * @param  Collection<int, Model>  $pending
+     */
+    private function write(Business $business, Collection $pending): ?int
+    {
+        // Read again once it is our turn: a call that ran just before may have written them already.
+        $pending = $pending->filter(fn (Model $item): bool => trim((string) $item->fresh()?->getAttribute('description')) === '')->values();
 
         if ($pending->isEmpty()) {
             return 0;

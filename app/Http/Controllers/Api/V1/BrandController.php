@@ -18,6 +18,9 @@ class BrandController extends Controller
     {
         return response()->json(['data' => [
             'name' => Company::brand(),
+            // The variant the server resolved for this phone (es, es_AR, es_VE): the app speaks it in its own
+            // fixed words too, or a phone set to the US would read tuteo in Argentina where the server says vos.
+            'locale' => app()->getLocale(),
             // The words the phone used to keep its own copy of, read from the web's text in the
             // caller's variant: a change on the web reaches the app without a new install.
             'copy' => collect((array) config('atendia.app.copy'))->map(fn (string $key): string => __($key))->all(),
