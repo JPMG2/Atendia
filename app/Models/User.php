@@ -241,6 +241,16 @@ class User extends Authenticatable
         return $this->fingerprintIsUnknown(LoginDevice::fingerprintFor($userAgent));
     }
 
+    /**
+     * The account the app stores' reviewers use: it belongs to a business flagged `is_demo`, a flag only a
+     * seeder writes (no sign-up path can). Naming `is_demo` in the query lets it through the examples scope.
+     */
+    public function isStoreReviewer(): bool
+    {
+        return $this->business_id !== null
+            && Business::query()->whereKey($this->business_id)->where('is_demo', true)->exists();
+    }
+
     /** The same rule for a mobile install, keyed on the id the app sends. */
     public function appDeviceIsUnknown(string $deviceId): bool
     {
@@ -249,6 +259,11 @@ class User extends Authenticatable
 
     private function fingerprintIsUnknown(string $fingerprint): bool
     {
+        // The store reviewer signs in from devices nobody here controls, and its code goes to an inbox they can't read.
+        if ($this->isStoreReviewer()) {
+            return false;
+        }
+
         $fingerprints = $this->loginDevices()->pluck('fingerprint');
 
         return $fingerprints->isNotEmpty() && ! $fingerprints->contains($fingerprint);

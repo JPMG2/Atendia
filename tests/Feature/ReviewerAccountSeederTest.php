@@ -59,15 +59,20 @@ test('running the seeder twice keeps one account and the first password', functi
         ->and(Business::query()->where('is_demo', true)->count())->toBe(1);
 });
 
-test('the reviewer signs in over the API from a first device, and a second device meets the code gate', function (): void {
+test('the reviewer signs in over the API from any device with no code, while a real client still meets the gate', function (): void {
     $this->seed(ReviewerAccountSeeder::class);
     $password = 'Reviewer-pass-123';
     User::query()->where('email', ReviewerAccountSeeder::EMAIL)->firstOrFail()->forceFill(['password' => bcrypt($password)])->save();
-    $login = fn (string $device) => $this->withHeaders(['X-Device-Id' => $device, 'X-Device-Name' => 'Pixel'])
-        ->postJson('/api/v1/login', ['email' => ReviewerAccountSeeder::EMAIL, 'password' => $password]);
+    $login = fn (string $email, string $device) => $this->withHeaders(['X-Device-Id' => $device, 'X-Device-Name' => 'Pixel'])
+        ->postJson('/api/v1/login', ['email' => $email, 'password' => $password]);
 
-    $login('device-one-0000000000')->assertOk()->assertJsonStructure(['token']);
-    $login('device-two-0000000000')->assertStatus(202)->assertJsonStructure(['challenge']);
+    $login(ReviewerAccountSeeder::EMAIL, 'device-one-0000000000')->assertOk()->assertJsonStructure(['token']);
+    $login(ReviewerAccountSeeder::EMAIL, 'device-two-0000000000')->assertOk()->assertJsonStructure(['token']);
+
+    payingUser(['email' => 'owner@example.com', 'password' => bcrypt($password)]);
+
+    $login('owner@example.com', 'device-one-0000000000')->assertOk();
+    $login('owner@example.com', 'device-two-0000000000')->assertStatus(202)->assertJsonStructure(['challenge']);
 });
 
 test('the reviewer can open the client dashboard and is kept out of the admin', function (): void {
