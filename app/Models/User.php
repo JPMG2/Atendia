@@ -611,7 +611,16 @@ class User extends Authenticatable
     /** The app follows the business's standing; the admin's own door opens in a later wave. */
     public function appAccess(): AppAccess
     {
-        return $this->business?->appAccess() ?? AppAccess::NoBusiness;
+        if ($this->business_id === null) {
+            return AppAccess::NoBusiness;
+        }
+
+        // Asked at sign-in, before any session adopts a tenant: the business must be read from inside its own,
+        // or one flagged as a landing example (the store reviewer's) would vanish and read as "no business".
+        return app(Tenant::class)->for(
+            $this->business_id,
+            fn (): AppAccess => $this->business()->first()?->appAccess() ?? AppAccess::NoBusiness,
+        );
     }
 
     /** A team member invited by the owner: sees the inbox, never the business setup. */
