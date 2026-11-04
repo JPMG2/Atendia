@@ -195,6 +195,14 @@ test('a mailed request erases a removed business that paid, keeping its payments
         ->and(DB::table('payments')->where('business_id', $owner->business_id)->count())->toBe(1);
 });
 
+test('the public privacy policy opens for anyone and links to the deletion page', function (): void {
+    $this->get(route('privacy'))
+        ->assertOk()
+        ->assertSee(__('privacy.heading'))
+        ->assertSee(__('privacy.minors.title'))
+        ->assertSee(route('account.deletion'));
+});
+
 test('the public page explains how to ask for the deletion', function (): void {
     $this->get(route('account.deletion'))
         ->assertOk()

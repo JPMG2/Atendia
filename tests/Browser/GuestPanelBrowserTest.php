@@ -29,6 +29,24 @@ test('the brand panel reads in the visitor\'s own voice', function (string $loca
     'argentina' => ['es_AR', 'Automatizá tu WhatsApp y no pierdas más clientes.', 'Automatiza tu'],
 ]);
 
+test('the public privacy policy reads whole on a phone and a desktop', function (int $width, int $height, bool $dark): void {
+    $page = visit('/privacidad')->resize($width, $height);
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee(__('privacy.heading'))
+        ->assertSee(__('privacy.changes.title'))
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true)
+        ->screenshot(fullPage: true, filename: 'privacy-'.$width.($dark ? '-dark' : ''));
+})->with([
+    'phone' => [390, 844, false],
+    'phone dark' => [390, 844, true],
+    'desktop' => [1280, 800, false],
+]);
+
 test('the public deletion page reads whole on a phone and a desktop', function (int $width, int $height, bool $dark): void {
     $page = visit('/borrar-cuenta')->resize($width, $height);
 
