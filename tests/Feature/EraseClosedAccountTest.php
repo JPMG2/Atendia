@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -201,6 +202,15 @@ test('the public privacy policy opens for anyone and links to the deletion page'
         ->assertSee(__('privacy.heading'))
         ->assertSee(__('privacy.minors.title'))
         ->assertSee(route('account.deletion'));
+});
+
+test('the voseo privacy policy only overrides keys the neutral text has, and reads in voseo', function (): void {
+    $neutral = Arr::dot(require lang_path('es/privacy.php'));
+    $voseo = Arr::dot(require lang_path('es_AR/privacy.php'));
+
+    expect(array_diff_key($voseo, $neutral))->toBe([])
+        ->and($voseo['rights.mail'])->toContain('escribinos')
+        ->and($neutral['rights.mail'])->toContain('escríbenos');
 });
 
 test('the public page explains how to ask for the deletion', function (): void {

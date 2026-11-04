@@ -6,7 +6,7 @@ return [
     'title' => 'Política de privacidad de :brand',
     'heading' => 'Política de privacidad',
     'lead' => 'Aquí te contamos qué datos usa :brand, para qué y cómo puedes pedir que los borremos. Esta política cubre la app del teléfono y la web.',
-    'updated' => 'Última actualización: :date.',
+    'updated' => 'Última actualización: 4 de noviembre de 2026.',
 
     'who' => [
         'title' => 'Quién es responsable',

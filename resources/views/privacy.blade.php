@@ -2,7 +2,6 @@
     $brand = \App\Models\Company::brand();
     $contact = \App\Models\Company::contact();
     $days = (int) config('atendia.account_restore_days');
-    $updated = \Illuminate\Support\Carbon::create(2026, 11, 4)->translatedFormat('j \d\e F \d\e Y');
 @endphp
 
 <x-guest-layout>
@@ -18,7 +17,7 @@
                 {{ __('privacy.heading') }}
             </h1>
             <p class="text-body">{{ __('privacy.lead', ['brand' => $brand]) }}</p>
-            <p class="text-muted text-sm">{{ __('privacy.updated', ['date' => $updated]) }}</p>
+            <p class="text-muted text-sm">{{ __('privacy.updated') }}</p>
         </header>
 
         <section class="flex flex-col gap-3">
