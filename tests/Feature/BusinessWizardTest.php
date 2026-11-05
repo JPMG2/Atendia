@@ -6,6 +6,7 @@ use App\Events\BusinessCreated;
 use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
+use App\Models\Country;
 use App\Models\Province;
 use App\Models\SuggestedService;
 use App\Models\User;
@@ -468,6 +469,27 @@ test('the connection saves even when the step mounted before the business was bo
         ->assertDispatched('wizard:step-completed', step: 5, skipped: false, connected: false);
 
     expect($business->refresh()->whatsapp_number)->toBe('+54 3415124408');
+});
+
+test('the dial prefix follows the country chosen after the connection step mounted', function (): void {
+    $client = actingAsClient();
+    $component = Livewire::test('business.step-whatsapp');
+
+    $country = Country::factory()->create();
+    $client->business()->associate(Business::factory()->create(['country_id' => $country->id]))->save();
+
+    $component->dispatch('wizard:step-completed', step: 2)
+        ->assertSet('form.data.country_id', $country->id);
+});
+
+test('the linking card stops asking for a business once step two creates it', function (): void {
+    $client = actingAsClient();
+    $component = Livewire::test('whatsapp.link')->assertSee(__('whatsapp.no_business'));
+
+    $client->business()->associate(Business::factory()->create())->save();
+
+    $component->dispatch('wizard:step-completed', step: 2)
+        ->assertDontSee(__('whatsapp.no_business'));
 });
 
 test('connecting for real demands the three fields; skipping demands none', function (): void {

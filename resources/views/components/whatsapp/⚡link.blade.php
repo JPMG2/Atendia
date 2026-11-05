@@ -13,6 +13,7 @@ use App\Services\EvolutionApi;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -40,6 +41,15 @@ new class extends Component
         // so it is waiting instead of one more button to find.
         if (request()->boolean('conectar')) {
             $this->connect();
+        }
+    }
+
+    /** In the wizard this card mounts before the business exists: step 2 saving it is what makes it real. */
+    #[On('wizard:step-completed')]
+    public function businessCreated(int $step): void
+    {
+        if ($step === 2) {
+            $this->recheck();
         }
     }
 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
+use App\Models\Country;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,6 +59,27 @@ test('the step bar fits a phone: the page does not widen and every step stays re
     $scrolls = (int) $page->script('document.querySelector(".wizard-steps").scrollWidth - document.querySelector(".wizard-steps").clientWidth');
 
     expect($outside)->toBe(0)->and($scrolls)->toBeLessThanOrEqual(0);
+});
+
+test('after the business is born, the connection step shows its country dial and no stale connect card', function (): void {
+    $country = Country::factory()->create(['phone_code' => '57', 'iso2' => 'CO', 'name' => 'Colombia']);
+    // The in-process server answers as THIS instance: a fresh copy of the row would never reach it.
+    $user = auth()->user();
+
+    // The step mounts with no business: the state the defect was recorded in.
+    $page = visit('/alta');
+
+    $user->business()->associate(Business::factory()->create(['country_id' => $country->id]))->save();
+    $page->script("Livewire.dispatch('wizard:step-completed', { step: 2 })");
+    $page->click('[data-testid="wizard-tab-5"]')
+        ->assertSee(__('wizard.steps.5.heading'))
+        ->assertNoJavaScriptErrors();
+
+    // The card re-probes the WhatsApp bridge, which is slower than the dial prefix.
+    $page->wait(6)->screenshot(filename: 'wizard-step5-dial');
+
+    expect((string) $page->script('document.body.innerText'))->toContain('+57')
+        ->and((string) $page->script('document.body.innerText'))->not->toContain(__('whatsapp.no_business'));
 });
 
 test('fast typing never duplicates the assistant reply', function (): void {

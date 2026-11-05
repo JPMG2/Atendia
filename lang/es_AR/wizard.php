@@ -75,7 +75,7 @@ return [
         'q_open' => '¡Hola! ¿Atienden ahora?',
         'a_open' => '¡Hola! 👋 Soy el asistente de <b>:business</b>. Sí, estoy para ayudarte las 24 horas. Contame qué necesitás.',
         'q_service' => '¿Hacen :service?',
-        'a_service' => '¡Sí! En :business ofrecemos :services. ¿Querés que te agende?',
+        'a_service' => '¡Sí! En :business ofrecemos :services. ¿Querés que te cuente más?',
         'a_product' => 'Dejame revisar el inventario… ¡Sí! Lo tenemos disponible. ¿Te lo reservo?',
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por vos.',
     ],

@@ -49,6 +49,21 @@ new class extends Component
         return Country::dialCode($this->form->data?->country_id);
     }
 
+    /**
+     * The country is chosen in step 2, after this step mounted: without this
+     * the dial prefix stays on whatever the empty form guessed.
+     */
+    #[On('wizard:step-completed')]
+    public function refreshCountry(int $step): void
+    {
+        if ($step !== 2) {
+            return;
+        }
+
+        $this->form->data->country_id = Auth::user()?->business?->country_id;
+        unset($this->defaultDial);
+    }
+
     /** The linking card below the fields reports its own success up here. */
     #[On('whatsapp:connected')]
     public function linked(): void

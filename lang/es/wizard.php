@@ -164,7 +164,7 @@ return [
         'q_open' => '¡Hola! ¿Atienden ahora?',
         'a_open' => '¡Hola! 👋 Soy el asistente de <b>:business</b>. Sí, estoy para ayudarte las 24 horas. Cuéntame qué necesitas.',
         'q_service' => '¿Hacen :service?',
-        'a_service' => '¡Sí! En :business ofrecemos :services. ¿Quieres que te agende?',
+        'a_service' => '¡Sí! En :business ofrecemos :services. ¿Quieres que te cuente más?',
         'q_product_named' => '¿Tienen :product?',
         'a_product' => 'Déjame revisar el inventario… ¡Sí! Lo tenemos disponible. ¿Te lo reservo?',
         'connected' => '✓ Conectado a tu WhatsApp. Desde ahora atiendo por ti.',
@@ -180,11 +180,11 @@ return [
 
     'tip_tag' => 'Tip de experto',
     'tips' => [
-        1 => 'Responder en menos de <b>5 minutos</b> multiplica por <b>21</b> las chances de cerrar la venta. Tu asistente va a responder en segundos.',
+        1 => 'Quien escribe por WhatsApp espera una respuesta pronto. Tu asistente va a responder en segundos.',
         2 => 'Un asistente que se presenta con <b>tu nombre</b> genera confianza al instante: nadie confía en un robot anónimo.',
         3 => 'Con tus servicios cargados, tu asistente <b>nunca más dice «no sé»</b>: cada consulta curiosa se vuelve un turno posible.',
         4 => 'Con tu inventario adentro, cada «¿tienen…?» se contesta solo. <b>Incluso a las 3 de la mañana.</b>',
-        5 => 'El <b>90%</b> de los mensajes de WhatsApp se leen en menos de 3 minutos. Del otro lado, ahora siempre hay alguien.',
+        5 => 'WhatsApp se lee rápido. Del otro lado, ahora siempre hay alguien que responde.',
         6 => 'Responder una consulta te lleva unos <b>:minutes minutos</b>. Tu asistente las contesta todas, en segundos, desde ahora.',
     ],
 
