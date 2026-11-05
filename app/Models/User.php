@@ -242,12 +242,14 @@ class User extends Authenticatable
     }
 
     /**
-     * The account the app stores' reviewers use: it belongs to a business flagged `is_demo`, a flag only a
+     * The account the app stores' reviewers use: the owner of a business flagged `is_demo`, a flag only a
      * seeder writes (no sign-up path can). Naming `is_demo` in the query lets it through the examples scope.
+     * Owner only: a teammate invited into that business must still pass the device code.
      */
     public function isStoreReviewer(): bool
     {
         return $this->business_id !== null
+            && $this->hasRole('client')
             && Business::query()->whereKey($this->business_id)->where('is_demo', true)->exists();
     }
 

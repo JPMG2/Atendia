@@ -19,7 +19,6 @@ use App\Models\User;
 use App\Traits\HasNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -391,11 +390,6 @@ new class extends Component
         return SupportQueue::screenName($route);
     }
 
-    public function fileUrl(string $path): string
-    {
-        return Storage::disk('public')->url($path);
-    }
-
     public function render(): View
     {
         // A full-page admin screen, so this title DOES reach the tab.
@@ -734,7 +728,7 @@ new class extends Component
                             <span>{{ $thread['report']['author'] }}</span>
                             <span>{{ $thread['report']['at'] }}</span>
                             @if ($thread['report']['attachment'] !== null)
-                                <a href="{{ $this->fileUrl($ticket->attachment_path) }}" target="_blank" rel="noopener">{{ $thread['report']['attachment'] }}</a>
+                                <a href="{{ route('admin.support.attachment', $ticket) }}" target="_blank" rel="noopener">{{ $thread['report']['attachment'] }}</a>
                             @endif
                         </span>
                     </div>

@@ -56,7 +56,7 @@ Route::get('/r/{code}', function (string $code) {
     Cookie::queue('atendia_ref', $code, 60 * 24 * 30);
 
     return view('referral-invite');
-})->name('referral.landing');
+})->middleware('throttle:30,1')->name('referral.landing');
 
 Route::get('/idioma/{locale}', function (string $locale) {
     if (in_array($locale, config('locales.supported'), true)) {

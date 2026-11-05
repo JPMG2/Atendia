@@ -239,6 +239,23 @@ test('an empty palette offers what was opened last, newest first', function (): 
         ->assertSeeInOrder(['Color', 'Corte de pelo']);
 });
 
+test('a picked row only navigates inside the app', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $row = fn (string $url): array => [
+        'group' => 'g', 'icon' => 'scissors', 'title' => 'Corte', 'subtitle' => '', 'url' => $url, 'key' => 'k',
+    ];
+
+    $palette = Livewire::actingAs($this->user)->test('search.palette')->call('open');
+
+    $palette->call('pick', $row('/servicios'))->assertRedirect('/servicios');
+
+    // A browser reads "/\host" as "//host": a path that looks local but leaves the site.
+    foreach (['//evil.test', '/\\evil.test', '/\\/evil.test', 'https://evil.test', 'javascript:alert(1)'] as $hostile) {
+        Livewire::actingAs($this->user)->test('search.palette')->call('open')->call('pick', $row($hostile))->assertNoRedirect();
+    }
+});
+
 test('a picked row climbs instead of being listed twice, and the trail is capped', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 

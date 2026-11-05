@@ -75,6 +75,28 @@ test('the reviewer signs in over the API from any device with no code, while a r
     $login('owner@example.com', 'device-two-0000000000')->assertStatus(202)->assertJsonStructure(['challenge']);
 });
 
+test('a teammate invited into the reviewer business does not inherit the no-code exemption', function (): void {
+    $this->seed(ReviewerAccountSeeder::class);
+    $reviewer = User::query()->where('email', ReviewerAccountSeeder::EMAIL)->firstOrFail();
+    $password = 'Teammate-pass-123';
+
+    $teammate = User::factory()->create([
+        'email' => 'teammate@example.com',
+        'password' => bcrypt($password),
+        'business_id' => $reviewer->business_id,
+    ]);
+    $teammate->syncRoles(['agent']);
+
+    $login = fn (string $device) => $this->withHeaders(['X-Device-Id' => $device, 'X-Device-Name' => 'Pixel'])
+        ->postJson('/api/v1/login', ['email' => 'teammate@example.com', 'password' => $password]);
+
+    $login('device-one-0000000000')->assertOk();
+    $login('device-two-0000000000')->assertStatus(202)->assertJsonStructure(['challenge']);
+
+    expect($teammate->fresh()->isStoreReviewer())->toBeFalse()
+        ->and($reviewer->fresh()->isStoreReviewer())->toBeTrue();
+});
+
 test('the reviewer can open the client dashboard and is kept out of the admin', function (): void {
     $this->seed(ReviewerAccountSeeder::class);
     $user = User::query()->where('email', ReviewerAccountSeeder::EMAIL)->firstOrFail();

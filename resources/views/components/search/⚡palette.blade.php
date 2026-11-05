@@ -68,11 +68,12 @@ new class extends Component
     {
         $this->remember($hit);
 
-        // The url arrives from the browser, so it is treated as input: only a
-        // path of this app, never "//evil.example" and never a scheme.
+        // The url arrives from the browser, so it is treated as input: only a path of
+        // this app, never "//evil.example", never "/\evil.example" (a browser reads the
+        // backslash as a slash) and never a scheme.
         $url = (string) ($hit['url'] ?? '');
 
-        if (! str_starts_with($url, '/') || str_starts_with($url, '//')) {
+        if (! str_starts_with($url, '/') || str_starts_with($url, '//') || str_contains($url, '\\')) {
             return null;
         }
 

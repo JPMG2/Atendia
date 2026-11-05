@@ -42,7 +42,7 @@ class CreateSupportTicket
         bool $afterHelp = false,
     ): SupportTicket {
         $path = $attachment instanceof UploadedFile
-            ? $attachment->store('businesses/'.$user->business_id.'/support', 'public')
+            ? $attachment->store('businesses/'.$user->business_id.'/support', 'local')
             : null;
 
         try {
@@ -50,7 +50,7 @@ class CreateSupportTicket
         } catch (Throwable $e) {
             // The file is useless without its row, and storage is not free.
             if ($path !== null) {
-                Storage::disk('public')->delete($path);
+                Storage::disk('local')->delete($path);
             }
 
             throw $e;

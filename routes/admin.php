@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Billing\PaymentReceiptController;
+use App\Http\Controllers\Support\TicketAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,6 +68,7 @@ Route::livewire('/moderacion', 'admin.moderation.index')->name('moderation')->mi
 
 // Support: what the businesses report from their own panel, by arrival.
 Route::livewire('/soporte', 'admin.support.index')->name('support')->middleware('permission:support.view');
+Route::get('/soporte/{ticket}/adjunto', TicketAttachmentController::class)->name('support.attachment')->middleware('permission:support.view');
 
 // Access: who can sign in and who actually does. Opened to answer "no puedo
 // entrar", so a closed account and an unverified address are listed, not hidden.
