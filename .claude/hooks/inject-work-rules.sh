@@ -38,6 +38,7 @@ REGLAS DE TRABAJO (no-mediocre.md — se cumplen en ESTE turno):
 7. Sin excusas: si algo salió mal, se asume y se corrige.
 Al cerrar con código tocado, el hook Stop corre los guardianes GoldenRules*; si hubo vistas, exige verificación visual REAL (browser test o captura), no frases.
 Si se toca app/Ai: checklist de .ai/guidelines/ia-economia-tokens.md.
+Antes de proponer infraestructura (dominio, Cloudflare, correo, túneles, servidor, cuentas): leer la memoria del tema y comprobar contra el servidor real. Lo que solo ella ve (consola de Cloudflare) se le pide, no se supone.
 RULES
 
 # Si el mensaje reclama una regla rota: se arregla, y si necesita candado, ese
