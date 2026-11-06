@@ -41,6 +41,25 @@ test('every active activity has concrete suggestions of its own trade', function
         ->toBe([]);
 });
 
+test('the specialty and cuisine trades suggest only types suggested for them', function (): void {
+    seedSuggestedCatalog();
+
+    $codes = [
+        'pediatria', 'ginecologia', 'dermatologia', 'cardiologia', 'traumatologia', 'oftalmologia',
+        'psiquiatria', 'otorrinolaringologia', 'urologia', 'endocrinologia', 'cirugia-plastica',
+        'arepera', 'parrilla', 'comida-rapida', 'pollo-en-brasa', 'chicharroneria', 'empanaderia',
+        'fuente-de-soda', 'jugueria',
+    ];
+
+    foreach ($codes as $code) {
+        $activity = BusinessActivity::where('code', $code)->sole();
+        $suggestedTypes = $activity->suggestedServiceTypes()->pluck('service_types.id')->all();
+
+        expect($activity->suggestedServices()->count())->toBeGreaterThanOrEqual(6)
+            ->and($activity->suggestedServices()->pluck('service_type_id')->diff($suggestedTypes)->all())->toBe([]);
+    }
+});
+
 test('every suggestion carries its type, so an adopted one is born typed', function (): void {
     seedSuggestedCatalog();
 

@@ -55,7 +55,7 @@ class ServiceTypeSeeder extends Seeder
                     'profesional' => ['sort_order' => 2],
                     'notas' => ['sort_order' => 3],
                 ],
-                'activities' => ['consultorio-medico', 'odontologia', 'kinesiologia', 'psicologia', 'nutricion', 'veterinaria'],
+                'activities' => ['consultorio-medico', 'odontologia', 'kinesiologia', 'psicologia', 'nutricion', 'veterinaria', 'pediatria', 'ginecologia', 'dermatologia', 'cardiologia', 'traumatologia', 'oftalmologia', 'psiquiatria', 'otorrinolaringologia', 'urologia', 'endocrinologia', 'cirugia-plastica'],
             ],
             'estudio' => [
                 'name' => 'Estudio', 'description' => 'Práctica con preparación previa y resultados.',
@@ -65,13 +65,13 @@ class ServiceTypeSeeder extends Seeder
                     'preparacion' => ['sort_order' => 2],
                     'obra_social' => ['sort_order' => 3],
                 ],
-                'activities' => ['laboratorio', 'optica'],
+                'activities' => ['laboratorio', 'optica', 'ginecologia', 'dermatologia', 'cardiologia', 'oftalmologia', 'otorrinolaringologia', 'urologia', 'endocrinologia'],
             ],
             'control' => [
                 'name' => 'Control', 'description' => 'Seguimiento de un tratamiento ya empezado.',
                 'modality' => 'cita', 'sector' => 'salud', 'sort_order' => 3,
                 'attributes' => ['profesional' => ['sort_order' => 1], 'notas' => ['sort_order' => 2]],
-                'activities' => ['consultorio-medico', 'odontologia', 'veterinaria'],
+                'activities' => ['consultorio-medico', 'odontologia', 'veterinaria', 'pediatria', 'ginecologia', 'dermatologia', 'cardiologia', 'traumatologia', 'oftalmologia', 'psiquiatria', 'urologia', 'endocrinologia', 'cirugia-plastica'],
             ],
             'plato' => [
                 'name' => 'Plato', 'description' => 'Un ítem de la carta.',
@@ -81,13 +81,13 @@ class ServiceTypeSeeder extends Seeder
                     'picante' => ['sort_order' => 2],
                     'apto_celiaco' => ['sort_order' => 3],
                 ],
-                'activities' => ['restaurante', 'pizzeria', 'rotiseria', 'bar', 'cafeteria'],
+                'activities' => ['restaurante', 'pizzeria', 'rotiseria', 'bar', 'cafeteria', 'arepera', 'parrilla', 'comida-rapida', 'pollo-en-brasa', 'chicharroneria', 'empanaderia', 'fuente-de-soda', 'jugueria'],
             ],
             'combo' => [
                 'name' => 'Combo', 'description' => 'Varios ítems a precio de conjunto.',
                 'modality' => 'producto', 'sector' => 'gastronomia', 'sort_order' => 11,
                 'attributes' => ['foto' => ['sort_order' => 1], 'incluye' => ['is_required' => true, 'sort_order' => 2]],
-                'activities' => ['restaurante', 'pizzeria', 'rotiseria'],
+                'activities' => ['restaurante', 'pizzeria', 'rotiseria', 'arepera', 'comida-rapida', 'pollo-en-brasa', 'chicharroneria', 'empanaderia', 'fuente-de-soda', 'jugueria'],
             ],
             'mesa' => [
                 'name' => 'Mesa', 'description' => 'Lugar en el salón para una franja horaria.',
@@ -98,7 +98,7 @@ class ServiceTypeSeeder extends Seeder
                     'personas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Comensales'],
                     'zona' => ['sort_order' => 2, 'label_override' => 'Sector del salón'],
                 ],
-                'activities' => ['restaurante', 'pizzeria', 'bar', 'cafeteria'],
+                'activities' => ['restaurante', 'pizzeria', 'bar', 'cafeteria', 'parrilla'],
             ],
             'pedido-llevar' => [
                 'name' => 'Pedido para llevar', 'description' => 'Una orden que se retira o se envía.',
@@ -108,7 +108,7 @@ class ServiceTypeSeeder extends Seeder
                     'hora_retiro' => ['sort_order' => 2],
                     'a_domicilio' => ['sort_order' => 3],
                 ],
-                'activities' => ['restaurante', 'pizzeria', 'rotiseria', 'panaderia', 'heladeria'],
+                'activities' => ['restaurante', 'pizzeria', 'rotiseria', 'panaderia', 'heladeria', 'arepera', 'parrilla', 'comida-rapida', 'pollo-en-brasa', 'chicharroneria', 'empanaderia', 'fuente-de-soda', 'jugueria'],
             ],
             'turno-belleza' => [
                 'name' => 'Turno de belleza', 'description' => 'Atención personal con turno.',
@@ -228,7 +228,7 @@ class ServiceTypeSeeder extends Seeder
                 'name' => 'Presupuesto', 'description' => 'Se consulta, se cotiza y se decide.',
                 'modality' => 'presupuesto', 'sector' => 'otro', 'sort_order' => 92,
                 'attributes' => ['notas' => ['is_required' => true, 'sort_order' => 1, 'label_override' => 'Qué necesita']],
-                'activities' => ['otra-actividad', 'imprenta', 'agencia-marketing', 'desarrollo-software', 'seguros', 'repuestos'],
+                'activities' => ['otra-actividad', 'imprenta', 'agencia-marketing', 'desarrollo-software', 'seguros', 'repuestos', 'cirugia-plastica', 'urologia', 'oftalmologia', 'empanaderia', 'parrilla'],
             ],
         ];
     }

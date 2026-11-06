@@ -30,6 +30,16 @@ class BusinessActivitySeeder extends Seeder
                 'heladeria' => 'Heladería',
                 'bar' => 'Bar',
                 'catering' => 'Catering',
+                // Trades whose service model differs from a generic restaurant.
+                // Appended: inserting earlier would renumber the live activities.
+                'arepera' => 'Arepera',
+                'parrilla' => 'Parrilla y asador',
+                'comida-rapida' => 'Comida rápida y hamburguesería',
+                'pollo-en-brasa' => 'Pollo en brasa',
+                'chicharroneria' => 'Chicharronería',
+                'empanaderia' => 'Empanadería y tequeñería',
+                'fuente-de-soda' => 'Fuente de soda',
+                'jugueria' => 'Juguería',
             ],
             'salud' => [
                 'farmacia' => 'Farmacia',
@@ -40,6 +50,18 @@ class BusinessActivitySeeder extends Seeder
                 'nutricion' => 'Nutrición',
                 'laboratorio' => 'Laboratorio de análisis',
                 'optica' => 'Óptica',
+                // Specialties with their own services; the rest stay a "specialty" tag.
+                'pediatria' => 'Pediatría',
+                'ginecologia' => 'Ginecología y obstetricia',
+                'dermatologia' => 'Dermatología',
+                'cardiologia' => 'Cardiología',
+                'traumatologia' => 'Traumatología y ortopedia',
+                'oftalmologia' => 'Oftalmología',
+                'psiquiatria' => 'Psiquiatría',
+                'otorrinolaringologia' => 'Otorrinolaringología',
+                'urologia' => 'Urología',
+                'endocrinologia' => 'Endocrinología y diabetes',
+                'cirugia-plastica' => 'Cirugía plástica y estética',
             ],
             'belleza' => [
                 'peluqueria' => 'Peluquería',

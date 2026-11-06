@@ -21,7 +21,7 @@ test('the seeders load sectors with their activities', function (): void {
     $this->seed(BusinessActivitySeeder::class);
 
     expect(BusinessSector::count())->toBe(13)
-        ->and(BusinessActivity::count())->toBe(74);
+        ->and(BusinessActivity::count())->toBe(93);
 
     // The examples the master has to cover from day one.
     expect(BusinessActivity::where('code', 'panaderia')->sole()->sector->name)->toBe('Gastronomía')
@@ -41,7 +41,7 @@ test('running the seeders twice does not duplicate anything', function (): void 
     $this->seed(BusinessActivitySeeder::class);
 
     expect(BusinessSector::count())->toBe(13)
-        ->and(BusinessActivity::count())->toBe(74);
+        ->and(BusinessActivity::count())->toBe(93);
 });
 
 test('every seeded activity belongs to a sector and is active', function (): void {

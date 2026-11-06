@@ -767,6 +767,210 @@ class SuggestedServiceSeeder extends Seeder
                 'Envío a domicilio' => 'pedido',
             ],
 
+            'pediatria' => [
+                'Consulta pediátrica' => 'consulta',
+                'Control del niño sano' => 'control',
+                'Vacunación infantil' => 'control',
+                'Control de recién nacido' => 'control',
+                'Consulta de urgencia' => 'consulta',
+                'Certificado médico escolar' => 'consulta',
+                'Consulta a domicilio' => 'consulta',
+                'Consulta online' => 'consulta',
+            ],
+
+            'ginecologia' => [
+                'Consulta ginecológica' => 'consulta',
+                'Control prenatal' => 'control',
+                'Citología (Papanicolau)' => 'estudio',
+                'Ecografía obstétrica' => 'estudio',
+                'Colposcopia' => 'estudio',
+                'Control anticonceptivo' => 'consulta',
+                'Consulta de menopausia' => 'consulta',
+                'Consulta online' => 'consulta',
+            ],
+
+            'dermatologia' => [
+                'Consulta dermatológica' => 'consulta',
+                'Tratamiento del acné' => 'consulta',
+                'Control de lunares' => 'control',
+                'Crioterapia' => 'consulta',
+                'Biopsia de piel' => 'estudio',
+                'Tratamiento de manchas' => 'consulta',
+                'Control de tratamiento' => 'control',
+                'Consulta online' => 'consulta',
+            ],
+
+            'cardiologia' => [
+                'Consulta cardiológica' => 'consulta',
+                'Electrocardiograma' => 'estudio',
+                'Ecocardiograma' => 'estudio',
+                'Prueba de esfuerzo' => 'estudio',
+                'Holter' => 'estudio',
+                'Control de presión arterial' => 'control',
+                'Evaluación prequirúrgica' => 'consulta',
+                'Apto cardiológico para deporte' => 'consulta',
+            ],
+
+            'traumatologia' => [
+                'Consulta traumatológica' => 'consulta',
+                'Infiltraciones' => 'consulta',
+                'Colocación de yeso' => 'consulta',
+                'Control postoperatorio' => 'control',
+                'Evaluación de rodilla y hombro' => 'consulta',
+                'Consulta deportiva' => 'consulta',
+                'Segunda opinión' => 'consulta',
+                'Consulta online' => 'consulta',
+            ],
+
+            'oftalmologia' => [
+                'Consulta oftalmológica' => 'consulta',
+                'Fondo de ojo' => 'estudio',
+                'Medición de la presión del ojo' => 'estudio',
+                'Control de miopía infantil' => 'control',
+                'Receta de anteojos' => 'consulta',
+                'Cirugía de cataratas' => 'presupuesto',
+                'Cirugía refractiva con láser' => 'presupuesto',
+                'Urgencia oftalmológica' => 'consulta',
+            ],
+
+            'psiquiatria' => [
+                'Primera consulta psiquiátrica' => 'consulta',
+                'Control y seguimiento' => 'control',
+                'Consulta online' => 'consulta',
+                'Evaluación de ansiedad y depresión' => 'consulta',
+                'Evaluación infantil y adolescente' => 'consulta',
+                'Renovación de receta' => 'control',
+                'Evaluación de atención e hiperactividad' => 'consulta',
+            ],
+
+            'otorrinolaringologia' => [
+                'Consulta otorrinolaringológica' => 'consulta',
+                'Audiometría' => 'estudio',
+                'Lavado de oídos' => 'consulta',
+                'Nasofibroscopía' => 'estudio',
+                'Estudio de ronquidos y apnea' => 'estudio',
+                'Control de amígdalas y adenoides' => 'consulta',
+                'Consulta por vértigo' => 'consulta',
+                'Consulta online' => 'consulta',
+            ],
+
+            'urologia' => [
+                'Consulta urológica' => 'consulta',
+                'Ecografía urológica' => 'estudio',
+                'Control de próstata' => 'control',
+                'Estudio de fertilidad masculina' => 'estudio',
+                'Tratamiento de cálculos' => 'consulta',
+                'Vasectomía' => 'presupuesto',
+                'Circuncisión' => 'presupuesto',
+                'Consulta online' => 'consulta',
+            ],
+
+            'endocrinologia' => [
+                'Consulta endocrinológica' => 'consulta',
+                'Control de diabetes' => 'control',
+                'Control de tiroides' => 'control',
+                'Estudios hormonales' => 'estudio',
+                'Plan de control de peso' => 'consulta',
+                'Medición de glucemia' => 'estudio',
+                'Educación para personas con diabetes' => 'consulta',
+                'Consulta online' => 'consulta',
+            ],
+
+            'cirugia-plastica' => [
+                'Consulta de valoración' => 'consulta',
+                'Rinoplastia' => 'presupuesto',
+                'Aumento mamario' => 'presupuesto',
+                'Liposucción y lipoescultura' => 'presupuesto',
+                'Abdominoplastia' => 'presupuesto',
+                'Cirugía de párpados' => 'presupuesto',
+                'Botox y rellenos' => 'presupuesto',
+                'Control postoperatorio' => 'control',
+            ],
+
+            'arepera' => [
+                'Arepas al gusto' => 'plato',
+                'Reina pepiada' => 'plato',
+                'Cachapas' => 'plato',
+                'Empanadas' => 'plato',
+                'Batidos y merengadas' => 'plato',
+                'Combo de arepas con bebida' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
+            'parrilla' => [
+                'Parrillada para dos' => 'plato',
+                'Parrillada familiar' => 'plato',
+                'Cortes por peso' => 'plato',
+                'Menú del día' => 'plato',
+                'Reserva de mesa' => 'mesa',
+                'Mesa para grupos' => 'mesa',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Eventos y cumpleaños' => 'presupuesto',
+            ],
+
+            'comida-rapida' => [
+                'Hamburguesas' => 'plato',
+                'Perros calientes' => 'plato',
+                'Pollo frito' => 'plato',
+                'Papas fritas y acompañantes' => 'plato',
+                'Combo hamburguesa con papas y bebida' => 'combo',
+                'Combos para grupos' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
+            'pollo-en-brasa' => [
+                'Pollo entero a la brasa' => 'plato',
+                'Medio pollo' => 'plato',
+                'Pollo broaster' => 'plato',
+                'Guarniciones' => 'plato',
+                'Combo de pollo con papas y ensalada' => 'combo',
+                'Canasta familiar' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
+            'chicharroneria' => [
+                'Chicharrón por porción' => 'plato',
+                'Chicharrón por kilo' => 'plato',
+                'Acompañantes' => 'plato',
+                'Chicharrón con yuca o arepa' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
+            'empanaderia' => [
+                'Empanadas por unidad' => 'plato',
+                'Docena de empanadas' => 'plato',
+                'Tequeños por docena' => 'plato',
+                'Pastelitos' => 'plato',
+                'Combo de empanadas con bebida' => 'combo',
+                'Pedido para fiestas y eventos' => 'presupuesto',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
+            'fuente-de-soda' => [
+                'Helados y sundaes' => 'plato',
+                'Batidos y merengadas' => 'plato',
+                'Sándwiches y comidas ligeras' => 'plato',
+                'Jugos naturales' => 'plato',
+                'Postres' => 'plato',
+                'Combo de merienda' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+            ],
+
+            'jugueria' => [
+                'Jugos naturales' => 'plato',
+                'Batidos' => 'plato',
+                'Ensaladas de frutas' => 'plato',
+                'Jugos por litro' => 'plato',
+                'Combo de desayuno' => 'combo',
+                'Pedido para llevar' => 'pedido-llevar',
+                'Envío a domicilio' => 'pedido-llevar',
+            ],
+
         ];
     }
 }
