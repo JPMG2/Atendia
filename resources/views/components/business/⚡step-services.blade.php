@@ -7,6 +7,7 @@ use App\Models\BusinessSector;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
@@ -33,12 +34,22 @@ new class extends Component
     /** @var list<string> */
     public array $services = [];
 
+    /**
+     * What is already saved: it cannot be removed from here. A service goes only
+     * from the catalog screen, with an undo. Locked: the front never edits it.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $savedServices = [];
+
     public string $draft = '';
 
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
         $this->services = Auth::user()?->business?->serviceNames() ?? [];
+        $this->savedServices = $this->services;
 
         if ($this->services !== []) {
             $this->dispatch('wizard:services-updated', services: $this->services);
@@ -113,6 +124,11 @@ new class extends Component
 
     public function remove(int $index): void
     {
+        // Only what was just typed and is not saved yet can go: a typo, never a stored service.
+        if (in_array($this->services[$index] ?? null, $this->savedServices, true)) {
+            return;
+        }
+
         unset($this->services[$index]);
 
         $this->services = array_values($this->services);
@@ -134,6 +150,9 @@ new class extends Component
             if ($notification->type === NotificationType::Error) {
                 return;
             }
+
+            // What was just saved is now stored: from here it can no longer be removed.
+            $this->savedServices = $this->services;
         }
 
         $this->dispatch('wizard:step-completed', step: 3, skipped: $skipped);
@@ -190,13 +209,15 @@ new class extends Component
             @foreach ($services as $index => $service)
                 <span wire:key="service-{{ md5($service) }}" class="wizard-pill">
                     {{ $service }}
-                    <button
-                        type="button"
-                        wire:click="remove({{ $index }})"
-                        aria-label="{{ __('wizard.services.remove') }}"
-                    >
-                        ×
-                    </button>
+                    @unless (in_array($service, $savedServices, true))
+                        <button
+                            type="button"
+                            wire:click="remove({{ $index }})"
+                            aria-label="{{ __('wizard.services.remove') }}"
+                        >
+                            ×
+                        </button>
+                    @endunless
                 </span>
             @endforeach
         </div>
