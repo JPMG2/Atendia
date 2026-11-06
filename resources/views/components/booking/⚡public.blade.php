@@ -27,6 +27,9 @@ new class extends Component
     /** The booked slot, once it exists: the screen then only celebrates. */
     public ?string $booked = null;
 
+    /** Who attends the booking made, when someone does; null for a business with nobody set up. */
+    public ?string $bookedWith = null;
+
     /** The chat that turns on the reminder, once booked; null when the line is not linked. */
     public ?string $reminderLink = null;
 
@@ -68,10 +71,32 @@ new class extends Component
             (new Agenda($business))->freeSlots(
                 CarbonImmutable::parse($this->form->day, $business->localTimezone())->startOfDay(),
                 $this->form->service_id,
+                $this->form->professional_id,
             ),
         ));
 
         return array_combine($hours, $hours);
+    }
+
+    /**
+     * Who the customer can ask for, following the service chosen; empty hides the picker.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function professionalOptions(): array
+    {
+        $business = $this->business;
+
+        return app(Tenant::class)->for($business->id, fn (): array => (new Agenda($business))->professionalsFor($this->form->service_id));
+    }
+
+    /** Someone who does not attend the service just chosen must not stay picked. */
+    public function updatedFormServiceId(): void
+    {
+        if ($this->form->professional_id !== null && ! array_key_exists($this->form->professional_id, $this->professionalOptions)) {
+            $this->form->professional_id = null;
+        }
     }
 
     /** @return array<int, string> */
@@ -87,7 +112,7 @@ new class extends Component
 
     public function updatedForm(): void
     {
-        unset($this->freeHours);
+        unset($this->freeHours, $this->professionalOptions);
     }
 
     public function pick(string $time): void
@@ -108,6 +133,7 @@ new class extends Component
         }
 
         $this->booked = $this->when($result);
+        $this->bookedWith = $result->professional?->name;
 
         // The person writes first, from their own phone: a number typed in the form proves
         // nothing, and the business line never writes first to someone who did not ask.
@@ -137,6 +163,9 @@ new class extends Component
                 <span class="bk-done-icon"><x-icon name="calendar-check" :size="28" /></span>
                 <h1 class="font-display text-strong text-2xl">{{ __('agenda.public.done_title') }}</h1>
                 <p class="text-body text-sm">{{ __('agenda.public.done_body', ['business' => $business->name, 'when' => $booked]) }}</p>
+                @if ($bookedWith !== null)
+                    <p class="text-strong text-sm font-semibold" data-testid="booking-with">{{ __('agenda.public.done_with', ['name' => $bookedWith]) }}</p>
+                @endif
                 @if ($reminderLink !== null)
                     <p class="text-muted text-sm">{{ __('agenda.public.reminder_hint') }}</p>
                     <x-ui.button variant="primary" icon="whatsapp" :href="$reminderLink" target="_blank" rel="noopener">
@@ -173,6 +202,21 @@ new class extends Component
                         />
                     @endif
                 </x-catalog.form-row>
+
+                {{-- Only with someone set up for the service: empty means anyone free, the first takes it. --}}
+                @if ($this->professionalOptions !== [])
+                    <x-catalog.form-row>
+                        <x-inputsform.combobox
+                            span="full"
+                            name="professional_id"
+                            :label="__('agenda.form.professional')"
+                            :options="$this->professionalOptions"
+                            :value="$form->professional_id"
+                            :placeholder="__('agenda.form.professional_placeholder')"
+                            wire:model.live="form.professional_id"
+                        />
+                    </x-catalog.form-row>
+                @endif
 
                 <x-catalog.form-row>
                     <x-inputsform.datepicker

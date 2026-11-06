@@ -90,6 +90,8 @@ return [
         'too_many' => 'Ya se hicieron varias reservas seguidas desde aquí. Si necesitas otra, escríbele al negocio por WhatsApp.',
         'too_many_phone' => 'Este número ya tiene varias reservas hoy en este negocio. Si necesitas otra, escríbele por WhatsApp.',
         'service_gone' => 'Ese servicio ya no se reserva por aquí. Elige otro o reserva solo la hora.',
+        'professional_gone' => 'Esa persona ya no atiende ese servicio por aquí. Elige a otra o deja que te atienda quien esté libre.',
+        'done_with' => 'Te atiende :name.',
         'done_title' => '¡Listo, quedó reservado!',
         'done_body' => ':business te espera el :when. Si necesitas cambiarlo, escríbele por WhatsApp.',
         'link_label' => 'Tu link de reservas',

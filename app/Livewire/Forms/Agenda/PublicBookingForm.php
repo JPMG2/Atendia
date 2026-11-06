@@ -13,6 +13,7 @@ use App\Livewire\Forms\BaseForm;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
+use App\Models\Professional;
 use App\Models\Service;
 use App\Rules\AttributeValidator;
 use App\Services\Agenda\SlotFinder;
@@ -37,6 +38,9 @@ class PublicBookingForm extends BaseForm
     public const array PER_PHONE = [3, 86400];
 
     public ?int $service_id = null;
+
+    /** Empty means anyone free: the first of them takes it. */
+    public ?int $professional_id = null;
 
     public string $day = '';
 
@@ -73,7 +77,7 @@ class PublicBookingForm extends BaseForm
     }
 
     /**
-     * @param  array{service_id: int|null, day: string, time: string, name: string, phone: string}  $validated
+     * @param  array{service_id: int|null, professional_id: int|null, day: string, time: string, name: string, phone: string}  $validated
      * @param  array<string, array{int, int, string}>  $keys
      */
     private function bookChecked(Business $business, array $validated, array $keys): NotificationDto|Appointment
@@ -94,15 +98,25 @@ class PublicBookingForm extends BaseForm
                 return new NotificationDto(__('agenda.public.service_gone'), NotificationType::Warning);
             }
 
+            $professional = $validated['professional_id'] === null
+                ? null
+                : $business->bookableProfessional((int) $validated['professional_id']);
+
+            // Switched off, removed, another business's, or no longer attending it: never booked with someone else.
+            if ($validated['professional_id'] !== null && ($professional === null || ! $professional->attends($service))) {
+                return new NotificationDto(__('agenda.public.professional_gone'), NotificationType::Warning);
+            }
+
             $customer = $business->customerWithPhone($validated['phone'], $validated['name']);
 
             try {
                 $appointment = app(BookAppointment::class)->handle(
                     $business,
                     $customer,
-                    $this->startsAt($business, $validated, $service),
+                    $this->startsAt($business, $validated, $service, $professional),
                     $service,
                     AppointmentSource::Link,
+                    professional: $professional,
                 );
 
                 // Only a turn really made counts: a taken hour or a typo does not use up the allowance.
@@ -124,10 +138,10 @@ class PublicBookingForm extends BaseForm
      *
      * @param  array{day: string, time: string}  $validated
      */
-    private function startsAt(Business $business, array $validated, ?Service $service): CarbonImmutable
+    private function startsAt(Business $business, array $validated, ?Service $service, ?Professional $professional): CarbonImmutable
     {
         $day = CarbonImmutable::parse($validated['day'], $business->localTimezone());
-        $offered = collect(app(SlotFinder::class)->freeSlots($business, $day, $service))
+        $offered = collect(app(SlotFinder::class)->freeSlots($business, $day, $service, professional: $professional))
             ->first(fn (CarbonImmutable $slot): bool => $slot->format('H:i') === $validated['time']);
 
         return $offered ?? CarbonImmutable::parse($validated['day'].' '.$validated['time'], $business->localTimezone());
@@ -137,6 +151,7 @@ class PublicBookingForm extends BaseForm
     {
         return [
             'service_id' => $this->service_id,
+            'professional_id' => $this->professional_id,
             'day' => $this->day,
             'time' => $this->time,
             'name' => $this->name,
@@ -149,6 +164,8 @@ class PublicBookingForm extends BaseForm
     {
         return [
             'service_id' => ['nullable', 'integer', Rule::exists('services', 'id')->where('is_bookable', true)->where('is_active', true)->whereNull('deleted_at')],
+            // Checked against THIS business when it is looked up: the rule alone cannot see whose it is.
+            'professional_id' => ['nullable', 'integer', Rule::exists('professionals', 'id')->where('is_active', true)->whereNull('deleted_at')],
             'day' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
             'name' => [...AttributeValidator::stringValid(true, '2'), 'max:60'],
@@ -163,6 +180,7 @@ class PublicBookingForm extends BaseForm
     {
         return [
             'service_id' => __('agenda.form.service'),
+            'professional_id' => __('agenda.form.professional'),
             'day' => __('agenda.form.day'),
             'time' => __('agenda.form.time'),
             'name' => __('agenda.public.name'),

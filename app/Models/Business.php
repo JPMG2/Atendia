@@ -1052,6 +1052,12 @@ class Business extends Model
         return $this->services()->where('is_active', true)->where('is_bookable', true)->find($id);
     }
 
+    /** A professional of this business a visitor may book with; null when it is not one, or when they are switched off. */
+    public function bookableProfessional(int $id): ?Professional
+    {
+        return $this->professionals()->where('is_active', true)->find($id);
+    }
+
     /**
      * @return HasMany<Appointment, $this>
      */
