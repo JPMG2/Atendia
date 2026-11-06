@@ -103,6 +103,12 @@ class Professional extends Model
             ->values();
     }
 
+    /** Bookings still to come that hold their hour: what stops them being removed. */
+    public function upcomingCount(): int
+    {
+        return $this->appointments()->holdingSlot()->where('ends_at', '>', now())->count();
+    }
+
     /** Whether they attend the service; a plain slot with no service is open to everyone. */
     public function attends(?Service $service): bool
     {
