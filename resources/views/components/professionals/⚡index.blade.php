@@ -133,6 +133,12 @@ new class extends Component
             :title="$professional->editingId === null ? __('professionals.sheet.new_title') : __('professionals.sheet.edit_title', ['name' => $professional->data->name])"
         >
             <div class="bp-form">
+                @php($editing = $professional->editingId === null ? null : $pieces->all->firstWhere('id', $professional->editingId))
+                @if ($editing !== null && $pieces->upcomingLine($editing) !== null)
+                    {{-- The reason Eliminar will refuse, said before pressing it. --}}
+                    <x-ui.alert variant="info">{{ __('professionals.sheet.upcoming_note', ['upcoming' => $pieces->upcomingLine($editing)]) }}</x-ui.alert>
+                @endif
+
                 <x-catalog.form-row>
                     <x-inputsform.input span="full" name="name" :label="__('professionals.fields.name')" wire:model="professional.data.name" required />
                 </x-catalog.form-row>

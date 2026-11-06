@@ -42,6 +42,7 @@ return [
         'delete' => 'Eliminar profesional',
         'delete_title' => 'Eliminar a :name',
         'delete_message' => 'Se quita de las listas y de la agenda. Sus turnos pasados quedan en el historial.',
+        'upcoming_note' => 'Tiene :upcoming, así que no se puede eliminar todavía. Desactívalo para que no reciba nuevos.',
     ],
 
     'fields' => [

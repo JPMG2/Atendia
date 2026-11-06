@@ -168,6 +168,19 @@ test('a professional of another business cannot be opened from here', function (
     livewire('professionals.index')->call('open', $stranger->id)->assertStatus(404);
 });
 
+test('the sheet says why a professional cannot be removed yet, and says nothing when they can', function (): void {
+    $owner = proScreenOwner();
+    $busy = $owner->business->professionals()->create(['name' => 'Ana']);
+    $free = $owner->business->professionals()->create(['name' => 'Luis']);
+    Appointment::factory()->count(2)->create(['business_id' => $owner->business_id, 'professional_id' => $busy->id]);
+
+    livewire('professionals.index')
+        ->call('open', $busy->id)
+        ->assertSee(__('professionals.sheet.upcoming_note', ['upcoming' => '2 turnos por venir']))
+        ->call('open', $free->id)
+        ->assertDontSee('no se puede eliminar todavía');
+});
+
 test('removing one with bookings to come is refused, tells why and keeps the sheet open', function (): void {
     $owner = proScreenOwner();
     $professional = $owner->business->professionals()->create(['name' => 'Ana']);

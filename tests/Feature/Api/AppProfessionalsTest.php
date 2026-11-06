@@ -114,6 +114,17 @@ it('offers no way to write: the phone only looks', function (): void {
     asProfessionalsApp($owner)->deleteJson('/api/v1/professionals/1')->assertStatus(404);
 });
 
+it('says how many of them are active in the hub row only when some are switched off', function (): void {
+    $owner = professionalsOwner();
+    $owner->business->professionals()->create(['name' => 'Ana']);
+    $owner->business->professionals()->create(['name' => 'Luis', 'is_active' => false]);
+    $owner->business->professionals()->create(['name' => 'Marta', 'is_active' => false]);
+
+    $row = collect(asProfessionalsApp($owner)->getJson('/api/v1/business')->json('data.sections'))->firstWhere('key', 'professionals');
+
+    expect($row['summary'])->toBe('3 profesionales · 1 activo');
+});
+
 it('adds the row to the app hub with the web\'s own summary', function (): void {
     $owner = professionalsOwner();
     $owner->business->professionals()->create(['name' => 'Ana']);

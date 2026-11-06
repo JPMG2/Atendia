@@ -25,6 +25,10 @@ return [
         'hint' => 'Marcá los que hace. Si para esta persona cambia la duración o el precio, cargalos; vacío usa los del servicio.',
     ],
 
+    'sheet' => [
+        'upcoming_note' => 'Tiene :upcoming, así que no se puede eliminar todavía. Desactivalo para que no reciba nuevos.',
+    ],
+
     'notify' => [
         'has_bookings' => 'No se puede eliminar: tiene turnos por venir. Desactivalo para que no reciba nuevos y eliminalo cuando los atienda.',
     ],

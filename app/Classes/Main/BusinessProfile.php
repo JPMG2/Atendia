@@ -45,7 +45,7 @@ class BusinessProfile
                     'used' => $this->business->teamSeatsUsed(),
                     'cap' => $this->business->plan()->teamSeats,
                 ])),
-                $this->row('professionals', 'user', 'professionals', __('menu.professionals'), trans_choice('client.business.summary.professionals', $count = $this->business->professionals()->count(), ['count' => $count])),
+                $this->row('professionals', 'user', 'professionals', __('menu.professionals'), $this->professionals()),
             ];
         }
     }
@@ -114,6 +114,16 @@ class BusinessProfile
         $line = collect([$data->address, $data->city])->map(fn (?string $part): string => trim((string) $part))->filter()->implode(', ');
 
         return $line === '' ? null : $line;
+    }
+
+    /** How many attend, and how many of them take new bookings — said only when some are switched off. */
+    private function professionals(): string
+    {
+        $total = $this->business->professionals()->count();
+        $active = $this->business->professionals()->where('is_active', true)->count();
+        $line = trans_choice('client.business.summary.professionals', $total, ['count' => $total]);
+
+        return $active === $total ? $line : $line.' · '.trans_choice('client.business.summary.professionals_active', $active, ['count' => $active]);
     }
 
     /** Today's shifts on the business's own clock: what a customer asking right now would be told. */

@@ -246,6 +246,7 @@ return [
             'no_agenda' => 'Sin agenda',
             'people' => ':used de :cap personas',
             'professionals' => '{0} Todavía ninguno|{1} 1 profesional|[2,*] :count profesionales',
+            'professionals_active' => '{0} ninguno activo|{1} 1 activo|[2,*] :count activos',
         ],
 
         'meter' => [
