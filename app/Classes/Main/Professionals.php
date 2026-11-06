@@ -31,7 +31,7 @@ class Professionals
      */
     public Collection $all {
         get => $this->business->professionals()
-            ->with(['services:id,name', 'hours'])
+            ->with(['services:id,name', 'hours', 'closures'])
             ->withCount(['appointments as upcoming' => fn ($booked) => $booked->upcoming()])
             ->get();
     }
@@ -42,7 +42,7 @@ class Professionals
      *
      * @var array{
      *     copy: array{title: string, sub: string, list: string, empty_title: string, empty_body: string, needs_services: string|null},
-     *     professionals: list<array{id: int, name: string, inactive: string|null, hours: string, services: string, limits: string|null, upcoming: string|null}>
+     *     professionals: list<array{id: int, name: string, inactive: string|null, hours: string, services: string, limits: string|null, upcoming: string|null, away: string|null}>
      * }
      */
     public array $overview {
@@ -63,8 +63,18 @@ class Professionals
                 'services' => trans_choice('professionals.list.services', $professional->services->count(), ['count' => $professional->services->count()]),
                 'limits' => $professional->appointments_per_day === null ? null : __('professionals.list.limits', ['per_day' => $professional->appointments_per_day]),
                 'upcoming' => $this->upcomingLine($professional),
+                'away' => $this->awayLine($professional),
             ])->values()->all(),
         ];
+    }
+
+    /** "Ausente hasta el 27/11" while they are away today, so the list says it without opening the sheet. */
+    public function awayLine(Professional $professional): ?string
+    {
+        $today = CarbonImmutable::now($this->business->localTimezone());
+        $closure = $professional->closures->first(fn (ProfessionalClosure $each): bool => $each->covers($today));
+
+        return $closure === null ? null : __('professionals.list.away', ['until' => $closure->ends_on->translatedFormat('d/m')]);
     }
 
     /** What is still to come, said only when there is something: the number that decides whether they can be removed. */

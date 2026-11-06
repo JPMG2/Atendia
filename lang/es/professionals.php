@@ -24,6 +24,7 @@ return [
         'empty_title' => 'Todavía no hay profesionales',
         'empty_body' => 'Mientras no cargues ninguno, tu agenda funciona como una sola. Agrega uno para que cada persona tenga sus horas y sus turnos.',
         'inactive' => 'Desactivado',
+        'away' => 'Ausente hasta el :until',
         'services' => '{0} Sin servicios|{1} 1 servicio|[2,*] :count servicios',
         'business_hours' => 'Sigue el horario del negocio',
         'limits' => 'Hasta :per_day por día',

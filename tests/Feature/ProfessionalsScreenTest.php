@@ -6,7 +6,9 @@ use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Menu;
 use App\Models\Professional;
+use App\Models\ProfessionalClosure;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -166,6 +168,22 @@ test('a professional of another business cannot be opened from here', function (
     $stranger = Professional::factory()->create();
 
     livewire('professionals.index')->call('open', $stranger->id)->assertStatus(404);
+});
+
+test('the list says who is away today and until when, and nothing for a past or a future stretch', function (): void {
+    $owner = proScreenOwner();
+    $now = CarbonImmutable::now($owner->business->localTimezone());
+    $away = $owner->business->professionals()->create(['name' => 'Ana']);
+    $past = $owner->business->professionals()->create(['name' => 'Luis']);
+    $later = $owner->business->professionals()->create(['name' => 'Marta']);
+    $closure = fn ($professional, $from, $to) => ProfessionalClosure::factory()->create(['business_id' => $owner->business_id, 'professional_id' => $professional->id, 'starts_on' => $from->format('Y-m-d'), 'ends_on' => $to->format('Y-m-d')]);
+    $closure($away, $now->subDay(), $now->addDays(3));
+    $closure($past, $now->subDays(9), $now->subDays(2));
+    $closure($later, $now->addDays(5), $now->addDays(9));
+
+    $page = livewire('professionals.index')->assertSee(__('professionals.list.away', ['until' => $now->addDays(3)->translatedFormat('d/m')]));
+
+    expect(substr_count($page->html(), 'Ausente hasta'))->toBe(1);
 });
 
 test('the sheet says why a professional cannot be removed yet, and says nothing when they can', function (): void {

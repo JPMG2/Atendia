@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Professional;
+use App\Models\ProfessionalClosure;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -66,6 +68,19 @@ it('says the web list: each person with their hours, services, ceiling and what 
             'limits' => null,
             'upcoming' => null,
         ]);
+});
+
+it('says who is away today and until when, in the same words as the web list', function (): void {
+    $owner = professionalsOwner();
+    $ana = $owner->business->professionals()->create(['name' => 'Ana Soto']);
+    $owner->business->professionals()->create(['name' => 'Luis Paz']);
+    $now = CarbonImmutable::now($owner->business->localTimezone());
+    ProfessionalClosure::factory()->create(['business_id' => $owner->business_id, 'professional_id' => $ana->id, 'starts_on' => $now->subDay()->format('Y-m-d'), 'ends_on' => $now->addDays(3)->format('Y-m-d')]);
+
+    $rows = asProfessionalsApp($owner)->getJson('/api/v1/professionals')->assertOk()->json('data.professionals');
+
+    expect($rows[0]['away'])->toBe(__('professionals.list.away', ['until' => $now->addDays(3)->translatedFormat('d/m')]))
+        ->and($rows[1]['away'])->toBeNull();
 });
 
 it('tells the owner when no service takes a booking yet, and nothing when nobody is loaded', function (): void {

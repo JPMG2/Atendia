@@ -130,6 +130,9 @@ new class extends Component
                             @unless ($staff->is_active)
                                 <span class="status-tag is-warning">{{ __('professionals.list.inactive') }}</span>
                             @endunless
+                            @if ($pieces->awayLine($staff) !== null)
+                                <span class="status-tag is-info">{{ $pieces->awayLine($staff) }}</span>
+                            @endif
                         </p>
                         <p class="text-muted text-xs">
                             {{ $pieces->hoursLine($staff) }}
