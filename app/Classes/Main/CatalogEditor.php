@@ -19,6 +19,7 @@ use App\Livewire\Forms\Catalog\SeasonalWindowForm;
 use App\Livewire\Forms\Catalog\ServiceAttributeForm;
 use App\Livewire\Forms\Catalog\ServiceModalityForm;
 use App\Livewire\Forms\Catalog\SocialNetworkForm;
+use App\Livewire\Forms\Catalog\SpecialtyForm;
 use App\Livewire\Forms\Catalog\SupportReplyForm;
 use App\Livewire\Forms\Catalog\SupportTicketKindForm;
 use App\Livewire\Forms\Catalog\TaxConditionForm;
@@ -50,6 +51,7 @@ final class CatalogEditor
         'mention-goal' => MentionGoalForm::class,
         'support-reply' => SupportReplyForm::class,
         'business-activity' => BusinessActivityForm::class,
+        'specialty' => SpecialtyForm::class,
         'service-modality' => ServiceModalityForm::class,
         'support-ticket-kind' => SupportTicketKindForm::class,
         'adoption-nudge' => AdoptionNudgeForm::class,

@@ -28,6 +28,7 @@ return [
     'caption' => 'texto del post',
     'sort_order' => 'orden',
     'business_sector_id' => 'rubro',
+    'business_activity_id' => 'actividad',
     'data_type' => 'tipo de dato',
     'unit' => 'unidad',
     'options' => 'opciones',
@@ -56,6 +57,7 @@ return [
     // Business: the tenant, as the wizard asks for it.
     'sector' => 'rubro',
     'activity' => 'actividad',
+    'specialties' => 'especialidades',
     'whatsapp_number' => 'WhatsApp del negocio',
     'fallback_whatsapp_number' => 'WhatsApp de respaldo',
 ];

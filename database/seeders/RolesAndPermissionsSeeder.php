@@ -28,7 +28,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'catalog.country', 'catalog.province', 'catalog.region',
             'catalog.currency', 'catalog.tax-condition',
             'catalog.status', 'catalog.social-network',
-            'catalog.business-sector', 'catalog.business-activity',
+            'catalog.business-sector', 'catalog.business-activity', 'catalog.specialty',
             'catalog.service-modality', 'catalog.service-attribute', 'catalog.service-type',
             'catalog.seasonal-window', 'catalog.demo-tag', 'catalog.whatsapp-variant', 'catalog.support-ticket-kind', 'catalog.support-reply', 'catalog.adoption-nudge', 'catalog.mention-goal',
             'catalog.plan', 'catalog.country-holiday',

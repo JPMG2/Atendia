@@ -529,6 +529,91 @@ class Business extends Model
     }
 
     /**
+     * The specialties the business marked inside its activities, in catalog order.
+     *
+     * @return BelongsToMany<Specialty, $this>
+     */
+    public function specialties(): BelongsToMany
+    {
+        return $this->belongsToMany(Specialty::class, 'business_specialty')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderBy('business_specialty.sort_order');
+    }
+
+    /**
+     * Leaves the specialties at exactly these codes.
+     *
+     * Only the ones its own activities offer get in: a code of another trade,
+     * or a switched-off one, is dropped here as a second line behind the form.
+     *
+     * @param  list<string>  $codes
+     */
+    public function syncSpecialties(array $codes): void
+    {
+        $activityIds = $this->activities()->pluck('business_activities.id')->map(fn (mixed $id): int => (int) $id)->all();
+
+        $pivot = [];
+
+        foreach (Specialty::idsFromCodes($codes, $activityIds) as $order => $id) {
+            $pivot[$id] = ['sort_order' => $order];
+        }
+
+        $this->specialties()->sync($pivot);
+    }
+
+    /**
+     * The codes of the specialties the business marked, in catalog order.
+     *
+     * @return list<string>
+     */
+    public function specialtyCodes(): array
+    {
+        return $this->specialties()->pluck('specialties.code')->map(fn (mixed $code): string => (string) $code)->all();
+    }
+
+    /**
+     * What this business could mark: the active specialties of its own
+     * activities, with the code as value. Empty when none of them offers any.
+     *
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    public function specialtyOptions(): array
+    {
+        $activityIds = $this->activities()->pluck('business_activities.id')->map(fn (mixed $id): int => (int) $id)->all();
+
+        return $activityIds === [] ? [] : Specialty::options(
+            states: [true],
+            value: fn (Specialty $specialty): string => $specialty->code,
+            activityIds: $activityIds,
+        );
+    }
+
+    /** What the specialty field is called for this business: its primary activity's label, or the generic one. */
+    public function specialtyLabel(): string
+    {
+        $label = $this->primaryActivity()?->specialty_label;
+
+        return $label !== null && $label !== '' ? $label : __('catalog.specialty.generic_label');
+    }
+
+    /**
+     * The specialties as one line for a prompt or a profile, worded with the label
+     * its primary activity gives the field ("Especialidad", "Tipo de cocina").
+     * Empty when the business marked none.
+     */
+    public function specialtiesLine(): string
+    {
+        $names = $this->specialties()->pluck('specialties.name')->implode(', ');
+
+        if ($names === '') {
+            return '';
+        }
+
+        return $this->specialtyLabel().': '.$names;
+    }
+
+    /**
      * The service types SUGGESTED to this business: the union of what each of its
      * activities suggests.
      *

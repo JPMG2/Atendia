@@ -38,6 +38,10 @@ class SyncProfileKnowledge
             $lines[] = 'Rubro: '.$activity->name;
         }
 
+        if (($specialties = $business->specialtiesLine()) !== '') {
+            $lines[] = $specialties;
+        }
+
         $lines = [...$lines, ...$business->premisesLines(), ...$this->hourLines($business), ...$business->contactLines()];
 
         return implode("\n", $lines);

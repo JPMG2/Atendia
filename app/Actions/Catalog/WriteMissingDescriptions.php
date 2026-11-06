@@ -83,7 +83,9 @@ class WriteMissingDescriptions
         $trade = $business->activities()->pluck('name')->implode(', ');
         $names = $pending->map(fn (Model $item): string => '- '.$item->getAttribute('name'))->implode("\n");
 
-        return "Negocio: {$business->name}".($trade !== '' ? " (rubro: {$trade})" : '')."\n\nNombres:\n{$names}";
+        $specialties = $business->specialtiesLine();
+
+        return "Negocio: {$business->name}".($trade !== '' ? " (rubro: {$trade})" : '').($specialties !== '' ? "\n{$specialties}" : '')."\n\nNombres:\n{$names}";
     }
 
     /**

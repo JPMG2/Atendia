@@ -68,8 +68,11 @@ class WriteBusinessBio
             ->take(self::SAMPLE)
             ->implode(', ');
 
+        $specialties = $business->specialtiesLine();
+
         return "Negocio: {$name}"
             .($trade !== '' ? "\nRubro: {$trade}" : '')
+            .($specialties !== '' ? "\n{$specialties}" : '')
             .($offers !== '' ? "\nOfrece: {$offers}" : '');
     }
 }

@@ -242,3 +242,54 @@ test('a loading combobox cannot be cleared either', function (): void {
 
     expect($clearButton)->toContain('wire:loading.attr="disabled"');
 });
+
+test('multiple entangles an array with the livewire property and carries no hidden input', function (): void {
+    $html = $this->blade(
+        '<x-inputsform.combobox multiple name="specialties" :options="$options" wire:model="form.data.specialties" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    // The value is an array: no hidden field could hold it, the property is entangled by name.
+    expect($html)->toContain('inputsformMultiCombobox')
+        ->toContain('$wire.$entangle(')
+        ->toContain('form.data.specialties')
+        ->not->toContain('type="hidden"')
+        ->not->toContain('inputsformCombobox(')
+        ->and($html)->toContain('is-multi')
+        ->toContain('aria-multiselectable="true"');
+});
+
+test('multiple draws the marked options as chips with their own remove button', function (): void {
+    $html = $this->blade(
+        '<x-inputsform.combobox multiple name="specialties" :options="$options" wire:model="form.data.specialties" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    // A chip is removed from itself, so the single-value clear cross is not drawn.
+    expect($html)->toContain('combo-chip-x')
+        ->toContain('removeLast()')
+        ->toContain('toggle(option)')
+        ->not->toContain('combo-clear')
+        ->and($html)->toContain(__('forms.combobox.remove'));
+});
+
+test('multiple is live only when the wire:model says so', function (): void {
+    $deferred = $this->blade('<x-inputsform.combobox multiple name="a" :options="[]" wire:model="form.data.a" />')->__toString();
+    $live = $this->blade('<x-inputsform.combobox multiple name="a" :options="[]" wire:model.live="form.data.a" />')->__toString();
+
+    expect($deferred)->toContain('form.data.a', 'false)')
+        ->and($live)->toContain('form.data.a', 'true)');
+});
+
+test('the single mode is untouched by the multiple one', function (): void {
+    $html = $this->blade(
+        '<x-inputsform.combobox name="currency_id" :options="$options" wire:model="form.data.currency_id" />',
+        ['options' => comboboxOptions()],
+    )->__toString();
+
+    expect($html)->toContain('inputsformCombobox(')
+        ->toContain('type="hidden"')
+        ->toContain('combo-clear')
+        ->not->toContain('is-multi')
+        ->not->toContain('combo-chip-x');
+});

@@ -1185,6 +1185,48 @@ return [
             'order' => 'Orden',
             'order_hint' => 'En qué posición se ofrece dentro del rubro',
             'status' => 'Estado',
+            'specialty_label' => 'Nombre del campo de especialidad',
+            'specialty_label_placeholder' => 'Ej. Especialidad',
+            'specialty_label_hint' => 'Lo que ve el negocio: «¿Qué especialidad atiendes?». Para un restaurante sería «Tipo de cocina». Déjalo vacío si esta actividad no lleva el campo',
+        ],
+    ],
+
+    'specialty' => [
+        'search_placeholder' => 'Buscar por clave, nombre o actividad',
+        'search_label' => 'Buscar especialidad',
+        'singular' => 'especialidad',
+        'plural' => 'especialidades',
+        'create' => 'Crear especialidad',
+        'new' => 'Nueva',
+        'new_title' => 'Nueva especialidad',
+        'edit_title' => 'Editar',
+        'empty' => 'No hay especialidades que coincidan con la búsqueda.',
+        'generic_label' => 'Especialidades',
+
+        'columns' => [
+            'code' => 'Clave',
+            'name' => 'Nombre',
+            'activity' => 'Actividad',
+            'order' => 'Orden',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'fields' => [
+            'code' => 'Clave',
+            'code_hint' => 'Sin espacios ni acentos: medicina-interna, cocina-china',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Ej. Medicina interna',
+            'activity' => 'Actividad',
+            'activity_placeholder' => 'Elegir actividad',
+            'activity_hint' => 'Solo se le ofrece a los negocios que tengan esta actividad',
+            'order' => 'Orden',
+            'order_hint' => 'En qué posición se ofrece dentro de la actividad',
+            'status' => 'Estado',
         ],
     ],
 

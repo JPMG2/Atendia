@@ -30,6 +30,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->boolean('catalog_eligible')->default(true)->comment('Si el oficio puede publicar en el catálogo de WhatsApp; Meta prohíbe los productos y servicios de salud');
+            $table->string('specialty_label', 60)->nullable()->comment('Cómo se llama el campo de especialidad del oficio: Especialidad, Tipo de cocina; null = el oficio no lleva el campo');
             $table->timestamp('intents_generated_at')->nullable()->comment('Cuándo la IA armó las intenciones propias del oficio; null = todavía no');
             $table->timestamps();
 

@@ -32,6 +32,18 @@ new class extends Component
         $this->form->setup();
     }
 
+    /**
+     * What the business may mark inside its own activities. Empty for most
+     * trades, and then the card carries no field at all.
+     *
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    #[Computed]
+    public function specialtyOptions(): array
+    {
+        return Auth::user()?->business?->specialtyOptions() ?? [];
+    }
+
     #[Computed]
     public function logoUrl(): ?string
     {
@@ -116,6 +128,20 @@ new class extends Component
                 wire:model="form.name"
             />
         </x-catalog.form-row>
+        @if ($this->specialtyOptions !== [])
+            <x-catalog.form-row>
+                <x-inputsform.combobox
+                    multiple
+                    span="full"
+                    :label="auth()->user()->business->specialtyLabel()"
+                    name="specialties"
+                    :placeholder="__('client.business.identity.specialties_placeholder')"
+                    :hint="__('client.business.identity.specialties_hint')"
+                    :options="$this->specialtyOptions"
+                    wire:model="form.specialties"
+                />
+            </x-catalog.form-row>
+        @endif
         <x-catalog.form-row>
             <x-inputsform.textarea
                 span="full"

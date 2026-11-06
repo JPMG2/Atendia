@@ -73,13 +73,13 @@ test('health activities are born out of the WhatsApp catalog and a re-run keeps 
         ->and(BusinessActivity::where('code', 'panaderia')->sole()->catalog_eligible)->toBeFalse();
 });
 
-test('the hub offers the Negocio group with both masters', function (): void {
+test('the hub offers the Negocio group with its three masters', function (): void {
     $this->seed(CatalogFormSeeder::class);
 
     $group = CatalogForm::where('group', 'Negocio')->orderBy('order')->get();
 
-    expect($group->pluck('title')->all())->toBe(['Rubros', 'Actividades'])
-        ->and($group->pluck('component')->all())->toBe(['catalog.business-sector', 'catalog.business-activity'])
+    expect($group->pluck('title')->all())->toBe(['Rubros', 'Actividades', 'Especialidades'])
+        ->and($group->pluck('component')->all())->toBe(['catalog.business-sector', 'catalog.business-activity', 'catalog.specialty'])
         ->and($group->every(fn (CatalogForm $form): bool => $form->is_active))->toBeTrue();
 });
 

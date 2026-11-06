@@ -140,6 +140,95 @@ function comboboxData({ options = [], initial = null } = {}) {
     };
 }
 
+/*
+ * The `multiple` mode of the same component: several options, shown as chips
+ * inside the field. The value is an ARRAY entangled with the Livewire property
+ * (`values`), so there is no hidden input to carry it.
+ */
+function multiComboboxData({ options = [], values = [] } = {}) {
+    return {
+        options,
+        values,
+        open: false,
+        query: '',
+        highlighted: 0,
+
+        /** The marked options as whole objects, in the order they were marked. */
+        chosen() {
+            return this.values
+                .map((value) => this.options.find((option) => String(option.value) === String(value)))
+                .filter(Boolean);
+        },
+
+        filtered() {
+            const needle = fold(this.query).trim();
+
+            return needle === '' ? this.options : this.options.filter((option) => fold(option.label).includes(needle));
+        },
+
+        isSelected(option) {
+            return this.values.some((value) => String(value) === String(option.value));
+        },
+
+        openPanel() {
+            this.open = true;
+        },
+
+        closePanel() {
+            this.open = false;
+            // Half-typed text that chose nothing must not stay on screen.
+            this.query = '';
+        },
+
+        onInput() {
+            this.open = true;
+            this.highlighted = 0;
+        },
+
+        move(step) {
+            const total = this.filtered().length;
+
+            if (total === 0) {
+                return;
+            }
+
+            this.open = true;
+            this.highlighted = (this.highlighted + step + total) % total;
+            this.$nextTick(() => {
+                this.$refs.list?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
+            });
+        },
+
+        /** Marks the option, or unmarks it when it already was: a second tap undoes the first. */
+        toggle(option) {
+            this.values = this.isSelected(option)
+                ? this.values.filter((value) => String(value) !== String(option.value))
+                : [...this.values, option.value];
+            this.query = '';
+        },
+
+        chooseHighlighted() {
+            const option = this.filtered()[this.highlighted];
+
+            if (option) {
+                this.toggle(option);
+            }
+        },
+
+        remove(value) {
+            this.values = this.values.filter((item) => String(item) !== String(value));
+        },
+
+        /** Backspace on an empty search box takes back the last mark, like every tag field. */
+        removeLast() {
+            if (this.query === '' && this.values.length > 0) {
+                this.values = this.values.slice(0, -1);
+            }
+        },
+    };
+}
+
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('inputsformCombobox', comboboxData);
+    window.Alpine.data('inputsformMultiCombobox', multiComboboxData);
 });

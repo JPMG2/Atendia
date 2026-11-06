@@ -62,6 +62,9 @@ return [
         'activity' => '¿Qué tipo de :sector?',
         'activity_hint' => 'Con esto tu asistente aprende tu oficio y te sugiere los servicios justos. Puedes sumar más actividades después.',
 
+        'specialty_placeholder' => 'Busca y elige',
+        'specialty_hint' => 'Elige todas las que atiendes: tu asistente las usa para contar qué haces. Puedes cambiarlas después.',
+
         'service' => 'Tus servicios',
         'service_placeholder' => 'Escribe uno y aprieta Enter — ej. Ecodoppler',
 

@@ -15,6 +15,7 @@ use App\Events\BusinessConnectionSaved;
 use App\Events\BusinessCreated;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Business;
+use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Rules\AttributeValidator;
 use Illuminate\Support\Facades\Auth;
@@ -297,6 +298,8 @@ class BusinessForm extends BaseForm
             'province_id' => config('nicename.province_id'),
             'sector' => config('nicename.sector'),
             'activity' => config('nicename.activity'),
+            'specialties' => config('nicename.specialties'),
+            'specialties.*' => config('nicename.specialties'),
             'whatsapp_number' => config('nicename.whatsapp_number'),
             'fallback_whatsapp_number' => config('nicename.fallback_whatsapp_number'),
             'email' => config('nicename.email'),
@@ -310,6 +313,7 @@ class BusinessForm extends BaseForm
             // Screen state, out of the payload; their rules still need them.
             'sector' => $this->data?->sector,
             'activity' => $this->data?->activity,
+            'specialties' => $this->data?->specialties ?? [],
         ];
     }
 
@@ -344,6 +348,18 @@ class BusinessForm extends BaseForm
                     Rule::exists('business_activities', 'code')
                         ->where('is_active', true)
                         ->where('business_sector_id', BusinessSector::idFromCode((string) $this->data?->sector)),
+                ],
+
+                // Optional: what the business marks inside its activity. Only the
+                // specialties THAT activity offers get in.
+                'specialties' => ['nullable', 'array', 'max:40'],
+
+                'specialties.*' => [
+                    'string',
+                    'max:60',
+                    Rule::exists('specialties', 'code')
+                        ->where('is_active', true)
+                        ->where('business_activity_id', BusinessActivity::idFromCode((string) $this->data?->activity)),
                 ],
             ],
 

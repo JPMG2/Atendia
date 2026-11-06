@@ -49,6 +49,7 @@ class BusinessActivityForm extends BaseCatalogForm implements EditableFromPhone
             ['key' => 'name', 'type' => 'text', 'label' => __('catalog.business_activity.fields.name'), 'placeholder' => __('catalog.business_activity.fields.name_placeholder'), 'required' => true],
             ['key' => 'business_sector_id', 'type' => 'select', 'label' => __('catalog.business_activity.fields.sector'), 'placeholder' => __('catalog.business_activity.fields.sector_placeholder'), 'required' => true, 'options' => BusinessSector::options()],
             ['key' => 'description', 'type' => 'text', 'label' => __('catalog.business_activity.fields.description'), 'placeholder' => __('catalog.business_activity.fields.description_placeholder'), 'hint' => __('catalog.business_activity.fields.description_hint'), 'max' => 255],
+            ['key' => 'specialty_label', 'type' => 'text', 'label' => __('catalog.business_activity.fields.specialty_label'), 'placeholder' => __('catalog.business_activity.fields.specialty_label_placeholder'), 'hint' => __('catalog.business_activity.fields.specialty_label_hint'), 'max' => 60],
             ['key' => 'sort_order', 'type' => 'number', 'label' => __('catalog.business_activity.fields.order'), 'hint' => __('catalog.business_activity.fields.order_hint'), 'min' => 0, 'max' => 32767],
             ['key' => 'is_active', 'type' => 'switch', 'label' => __('catalog.business_activity.fields.status'), 'on_label' => __('catalog.business_activity.status.active'), 'off_label' => __('catalog.business_activity.status.inactive')],
             ['key' => 'catalog_eligible', 'type' => 'switch', 'label' => __('catalog.business_activity.fields.catalog'), 'hint' => __('catalog.business_activity.fields.catalog_hint'), 'on_label' => __('catalog.business_activity.catalog.on'), 'off_label' => __('catalog.business_activity.catalog.off')],
@@ -88,6 +89,12 @@ class BusinessActivityForm extends BaseCatalogForm implements EditableFromPhone
             'is_active' => AttributeValidator::booleanValue(true),
 
             'catalog_eligible' => AttributeValidator::booleanValue(true),
+
+            'specialty_label' => [
+                'nullable',
+                ...AttributeValidator::stringValid(false, '3'),
+                'max:60',
+            ],
         ];
     }
 
@@ -101,6 +108,7 @@ class BusinessActivityForm extends BaseCatalogForm implements EditableFromPhone
             'sort_order' => config('nicename.sort_order'),
             'is_active' => config('nicename.is_active'),
             'catalog_eligible' => __('catalog.business_activity.fields.catalog'),
+            'specialty_label' => __('catalog.business_activity.fields.specialty_label'),
         ];
     }
 }

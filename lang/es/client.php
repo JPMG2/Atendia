@@ -85,6 +85,8 @@ return [
             'name_hint' => 'Escríbelo tal como aparece en tu marca: así lo va a mostrar WhatsApp.',
             'description' => 'Descripción',
             'description_hint' => 'Tu asistente la usa para presentarse. Cuenta qué haces y qué te hace distinto.',
+            'specialties_placeholder' => 'Busca y elige',
+            'specialties_hint' => 'Elige todas las que atiendes: tu asistente las usa para contar qué haces.',
             'ai_title' => '¿Te cuesta describir tu negocio?',
             'ai_body' => 'Con tu nombre, tu rubro y lo que ofreces redactamos una propuesta. La revisas, la ajustas y la guardas tú.',
             'ai_action' => 'Optimizar con IA',

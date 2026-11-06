@@ -6,6 +6,7 @@ use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\Province;
+use App\Models\Specialty;
 use App\Traits\HasNotifications;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -90,6 +91,32 @@ new class extends Component
         );
     }
 
+    /**
+     * What the chosen trade lets a business mark inside it (specialties,
+     * cuisines). Empty when the trade offers none, which is what keeps the field
+     * out of the screen for most trades.
+     *
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    #[Computed]
+    public function specialtyOptions(): array
+    {
+        $activityId = BusinessActivity::idFromCode((string) $this->form->data?->activity);
+
+        return $activityId === null ? [] : Specialty::options(
+            states: [true],
+            value: fn (Specialty $specialty): string => $specialty->code,
+            activityIds: [$activityId],
+        );
+    }
+
+    /** What the field is called for the chosen trade: "Especialidad", "Tipo de cocina". */
+    #[Computed]
+    public function specialtyLabel(): string
+    {
+        return BusinessActivity::specialtyLabelFromCode((string) $this->form->data?->activity) ?? __('catalog.specialty.generic_label');
+    }
+
     /** "¿Qué tipo de gastronomía?" — the question names the chosen sector. */
     #[Computed]
     public function activityLabel(): string
@@ -105,8 +132,9 @@ new class extends Component
 
         // A new sector invalidates the trade: the old one no longer belongs.
         $this->form->data->activity = null;
+        $this->form->data->specialties = [];
 
-        unset($this->activityOptions);
+        unset($this->activityOptions, $this->specialtyOptions);
 
         // BEFORE the auto-pick below, or the parent's reset on sector-chosen
         // would wipe the freshly picked trade.
@@ -127,7 +155,14 @@ new class extends Component
 
     public function chooseActivity(string $activity): void
     {
+        // What was marked belongs to the previous trade: it does not carry over.
+        if ($this->form->data->activity !== $activity) {
+            $this->form->data->specialties = [];
+        }
+
         $this->form->data->activity = $activity;
+
+        unset($this->specialtyOptions, $this->specialtyLabel);
 
         $this->dispatch('wizard:activity-chosen', activity: $activity);
     }
@@ -236,6 +271,20 @@ new class extends Component
                 <span class="field-error-text" x-show="errors.activity" x-text="errors.activity" x-cloak></span>
                 <span class="field-hint">{{ __('wizard.fields.activity_hint') }}</span>
             </div>
+        @endif
+
+        {{-- Only for trades that offer them: most never see this field. --}}
+        @if ($this->specialtyOptions !== [])
+            <x-inputsform.combobox
+                multiple
+                span="long"
+                name="specialties"
+                :label="$this->specialtyLabel.' · '.__('wizard.optional')"
+                :placeholder="__('wizard.fields.specialty_placeholder')"
+                :hint="__('wizard.fields.specialty_hint')"
+                :options="$this->specialtyOptions"
+                wire:model="form.data.specialties"
+            />
         @endif
 
         <div class="wizard-foot">

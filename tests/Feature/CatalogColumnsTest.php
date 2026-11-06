@@ -21,6 +21,7 @@ use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
 use App\Models\ServiceType;
 use App\Models\SocialNetwork;
+use App\Models\Specialty;
 use App\Models\SubscriptionPlan;
 use App\Models\SupportReply;
 use App\Models\SupportTicketKind;
@@ -50,6 +51,7 @@ dataset('masters with columns', [
     'region' => ['region', Region::class, ['name', 'province', 'country']],
     'country-holiday' => ['country-holiday', CountryHoliday::class, ['country', 'name', 'when']],
     'business-activity' => ['business-activity', BusinessActivity::class, ['code', 'name', 'sector']],
+    'specialty' => ['specialty', Specialty::class, ['code', 'name', 'activity']],
     'service-type' => ['service-type', ServiceType::class, ['code', 'name', 'sector', 'modality', 'attributes']],
     'service-attribute' => ['service-attribute', ServiceAttribute::class, ['code', 'name', 'description', 'type']],
     'service-modality' => ['service-modality', ServiceModality::class, ['code', 'name', 'description']],

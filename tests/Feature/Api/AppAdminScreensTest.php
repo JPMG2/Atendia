@@ -923,10 +923,10 @@ test('Catálogos lists, grouped as the web\'s rail groups them, only the masters
 
     // Readable = its model says its own columns; the other 7 masters are not drawn until they do.
     // The order is the rail's: by the master's `order`, a group appearing where its first master does.
-    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'plan', 'business-sector', 'business-activity', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal', 'seasonal-window', 'demo-tag', 'whatsapp-variant', 'support-reply', 'adoption-nudge', 'support-ticket-kind'])
+    expect(catalogSlugs($data['groups']))->toBe(['country', 'province', 'region', 'country-holiday', 'currency', 'tax-condition', 'plan', 'business-sector', 'business-activity', 'specialty', 'service-type', 'service-modality', 'service-attribute', 'status', 'social-network', 'mention-goal', 'seasonal-window', 'demo-tag', 'whatsapp-variant', 'support-reply', 'adoption-nudge', 'support-ticket-kind'])
         ->and(array_column($data['groups'], 'label'))->toBe(['Ubicaciones', 'Facturación', 'Negocio', 'Servicios', 'Sistema', 'Landing', 'Soporte'])
-        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition', 'plan'], ['business-sector', 'business-activity'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal'], ['seasonal-window', 'demo-tag', 'whatsapp-variant'], ['support-reply', 'adoption-nudge', 'support-ticket-kind']])
-        // All 21 masters of the web are read now.
+        ->and(array_map(fn (array $group): array => array_column($group['masters'], 'slug'), $data['groups']))->toBe([['country', 'province', 'region', 'country-holiday'], ['currency', 'tax-condition', 'plan'], ['business-sector', 'business-activity', 'specialty'], ['service-type', 'service-modality', 'service-attribute'], ['status', 'social-network', 'mention-goal'], ['seasonal-window', 'demo-tag', 'whatsapp-variant'], ['support-reply', 'adoption-nudge', 'support-ticket-kind']])
+        // All 22 masters of the web are read now.
         ->and(count(catalogSlugs($data['groups'])))->toBe(CatalogForm::query()->count())
         ->and($data['groups'][0]['masters'][0])->toBe(['slug' => 'country', 'title' => 'Países', 'icon' => 'globe'])
         ->and($data['title'])->toBe(__('catalog.hub.rail_label'))

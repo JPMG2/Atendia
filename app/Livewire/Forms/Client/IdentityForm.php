@@ -25,6 +25,13 @@ class IdentityForm extends BaseForm
 
     public ?string $description = null;
 
+    /**
+     * Codes of the specialties the business marked.
+     *
+     * @var list<string>
+     */
+    public array $specialties = [];
+
     /** The stored path; the drop zone previews it until a new pick lands. */
     public ?string $logo_path = null;
 
@@ -45,6 +52,7 @@ class IdentityForm extends BaseForm
         $this->name = $data->name;
         $this->description = $data->description;
         $this->logo_path = $data->logo_path;
+        $this->specialties = Auth::user()?->business?->specialtyCodes() ?? [];
     }
 
     public function save(): NotificationDto
@@ -59,7 +67,7 @@ class IdentityForm extends BaseForm
 
             // With no file picked the logo column is not sent at all, so the stored logo stays.
             $business = $this->client()->personalData->saveIdentity(
-                ['name' => $validated['name'], 'description' => $validated['description']],
+                ['name' => $validated['name'], 'description' => $validated['description'], 'specialties' => $validated['specialties'] ?? []],
                 $validated['logo_file'] instanceof UploadedFile ? $validated['logo_file'] : null,
             );
 
@@ -82,6 +90,7 @@ class IdentityForm extends BaseForm
         return [
             'name' => $this->name,
             'description' => $this->description,
+            'specialties' => $this->specialties,
             'logo_file' => $this->logo_file,
         ];
     }
@@ -101,6 +110,9 @@ class IdentityForm extends BaseForm
         return [
             'name' => AttributeValidator::stringValid(true, '3'),
             'description' => ['nullable', 'string', 'max:500'],
+            // Which codes the business may mark is settled by the model when it saves: only its own activities' ones get in.
+            'specialties' => ['nullable', 'array', 'max:40'],
+            'specialties.*' => ['string', 'max:60'],
             'logo_file' => AttributeValidator::imageUpload('logo', false, 2048),
         ];
     }
@@ -121,6 +133,7 @@ class IdentityForm extends BaseForm
         return [
             'name' => config('nicename.name'),
             'description' => config('nicename.description'),
+            'specialties' => config('nicename.specialties'),
             'logo_file' => config('nicename.logo_path'),
         ];
     }

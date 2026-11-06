@@ -29,6 +29,7 @@ return [
         'empty' => 'No hay resultados para esa búsqueda.',
         'loading' => 'Cargando opciones…',
         'clear' => 'Limpiar la selección',
+        'remove' => 'Quitar',
     ],
 
     'datepicker' => [

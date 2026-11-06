@@ -25,6 +25,7 @@ use App\Models\ServiceAttribute;
 use App\Models\ServiceModality;
 use App\Models\ServiceType;
 use App\Models\SocialNetwork;
+use App\Models\Specialty;
 use App\Models\SubscriptionPlan;
 use App\Models\SupportReply;
 use App\Models\SupportTicketKind;
@@ -60,6 +61,7 @@ class CatalogReport extends ListReport
         'service-modality' => ServiceModality::class,
         'service-type' => ServiceType::class,
         'social-network' => SocialNetwork::class,
+        'specialty' => Specialty::class,
         'status' => CurrentStatus::class,
         'support-reply' => SupportReply::class,
         'support-ticket-kind' => SupportTicketKind::class,

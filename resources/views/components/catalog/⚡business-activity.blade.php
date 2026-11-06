@@ -148,6 +148,17 @@ new class extends Component
                 />
 
                 <x-inputsform.input
+                    span="text"
+                    :label="__('catalog.business_activity.fields.specialty_label')"
+                    name="specialty_label"
+                    :placeholder="__('catalog.business_activity.fields.specialty_label_placeholder')"
+                    :hint="__('catalog.business_activity.fields.specialty_label_hint')"
+                    maxlength="60"
+                    alpine-error="specialty_label"
+                    wire:model="form.data.specialty_label"
+                />
+
+                <x-inputsform.input
                     span="code"
                     :label="__('catalog.business_activity.fields.order')"
                     name="sort_order"

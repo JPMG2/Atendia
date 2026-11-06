@@ -20,6 +20,7 @@ class BusinessActivityDto implements FormData
         public int $sort_order = 0,
         public bool $is_active = true,
         public bool $catalog_eligible = true,
+        public ?string $specialty_label = null,
     ) {}
 
     /**
@@ -48,6 +49,7 @@ class BusinessActivityDto implements FormData
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'catalog_eligible' => $this->catalog_eligible,
+            'specialty_label' => $this->specialty_label,
         ];
     }
 
@@ -61,6 +63,7 @@ class BusinessActivityDto implements FormData
             sort_order: (int) ($data['sort_order'] ?? 0),
             is_active: $data['is_active'] ?? true,
             catalog_eligible: $data['catalog_eligible'] ?? true,
+            specialty_label: DtoCast::toNullableString($data['specialty_label'] ?? null),
         );
     }
 
@@ -76,6 +79,7 @@ class BusinessActivityDto implements FormData
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'catalog_eligible' => $this->catalog_eligible,
+            'specialty_label' => $this->specialty_label,
         ];
     }
 }

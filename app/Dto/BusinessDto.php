@@ -49,6 +49,8 @@ class BusinessDto implements FormData
         public int $appointment_slot_minutes = 30,
         public ?string $sector = null,
         public ?string $activity = null,
+        /** @var list<string> Codes of the specialties marked; screen state like `activity`. */
+        public array $specialties = [],
     ) {}
 
     /**
@@ -97,6 +99,7 @@ class BusinessDto implements FormData
             'appointment_slot_minutes' => $this->appointment_slot_minutes,
             'sector' => $this->sector,
             'activity' => $this->activity,
+            'specialties' => $this->specialties,
         ];
     }
 
@@ -130,6 +133,7 @@ class BusinessDto implements FormData
             appointment_slot_minutes: (int) ($data['appointment_slot_minutes'] ?? 30),
             sector: DtoCast::toNullableString($data['sector'] ?? null),
             activity: DtoCast::toNullableString($data['activity'] ?? null),
+            specialties: array_values(array_filter((array) ($data['specialties'] ?? []), 'is_string')),
         );
     }
 

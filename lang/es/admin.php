@@ -444,6 +444,7 @@ return [
                 'social-network' => 'Redes sociales',
                 'business-sector' => 'Rubros',
                 'business-activity' => 'Actividades',
+                'specialty' => 'Especialidades',
                 'service-modality' => 'Modalidades de servicio',
                 'service-attribute' => 'Atributos de servicio',
                 'service-type' => 'Tipos de servicio',

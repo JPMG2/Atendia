@@ -51,6 +51,12 @@ class SaveBusinessIdentity
             );
         }
 
+        // Same rule as the activity: only the caller that sends the key (the wizard,
+        // the identity card) touches the specialties; the other cards leave them be.
+        if (array_key_exists('specialties', $data)) {
+            $business->syncSpecialties(array_values(array_filter((array) $data['specialties'], 'is_string')));
+        }
+
         app(SyncProfileKnowledge::class)->handle($business);
 
         return $business;

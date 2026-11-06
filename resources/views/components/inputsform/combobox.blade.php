@@ -13,6 +13,7 @@
     'loading' => null,     // Livewire property the list hangs off (e.g. "form.data.country_id"):
     // while that request travels the field stays locked behind a spinner
     'span' => 'text',      // width BY CONTENT: code | short | text | long | full
+    'multiple' => false,   // several options as chips; the wire:model must name an ARRAY property
 ])
 
 @php
@@ -45,7 +46,15 @@
     // visible search box carries no `name`, so a native submit never posts it.
     $valueAttributes = $isRequired ? $attributes->except('required') : $attributes;
 
-    $controlClasses = trim('field-control combo-control '.$sizeClass
+    // `multiple` has no hidden field: its value is an array, entangled with the
+    // property the wire:model names (and live only when the attribute says so).
+    $modelKey = $multiple ? collect($attributes->getAttributes())->keys()->first(fn ($key) => str_starts_with((string) $key, 'wire:model')) : null;
+    $modelPath = $modelKey !== null ? (string) $attributes->get($modelKey) : null;
+    $xData = $multiple
+        ? 'inputsformMultiCombobox({ options: '.\Illuminate\Support\Js::from($normalizedOptions).', values: $wire.$entangle('.\Illuminate\Support\Js::from($modelPath).', '.($modelKey !== null && str_contains((string) $modelKey, '.live') ? 'true' : 'false').') })'
+        : 'inputsformCombobox({ options: '.\Illuminate\Support\Js::from($normalizedOptions).', initial: '.\Illuminate\Support\Js::from($value).' })';
+
+    $controlClasses = trim('field-control combo-control '.($multiple ? 'is-multi ' : '').$sizeClass
         .($error ? ' field-error' : '')
         .($isDisabled ? ' is-disabled' : ''));
 
@@ -68,7 +77,7 @@
 
 <div
     class="field combo {{ $spanClass }}"
-    x-data="inputsformCombobox({ options: {{ \Illuminate\Support\Js::from($normalizedOptions) }}, initial: {{ \Illuminate\Support\Js::from($value) }} })"
+    x-data="{{ $xData }}"
     x-on:keydown.escape.stop="closePanel()"
     x-on:click.outside="closePanel()"
 >
@@ -87,6 +96,24 @@
             x-bind:class="open && 'is-open'"
             @if ($loading) wire:loading.class="is-loading" {!! $loadingAttributes !!} @endif
         >
+            @if ($multiple)
+                <template x-for="chip in chosen()" :key="chip.value">
+                    <span class="combo-chip">
+                        <span x-text="chip.label"></span>
+                        <button
+                            type="button"
+                            class="combo-chip-x"
+                            tabindex="-1"
+                            x-bind:aria-label="{{ \Illuminate\Support\Js::from(__('forms.combobox.remove')) }} + ' ' + chip.label"
+                            @if ($isDisabled) disabled @endif
+                            x-on:mousedown.prevent="remove(chip.value)"
+                        >
+                            <x-icon name="x" :size="12" />
+                        </button>
+                    </span>
+                </template>
+            @endif
+
             <input
                 type="text"
                 role="combobox"
@@ -102,7 +129,7 @@
                 aria-autocomplete="list"
                 x-ref="search"
                 {{-- The box may be narrower than the choice: the full label is one hover away. --}}
-                x-bind:title="selected ? selected.label : null"
+                @unless ($multiple) x-bind:title="selected ? selected.label : null" @endunless
                 x-bind:aria-expanded="open"
                 x-model="query"
                 x-on:input="onInput()"
@@ -112,6 +139,7 @@
                 x-on:keydown.arrow-up.prevent="move(-1)"
                 x-on:keydown.enter.prevent="chooseHighlighted()"
                 x-on:keydown.tab="closePanel()"
+                @if ($multiple) x-on:keydown.backspace="removeLast()" @endif
                 @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
                 class="field-input"
             />
@@ -119,20 +147,22 @@
             {{-- Clear in one go. It only appears when there is something to clear:
             a fixed cross over an empty field is noise. `mousedown.prevent`
             because the search box's blur closes the panel and would eat
-            the click. --}}
-            <button
-                type="button"
-                class="combo-clear"
-                tabindex="-1"
-                x-show="selected || query"
-                x-cloak
-                aria-label="{{ __('forms.combobox.clear') }}"
-                @if ($isDisabled) disabled @endif
-                @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
-                x-on:mousedown.prevent="clear()"
-            >
-                <x-icon name="x" :size="$iconSize - 2" />
-            </button>
+            the click. The chips of `multiple` carry their own cross. --}}
+            @unless ($multiple)
+                <button
+                    type="button"
+                    class="combo-clear"
+                    tabindex="-1"
+                    x-show="selected || query"
+                    x-cloak
+                    aria-label="{{ __('forms.combobox.clear') }}"
+                    @if ($isDisabled) disabled @endif
+                    @if ($loading) wire:loading.attr="disabled" {!! $loadingAttributes !!} @endif
+                    x-on:mousedown.prevent="clear()"
+                >
+                    <x-icon name="x" :size="$iconSize - 2" />
+                </button>
+            @endunless
 
             <button
                 type="button"
@@ -161,7 +191,9 @@
             </button>
 
             {{-- The real value: it carries the wire:model and travels to the server. --}}
-            <input type="hidden" x-ref="value" @if ($name) name="{{ $name }}" @endif {{ $valueAttributes }} />
+            @unless ($multiple)
+                <input type="hidden" x-ref="value" @if ($name) name="{{ $name }}" @endif {{ $valueAttributes }} />
+            @endunless
         </div>
 
         <ul
@@ -170,6 +202,7 @@
             x-show="open"
             x-cloak
             role="listbox"
+            @if ($multiple) aria-multiselectable="true" @endif
             @if ($listId) id="{{ $listId }}" @endif
             @if ($label) aria-label="{{ $label }}" @endif
         >
@@ -179,7 +212,7 @@
                     role="option"
                     x-bind:data-active="index === highlighted"
                     x-bind:aria-selected="isSelected(option)"
-                    x-on:mousedown.prevent="choose(option)"
+                    x-on:mousedown.prevent="{{ $multiple ? 'toggle' : 'choose' }}(option)"
                     x-on:mousemove="highlighted = index"
                 >
                     <span x-text="option.label"></span>

@@ -21,6 +21,7 @@ return [
         'business' => 'Negocio',
         'business_sector' => 'Rubro',
         'business_activity' => 'Actividad',
+        'specialty' => 'Especialidad',
         'service_modality' => 'Modalidad',
         'service_attribute' => 'Atributo',
         'service_type' => 'Tipo de servicio',

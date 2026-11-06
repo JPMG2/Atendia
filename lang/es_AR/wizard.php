@@ -37,6 +37,8 @@ return [
         'service_placeholder' => 'Escribí uno y apretá Enter — ej. Ecodoppler',
         'product_placeholder' => 'Escribí uno y apretá Enter — ej. Pan de campo',
         'activity_hint' => 'Con esto tu asistente aprende tu oficio y te sugiere los servicios justos. Podés sumar más actividades después.',
+
+        'specialty_hint' => 'Elegí todas las que atendés: tu asistente las usa para contar qué hacés. Podés cambiarlas después.',
     ],
 
     'products' => [

@@ -30,7 +30,7 @@ use Illuminate\Support\Collection;
  *
  * It is what the business picks, and what then shapes how the assistant works.
  */
-#[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active', 'catalog_eligible'])]
+#[Fillable(['business_sector_id', 'code', 'name', 'description', 'sort_order', 'is_active', 'catalog_eligible', 'specialty_label'])]
 class BusinessActivity extends Model implements DataTable, HasColumns, Removable
 {
     use CountsUsage;
@@ -94,6 +94,17 @@ class BusinessActivity extends Model implements DataTable, HasColumns, Removable
     }
 
     /**
+     * What a business can mark inside this activity, in catalog order. Empty =
+     * the activity carries no specialty field.
+     *
+     * @return HasMany<Specialty, $this>
+     */
+    public function specialties(): HasMany
+    {
+        return $this->hasMany(Specialty::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
      * Options for an activity picker. Same conventions as its siblings: an
      * empty `states` does not filter, `label`/`value` are opt-in (the wizard
      * chips carry the code), `sectorId` narrows to one trade group the way
@@ -131,6 +142,26 @@ class BusinessActivity extends Model implements DataTable, HasColumns, Removable
                 ],
             )
             ->all();
+    }
+
+    public static function idFromCode(string $code): ?int
+    {
+        return self::query()->where('code', $code)->value('id');
+    }
+
+    /**
+     * What the specialty field is called for this trade ("Especialidad", "Tipo de
+     * cocina"), or null when the trade carries no field: no label set, or nothing
+     * active to choose from.
+     */
+    public static function specialtyLabelFromCode(string $code): ?string
+    {
+        $label = self::query()
+            ->where('code', $code)
+            ->whereHas('specialties', fn ($query) => $query->where('is_active', true))
+            ->value('specialty_label');
+
+        return is_string($label) && $label !== '' ? $label : null;
     }
 
     /**

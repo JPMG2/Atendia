@@ -17,7 +17,8 @@ class CreateBusinessActivity
      *     description: ?string,
      *     sort_order: int,
      *     is_active: bool,
-     *     catalog_eligible: bool
+     *     catalog_eligible: bool,
+     *     specialty_label: ?string
      * }  $data  Already validated by BusinessActivityForm::transformServiceData().
      */
     public function handle(array $data): BusinessActivity
