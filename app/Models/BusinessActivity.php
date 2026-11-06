@@ -150,6 +150,50 @@ class BusinessActivity extends Model implements DataTable, HasColumns, Removable
     }
 
     /**
+     * The ids behind a list of codes, in the order given. An unknown or switched-off
+     * code is dropped.
+     *
+     * @param  list<string>  $codes
+     * @return list<int>
+     */
+    public static function idsFromCodes(array $codes): array
+    {
+        if ($codes === []) {
+            return [];
+        }
+
+        $ids = self::query()->whereIn('code', $codes)->where('is_active', true)->pluck('id', 'code');
+
+        return collect($codes)
+            ->map(fn (string $code): ?int => isset($ids[$code]) ? (int) $ids[$code] : null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Every active activity as "Sector · Activity" with its code as value, in
+     * sector order: for a picker that is not narrowed by a sector first.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function pickerOptions(): array
+    {
+        return self::query()
+            ->with('sector:id,name,sort_order')
+            ->where('is_active', true)
+            ->get()
+            ->sortBy([
+                fn (self $a, self $b): int => ($a->sector?->sort_order ?? 0) <=> ($b->sector?->sort_order ?? 0),
+                fn (self $a, self $b): int => $a->sort_order <=> $b->sort_order,
+                fn (self $a, self $b): int => strcmp($a->name, $b->name),
+            ])
+            ->map(fn (self $activity): array => ['value' => $activity->code, 'label' => ($activity->sector?->name ?? '').' · '.$activity->name])
+            ->values()
+            ->all();
+    }
+
+    /**
      * What the specialty field is called for this trade ("Especialidad", "Tipo de
      * cocina"), or null when the trade carries no field: no label set, or nothing
      * active to choose from.

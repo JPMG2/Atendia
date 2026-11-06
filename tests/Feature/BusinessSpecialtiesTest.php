@@ -252,3 +252,104 @@ test('the presentation prompt and the profile text carry the specialties', funct
 
     expect($seen)->toContain('Especialidad: Neurología');
 });
+
+test('the identity card shows the primary activity and the others, and offers the rest', function (): void {
+    $trades = specialtyTrades();
+    $business = Business::factory()->create(['name' => 'Clínica Vida']);
+    $business->syncActivities($trades['office']->id, [$trades['bakery']->id]);
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+
+    Livewire::actingAs($user)
+        ->test('client.section-identity')
+        ->assertSet('form.activity', 'consultorio-medico')
+        ->assertSet('form.other_activities', ['panaderia'])
+        ->assertSee('Actividad principal')
+        ->assertSee('Otras actividades');
+});
+
+test('changing the primary activity saves it and drops the specialties the new one does not offer', function (): void {
+    $trades = specialtyTrades();
+    $business = Business::factory()->create(['name' => 'Clínica Vida']);
+    $business->syncActivities($trades['office']->id);
+    $business->syncSpecialties(['neurologia']);
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+
+    Livewire::actingAs($user)
+        ->test('client.section-identity')
+        ->set('form.activity', 'panaderia')
+        // What the bakery does not offer leaves the screen at once, before saving.
+        ->assertSet('form.specialties', [])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($business->fresh()->primaryActivity()->code)->toBe('panaderia')
+        ->and($business->specialtyCodes())->toBe([]);
+});
+
+test('the specialties offered follow the activities picked on screen, saved or not', function (): void {
+    $trades = specialtyTrades();
+    $business = Business::factory()->create(['name' => 'Panadería Sol']);
+    $business->syncActivities($trades['bakery']->id);
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+
+    Livewire::actingAs($user)
+        ->test('client.section-identity')
+        ->assertDontSee('Medicina interna')
+        ->set('form.other_activities', ['consultorio-medico'])
+        ->assertSee('Medicina interna');
+});
+
+test('the others are replaced when sent and kept when not, and the primary is never one of them', function (): void {
+    $trades = specialtyTrades();
+    $third = BusinessActivity::factory()->create(['code' => 'otra', 'business_sector_id' => $trades['sector']->id]);
+    $user = User::factory()->create();
+    $business = Business::factory()->create();
+    $user->business()->associate($business)->save();
+
+    $save = fn (array $data) => app(SaveBusinessIdentity::class)->handle($user->refresh(), ['name' => 'Clínica Vida', ...$data]);
+
+    $save(['activity' => 'consultorio-medico', 'other_activities' => ['panaderia', 'consultorio-medico']]);
+    expect($business->secondaryActivityCodes())->toBe(['panaderia']);
+
+    // The wizard sends the primary and no others: what was declared stays.
+    $save(['activity' => 'consultorio-medico']);
+    expect($business->secondaryActivityCodes())->toBe(['panaderia']);
+
+    $save(['activity' => 'consultorio-medico', 'other_activities' => [$third->code]]);
+    expect($business->secondaryActivityCodes())->toBe(['otra']);
+});
+
+test('a card that sends no activity leaves the activities and the specialties as they were', function (): void {
+    $trades = specialtyTrades();
+    $user = User::factory()->create();
+    $business = Business::factory()->create();
+    $user->business()->associate($business)->save();
+    $business->syncActivities($trades['office']->id, [$trades['bakery']->id]);
+    $business->syncSpecialties(['neurologia']);
+
+    app(SaveBusinessIdentity::class)->handle($user->refresh(), ['name' => 'Nombre nuevo']);
+
+    expect($business->fresh()->primaryActivity()->code)->toBe('consultorio-medico')
+        ->and($business->secondaryActivityCodes())->toBe(['panaderia'])
+        ->and($business->specialtyCodes())->toBe(['neurologia']);
+});
+
+test('an unknown or switched-off activity is refused by the identity card', function (): void {
+    $trades = specialtyTrades();
+    $trades['bakery']->update(['is_active' => false]);
+    $business = Business::factory()->create();
+    $business->syncActivities($trades['office']->id);
+    $user = User::factory()->create();
+    $user->business()->associate($business)->save();
+
+    Livewire::actingAs($user)
+        ->test('client.section-identity')
+        ->set('form.activity', 'panaderia')
+        ->call('save')
+        ->assertHasErrors('activity');
+
+    expect($business->fresh()->primaryActivity()->code)->toBe('consultorio-medico');
+});

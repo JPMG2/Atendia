@@ -1207,6 +1207,7 @@ return [
             'code' => 'Clave',
             'name' => 'Nombre',
             'activity' => 'Actividad',
+            'businesses' => 'Negocios',
             'order' => 'Orden',
             'status' => 'Estado',
         ],

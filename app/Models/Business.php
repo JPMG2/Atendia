@@ -573,20 +573,13 @@ class Business extends Model
     }
 
     /**
-     * What this business could mark: the active specialties of its own
-     * activities, with the code as value. Empty when none of them offers any.
+     * The codes of the activities the business declared besides the primary one.
      *
-     * @return array<int, array{value: int|string, label: string}>
+     * @return list<string>
      */
-    public function specialtyOptions(): array
+    public function secondaryActivityCodes(): array
     {
-        $activityIds = $this->activities()->pluck('business_activities.id')->map(fn (mixed $id): int => (int) $id)->all();
-
-        return $activityIds === [] ? [] : Specialty::options(
-            states: [true],
-            value: fn (Specialty $specialty): string => $specialty->code,
-            activityIds: $activityIds,
-        );
+        return $this->activities()->wherePivot('is_primary', false)->pluck('business_activities.code')->map(fn (mixed $code): string => (string) $code)->all();
     }
 
     /** What the specialty field is called for this business: its primary activity's label, or the generic one. */

@@ -45,16 +45,22 @@ class SaveBusinessIdentity
         // Only the caller that declares the PRIMARY activity syncs it (the
         // wizard); a profile card sends its own fields and no activity.
         if (isset($data['activity'])) {
-            $business->syncActivities(
-                BusinessActivity::query()->where('code', $data['activity'])->value('id'),
-                $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all(),
-            );
+            // The secondary ones are replaced only by a caller that sends them (the
+            // identity card); the wizard keeps what the business already declared.
+            $secondary = array_key_exists('other_activities', $data)
+                ? BusinessActivity::idsFromCodes(array_values(array_filter((array) $data['other_activities'], 'is_string')))
+                : $business->activities()->wherePivot('is_primary', false)->pluck('business_activities.id')->all();
+
+            $business->syncActivities(BusinessActivity::idFromCode((string) $data['activity']), $secondary);
         }
 
         // Same rule as the activity: only the caller that sends the key (the wizard,
         // the identity card) touches the specialties; the other cards leave them be.
         if (array_key_exists('specialties', $data)) {
             $business->syncSpecialties(array_values(array_filter((array) $data['specialties'], 'is_string')));
+        } elseif (isset($data['activity'])) {
+            // A new activity may no longer offer what was marked: sync it again against them.
+            $business->syncSpecialties($business->specialtyCodes());
         }
 
         app(SyncProfileKnowledge::class)->handle($business);

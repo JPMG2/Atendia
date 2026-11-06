@@ -104,3 +104,30 @@ test('in Mi negocio the identity card shows the marks, adds one and saves', func
 
     expect($business->specialtyCodes())->toBe(['geriatria', 'neurologia']);
 });
+
+test('in Mi negocio the business sees its activity, changes it and the specialty field follows', function (): void {
+    $business = Business::factory()->create(['name' => 'Clínica Vida']);
+    $business->syncActivities(BusinessActivity::where('code', 'consultorio-medico')->value('id'));
+    $business->syncSpecialties(['neurologia']);
+    $user = User::factory()->create(['name' => 'María González']);
+    $user->business()->associate($business)->save();
+    $this->actingAs($user->refresh());
+
+    $page = visit(route('my-business.identidad'))->resize(1280, 900);
+
+    $page->assertNoJavaScriptErrors()
+        ->assertSee('Actividad principal')
+        ->assertValue('#if-activity', 'Salud · Consultorio médico')
+        ->assertPresent('#if-specialties')
+        ->screenshot(filename: 'activity-identity-before');
+
+    $page->type('#if-activity', 'Panader')->click('Gastronomía · Panadería')->wait(1);
+
+    // The bakery offers no specialty: the field leaves the screen before saving.
+    $page->assertMissing('#if-specialties')->screenshot(filename: 'activity-identity-after');
+
+    $page->click('Guardar')->wait(2);
+
+    expect($business->fresh()->primaryActivity()->code)->toBe('panaderia')
+        ->and($business->specialtyCodes())->toBe([]);
+});

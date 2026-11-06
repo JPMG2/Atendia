@@ -36,6 +36,8 @@ return [
         'identity' => [
             'name_hint' => 'Escribilo tal como aparece en tu marca: así lo va a mostrar WhatsApp.',
             'description_hint' => 'Tu asistente la usa para presentarse. Contá qué hacés y qué te hace distinto.',
+            'activity_hint' => 'Define cómo te atiende el asistente y los servicios que te sugerimos. Si la cambiás, se quitan las especialidades que ya no correspondan.',
+            'other_activities_hint' => 'Sumá las que también hacés: tu asistente aprende de todas.',
             'specialties_hint' => 'Elegí todas las que atendés: tu asistente las usa para contar qué hacés.',
             'ai_body' => 'Con tu nombre, tu rubro y lo que ofrecés redactamos una propuesta. La revisás, la ajustás y la guardás vos.',
             'ai_done' => 'Listo: escribimos una propuesta. Leela y guardá si te gusta.',

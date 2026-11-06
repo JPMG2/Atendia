@@ -76,6 +76,7 @@ new class extends Component
             <td><span class="catalog-code" x-text="row.code"></span></td>
             <td class="catalog-cell-name catalog-cell-fill" x-text="row.name"></td>
             <td x-text="row.activity"></td>
+            <td class="catalog-cell-sym" x-text="row.businesses"></td>
             <td class="catalog-cell-sym" x-text="row.order"></td>
             <td>
                 <span class="catalog-status" x-bind:class="row.active ? 'is-on' : 'is-off'">

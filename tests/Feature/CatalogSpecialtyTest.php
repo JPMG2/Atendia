@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Business;
 use App\Models\BusinessActivity;
 use App\Models\Specialty;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +38,25 @@ test('the specialties are grouped by activity and ordered inside it, as the busi
     $rows = Livewire::test('catalog.specialty')->get('initialRows');
 
     expect(collect($rows)->pluck('name')->all())->toBe(['Alergología', 'Neurología', 'Cocina china']);
+});
+
+test('each row counts the real businesses that marked it, and the landing examples never inflate it', function (): void {
+    $activity = BusinessActivity::factory()->create();
+    $specialty = Specialty::factory()->for($activity, 'activity')->create(['name' => 'Neurología']);
+    $unused = Specialty::factory()->for($activity, 'activity')->create(['name' => 'Alergología']);
+
+    $real = Business::factory()->create();
+    $other = Business::factory()->create();
+    $example = Business::factory()->create(['is_demo' => true]);
+
+    foreach ([$real, $other, $example] as $business) {
+        $business->specialties()->attach($specialty->id);
+    }
+
+    $rows = collect(Livewire::test('catalog.specialty')->get('initialRows'))->keyBy('name');
+
+    expect($rows['Neurología']['businesses'])->toBe(2)
+        ->and($rows['Alergología']['businesses'])->toBe(0);
 });
 
 test('creating one saves it under its activity and normalizes its code', function (): void {

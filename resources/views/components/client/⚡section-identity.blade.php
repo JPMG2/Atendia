@@ -5,6 +5,8 @@ use App\Classes\Main\AiOptimizeLimit;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\IdentityForm;
+use App\Models\BusinessActivity;
+use App\Models\Specialty;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -33,15 +35,61 @@ new class extends Component
     }
 
     /**
-     * What the business may mark inside its own activities. Empty for most
-     * trades, and then the card carries no field at all.
+     * Every active activity: what a business may pick as its primary one.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    #[Computed]
+    public function activityOptions(): array
+    {
+        return BusinessActivity::pickerOptions();
+    }
+
+    /**
+     * The same list without the primary one: it cannot also be a secondary.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    #[Computed]
+    public function otherActivityOptions(): array
+    {
+        return array_values(array_filter($this->activityOptions, fn (array $option): bool => $option['value'] !== $this->form->activity));
+    }
+
+    /**
+     * What could be marked given the activities selected on screen, saved or not.
+     * Empty for most trades, and then the card carries no field at all.
      *
      * @return array<int, array{value: int|string, label: string}>
      */
     #[Computed]
     public function specialtyOptions(): array
     {
-        return Auth::user()?->business?->specialtyOptions() ?? [];
+        return Specialty::optionsForActivityCodes(array_values(array_filter([$this->form->activity, ...$this->form->other_activities])));
+    }
+
+    /** What the specialty field is called for the primary activity on screen. */
+    #[Computed]
+    public function specialtyLabel(): string
+    {
+        return BusinessActivity::specialtyLabelFromCode((string) $this->form->activity) ?? __('catalog.specialty.generic_label');
+    }
+
+    /**
+     * Changing the activities changes what can be marked: what the new ones no
+     * longer offer leaves the screen at once, before the save would drop it.
+     */
+    public function updated(string $property): void
+    {
+        if ($property !== 'form.activity' && ! str_starts_with($property, 'form.other_activities')) {
+            return;
+        }
+
+        $this->form->other_activities = array_values(array_diff($this->form->other_activities, [(string) $this->form->activity]));
+
+        unset($this->otherActivityOptions, $this->specialtyOptions, $this->specialtyLabel);
+
+        $this->form->specialties = array_values(array_intersect($this->form->specialties, array_column($this->specialtyOptions, 'value')));
     }
 
     #[Computed]
@@ -128,12 +176,38 @@ new class extends Component
                 wire:model="form.name"
             />
         </x-catalog.form-row>
+        {{-- Where the business sees and changes what it does: before the wizard
+        was the only place, and it asked once. --}}
+        <x-catalog.form-row>
+            <x-inputsform.combobox
+                span="full"
+                :label="__('client.business.identity.activity')"
+                name="activity"
+                :placeholder="__('client.business.identity.activity_placeholder')"
+                :hint="__('client.business.identity.activity_hint')"
+                :options="$this->activityOptions"
+                :value="$form->activity"
+                wire:model.live="form.activity"
+            />
+        </x-catalog.form-row>
+        <x-catalog.form-row>
+            <x-inputsform.combobox
+                multiple
+                span="full"
+                :label="__('client.business.identity.other_activities').' · '.__('client.business.optional')"
+                name="other_activities"
+                :placeholder="__('client.business.identity.specialties_placeholder')"
+                :hint="__('client.business.identity.other_activities_hint')"
+                :options="$this->otherActivityOptions"
+                wire:model.live="form.other_activities"
+            />
+        </x-catalog.form-row>
         @if ($this->specialtyOptions !== [])
             <x-catalog.form-row>
                 <x-inputsform.combobox
                     multiple
                     span="full"
-                    :label="auth()->user()->business->specialtyLabel()"
+                    :label="$this->specialtyLabel"
                     name="specialties"
                     :placeholder="__('client.business.identity.specialties_placeholder')"
                     :hint="__('client.business.identity.specialties_hint')"

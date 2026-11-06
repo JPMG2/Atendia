@@ -58,6 +58,7 @@ return [
     'sector' => 'rubro',
     'activity' => 'actividad',
     'specialties' => 'especialidades',
+    'other_activities' => 'otras actividades',
     'whatsapp_number' => 'WhatsApp del negocio',
     'fallback_whatsapp_number' => 'WhatsApp de respaldo',
 ];

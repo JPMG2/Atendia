@@ -110,6 +110,24 @@ class Specialty extends Model implements DataTable, HasColumns, Removable
     }
 
     /**
+     * What a business could mark if it practised these activities: the active
+     * specialties of those, with the code as value. Empty when none offers any.
+     *
+     * @param  list<string>  $activityCodes
+     * @return array<int, array{value: int|string, label: string}>
+     */
+    public static function optionsForActivityCodes(array $activityCodes): array
+    {
+        $activityIds = BusinessActivity::idsFromCodes($activityCodes);
+
+        return $activityIds === [] ? [] : self::options(
+            states: [true],
+            value: fn (self $specialty): string => $specialty->code,
+            activityIds: $activityIds,
+        );
+    }
+
+    /**
      * The ids a list of codes stands for, limited to the activities offered.
      *
      * A code that is not active or not offered by those activities is dropped:
@@ -166,11 +184,14 @@ class Specialty extends Model implements DataTable, HasColumns, Removable
      * Grouped by activity and, inside each, by their order: how the business
      * will see them when choosing.
      *
-     * @return Collection<int, array{id: int, code: string, name: string, activity: string, order: int, active: bool}>
+     * `businesses` counts the real ones that marked it: the model's own scope
+     * leaves the landing examples out, so they never inflate it.
+     *
+     * @return Collection<int, array{id: int, code: string, name: string, activity: string, businesses: int, order: int, active: bool}>
      */
     public function catalogRows(): Collection
     {
-        return $this->newQuery()->with('activity:id,name,sort_order')
+        return $this->newQuery()->with('activity:id,name,sort_order')->withCount('businesses')
             ->get()
             ->sortBy([fn (self $a, self $b): int => ($a->activity?->sort_order ?? 0) <=> ($b->activity?->sort_order ?? 0), fn (self $a, self $b): int => $a->sort_order <=> $b->sort_order, fn (self $a, self $b): int => strcmp($a->name, $b->name)])
             ->map(
@@ -179,6 +200,7 @@ class Specialty extends Model implements DataTable, HasColumns, Removable
                     'code' => $specialty->code,
                     'name' => $specialty->name,
                     'activity' => $specialty->activity?->name ?? '',
+                    'businesses' => (int) $specialty->businesses_count,
                     'order' => $specialty->sort_order,
                     'active' => $specialty->is_active,
                 ],
@@ -193,6 +215,7 @@ class Specialty extends Model implements DataTable, HasColumns, Removable
             new CatalogColumnDto('code', __('catalog.specialty.columns.code'), CatalogCell::Code, search: true),
             new CatalogColumnDto('name', __('catalog.specialty.columns.name'), CatalogCell::Name, fill: true, search: true),
             new CatalogColumnDto('activity', __('catalog.specialty.columns.activity'), CatalogCell::Text, search: true),
+            new CatalogColumnDto('businesses', __('catalog.specialty.columns.businesses'), CatalogCell::Symbol),
             new CatalogColumnDto('order', __('catalog.specialty.columns.order'), CatalogCell::Symbol),
             new CatalogColumnDto('active', __('catalog.specialty.columns.status'), CatalogCell::Active, on: __('catalog.specialty.status.active'), off: __('catalog.specialty.status.inactive')),
         ];
