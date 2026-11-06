@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -78,6 +79,45 @@ class SuggestedService extends Model
     public function nameFor(string $locale): string
     {
         return $this->regional_names[$locale] ?? $this->name;
+    }
+
+    /**
+     * The specialties this suggestion is for. A suggestion with any is left out
+     * of its activity's general list: it is offered to the businesses that marked one of them.
+     *
+     * @return BelongsToMany<Specialty, $this>
+     */
+    public function specialties(): BelongsToMany
+    {
+        return $this->belongsToMany(Specialty::class, 'specialty_suggested_service')->withTimestamps();
+    }
+
+    /**
+     * The names the marked specialties suggest, in demand order, with the same
+     * product/service split as the activity's own list. Empty when none is marked.
+     *
+     * @param  list<int>  $specialtyIds
+     * @param  bool  $goods  true = only the product names, false = only the services
+     * @return list<string>
+     */
+    public static function namesForSpecialties(array $specialtyIds, bool $goods = false): array
+    {
+        if ($specialtyIds === []) {
+            return [];
+        }
+
+        return self::query()
+            ->where('is_active', true)
+            ->whereHas('specialties', fn ($query) => $query->whereIn('specialties.id', $specialtyIds))
+            ->with('serviceType.modality')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (self $row): bool => ($row->serviceType?->modality?->code === 'producto') === $goods)
+            ->map(fn (self $row): string => $row->nameFor(app()->getLocale()))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

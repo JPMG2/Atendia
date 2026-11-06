@@ -148,6 +148,9 @@ new class extends Component
                 <p class="eyebrow">{{ $business->name }}</p>
                 <h1 class="font-display text-strong text-2xl">{{ __('agenda.public.title') }}</h1>
                 <p class="text-muted text-sm">{{ __('agenda.public.sub') }}</p>
+                @if (($specialties = $business->specialtiesLine()) !== '')
+                    <p class="text-body text-sm font-semibold" data-testid="booking-specialties">{{ $specialties }}</p>
+                @endif
             </div>
 
             @if ($warning !== null)

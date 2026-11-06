@@ -76,6 +76,7 @@ class BusinessSector extends Model implements DataTable, HasColumns, Removable
     {
         return SuggestedService::query()
             ->where('is_active', true)
+            ->whereDoesntHave('specialties')
             ->whereHas(
                 'activity',
                 fn (Builder $query): Builder => $query->where('business_sector_id', $this->id),

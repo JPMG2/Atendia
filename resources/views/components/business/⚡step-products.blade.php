@@ -10,6 +10,7 @@ use App\Traits\ImportsProducts;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -95,6 +96,18 @@ new class extends Component
     }
 
     /**
+     * Mounted before step 2 saves: the cuisines marked there reach it only when
+     * step 2 reports done, and the suggestions are read again then.
+     */
+    #[On('wizard:step-completed')]
+    public function refreshSuggestions(int $step): void
+    {
+        if ($step === 2) {
+            unset($this->suggestions);
+        }
+    }
+
+    /**
      * The trade's suggested names that are goods: the services step leaves
      * them out, so a pizza is offered once and saved where /productos reads.
      *
@@ -104,7 +117,11 @@ new class extends Component
     public function suggestions(): array
     {
         if ($this->activity !== '') {
-            return BusinessActivity::suggestionsName(code: $this->activity, goods: true);
+            // The dishes the marked cuisines suggest come first, then the trade's own list.
+            return array_values(array_unique([
+                ...(Auth::user()?->business?->specialtySuggestionNames(goods: true) ?? []),
+                ...BusinessActivity::suggestionsName(code: $this->activity, goods: true),
+            ]));
         }
 
         return $this->sector === '' ? [] : BusinessSector::suggestionsName(code: $this->sector, goods: true);

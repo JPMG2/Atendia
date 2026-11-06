@@ -71,6 +71,16 @@ class Specialty extends Model implements DataTable, HasColumns, Removable
     }
 
     /**
+     * The suggested services a business that marks it is offered first.
+     *
+     * @return BelongsToMany<SuggestedService, $this>
+     */
+    public function suggestedServices(): BelongsToMany
+    {
+        return $this->belongsToMany(SuggestedService::class, 'specialty_suggested_service')->withTimestamps();
+    }
+
+    /**
      * Options for a specialty picker. Same conventions as its siblings: an empty
      * `states` or `activityIds` does not filter, `label`/`value` are opt-in (the
      * wizard carries the code).

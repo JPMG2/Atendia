@@ -7,6 +7,7 @@ use App\Models\BusinessSector;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
@@ -45,6 +46,18 @@ new class extends Component
     }
 
     /**
+     * This step is mounted before step 2 saves, so the specialties marked there
+     * reach it only when step 2 reports done: the suggestions are read again then.
+     */
+    #[On('wizard:step-completed')]
+    public function refreshSuggestions(int $step): void
+    {
+        if ($step === 2) {
+            unset($this->suggestions);
+        }
+    }
+
+    /**
      * The top CONCRETE services (GBP-style), straight from the models. The
      * ACTIVITY gives the fine per-trade list; with only the sector known the
      * sibling trades pool theirs as the fallback.
@@ -55,7 +68,11 @@ new class extends Component
     public function suggestions(): array
     {
         if ($this->activity !== '') {
-            return BusinessActivity::suggestionsName(code: $this->activity);
+            // What the specialties marked on step 2 suggest comes first, then the trade's own list.
+            return array_values(array_unique([
+                ...(Auth::user()?->business?->specialtySuggestionNames() ?? []),
+                ...BusinessActivity::suggestionsName(code: $this->activity),
+            ]));
         }
 
         if ($this->sector === '') {

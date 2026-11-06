@@ -90,7 +90,8 @@ class BusinessActivity extends Model implements DataTable, HasColumns, Removable
      */
     public function suggestedServices(): HasMany
     {
-        return $this->hasMany(SuggestedService::class)->orderBy('sort_order')->orderBy('name');
+        // The ones tied to a specialty are offered to the businesses that marked it, not to all.
+        return $this->hasMany(SuggestedService::class)->whereDoesntHave('specialties')->orderBy('sort_order')->orderBy('name');
     }
 
     /**

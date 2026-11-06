@@ -7,9 +7,12 @@ use App\Enums\AppointmentSource;
 use App\Livewire\Forms\Agenda\PublicBookingForm;
 use App\Models\Appointment;
 use App\Models\Business;
+use App\Models\BusinessActivity;
+use App\Models\BusinessSector;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\Service;
+use App\Models\Specialty;
 use App\Models\User;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
@@ -338,4 +341,23 @@ test('an hour that was taken does not use up the allowance', function (): void {
     bookFromLink($business, '10:30', '+54 9 11 5555-0202')->assertHasNoErrors();
 
     expect(Appointment::withoutGlobalScopes()->count())->toBe(2);
+});
+
+test('the public link tells the customer which specialties the business marked, and says nothing when it marked none', function (): void {
+    $sector = BusinessSector::factory()->create();
+    $office = BusinessActivity::factory()->create(['business_sector_id' => $sector->id, 'specialty_label' => 'Especialidad']);
+    Specialty::factory()->for($office, 'activity')->create(['code' => 'neurologia', 'name' => 'Neurología']);
+
+    $business = bookableBusiness();
+    $plain = bookableBusiness(['name' => 'Otro consultorio']);
+
+    $business->syncActivities($office->id);
+    $business->syncSpecialties(['neurologia']);
+
+    livewire('booking.public', ['code' => $business->booking_code])
+        ->assertSeeHtml('data-testid="booking-specialties"')
+        ->assertSee('Especialidad: Neurología');
+
+    livewire('booking.public', ['code' => $plain->booking_code])
+        ->assertDontSeeHtml('data-testid="booking-specialties"');
 });

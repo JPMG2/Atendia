@@ -582,6 +582,19 @@ class Business extends Model
         return $this->activities()->wherePivot('is_primary', false)->pluck('business_activities.code')->map(fn (mixed $code): string => (string) $code)->all();
     }
 
+    /**
+     * What the marked specialties suggest as a first service (or product), before
+     * the activity's own list. Empty when it marked none.
+     *
+     * @return list<string>
+     */
+    public function specialtySuggestionNames(bool $goods = false): array
+    {
+        $ids = $this->specialties()->pluck('specialties.id')->map(fn (mixed $id): int => (int) $id)->all();
+
+        return SuggestedService::namesForSpecialties($ids, $goods);
+    }
+
     /** What the specialty field is called for this business: its primary activity's label, or the generic one. */
     public function specialtyLabel(): string
     {
