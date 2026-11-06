@@ -121,6 +121,27 @@ class SuggestedService extends Model
     }
 
     /**
+     * Every name an activity can put on a business's list: its general ones and
+     * the ones tied to a specialty. Tells what a trade added, so that changing
+     * trade can take its names back out.
+     *
+     * @param  bool  $goods  true = only the product names, false = only the services
+     * @return list<string>
+     */
+    public static function namesOfActivity(string $code, bool $goods = false): array
+    {
+        return self::query()
+            ->whereHas('activity', fn ($query) => $query->where('code', $code))
+            ->with('serviceType.modality')
+            ->get()
+            ->filter(fn (self $row): bool => ($row->serviceType?->modality?->code === 'producto') === $goods)
+            ->map(fn (self $row): string => $row->nameFor(app()->getLocale()))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return BelongsTo<BusinessActivity, $this>
      */
     public function activity(): BelongsTo

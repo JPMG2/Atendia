@@ -4,9 +4,11 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\Business\BusinessForm;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
+use App\Models\SuggestedService;
 use App\Traits\HasNotifications;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
@@ -33,12 +35,20 @@ new class extends Component
     /** @var list<string> */
     public array $services = [];
 
+    /**
+     * The trade the list on screen was built under. When the business changes
+     * trade, the names the old one put there leave with it. Locked: the front never edits it.
+     */
+    #[Locked]
+    public string $listActivity = '';
+
     public string $draft = '';
 
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
         $this->services = Auth::user()?->business?->serviceNames() ?? [];
+        $this->listActivity = Auth::user()?->business?->primaryActivity()?->code ?? '';
 
         if ($this->services !== []) {
             $this->dispatch('wizard:services-updated', services: $this->services);
@@ -54,6 +64,32 @@ new class extends Component
     {
         if ($step === 2) {
             unset($this->suggestions);
+
+            $this->dropPreviousTradeNames();
+        }
+    }
+
+    /**
+     * Going back to step 2 and changing trade must not leave the old trade's
+     * services on the list. Only the names that trade suggests and the new one
+     * does not go: what the person typed herself stays.
+     */
+    private function dropPreviousTradeNames(): void
+    {
+        $previous = $this->listActivity;
+        $this->listActivity = $this->activity !== '' ? $this->activity : $previous;
+
+        if ($previous === '' || $this->activity === '' || $previous === $this->activity) {
+            return;
+        }
+
+        $foreign = array_diff(SuggestedService::namesOfActivity($previous), SuggestedService::namesOfActivity($this->activity));
+        $kept = array_values(array_diff($this->services, $foreign));
+
+        if ($kept !== $this->services) {
+            $this->services = $kept;
+
+            $this->dispatch('wizard:services-updated', services: $this->services);
         }
     }
 

@@ -5,6 +5,7 @@ use App\Livewire\Forms\Business\BusinessForm;
 use App\Models\BusinessActivity;
 use App\Models\BusinessSector;
 use App\Models\ProductImport;
+use App\Models\SuggestedService;
 use App\Traits\HasNotifications;
 use App\Traits\ImportsProducts;
 use Illuminate\Support\Facades\Auth;
@@ -48,12 +49,20 @@ new class extends Component
     #[Locked]
     public array $knownProducts = [];
 
+    /**
+     * The trade the list on screen was built under. When the business changes
+     * trade, the names the old one put there leave with it. Locked: the front never edits it.
+     */
+    #[Locked]
+    public string $listActivity = '';
+
     public string $draft = '';
 
     /** Re-entry shows what a previous pass saved; the preview hears it too. */
     public function mount(): void
     {
         $this->products = Auth::user()?->business?->productNames() ?? [];
+        $this->listActivity = Auth::user()?->business?->primaryActivity()?->code ?? '';
         $this->knownProducts = $this->products;
 
         if ($this->products !== []) {
@@ -104,6 +113,32 @@ new class extends Component
     {
         if ($step === 2) {
             unset($this->suggestions);
+
+            $this->dropPreviousTradeNames();
+        }
+    }
+
+    /**
+     * Going back to step 2 and changing trade must not leave the old trade's
+     * products on the list. Only the names that trade suggests and the new one
+     * does not go: what the person typed or imported herself stays.
+     */
+    private function dropPreviousTradeNames(): void
+    {
+        $previous = $this->listActivity;
+        $this->listActivity = $this->activity !== '' ? $this->activity : $previous;
+
+        if ($previous === '' || $this->activity === '' || $previous === $this->activity) {
+            return;
+        }
+
+        $foreign = array_diff(SuggestedService::namesOfActivity($previous, goods: true), SuggestedService::namesOfActivity($this->activity, goods: true));
+        $kept = array_values(array_diff($this->products, $foreign));
+
+        if ($kept !== $this->products) {
+            $this->products = $kept;
+
+            $this->dispatch('wizard:products-updated', products: $this->products);
         }
     }
 
