@@ -26,6 +26,10 @@ return [
         'capacity' => 'Citas a la vez',
     ],
 
+    'closures' => [
+        'booked' => '{1}Tiene 1 cita en esas fechas: muévela o cancélala desde la Agenda y vuelve a cargar el cierre.|[2,*]Tiene :count citas en esas fechas: muévelas o cancélalas desde la Agenda y vuelve a cargar el cierre.',
+    ],
+
     'notify' => [
         'has_bookings' => 'No se puede eliminar: tiene citas por venir. Desactívalo para que no reciba nuevas y elimínalo cuando las atienda.',
     ],

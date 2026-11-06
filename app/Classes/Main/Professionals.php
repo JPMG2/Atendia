@@ -9,7 +9,9 @@ use App\Actions\Professionals\SaveProfessional;
 use App\Dto\ProfessionalDto;
 use App\Models\Business;
 use App\Models\Professional;
+use App\Models\ProfessionalClosure;
 use App\Models\Service;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
@@ -127,6 +129,49 @@ class Professionals
         }
 
         return (new OpeningHours($this->weekOf($professional), $this->business->localTimezone()))->summary;
+    }
+
+    /**
+     * The days they are away that are still ahead.
+     *
+     * @return Collection<int, ProfessionalClosure>
+     */
+    public function closuresOf(int $id): Collection
+    {
+        return $this->business->professionals()->findOrFail($id)->closures()->upcoming()->get();
+    }
+
+    /**
+     * Loads their time away — unless bookings are still standing inside it, which are
+     * never cancelled behind anyone's back: they are counted and the owner moves them.
+     *
+     * @return array{added: bool, booked: int} Not added with `booked` 0 means those days were already loaded.
+     */
+    public function addClosure(int $id, string $range, ?string $reason): array
+    {
+        $professional = $this->business->professionals()->findOrFail($id);
+        [$from, $to] = Closures::split($range);
+        $timezone = $this->business->localTimezone();
+        $booked = $professional->upcomingBetween(CarbonImmutable::parse($from, $timezone), CarbonImmutable::parse($to, $timezone));
+
+        if ($booked > 0) {
+            return ['added' => false, 'booked' => $booked];
+        }
+
+        if ($professional->closures()->whereDate('starts_on', '<=', $to)->whereDate('ends_on', '>=', $from)->exists()) {
+            return ['added' => false, 'booked' => 0];
+        }
+
+        $closure = new ProfessionalClosure(['starts_on' => $from, 'ends_on' => $to, 'reason' => $reason === null || trim($reason) === '' ? null : trim($reason)]);
+        $closure->business()->associate($this->business);
+        $closure->professional()->associate($professional)->save();
+
+        return ['added' => true, 'booked' => 0];
+    }
+
+    public function removeClosure(int $id, int $closureId): void
+    {
+        $this->business->professionals()->findOrFail($id)->closures()->findOrFail($closureId)->delete();
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Client;
 
 use App\Classes\Main\Client;
+use App\Classes\Main\Closures;
 use App\Classes\Main\OpeningHours;
 use App\Dto\NotificationDto;
 use App\Dto\ProfessionalDto;
@@ -12,7 +13,9 @@ use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\Service;
 use App\Rules\AttributeValidator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
@@ -27,10 +30,17 @@ class ProfessionalForm extends BaseForm
 
     public ?int $editingId = null;
 
+    /** The time away being typed: kept apart from the sheet, which has its own Guardar. */
+    public string $closure_range = '';
+
+    public string $closure_reason = '';
+
     /** Called from the component's `mount()` and whenever the sheet opens. */
     public function setup(?int $professionalId = null): void
     {
         $this->editingId = $professionalId;
+        $this->closure_range = '';
+        $this->closure_reason = '';
         $this->resetErrorBag();
 
         $this->data = $this->client()->professionals?->sheetOf($professionalId) ?? new ProfessionalDto;
@@ -71,6 +81,56 @@ class ProfessionalForm extends BaseForm
         }
 
         return new NotificationDto(__('professionals.notify.deleted'), NotificationType::Success);
+    }
+
+    /**
+     * Loads their time away, right away and apart from Guardar. The range arrives from the
+     * datepicker as ISO ("Y-m-d" or "Y-m-d..Y-m-d"), the one shape the business's own closures read.
+     */
+    public function addClosure(): NotificationDto
+    {
+        $professionals = $this->client()->professionals;
+
+        if ($professionals === null || $this->editingId === null) {
+            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
+        }
+
+        $validated = Validator::make(
+            ['range' => trim($this->closure_range), 'reason' => trim($this->closure_reason)],
+            Arr::only(Closures::rules(), ['range', 'reason']),
+            [],
+            Closures::attributes(),
+        )->validate();
+
+        return $this->tryAction(function () use ($professionals, $validated): NotificationDto {
+
+            $result = $professionals->addClosure($this->editingId, $validated['range'], $validated['reason'] ?? null);
+
+            if (! $result['added']) {
+                return $result['booked'] > 0
+                    ? new NotificationDto(trans_choice('professionals.closures.booked', $result['booked'], ['count' => $result['booked']]), NotificationType::Warning)
+                    : new NotificationDto(__('professionals.closures.exists'), NotificationType::Info);
+            }
+
+            $this->closure_range = '';
+            $this->closure_reason = '';
+
+            return new NotificationDto(__('professionals.closures.added'), NotificationType::Success);
+
+        }, __('notifications.not_updated'));
+    }
+
+    public function removeClosure(int $closureId): NotificationDto
+    {
+        $professionals = $this->client()->professionals;
+
+        if ($professionals === null || $this->editingId === null) {
+            return new NotificationDto(__('notifications.not_found'), NotificationType::Error);
+        }
+
+        $professionals->removeClosure($this->editingId, $closureId);
+
+        return new NotificationDto(__('professionals.closures.removed'), NotificationType::Success);
     }
 
     /** Rebuilt per request: a Livewire form cannot hold it in a constructor. */

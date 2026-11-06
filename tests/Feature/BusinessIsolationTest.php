@@ -15,6 +15,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImport;
 use App\Models\Professional;
+use App\Models\ProfessionalClosure;
 use App\Models\ProfessionalHour;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -53,6 +54,7 @@ dataset('tenant models', [
     Appointment::class,
     Professional::class,
     ProfessionalHour::class,
+    ProfessionalClosure::class,
     Conversation::class,
     ConversationMessage::class,
     Subscription::class,

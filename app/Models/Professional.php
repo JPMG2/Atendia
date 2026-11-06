@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
 use App\Traits\TracksUserActions;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\ProfessionalFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,10 +99,28 @@ class Professional extends Model
     {
         return $business->professionals()
             ->where('is_active', true)
-            ->with(['services', 'hours'])
+            ->with(['services', 'hours', 'closures'])
             ->get()
             ->filter(fn (self $professional): bool => $professional->attends($service))
             ->values();
+    }
+
+    /** Whether they are away that day: the business is open and they are not. */
+    public function isClosedOn(CarbonInterface $day): bool
+    {
+        return $this->closures->contains(fn (ProfessionalClosure $closure): bool => $closure->covers($day));
+    }
+
+    /**
+     * Bookings still to come inside a stretch of days: what a new closure would leave
+     * without anyone, and why it is refused until they are moved or cancelled.
+     */
+    public function upcomingBetween(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return $this->appointments()->upcoming()
+            ->where('starts_at', '<', $to->addDay()->startOfDay()->utc())
+            ->where('ends_at', '>', $from->startOfDay()->utc())
+            ->count();
     }
 
     /** Bookings still to come that hold their hour: what stops them being removed. */
@@ -142,6 +162,16 @@ class Professional extends Model
     public function hours(): HasMany
     {
         return $this->hasMany(ProfessionalHour::class)->orderBy('day_of_week')->orderBy('opens_at');
+    }
+
+    /**
+     * The days they are away, soonest first.
+     *
+     * @return HasMany<ProfessionalClosure, $this>
+     */
+    public function closures(): HasMany
+    {
+        return $this->hasMany(ProfessionalClosure::class)->orderBy('starts_on');
     }
 
     /**

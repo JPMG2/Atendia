@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Appointment;
 use App\Models\Business;
+use App\Models\ProfessionalClosure;
 use App\Models\ProfessionalHour;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -69,6 +70,31 @@ test('the owner sees the professionals, edits one and adds another, and nothing 
 
     $page->wait(0.3)
         ->screenshot(filename: 'professionals-sheet-mobile-services')
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true)
+        ->assertNoJavaScriptErrors();
+});
+
+test('the sheet lists the time away and offers to load more, readable on a phone', function (): void {
+    ProfessionalClosure::factory()->create([
+        'business_id' => $this->business->id,
+        'professional_id' => $this->business->professionals()->where('name', 'Luis Paz')->value('id'),
+        'starts_on' => now()->addWeeks(2)->format('Y-m-d'),
+        'ends_on' => now()->addWeeks(3)->format('Y-m-d'),
+        'reason' => 'Vacaciones de verano',
+    ]);
+    $this->actingAs($this->owner);
+
+    $page = visit('/profesionales')->resize(1280, 900)
+        ->click('[aria-label="'.__('professionals.list.edit', ['name' => 'Luis Paz']).'"]')
+        ->assertSee(__('professionals.closures.title'))
+        ->assertSee('Vacaciones de verano');
+
+    $page->script("document.querySelector('.slide-over-body').scrollTo(0, 99999)");
+    $page->wait(0.4)->screenshot(filename: 'professionals-closures-desktop')->assertNoJavaScriptErrors();
+
+    $page->resize(390, 844);
+    $page->script("document.querySelector('.slide-over-body').scrollTo(0, 99999)");
+    $page->wait(0.4)->screenshot(filename: 'professionals-closures-mobile')
         ->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true)
         ->assertNoJavaScriptErrors();
 });

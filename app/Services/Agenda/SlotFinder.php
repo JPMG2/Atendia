@@ -62,7 +62,7 @@ class SlotFinder
     private function slotsOf(Business $business, CarbonImmutable $day, ?Service $service, ?CarbonImmutable $now, ?int $ignoringId, ?Professional $professional): array
     {
         if ($professional !== null) {
-            $professional->loadMissing(['services', 'hours']);
+            $professional->loadMissing(['services', 'hours', 'closures']);
 
             // A booking being MOVED keeps its professional even once they are switched off.
             $offering = $professional->is_active || $ignoringId !== null;
@@ -74,6 +74,11 @@ class SlotFinder
 
         $timezone = $business->localTimezone();
         $day = $day->setTimezone($timezone)->startOfDay();
+
+        // Away that day: the business opens, they do not.
+        if ($professional?->isClosedOn($day) === true) {
+            return [];
+        }
 
         // A day she marked closed offers nothing, whatever the weekly hours
         // say: the holiday has to reach the customer asking for an hour.

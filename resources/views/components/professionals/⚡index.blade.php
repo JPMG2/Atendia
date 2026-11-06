@@ -5,6 +5,7 @@ use App\Classes\Main\Professionals;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\Client\ProfessionalForm;
 use App\Traits\HasNotifications;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -59,6 +60,27 @@ new class extends Component
             $this->sheetOpen = false;
             unset($this->professionals);
         }
+    }
+
+    /** The days the person being edited is away, still ahead; empty for a new one. */
+    #[Computed]
+    public function closures(): Collection
+    {
+        $id = $this->professional->editingId;
+
+        return $id === null || $this->professionals === null ? new Collection : $this->professionals->closuresOf($id);
+    }
+
+    public function addClosure(): void
+    {
+        $this->dispatchNotification($this->professional->addClosure());
+        unset($this->closures);
+    }
+
+    public function removeClosure(int $closureId): void
+    {
+        $this->dispatchNotification($this->professional->removeClosure($closureId));
+        unset($this->closures);
     }
 };
 ?>
@@ -217,6 +239,58 @@ new class extends Component
                             </div>
                         @endforeach
                     </div>
+                </div>
+
+                {{-- Time away is loaded apart from Guardar, on a person that already exists. --}}
+                <div class="bp-closures">
+                    <p class="text-strong text-sm font-semibold">{{ __('professionals.closures.title') }}</p>
+
+                    @if ($professional->editingId === null)
+                        <p class="text-muted text-xs">{{ __('professionals.closures.save_first') }}</p>
+                    @else
+                        <p class="text-muted mb-2 text-xs">{{ __('professionals.closures.hint') }}</p>
+
+                        @forelse ($this->closures as $closure)
+                            <div class="bp-closure" wire:key="pc-{{ $closure->id }}">
+                                <span class="bp-closure-days font-mono">{{ $closure->label() }}</span>
+                                <span class="bp-closure-reason">{{ $closure->reason }}</span>
+                                <x-ui.icon-button
+                                    icon="trash-2"
+                                    variant="ghost"
+                                    class="bp-shift-remove"
+                                    data-testid="professional-closure-remove"
+                                    :label="__('professionals.closures.remove', ['days' => $closure->label()])"
+                                    wire:click="removeClosure({{ $closure->id }})"
+                                />
+                            </div>
+                        @empty
+                            <p class="bp-closed">{{ __('professionals.closures.empty') }}</p>
+                        @endforelse
+
+                        <x-catalog.form-row>
+                            <x-inputsform.datepicker
+                                span="full"
+                                mode="range"
+                                name="range"
+                                :label="__('professionals.closures.dates')"
+                                :value="$professional->closure_range"
+                                wire:model="professional.closure_range"
+                            />
+                        </x-catalog.form-row>
+                        <x-catalog.form-row>
+                            <x-inputsform.input
+                                span="long"
+                                name="reason"
+                                maxlength="80"
+                                :label="__('professionals.closures.reason')"
+                                :hint="__('professionals.closures.reason_hint')"
+                                wire:model="professional.closure_reason"
+                            />
+                        </x-catalog.form-row>
+                        <div>
+                            <x-ui.button variant="secondary" size="sm" icon="plus" wire:click="addClosure">{{ __('professionals.closures.add') }}</x-ui.button>
+                        </div>
+                    @endif
                 </div>
             </div>
 

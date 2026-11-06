@@ -74,6 +74,22 @@ return [
         'same' => 'Como el servicio',
     ],
 
+    'closures' => [
+        'title' => 'Vacaciones y cierres',
+        'hint' => 'Los días que esta persona no atiende aunque el negocio abra. Se guardan al agregarlos, no con Guardar.',
+        'save_first' => 'Guarda al profesional para cargarle vacaciones.',
+        'dates' => 'Días',
+        'reason' => 'Motivo',
+        'reason_hint' => 'Opcional. Para que lo recuerdes tú.',
+        'add' => 'Agregar',
+        'empty' => 'Sin cierres cargados.',
+        'remove' => 'Quitar el cierre del :days',
+        'added' => 'Cierre cargado.',
+        'exists' => 'Esos días ya estaban cargados.',
+        'removed' => 'Cierre quitado.',
+        'booked' => '{1}Tiene 1 turno en esas fechas: muévelo o cancélalo desde la Agenda y vuelve a cargar el cierre.|[2,*]Tiene :count turnos en esas fechas: muévelos o cancélalos desde la Agenda y vuelve a cargar el cierre.',
+    ],
+
     'notify' => [
         'saved' => ':name guardado.',
         'deleted' => 'Profesional eliminado.',

@@ -29,6 +29,12 @@ return [
         'upcoming_note' => 'Tiene :upcoming, así que no se puede eliminar todavía. Desactivalo para que no reciba nuevos.',
     ],
 
+    'closures' => [
+        'hint' => 'Los días que esta persona no atiende aunque el negocio abra. Se guardan al agregarlos, no con Guardar.',
+        'save_first' => 'Guardá al profesional para cargarle vacaciones.',
+        'booked' => '{1}Tiene 1 turno en esas fechas: movelo o cancelalo desde la Agenda y volvé a cargar el cierre.|[2,*]Tiene :count turnos en esas fechas: movelos o cancelalos desde la Agenda y volvé a cargar el cierre.',
+    ],
+
     'notify' => [
         'has_bookings' => 'No se puede eliminar: tiene turnos por venir. Desactivalo para que no reciba nuevos y eliminalo cuando los atienda.',
     ],
