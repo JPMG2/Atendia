@@ -150,7 +150,8 @@ class Appointment extends Model
         return $customer->appointments()
             ->where('status', AppointmentStatus::Confirmed)
             ->where('starts_at', '>=', $now->utc())
-            ->with('service:id,name,duration_minutes')
+            // Whole, not a slice: the assistant hands these bookings to the slot finder to move them.
+            ->with('service:id,name,duration_minutes', 'professional')
             ->orderBy('starts_at')
             ->get();
     }

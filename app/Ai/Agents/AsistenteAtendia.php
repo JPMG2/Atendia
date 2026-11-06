@@ -261,6 +261,14 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             return '';
         }
 
+        // Said only where there are people to choose from: the others never pay for these lines.
+        $people = $this->business->hasProfessionals() ? <<<'PERSONAS'
+
+            Si la herramienta de agenda dice quiénes atienden, el cliente puede
+            pedir a una persona: pasá "professional" solo si lo pide. Si no pide
+            a nadie, no preguntes: reservá sin profesional y toma quien esté libre.
+            PERSONAS : '';
+
         return <<<'TURNOS'
 
             AGENDA DE TURNOS. Este negocio reserva turnos y vos los tomás.
@@ -273,7 +281,7 @@ class AsistenteAtendia implements Agent, Conversational, HasTools
             El día antes le llega un recordatorio: si contesta "confirmo" (o
             similar), agradecé y no toques nada; si contesta "reprogramar",
             ofrecele horarios libres y movelo con la herramienta de sus turnos.
-            TURNOS;
+            TURNOS.$people;
     }
 
     /**

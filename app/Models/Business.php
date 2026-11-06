@@ -1052,6 +1052,12 @@ class Business extends Model
         return $this->services()->where('is_active', true)->where('is_bookable', true)->find($id);
     }
 
+    /** Whether anyone is set up to attend bookings: what decides if the assistant should talk about people. */
+    public function hasProfessionals(): bool
+    {
+        return $this->professionals()->where('is_active', true)->exists();
+    }
+
     /** A professional of this business a visitor may book with; null when it is not one, or when they are switched off. */
     public function bookableProfessional(int $id): ?Professional
     {

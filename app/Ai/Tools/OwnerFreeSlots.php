@@ -42,7 +42,8 @@ class OwnerFreeSlots implements OwnerSkillTool
     {
         return 'Las horas que le quedan LIBRES a la agenda: los horarios del negocio menos lo ya '
             .'reservado. Pasá "date" (AAAA-MM-DD) para un día puntual; sin fecha devuelve los '
-            .'próximos huecos. Con "service" el nombre de un servicio, si preguntan por uno. Usala '
+            .'próximos huecos. Con "service" el nombre de un servicio, si preguntan por uno, y '
+            .'"professional" si preguntan por una persona del negocio. Usala '
             .'para "¿me queda algo hoy?", "¿cuántos huecos tengo el viernes?" o "¿estoy lleno?".';
     }
 
@@ -50,14 +51,21 @@ class OwnerFreeSlots implements OwnerSkillTool
     {
         $timezone = $this->business->localTimezone();
         $service = $this->bookableService($this->business, (string) ($request['service'] ?? ''));
-        $forService = $service === null ? '' : " para {$service->name}";
+        $named = trim((string) ($request['professional'] ?? ''));
+        $professional = $this->professionalNamed($this->business, $named, $service);
+
+        if ($named !== '' && $professional === null) {
+            return 'No hay nadie con ese nombre para ese servicio.'.$this->attendingLine($this->business, $service);
+        }
+
+        $forService = ($service === null ? '' : " para {$service->name}").($professional === null ? '' : " con {$professional->name}");
         $finder = app(SlotFinder::class);
-        $duration = $finder->slotMinutes($this->business, $service);
+        $duration = $finder->slotMinutes($this->business, $service, $professional);
         $screen = 'Pantalla: '.route('agenda');
         $asked = trim((string) ($request['date'] ?? ''));
 
         if ($asked === '') {
-            $next = $finder->nextSlots($this->business, $service, CarbonImmutable::now($timezone), self::LISTED);
+            $next = $finder->nextSlots($this->business, $service, CarbonImmutable::now($timezone), self::LISTED, professional: $professional);
 
             return ($next === []
                 ? "No queda ninguna hora libre{$forService} en los próximos 14 días."
@@ -70,7 +78,7 @@ class OwnerFreeSlots implements OwnerSkillTool
             return 'Fecha inválida: usá el formato AAAA-MM-DD, con un día que exista.';
         }
 
-        $slots = $finder->freeSlots($this->business, $date, $service);
+        $slots = $finder->freeSlots($this->business, $date, $service, professional: $professional);
         $day = $this->dayLabel($date);
 
         if ($slots === []) {
@@ -90,6 +98,7 @@ class OwnerFreeSlots implements OwnerSkillTool
         return [
             'date' => $schema->string()->description('Día por el que se pregunta, formato AAAA-MM-DD. Vacío = los próximos huecos.'),
             'service' => $schema->string()->description('Nombre del servicio, si se preguntó por uno.'),
+            'professional' => $schema->string()->description('Nombre de la persona, si se preguntó por una. Vacío = todo el negocio.'),
         ];
     }
 }

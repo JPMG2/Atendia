@@ -44,7 +44,8 @@ class BookCustomerAppointment implements AssistantSkillTool
     {
         return 'Reserva un turno para este cliente. Usala SOLO cuando el cliente ya eligió un '
             .'horario de los que le ofreciste. Pasá "starts_at" con el formato AAAA-MM-DD HH:MM, '
-            .'"service" con el nombre del servicio si corresponde, y "notes" con lo que pidió.';
+            .'"service" con el nombre del servicio si corresponde, "professional" solo si pidió a una '
+            .'persona en particular, y "notes" con lo que pidió.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -57,6 +58,12 @@ class BookCustomerAppointment implements AssistantSkillTool
         }
 
         $service = $this->bookableService($this->business, (string) ($request['service'] ?? ''));
+        $named = trim((string) ($request['professional'] ?? ''));
+        $professional = $this->professionalNamed($this->business, $named, $service);
+
+        if ($named !== '' && $professional === null) {
+            return 'No hay nadie con ese nombre para ese servicio.'.$this->attendingLine($this->business, $service);
+        }
 
         try {
             $appointment = app(BookAppointment::class)->handle(
@@ -67,9 +74,10 @@ class BookCustomerAppointment implements AssistantSkillTool
                 AppointmentSource::Assistant,
                 trim((string) ($request['notes'] ?? '')) ?: null,
                 $this->conversation?->id,
+                $professional,
             );
         } catch (RuntimeException) {
-            $free = app(SlotFinder::class)->freeSlots($this->business, $startsAt, $service);
+            $free = app(SlotFinder::class)->freeSlots($this->business, $startsAt, $service, professional: $professional);
 
             return 'Ese horario ya no está libre. '
                 .($free === [] ? 'Ese día no queda ninguno.' : 'Libres ese día: '.$this->slotList($free));
@@ -84,6 +92,7 @@ class BookCustomerAppointment implements AssistantSkillTool
         return [
             'starts_at' => $schema->string()->required()->description('Inicio del turno elegido, formato AAAA-MM-DD HH:MM.'),
             'service' => $schema->string()->description('Nombre del servicio que reserva, si corresponde.'),
+            'professional' => $schema->string()->description('Nombre de la persona que pidió, solo si pidió a alguien en particular. Vacío = toma el turno quien esté libre.'),
             'notes' => $schema->string()->description('Lo que pidió el cliente, en una línea.'),
         ];
     }

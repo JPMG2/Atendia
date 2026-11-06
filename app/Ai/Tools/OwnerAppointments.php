@@ -93,7 +93,7 @@ class OwnerAppointments implements OwnerSkillTool
         $when = $this->slotLabel($appointment->starts_at->setTimezone($this->business->localTimezone()));
         $customer = $appointment->customer;
         $who = $customer === null ? 'cliente borrado' : $customer->displayName() ?? '+'.$customer->phone;
-        $what = $appointment->service?->name ?? 'turno general';
+        $what = ($appointment->service?->name ?? 'turno general').($appointment->professional === null ? '' : " con {$appointment->professional->name}");
         $ended = match ($appointment->status) {
             AppointmentStatus::Done => ' · atendido',
             AppointmentStatus::NoShow => ' · no vino',

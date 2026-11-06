@@ -115,7 +115,8 @@ class ManageCustomerAppointments implements AssistantSkillTool
         try {
             app(RescheduleAppointment::class)->handle($appointment, $startsAt);
         } catch (RuntimeException) {
-            $free = app(SlotFinder::class)->freeSlots($this->business, $startsAt, $appointment->service);
+            // Moving keeps whoever attends it: the hours that count are theirs.
+            $free = app(SlotFinder::class)->freeSlots($this->business, $startsAt, $appointment->service, professional: $appointment->professional);
 
             return 'Ese horario no está libre. '
                 .($free === [] ? 'Ese día no queda ninguno.' : 'Libres ese día: '.$this->slotList($free));

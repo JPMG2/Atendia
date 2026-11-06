@@ -37,6 +37,7 @@ class CheckFreeSlots implements AssistantSkillTool
         return 'Devuelve los turnos LIBRES de la agenda del negocio. Usala siempre que pregunten '
             .'por disponibilidad, cuándo hay turno o si pueden reservar. Pasá "date" (AAAA-MM-DD) '
             .'si preguntan por un día puntual, y "service" con el nombre del servicio si lo dijeron; '
+            .'"professional" solo si piden a una persona en particular; '
             .'sin fecha te devuelve los próximos huecos.';
     }
 
@@ -44,17 +45,27 @@ class CheckFreeSlots implements AssistantSkillTool
     {
         $timezone = $this->business->localTimezone();
         $service = $this->bookableService($this->business, (string) ($request['service'] ?? ''));
+        $named = trim((string) ($request['professional'] ?? ''));
+        $professional = $this->professionalNamed($this->business, $named, $service);
+
+        // Asked for someone we do not have: say who does attend, never answer for somebody else.
+        if ($named !== '' && $professional === null) {
+            return 'No hay nadie con ese nombre para ese servicio.'.$this->attendingLine($this->business, $service);
+        }
+
         $asked = trim((string) ($request['date'] ?? ''));
         $finder = app(SlotFinder::class);
-        $duration = $finder->slotMinutes($this->business, $service);
-        $forService = $service === null ? '' : " para {$service->name}";
+        $duration = $this->durationLabel($this->business, $service, $professional);
+        $forService = ($service === null ? '' : " para {$service->name}").($professional === null ? '' : " con {$professional->name}");
+        // Nobody named: whoever is free takes it, and who they are is worth saying once.
+        $who = $professional === null ? $this->attendingLine($this->business, $service) : '';
 
         if ($asked === '') {
-            $slots = $finder->nextSlots($this->business, $service, CarbonImmutable::now($timezone), 5);
+            $slots = $finder->nextSlots($this->business, $service, CarbonImmutable::now($timezone), 5, professional: $professional);
 
             return $slots === []
                 ? 'No hay turnos libres en los próximos 14 días.'
-                : "Próximos turnos libres{$forService} (duran {$duration} min): ".$this->slotList($slots);
+                : "Próximos turnos libres{$forService} ({$duration}): ".$this->slotList($slots).'.'.$who;
         }
 
         $date = AssistantContract::strictDate($asked, 'Y-m-d', $timezone);
@@ -63,18 +74,18 @@ class CheckFreeSlots implements AssistantSkillTool
             return 'Fecha inválida: usá el formato AAAA-MM-DD, con un día que exista.';
         }
 
-        $slots = $finder->freeSlots($this->business, $date, $service);
+        $slots = $finder->freeSlots($this->business, $date, $service, professional: $professional);
         $day = $this->dayLabel($date);
 
         if ($slots !== []) {
-            return "Turnos libres{$forService} el {$day} (duran {$duration} min): ".$this->slotList($slots);
+            return "Turnos libres{$forService} el {$day} ({$duration}): ".$this->slotList($slots).'.'.$who;
         }
 
         // Nothing that day: the next real hour beats a bare "no".
-        $next = $finder->nextSlots($this->business, $service, $date->addDay(), 3);
+        $next = $finder->nextSlots($this->business, $service, $date->addDay(), 3, professional: $professional);
 
         return "No hay turnos libres{$forService} el {$day}."
-            .($next === [] ? '' : ' Los siguientes libres: '.$this->slotList($next));
+            .($next === [] ? '' : ' Los siguientes libres: '.$this->slotList($next).'.');
     }
 
     public function schema(JsonSchema $schema): array
@@ -82,6 +93,7 @@ class CheckFreeSlots implements AssistantSkillTool
         return [
             'date' => $schema->string()->description('Día por el que preguntan, formato AAAA-MM-DD. Vacío = los próximos huecos.'),
             'service' => $schema->string()->description('Nombre del servicio que quieren reservar, si lo dijeron.'),
+            'professional' => $schema->string()->description('Nombre de la persona que piden, solo si piden a alguien en particular. Vacío = cualquiera libre.'),
         ];
     }
 }
