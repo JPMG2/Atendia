@@ -186,11 +186,12 @@ test('a booker who arrives while the same hour is being written is refused', fun
     $monday = nextMonday($business)->setTime(9, 0);
 
     // Standing in for the other booker mid-write: the hour is still free in the
-    // table, so only the lock can keep this one out.
-    $held = Cache::lock('agenda:'.$business->id.':'.$monday->utc()->format('YmdHi'), 10);
+    // table, so only the lock can keep this one out. It covers the whole business,
+    // so even a slot that merely overlaps the other one waits behind it.
+    $held = Cache::lock('agenda:'.$business->id, 10);
     $held->get();
 
-    expect(fn () => app(BookAppointment::class)->handle($business, $customer, $monday))
+    expect(fn () => app(BookAppointment::class)->handle($business, $customer, $monday->addMinutes(15)))
         ->toThrow(RuntimeException::class);
 
     $held->release();

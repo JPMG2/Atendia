@@ -15,18 +15,22 @@ use App\Models\Professional;
 use App\Models\Service;
 use App\Services\Agenda\SlotFinder;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 
 class BookAppointment
 {
+    /** Long enough for a booker queued behind another one's write, short enough for a chat reply. */
+    private const int LOCK_WAIT_SECONDS = 3;
+
     public function __construct(private readonly SlotFinder $slots) {}
 
     /**
      * Books a slot after checking it is STILL free: the assistant offered the
      * hour seconds ago and two people can ask for the same one at once. The
-     * check and the insert run under a lock on that very hour — checking and
-     * then writing let both bookers pass when they arrived together.
+     * check and the insert run under a lock — checking and then writing let
+     * both bookers pass when they arrived together.
      *
      * @throws RuntimeException when the hour is already gone
      */
@@ -42,37 +46,17 @@ class BookAppointment
     ): Appointment {
         $startsAt = $startsAt->setTimezone($business->localTimezone());
 
-        // Per business and hour, not per professional: an "anyone" booking and a named one
-        // would otherwise pick the same person at the same time.
-        $lock = Cache::lock("agenda:{$business->id}:".$startsAt->utc()->format('YmdHi'), 10);
+        // One lock per business, not per hour or professional: two slots that merely overlap
+        // (10:00 and 10:15) or an "anyone" booking and a named one must not pass together.
+        $lock = Cache::lock("agenda:{$business->id}", 10);
 
-        // A booker who loses the lock reads the same answer as one who lost the
-        // hour: it is gone. Every caller already says so in its own words.
-        $appointment = $lock->get(function () use ($business, $customer, $startsAt, $service, $source, $notes, $conversationId, $professional): ?Appointment {
-            $attending = $this->attendant($business, $startsAt, $service, $professional);
-
-            if ($attending === false) {
-                return null;
-            }
-
-            // Stored UTC, read back UTC, painted local: Eloquent writes a Carbon's
-            // wall clock as-is, so a local time would land three hours off.
-            $appointment = new Appointment([
-                'starts_at' => $startsAt->utc(),
-                'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $service, $attending))->utc(),
-                'status' => AppointmentStatus::Confirmed,
-                'source' => $source,
-                'notes' => $notes,
-                'conversation_id' => $conversationId,
-            ]);
-
-            $appointment->customer()->associate($customer);
-            $appointment->service()->associate($service);
-            $appointment->professional()->associate($attending);
-            $appointment->business()->associate($business)->save();
-
-            return $appointment;
-        });
+        try {
+            $appointment = $lock->block(self::LOCK_WAIT_SECONDS, fn (): ?Appointment => $this->book($business, $customer, $startsAt, $service, $source, $notes, $conversationId, $professional));
+        } catch (LockTimeoutException) {
+            // A booker who never gets the lock reads the same answer as one who lost the
+            // hour: it is gone. Every caller already says so in its own words.
+            $appointment = null;
+        }
 
         if (! $appointment instanceof Appointment) {
             throw new RuntimeException('The slot is no longer free.');
@@ -83,6 +67,33 @@ class BookAppointment
         if ($source !== AppointmentSource::Owner) {
             (new Panel($appointment, [], AppointmentBooked::class))->send();
         }
+
+        return $appointment;
+    }
+
+    private function book(Business $business, Customer $customer, CarbonImmutable $startsAt, ?Service $service, AppointmentSource $source, ?string $notes, ?int $conversationId, ?Professional $professional): ?Appointment
+    {
+        $attending = $this->attendant($business, $startsAt, $service, $professional);
+
+        if ($attending === false) {
+            return null;
+        }
+
+        // Stored UTC, read back UTC, painted local: Eloquent writes a Carbon's
+        // wall clock as-is, so a local time would land three hours off.
+        $appointment = new Appointment([
+            'starts_at' => $startsAt->utc(),
+            'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $service, $attending))->utc(),
+            'status' => AppointmentStatus::Confirmed,
+            'source' => $source,
+            'notes' => $notes,
+            'conversation_id' => $conversationId,
+        ]);
+
+        $appointment->customer()->associate($customer);
+        $appointment->service()->associate($service);
+        $appointment->professional()->associate($attending);
+        $appointment->business()->associate($business)->save();
 
         return $appointment;
     }

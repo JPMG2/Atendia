@@ -111,10 +111,10 @@ class Appointment extends Model
     }
 
     /**
-     * Everything booked inside a window, earliest first — what the day view
-     * paints and what the slot finder subtracts from the open hours. Pinned
-     * to the business on purpose: a worker has no session, so the tenant
-     * scope alone would not fence it. A professional narrows it to their own.
+     * Everything booked inside a window, earliest first. Pinned to the business
+     * because a worker has no session. A professional narrows it to their own
+     * plus the unassigned ones: those predate professionals, so any of them
+     * could be theirs.
      *
      * @return Collection<int, self>
      */
@@ -122,7 +122,9 @@ class Appointment extends Model
     {
         return $business->appointments()
             ->holdingSlot()
-            ->when($professionalId !== null, fn (Builder $query) => $query->where('professional_id', $professionalId))
+            ->when($professionalId !== null, fn (Builder $query) => $query->where(
+                fn (Builder $own) => $own->where('professional_id', $professionalId)->orWhereNull('professional_id')
+            ))
             ->where('starts_at', '<', $until->utc())
             ->where('ends_at', '>', $from->utc())
             ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes')

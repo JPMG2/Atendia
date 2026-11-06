@@ -252,6 +252,22 @@ test('a service nobody attends keeps the single agenda of the business, unassign
     expect($booking->professional_id)->toBeNull();
 });
 
+test('a booking from before professionals existed still takes its hour from every professional', function (): void {
+    $business = proBusiness();
+    $ana = proStaff($business, 'Ana', 1);
+    $luis = proStaff($business, 'Luis', 2);
+    $monday = proMonday($business);
+    $nine = $monday->setTime(9, 0);
+    Appointment::factory()->create(['business_id' => $business->id, 'starts_at' => $nine->utc(), 'ends_at' => $nine->addMinutes(30)->utc()]);
+
+    $finder = app(SlotFinder::class);
+
+    expect(proHours($finder->freeSlots($business, $monday, professional: $ana->fresh())))->not->toContain('09:00')
+        ->and(proHours($finder->freeSlots($business, $monday, professional: $luis->fresh())))->not->toContain('09:00')
+        ->and(proHours($finder->freeSlots($business, $monday)))->not->toContain('09:00')
+        ->and(fn () => proBook($business, $nine))->toThrow(RuntimeException::class);
+});
+
 test('a booking of one professional does not take the hour from another', function (): void {
     $business = proBusiness();
     $ana = proStaff($business, 'Ana', 1);
