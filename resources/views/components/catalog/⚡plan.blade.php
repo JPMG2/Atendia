@@ -107,6 +107,7 @@ new class extends Component
         'price' => ['required', 'integer', ['min', 1], ['max', 99999]],
         'conversations_per_month' => ['required', 'integer', ['min', 1], ['max', 1000000]],
         'team_seats' => ['required', 'integer', ['min', 1], ['max', 100]],
+        'professionals' => ['required', 'integer', ['min', 1], ['max', 100]],
         'messages_per_hour' => ['required', 'integer', ['min', 1], ['max', 10000]],
         'audio_minutes_per_month' => ['required', 'integer', ['min', 0], ['max', 100000]],
         'ask_per_month' => ['required', 'integer', ['min', 0], ['max', 100000]],
@@ -207,6 +208,7 @@ new class extends Component
                 <x-inputsform.input span="short" :label="__('catalog.plan.fields.price')" required name="price" type="number" min="1" :hint="__('catalog.plan.fields.price_hint')" alpine-error="price" wire:model="form.data.price" />
                 <x-inputsform.input span="short" :label="__('catalog.plan.fields.conversations_per_month')" required name="conversations_per_month" type="number" min="1" alpine-error="conversations_per_month" wire:model="form.data.conversations_per_month" />
                 <x-inputsform.input span="short" :label="__('catalog.plan.fields.team_seats')" required name="team_seats" type="number" min="1" :hint="__('catalog.plan.fields.team_seats_hint')" alpine-error="team_seats" wire:model="form.data.team_seats" />
+                <x-inputsform.input span="short" :label="__('catalog.plan.fields.professionals')" required name="professionals" type="number" min="1" :hint="__('catalog.plan.fields.professionals_hint')" alpine-error="professionals" wire:model="form.data.professionals" />
                 <x-inputsform.input span="short" :label="__('catalog.plan.fields.messages_per_hour')" required name="messages_per_hour" type="number" min="1" :hint="__('catalog.plan.fields.messages_per_hour_hint')" alpine-error="messages_per_hour" wire:model="form.data.messages_per_hour" />
             </x-catalog.form-row>
 

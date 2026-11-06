@@ -299,6 +299,8 @@ return [
             'conversations_per_month' => 'Conversaciones al mes',
             'team_seats' => 'Personas del equipo',
             'team_seats_hint' => 'Con el titular',
+            'professionals' => 'Profesionales',
+            'professionals_hint' => 'Sin lugar del equipo',
             'messages_per_hour' => 'Mensajes por hora',
             'messages_per_hour_hint' => 'Ritmo máximo por contacto',
             'audio_minutes_per_month' => 'Minutos de audio al mes',

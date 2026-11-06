@@ -63,6 +63,7 @@ test('Mi plan lists the meters in the web order and looks right in both themes a
         'Fotos de catálogo',
         'Minutos de audio transcriptos',
         'Personas en el panel',
+        'Profesionales',
         'Ritmo máximo por contacto',
     ]);
 

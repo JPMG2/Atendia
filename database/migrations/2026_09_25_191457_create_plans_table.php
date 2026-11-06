@@ -23,6 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('price')->comment('Precio mensual en USD');
             $table->unsignedInteger('conversations_per_month');
             $table->unsignedSmallInteger('team_seats')->comment('Personas que pueden entrar al panel, el titular incluido');
+            $table->unsignedSmallInteger('professionals')->default(1)->comment('Profesionales que atienden turnos (no usan lugar del equipo)');
             $table->unsignedSmallInteger('messages_per_hour')->comment('Ritmo máximo por contacto');
             $table->unsignedInteger('audio_minutes_per_month')->default(0)->comment('0 = sin notas de voz');
             $table->string('statistics', 20)->default('counts')->comment('counts | patterns | trends');

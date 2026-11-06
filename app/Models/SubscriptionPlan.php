@@ -23,7 +23,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * A row of the plan catalog. Read through App\Classes\Main\Plan, never
  * directly: the catalog is cached whole and every screen asks the same copy.
  */
-#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'daily_digest', 'trial_days', 'is_featured', 'ai_alert_share'])]
+#[Fillable(['code', 'sort_order', 'price', 'conversations_per_month', 'team_seats', 'professionals', 'messages_per_hour', 'audio_minutes_per_month', 'statistics', 'ask_per_month', 'catalog_photos', 'photos_per_item', 'reads_media', 'departments', 'daily_digest', 'trial_days', 'is_featured', 'ai_alert_share'])]
 class SubscriptionPlan extends Model implements DataTable, HasColumns, HasHighlights
 {
     use EditedByForm;
@@ -33,7 +33,7 @@ class SubscriptionPlan extends Model implements DataTable, HasColumns, HasHighli
 
     /** Dials where more is better: a plan above never gives less than the one below. */
     public const array LADDER = [
-        'price', 'conversations_per_month', 'team_seats', 'messages_per_hour',
+        'price', 'conversations_per_month', 'team_seats', 'professionals', 'messages_per_hour',
         'audio_minutes_per_month', 'ask_per_month', 'catalog_photos', 'photos_per_item',
     ];
 
@@ -207,6 +207,7 @@ class SubscriptionPlan extends Model implements DataTable, HasColumns, HasHighli
                 'price' => (int) $plan->price,
                 'conversations_per_month' => (int) $plan->conversations_per_month,
                 'team_seats' => (int) $plan->team_seats,
+                'professionals' => (int) $plan->professionals,
                 'messages_per_hour' => (int) $plan->messages_per_hour,
                 'audio_minutes_per_month' => (int) $plan->audio_minutes_per_month,
                 'statistics' => (string) $plan->statistics,

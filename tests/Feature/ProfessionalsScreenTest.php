@@ -170,6 +170,23 @@ test('a professional of another business cannot be opened from here', function (
     livewire('professionals.index')->call('open', $stranger->id)->assertStatus(404);
 });
 
+test('a plan with no room left refuses a new professional but still lets one be edited', function (): void {
+    $owner = proScreenOwner();
+    $cap = $owner->business->plan()->professionalsCap;
+    $first = $owner->business->professionals()->create(['name' => 'Pro 1']);
+    foreach (range(2, $cap) as $n) {
+        $owner->business->professionals()->create(['name' => 'Pro '.$n]);
+    }
+
+    livewire('professionals.index')->call('open')->set('professional.data.name', 'One too many')->call('save')
+        ->assertDispatched('notify', type: 'warning');
+    expect($owner->business->professionals()->where('name', 'One too many')->exists())->toBeFalse();
+
+    livewire('professionals.index')->call('open', $first->id)->set('professional.data.name', 'Renamed')->call('save')
+        ->assertDispatched('notify', type: 'success');
+    expect($first->fresh()->name)->toBe('Renamed');
+});
+
 test('the list says who is away today and until when, and nothing for a past or a future stretch', function (): void {
     $owner = proScreenOwner();
     $now = CarbonImmutable::now($owner->business->localTimezone());

@@ -94,6 +94,7 @@ return [
     'notify' => [
         'saved' => ':name guardado.',
         'deleted' => 'Profesional eliminado.',
+        'plan_full' => 'Tu plan ya tiene todos sus profesionales. Para sumar otro, pasa a un plan mayor.',
         'has_bookings' => 'No se puede eliminar: tiene turnos por venir. Desactívalo para que no reciba nuevos y elimínalo cuando los atienda.',
     ],
 ];

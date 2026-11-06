@@ -35,7 +35,7 @@ function planFormWith(string $code, array $changes = []): array
     $plan = SubscriptionPlan::query()->where('code', $code)->firstOrFail();
 
     return [...$plan->only([
-        'price', 'conversations_per_month', 'team_seats', 'messages_per_hour', 'audio_minutes_per_month', 'statistics',
+        'price', 'conversations_per_month', 'team_seats', 'professionals', 'messages_per_hour', 'audio_minutes_per_month', 'statistics',
         'ask_per_month', 'catalog_photos', 'photos_per_item', 'ai_alert_share', 'trial_days', 'reads_media', 'departments',
         'daily_digest', 'is_featured',
     ]), ...$changes];

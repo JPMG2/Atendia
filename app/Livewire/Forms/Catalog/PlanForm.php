@@ -34,6 +34,7 @@ class PlanForm extends BaseCatalogForm
             'price' => ['required', 'integer', 'min:1', 'max:99999', ...$ladder('price')],
             'conversations_per_month' => ['required', 'integer', 'min:1', 'max:1000000', ...$ladder('conversations_per_month')],
             'team_seats' => ['required', 'integer', 'min:1', 'max:100', ...$ladder('team_seats')],
+            'professionals' => ['required', 'integer', 'min:1', 'max:100', ...$ladder('professionals')],
             'messages_per_hour' => ['required', 'integer', 'min:1', 'max:10000', ...$ladder('messages_per_hour')],
             'audio_minutes_per_month' => ['required', 'integer', 'min:0', 'max:100000', ...$ladder('audio_minutes_per_month')],
             'ask_per_month' => ['required', 'integer', 'min:0', 'max:100000', ...$ladder('ask_per_month')],

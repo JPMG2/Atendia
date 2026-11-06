@@ -60,11 +60,12 @@ describe('the plan screen', function (): void {
 
         $data = asPlanApp($owner)->getJson('/api/v1/plan')->assertOk()->json('data');
 
-        expect(collect($data['meters'])->pluck('key')->all())->toBe(['conversations', 'photos', 'audio', 'seats', 'pace'])
+        expect(collect($data['meters'])->pluck('key')->all())->toBe(['conversations', 'photos', 'audio', 'seats', 'professionals', 'pace'])
             ->and($data['meters'][0]['label'])->toBe('Conversaciones con la IA')
             ->and($data['meters'][0]['text'])->toBe('0 de 1.000')
             ->and($data['meters'][2]['text'])->toBe('0 de 200 min')
-            ->and($data['meters'][4]['text'])->toBe('60 mensajes por hora')
+            ->and($data['meters'][4]['text'])->toBe('0 de 3')
+            ->and($data['meters'][5]['text'])->toBe('60 mensajes por hora')
             // The web prints these meters with no heading of their own, so the phone sends none either.
             ->and($data['copy'])->not->toHaveKey('usage_title')
             ->and($data['plan'])->toMatchArray(['code' => 'negocio', 'name' => 'Negocio', 'price' => '$79', 'per_month' => '/mes']);
@@ -89,6 +90,7 @@ describe('the plan screen', function (): void {
             'photos' => 'my-products',
             'audio' => 'conversations',
             'seats' => 'team',
+            'professionals' => 'professionals',
             'pace' => null,
         ])->and($screens->filter()->every(fn (string $name): bool => Route::has($name)))->toBeTrue();
     });
@@ -96,7 +98,7 @@ describe('the plan screen', function (): void {
     it('leaves out audio and the Ask quota on a plan that does not include them', function (): void {
         $data = asPlanApp(ownerOn('emprende'))->getJson('/api/v1/plan')->assertOk()->json('data');
 
-        expect(collect($data['meters'])->pluck('key')->all())->toBe(['conversations', 'photos', 'seats', 'pace'])
+        expect(collect($data['meters'])->pluck('key')->all())->toBe(['conversations', 'photos', 'seats', 'professionals', 'pace'])
             ->and($data['ask'])->toBeNull();
     });
 

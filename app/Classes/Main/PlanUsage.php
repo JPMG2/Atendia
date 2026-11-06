@@ -76,6 +76,7 @@ class PlanUsage
                     )
                     : null,
                 $this->plain('seats', __('plan.meters.seats'), __('plan.meters.seats_of', ['used' => $this->business->teamSeatsUsed(), 'cap' => $plan->teamSeats]), 'team'),
+                $this->plain('professionals', __('plan.meters.professionals'), __('plan.meters.professionals_of', ['used' => $this->business->professionals()->count(), 'cap' => $plan->professionalsCap]), 'professionals'),
                 $this->plain('pace', __('plan.meters.pace'), __('plan.meters.pace_value', ['cap' => $plan->messagesPerHour])),
             ]));
         }

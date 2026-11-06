@@ -9,6 +9,7 @@ use App\Models\Business;
 use App\Models\Professional;
 use App\Models\ProfessionalHour;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class SaveProfessional
 {
@@ -17,6 +18,11 @@ class SaveProfessional
      */
     public function handle(Business $business, array $data, ?int $id = null): Professional
     {
+        // Editing keeps its place; only a new one needs room under the plan.
+        if ($id === null && $business->professionals()->count() >= $business->plan()->professionalsCap) {
+            throw new RuntimeException('The plan has no room for another professional.');
+        }
+
         // All or nothing: the person, their week and their services are one decision.
         return DB::transaction(function () use ($business, $data, $id): Professional {
             $professional = $id === null

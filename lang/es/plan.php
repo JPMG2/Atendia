@@ -25,6 +25,8 @@ return [
         'photos_of' => ':used de :cap',
         'seats' => 'Personas en el panel',
         'seats_of' => ':used de :cap',
+        'professionals' => 'Profesionales',
+        'professionals_of' => ':used de :cap',
         'pace' => 'Ritmo máximo por contacto',
         'pace_value' => ':cap mensajes por hora',
     ],
@@ -64,6 +66,7 @@ return [
     'features' => [
         'conversations' => ':cap conversaciones con IA por mes',
         'seats' => '{1} Un solo usuario del panel: tu cuenta|[2,*] Hasta :cap personas en el panel, tu cuenta incluida',
+        'professionals' => '{1} Un profesional con su propia agenda|[2,*] Hasta :cap profesionales, cada uno con su agenda',
         'pace' => 'Hasta :cap mensajes por hora por contacto',
         'audio_none' => 'Atención por mensajes de texto',
         'audio' => ':cap minutos de audio transcriptos',

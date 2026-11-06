@@ -38,6 +38,11 @@ final class Plan
         get => (int) $this->limits['team_seats'];
     }
 
+    /** Professionals who attend bookings, active or not: they take no panel seat, so this is its own figure. */
+    public int $professionalsCap {
+        get => (int) ($this->limits['professionals'] ?? 1);
+    }
+
     public int $messagesPerHour {
         get => (int) $this->limits['messages_per_hour'];
     }
@@ -298,6 +303,7 @@ final class Plan
             return array_values(array_filter([
                 ['key' => 'conversations', 'label' => __('plan.features.conversations', ['cap' => number_format($this->conversationsPerMonth, 0, ',', '.')]), 'value' => $this->conversationsPerMonth],
                 ['key' => 'seats', 'label' => trans_choice('plan.features.seats', $this->teamSeats, ['cap' => $this->teamSeats]), 'value' => $this->teamSeats],
+                ['key' => 'professionals', 'label' => trans_choice('plan.features.professionals', $this->professionalsCap, ['cap' => $this->professionalsCap]), 'value' => $this->professionalsCap],
                 ['key' => 'pace', 'label' => __('plan.features.pace', ['cap' => $this->messagesPerHour]), 'value' => $this->messagesPerHour],
                 $this->allowsAudio
                     ? ['key' => 'audio', 'label' => __('plan.features.audio', ['cap' => $this->audioMinutesPerMonth]), 'value' => $this->audioMinutesPerMonth]

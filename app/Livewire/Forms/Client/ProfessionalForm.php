@@ -58,7 +58,11 @@ class ProfessionalForm extends BaseForm
 
         return $this->tryAction(function () use ($professionals, $validated): NotificationDto {
 
-            $professionals->save($validated, $this->editingId);
+            try {
+                $professionals->save($validated, $this->editingId);
+            } catch (RuntimeException) {
+                return new NotificationDto(__('professionals.notify.plan_full'), NotificationType::Warning);
+            }
 
             return new NotificationDto(__('professionals.notify.saved', ['name' => $validated['name']]), NotificationType::Success);
 

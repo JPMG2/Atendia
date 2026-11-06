@@ -28,6 +28,7 @@ const DIALS = [
     'pace' => ['messagesPerHour'],
     'audio' => ['allowsAudio', 'audioMinutesPerMonth'],
     'statistics' => ['statisticsAtLeast', 'statisticsLevel'],
+    'professionals' => ['professionalsCap'],
     'photos' => ['catalogPhotos', 'photosPerItem'],
     'departments' => ['hasDepartments'],
     'media' => ['readsMedia'],
@@ -41,6 +42,7 @@ const DIALS = [
  */
 const LOCKS = [
     'seats' => ['app/Models/Business.php', 'app/Actions/Team/InviteTeamMember.php', 'app/Actions/Team/AcceptTeamInvitation.php'],
+    'professionals' => ['app/Actions/Professionals/SaveProfessional.php'],
     'pace' => ['app/Jobs/ProcessIncomingWhatsAppMessage.php'],
     'audio' => ['app/Jobs/ProcessIncomingWhatsAppMessage.php'],
     'media' => ['app/Jobs/ProcessIncomingWhatsAppMessage.php'],
