@@ -39,8 +39,9 @@ new class extends Component
     public array $products = [];
 
     /**
-     * What is already saved: it cannot be removed from here. A product goes only
-     * from the catalog screen, with an undo. Locked: the front never edits it.
+     * What the screen actually showed: the only names Continuar may drop.
+     * The import job writes behind this step, and reconciling against the
+     * pills alone wiped its rows once. Locked: the front never edits it.
      *
      * @var list<string>
      */
@@ -142,11 +143,6 @@ new class extends Component
 
     public function remove(int $index): void
     {
-        // Only what was just typed and is not saved yet can go: a typo, never a stored product.
-        if (in_array($this->products[$index] ?? null, $this->knownProducts, true)) {
-            return;
-        }
-
         unset($this->products[$index]);
 
         $this->products = array_values($this->products);
@@ -161,7 +157,7 @@ new class extends Component
             // The box has no add button: a name typed and never confirmed with Enter would vanish.
             $this->add();
 
-            $notification = $this->form->saveProducts($this->products);
+            $notification = $this->form->saveProducts($this->products, $this->knownProducts);
 
             $this->dispatchChangeNotification($notification);
 
@@ -262,15 +258,13 @@ new class extends Component
             @foreach ($products as $index => $product)
                 <span wire:key="product-{{ md5($product) }}" class="wizard-pill">
                     {{ $product }}
-                    @unless (in_array($product, $knownProducts, true))
-                        <button
-                            type="button"
-                            wire:click="remove({{ $index }})"
-                            aria-label="{{ __('wizard.services.remove') }}"
-                        >
-                            ×
-                        </button>
-                    @endunless
+                    <button
+                        type="button"
+                        wire:click="remove({{ $index }})"
+                        aria-label="{{ __('wizard.services.remove') }}"
+                    >
+                        ×
+                    </button>
                 </span>
             @endforeach
         </div>

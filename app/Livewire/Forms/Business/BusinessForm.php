@@ -187,21 +187,21 @@ class BusinessForm extends BaseForm
      */
     public function saveServices(array $names): NotificationDto
     {
-        // Nothing is known as removable: the wizard adds, it never removes; a service goes only from the catalog screen.
-        return $this->saveNamedList('services', $names, __('wizard.fields.service'), app(SaveBusinessServices::class), []);
+        return $this->saveNamedList('services', $names, __('wizard.fields.service'), app(SaveBusinessServices::class));
     }
 
     /**
      * Saves the products step: the universal core takes only names here.
-     * The wizard adds and never removes, so nothing is passed as known: the
-     * queued import writes products behind this step and must never be wiped
-     * by it (it was, on 2026-09-04).
+     * `$known` scopes deletions to what the SCREEN showed — the queued
+     * import writes products behind this step, and reconciling against the
+     * manual list alone would wipe them (it did, on 2026-09-04).
      *
      * @param  list<string>  $names
+     * @param  list<string>  $known
      */
-    public function saveProducts(array $names): NotificationDto
+    public function saveProducts(array $names, array $known = []): NotificationDto
     {
-        return $this->saveNamedList('products', $names, __('wizard.fields.product'), app(SaveBusinessProducts::class), []);
+        return $this->saveNamedList('products', $names, __('wizard.fields.product'), app(SaveBusinessProducts::class), $known);
     }
 
     /**

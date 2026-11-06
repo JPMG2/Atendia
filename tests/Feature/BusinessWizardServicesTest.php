@@ -109,19 +109,17 @@ test('a suggestion with an apostrophe renders a valid click expression', functio
         ->assertSet('services', ["Corte D'Angelo"]);
 });
 
-test('a saved service cannot be dropped from the list: finishing keeps it', function (): void {
-    // Before 2026-11-06 this removed the service on finish. A client takes a
-    // service out only from the catalog screen, with an undo.
+test('a service dropped from the list leaves softly on finish', function (): void {
     $business = actingAsOwner();
     $business->services()->create(['name' => 'Manicura']);
-    $kept = $business->services()->create(['name' => 'Pedicura']);
+    $gone = $business->services()->create(['name' => 'Pedicura']);
 
     Livewire::test('business.step-services')
         ->call('remove', 1)
         ->call('finish');
 
-    expect(Service::withTrashed()->find($kept->id)->trashed())->toBeFalse()
-        ->and($business->services()->pluck('name')->all())->toBe(['Manicura', 'Pedicura']);
+    expect(Service::withTrashed()->find($gone->id)->trashed())->toBeTrue()
+        ->and($business->services()->pluck('name')->all())->toBe(['Manicura']);
 });
 
 test('a removed name coming back restores the same row, not a duplicate', function (): void {

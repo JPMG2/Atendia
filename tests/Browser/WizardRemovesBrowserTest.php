@@ -13,10 +13,10 @@ uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
-| The wizard adds, it never removes — what a person sees
+| The wizard forces nothing — what a person sees
 |--------------------------------------------------------------------------
-| A saved service shows no cross. Only a name just typed, and not saved yet,
-| carries one: a typo can be taken back, a stored service cannot.
+| What the catalog proposed and was already saved can be taken out again:
+| every service has its cross, and Continuar keeps the list she left.
 */
 
 beforeEach(function (): void {
@@ -25,9 +25,10 @@ beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('a saved service has no cross in the services step and a name just typed does', function (): void {
+test('a proposed service that was already saved can be taken out of the list', function (): void {
     $business = Business::factory()->create(['name' => 'Clínica Vida']);
     Service::factory()->for($business)->create(['name' => 'Consulta clínica']);
+    Service::factory()->for($business)->create(['name' => 'Control de rutina']);
     $user = User::factory()->create();
     $user->business()->associate($business)->save();
     $this->actingAs($user->refresh());
@@ -36,19 +37,20 @@ test('a saved service has no cross in the services step and a name just typed do
 
     $page->script("Livewire.dispatch('wizard:step-completed', { step: 2 })");
     $page->click('[data-testid="wizard-tab-3"]')
-        ->assertSee('Tus servicios')
         ->assertSeeIn('.wizard-pills', 'Consulta clínica')
-        ->assertMissing('.wizard-pill button');
-
-    $page->type('[name="service_draft"]', 'Consluta')->keys('[name="service_draft"]', 'Enter');
-
-    $page->assertSeeIn('.wizard-pills', 'Consluta')
+        ->assertSeeIn('.wizard-pills', 'Control de rutina')
         ->assertPresent('.wizard-pill button')
         ->assertNoJavaScriptErrors()
-        ->screenshot(filename: 'wizard-saved-service-no-cross');
+        ->screenshot(filename: 'wizard-saved-services-removable');
 
-    $page->click('.wizard-pill button');
+    $page->click('[aria-label="Quitar"] >> nth=1')->wait(1);
 
-    $page->assertDontSeeIn('.wizard-pills', 'Consluta')
+    $page->assertDontSeeIn('.wizard-pills', 'Control de rutina')
         ->assertSeeIn('.wizard-pills', 'Consulta clínica');
+
+    // Every mounted step has its own Continuar: only the visible one is this step's.
+    $page->script("[...document.querySelectorAll('button')].filter(b => b.textContent.trim() === 'Continuar' && b.offsetParent !== null)[0].click()");
+    $page->wait(2);
+
+    expect($business->services()->pluck('name')->all())->toBe(['Consulta clínica']);
 });

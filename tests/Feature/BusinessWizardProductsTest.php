@@ -93,19 +93,17 @@ test('goods suggestions are offered here, not on the services step, and save to 
         ->and($business->services()->count())->toBe(0);
 });
 
-test('a saved product cannot be dropped from the list: finishing keeps it', function (): void {
-    // Before 2026-11-06 this removed the product on finish. A client takes a
-    // product out only from the catalog screen, with an undo.
+test('a product dropped from the list leaves softly on finish', function (): void {
     $business = actingAsShopOwner();
     $business->products()->create(['name' => 'Pan de campo']);
-    $kept = $business->products()->create(['name' => 'Factura']);
+    $gone = $business->products()->create(['name' => 'Factura']);
 
     Livewire::test('business.step-products')
         ->call('remove', 1)
         ->call('finish');
 
-    expect(Product::withTrashed()->find($kept->id)->trashed())->toBeFalse()
-        ->and($business->products()->pluck('name')->all())->toBe(['Pan de campo', 'Factura']);
+    expect(Product::withTrashed()->find($gone->id)->trashed())->toBeTrue()
+        ->and($business->products()->pluck('name')->all())->toBe(['Pan de campo']);
 });
 
 test('a removed name coming back restores the same row, not a duplicate', function (): void {
