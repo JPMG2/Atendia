@@ -24,13 +24,16 @@ class RescheduleAppointment
         $business = $appointment->business;
         $startsAt = $startsAt->setTimezone($business->localTimezone());
 
-        if (! $this->slots->isFree($business, $startsAt, $appointment->service, $appointment->id)) {
+        // It keeps whoever attends it: the new hour is checked against their agenda and their length.
+        $professional = $appointment->professional;
+
+        if (! $this->slots->isFree($business, $startsAt, $appointment->service, $appointment->id, $professional)) {
             throw new RuntimeException('The new slot is not free.');
         }
 
         $appointment->update([
             'starts_at' => $startsAt->utc(),
-            'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $appointment->service))->utc(),
+            'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $appointment->service, $professional))->utc(),
             'reminder_sent_at' => null,
         ]);
 

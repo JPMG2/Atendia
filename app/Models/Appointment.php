@@ -114,14 +114,15 @@ class Appointment extends Model
      * Everything booked inside a window, earliest first — what the day view
      * paints and what the slot finder subtracts from the open hours. Pinned
      * to the business on purpose: a worker has no session, so the tenant
-     * scope alone would not fence it.
+     * scope alone would not fence it. A professional narrows it to their own.
      *
      * @return Collection<int, self>
      */
-    public static function between(Business $business, CarbonImmutable $from, CarbonImmutable $until): Collection
+    public static function between(Business $business, CarbonImmutable $from, CarbonImmutable $until, ?int $professionalId = null): Collection
     {
         return $business->appointments()
             ->holdingSlot()
+            ->when($professionalId !== null, fn (Builder $query) => $query->where('professional_id', $professionalId))
             ->where('starts_at', '<', $until->utc())
             ->where('ends_at', '>', $from->utc())
             ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes')

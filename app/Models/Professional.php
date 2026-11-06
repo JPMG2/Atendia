@@ -9,6 +9,7 @@ use App\Traits\TracksUserActions;
 use Database\Factories\ProfessionalFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,17 @@ class Professional extends Model
     // Past bookings point at it: it leaves the lists but never the history.
     use SoftDeletes;
     use TracksUserActions;
+
+    /**
+     * The database defaults, mirrored: a row just created in memory has not read
+     * them back, and an empty `is_active` would read as switched off.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+        'sort_order' => 0,
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -71,6 +83,38 @@ class Professional extends Model
     public function scopeBookable(Builder $query): void
     {
         $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Who can take a new booking for a service, in the owner's order. Pinned to
+     * the business on purpose: a worker has no session, so the tenant scope
+     * alone would not fence it. Empty means the business has nobody set up for
+     * it, and the agenda behaves as it always did.
+     *
+     * @return Collection<int, self>
+     */
+    public static function offeredFor(Business $business, ?Service $service): Collection
+    {
+        return $business->professionals()
+            ->where('is_active', true)
+            ->with(['services', 'hours'])
+            ->get()
+            ->filter(fn (self $professional): bool => $professional->attends($service))
+            ->values();
+    }
+
+    /** Whether they attend the service; a plain slot with no service is open to everyone. */
+    public function attends(?Service $service): bool
+    {
+        return $service === null || $this->services->contains('id', $service->id);
+    }
+
+    /** Their own length for the service; null when they follow the service's own. */
+    public function ownMinutesFor(?Service $service): ?int
+    {
+        $minutes = $service === null ? null : $this->services->firstWhere('id', $service->id)?->pivot->duration_minutes;
+
+        return $minutes === null ? null : (int) $minutes;
     }
 
     /**

@@ -11,6 +11,7 @@ use App\Messaging\Panel\AppointmentBooked;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
+use App\Models\Professional;
 use App\Models\Service;
 use App\Services\Agenda\SlotFinder;
 use Carbon\CarbonImmutable;
@@ -37,14 +38,20 @@ class BookAppointment
         AppointmentSource $source = AppointmentSource::Assistant,
         ?string $notes = null,
         ?int $conversationId = null,
+        ?Professional $professional = null,
     ): Appointment {
         $startsAt = $startsAt->setTimezone($business->localTimezone());
+
+        // Per business and hour, not per professional: an "anyone" booking and a named one
+        // would otherwise pick the same person at the same time.
         $lock = Cache::lock("agenda:{$business->id}:".$startsAt->utc()->format('YmdHi'), 10);
 
         // A booker who loses the lock reads the same answer as one who lost the
         // hour: it is gone. Every caller already says so in its own words.
-        $appointment = $lock->get(function () use ($business, $customer, $startsAt, $service, $source, $notes, $conversationId): ?Appointment {
-            if (! $this->slots->isFree($business, $startsAt, $service)) {
+        $appointment = $lock->get(function () use ($business, $customer, $startsAt, $service, $source, $notes, $conversationId, $professional): ?Appointment {
+            $attending = $this->attendant($business, $startsAt, $service, $professional);
+
+            if ($attending === false) {
                 return null;
             }
 
@@ -52,7 +59,7 @@ class BookAppointment
             // wall clock as-is, so a local time would land three hours off.
             $appointment = new Appointment([
                 'starts_at' => $startsAt->utc(),
-                'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $service))->utc(),
+                'ends_at' => $startsAt->addMinutes($this->slots->slotMinutes($business, $service, $attending))->utc(),
                 'status' => AppointmentStatus::Confirmed,
                 'source' => $source,
                 'notes' => $notes,
@@ -61,6 +68,7 @@ class BookAppointment
 
             $appointment->customer()->associate($customer);
             $appointment->service()->associate($service);
+            $appointment->professional()->associate($attending);
             $appointment->business()->associate($business)->save();
 
             return $appointment;
@@ -77,5 +85,25 @@ class BookAppointment
         }
 
         return $appointment;
+    }
+
+    /**
+     * Who attends the hour: the one asked for, or the first free of those who
+     * attend the service; null for a business with nobody set up (its single
+     * agenda). False when there is no one to take it.
+     */
+    private function attendant(Business $business, CarbonImmutable $startsAt, ?Service $service, ?Professional $asked): Professional|false|null
+    {
+        if ($asked !== null) {
+            return $this->slots->isFree($business, $startsAt, $service, null, $asked) ? $asked : false;
+        }
+
+        $offered = Professional::offeredFor($business, $service);
+
+        if ($offered->isEmpty()) {
+            return $this->slots->isFree($business, $startsAt, $service) ? null : false;
+        }
+
+        return $offered->first(fn (Professional $each): bool => $this->slots->isFree($business, $startsAt, $service, null, $each)) ?? false;
     }
 }

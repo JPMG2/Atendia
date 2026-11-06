@@ -7,6 +7,7 @@ namespace App\Services\Agenda;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\BusinessHour;
+use App\Models\Professional;
 use App\Models\Service;
 use Carbon\CarbonImmutable;
 
@@ -22,12 +23,53 @@ class SlotFinder
     /**
      * Free starting times of one day, in the business's own timezone.
      *
+     * With a professional, only theirs. Without one, the hours ANY professional
+     * who attends the service can take; and a business with nobody set up for it
+     * keeps the single agenda it always had.
+     *
      * @return list<CarbonImmutable>
      */
-    public function freeSlots(Business $business, CarbonImmutable $day, ?Service $service = null, ?CarbonImmutable $now = null, ?int $ignoringId = null): array
+    public function freeSlots(Business $business, CarbonImmutable $day, ?Service $service = null, ?CarbonImmutable $now = null, ?int $ignoringId = null, ?Professional $professional = null): array
     {
         if (! $business->appointments_enabled) {
             return [];
+        }
+
+        if ($professional !== null) {
+            return $this->slotsOf($business, $day, $service, $now, $ignoringId, $professional);
+        }
+
+        $offered = Professional::offeredFor($business, $service);
+
+        if ($offered->isEmpty()) {
+            return $this->slotsOf($business, $day, $service, $now, $ignoringId, null);
+        }
+
+        return $offered
+            ->flatMap(fn (Professional $each): array => $this->slotsOf($business, $day, $service, $now, $ignoringId, $each))
+            ->unique(fn (CarbonImmutable $slot): int => $slot->getTimestamp())
+            ->sortBy(fn (CarbonImmutable $slot): int => $slot->getTimestamp())
+            ->values()
+            ->all();
+    }
+
+    /**
+     * One agenda's free hours: the business's own (null) or one professional's,
+     * who falls back to the business for whatever they have not set themselves.
+     *
+     * @return list<CarbonImmutable>
+     */
+    private function slotsOf(Business $business, CarbonImmutable $day, ?Service $service, ?CarbonImmutable $now, ?int $ignoringId, ?Professional $professional): array
+    {
+        if ($professional !== null) {
+            $professional->loadMissing(['services', 'hours']);
+
+            // A booking being MOVED keeps its professional even once they are switched off.
+            $offering = $professional->is_active || $ignoringId !== null;
+
+            if ((int) $professional->business_id !== $business->id || ! $offering || ! $professional->attends($service)) {
+                return [];
+            }
         }
 
         $timezone = $business->localTimezone();
@@ -43,12 +85,25 @@ class SlotFinder
 
         $special = $closure;
         $now ??= CarbonImmutable::now($timezone);
-        $minutes = $this->slotMinutes($business, $service);
+        $minutes = $this->slotMinutes($business, $service, $professional);
+        $weekday = (int) $day->format('w');
+
+        // A professional with shifts of their own works only those days; one with none follows the business.
+        $ownShifts = $professional !== null && $professional->hours->isNotEmpty();
+
+        if ($ownShifts && $professional->hours->where('day_of_week', $weekday)->isEmpty()) {
+            return [];
+        }
 
         // Special hours REPLACE the weekly ones for that day: offering both
         // would hand out the very hours she decided not to work.
+        $weekly = $ownShifts
+            ? $professional->hours->where('day_of_week', $weekday)
+                ->map(fn ($shift): BusinessHour => new BusinessHour(['day_of_week' => $weekday, 'opens_at' => $shift->opens_at, 'closes_at' => $shift->closes_at]))
+            : $business->hours->where('day_of_week', $weekday);
+
         $shifts = $special === null
-            ? $business->hours->where('day_of_week', (int) $day->format('w'))
+            ? $weekly
             : collect([new BusinessHour(['opens_at' => $special->opens_at, 'closes_at' => $special->closes_at])]);
 
         // A night shift (weekly or special) ends on the next calendar day, so what is
@@ -58,17 +113,18 @@ class SlotFinder
             : $day->endOfDay();
 
         // A booking being MOVED must not block its own new hour.
-        $booked = Appointment::between($business, $day, $dayEnd)
+        $booked = Appointment::between($business, $day, $dayEnd, $professional?->id)
             ->reject(fn (Appointment $taken): bool => $taken->id === $ignoringId);
 
         // The daily cap is the whole day's ceiling, whatever hour is asked for.
-        $cap = $business->appointments_per_day;
+        // A professional's own number wins; empty inherits the business's.
+        $cap = $professional?->appointments_per_day ?? $business->appointments_per_day;
 
         if ($cap !== null && $booked->count() >= $cap) {
             return [];
         }
 
-        $capacity = max(1, (int) $business->appointment_capacity);
+        $capacity = max(1, (int) ($professional?->appointment_capacity ?? $business->appointment_capacity));
         $slots = [];
 
         // The hours past midnight belong to the next day's calendar: a closure there (whole day, or
@@ -130,14 +186,14 @@ class SlotFinder
      *
      * @return list<CarbonImmutable>
      */
-    public function nextSlots(Business $business, ?Service $service, CarbonImmutable $from, int $limit = 3, int $daysAhead = 14): array
+    public function nextSlots(Business $business, ?Service $service, CarbonImmutable $from, int $limit = 3, int $daysAhead = 14, ?Professional $professional = null): array
     {
         $timezone = $business->localTimezone();
         $from = $from->setTimezone($timezone);
         $found = [];
 
         for ($offset = 0; $offset <= $daysAhead && count($found) < $limit; $offset++) {
-            foreach ($this->freeSlots($business, $from->addDays($offset), $service, $from) as $slot) {
+            foreach ($this->freeSlots($business, $from->addDays($offset), $service, $from, null, $professional) as $slot) {
                 $found[] = $slot;
 
                 if (count($found) === $limit) {
@@ -150,14 +206,14 @@ class SlotFinder
     }
 
     /** Whether that exact hour is still bookable — checked again when saving. */
-    public function isFree(Business $business, CarbonImmutable $startsAt, ?Service $service = null, ?int $ignoringId = null): bool
+    public function isFree(Business $business, CarbonImmutable $startsAt, ?Service $service = null, ?int $ignoringId = null, ?Professional $professional = null): bool
     {
         $startsAt = $startsAt->setTimezone($business->localTimezone());
 
         // Saturday 01:00 may be an hour of Friday's night shift: it is offered in Friday's list,
         // so it is looked for there too, or the slot shown would never book.
         foreach ([$startsAt, $startsAt->subDay()] as $day) {
-            $free = collect($this->freeSlots($business, $day, $service, $startsAt->subSecond(), $ignoringId))
+            $free = collect($this->freeSlots($business, $day, $service, $startsAt->subSecond(), $ignoringId, $professional))
                 ->contains(fn (CarbonImmutable $slot): bool => $slot->equalTo($startsAt));
 
             if ($free) {
@@ -168,10 +224,16 @@ class SlotFinder
         return false;
     }
 
-    /** The service's own duration, or the business's default for a plain slot. */
-    public function slotMinutes(Business $business, ?Service $service): int
+    /**
+     * How long the slot lasts: the professional's own length for the service,
+     * else the service's, else the business's default for a plain slot.
+     */
+    public function slotMinutes(Business $business, ?Service $service, ?Professional $professional = null): int
     {
-        return $service?->duration_minutes
+        $professional?->loadMissing('services');
+
+        return $professional?->ownMinutesFor($service)
+            ?? $service?->duration_minutes
             ?? max(5, (int) $business->appointment_slot_minutes);
     }
 
