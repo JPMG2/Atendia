@@ -43,6 +43,8 @@ class MenuSeeder extends Seeder
         // Last child of the business, not a top item (her call, 2026-09-27): the
         // people and departments are the owner's setup, like Shopify's "Users".
         Menu::create(['parent_id' => $myBusiness->id, 'label_key' => 'menu.team', 'icon' => 'users-round', 'route_name' => 'team', 'sort_order' => count($profileSections) + 1]);
+        // Right after the team, under the same parent: who attends the bookings is the owner's setup too.
+        Menu::create(['parent_id' => $myBusiness->id, 'label_key' => 'menu.professionals', 'icon' => 'user', 'route_name' => 'professionals', 'sort_order' => count($profileSections) + 2]);
         // Grouped under the Catalog parent by the owner's call (2026-09-14),
         // the Fresha pattern: a submenu whose children are both REAL screens.
         // Badges mirror the mock counts until the real tables land.

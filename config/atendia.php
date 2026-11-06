@@ -546,6 +546,7 @@ return [
             'my-payments' => ['menu.my_payments', 'billing'],
             'referrals' => ['menu.referrals', 'referrals'],
             'team' => ['menu.team', 'team'],
+            'professionals' => ['menu.professionals', 'professionals'],
             'settings' => ['menu.settings', 'settings'],
             'help' => ['menu.help', 'help'],
         ],

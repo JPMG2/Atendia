@@ -77,6 +77,16 @@ class Professionals
         );
     }
 
+    /** The week in one line, as the business's own is told; they may also follow it. */
+    public function hoursLine(Professional $professional): string
+    {
+        if ($professional->hours->isEmpty()) {
+            return __('professionals.list.business_hours');
+        }
+
+        return (new OpeningHours($this->weekOf($professional), $this->business->localTimezone()))->summary;
+    }
+
     /**
      * @param  array<string, mixed>  $validated
      */

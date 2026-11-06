@@ -2,7 +2,25 @@
 
 declare(strict_types=1);
 
+// Venezuela: "cita" instead of "turno"; everything else falls back to lang/es.
+
 return [
+    'sub' => 'Quién atiende tus citas. Cada profesional tiene sus días, sus horas y su cupo; lo que no cargues, lo hereda de tu negocio.',
+
+    'needs_services' => [
+        'body' => 'Marca en Servicios cuáles se reservan con cita: sin eso, un profesional no tiene qué atender.',
+    ],
+
+    'list' => [
+        'empty_body' => 'Mientras no cargues ninguno, tu agenda funciona como una sola. Agrega uno para que cada persona tenga sus horas y sus citas.',
+    ],
+
+    'sheet' => [
+        'active' => 'Recibe citas nuevas',
+        'active_hint' => 'Desactivado no recibe citas nuevas. Las que ya tiene se conservan.',
+        'delete_message' => 'Se quita de las listas y de la agenda. Sus citas pasadas quedan en el historial.',
+    ],
+
     'fields' => [
         'capacity' => 'Citas a la vez',
     ],

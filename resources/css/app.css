@@ -1645,6 +1645,12 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* One line per day, always: the closing time dropping under the day read as another day. */
   .form-row.tm-hour-row { align-items:center; flex-wrap:nowrap; gap:8px; }
   .form-row.tm-hour-row > .f-code { flex:0 0 118px; min-width:118px; }
+  /* The phone rule that gives every form-row child a full line would push the day and its switch
+     out of the sheet: here they keep their size and the two time boxes share what is left. */
+  @media (max-width:680px) {
+    .form-row.tm-hour-row > * { flex-basis:auto; }
+    .form-row.tm-hour-row > .f-code { flex:1 1 0; min-width:76px; }
+  }
   .tm-hour-day { width:40px; flex:none; font-size:var(--text-sm); font-weight:600; color:var(--text-strong); }
   .tm-waiting.is-on { font-weight:600; color:var(--warning); }
   .tm-steps { display:flex; flex-direction:column; gap:12px; font-size:var(--text-sm); color:var(--text-body); }

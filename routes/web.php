@@ -177,6 +177,11 @@ Route::get('/equipo', fn () => view('team'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('team');
 
+// "Profesionales": who attends the bookings, each with their own week, capacity and services.
+Route::get('/profesionales', fn () => view('professionals'))
+    ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
+    ->name('professionals');
+
 // Public on purpose: Google Play requires a page anyone can open to ask for an account's deletion.
 Route::get('/borrar-cuenta', fn () => view('account-deletion'))->name('account.deletion');
 

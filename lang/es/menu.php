@@ -45,6 +45,7 @@ return [
     'conversations' => 'Conversaciones',
     'my_business' => 'Mi negocio',
     'team' => 'Equipo',
+    'professionals' => 'Profesionales',
     'catalog' => 'Catálogo',
     'services' => 'Servicios',
     'products' => 'Productos',
