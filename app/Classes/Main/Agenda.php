@@ -109,7 +109,7 @@ class Agenda
      */
     public Collection $everything {
         get => $this->business->appointments()
-            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes', 'professional:id,name')
+            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes', 'professional')
             ->orderByDesc('starts_at')
             ->get();
     }

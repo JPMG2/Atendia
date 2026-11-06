@@ -15,6 +15,7 @@ use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\KnowledgeDocument;
 use App\Models\Product;
+use App\Models\ProfessionalHour;
 use App\Models\Service;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Carbon\CarbonImmutable;
@@ -75,6 +76,30 @@ class EvalBusinesses
                 'Cancelaciones' => 'Si cancelás con 24 horas de anticipación te devolvemos la seña.',
             ],
         ],
+        // The salon with the agenda on and two professionals: what the people-aware booking tools are held to.
+        // Ana works Wednesday and Thursday mornings only; Luis follows the salon's hours.
+        'salon-team' => [
+            'name' => 'Peluquería Lumen',
+            'activity' => 'Peluquería',
+            'timezone' => 'America/Argentina/Buenos_Aires',
+            'settings' => ['appointments_enabled' => true, 'appointment_slot_minutes' => 30],
+            'contact' => ['has_premises' => true, 'address' => 'Thames 1650', 'city' => 'Buenos Aires',
+                'whatsapp_number' => '5491155550000', 'email' => 'turnos@lumen.test'],
+            'hours' => [2 => [['10:00', '20:00']], 3 => [['10:00', '20:00']], 4 => [['10:00', '20:00']],
+                5 => [['10:00', '20:00']], 6 => [['10:00', '20:00']]],
+            'services' => [
+                ['name' => 'Corte de mujer', 'price' => 15000, 'duration_minutes' => 45, 'is_bookable' => true],
+                ['name' => 'Corte de hombre', 'price' => 9000, 'duration_minutes' => 30, 'is_bookable' => true],
+                ['name' => 'Brushing', 'price' => 8000, 'duration_minutes' => 30, 'is_bookable' => true],
+            ],
+            'professionals' => [
+                ['name' => 'Ana Soto', 'services' => ['Corte de mujer', 'Corte de hombre', 'Brushing'], 'hours' => [3 => ['10:00', '14:00'], 4 => ['10:00', '14:00']]],
+                ['name' => 'Luis Paz', 'services' => ['Corte de hombre', 'Brushing'], 'hours' => []],
+            ],
+            'knowledge' => [
+                'Turnos y seña' => 'Los turnos se reservan por WhatsApp y se confirman con una seña del 20%.',
+            ],
+        ],
         'restaurant' => [
             'name' => 'Restaurante La Nona',
             'activity' => 'Restaurante',
@@ -122,6 +147,7 @@ class EvalBusinesses
         $business = Business::factory()->create([
             'name' => $definition['name'],
             'timezone' => $definition['timezone'],
+            ...($definition['settings'] ?? []),
             ...$definition['contact'],
         ]);
         $business->activities()->attach(BusinessActivity::factory()->create(['name' => $definition['activity']])->id, ['is_primary' => true]);
@@ -134,6 +160,15 @@ class EvalBusinesses
 
         foreach ($definition['services'] ?? [] as $service) {
             Service::factory()->create(['business_id' => $business->id, 'price_type' => 'fixed', ...$service]);
+        }
+
+        foreach ($definition['professionals'] ?? [] as $person) {
+            $professional = $business->professionals()->create(['name' => $person['name']]);
+            $professional->services()->attach($business->services()->whereIn('name', $person['services'])->pluck('id'));
+
+            foreach ($person['hours'] as $day => [$opens, $closes]) {
+                ProfessionalHour::factory()->create(['business_id' => $business->id, 'professional_id' => $professional->id, 'day_of_week' => $day, 'opens_at' => $opens, 'closes_at' => $closes]);
+            }
         }
 
         foreach ($definition['products'] ?? [] as $product) {

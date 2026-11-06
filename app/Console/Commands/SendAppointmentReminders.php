@@ -57,7 +57,7 @@ class SendAppointmentReminders extends Command
             ->whereNull('reminder_sent_at')
             ->where('starts_at', '>', $now->utc())
             ->where('starts_at', '<=', $now->copy()->addHours($hours)->utc())
-            ->with('customer', 'service')
+            ->with('customer', 'service', 'professional')
             ->get();
 
         $gate = ProactiveSends::for($business);
@@ -95,7 +95,9 @@ class SendAppointmentReminders extends Command
             'business' => $business->name,
             'day' => $when->locale(app()->getLocale())->translatedFormat('l j/n'),
             'time' => $when->format('H:i'),
-            'what' => $appointment->service?->name ?? __('agenda.plain_slot'),
+            // "Corte con Ana Soto": the customer is told who is waiting, not only what for.
+            'what' => ($appointment->service?->name ?? __('agenda.plain_slot'))
+                .($appointment->professional === null ? '' : ' '.__('agenda.with_professional', ['name' => $appointment->professional->name])),
         ]);
 
         $gate->pace();

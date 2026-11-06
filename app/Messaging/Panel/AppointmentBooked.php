@@ -25,7 +25,7 @@ class AppointmentBooked extends PanelMessage
      */
     public function payload(): array
     {
-        $appointment = $this->model->loadMissing(['customer', 'service', 'business']);
+        $appointment = $this->model->loadMissing(['customer', 'service', 'professional', 'business']);
 
         return [
             'name' => $appointment->customer?->name ?? '',
@@ -33,7 +33,8 @@ class AppointmentBooked extends PanelMessage
                 ->copy()
                 ->setTimezone($appointment->business->localTimezone())
                 ->format('d/m H:i'),
-            'service' => $appointment->service?->name ?? '',
+            // Said once with what it is for: the owner reads who attends it without a new field to word.
+            'service' => trim(($appointment->service?->name ?? '').($appointment->professional === null ? '' : ' '.__('agenda.with_professional', ['name' => $appointment->professional->name]))),
         ];
     }
 

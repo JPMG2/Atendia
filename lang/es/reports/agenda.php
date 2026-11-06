@@ -10,6 +10,7 @@ return [
     'customer' => 'Cliente',
     'phone' => 'Teléfono',
     'service' => 'Servicio',
+    'professional' => 'Profesional',
     'duration' => 'Duración (min)',
     'status' => 'Estado',
     'notes' => 'Notas',

@@ -33,6 +33,7 @@ class AgendaReport extends ListReport
             __('reports/agenda.customer'),
             __('reports/agenda.phone'),
             __('reports/agenda.service'),
+            __('reports/agenda.professional'),
             __('reports/agenda.duration'),
             __('reports/agenda.status'),
             __('reports/agenda.notes'),
@@ -63,7 +64,9 @@ class AgendaReport extends ListReport
                 (string) ($appointment->customer?->displayName() ?? __('reports/agenda.anonymous')),
                 (string) $appointment->customer?->phone,
                 (string) $appointment->service?->name,
-                (int) $appointment->service?->duration_minutes,
+                (string) $appointment->professional?->name,
+                // What the booking really lasts: a professional may take longer than the service's own length.
+                $appointment->durationMinutes(),
                 __('reports/agenda.statuses.'.$appointment->status->value),
                 (string) $appointment->notes,
             ])
