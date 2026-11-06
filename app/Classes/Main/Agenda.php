@@ -314,7 +314,7 @@ class Agenda
             'save' => $booking === null ? __('agenda.form.save') : __('agenda.form.move_save'),
             'values' => ['customer_id' => $booking?->customer_id, 'service_id' => $booking?->service_id, 'professional_id' => $booking?->professional_id, 'day' => $day, 'time' => $time, 'notes' => $booking?->notes],
             // Moving keeps whoever attends it: only said, never re-picked.
-            'professional' => $booking?->professional?->name,
+            'professional' => $booking?->professional === null ? null : __('agenda.with_professional', ['name' => $booking->professional->name]),
             // Who each service can be booked with, so the picker follows the service chosen; empty hides it.
             'professionals' => $booking !== null ? [] : Professional::offeredFor($this->business, null)->map(fn (Professional $professional): array => [
                 'id' => $professional->id,

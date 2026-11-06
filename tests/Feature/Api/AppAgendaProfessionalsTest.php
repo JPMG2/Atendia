@@ -105,7 +105,7 @@ it('says who has a booking being moved, and offers only their hours', function (
 
     $sheet = asWhoApp($owner)->getJson('/api/v1/agenda/sheet?day='.$monday->format('Y-m-d').'&booking='.$booking->id)->assertOk()->json('data.sheet');
 
-    expect($sheet['professional'])->toBe('Ana Soto')
+    expect($sheet['professional'])->toBe('con Ana Soto')
         ->and($sheet['professionals'])->toBe([])
         ->and($sheet['values']['professional_id'])->toBe($ana->id)
         ->and($sheet['hours'])->toBe(['09:00', '09:30']);
