@@ -437,6 +437,16 @@ class Business extends Model
     }
 
     /**
+     * Whoever attends its bookings, in the order the owner arranged them.
+     *
+     * @return HasMany<Professional, $this>
+     */
+    public function professionals(): HasMany
+    {
+        return $this->hasMany(Professional::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
      * The days it keeps closed on top of the weekly hours: holidays, a family
      * matter, a fortnight at the beach.
      *

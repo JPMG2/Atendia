@@ -23,6 +23,8 @@ return new class extends Migration
                 ->comment('Quién viene: el turno SIEMPRE es de una persona del directorio');
             $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete()
                 ->comment('El servicio reservado; null = turno general, dura lo que diga el negocio');
+            $table->foreignId('professional_id')->nullable()->constrained()->nullOnDelete()
+                ->comment('Who attends it; null = unassigned (every booking from before professionals existed)');
             $table->foreignId('conversation_id')->nullable()->constrained()->nullOnDelete()
                 ->comment('La charla donde se pidió, para volver al hilo desde la agenda');
 
@@ -41,6 +43,7 @@ return new class extends Migration
 
             $table->index(['business_id', 'starts_at']);
             $table->index(['business_id', 'status', 'starts_at']);
+            $table->index(['professional_id', 'starts_at']);
         });
     }
 

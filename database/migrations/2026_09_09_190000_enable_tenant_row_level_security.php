@@ -50,6 +50,8 @@ return new class extends Migration
         'compliance_events',
         'business_mentions',
         'daily_digests',
+        'professionals',
+        'professional_hours',
     ];
 
     /**

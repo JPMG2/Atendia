@@ -27,7 +27,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * is born THROUGH its owner, so an id arriving in a request cannot move a
  * booking to another tenant.
  */
-#[Fillable(['customer_id', 'service_id', 'conversation_id', 'starts_at', 'ends_at', 'status', 'source', 'notes', 'reminder_sent_at'])]
+#[Fillable(['customer_id', 'service_id', 'professional_id', 'conversation_id', 'starts_at', 'ends_at', 'status', 'source', 'notes', 'reminder_sent_at'])]
 class Appointment extends Model
 {
     use BelongsToBusiness;
@@ -45,7 +45,7 @@ class Appointment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['customer_id', 'service_id', 'starts_at', 'ends_at', 'status', 'notes'])
+            ->logOnly(['customer_id', 'service_id', 'professional_id', 'starts_at', 'ends_at', 'status', 'notes'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('appointment');
@@ -59,6 +59,7 @@ class Appointment extends Model
         return [
             'customer_id' => 'integer',
             'service_id' => 'integer',
+            'professional_id' => 'integer',
             'conversation_id' => 'integer',
             'starts_at' => 'immutable_datetime',
             'ends_at' => 'immutable_datetime',
@@ -83,6 +84,16 @@ class Appointment extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * Null on a booking that predates professionals: it belongs to the business.
+     *
+     * @return BelongsTo<Professional, $this>
+     */
+    public function professional(): BelongsTo
+    {
+        return $this->belongsTo(Professional::class);
     }
 
     /**

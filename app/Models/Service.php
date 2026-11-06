@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -81,6 +82,13 @@ class Service extends Model
             'is_featured' => 'boolean',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /** @return BelongsToMany<Professional, $this> */
+    public function professionals(): BelongsToMany
+    {
+        return $this->belongsToMany(Professional::class)
+            ->withPivot(['duration_minutes', 'price_type', 'price', 'deposit']);
     }
 
     /** @return MorphMany<CatalogPhoto, $this> */

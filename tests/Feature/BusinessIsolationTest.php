@@ -14,6 +14,8 @@ use App\Models\KnowledgeSuggestion;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImport;
+use App\Models\Professional;
+use App\Models\ProfessionalHour;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\SocialLink;
@@ -49,6 +51,8 @@ dataset('tenant models', [
     KnowledgeSuggestion::class,
     Customer::class,
     Appointment::class,
+    Professional::class,
+    ProfessionalHour::class,
     Conversation::class,
     ConversationMessage::class,
     Subscription::class,
