@@ -27,11 +27,13 @@ class AgendaController extends Controller
         $query = $request->validate([
             'day' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'view' => ['sometimes', 'in:day,week'],
+            'professional' => ['sometimes', 'nullable', 'integer'],
         ]);
         $agenda = $this->agenda($request);
         $day = isset($query['day']) ? CarbonImmutable::parse($query['day'], $request->user()->business->localTimezone()) : $agenda->today;
+        $professionalId = isset($query['professional']) ? (int) $query['professional'] : null;
 
-        return response()->json(['data' => ['copy' => $agenda->copy, ...$agenda->page($day, $query['view'] ?? 'day')]]);
+        return response()->json(['data' => ['copy' => $agenda->copy, ...$agenda->page($day, $query['view'] ?? 'day', $professionalId)]]);
     }
 
     /** The free hours of one day, for the sheet that re-asks when its day changes. */

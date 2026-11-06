@@ -16,6 +16,11 @@ return [
     'week_of' => 'Semana del :day',
     'week_none' => 'Sin turnos',
     'week_closed' => 'Cerrado',
+    'week_away' => 'No atiende',
+    'filter' => [
+        'professional' => 'Ver la agenda de',
+        'all' => 'Todos',
+    ],
     'week_free' => '{0} sin horas libres|{1} 1 hora libre|[2,*] :count horas libres',
     'no_name' => 'Sin nombre',
     'plain_slot' => 'Turno general',

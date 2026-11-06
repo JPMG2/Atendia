@@ -69,7 +69,27 @@ new class extends Component
     #[Computed]
     public function bookings(): Collection
     {
-        return $this->agenda->day($this->dayDate());
+        return $this->agenda->day($this->dayDate(), $this->professional);
+    }
+
+    /** Whose agenda is on screen; empty is everybody's. */
+    public ?int $professional = null;
+
+    /**
+     * Who the filter offers, or null while nobody is set up and it is not drawn.
+     *
+     * @return array{label: string, all: string, options: list<array{id: int, name: string}>}|null
+     */
+    #[Computed]
+    public function professionalFilter(): ?array
+    {
+        return $this->agenda->professionalFilter;
+    }
+
+    public function updatedProfessional(): void
+    {
+        $this->professional = $this->professional === 0 ? null : $this->professional;
+        $this->refreshDay();
     }
 
     /**
@@ -81,7 +101,7 @@ new class extends Component
     #[Computed]
     public function freeHours(): array
     {
-        return $this->hoursFor($this->day);
+        return $this->hoursFor($this->day, null, null, $this->professional);
     }
 
     /**
@@ -92,7 +112,7 @@ new class extends Component
     #[Computed]
     public function weekDays(): array
     {
-        return $this->agenda->week($this->dayDate());
+        return $this->agenda->week($this->dayDate(), $this->professional);
     }
 
     /** @return array<int, string> */
@@ -184,6 +204,8 @@ new class extends Component
     public function book(?string $time = null): void
     {
         $this->form->setup($this->day, null, $time);
+        // Looking at one person's agenda, a new booking starts with them picked.
+        $this->form->professional_id = $this->professional;
         $this->sheetOpen = true;
     }
 
@@ -292,6 +314,21 @@ new class extends Component
             </div>
         </x-catalog.form-row>
 
+        {{-- Whose agenda: only once someone is set up. Empty is everybody's. --}}
+        @if ($this->professionalFilter !== null)
+            <x-catalog.form-row>
+                <x-inputsform.combobox
+                    span="long"
+                    size="s"
+                    name="professional"
+                    :label="$this->professionalFilter['label']"
+                    :options="['' => $this->professionalFilter['all']] + collect($this->professionalFilter['options'])->mapWithKeys(fn (array $person): array => [$person['id'] => $person['name']])->all()"
+                    :value="$professional ?? ''"
+                    wire:model.live="professional"
+                />
+            </x-catalog.form-row>
+        @endif
+
         @if ($view === 'week')
             {{-- The week reads as seven short columns: press a day to open it. --}}
             <div class="ag-week">
@@ -316,7 +353,7 @@ new class extends Component
                             </span>
                         @empty
                             <span class="text-subtle text-xs">
-                                {{ $slot['closed'] ? __('agenda.week_closed') : __('agenda.week_none') }}
+                                {{ $slot['closed'] ? __('agenda.week_closed') : ($slot['away'] ? __('agenda.week_away') : __('agenda.week_none')) }}
                             </span>
                         @endforelse
 

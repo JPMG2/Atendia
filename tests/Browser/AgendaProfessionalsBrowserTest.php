@@ -55,6 +55,28 @@ beforeEach(function (): void {
     $this->actingAs($user);
 });
 
+test('the owner picks whose agenda to look at and the day follows', function (): void {
+    $page = visit('/agenda')->resize(1280, 900);
+
+    $page->assertSee(__('agenda.filter.professional'))
+        ->assertSee('con Ana Soto')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'agenda-filter-everybody');
+
+    // The real path: type to narrow the list, then pick the one option still standing.
+    $page->click('#if-professional')
+        ->type('#if-professional', 'Luis')
+        ->click('[role="option"]:has-text("Luis Paz")')
+        ->wait(1)
+        ->assertDontSee('con Ana Soto')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(filename: 'agenda-filter-luis');
+
+    $page->resize(390, 844)
+        ->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true)
+        ->screenshot(filename: 'agenda-filter-mobile');
+});
+
 test('the day says with whom each booking is, and the sheet asks who attends once the service is picked', function (): void {
     $page = visit('/agenda')->resize(1280, 900);
 

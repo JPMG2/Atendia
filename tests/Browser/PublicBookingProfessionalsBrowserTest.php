@@ -27,12 +27,17 @@ test('the public link asks who should attend, and books and says who will', func
     $page->assertSee(__('agenda.form.professional'))
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'public-booking-professionals-desktop')
+        // The real path with the mouse: the second person on the list, not the first.
+        ->click('#if-professional_id')
+        ->type('#if-professional_id', 'Luis')
+        ->click('[role="option"]:has-text("Luis Paz")')
+        ->wait(1)
         ->type('#if-name', 'Marta Gil')
         ->type('#if-phone', '5491155550199')
         ->click('.ag-slot:first-child')
         ->click(__('agenda.public.submit'))
         ->assertSee(__('agenda.public.done_title'))
-        ->assertSee('Te atiende Ana Soto')
+        ->assertSee('Te atiende Luis Paz')
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'public-booking-professionals-done');
 

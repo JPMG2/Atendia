@@ -77,11 +77,23 @@ class Agenda
      *
      * @return Collection<int, Appointment>
      */
-    public function day(CarbonImmutable $day): Collection
+    public function day(CarbonImmutable $day, ?int $professionalId = null): Collection
     {
         $day = $day->setTimezone($this->business->localTimezone())->startOfDay();
 
-        return Appointment::between($this->business, $day, $day->endOfDay());
+        return $this->only(Appointment::between($this->business, $day, $day->endOfDay()), $professionalId);
+    }
+
+    /**
+     * Narrows a list to one professional's own bookings: what the owner looking at "Ana" expects. Not
+     * the slot finder's rule, which also holds the unassigned ones against every professional.
+     *
+     * @param  Collection<int, Appointment>  $bookings
+     * @return Collection<int, Appointment>
+     */
+    private function only(Collection $bookings, ?int $professionalId): Collection
+    {
+        return $professionalId === null ? $bookings : $bookings->where('professional_id', $professionalId)->values();
     }
 
     /**
@@ -90,15 +102,15 @@ class Agenda
      *
      * @return Collection<int, Appointment>
      */
-    public function inView(CarbonImmutable $day, string $view): Collection
+    public function inView(CarbonImmutable $day, string $view, ?int $professionalId = null): Collection
     {
         if ($view !== 'week') {
-            return $this->day($day);
+            return $this->day($day, $professionalId);
         }
 
         $monday = $day->setTimezone($this->business->localTimezone())->startOfWeek();
 
-        return Appointment::between($this->business, $monday, $monday->addDays(7));
+        return $this->only(Appointment::between($this->business, $monday, $monday->addDays(7)), $professionalId);
     }
 
     /**
@@ -118,21 +130,24 @@ class Agenda
      * The week that holds a day, Monday first: each day with its bookings and
      * how many hours it still has free — what the week view paints.
      *
-     * @return list<array{date: CarbonImmutable, bookings: Collection<int, Appointment>, free: int, closed: bool}>
+     * @return list<array{date: CarbonImmutable, bookings: Collection<int, Appointment>, free: int, closed: bool, away: bool}>
      */
-    public function week(CarbonImmutable $day): array
+    public function week(CarbonImmutable $day, ?int $professionalId = null): array
     {
         $monday = $day->setTimezone($this->business->localTimezone())->startOfWeek();
-        $booked = Appointment::between($this->business, $monday, $monday->addDays(7))
+        $professional = $this->professional($professionalId)?->load('closures');
+        $booked = $this->only(Appointment::between($this->business, $monday, $monday->addDays(7)), $professionalId)
             ->groupBy(fn (Appointment $appointment): string => $appointment->starts_at->setTimezone($this->business->localTimezone())->format('Y-m-d'));
 
         return array_map(fn (int $offset): array => [
             'date' => $date = $monday->addDays($offset),
             'bookings' => $booked->get($date->format('Y-m-d')) ?? new Collection,
-            'free' => count($this->freeSlots($date)),
+            'free' => count($this->freeSlots($date, null, $professionalId)),
             // Closed is about the SCHEDULE, not about hours already gone: a
             // past Monday has no free hours left and was never closed.
             'closed' => $this->business->hours->where('day_of_week', (int) $date->format('w'))->isEmpty(),
+            // Away: their own agenda is shut that day while the business opens.
+            'away' => $professional?->isClosedOn($date) === true,
         ], range(0, 6));
     }
 
@@ -256,7 +271,7 @@ class Agenda
      *
      * @return array<string, mixed>
      */
-    public function page(CarbonImmutable $day, string $view): array
+    public function page(CarbonImmutable $day, string $view, ?int $professionalId = null): array
     {
         $day = $day->setTimezone($this->business->localTimezone())->startOfDay();
         $locale = app()->getLocale();
@@ -265,8 +280,8 @@ class Agenda
             return ['isOn' => false, 'day' => $day->format('Y-m-d'), 'view' => $view];
         }
 
-        $week = $view === 'week' ? $this->week($day) : null;
-        $bookings = $view === 'week' ? null : $this->day($day);
+        $week = $view === 'week' ? $this->week($day, $professionalId) : null;
+        $bookings = $view === 'week' ? null : $this->day($day, $professionalId);
 
         return [
             'isOn' => true,
@@ -287,11 +302,36 @@ class Agenda
                     'time' => $booking->starts_at->setTimezone($this->business->localTimezone())->format('H:i'),
                     'name' => $booking->customer?->displayName() ?? __('agenda.no_name'),
                 ])->values()->all(),
-                'empty' => $slot['closed'] ? __('agenda.week_closed') : __('agenda.week_none'),
+                'empty' => match (true) {
+                    $slot['closed'] => __('agenda.week_closed'),
+                    $slot['away'] => __('agenda.week_away'),
+                    default => __('agenda.week_none'),
+                },
                 'free' => trans_choice('agenda.week_free', $slot['free'], ['count' => $slot['free']]),
             ], $week),
-            'hours' => $view === 'week' ? [] : array_values($this->hoursFor($day->format('Y-m-d'))),
+            'hours' => $view === 'week' ? [] : array_values($this->hoursFor($day->format('Y-m-d'), null, null, $professionalId)),
+            'professional' => $professionalId,
+            // Whose agenda to look at: empty while nobody is set up, and the filter is not drawn.
+            'filter' => $this->professionalFilter,
         ];
+    }
+
+    /**
+     * The "who am I looking at" choice, in the web's words: everybody, or one person. Null for a
+     * business with nobody set up.
+     *
+     * @var array{label: string, all: string, options: list<array{id: int, name: string}>}|null
+     */
+    public ?array $professionalFilter {
+        get {
+            $people = $this->business->professionals()->where('is_active', true)->get(['id', 'name']);
+
+            return $people->isEmpty() ? null : [
+                'label' => __('agenda.filter.professional'),
+                'all' => __('agenda.filter.all'),
+                'options' => $people->map(fn (Professional $person): array => ['id' => $person->id, 'name' => $person->name])->all(),
+            ];
+        }
     }
 
     /**

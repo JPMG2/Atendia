@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Professional;
+use App\Models\ProfessionalClosure;
 use App\Models\ProfessionalHour;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -169,6 +170,43 @@ it('says with whom each booking of the day is, and null for one from before', fu
     $rows = asWhoApp($owner)->getJson('/api/v1/agenda?day='.$monday->format('Y-m-d'))->assertOk()->json('data.bookings');
 
     expect(collect($rows)->pluck('professional')->all())->toBe(['con Ana Soto', null]);
+});
+
+it('answers one person\'s day and week when asked, and brings the filter in the web\'s words', function (): void {
+    $owner = whoApp();
+    $ana = $owner->business->professionals()->create(['name' => 'Ana Soto']);
+    $luis = $owner->business->professionals()->create(['name' => 'Luis Paz']);
+    $monday = whoMonday($owner);
+    $customer = $owner->business->customers()->sole()->id;
+    Appointment::factory()->create(['business_id' => $owner->business_id, 'customer_id' => $customer, 'professional_id' => $ana->id, 'starts_at' => $monday->setTime(9, 0)->utc(), 'ends_at' => $monday->setTime(9, 30)->utc()]);
+    Appointment::factory()->create(['business_id' => $owner->business_id, 'customer_id' => $customer, 'professional_id' => $luis->id, 'starts_at' => $monday->setTime(10, 0)->utc(), 'ends_at' => $monday->setTime(10, 30)->utc()]);
+    Appointment::factory()->create(['business_id' => $owner->business_id, 'customer_id' => $customer, 'starts_at' => $monday->setTime(11, 0)->utc(), 'ends_at' => $monday->setTime(11, 30)->utc()]);
+    ProfessionalClosure::factory()->create(['business_id' => $owner->business_id, 'professional_id' => $ana->id, 'starts_on' => $monday->addDay()->format('Y-m-d'), 'ends_on' => $monday->addDay()->format('Y-m-d')]);
+    $day = $monday->format('Y-m-d');
+
+    $all = asWhoApp($owner)->getJson("/api/v1/agenda?day={$day}")->assertOk()->json('data');
+    $mine = asWhoApp($owner)->getJson("/api/v1/agenda?day={$day}&professional={$ana->id}")->assertOk()->json('data');
+    $week = asWhoApp($owner)->getJson("/api/v1/agenda?day={$day}&view=week&professional={$ana->id}")->assertOk()->json('data');
+
+    expect($all['bookings'])->toHaveCount(3)
+        ->and($mine['bookings'])->toHaveCount(1)
+        ->and($mine['bookings'][0]['professional'])->toBe('con Ana Soto')
+        ->and($mine['professional'])->toBe($ana->id)
+        ->and($mine['filter'])->toBe([
+            'label' => __('agenda.filter.professional'),
+            'all' => __('agenda.filter.all'),
+            'options' => [['id' => $ana->id, 'name' => 'Ana Soto'], ['id' => $luis->id, 'name' => 'Luis Paz']],
+        ])
+        ->and($week['week'][1]['empty'])->toBe(__('agenda.week_away'))
+        ->and(collect($week['week'])->sum(fn (array $slot): int => count($slot['bookings'])))->toBe(1);
+});
+
+it('sends no filter while nobody is set up', function (): void {
+    $owner = whoApp();
+
+    $data = asWhoApp($owner)->getJson('/api/v1/agenda?day='.whoMonday($owner)->format('Y-m-d'))->assertOk()->json('data');
+
+    expect($data['filter'])->toBeNull();
 });
 
 it('moves a booking keeping whoever has it', function (): void {
