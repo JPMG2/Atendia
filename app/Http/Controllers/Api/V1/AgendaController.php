@@ -41,10 +41,12 @@ class AgendaController extends Controller
             'day' => ['required', 'date_format:Y-m-d'],
             'keep' => ['sometimes', 'nullable', 'date_format:H:i'],
             'service' => ['sometimes', 'nullable', 'integer'],
+            'professional' => ['sometimes', 'nullable', 'integer'],
         ]);
         $serviceId = isset($query['service']) ? (int) $query['service'] : null;
+        $professionalId = isset($query['professional']) ? (int) $query['professional'] : null;
 
-        return response()->json(['data' => ['hours' => array_values($this->agenda($request)->hoursFor($query['day'], $query['keep'] ?? null, $serviceId))]]);
+        return response()->json(['data' => ['hours' => array_values($this->agenda($request)->hoursFor($query['day'], $query['keep'] ?? null, $serviceId, $professionalId))]]);
     }
 
     /** A new booking's sheet (optionally with the hour a free-hour chip picked), or a booking's own, to move it. */
@@ -73,6 +75,7 @@ class AgendaController extends Controller
             $this->agenda($request)->book([
                 'customer_id' => (int) $validated['customer_id'],
                 'service_id' => $validated['service_id'] === null ? null : (int) $validated['service_id'],
+                'professional_id' => $validated['professional_id'] === null ? null : (int) $validated['professional_id'],
                 'starts_at' => $validated['day'].' '.$validated['time'],
                 'notes' => $validated['notes'],
             ]);

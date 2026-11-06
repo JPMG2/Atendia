@@ -13,11 +13,13 @@ use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Customer;
+use App\Models\Professional;
 use App\Models\Service;
 use App\Services\Agenda\SlotFinder;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The agenda piece: the booked slots and the free hours left. Every write is
@@ -107,7 +109,7 @@ class Agenda
      */
     public Collection $everything {
         get => $this->business->appointments()
-            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes')
+            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes', 'professional:id,name')
             ->orderByDesc('starts_at')
             ->get();
     }
@@ -139,9 +141,22 @@ class Agenda
      *
      * @return list<CarbonImmutable>
      */
-    public function freeSlots(CarbonImmutable $day, ?int $serviceId = null): array
+    public function freeSlots(CarbonImmutable $day, ?int $serviceId = null, ?int $professionalId = null): array
     {
-        return app(SlotFinder::class)->freeSlots($this->business, $day, $this->service($serviceId));
+        return app(SlotFinder::class)->freeSlots($this->business, $day, $this->service($serviceId), professional: $this->professional($professionalId));
+    }
+
+    /**
+     * Who the sheet's picker offers for a service: the active professionals that attend it, in the
+     * owner's order. Empty for a business with nobody set up, and the picker is not drawn.
+     *
+     * @return array<int, string> id => name
+     */
+    public function professionalsFor(?int $serviceId = null): array
+    {
+        return Professional::offeredFor($this->business, $this->service($serviceId))
+            ->mapWithKeys(fn (Professional $professional): array => [$professional->id => $professional->name])
+            ->all();
     }
 
     /**
@@ -150,12 +165,12 @@ class Agenda
      *
      * @return array<string, string>
      */
-    public function hoursFor(string $day, ?string $keep = null, ?int $serviceId = null): array
+    public function hoursFor(string $day, ?string $keep = null, ?int $serviceId = null, ?int $professionalId = null): array
     {
         // The service's own duration decides which hours fit: offering one the save then refuses is a lie.
         $hours = array_map(
             fn (CarbonImmutable $slot): string => $slot->format('H:i'),
-            $this->freeSlots(CarbonImmutable::parse($day, $this->business->localTimezone())->startOfDay(), $serviceId),
+            $this->freeSlots(CarbonImmutable::parse($day, $this->business->localTimezone())->startOfDay(), $serviceId, $professionalId),
         );
 
         if ($keep !== null && ! in_array($keep, $hours, true)) {
@@ -192,6 +207,8 @@ class Agenda
                 'customerEmpty' => __('agenda.form.customer_empty'),
                 'service' => __('agenda.form.service'),
                 'servicePlaceholder' => __('agenda.form.service_placeholder'),
+                'professional' => __('agenda.form.professional'),
+                'professionalPlaceholder' => __('agenda.form.professional_placeholder'),
                 'day' => __('agenda.form.day'),
                 'time' => __('agenda.form.time'),
                 'timePlaceholder' => __('agenda.form.time_placeholder'),
@@ -219,6 +236,8 @@ class Agenda
             'name' => $booking->customer?->displayName() ?? __('agenda.no_name'),
             'state' => $open ? null : __('agenda.status.'.$booking->status->value),
             'service' => $booking->service?->name ?? __('agenda.plain_slot'),
+            // Who attends it, said only when someone does: a booking from before professionals says nothing.
+            'professional' => $booking->professional === null ? null : __('agenda.with_professional', ['name' => $booking->professional->name]),
             'minutes' => $booking->durationMinutes().' min',
             'phone' => $booking->customer?->phone === null ? null : '+'.$booking->customer->phone,
             'notes' => $booking->notes,
@@ -293,26 +312,46 @@ class Agenda
             'title' => $booking === null ? __('agenda.form.title') : __('agenda.form.move_title'),
             'sub' => $booking === null ? __('agenda.form.sub') : __('agenda.form.move_sub'),
             'save' => $booking === null ? __('agenda.form.save') : __('agenda.form.move_save'),
-            'values' => ['customer_id' => $booking?->customer_id, 'service_id' => $booking?->service_id, 'day' => $day, 'time' => $time, 'notes' => $booking?->notes],
+            'values' => ['customer_id' => $booking?->customer_id, 'service_id' => $booking?->service_id, 'professional_id' => $booking?->professional_id, 'day' => $day, 'time' => $time, 'notes' => $booking?->notes],
+            // Moving keeps whoever attends it: only said, never re-picked.
+            'professional' => $booking?->professional?->name,
+            // Who each service can be booked with, so the picker follows the service chosen; empty hides it.
+            'professionals' => $booking !== null ? [] : Professional::offeredFor($this->business, null)->map(fn (Professional $professional): array => [
+                'id' => $professional->id,
+                'name' => $professional->name,
+                'services' => $professional->services->pluck('id')->all(),
+            ])->values()->all(),
             // Moving never re-picks the person: only who it is, for the line above the hour.
             'customer' => $booking?->customer?->displayName() ?? ($booking === null ? null : __('agenda.no_name')),
             // The people the sheet picks from, most recently active first, as the web's combobox lists them.
             'customers' => $booking !== null ? [] : collect($this->customerOptions)->map(fn (string $name, int $id): array => ['id' => $id, 'name' => $name])->values()->all(),
             'services' => $this->bookableServices->map(fn (Service $service): array => ['id' => $service->id, 'name' => $service->name])->all(),
-            'hours' => array_values($this->hoursFor($day, $booking === null ? null : $time, $booking?->service_id)),
+            'hours' => array_values($this->hoursFor($day, $booking === null ? null : $time, $booking?->service_id, $booking?->professional_id)),
         ];
     }
 
-    /** @param  array{customer_id: int, service_id: ?int, starts_at: string, notes: ?string}  $validated */
+    /**
+     * @param  array{customer_id: int, service_id: ?int, professional_id?: ?int, starts_at: string, notes: ?string}  $validated
+     *
+     * @throws ValidationException when the professional does not attend that service
+     */
     public function book(array $validated): Appointment
     {
+        $professional = $this->professional($validated['professional_id'] ?? null);
+        $service = $this->service($validated['service_id'] ?? null);
+
+        if ($professional !== null && ! $professional->attends($service)) {
+            throw ValidationException::withMessages(['professional_id' => __('agenda.notify.professional_service')]);
+        }
+
         return app(BookAppointment::class)->handle(
             $this->business,
             $this->business->customers()->findOrFail($validated['customer_id']),
             CarbonImmutable::parse($validated['starts_at'], $this->business->localTimezone()),
-            $this->service($validated['service_id'] ?? null),
+            $service,
             AppointmentSource::Owner,
             $validated['notes'] ?? null,
+            professional: $professional,
         );
     }
 
@@ -354,6 +393,12 @@ class Agenda
     private function appointment(int $id): Appointment
     {
         return $this->business->appointments()->findOrFail($id);
+    }
+
+    /** Only this business's professionals are ever read, whatever id arrives. */
+    private function professional(?int $professionalId): ?Professional
+    {
+        return $professionalId === null ? null : $this->business->professionals()->findOrFail($professionalId);
     }
 
     private function service(?int $serviceId): ?Service

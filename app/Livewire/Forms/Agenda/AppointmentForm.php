@@ -26,6 +26,9 @@ class AppointmentForm extends BaseForm
 
     public ?int $service_id = null;
 
+    /** Empty means anyone who is free: the first of them takes it. */
+    public ?int $professional_id = null;
+
     public string $day = '';
 
     public string $time = '';
@@ -44,6 +47,7 @@ class AppointmentForm extends BaseForm
 
         $this->customer_id = $appointment?->customer_id;
         $this->service_id = $appointment?->service_id;
+        $this->professional_id = $appointment?->professional_id;
         $this->notes = $appointment?->notes;
 
         if ($appointment !== null) {
@@ -76,6 +80,7 @@ class AppointmentForm extends BaseForm
             $agenda->book([
                 'customer_id' => (int) $validated['customer_id'],
                 'service_id' => $validated['service_id'],
+                'professional_id' => $validated['professional_id'],
                 'starts_at' => $startsAt,
                 'notes' => $validated['notes'],
             ]);
@@ -95,6 +100,7 @@ class AppointmentForm extends BaseForm
         return [
             'customer_id' => $this->customer_id,
             'service_id' => $this->service_id,
+            'professional_id' => $this->professional_id,
             'day' => $this->day,
             'time' => $this->time,
             'notes' => $this->notes,
@@ -125,6 +131,12 @@ class AppointmentForm extends BaseForm
                 'integer',
                 Rule::exists('services', 'id')->where('business_id', $businessId)->where('is_bookable', true)->whereNull('deleted_at'),
             ],
+            // Empty means anyone free; moving keeps whoever has it, so it is never re-picked.
+            'professional_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('professionals', 'id')->where('business_id', $businessId)->where('is_active', true)->whereNull('deleted_at'),
+            ],
             'day' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:255', AttributeValidator::xssFree()],
@@ -147,6 +159,7 @@ class AppointmentForm extends BaseForm
         return [
             'customer_id' => __('agenda.form.customer'),
             'service_id' => __('agenda.form.service'),
+            'professional_id' => __('agenda.form.professional'),
             'day' => __('agenda.form.day'),
             'time' => __('agenda.form.time'),
             'notes' => __('agenda.form.notes'),

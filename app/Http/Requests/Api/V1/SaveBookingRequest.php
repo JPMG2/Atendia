@@ -26,6 +26,7 @@ class SaveBookingRequest extends FormRequest
         $this->replace([
             'customer_id' => $this->moving() ? null : ($text('customer_id')),
             'service_id' => $this->moving() ? null : ($text('service_id')),
+            'professional_id' => $this->moving() ? null : ($text('professional_id')),
             'day' => $text('day'),
             'time' => $text('time'),
             'notes' => $this->moving() ? null : ($text('notes') === null ? null : trim((string) $text('notes'))),

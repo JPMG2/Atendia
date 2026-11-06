@@ -88,12 +88,13 @@ class Appointment extends Model
 
     /**
      * Null on a booking that predates professionals: it belongs to the business.
+     * A removed professional still answers, so their history keeps their name.
      *
      * @return BelongsTo<Professional, $this>
      */
     public function professional(): BelongsTo
     {
-        return $this->belongsTo(Professional::class);
+        return $this->belongsTo(Professional::class)->withTrashed();
     }
 
     /**
@@ -133,7 +134,7 @@ class Appointment extends Model
             ))
             ->where('starts_at', '<', $until->utc())
             ->where('ends_at', '>', $from->utc())
-            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes')
+            ->with('customer:id,name,phone,profile_name', 'service:id,name,duration_minutes', 'professional:id,name')
             ->orderBy('starts_at')
             ->get();
     }

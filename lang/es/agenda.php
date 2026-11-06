@@ -19,6 +19,7 @@ return [
     'week_free' => '{0} sin horas libres|{1} 1 hora libre|[2,*] :count horas libres',
     'no_name' => 'Sin nombre',
     'plain_slot' => 'Turno general',
+    'with_professional' => 'con :name',
     'move' => 'Cambiar de horario',
     'cancel' => 'Cancelar el turno',
     'mark_done' => 'Marcar como atendido',
@@ -60,6 +61,8 @@ return [
         'customer_empty' => 'No hay ningún cliente con ese nombre.',
         'service' => 'Servicio',
         'service_placeholder' => 'Sin servicio: turno general',
+        'professional' => 'Profesional',
+        'professional_placeholder' => 'Cualquiera disponible',
         'day' => 'Día',
         'time' => 'Hora',
         'time_placeholder' => 'Elige una hora libre',
@@ -124,6 +127,7 @@ return [
         'cancelled' => 'Turno cancelado: la hora volvió a quedar libre.',
         'marked' => 'Turno marcado como atendido.',
         'slot_taken' => 'No pudimos guardar el turno: esa hora ya no está libre.',
+        'professional_service' => 'Ese profesional no atiende el servicio elegido.',
     ],
 
 ];

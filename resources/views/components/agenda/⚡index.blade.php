@@ -102,6 +102,13 @@ new class extends Component
         return $this->agenda->customerOptions;
     }
 
+    /** The professional of the booking being moved, for the line above its hour. */
+    #[Computed]
+    public function movingWith(): ?string
+    {
+        return $this->form->editingId === null ? null : $this->agenda->find($this->form->editingId)->professional?->name;
+    }
+
     /** @return array<int, string> */
     #[Computed]
     public function serviceOptions(): array
@@ -117,9 +124,29 @@ new class extends Component
      *
      * @return array<string, string>
      */
-    public function hoursFor(string $day, ?string $keep = null, ?int $serviceId = null): array
+    public function hoursFor(string $day, ?string $keep = null, ?int $serviceId = null, ?int $professionalId = null): array
     {
-        return $this->agenda->hoursFor($day, $keep, $serviceId);
+        return $this->agenda->hoursFor($day, $keep, $serviceId, $professionalId);
+    }
+
+    /**
+     * Who the sheet can book with for the service picked; empty hides the picker.
+     *
+     * @return array<int, string>
+     */
+    public function professionalOptions(?int $serviceId): array
+    {
+        return $this->agenda->professionalsFor($serviceId);
+    }
+
+    /** Someone who no longer attends the new service must not stay picked. */
+    public function updatedFormServiceId(): void
+    {
+        $picked = $this->form->professional_id;
+
+        if ($picked !== null && ! array_key_exists($picked, $this->professionalOptions($this->form->service_id))) {
+            $this->form->professional_id = null;
+        }
     }
 
     public function go(int $days): void
@@ -317,6 +344,9 @@ new class extends Component
                                 {{-- Each datum wraps whole: a phone split mid-way reads as two. --}}
                                 <span class="inline-block">{{ $booking->service?->name ?? __('agenda.plain_slot') }}</span>
                                 <span class="inline-block whitespace-nowrap">· <span class="font-mono">{{ $booking->durationMinutes() }} min</span></span>
+                                @if ($booking->professional !== null)
+                                    <span class="inline-block">· {{ __('agenda.with_professional', ['name' => $booking->professional->name]) }}</span>
+                                @endif
                                 @if ($booking->customer?->phone !== null)
                                     <span class="inline-block whitespace-nowrap">· <span class="font-mono">+{{ $booking->customer->phone }}</span></span>
                                 @endif
@@ -409,6 +439,23 @@ new class extends Component
                             />
                         </x-catalog.form-row>
                     @endif
+
+                    {{-- Only with someone set up for the service: empty means anyone free, the first takes it. --}}
+                    @if ($this->professionalOptions($form->service_id) !== [])
+                        <x-catalog.form-row>
+                            <x-inputsform.combobox
+                                span="full"
+                                name="professional_id"
+                                :label="__('agenda.form.professional')"
+                                :options="$this->professionalOptions($form->service_id)"
+                                :value="$form->professional_id"
+                                :placeholder="__('agenda.form.professional_placeholder')"
+                                wire:model.live="form.professional_id"
+                            />
+                        </x-catalog.form-row>
+                    @endif
+                @elseif ($this->movingWith !== null)
+                    <p class="text-muted text-sm">{{ __('agenda.with_professional', ['name' => $this->movingWith]) }}</p>
                 @endif
 
                 <x-catalog.form-row>
@@ -426,7 +473,7 @@ new class extends Component
                         span="text"
                         name="time"
                         :label="__('agenda.form.time')"
-                        :options="$this->hoursFor($form->day, $form->editingId === null ? null : $form->time, $form->service_id)"
+                        :options="$this->hoursFor($form->day, $form->editingId === null ? null : $form->time, $form->service_id, $form->professional_id)"
                         :value="$form->time"
                         :placeholder="__('agenda.form.time_placeholder')"
                         :empty="__('agenda.free.none')"
