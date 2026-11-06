@@ -45,6 +45,7 @@ class BusinessProfile
                     'used' => $this->business->teamSeatsUsed(),
                     'cap' => $this->business->plan()->teamSeats,
                 ])),
+                $this->row('professionals', 'user', 'professionals', __('menu.professionals'), trans_choice('client.business.summary.professionals', $count = $this->business->professionals()->count(), ['count' => $count])),
             ];
         }
     }

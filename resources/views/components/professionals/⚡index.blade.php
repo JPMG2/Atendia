@@ -115,6 +115,9 @@ new class extends Component
                             @if ($staff->appointments_per_day !== null)
                                 · <span class="font-mono">{{ __('professionals.list.limits', ['per_day' => $staff->appointments_per_day]) }}</span>
                             @endif
+                            @if ($pieces->upcomingLine($staff) !== null)
+                                · {{ $pieces->upcomingLine($staff) }}
+                            @endif
                         </p>
                     </div>
 

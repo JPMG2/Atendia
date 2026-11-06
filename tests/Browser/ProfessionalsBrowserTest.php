@@ -33,11 +33,13 @@ beforeEach(function (): void {
 });
 
 test('the owner sees the professionals, edits one and adds another, and nothing overflows a phone', function (): void {
+    Appointment::factory()->count(2)->create(['business_id' => $this->business->id, 'professional_id' => $this->ana->id]);
     $this->actingAs($this->owner);
 
     $page = visit('/profesionales')->resize(1280, 900);
 
     $page->assertSee('Ana Soto')
+        ->assertSee('2 turnos por venir')
         ->assertSee('Luis Paz')
         ->assertSee(__('professionals.list.inactive'))
         ->assertSee(__('professionals.list.business_hours'))

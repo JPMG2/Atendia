@@ -245,6 +245,7 @@ return [
             'slots' => 'Cada :minutes minutos',
             'no_agenda' => 'Sin agenda',
             'people' => ':used de :cap personas',
+            'professionals' => '{0} Todavía ninguno|{1} 1 profesional|[2,*] :count profesionales',
         ],
 
         'meter' => [

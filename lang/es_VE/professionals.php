@@ -12,6 +12,7 @@ return [
     ],
 
     'list' => [
+        'upcoming' => '{1} 1 cita por venir|[2,*] :count citas por venir',
         'empty_body' => 'Mientras no cargues ninguno, tu agenda funciona como una sola. Agrega uno para que cada persona tenga sus horas y sus citas.',
     ],
 

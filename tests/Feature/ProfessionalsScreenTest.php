@@ -201,9 +201,13 @@ test('the list tells each one hours, services and a switched-off one', function 
     $ana = $owner->business->professionals()->create(['name' => 'Ana', 'appointments_per_day' => 8]);
     $owner->business->professionals()->create(['name' => 'Luis', 'is_active' => false]);
     $ana->services()->attach($owner->business->services()->pluck('id'));
+    Appointment::factory()->count(3)->create(['business_id' => $owner->business_id, 'professional_id' => $ana->id]);
+    Appointment::factory()->cancelled()->create(['business_id' => $owner->business_id, 'professional_id' => $ana->id]);
+    Appointment::factory()->create(['business_id' => $owner->business_id, 'professional_id' => $ana->id, 'starts_at' => now()->subDays(2), 'ends_at' => now()->subDays(2)->addMinutes(30)]);
 
     livewire('professionals.index')
         ->assertSee('Ana')
+        ->assertSee('3 turnos por venir')
         ->assertSee('2 servicios')
         ->assertSee(__('professionals.list.business_hours'))
         ->assertSee(__('professionals.list.limits', ['per_day' => 8]))

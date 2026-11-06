@@ -27,6 +27,7 @@ return [
         'services' => '{0} Sin servicios|{1} 1 servicio|[2,*] :count servicios',
         'business_hours' => 'Sigue el horario del negocio',
         'limits' => 'Hasta :per_day por día',
+        'upcoming' => '{1} 1 turno por venir|[2,*] :count turnos por venir',
     ],
 
     'sheet' => [

@@ -110,6 +110,12 @@ class Appointment extends Model
         $query->where('status', '!=', AppointmentStatus::Cancelled);
     }
 
+    /** Still to come and holding its hour: what stops a professional being removed. */
+    public function scopeUpcoming(Builder $query): void
+    {
+        $query->holdingSlot()->where('ends_at', '>', now());
+    }
+
     /**
      * Everything booked inside a window, earliest first. Pinned to the business
      * because a worker has no session. A professional narrows it to their own

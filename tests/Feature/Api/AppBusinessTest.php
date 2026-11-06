@@ -76,13 +76,13 @@ describe('the profile hub', function (): void {
     it('lists the sections in the order of the web menu, with the web\'s own titles', function (): void {
         $data = asProfileApp(profileOwner())->getJson('/api/v1/business')->assertOk()->json('data');
 
-        expect(collect($data['sections'])->pluck('key')->all())->toBe(['identity', 'location', 'hours', 'appointments', 'contact', 'social', 'billing', 'team'])
+        expect(collect($data['sections'])->pluck('key')->all())->toBe(['identity', 'location', 'hours', 'appointments', 'contact', 'social', 'billing', 'team', 'professionals'])
             ->and(collect($data['sections'])->pluck('title')->all())->toBe([
-                'Identidad', 'Ubicación', 'Horarios de atención', 'Turnos', 'Contacto', 'Redes sociales', 'Moneda', __('menu.team'),
+                'Identidad', 'Ubicación', 'Horarios de atención', 'Turnos', 'Contacto', 'Redes sociales', 'Moneda', __('menu.team'), __('menu.professionals'),
             ])
             ->and(collect($data['sections'])->pluck('screen')->all())->toBe([
                 'my-business.identidad', 'my-business.ubicacion', 'my-business.horarios', 'my-business.turnos',
-                'my-business.contacto', 'my-business.redes', 'my-business.facturacion', 'team',
+                'my-business.contacto', 'my-business.redes', 'my-business.facturacion', 'team', 'professionals',
             ])
             ->and($data['copy']['title'])->toBe('Mi negocio')
             ->and($data['copy']['empty'])->toBe('Sin completar');

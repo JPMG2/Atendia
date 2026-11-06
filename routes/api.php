@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\V1\PaymentsController;
 use App\Http\Controllers\Api\V1\PhoneCountriesController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\ProfessionalsController;
 use App\Http\Controllers\Api\V1\PushTokenController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SupportController;
@@ -195,6 +196,8 @@ Route::prefix('v1')->middleware(['throttle:api', RequireSupportedAppBuild::class
             Route::post('business/closures/{closure}/tell', [BusinessClosuresController::class, 'tell'])->where('closure', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::delete('business/closures/{closure}', [BusinessClosuresController::class, 'destroy'])->where('closure', '[0-9]{1,18}')->middleware('can:manage-business');
             Route::get('team', [TeamController::class, 'show'])->middleware('can:manage-business');
+            // Read-only on the phone: who attends is the owner's setup, edited on the web.
+            Route::get('professionals', [ProfessionalsController::class, 'show'])->middleware('can:manage-business');
             // A creation or a send that the phone may retry after a lost answer: done once (`AnswerRepeatOnce`).
             Route::post('team/invitations', [TeamController::class, 'invite'])->middleware(['can:manage-business', AnswerRepeatOnce::class.':guard']);
             // Not guarded: resending on purpose ("it never arrived") must send again.

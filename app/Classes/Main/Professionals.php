@@ -28,7 +28,49 @@ class Professionals
      * @var Collection<int, Professional>
      */
     public Collection $all {
-        get => $this->business->professionals()->with(['services:id,name', 'hours'])->get();
+        get => $this->business->professionals()
+            ->with(['services:id,name', 'hours'])
+            ->withCount(['appointments as upcoming' => fn ($booked) => $booked->upcoming()])
+            ->get();
+    }
+
+    /**
+     * The list as the app draws it: the web's own lines for each person, said by
+     * the server. Read-only on the phone, so no word of an action travels.
+     *
+     * @var array{
+     *     copy: array{title: string, sub: string, list: string, empty_title: string, empty_body: string, needs_services: string|null},
+     *     professionals: list<array{id: int, name: string, inactive: string|null, hours: string, services: string, limits: string|null, upcoming: string|null}>
+     * }
+     */
+    public array $overview {
+        get => [
+            'copy' => [
+                'title' => __('professionals.title'),
+                'sub' => __('professionals.sub'),
+                'list' => __('professionals.list.title'),
+                'empty_title' => __('professionals.list.empty_title'),
+                'empty_body' => __('professionals.list.empty_body'),
+                'needs_services' => $this->bookableServices->isEmpty() ? __('professionals.needs_services.body') : null,
+            ],
+            'professionals' => $this->all->map(fn (Professional $professional): array => [
+                'id' => $professional->id,
+                'name' => $professional->name,
+                'inactive' => $professional->is_active ? null : __('professionals.list.inactive'),
+                'hours' => $this->hoursLine($professional),
+                'services' => trans_choice('professionals.list.services', $professional->services->count(), ['count' => $professional->services->count()]),
+                'limits' => $professional->appointments_per_day === null ? null : __('professionals.list.limits', ['per_day' => $professional->appointments_per_day]),
+                'upcoming' => $this->upcomingLine($professional),
+            ])->values()->all(),
+        ];
+    }
+
+    /** What is still to come, said only when there is something: the number that decides whether they can be removed. */
+    public function upcomingLine(Professional $professional): ?string
+    {
+        $count = (int) $professional->upcoming;
+
+        return $count === 0 ? null : trans_choice('professionals.list.upcoming', $count, ['count' => $count]);
     }
 
     /**
