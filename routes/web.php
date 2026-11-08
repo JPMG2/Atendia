@@ -8,6 +8,7 @@ use App\Http\Controllers\Conversations\MessageMediaController;
 use App\Http\Controllers\CspReportController;
 use App\Http\Controllers\DemoChatController;
 use App\Http\Controllers\Reports\ShowReportController;
+use App\Http\Controllers\SalesChatEventController;
 use App\Http\Controllers\Security\RevokeDeviceController;
 use App\Http\Controllers\Settings\CancelEmailChangeController;
 use App\Http\Controllers\Settings\ConfirmEmailChangeController;
@@ -43,6 +44,11 @@ Route::post(ContentSecurityPolicy::REPORT_PATH, CspReportController::class)
 Route::post('/demo/mensaje', DemoChatController::class)
     ->middleware('throttle:6,1')
     ->name('demo.message');
+
+// The landing's sales chat only counts (opens, answers, hand-offs): no model call, no text stored.
+Route::post('/chat-ventas/evento', SalesChatEventController::class)
+    ->middleware('throttle:20,1')
+    ->name('sales-chat.event');
 
 // The referral code rides session + 30-day cookie (industry window). A real code earns the
 // invite page and a dead one falls through to register. The page never names the inviter:

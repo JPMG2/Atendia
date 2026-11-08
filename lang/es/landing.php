@@ -418,6 +418,30 @@ return [
         'settings' => 'Preferencias de cookies',
     ],
 
+    // Floating sales chat. Phase 1: quick answers from the page, no AI; figures come from the plans table.
+    'sales_chat' => [
+        'open' => 'Pregúntale a :brand',
+        'title' => 'Pregúntale a :brand',
+        'subtitle' => 'Te respondemos al momento',
+        'close' => 'Cerrar el chat',
+        'greeting' => 'Hola. Elige una pregunta y te respondo al momento.',
+        'quick' => [
+            'prices' => 'Cuánto cuesta',
+            'how' => 'Cómo funciona',
+            'trial' => 'Cómo lo pruebo gratis',
+            'person' => 'Quiero hablar con una persona',
+        ],
+        'prices_intro' => 'Estos son los planes, por mes:',
+        'prices_outro' => 'Todos empiezan con :days días gratis, sin tarjeta.',
+        'prices_link' => 'Ver los planes completos',
+        'how' => 'Conectas tu WhatsApp escaneando un código, cargas tus precios, horarios y lo que ofreces, y :brand responde por ti a cualquier hora. Tú ves cada conversación desde el panel y entras cuando quieras.',
+        'trial' => 'Creas tu cuenta en minutos y lo usas :days días gratis, sin tarjeta. Al terminar la prueba decides si sigues.',
+        'trial_cta' => 'Crear mi cuenta gratis',
+        'person' => 'Te paso con una persona del equipo por WhatsApp. Si quieres una cotización o pagar por transferencia, ahí te ayudamos.',
+        'whatsapp' => 'Seguir por WhatsApp',
+        'whatsapp_text' => 'Hola, vengo del chat de :brand y quiero hablar con una persona.',
+    ],
+
     'footer' => [
         'tagline' => 'Publicidad y atención automatizada por WhatsApp para cualquier negocio.',
         'col_product' => 'Producto',

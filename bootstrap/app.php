@@ -91,10 +91,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // demo/* is the landing's fetch-only endpoint: its errors must come
-        // back as JSON, never as a redirect the browser fetch would follow.
+        // demo/* and chat-ventas/* are the landing's fetch-only endpoints: their errors
+        // must come back as JSON, never as a redirect the browser fetch would follow.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->is('demo/*'),
+            fn (Request $request) => $request->is('api/*') || $request->is('demo/*') || $request->is('chat-ventas/*'),
         );
 
         // The app prints the server's message as is: the framework's "Too Many

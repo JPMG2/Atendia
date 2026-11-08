@@ -14,5 +14,6 @@
     </main>
     <x-site.footer />
     <x-site.mobile-cta />
+    <x-site.sales-chat />
     <x-site.cookie-consent />
 </x-layouts.marketing>

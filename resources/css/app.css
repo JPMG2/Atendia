@@ -1207,6 +1207,51 @@
   .cookie-consent { inset-inline-end:auto; inset-inline-start:24px; bottom:24px; max-width:440px; }
 }
 
+/* Floating sales chat of the landing: bottom-right, opposite the cookie card. On a
+   phone it rides above the sticky register bar and the button is the icon alone. */
+.sales-chat-fab { position:fixed; z-index:44; inset-inline-end:16px; bottom:calc(84px + env(safe-area-inset-bottom));
+                  display:inline-flex; align-items:center; justify-content:center; gap:var(--space-2);
+                  min-width:56px; height:56px; padding:0 var(--space-4); border:0; border-radius:var(--radius-pill);
+                  background:var(--brand); color:var(--text-on-brand); font-weight:700; font-size:var(--text-sm);
+                  box-shadow:var(--shadow-lg); cursor:pointer;
+                  transition:filter var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.sales-chat-fab:hover { filter:brightness(.95); }
+.sales-chat-fab:active { transform:scale(.97); }
+.sales-chat-fab:focus-visible { outline:2px solid var(--brand); outline-offset:3px; box-shadow:0 0 0 4px var(--focus-ring); }
+.sales-chat-fab-label { display:none; }
+.sales-chat-panel { position:fixed; z-index:44; inset-inline:12px; bottom:calc(152px + env(safe-area-inset-bottom));
+                    display:flex; flex-direction:column; max-height:min(560px, calc(100dvh - 200px));
+                    background:var(--surface-card); color:var(--text-body); border:1px solid var(--border-default);
+                    border-radius:var(--radius-xl); box-shadow:var(--shadow-xl); overflow:hidden; }
+.sales-chat-head { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-4) var(--space-5);
+                   border-bottom:1px solid var(--border-subtle); }
+.sales-chat-avatar { display:grid; place-items:center; flex:none; width:40px; height:40px; border-radius:var(--radius-pill);
+                     background:var(--brand-soft); }
+.sales-chat-body { flex:1; min-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:var(--space-2);
+                   padding:var(--space-4) var(--space-5); background:var(--chat-canvas); }
+.sales-chat-body .pm-bubble { max-width:88%; }
+.sales-chat-quick { display:flex; flex-wrap:wrap; gap:var(--space-2); padding:var(--space-3) var(--space-5);
+                    border-top:1px solid var(--border-subtle); }
+.sales-chat-chip { padding:6px 12px; border-radius:var(--radius-pill); border:1px solid var(--brand-border);
+                   background:var(--brand-soft); color:var(--brand-soft-text); font-size:var(--text-sm); font-weight:600;
+                   cursor:pointer; transition:background var(--dur-fast) var(--ease-out); }
+.sales-chat-chip:hover { background:var(--brand-soft-hover); }
+.sales-chat-chip:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+.sales-chat-foot { padding:0 var(--space-5) var(--space-4); }
+.sales-chat-whatsapp { display:flex; align-items:center; justify-content:center; gap:var(--space-2); width:100%;
+                       padding:10px var(--space-4); border-radius:var(--radius-md); background:var(--brand);
+                       color:var(--text-on-brand); font-weight:700; font-size:var(--text-sm);
+                       transition:filter var(--dur-fast) var(--ease-out); }
+.sales-chat-whatsapp:hover { filter:brightness(.95); }
+@media (min-width: 1024px) {
+  .sales-chat-fab { inset-inline-end:24px; bottom:24px; }
+  .sales-chat-fab-label { display:inline; }
+  .sales-chat-panel { inset-inline:auto 24px; bottom:92px; width:380px; max-height:min(560px, calc(100dvh - 120px)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .sales-chat-fab { transition:none; }
+}
+
 /* Hero phone bubbles as classes, not inline styles: hero.js appends live
    exchanges and must speak the exact same markup as the Blade ones. */
 .pm-row { display:flex; }

@@ -19,6 +19,15 @@ return [
         'body' => 'Usamos Google Analytics para contar cuántas personas visitan esta página y de dónde llegan. Solo se activa si aceptás, y lo podés cambiar cuando quieras.',
     ],
 
+    'sales_chat' => [
+        'open' => 'Preguntale a :brand',
+        'title' => 'Preguntale a :brand',
+        'greeting' => 'Hola. Elegí una pregunta y te respondo al momento.',
+        'how' => 'Conectás tu WhatsApp escaneando un código, cargás tus precios, horarios y lo que ofrecés, y :brand responde por vos a cualquier hora. Vos ves cada conversación desde el panel y entrás cuando quieras.',
+        'trial' => 'Creás tu cuenta en minutos y lo usás :days días gratis, sin tarjeta. Al terminar la prueba decidís si seguís.',
+        'person' => 'Te paso con una persona del equipo por WhatsApp. Si querés una cotización o pagar por transferencia, ahí te ayudamos.',
+    ],
+
     'demo' => [
         'try_label' => 'Probalo: escribile como si fueras un cliente',
         'rubro_label' => 'Elegí un negocio de ejemplo',
