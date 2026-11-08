@@ -41,6 +41,35 @@ test('a quick answer opens with the real prices and both the open and the answer
     expect($today->opens)->toBe(1)->and($today->answers)->toBe(1);
 });
 
+test('the welcome bubble waits for the hero to scroll away, shows once per visitor and opens the chat', function (): void {
+    config()->set('atendia.sales_chat.nudge_seconds', 1);
+
+    $page = visit('/')->resize(1280, 900);
+    $page->wait(1.5);
+
+    // Still on the hero: the bubble would cover the demo phone.
+    expect($page->script("getComputedStyle(document.querySelector('[data-testid=sales-chat-nudge]')).display"))->toBe('none');
+
+    $page->script('window.scrollTo(0, 2000)');
+    $page->wait(0.8);
+
+    expect($page->script("getComputedStyle(document.querySelector('[data-testid=sales-chat-nudge]')).display"))->not->toBe('none');
+
+    $page->script("document.querySelector('.sales-chat-nudge-text').click()");
+    $page->wait(0.4);
+
+    expect($page->script("getComputedStyle(document.querySelector('[data-testid=sales-chat-panel]')).display"))->not->toBe('none')
+        ->and($page->script("localStorage.getItem('atendia-sales-nudge')"))->toBe('1');
+
+    // The same visitor coming back: a reload keeps the browser's storage (a new visit() would not).
+    $page->script('location.reload()');
+    $page->wait(1.5);
+    $page->script('window.scrollTo(0, 2000)');
+    $page->wait(1.8);
+
+    expect($page->script("getComputedStyle(document.querySelector('[data-testid=sales-chat-nudge]')).display"))->toBe('none');
+});
+
 test('on a phone the chat fits the screen and leaves no horizontal scroll', function (): void {
     $page = visit('/')->resize(390, 844);
 

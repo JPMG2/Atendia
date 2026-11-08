@@ -310,6 +310,11 @@ return [
         'daily_cap' => env('DEMO_DAILY_CAP', 300),
     ],
 
+    // The landing's sales chat: the welcome bubble shows once per visitor after this wait.
+    'sales_chat' => [
+        'nudge_seconds' => 20,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | AI rates (USD)

@@ -12,6 +12,8 @@
 
     // Unset sales number = no hand-off: the "person" chip and the WhatsApp button are not drawn.
     $salesWhatsapp = \App\Models\Company::whatsapp();
+    $reach = \App\Models\Company::reach();
+    $nudgeAfterMs = (int) config('atendia.sales_chat.nudge_seconds') * 1000;
     $whatsappHref = $salesWhatsapp
         ? 'https://wa.me/'.$salesWhatsapp.'?text='.rawurlencode(__('landing.sales_chat.whatsapp_text'))
         : null;
@@ -26,6 +28,8 @@
     x-data="{
         open: false,
         pastHero: false,
+        ready: false,
+        nudge: false,
         thread: [],
         labels: @js($labels),
         init() {
@@ -33,9 +37,23 @@
             const hero = document.getElementById('top');
             if (hero) new IntersectionObserver(([entry]) => (this.pastHero = ! entry.isIntersecting)).observe(hero);
             else this.pastHero = true;
+            setTimeout(() => { this.ready = true; this.offerNudge(); }, @js($nudgeAfterMs));
+            this.$watch('pastHero', () => this.offerNudge());
+        },
+        offerNudge() {
+            if (! this.ready || ! this.pastHero || this.open || this.nudge) return;
+            // The cookie card takes the same corner on a phone: wait until it is answered.
+            const consent = document.querySelector('[data-consent]');
+            if (consent && ! consent.hidden) return;
+            try {
+                if (localStorage.getItem('atendia-sales-nudge')) return;
+                localStorage.setItem('atendia-sales-nudge', '1');
+            } catch (e) { return; }
+            this.nudge = true;
         },
         toggle() {
             this.open = ! this.open;
+            this.nudge = false;
             if (this.open) this.count('open');
         },
         ask(key) {
@@ -164,8 +182,32 @@
                     <x-icon name="whatsapp" :size="18" />
                     {{ __('landing.sales_chat.whatsapp') }}
                 </a>
+                <div class="sales-chat-hours" data-testid="sales-chat-hours">
+                    <x-site.opening-status :reach="$reach" />
+                </div>
             </div>
         @endif
+    </div>
+
+    <div
+        class="sales-chat-nudge"
+        x-show="nudge && ! open"
+        x-cloak
+        x-transition:enter="transition duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        data-testid="sales-chat-nudge"
+    >
+        <button type="button" class="sales-chat-nudge-text" x-on:click="toggle()">
+            {{ __('landing.sales_chat.nudge') }}
+        </button>
+        <x-ui.icon-button
+            icon="x"
+            variant="ghost"
+            size="sm"
+            :label="__('landing.sales_chat.nudge_dismiss')"
+            x-on:click="nudge = false"
+        />
     </div>
 
     <button

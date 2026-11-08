@@ -440,6 +440,8 @@ return [
         'person' => 'Te paso con una persona del equipo por WhatsApp. Si quieres una cotización o pagar por transferencia, ahí te ayudamos.',
         'whatsapp' => 'Seguir por WhatsApp',
         'whatsapp_text' => 'Hola, vengo del chat de :brand y quiero hablar con una persona.',
+        'nudge' => '¿Te ayudo a elegir un plan?',
+        'nudge_dismiss' => 'Cerrar el aviso',
     ],
 
     'footer' => [

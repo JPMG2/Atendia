@@ -220,6 +220,24 @@ test('the footer says whether they are answering now, and hides the dot with no 
     $this->get('/')->assertSee(__('landing.footer.closed_now'))->assertDontSee(__('landing.footer.open_now'));
 });
 
+test('the sales chat tells the same hours and open state as the footer, from the company row', function (): void {
+    companyReach();
+
+    $chatHours = function (): string {
+        $html = $this->get('/')->getContent();
+        $start = strpos($html, 'data-testid="sales-chat-hours"');
+
+        return substr($html, $start, strpos($html, '</div>', $start) - $start);
+    };
+
+    expect($chatHours())->toContain('Lunes a viernes de 09:00 a 18:00 h')->toContain(__('landing.footer.open_now'));
+
+    CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-14 21:00:00', 'America/Caracas'));
+    Company::forgetReach();
+
+    expect($chatHours())->toContain(__('landing.footer.closed_now'))->not->toContain(__('landing.footer.open_now'));
+});
+
 test('the footer draws no dot when no week was ever declared', function (): void {
     companyReach(['opening_schedule' => null]);
 

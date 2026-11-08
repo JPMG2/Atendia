@@ -1243,10 +1243,21 @@
                        color:var(--text-on-brand); font-weight:700; font-size:var(--text-sm);
                        transition:filter var(--dur-fast) var(--ease-out); }
 .sales-chat-whatsapp:hover { filter:brightness(.95); }
+.sales-chat-hours { display:flex; flex-wrap:wrap; justify-content:center; gap:var(--space-1) var(--space-4); margin-top:var(--space-3); }
+.sales-chat-hours:empty { display:none; }
+.sales-chat-nudge { position:fixed; z-index:44; inset-inline-end:16px; bottom:calc(152px + env(safe-area-inset-bottom));
+                    display:flex; align-items:center; gap:var(--space-1); max-width:min(300px, calc(100vw - 32px));
+                    padding:var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+                    background:var(--surface-card); border:1px solid var(--border-default);
+                    border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); }
+.sales-chat-nudge-text { flex:1; padding:var(--space-2) 0; border:0; background:none; text-align:start; cursor:pointer;
+                         color:var(--text-strong); font-weight:600; font-size:var(--text-sm); }
+.sales-chat-nudge-text:hover { color:var(--brand); }
 @media (min-width: 1024px) {
   .sales-chat-fab { inset-inline-end:24px; bottom:24px; }
   .sales-chat-fab-label { display:inline; }
   .sales-chat-panel { inset-inline:auto 24px; bottom:92px; width:380px; max-height:min(560px, calc(100dvh - 120px)); }
+  .sales-chat-nudge { inset-inline-end:24px; bottom:92px; }
 }
 @media (prefers-reduced-motion:reduce) {
   .sales-chat-fab { transition:none; }
