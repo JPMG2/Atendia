@@ -74,6 +74,14 @@ function inRow(string $label, string $selector): string
     return "[...document.querySelectorAll('.re-item')].find((item) => item.querySelector('.re-label').textContent.trim() === {$label}).querySelector('{$selector}')";
 }
 
+/** The switch of one action inside a screen block, found by its words so a new action never shifts it. */
+function inAction(string $label, string $action): string
+{
+    $action = json_encode($action);
+
+    return '[...'.inRow($label, '.re-acts').".querySelectorAll('.re-act')].find((act) => act.querySelector('span').textContent.trim() === {$action}).querySelector('input')";
+}
+
 /** Clicks the switch of the editor row that carries this label. */
 function flipRow(string $label): string
 {
@@ -95,10 +103,10 @@ test('the editor paints the menu and answers every switch at once', function ():
     // diseno opens two screens (Contenido, Testimonios) out of the 23 with a switch.
     expect($page->script("document.querySelector('.re-big span').textContent"))->toBe('2');
 
-    // A group switch opens all its screens: Cobros has five.
+    // A group switch opens all its screens: Cobros has six.
     $page->script(flipRow('Cobros'));
-    expect($page->script("document.querySelector('.re-big span').textContent"))->toBe('7');
-    // Three distinct permissions move: Pagos and Cobranza share one, Consumo and Calidad another.
+    expect($page->script("document.querySelector('.re-big span').textContent"))->toBe('8');
+    // Three distinct permissions move: Pagos, Cobranza and Tasa de cambio share one, Consumo and Calidad another.
     $page->assertSee('3 cambios sin guardar')->screenshot(filename: 'admin-roles-editor-group');
 
     // One screen off leaves the group halfway, not off.
@@ -113,7 +121,7 @@ test('the editor saves what the switches say, actions included', function (): vo
     $page->script(flipRow('Pagos'));
     $page->script(inRow('Pagos', '.re-expand').'.click()');
     $page->assertSee('Acreditar o rechazar un pago');
-    $page->script(inRow('Pagos', '.re-act input').'.click()');
+    $page->script(inAction('Pagos', 'Acreditar o rechazar un pago').'.click()');
     $page->assertSee('2 cambios sin guardar')->screenshot(filename: 'admin-roles-editor-actions');
 
     $page->script("document.querySelector('.re-bar button[type=submit]').click()");
@@ -198,7 +206,7 @@ test('the preview marks what a save changes and says who it reaches', function (
     $page->script("[...document.querySelectorAll('.re-link')].find((b) => b.textContent.includes('Ver como')).click()");
     $page->wait(1)
         ->assertSee('Al guardar, quita Soporte a 1 persona.')
-        ->assertSee('Al guardar, suma Pagos, Cobranza a 1 persona.')
+        ->assertSee('Al guardar, suma Pagos, Cobranza, Tasa de cambio a 1 persona.')
         ->assertSee('Se oculta')
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'admin-roles-editor-impact');

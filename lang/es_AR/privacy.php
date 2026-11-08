@@ -14,6 +14,10 @@ return [
         'device' => 'Un identificador de la instalación, el nombre del dispositivo y el código de las notificaciones, para avisarte y para detectar un dispositivo nuevo; y tus inicios de sesión, para proteger tu cuenta.',
     ],
 
+    'cookies' => [
+        'body' => 'En la página pública usamos Google Analytics para contar las visitas y saber de qué páginas llegan. Solo se activa si lo aceptás en el aviso de cookies. Google guarda cookies en tu navegador y recibe datos técnicos de tu visita, como el navegador y una ubicación aproximada. No usamos esos datos para publicidad. Podés cambiar tu decisión cuando quieras desde «Preferencias de cookies», al final de la página.',
+    ],
+
     'keep' => [
         'body' => 'Mientras tu cuenta esté activa. Si la cerrás, la podés recuperar durante :days días; pasado ese plazo se borra para siempre. Los pagos y sus comprobantes los conservamos más tiempo porque la ley nos obliga a guardar los registros contables.',
     ],

@@ -22,6 +22,14 @@ return [
         'payments' => 'El historial de pagos de tu suscripción y sus comprobantes.',
         'device' => 'Un identificador de la instalación, el nombre del dispositivo y el código de las notificaciones, para avisarte y para detectar un dispositivo nuevo; y tus inicios de sesión, para proteger tu cuenta.',
         'none' => 'No recopilamos tu ubicación, los contactos ni el calendario del teléfono. No usamos analítica de terceros ni publicidad.',
+        // Replaces `none` while Google Analytics is on: the web page measures visits, the app does not.
+        'none_analytics' => 'No recopilamos tu ubicación, los contactos ni el calendario del teléfono. No usamos publicidad, y la app no usa analítica de terceros.',
+    ],
+
+    // Shown only while Google Analytics is switched on.
+    'cookies' => [
+        'title' => 'Cookies de la página web',
+        'body' => 'En la página pública usamos Google Analytics para contar las visitas y saber de qué páginas llegan. Solo se activa si lo aceptas en el aviso de cookies. Google guarda cookies en tu navegador y recibe datos técnicos de tu visita, como el navegador y una ubicación aproximada. No usamos esos datos para publicidad. Puedes cambiar tu decisión cuando quieras desde «Preferencias de cookies», al final de la página.',
     ],
 
     'use' => [

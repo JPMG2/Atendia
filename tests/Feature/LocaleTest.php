@@ -27,7 +27,7 @@ function fakePosition(string $countryCode): Position
 test('the neutral base has no voseo: it lives in the es_AR overrides', function (): void {
     // Accented words that end in a stress mark and are plain Spanish for everyone.
     $neutral = ['está', 'esté', 'aquí', 'allá', 'allí', 'así', 'sí', 'ahí', 'estás', 'además', 'después', 'atrás', 'demás', 'detrás',
-        'inglés', 'portugués', 'francés', 'caché', 'verás', 'tendrás', 'sabrá', 'responderá', 'aparecerá', 'avisé', 'guardé',
+        'inglés', 'portugués', 'francés', 'caché', 'verás', 'tendrás', 'sabrá', 'responderá', 'aparecerá', 'avisé', 'guardé', 'reservé',
         'envié', 'dejé', 'enséñale', 'enséñasela', 'más', 'país', 'también', 'través', 'mí', 'té', 'café', 'bebé', 'sofá',
         'qué', 'acá', 'sé', 'leí'];
 

@@ -164,6 +164,17 @@
     >
         <span>© {{ date('Y') }} {{ $company?->legal_name ?: \App\Models\Company::brand() }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
+            {{-- Brings the cookie banner back so the choice can be changed. --}}
+            @if (filled(config('atendia.analytics.measurement_id')))
+                <button
+                    type="button"
+                    data-consent-open
+                    class="text-subtle hover:text-brand transition"
+                    style="font-size: var(--text-xs)"
+                >
+                    {{ __('landing.cookies.settings') }}
+                </button>
+            @endif
             {{-- Language picker: geolocation suggests, the person decides. --}}
             <span x-data="{ open: false }" class="relative">
                 <button

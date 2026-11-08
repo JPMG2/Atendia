@@ -39,7 +39,7 @@ beforeEach(function (): void {
 | the person typed herself, and what both trades suggest, stays.
 */
 
-function ownerOf(string $activityCode): Business
+function businessOfTrade(string $activityCode): Business
 {
     $business = Business::factory()->create();
     $business->syncActivities(BusinessActivity::where('code', $activityCode)->value('id'));
@@ -52,7 +52,7 @@ function ownerOf(string $activityCode): Business
 }
 
 test('changing trade takes the old trade\'s services off the list and keeps what she typed', function (): void {
-    $business = ownerOf('consultorio-medico');
+    $business = businessOfTrade('consultorio-medico');
     Service::factory()->for($business)->create(['name' => 'Consulta clínica']);
     Service::factory()->for($business)->create(['name' => 'Consulta a domicilio']);
     Service::factory()->for($business)->create(['name' => 'Sesión de bienestar propia']);
@@ -66,7 +66,7 @@ test('changing trade takes the old trade\'s services off the list and keeps what
 });
 
 test('a name both trades suggest stays when the trade changes', function (): void {
-    $business = ownerOf('consultorio-medico');
+    $business = businessOfTrade('consultorio-medico');
     // "Envío a domicilio" is offered by a pharmacy and by a restaurant alike.
     Service::factory()->for($business)->create(['name' => 'Envío a domicilio']);
     $business->syncActivities(BusinessActivity::where('code', 'farmacia')->value('id'));
@@ -77,7 +77,7 @@ test('a name both trades suggest stays when the trade changes', function (): voi
 });
 
 test('nothing leaves the list while the trade stays the same', function (): void {
-    $business = ownerOf('consultorio-medico');
+    $business = businessOfTrade('consultorio-medico');
     Service::factory()->for($business)->create(['name' => 'Consulta clínica']);
 
     Livewire::test('business.step-services', ['sector' => 'salud', 'activity' => 'consultorio-medico'])
@@ -99,7 +99,7 @@ test('a business with no trade yet loses nothing on its first pass', function ()
 });
 
 test('saving after the change drops the old trade\'s services from the business', function (): void {
-    $business = ownerOf('consultorio-medico');
+    $business = businessOfTrade('consultorio-medico');
     Service::factory()->for($business)->create(['name' => 'Consulta clínica']);
     Service::factory()->for($business)->create(['name' => 'Sesión de bienestar propia']);
 
@@ -111,7 +111,7 @@ test('saving after the change drops the old trade\'s services from the business'
 });
 
 test('changing trade takes the old trade\'s products off the list and keeps what she typed', function (): void {
-    $business = ownerOf('farmacia');
+    $business = businessOfTrade('farmacia');
     Product::factory()->for($business)->create(['name' => 'Perfumería y cuidado personal']);
     Product::factory()->for($business)->create(['name' => 'Camilla propia']);
 

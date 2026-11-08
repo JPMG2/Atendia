@@ -14,4 +14,5 @@
     </main>
     <x-site.footer />
     <x-site.mobile-cta />
+    <x-site.cookie-consent />
 </x-layouts.marketing>

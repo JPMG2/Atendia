@@ -432,6 +432,9 @@ test('a new price is a new row, so what was consumed keeps its own', function ()
     aiConnections();
     aiPriced('openai', 'gpt-6-astra');
 
+    // Relative on purpose: a hardcoded start date turns "future" into "today" the day the calendar reaches it.
+    $start = now()->addMonths(2)->startOfMonth();
+
     Livewire::test('admin.ai.index')
         ->call('create')
         ->set('model.provider', 'openai')
@@ -440,13 +443,13 @@ test('a new price is a new row, so what was consumed keeps its own', function ()
         ->set('model.prompt_per_million', '12')
         ->set('model.cached_per_million', '1.2')
         ->set('model.completion_per_million', '60')
-        ->set('model.effective_from', '2026-11-01')
+        ->set('model.effective_from', $start->toDateString())
         ->call('store')
         ->assertHasNoErrors();
 
     expect(AiModel::query()->where('code', 'gpt-6-astra')->count())->toBe(2)
         ->and((float) AiModel::rateOn('gpt-6-astra', now())->prompt_per_million)->toBe(1.0)
-        ->and((float) AiModel::rateOn('gpt-6-astra', now()->setDate(2026, 12, 1))->prompt_per_million)->toBe(12.0);
+        ->and((float) AiModel::rateOn('gpt-6-astra', $start->copy()->addDay())->prompt_per_million)->toBe(12.0);
 });
 
 test('two prices of the same model cannot start the same day', function (): void {

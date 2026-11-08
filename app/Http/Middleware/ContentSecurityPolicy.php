@@ -38,6 +38,13 @@ class ContentSecurityPolicy
         $directives['connect-src'][] = ($request->isSecure() ? 'wss://' : 'ws://').$request->getHttpHost();
         $directives['report-uri'] = [self::REPORT_PATH];
 
+        // Google's origins are opened for the landing alone, never for a panel.
+        if (filled(config('atendia.analytics.measurement_id')) && $request->is('/')) {
+            foreach (config('atendia.analytics.csp') as $name => $sources) {
+                $directives[$name] = [...$directives[$name], ...$sources];
+            }
+        }
+
         return collect($directives)
             ->map(fn (array $sources, string $name): string => $name.' '.implode(' ', $sources))
             ->implode('; ');

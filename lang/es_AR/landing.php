@@ -15,6 +15,10 @@ declare(strict_types=1);
 
 return [
 
+    'cookies' => [
+        'body' => 'Usamos Google Analytics para contar cuántas personas visitan esta página y de dónde llegan. Solo se activa si aceptás, y lo podés cambiar cuando quieras.',
+    ],
+
     'demo' => [
         'try_label' => 'Probalo: escribile como si fueras un cliente',
         'rubro_label' => 'Elegí un negocio de ejemplo',

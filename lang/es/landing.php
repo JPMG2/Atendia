@@ -408,6 +408,16 @@ return [
         'cta_secondary' => 'Ver cómo funciona',
     ],
 
+    // Shown only while Google Analytics is switched on (see config atendia.analytics).
+    'cookies' => [
+        'title' => 'Cookies para medir las visitas',
+        'body' => 'Usamos Google Analytics para contar cuántas personas visitan esta página y de dónde llegan. Solo se activa si aceptas, y puedes cambiarlo cuando quieras.',
+        'more' => 'Cómo tratamos tus datos',
+        'accept' => 'Aceptar',
+        'reject' => 'Rechazar',
+        'settings' => 'Preferencias de cookies',
+    ],
+
     'footer' => [
         'tagline' => 'Publicidad y atención automatizada por WhatsApp para cualquier negocio.',
         'col_product' => 'Producto',

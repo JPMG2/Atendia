@@ -184,3 +184,25 @@
 2026-11-02	check-panel-screen	resources/views/components/admin/exchange-rate/⚡index.blade.php
 2026-11-02	check-panel-screen	resources/views/components/admin/exchange-rate/⚡index.blade.php
 2026-11-03	check-comment-golden-rules	app/Http/Middleware/RequireSupportedAppBuild.php
+2026-11-05	require-build-batch	eas build
+2026-11-06	check-comment-golden-rules	database/seeders/SpecialtySeeder.php
+2026-11-06	check-comment-golden-rules	app/Livewire/Forms/Business/BusinessForm.php
+2026-11-06	check-comment-golden-rules	app/Livewire/Forms/Business/BusinessForm.php
+2026-11-06	check-comment-golden-rules	resources/views/components/business/⚡step-products.blade.php
+2026-11-06	check-comment-golden-rules	resources/views/components/business/⚡step-products.blade.php
+2026-11-06	check-comment-golden-rules	resources/views/components/business/⚡step-products.blade.php
+2026-11-06	check-comment-golden-rules	app/Actions/Agenda/BookAppointment.php
+2026-11-06	check-comment-golden-rules	app/Actions/Agenda/BookAppointment.php
+2026-11-06	check-comment-golden-rules	app/Actions/Agenda/BookAppointment.php
+2026-11-06	check-comment-golden-rules	app/Models/Appointment.php
+2026-11-06	check-comment-golden-rules	app/Models/Appointment.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/AppointmentForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Livewire/Forms/Agenda/PublicBookingForm.php
+2026-11-06	check-blade-query-golden-rules	app/Models/Business.php
+2026-11-06	check-php-getter-golden-rules	app/Classes/Main/Agenda.php
+2026-11-06	check-php-getter-golden-rules	app/Classes/Main/Agenda.php

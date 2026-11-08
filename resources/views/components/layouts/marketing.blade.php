@@ -50,7 +50,13 @@
         }
     </style>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/hero.js'])
+    {{-- The consent script ships only while analytics is switched on. --}}
+    @vite(array_filter([
+        'resources/css/app.css',
+        'resources/js/app.js',
+        'resources/js/hero.js',
+        filled(config('atendia.analytics.measurement_id')) ? 'resources/js/analytics-consent.js' : null,
+    ]))
 </head>
 <body>
     {{ $slot }}

@@ -2,6 +2,7 @@
     $brand = \App\Models\Company::brand();
     $contact = \App\Models\Company::contact();
     $days = (int) config('atendia.account_restore_days');
+    $analytics = filled(config('atendia.analytics.measurement_id'));
 @endphp
 
 <x-guest-layout>
@@ -41,8 +42,19 @@
                 <li>{{ __('privacy.collect.payments') }}</li>
                 <li>{{ __('privacy.collect.device') }}</li>
             </ul>
-            <p class="text-body">{{ __('privacy.collect.none') }}</p>
+            <p class="text-body">
+                {{ $analytics ? __('privacy.collect.none_analytics') : __('privacy.collect.none') }}
+            </p>
         </section>
+
+        @if ($analytics)
+            <section class="flex flex-col gap-3" data-testid="privacy-cookies">
+                <h2 class="text-strong font-display" style="font-weight: 700; font-size: var(--text-lg)">
+                    {{ __('privacy.cookies.title') }}
+                </h2>
+                <p class="text-body">{{ __('privacy.cookies.body') }}</p>
+            </section>
+        @endif
 
         <section class="flex flex-col gap-3">
             <h2 class="text-strong font-display" style="font-weight: 700; font-size: var(--text-lg)">

@@ -1197,6 +1197,16 @@
               backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
               border-top:1px solid var(--border-subtle); }
 
+/* Cookie banner of the public landing: a card at the bottom-left on a desktop,
+   full width on a phone and lifted above the sticky register bar. */
+.cookie-consent { position:fixed; z-index:45; inset-inline:16px; bottom:calc(88px + env(safe-area-inset-bottom));
+                  padding:var(--space-5); background:var(--surface-card); color:var(--text-body);
+                  border:1px solid var(--border-default); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); }
+.cookie-consent[hidden] { display:none; }
+@media (min-width: 1024px) {
+  .cookie-consent { inset-inline-end:auto; inset-inline-start:24px; bottom:24px; max-width:440px; }
+}
+
 /* Hero phone bubbles as classes, not inline styles: hero.js appends live
    exchanges and must speak the exact same markup as the Blade ones. */
 .pm-row { display:flex; }

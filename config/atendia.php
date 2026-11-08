@@ -761,6 +761,19 @@ return [
         ],
     ],
 
+    // Google Analytics 4 for the public landing only. An empty id switches the
+    // whole thing off: no banner, no script, no extra origin in the policy.
+    'analytics' => [
+        'measurement_id' => env('GA4_MEASUREMENT_ID'),
+
+        // Added to the policy of the landing, and only while the id is set.
+        'csp' => [
+            'script-src' => ['https://www.googletagmanager.com'],
+            'connect-src' => ['https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com'],
+            'img-src' => ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+        ],
+    ],
+
     'health' => [
         // A look older than this is shown as stale, not as green.
         'stale_minutes' => 6,
