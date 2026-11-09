@@ -15,6 +15,7 @@ use App\Enums\SubscriptionStatus;
 use App\Jobs\PlatformHeartbeat;
 use App\Models\AiUsage;
 use App\Models\Business;
+use App\Models\Conversation;
 use App\Models\ExchangeRate;
 use App\Models\Payment;
 use App\Models\PlatformEvent;
@@ -53,6 +54,7 @@ class PlatformSensors
             $this->guard('whatsapp_links', 'customers', fn (): SensorReadingDto => $this->whatsappLinks()),
             $this->guard('bridge_orphans', 'customers', fn (): SensorReadingDto => $this->bridgeOrphans()),
             $this->guard('signups', 'customers', fn (): SensorReadingDto => $this->signups()),
+            $this->guard('auto_responders', 'customers', fn (): SensorReadingDto => $this->autoResponders()),
             $this->guard('receipts', 'money', fn (): SensorReadingDto => $this->receipts()),
             $this->guard('late', 'money', fn (): SensorReadingDto => $this->subscriptions('late', SubscriptionStatus::PastDue, Status::Warn)),
             $this->guard('paused', 'money', fn (): SensorReadingDto => $this->subscriptions('paused', SubscriptionStatus::Paused, Status::Crit)),
@@ -356,6 +358,20 @@ class PlatformSensors
         return $count === 0
             ? new SensorReadingDto($key, 'money', Status::Ok, '0', __("platform_events.detail.{$key}_none"))
             : new SensorReadingDto($key, 'money', $whenAny, (string) $count, __("platform_events.detail.{$key}_some"));
+    }
+
+    /**
+     * Chats silenced for an auto-responder this week and not handed back. Never
+     * red on its own: a busy week is news, and a run of wrong calls is tuned in
+     * Ajustes, where the tile leads.
+     */
+    private function autoResponders(): SensorReadingDto
+    {
+        $count = Conversation::silencedForMachinesSince(now()->subDays(7));
+
+        return new SensorReadingDto('auto_responders', 'customers', Status::Ok, (string) $count, $count === 0
+            ? __('platform_events.detail.auto_responders_none')
+            : __('platform_events.detail.auto_responders_some'));
     }
 
     private function suspended(): SensorReadingDto

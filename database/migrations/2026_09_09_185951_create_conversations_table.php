@@ -30,6 +30,8 @@ return new class extends Migration
             $table->string('status', 12)->default('open')->comment('open | team | customer | resolved — en team la IA calla en ESTE hilo');
             $table->timestamp('escalated_at')->nullable()->comment('Esperando al equipo DESDE; el reloj del recordatorio de hilo olvidado');
             $table->timestamp('handoff_reminded_at')->nullable()->comment('Recordatorio enviado (una vez por entrada a team)');
+            $table->timestamp('bot_suspected_at')->nullable()->comment('La IA calló porque del otro lado parece un contestador automático; lo borra «Que siga el asistente»');
+            $table->string('bot_signal', 12)->nullable()->comment('Qué la delató: echo | phrase | repeated | fast | burst (App\Enums\AutoReplySignal)');
             $table->timestamp('last_message_at')->nullable()->comment('Para ordenar la bandeja; lo sella cada intercambio');
             $table->unsignedBigInteger('analyzed_message_id')->nullable()->comment('Hasta qué mensaje se analizó la charla; lo nuevo se analiza al terminar');
             $table->timestamps();

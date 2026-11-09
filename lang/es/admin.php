@@ -551,6 +551,8 @@ return [
         'restore' => 'Volver a los valores del código',
         'saved' => 'Listo. :count ajuste ya está en vigencia.|Listo. :count ajustes ya están en vigencia.',
         'nothing_changed' => 'No cambiaste ningún ajuste.',
+        'list_size' => '{0} Vacía|{1} :count frase|[2,*] :count frases',
+        'list_line_too_short' => '«:line» es muy corta: cada renglón necesita al menos tres palabras para no confundir a una persona con una máquina.',
         'moved' => ':count ajuste cambiado|:count ajustes cambiados',
 
         'columns' => [
@@ -622,6 +624,10 @@ return [
                 'title' => 'Menciones',
                 'sub' => 'Cuánto espera la oferta de mencionar a un negocio después de un "ahora no", y cuándo deja de ofrecerse.',
             ],
+            'bots' => [
+                'title' => 'Contestadores automáticos',
+                'sub' => 'Cuándo el asistente deja de responder porque del otro lado parece haber una máquina. Calla sin avisarle y la charla pasa al equipo, marcada; el negocio la devuelve con «Era una persona».',
+            ],
             'app' => [
                 'title' => 'La app del teléfono',
                 'sub' => 'Qué versión de la app sigue funcionando. Un teléfono con una más vieja ve una pantalla que le pide actualizarla, y nada más, hasta que lo hace.',
@@ -679,6 +685,24 @@ return [
                 'idle_hours' => [
                     'label' => 'Silencio para dar por terminada una charla',
                     'hint' => 'Horas sin que nadie escriba. Más bajo, la IA analiza antes pero puede cortar una charla viva; más alto, los temas del día aparecen más tarde.',
+                ],
+            ],
+            'bots' => [
+                'phrases' => [
+                    'label' => 'Frases de contestador',
+                    'hint' => 'Una frase por renglón, de tres palabras o más. Si un mensaje trae alguna, el asistente calla ahí mismo. No importan mayúsculas ni tildes. Vacía, esta señal se apaga.',
+                ],
+                'repeat_threshold' => [
+                    'label' => 'Mismo texto repetido',
+                    'hint' => 'A la cuántas veces de recibir el mismo texto en un día el asistente calla.',
+                ],
+                'fast_replies' => [
+                    'label' => 'Respuestas en menos de 2 segundos',
+                    'hint' => 'Cuántas seguidas hacen falta para callar. Nadie lee, piensa y escribe tan rápido una y otra vez.',
+                ],
+                'burst_cap' => [
+                    'label' => 'Respuestas del asistente en 10 minutos',
+                    'hint' => 'Tope en una misma charla. Al llegar, el asistente calla aunque ninguna otra señal haya saltado.',
                 ],
             ],
             'handoff' => [

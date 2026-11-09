@@ -412,6 +412,49 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Auto-responders on the other side
+    |--------------------------------------------------------------------------
+    | Two bots answering each other burn the plan's hourly cap before anything
+    | stops them. These signals cut the loop in PHP, without a model call, and
+    | hand the thread to the team. Editable in Ajustes (PlatformSettingSeeder).
+    | `phrases` is ONE string, a phrase per line: the admin override is a string.
+    */
+    'bots' => [
+        'repeat_threshold' => 3,
+        'fast_replies' => 2,
+        'fast_reply_ms' => 2000,
+        'burst_cap' => 15,
+        'burst_minutes' => 10,
+        'echo_min_chars' => 30,
+        // Shorter texts never count as repeated or as too fast: "sí", "ok", "dale".
+        'min_chars' => 12,
+        // After the owner marks a flagged chat as a person, how long nothing is checked there.
+        'person_trust_hours' => 24,
+        // What a machine says about ITSELF. Never what a person may ask
+        // ("¿es una respuesta automática?"): three words or more per line.
+        'phrases' => implode("\n", [
+            'este es un mensaje automático',
+            'este es un mensaje automatizado',
+            'esta es una respuesta automática',
+            'gracias por comunicarte con',
+            'gracias por comunicarse con',
+            'gracias por escribirnos',
+            'en breve te responderemos',
+            'en breve le responderemos',
+            'te responderemos a la brevedad',
+            'le responderemos a la brevedad',
+            'nuestro horario de atención es',
+            'en este momento no podemos atenderte',
+            'en este momento no podemos atenderle',
+            'this is an automated message',
+            'this is an automatic reply',
+            'thank you for contacting',
+            'we will get back to you',
+        ]),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Conversation analysis
     |--------------------------------------------------------------------------
     | A thread nobody marked resolved counts as finished after this many quiet

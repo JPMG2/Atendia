@@ -27,6 +27,7 @@ return [
         'department_alert' => "🔔 *:name* (:phone) necesita a *:department*.\nMotivo: :reason\nRespondeme por acá y le reenvío tu mensaje, o atendelo desde tu panel: :url",
         'owner_alert' => "🔔 *:name* (:phone) necesita a alguien del equipo.\nMotivo: :reason\nRespondeme por acá y le reenvío tu mensaje, o atendelo desde tu panel: :url\nTu asistente quedó en pausa solo en ese chat.",
         'reason_emergency' => 'posible emergencia: el cliente describe un riesgo para su salud o su vida; atendelo ya',
+        'reason_auto_responder' => 'parece un contestador automático. Tu asistente dejó de responderle para no quedar en un ida y vuelta entre máquinas; si es una persona, devolvele la charla desde el panel',
         'customer_emergency' => 'Si es una emergencia, llamá ya a tu servicio de emergencias local: yo no puedo atenderla. Ya avisé al equipo para que te escriba.',
         'relay_done' => "✅ Le envié tu respuesta a *:name*.\nCuando el tema esté cerrado, escribime *#resuelto* y tu asistente retoma ese chat. También lo ves en tu panel: :url",
     ],

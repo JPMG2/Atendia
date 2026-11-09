@@ -180,3 +180,62 @@ test('the seeder never overwrites a knob she already moved', function (): void {
     expect(PlatformSetting::where('key', 'analysis.idle_hours')->value('value'))->toBe('8')
         ->and(PlatformSetting::where('key', 'analysis.idle_hours')->value('default_value'))->toBe('2');
 });
+
+test('the auto-responder phrases are a list she edits, one per line', function (): void {
+    settingsAdmin();
+
+    Livewire::test('admin.settings.index')
+        ->assertSee(__('admin.settings.keys.bots.phrases.label'))
+        ->set(settingField('bots.phrases'), "este es un mensaje automático\nvuelvo el lunes temprano")
+        ->call('save')
+        ->assertHasNoErrors();
+
+    Cache::forget('platform.settings');
+
+    foreach (PlatformSetting::overrides() as $key => $value) {
+        config()->set('atendia.'.$key, $value);
+    }
+
+    expect(config('atendia.bots.phrases'))->toBe("este es un mensaje automático\nvuelvo el lunes temprano");
+});
+
+test('a phrase too short to tell a machine apart is refused, and an empty list is allowed', function (): void {
+    settingsAdmin();
+
+    Livewire::test('admin.settings.index')
+        ->set(settingField('bots.phrases'), "este es un mensaje automático\nok")
+        ->call('save')
+        ->assertHasErrors([settingError('bots.phrases')]);
+
+    Livewire::test('admin.settings.index')
+        ->set(settingField('bots.phrases'), '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(PlatformSetting::where('key', 'bots.phrases')->value('value'))->toBe('');
+});
+
+test('a saved knob reaches the queue workers at once, not at their next restart', function (): void {
+    settingsAdmin();
+    Cache::forget('illuminate:queue:restart');
+
+    Livewire::test('admin.settings.index')
+        ->set(settingField('bots.burst_cap'), '20')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Cache::has('illuminate:queue:restart'))->toBeTrue();
+});
+
+test('reseeding keeps the file list as the default even when she edited hers', function (): void {
+    PlatformSetting::where('key', 'bots.phrases')->update(['value' => 'solo esta']);
+    config()->set('atendia.bots.phrases', 'solo esta');
+
+    $this->seed(PlatformSettingSeeder::class);
+
+    $row = PlatformSetting::where('key', 'bots.phrases')->sole();
+
+    expect($row->value)->toBe('solo esta')
+        ->and($row->default_value)->toContain('mensaje automático')
+        ->and($row->defaultListSize)->toBeGreaterThan(10);
+});

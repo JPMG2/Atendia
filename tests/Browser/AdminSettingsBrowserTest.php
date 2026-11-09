@@ -74,3 +74,14 @@ test('the settings screen holds at every width in both themes', function (string
     'desktop dark' => ['desktop', 1280, 1000, true],
     'phone light' => ['phone', 390, 844, false],
 ]);
+
+test('the auto-responder phrases read one per line, wide enough to edit', function (string $label, int $width): void {
+    visit(route('admin.settings'))->resize($width, 900)
+        ->assertSee('Contestadores automáticos')
+        ->assertSee('Frases de contestador')
+        ->screenshotElement('[wire\\:key="group-bots"]', 'admin-settings-bots-'.$label)
+        ->assertNoJavaScriptErrors();
+})->with([
+    'desktop' => ['desktop', 1280],
+    'phone' => ['phone', 390],
+]);

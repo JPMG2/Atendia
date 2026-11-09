@@ -12,6 +12,7 @@ use App\Actions\Business\TranslateForCustomer;
 use App\Ai\Agents\AsistenteAtendia;
 use App\Classes\Main\HandoffSignals;
 use App\Classes\Main\Plan;
+use App\Enums\AutoReplySignal;
 use App\Enums\ConversationStatus;
 use App\Enums\GuardVerdict;
 use App\Enums\HandoffLevel;
@@ -28,6 +29,7 @@ use App\Models\ConversationMessage;
 use App\Models\Customer;
 use App\Models\PlatformContact;
 use App\Models\User;
+use App\Services\AutoResponderDetector;
 use App\Services\ConversationGuard;
 use App\Services\EvolutionApi;
 use App\Services\OwnerPings;
@@ -84,7 +86,11 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         public ?string $quotedMessageId = null,
         /** @var array{kind: string, tmp: ?string, mime: string, name: string, caption: string, lat: ?float, lng: ?float, label: string}|null */
         public ?array $media = null,
-    ) {}
+        /** Stamped at dispatch, when the webhook heard it: the job itself runs after the debounce. */
+        public ?int $arrivedAtMs = null,
+    ) {
+        $this->arrivedAtMs ??= now()->getTimestampMs();
+    }
 
     public function handle(): void
     {
@@ -205,6 +211,22 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 return;
             }
 
+            // Before the guard: a bot loop must stop here, not at the hourly cap.
+            $machine = app(AutoResponderDetector::class)->detect($conversation, "{$this->instance}:{$this->from}", $typed, $this->arrivedAtMs);
+
+            // An emergency or a plea for a person outranks the suspicion: that
+            // path below still answers and hands off, and a bot never writes it.
+            if ($machine !== null && $this->safetySignal($business, $typed) === null) {
+                // Silent on WhatsApp, but a consent yes is still the customer's word.
+                if ($optInYes) {
+                    $customer->sealOptIn();
+                }
+
+                $this->handOffAutoResponder($business, $conversation, $machine, $body, $media, $mediaText);
+
+                return;
+            }
+
             $verdict = app(ConversationGuard::class)->verdict($this->instance, $this->from, $text, $plan->messagesPerHour);
 
             if ($verdict === GuardVerdict::Muted) {
@@ -241,6 +263,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
                 $evolution->sendText($this->instance, $this->from, $bubble, $this->humanDelay($bubble));
             }
 
+            AutoResponderDetector::replied("{$this->instance}:{$this->from}");
             $this->rememberReply($conversation, $reply, $agent->knowledgeSources());
 
             // The assistant thanks per its briefing; the seal itself never
@@ -567,6 +590,29 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         }
 
         $this->rememberReply($conversation, $reply);
+
+        WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
+    }
+
+    /**
+     * The other side is a machine: the assistant goes quiet WITHOUT a word
+     * (telling a bot it is a bot only feeds the loop, and a person wrongly
+     * flagged must never read it) and the team gets the thread, marked.
+     *
+     * @param  array<int, array<string, mixed>>  $media
+     */
+    private function handOffAutoResponder(Business $business, Conversation $conversation, AutoReplySignal $signal, string $body, array $media, ?string $mediaText): void
+    {
+        $this->rememberInbound($conversation, $body, $media, $mediaText);
+
+        $conversation->update(['bot_suspected_at' => now(), 'bot_signal' => $signal]);
+        app(RaiseHandoff::class)->handle($business, $conversation, __('assistant.handoff.reason_auto_responder'));
+
+        Log::info('whatsapp.auto_responder', [
+            'business_id' => $business->id,
+            'conversation_id' => $conversation->id,
+            'signal' => $signal->value,
+        ]);
 
         WhatsAppExchangeArrived::dispatch((int) $business->id, (int) $conversation->id);
     }

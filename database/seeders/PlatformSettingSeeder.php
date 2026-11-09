@@ -87,6 +87,12 @@ class PlatformSettingSeeder extends Seeder
             ['key' => 'mentions.pause_months', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '3', 'min' => 1, 'max' => 24, 'sort_order' => 1],
             ['key' => 'mentions.max_refusals', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '2', 'min' => 1, 'max' => 10, 'sort_order' => 2],
             ['key' => 'mentions.followers_stale_days', 'group' => 'mentions', 'type' => 'integer', 'default_value' => '7', 'min' => 1, 'max' => 60, 'sort_order' => 3],
+
+            // When the other side looks like an auto-responder and the assistant goes quiet.
+            ['key' => 'bots.phrases', 'group' => 'bots', 'type' => 'list', 'default_value' => $this->fileDefault('bots.phrases'), 'sort_order' => 1],
+            ['key' => 'bots.repeat_threshold', 'group' => 'bots', 'type' => 'integer', 'default_value' => '3', 'min' => 2, 'max' => 10, 'sort_order' => 2],
+            ['key' => 'bots.fast_replies', 'group' => 'bots', 'type' => 'integer', 'default_value' => '2', 'min' => 2, 'max' => 10, 'sort_order' => 3],
+            ['key' => 'bots.burst_cap', 'group' => 'bots', 'type' => 'integer', 'default_value' => '15', 'min' => 5, 'max' => 60, 'sort_order' => 4],
         ];
 
         foreach ($settings as $setting) {
@@ -105,5 +111,15 @@ class PlatformSettingSeeder extends Seeder
                 ],
             );
         }
+    }
+
+    /**
+     * The value written in config/atendia.php, read from the file: config()
+     * already carries her override by now, and seeding it as the default
+     * would make her edit the thing "Restaurar" goes back to.
+     */
+    private function fileDefault(string $key): string
+    {
+        return (string) data_get(require config_path('atendia.php'), $key);
     }
 }

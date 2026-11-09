@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AutoReplySignal;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageDirection;
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * One WhatsApp thread between a business and one customer. The reply
  * worker writes it; the assistant reads it back as memory.
  */
-#[Fillable(['business_id', 'customer_id', 'department_id', 'assigned_user_id', 'contact_phone', 'contact_name', 'language', 'status', 'escalated_at', 'handoff_reminded_at', 'last_message_at'])]
+#[Fillable(['business_id', 'customer_id', 'department_id', 'assigned_user_id', 'contact_phone', 'contact_name', 'language', 'status', 'escalated_at', 'handoff_reminded_at', 'bot_suspected_at', 'bot_signal', 'last_message_at'])]
 class Conversation extends Model
 {
     use BelongsToBusiness;
@@ -37,6 +38,22 @@ class Conversation extends Model
     use SearchesText;
 
     /**
+     * The auto-responder mark lives only while the thread waits on the team.
+     * Every exit (panel, "#resuelto" by WhatsApp, the idle close, the customer's
+     * next word on a resolved thread) clears it here, so none can forget it.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $conversation): void {
+            if ($conversation->isDirty('status')
+                && in_array($conversation->status, [ConversationStatus::Open, ConversationStatus::Resolved], true)) {
+                $conversation->bot_suspected_at = null;
+                $conversation->bot_signal = null;
+            }
+        });
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -45,6 +62,8 @@ class Conversation extends Model
             'status' => ConversationStatus::class,
             'escalated_at' => 'datetime',
             'handoff_reminded_at' => 'datetime',
+            'bot_suspected_at' => 'datetime',
+            'bot_signal' => AutoReplySignal::class,
             'last_message_at' => 'datetime',
             'analyzed_message_id' => 'integer',
         ];
@@ -63,6 +82,18 @@ class Conversation extends Model
             ->where('created_at', '>=', now()->subDays(7))
             ->distinct('conversation_id')
             ->count('conversation_id'));
+    }
+
+    /**
+     * Threads platform-wide where the assistant went quiet for an auto-responder
+     * lately and nobody handed back yet: the admin board's count, so it escapes
+     * the tenant scope on purpose, like answeredThisWeekCount().
+     */
+    public static function silencedForMachinesSince(CarbonInterface $since): int
+    {
+        return app(Tenant::class)->for(null, fn (): int => self::query()
+            ->where('bot_suspected_at', '>=', $since)
+            ->count());
     }
 
     /**
@@ -182,6 +213,44 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ConversationMessage::class);
+    }
+
+    /**
+     * What the other side wrote lately, newest first: the auto-responder check
+     * compares texts after normalising them, which SQL cannot do for it.
+     *
+     * @return list<string>
+     */
+    public function recentInboundBodies(int $hours = 24, int $limit = 20): array
+    {
+        return $this->messages()
+            ->where('direction', MessageDirection::In)
+            ->where('created_at', '>=', now()->subHours($hours))
+            ->latest('id')
+            ->limit($limit)
+            ->pluck('body')
+            ->map(fn (?string $body): string => (string) $body)
+            ->all();
+    }
+
+    /** The assistant's last words in this thread, or null if it never spoke. */
+    public function lastAssistantReply(): ?string
+    {
+        return $this->messages()
+            ->where('direction', MessageDirection::Out)
+            ->where('author', MessageAuthor::Assistant)
+            ->latest('id')
+            ->value('body');
+    }
+
+    /** How many replies the assistant sent here since the given moment. */
+    public function assistantRepliesSince(CarbonInterface $since): int
+    {
+        return $this->messages()
+            ->where('direction', MessageDirection::Out)
+            ->where('author', MessageAuthor::Assistant)
+            ->where('created_at', '>=', $since)
+            ->count();
     }
 
     /**

@@ -102,6 +102,7 @@ class PlatformSensor extends Model
             'receipts' => 'admin.payments',
             'late', 'paused' => 'admin.collections',
             'suspended', 'appeals', 'content' => 'admin.compliance',
+            'auto_responders' => 'admin.settings',
             default => null,
         };
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\ConversationStatus;
 use App\Enums\MessageAuthor;
 use App\Models\AssistantRating;
 use App\Models\Business;
@@ -424,3 +425,35 @@ test('a customer photo, document and location read as previews inside the bubble
 
     $photos->each(fn (string $path): bool => Storage::disk('local')->delete($path));
 });
+
+test('a thread silenced for an auto-responder says so in the list and in the thread', function (int $width, int $height): void {
+    $user = User::factory()->create();
+    $user->business()->associate(Business::factory()->create())->save();
+
+    $thread = Conversation::factory()->create([
+        'business_id' => $user->business_id,
+        'contact_name' => 'Ferretería Sur',
+        'contact_phone' => '5491177778888',
+        'status' => ConversationStatus::Team,
+        'bot_suspected_at' => now(),
+        'bot_signal' => App\Enums\AutoReplySignal::Phrase,
+        'last_message_at' => now(),
+    ]);
+    ConversationMessage::factory()->for($thread)->create([
+        'business_id' => $user->business_id, 'body' => '¡Gracias por comunicarte con Ferretería Sur! En breve te responderemos.',
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/conversaciones')->resize($width, $height);
+
+    $page->assertSee(__('client.conversations.bot_chip'))
+        ->click('Ferretería Sur')
+        ->wait(1)
+        ->assertSee(__('client.conversations.bot_suspected'))
+        ->assertSee(__('client.conversations.resume_person'))
+        ->screenshot(filename: 'conversation-auto-responder-'.$width)
+        ->assertNoJavaScriptErrors();
+
+    expect($page->script('document.documentElement.scrollWidth - window.innerWidth'))->toBeLessThanOrEqual(0);
+})->with([[1280, 900], [390, 844]]);

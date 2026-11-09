@@ -61,6 +61,7 @@ return [
         'no_reason' => 'el cliente pidió hablar con una persona',
         'reason_human_requested' => 'el cliente pidió hablar con una persona',
         'reason_emergency' => 'posible emergencia: el cliente describe un riesgo para su salud o su vida; atiéndelo ya',
+        'reason_auto_responder' => 'parece un contestador automático. Tu asistente dejó de responderle para no quedar en un ida y vuelta entre máquinas; si es una persona, devuélvele la charla desde el panel',
         'customer_human_requested' => 'Listo, ya avisé a una persona del equipo: te escribe a la brevedad.',
         'customer_emergency' => 'Si es una emergencia, llama ya a tu servicio de emergencias local: yo no puedo atenderla. Ya avisé al equipo para que te escriba.',
         'department_alert' => "🔔 *:name* (:phone) necesita a *:department*.\nMotivo: :reason\nRespóndeme por aquí y le reenvío tu mensaje, o atiéndelo desde tu panel: :url",

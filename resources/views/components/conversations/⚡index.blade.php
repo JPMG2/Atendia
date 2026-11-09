@@ -13,6 +13,7 @@ use App\Models\AssistantRating;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Customer;
+use App\Services\AutoResponderDetector;
 use App\Traits\HasNotifications;
 use App\Traits\ManagesCustomerSheet;
 use Illuminate\Support\Carbon;
@@ -346,10 +347,22 @@ new class extends Component
             return;
         }
 
-        $this->thread?->update(['status' => ConversationStatus::Open, 'escalated_at' => null, 'handoff_reminded_at' => null]);
+        $thread = $this->thread;
+        $wasMachine = $thread?->bot_suspected_at !== null;
+
+        // Handing a marked thread back is her verdict that a person is there:
+        // the mark goes, and that number is not checked again for a while.
+        if ($wasMachine && $thread->business?->whatsapp_instance !== null) {
+            AutoResponderDetector::trustAsPerson($thread->business->whatsapp_instance.':'.$thread->contact_phone);
+        }
+
+        $thread?->update(['status' => ConversationStatus::Open, 'escalated_at' => null, 'handoff_reminded_at' => null, 'bot_suspected_at' => null, 'bot_signal' => null]);
         unset($this->thread, $this->humanHeld);
 
-        $this->dispatchNotification(new NotificationDto(__('client.conversations.resumed'), NotificationType::Success));
+        $this->dispatchNotification(new NotificationDto(
+            $wasMachine ? __('client.conversations.resumed_person', ['hours' => (int) config('atendia.bots.person_trust_hours')]) : __('client.conversations.resumed'),
+            NotificationType::Success,
+        ));
     }
 
     /** The owner takes the thread by hand: same silence as an AI escalation. */
@@ -452,7 +465,7 @@ new class extends Component
             return;
         }
 
-        $this->thread?->update(['status' => ConversationStatus::Resolved, 'escalated_at' => null, 'handoff_reminded_at' => null]);
+        $this->thread?->update(['status' => ConversationStatus::Resolved, 'escalated_at' => null, 'handoff_reminded_at' => null, 'bot_suspected_at' => null, 'bot_signal' => null]);
         unset($this->thread, $this->humanHeld);
 
         $this->dispatchNotification(new NotificationDto(__('client.conversations.resolved_done'), NotificationType::Success));
@@ -541,7 +554,10 @@ new class extends Component
                                         <span class="text-strong truncate text-sm font-semibold">
                                             <x-ui.match :text="$row->contact_name ?? __('client.conversations.anonymous')" :needle="$search" />
                                         </span>
-                                        @if ($row->status === ConversationStatus::Team)
+                                        {{-- A marked thread is always with the team: one chip says both, and the name keeps its room. --}}
+                                        @if ($row->bot_suspected_at !== null)
+                                            <x-ui.badge variant="brand">{{ __('client.conversations.bot_chip') }}</x-ui.badge>
+                                        @elseif ($row->status === ConversationStatus::Team)
                                             <x-ui.badge variant="accent">{{ __('client.conversations.status_team_chip') }}</x-ui.badge>
                                         @endif
                                         <span class="text-subtle flex-none font-mono text-xs">
@@ -617,7 +633,13 @@ new class extends Component
                                 </div>
                             </div>
                         @endif
-                        @if ($this->thread->status === ConversationStatus::Team)
+                        @if ($this->thread->status === ConversationStatus::Team && $this->thread->bot_suspected_at !== null)
+                            {{-- Which signal tripped, said on hover: she judges the call before undoing it. --}}
+                            <span class="status-tag is-info" title="{{ $this->thread->bot_signal !== null ? __('client.conversations.bot_signal.'.$this->thread->bot_signal->value).' ' : '' }}{{ __('client.conversations.bot_suspected_hint') }}">
+                                <span class="dot"></span>
+                                {{ __('client.conversations.bot_suspected') }}
+                            </span>
+                        @elseif ($this->thread->status === ConversationStatus::Team)
                             <span class="status-tag is-warning">
                                 <span class="dot"></span>
                                 {{ __('client.conversations.status_team') }}
@@ -637,9 +659,15 @@ new class extends Component
                             <x-ui.button variant="secondary" size="sm" icon="check" wire:click="markResolved">
                                 {{ __('client.conversations.mark_resolved') }}
                             </x-ui.button>
-                            <x-ui.button variant="primary" size="sm" icon="bot" wire:click="resume">
-                                {{ __('client.conversations.resume') }}
-                            </x-ui.button>
+                            @if ($this->thread->bot_suspected_at !== null)
+                                <x-ui.button variant="primary" size="sm" icon="user" wire:click="resume">
+                                    {{ __('client.conversations.resume_person') }}
+                                </x-ui.button>
+                            @else
+                                <x-ui.button variant="primary" size="sm" icon="bot" wire:click="resume">
+                                    {{ __('client.conversations.resume') }}
+                                </x-ui.button>
+                            @endif
                         @elseif ($this->thread->status === ConversationStatus::Open)
                             <x-ui.button variant="secondary" size="sm" icon="user" wire:click="takeover">
                                 {{ __('client.conversations.takeover') }}

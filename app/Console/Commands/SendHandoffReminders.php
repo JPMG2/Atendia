@@ -151,6 +151,8 @@ class SendHandoffReminders extends Command
         $abandoned = Conversation::query()
             ->with('business')
             ->where('status', ConversationStatus::Team)
+            // Auto-resuming an auto-responder would greet the bot and restart the loop.
+            ->whereNull('bot_suspected_at')
             ->whereNotNull('handoff_reminded_at')
             ->whereNotNull('escalated_at')
             ->where('escalated_at', '<=', now()->subHours((int) $hours))

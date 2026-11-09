@@ -68,6 +68,11 @@ class PlatformSetting extends Model
             ->all();
     }
 
+    /** How many lines a `list` knob ships with, blank lines aside. */
+    public int $defaultListSize {
+        get => count(array_filter(preg_split('/\R/', (string) $this->default_value) ?: [], fn (string $line): bool => trim($line) !== ''));
+    }
+
     /** Whether this knob still sits where the code left it. */
     public bool $isDefault {
         get => (string) $this->value === (string) $this->default_value;

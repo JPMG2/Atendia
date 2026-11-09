@@ -8,6 +8,9 @@ use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Livewire\Forms\BaseForm;
 use App\Models\PlatformSetting;
+use App\Services\AutoResponderDetector;
+use Closure;
+use Illuminate\Support\Facades\Artisan;
 
 /**
  * The behaviour knobs, edited together and saved once.
@@ -63,6 +66,10 @@ class PlatformSettingForm extends BaseForm
                 $setting->update(['value' => trim((string) $this->value[$setting->id])]);
             }
 
+            // The workers read the overrides once, at boot: without this a saved
+            // knob waited up to an hour for the next restart to apply.
+            Artisan::call('queue:restart');
+
             $this->setup();
 
             return new NotificationDto(
@@ -89,6 +96,17 @@ class PlatformSettingForm extends BaseForm
             $rules['value.'.$setting->id] = match ($setting->type) {
                 'time' => ['required', 'date_format:H:i'],
                 'weekday' => ['required', 'integer', 'between:1,7'],
+                // Empty is allowed: it switches that signal off. A line too short
+                // to be a sentence would match almost every chat.
+                'list' => ['nullable', 'string', 'max:5000', function (string $attribute, mixed $value, Closure $fail): void {
+                    $short = collect(preg_split('/\R/', (string) $value) ?: [])
+                        ->map(fn (string $line): string => trim($line))
+                        ->first(fn (string $line): bool => $line !== '' && str_word_count(AutoResponderDetector::normalise($line)) < 3);
+
+                    if ($short !== null) {
+                        $fail(__('admin.settings.list_line_too_short', ['line' => $short]));
+                    }
+                }],
                 'decimal' => array_filter(['required', 'numeric', $this->floor($setting), $this->ceiling($setting)]),
                 default => array_filter(['required', 'integer', $this->floor($setting), $this->ceiling($setting)]),
             };

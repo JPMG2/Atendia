@@ -104,6 +104,7 @@ return [
         'reply_unavailable' => 'No pudimos enviar tu respuesta: tu WhatsApp no está conectado. Revisá la conexión e intentá de nuevo.',
         'empty_body' => 'Cuando tu asistente atienda el WhatsApp, acá vas a ver cada conversación.',
         'taught_list_title' => 'Lo que aprendió acá',
+        'bot_suspected_hint' => 'Tu asistente dejó de responder para no quedar en un ida y vuelta entre máquinas. Si es una persona, tocá «Era una persona».',
         'select' => 'Elegí una conversación para leerla.',
         'read_only' => 'Solo lectura: tu asistente responde por vos.',
         'reply_placeholder' => 'Escribí tu respuesta…',

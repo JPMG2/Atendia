@@ -139,6 +139,13 @@ new class extends Component
                                             :aria-label="__('admin.settings.keys.'.$setting->key.'.label')"
                                             wire:model="form.value.{{ $setting->id }}"
                                         />
+                                    @elseif ($setting->type === 'list')
+                                        <x-inputsform.textarea
+                                            :name="'value.'.$setting->id"
+                                            :rows="8"
+                                            :aria-label="__('admin.settings.keys.'.$setting->key.'.label')"
+                                            wire:model="form.value.{{ $setting->id }}"
+                                        />
                                     @else
                                         <x-inputsform.input
                                             size="s"
@@ -150,9 +157,12 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="is-num font-mono" data-label="{{ __('admin.settings.columns.default') }}">
-                                    {{ $setting->type === 'weekday'
-                                        ? (__('admin.settings.weekdays')[(int) $setting->default_value] ?? $setting->default_value)
-                                        : $setting->default_value }}
+                                    {{-- A list is too long for this column: its size says enough. --}}
+                                    {{ match ($setting->type) {
+                                        'weekday' => __('admin.settings.weekdays')[(int) $setting->default_value] ?? $setting->default_value,
+                                        'list' => trans_choice('admin.settings.list_size', $setting->defaultListSize, ['count' => $setting->defaultListSize]),
+                                        default => $setting->default_value,
+                                    } }}
                                 </td>
                             </tr>
                         @endforeach
