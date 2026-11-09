@@ -75,6 +75,9 @@ class SendHandoffReminders extends Command
         $forgotten = Conversation::query()
             ->with('business')
             ->where('status', ConversationStatus::Team)
+            // A machine on the other side is not a customer left waiting: no nudge,
+            // and above all no "a person is on the way" landing on the bot.
+            ->whereNull('bot_suspected_at')
             ->whereNull('handoff_reminded_at')
             ->whereNotNull('escalated_at')
             ->where('escalated_at', '<=', $floor)

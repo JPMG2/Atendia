@@ -10,11 +10,13 @@ use App\Enums\MessageDirection;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Models\Business;
 use App\Models\Conversation;
+use App\Models\PanelNotification;
 use App\Models\PlatformSensor;
 use App\Models\User;
 use App\Services\AutoResponderDetector;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use App\Services\PlatformSensors;
+use App\Services\Tenant;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -198,6 +200,23 @@ test('everyday human replies are never read as a machine', function (string ...$
     'thanks to the business' => ['Gracias por comunicarse conmigo, ahí estaré'],
     'asking if it is automatic' => ['¿Esto es una respuesta automática o me atiende alguien?'],
 ]);
+
+test('the team gets no "still waiting" nudge for a chat with a machine', function (): void {
+    botLap('¡Gracias por comunicarte con Ferretería Sur! En breve te responderemos.', 1);
+    botThread()->update(['escalated_at' => now()->subHour()]);
+    // Connected and with no hours set (= open): every gate of the nudge is passed but the mark.
+    Business::query()->update(['whatsapp_connected_at' => now()]);
+    $bells = fn (): int => app(Tenant::class)->for(botThread()->business_id, fn (): int => PanelNotification::query()->count());
+    $before = $bells();
+    Http::fake();
+
+    $this->artisan('atendia:handoff-reminders')->assertSuccessful();
+
+    // Neither the bell nor "a person is on the way", which would land on the bot and restart the loop.
+    expect($bells())->toBe($before)
+        ->and(botThread()->handoff_reminded_at)->toBeNull();
+    Http::assertNothingSent();
+});
 
 test('closing the thread anywhere clears the mark, not only from the panel', function (): void {
     botLap('¡Gracias por comunicarte con Ferretería Sur! En breve te responderemos.', 1);

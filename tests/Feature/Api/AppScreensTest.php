@@ -182,6 +182,17 @@ describe('conversations', function (): void {
             ->and($team['messages'][0]['day_key'])->toMatch('/^\d{4}-\d{2}-\d{2}$/');
     });
 
+    it('marks a chat silenced for an auto-responder with the web’s words, in the list and in the thread', function (): void {
+        $owner = payingUser();
+        $bot = Conversation::factory()->create(['business_id' => $owner->business_id, 'status' => ConversationStatus::Team, 'bot_suspected_at' => now(), 'last_message_at' => now()]);
+
+        $row = collect(asAppUser($owner)->getJson('/api/v1/conversations')->json('data'))->firstWhere('id', $bot->id);
+        $thread = asAppUser($owner)->getJson("/api/v1/conversations/{$bot->id}")->json('data');
+
+        expect($row['badge'])->toBe(['label' => __('client.conversations.bot_chip'), 'tone' => 'brand'])
+            ->and($thread['badge'])->toBe(['label' => __('client.conversations.bot_suspected'), 'tone' => 'info']);
+    });
+
     it('does not open the thread of another business', function (): void {
         $owner = payingUser();
         $foreign = Conversation::factory()->create();

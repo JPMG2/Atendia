@@ -68,7 +68,12 @@ class ConversationResource extends JsonResource
      */
     private function badge(bool $isThread): ?array
     {
+        $machine = $this->status === ConversationStatus::Team && $this->bot_suspected_at !== null;
+
         return match (true) {
+            // Same swap as the web: on a marked thread the auto-responder mark stands in for "team".
+            $machine && ! $isThread => ['label' => __('client.conversations.bot_chip'), 'tone' => 'brand'],
+            $machine => ['label' => __('client.conversations.bot_suspected'), 'tone' => 'info'],
             $this->status === ConversationStatus::Team && ! $isThread => ['label' => __('client.conversations.status_team_chip'), 'tone' => 'accent'],
             $this->status === ConversationStatus::Team => ['label' => __('client.conversations.status_team'), 'tone' => 'warning'],
             $this->status === ConversationStatus::Customer && $isThread => ['label' => __('client.conversations.status_customer'), 'tone' => 'info'],
