@@ -6,6 +6,7 @@ use App\Ai\Agents\AsistenteAtendia;
 use App\Ai\Agents\AskAtendia;
 use App\Classes\Main\AiEvalResults;
 use App\Models\Conversation;
+use App\Models\Customer;
 use App\Services\Knowledge\KnowledgeEmbedder;
 use Carbon\CarbonImmutable;
 use Database\Seeders\AiModelSeeder;
@@ -117,6 +118,24 @@ test('a bare photo is searched in the catalog, not described back', function ():
     evalReport('hardware', 'whatsapp', $question, $expectation, $evidence, $response->text, $verdict['pass'], $verdict['reason'], $verdict['invented']);
 
     expect($verdict['pass'])->toBeTrue("A: {$response->text}\nWhy: {$verdict['reason']}");
+});
+
+test('a WhatsApp booking hands the customer the Google Calendar link intact', function (): void {
+    $business = EvalBusinesses::build('salon-team');
+    $customer = Customer::factory()->create(['business_id' => $business->id]);
+    $conversation = Conversation::factory()->create(['business_id' => $business->id]);
+
+    $response = (new AsistenteAtendia($business, $conversation, $customer))
+        ->answer('Reservame un corte de hombre con Luis el viernes 9/10 a las 11:00, por favor');
+
+    $booked = $response->toolResults->first(fn (ToolResult $result): bool => str_contains($result->text(), 'Turno reservado'));
+    preg_match('~https://calendar\.google\.com/\S+~', (string) $booked?->text(), $link);
+    $pass = $link !== [] && str_contains($response->text, $link[0]);
+
+    evalReport('salon-team', 'whatsapp', 'Reservame un corte de hombre con Luis el viernes 9/10 a las 11:00', 'Reserva y pasa el enlace de Google Calendar entero, tal como lo dio la herramienta.', evalEvidence($response), $response->text, $pass, $pass ? 'Link copied verbatim.' : 'Link missing or altered.', []);
+
+    expect($booked)->not->toBeNull("Not booked. A: {$response->text}")
+        ->and($pass)->toBeTrue("A: {$response->text}");
 });
 
 function evalEvidence(AgentResponse $response): string
