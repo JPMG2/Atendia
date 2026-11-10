@@ -38,10 +38,12 @@ test('the public link asks who should attend, and books and says who will', func
         ->click(__('agenda.public.submit'))
         ->assertSee(__('agenda.public.done_title'))
         ->assertSee('Te atiende Luis Paz')
+        ->assertSee(__('agenda.public.calendar_button'))
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'public-booking-professionals-done');
 
     $page->resize(390, 844)
+        ->screenshot(filename: 'public-booking-professionals-done-mobile')
         ->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true);
 });
 

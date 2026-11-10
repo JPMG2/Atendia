@@ -161,4 +161,18 @@ class Appointment extends Model
     {
         return (int) $this->starts_at->diffInMinutes($this->ends_at);
     }
+
+    /**
+     * Google's prefilled "new event" page: the person saves it to THEIR own calendar, so no
+     * account of ours is connected. Times go in UTC ("Z") and Google paints them on the
+     * visitor's clock, whatever zone the business is in.
+     */
+    public function googleCalendarLink(string $title): string
+    {
+        return 'https://calendar.google.com/calendar/render?'.http_build_query([
+            'action' => 'TEMPLATE',
+            'text' => $title,
+            'dates' => $this->starts_at->utc()->format('Ymd\THis\Z').'/'.$this->ends_at->utc()->format('Ymd\THis\Z'),
+        ], '', '&', PHP_QUERY_RFC3986);
+    }
 }

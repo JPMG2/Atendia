@@ -33,6 +33,9 @@ new class extends Component
     /** The chat that turns on the reminder, once booked; null when the line is not linked. */
     public ?string $reminderLink = null;
 
+    /** The booked hour, ready to save in the person's own Google Calendar. */
+    public ?string $calendarLink = null;
+
     public ?string $warning = null;
 
     public function mount(string $code): void
@@ -134,6 +137,7 @@ new class extends Component
 
         $this->booked = $this->when($result);
         $this->bookedWith = $result->professional?->name;
+        $this->calendarLink = $result->googleCalendarLink(__('agenda.public.calendar_event', ['business' => $this->business->name]));
 
         // The person writes first, from their own phone: a number typed in the form proves
         // nothing, and the business line never writes first to someone who did not ask.
@@ -170,6 +174,10 @@ new class extends Component
                     <p class="text-muted text-sm">{{ __('agenda.public.reminder_hint') }}</p>
                     <x-ui.button variant="primary" icon="whatsapp" :href="$reminderLink" target="_blank" rel="noopener">
                         {{ __('agenda.public.reminder_button') }}</x-ui.button>
+                @endif
+                @if ($calendarLink !== null)
+                    <x-ui.button variant="secondary" icon="calendar" :href="$calendarLink" target="_blank" rel="noopener">
+                        {{ __('agenda.public.calendar_button') }}</x-ui.button>
                 @endif
             </div>
         @else

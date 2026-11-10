@@ -324,6 +324,20 @@ test('the confirmation offers to turn on the reminder from the person own WhatsA
         ->and(rawurldecode((string) $page->get('reminderLink')))->toContain('Consultorio Vida');
 });
 
+test('the confirmation offers to save the booked hour in Google Calendar, in UTC', function (): void {
+    $business = bookableBusiness();
+    $page = bookFromLink($business, '10:00', '+54 9 11 5555-0451')
+        ->assertSee(__('agenda.public.calendar_button'));
+
+    $booking = Appointment::withoutGlobalScopes()->sole();
+    $link = (string) $page->get('calendarLink');
+    $utc = fn (CarbonImmutable $at): string => $at->utc()->format('Ymd\THis\Z');
+
+    expect($link)->toStartWith('https://calendar.google.com/calendar/render?action=TEMPLATE')
+        ->and(rawurldecode($link))->toContain('Turno en Consultorio Vida')
+        ->and(rawurldecode($link))->toContain('dates='.$utc($booking->starts_at).'/'.$utc($booking->ends_at));
+});
+
 test('without a linked line the confirmation promises no reminder', function (): void {
     bookFromLink(bookableBusiness(), '10:00', '+54 9 11 5555-0501')
         ->assertSee(__('agenda.public.done_title'))

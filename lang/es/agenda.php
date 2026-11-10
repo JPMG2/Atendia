@@ -89,6 +89,8 @@ return [
         'phone_hint' => 'Con código de país, sin espacios. Ahí te escribimos si algo cambia.',
         'reminder_hint' => '¿Quieres que te recordemos el turno? Envíanos el mensaje que te dejamos listo y te escribimos antes de la hora.',
         'reminder_button' => 'Recibir mi recordatorio por WhatsApp',
+        'calendar_button' => 'Agregar a Google Calendar',
+        'calendar_event' => 'Turno en :business',
         'reminder_text' => 'Hola, reservé en :business para el :when. Quiero recibir el recordatorio.',
         'submit' => 'Reservar mi turno',
         'taken' => 'Esa hora se acaba de ocupar. Elige otra, por favor.',
