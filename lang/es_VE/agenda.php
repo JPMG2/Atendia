@@ -30,6 +30,7 @@ return [
     'public' => [
         'title' => 'Reserva tu cita',
         'submit' => 'Reservar mi cita',
+        'calendar_event' => 'Cita en :business',
     ],
     'closure_notice' => [
         '*:business*: tenemos que cancelar tu cita del :when porque ese día no abrimos. Escríbenos y la reprogramamos.',

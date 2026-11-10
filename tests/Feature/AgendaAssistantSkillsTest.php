@@ -94,6 +94,8 @@ test('the assistant books the chosen hour and refuses one already taken', functi
 
     expect((string) $tool->handle(new Request(['starts_at' => $monday->format('Y-m-d H:i')])))
         ->toContain('Turno reservado')
+        ->toContain('https://calendar.google.com/calendar/render?action=TEMPLATE')
+        ->toContain('dates='.$monday->utc()->format('Ymd\THis\Z').'%2F')
         ->and((string) $tool->handle(new Request(['starts_at' => $monday->format('Y-m-d H:i')])))
         ->toContain('ya no está libre')->toContain('09:30');
 });

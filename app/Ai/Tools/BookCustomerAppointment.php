@@ -83,8 +83,11 @@ class BookCustomerAppointment implements AssistantSkillTool
                 .($free === [] ? 'Ese día no queda ninguno.' : 'Libres ese día: '.$this->slotList($free));
         }
 
+        $calendarLink = $appointment->googleCalendarLink(__('agenda.public.calendar_event', ['business' => $this->business->name]));
+
         return 'Turno reservado: '.$this->appointmentLabel($appointment, $this->business)
-            .'. Confirmale el día y la hora al cliente, y decile que si necesita cambiarlo o cancelarlo te lo diga por acá.';
+            .'. Confirmale el día y la hora al cliente, y decile que si necesita cambiarlo o cancelarlo te lo diga por acá. '
+            .'Al final pasale este enlace tal cual, para guardarlo en su Google Calendar: '.$calendarLink;
     }
 
     public function schema(JsonSchema $schema): array
