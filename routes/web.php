@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Classes\Main\LlmsTxt;
 use App\Http\Controllers\Billing\PaymentReceiptController;
+use App\Http\Controllers\Booking\CalendarFileController;
 use App\Http\Controllers\Conversations\MessageMediaController;
 use App\Http\Controllers\CspReportController;
 use App\Http\Controllers\DemoChatController;
@@ -103,6 +104,12 @@ foreach (['identidad', 'ubicacion', 'horarios', 'turnos', 'contacto', 'redes', '
 Route::get('/reservar/{code}', fn (string $code) => view('booking', ['code' => $code]))
     ->middleware('throttle:20,1')
     ->name('booking.public');
+
+// The booked hour as a calendar file, linked from that page's confirmation only.
+Route::get('/reservar/{code}/turno/{appointment}.ics', CalendarFileController::class)
+    ->whereNumber('appointment')
+    ->middleware(['signed:relative', 'throttle:20,1'])
+    ->name('booking.calendar');
 
 // "Agenda": the day's bookings and the free hours the assistant offers.
 Route::get('/agenda', fn () => view('agenda'))

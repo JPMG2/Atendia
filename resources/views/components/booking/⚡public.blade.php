@@ -6,6 +6,7 @@ use App\Livewire\Forms\Agenda\PublicBookingForm;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Service;
+use App\Services\SignedLink;
 use App\Services\Tenant;
 use Carbon\CarbonImmutable;
 use Livewire\Attributes\Computed;
@@ -35,6 +36,9 @@ new class extends Component
 
     /** The booked hour, ready to save in the person's own Google Calendar. */
     public ?string $calendarLink = null;
+
+    /** The same hour as an .ics file, for iPhone, Outlook and the other calendars. */
+    public ?string $calendarFileLink = null;
 
     public ?string $warning = null;
 
@@ -138,6 +142,8 @@ new class extends Component
         $this->booked = $this->when($result);
         $this->bookedWith = $result->professional?->name;
         $this->calendarLink = $result->googleCalendarLink(__('agenda.public.calendar_event', ['business' => $this->business->name]));
+        // Valid until the hour is over: past that, saving it serves nobody.
+        $this->calendarFileLink = SignedLink::temporary('booking.calendar', $result->ends_at, ['code' => $this->code, 'appointment' => $result->id]);
 
         // The person writes first, from their own phone: a number typed in the form proves
         // nothing, and the business line never writes first to someone who did not ask.
@@ -178,6 +184,10 @@ new class extends Component
                 @if ($calendarLink !== null)
                     <x-ui.button variant="secondary" icon="calendar" :href="$calendarLink" target="_blank" rel="noopener">
                         {{ __('agenda.public.calendar_button') }}</x-ui.button>
+                @endif
+                @if ($calendarFileLink !== null)
+                    <x-ui.button variant="secondary" icon="calendar" :href="$calendarFileLink">
+                        {{ __('agenda.public.calendar_file_button') }}</x-ui.button>
                 @endif
             </div>
         @else

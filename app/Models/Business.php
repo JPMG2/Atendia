@@ -272,6 +272,21 @@ class Business extends Model
             ->first();
     }
 
+    /**
+     * Where a customer goes to be attended; null for a business without premises (it
+     * visits or works remotely) or with no address typed, so no event points at a wrong door.
+     */
+    public function visitAddress(): ?string
+    {
+        if ($this->has_premises === false) {
+            return null;
+        }
+
+        $address = implode(', ', array_filter([$this->address, $this->city]));
+
+        return $address === '' ? null : $address;
+    }
+
     /** Where a customer books a slot without writing to anybody. */
     public function bookingLink(): string
     {

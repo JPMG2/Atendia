@@ -91,6 +91,7 @@ return [
         'reminder_button' => 'Recibir mi recordatorio por WhatsApp',
         'calendar_button' => 'Agregar a Google Calendar',
         'calendar_event' => 'Turno en :business',
+        'calendar_file_button' => 'Agregar a iPhone u Outlook',
         'reminder_text' => 'Hola, reservé en :business para el :when. Quiero recibir el recordatorio.',
         'submit' => 'Reservar mi turno',
         'taken' => 'Esa hora se acaba de ocupar. Elige otra, por favor.',

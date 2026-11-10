@@ -39,6 +39,7 @@ test('the public link asks who should attend, and books and says who will', func
         ->assertSee(__('agenda.public.done_title'))
         ->assertSee('Te atiende Luis Paz')
         ->assertSee(__('agenda.public.calendar_button'))
+        ->assertSee(__('agenda.public.calendar_file_button'))
         ->assertNoJavaScriptErrors()
         ->screenshot(filename: 'public-booking-professionals-done');
 

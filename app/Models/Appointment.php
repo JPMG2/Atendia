@@ -169,10 +169,73 @@ class Appointment extends Model
      */
     public function googleCalendarLink(string $title): string
     {
-        return 'https://calendar.google.com/calendar/render?'.http_build_query([
+        return 'https://calendar.google.com/calendar/render?'.http_build_query(array_filter([
             'action' => 'TEMPLATE',
             'text' => $title,
-            'dates' => $this->starts_at->utc()->format('Ymd\THis\Z').'/'.$this->ends_at->utc()->format('Ymd\THis\Z'),
-        ], '', '&', PHP_QUERY_RFC3986);
+            'dates' => $this->utcStamp($this->starts_at).'/'.$this->utcStamp($this->ends_at),
+            'location' => $this->business->visitAddress(),
+        ]), '', '&', PHP_QUERY_RFC3986);
+    }
+
+    /** A booking of this business still holding its hour, for the calendar file its page hands out. */
+    public static function forCalendarFile(Business $business, int $id): ?self
+    {
+        return self::query()->holdingSlot()->where('business_id', $business->id)->find($id);
+    }
+
+    /**
+     * The same event as an iCalendar file, for the calendars that are not Google's
+     * (iPhone, Outlook, Samsung). RFC 5545: CRLF lines, escaped text, folded at 75 octets.
+     */
+    public function toCalendarFile(string $title, string $productName): string
+    {
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//'.$this->calendarText($productName).'//ES',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VEVENT',
+            'UID:appointment-'.$this->id.'@'.(parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost'),
+            'DTSTAMP:'.$this->utcStamp(CarbonImmutable::now()),
+            'DTSTART:'.$this->utcStamp($this->starts_at),
+            'DTEND:'.$this->utcStamp($this->ends_at),
+            'SUMMARY:'.$this->calendarText($title),
+        ];
+
+        if (($address = $this->business->visitAddress()) !== null) {
+            $lines[] = 'LOCATION:'.$this->calendarText($address);
+        }
+
+        $lines = [...$lines, 'END:VEVENT', 'END:VCALENDAR'];
+
+        return implode("\r\n", array_map($this->foldCalendarLine(...), $lines))."\r\n";
+    }
+
+    private function utcStamp(CarbonImmutable $at): string
+    {
+        return $at->utc()->format('Ymd\THis\Z');
+    }
+
+    private function calendarText(string $text): string
+    {
+        return str_replace(['\\', ';', ',', "\r\n", "\n"], ['\\\\', '\;', '\,', '\n', '\n'], $text);
+    }
+
+    /** Never cuts a multibyte letter in half: an accent split across two lines breaks the file. */
+    private function foldCalendarLine(string $line): string
+    {
+        $chunks = [];
+
+        // A continuation line starts with one space, which counts toward its 75.
+        while (strlen($line) > ($room = $chunks === [] ? 75 : 74)) {
+            $chunk = mb_strcut($line, 0, $room, 'UTF-8');
+            $chunks[] = $chunk;
+            $line = substr($line, strlen($chunk));
+        }
+
+        $chunks[] = $line;
+
+        return implode("\r\n ", $chunks);
     }
 }

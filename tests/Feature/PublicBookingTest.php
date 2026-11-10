@@ -338,6 +338,43 @@ test('the confirmation offers to save the booked hour in Google Calendar, in UTC
         ->and(rawurldecode($link))->toContain('dates='.$utc($booking->starts_at).'/'.$utc($booking->ends_at));
 });
 
+test('the calendar event points at the business door, and at none when it has no premises', function (): void {
+    $withDoor = bookFromLink(bookableBusiness(['address' => 'Av. Libertador 1234', 'city' => 'Caracas', 'has_premises' => true]), '10:00', '+54 9 11 5555-0461');
+    $withoutDoor = bookFromLink(bookableBusiness(['address' => 'Av. Libertador 1234', 'city' => 'Caracas', 'has_premises' => false]), '10:00', '+54 9 11 5555-0471');
+
+    expect(rawurldecode((string) $withDoor->get('calendarLink')))->toContain('location=Av. Libertador 1234, Caracas')
+        ->and((string) $withoutDoor->get('calendarLink'))->not->toContain('location=');
+});
+
+test('the confirmation hands out the booked hour as an .ics file for other calendars', function (): void {
+    $business = bookableBusiness(['address' => 'Av. Libertador 1234', 'city' => 'Caracas', 'has_premises' => true]);
+    $page = bookFromLink($business, '10:00', '+54 9 11 5555-0481')
+        ->assertSee(__('agenda.public.calendar_file_button'));
+
+    $booking = Appointment::withoutGlobalScopes()->sole();
+    $response = $this->get((string) $page->get('calendarFileLink'));
+    $file = $response->getContent();
+
+    $response->assertOk()->assertHeader('Content-Type', 'text/calendar; charset=utf-8');
+    expect($file)->toStartWith("BEGIN:VCALENDAR\r\n")
+        ->and($file)->toContain('SUMMARY:Turno en Consultorio Vida')
+        ->and($file)->toContain('DTSTART:'.$booking->starts_at->utc()->format('Ymd\THis\Z'))
+        ->and($file)->toContain('DTEND:'.$booking->ends_at->utc()->format('Ymd\THis\Z'))
+        ->and($file)->toContain('LOCATION:Av. Libertador 1234\, Caracas');
+});
+
+test('the .ics link cannot be walked to another booking by changing its number', function (): void {
+    $business = bookableBusiness();
+    $page = bookFromLink($business, '10:00', '+54 9 11 5555-0491');
+    $other = bookFromLink($business, '11:00', '+54 9 11 5555-0492');
+    $otherId = Appointment::withoutGlobalScopes()->latest('id')->value('id');
+
+    $tampered = preg_replace('#/turno/\d+\.ics#', '/turno/'.$otherId.'.ics', (string) $page->get('calendarFileLink'));
+
+    $this->get($tampered)->assertForbidden();
+    $this->get((string) $other->get('calendarFileLink'))->assertOk();
+});
+
 test('without a linked line the confirmation promises no reminder', function (): void {
     bookFromLink(bookableBusiness(), '10:00', '+54 9 11 5555-0501')
         ->assertSee(__('agenda.public.done_title'))
