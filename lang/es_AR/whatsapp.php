@@ -16,6 +16,20 @@ return [
         'failed' => 'No pudimos desconectar el número ahora. Probá de nuevo en un momento.',
     ],
 
+    'lost_phone' => [
+        'body' => 'Pausá tu WhatsApp y nadie podrá usarlo a través de :brand hasta que lo reactives con tu contraseña nueva. No es dar de baja: no se borra nada.',
+        'effects' => [
+            'Tu asistente deja de responder y no sale ningún mensaje ni recordatorio por tu número.',
+            'El número se desvincula: cuando lo recuperes, lo volvés a vincular con el código QR.',
+            'Se cierran todas las sesiones y la app, también las de tu equipo.',
+            'Los avisos y los códigos de acceso dejan de ir a tu WhatsApp: te llegan por correo.',
+        ],
+        'password_hint' => 'Elegí una contraseña nueva: la que quedó guardada en el teléfono deja de servir. Si tu correo también estaba abierto en ese teléfono, cambiale la contraseña desde su propia página.',
+        'paused_not_unlinked' => 'Tu WhatsApp quedó en pausa y nada sale por tu número, pero no pudimos desvincularlo ahora. Quitalo también desde Dispositivos vinculados cuando recuperes tu número.',
+        'resume_body' => 'Escribí la contraseña que elegiste al pausar para reactivarlo. Después escaneá el código QR desde el teléfono con tu número y tu asistente vuelve a atender.',
+        'resumed' => 'Listo. Ahora escaneá el código QR para que tu asistente vuelva a atender.',
+    ],
+
     'connect' => [
         'title' => 'Conectá tu WhatsApp',
         'body' => 'Vinculá el número de tu negocio y tu asistente empieza a responder por vos, las 24 horas.',

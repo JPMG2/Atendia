@@ -297,6 +297,28 @@ return [
             'reason' => 'Recibiste este correo porque la contraseña de tu cuenta de :brand cambió.',
         ],
 
+        'lost_phone' => [
+            'reason' => 'Recibiste este correo porque cambió la pausa por robo o pérdida de tu cuenta de :brand.',
+            'paused' => [
+                'subject' => 'Pausaste tu WhatsApp en :brand',
+                'preheader' => 'Nada sale por tu número hasta que lo reactives.',
+                'title' => 'Tu WhatsApp quedó en pausa',
+                'intro' => 'Hola :name, pausaste tu WhatsApp por robo o pérdida del teléfono el :time (UTC).',
+                'body' => 'Desde ahora tu asistente no responde, no sale ningún mensaje ni recordatorio por tu número, tu contraseña cambió, se cerraron todas las sesiones y la app, y los códigos de acceso te llegan a este correo. Tu plan y tus fechas de cobro siguen igual.',
+                'alert' => 'Cuando recuperes tu número, entra a tu panel, reactiva con la contraseña nueva y vuelve a escanear el código QR.',
+                'cta' => 'Ir a mi WhatsApp',
+            ],
+            'resumed' => [
+                'subject' => 'Reactivaste tu WhatsApp en :brand',
+                'preheader' => 'Si fuiste tú, solo falta escanear el código QR.',
+                'title' => 'Tu WhatsApp salió de la pausa',
+                'intro' => 'Hola :name, la pausa por robo o pérdida de tu cuenta se levantó el :time (UTC).',
+                'body' => 'Si fuiste tú, escanea el código QR desde tu teléfono y tu asistente vuelve a atender.',
+                'alert' => 'Si no fuiste tú, restablece tu contraseña ahora mismo y vuelve a pausar desde tu panel.',
+                'cta' => 'Restablecer mi contraseña',
+            ],
+        ],
+
         'closed' => [
             'subject' => 'Cerramos tu cuenta de :brand',
             'preheader' => 'Tienes :days días para volver con todo tal como estaba.',

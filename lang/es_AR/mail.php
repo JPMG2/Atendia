@@ -87,6 +87,17 @@ return [
             'body' => 'Si fuiste vos, no hay nada que hacer.',
             'alert' => 'Si no fuiste vos, restablecé tu contraseña ahora mismo: vas a cerrar cualquier acceso que no reconozcas.',
         ],
+        'lost_phone' => [
+            'paused' => [
+                'preheader' => 'Nada sale por tu número hasta que lo reactives.',
+                'alert' => 'Cuando recuperes tu número, entrá a tu panel, reactivá con la contraseña nueva y volvé a escanear el código QR.',
+            ],
+            'resumed' => [
+                'preheader' => 'Si fuiste vos, solo falta escanear el código QR.',
+                'body' => 'Si fuiste vos, escaneá el código QR desde tu teléfono y tu asistente vuelve a atender.',
+                'alert' => 'Si no fuiste vos, restablecé tu contraseña ahora mismo y volvé a pausar desde tu panel.',
+            ],
+        ],
         'closed' => [
             'preheader' => 'Tenés :days días para volver con todo tal como estaba.',
             'body' => 'Guardamos todo tal como estaba durante :days días: si cambiás de idea, volvés con un clic o simplemente iniciando sesión. Pasado ese plazo, tu cuenta, tu negocio y sus datos se borran para siempre; solo quedan tus pagos, que la ley nos pide conservar.',

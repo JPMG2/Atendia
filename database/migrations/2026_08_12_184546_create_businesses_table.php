@@ -62,6 +62,8 @@ return new class extends Migration
             $table->string('suspension_reason', 60)->nullable()->comment('Categoría de moderación que disparó la suspensión');
             $table->text('appeal_message')->nullable()->comment('Apelación del negocio suspendido: la lee el admin antes de decidir');
             $table->timestamp('appealed_at')->nullable()->comment('Cuándo apeló: una apelación por suspensión');
+            $table->timestamp('lost_phone_paused_at')->nullable()->comment('Pausa por robo o pérdida del teléfono: nada sale por su WhatsApp hasta que el negocio la levanta con su contraseña; el cobro sigue igual');
+            $table->foreignId('lost_phone_paused_by')->nullable()->constrained('users')->nullOnDelete()->comment('Quién la pausó');
             $table->timestamps();
 
             $table->index('is_active');

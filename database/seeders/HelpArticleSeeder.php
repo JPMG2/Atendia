@@ -133,6 +133,24 @@ class HelpArticleSeeder extends Seeder
                     Si vas a estrenar un número, conviene usarlo unos días antes de conectarlo.
                     TXT,
             ],
+            [
+                'slug' => 'me-robaron-el-telefono',
+                'category' => 'whatsapp',
+                'screen' => 'whatsapp',
+                'sort_order' => 5,
+                'title' => 'Me robaron o perdí el teléfono',
+                'keywords' => 'robo robaron perdi perdido telefono pausar pausa bloquear ladron reactivar',
+                'body' => <<<'TXT'
+                    Pausa tu WhatsApp desde el panel: nadie podrá usarlo a través de :brand hasta que lo reactives con una contraseña nueva. No es dar de baja: no se borra nada y tu plan y tus fechas de cobro siguen igual.
+
+                    1. Desde otro dispositivo, entra a WhatsApp en el menú de la izquierda.
+                    2. Escribe tu contraseña actual, elige una nueva, toca "Pausar mi WhatsApp" y confirma.
+                    3. Mientras dure la pausa tu asistente no responde, no sale ningún mensaje por tu número, se cierran todas las sesiones y la app, también las de tu equipo, y los códigos de acceso te llegan por correo.
+                    4. Cuando recuperes tu número, vuelve a WhatsApp, escribe la contraseña nueva, toca "Reactivar mi WhatsApp" y escanea el código QR otra vez.
+
+                    Si tu correo también estaba abierto en ese teléfono, cámbiale la contraseña desde su propia página. Pide a tu compañía telefónica un chip nuevo con el mismo número para recuperar tu WhatsApp.
+                    TXT,
+            ],
 
             [
                 'slug' => 'asistente-responde-mal',

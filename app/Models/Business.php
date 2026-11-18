@@ -108,6 +108,7 @@ class Business extends Model
             'appointment_slot_minutes' => 'integer',
             'suspended_at' => 'datetime',
             'appealed_at' => 'datetime',
+            'lost_phone_paused_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
     }
@@ -1600,21 +1601,44 @@ class Business extends Model
         return $this->suspended_at !== null;
     }
 
-    /** Unpaid past grace or suspended: the assistant keeps the thread but says nothing. */
+    /**
+     * The business said its phone was stolen or lost: nothing leaves through
+     * its WhatsApp until it lifts the pause itself. Billing is untouched.
+     */
+    public function isPausedForLostPhone(): bool
+    {
+        return $this->lost_phone_paused_at !== null;
+    }
+
+    /** Who paused it, for the "paused by" line; null once that account is gone. */
+    public function lostPhonePausedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'lost_phone_paused_by');
+    }
+
+    /** Unpaid past grace, suspended or paused for a lost phone: the assistant keeps the thread but says nothing. */
     public function isSilenced(): bool
     {
-        return $this->isSuspended() || (bool) $this->subscription?->isPaused();
+        return $this->isSuspended() || $this->isPausedForLostPhone() || (bool) $this->subscription?->isPaused();
     }
 
-    /** Whether anything may go out to its customers: a linked number, and not suspended. */
+    /** Whether anything may go out to its customers: a linked number, not suspended, not paused for a lost phone. */
     public function canMessageCustomers(): bool
     {
-        return $this->isConnected() && $this->whatsapp_instance !== null && ! $this->isSuspended();
+        return $this->isConnected() && $this->whatsapp_instance !== null && ! $this->isSuspended() && ! $this->isPausedForLostPhone();
     }
 
-    /** The owner's alert number as bare digits; empty when unset. */
+    /**
+     * The owner's alert number as bare digits; empty when unset. Empty too
+     * while paused for a lost phone: that number may be in a thief's hand, so
+     * alerts and login codes must not reach it (codes fall back to e-mail).
+     */
     public function ownerWhatsAppDigits(): string
     {
+        if ($this->isPausedForLostPhone()) {
+            return '';
+        }
+
         return (string) preg_replace('/\D/', '', (string) $this->fallback_whatsapp_number);
     }
 

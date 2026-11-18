@@ -121,6 +121,11 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
         // Their texts are relayed to the thread waiting for the team.
         $member = $business->teamMemberForWhatsApp($this->from);
 
+        // Paused for a lost phone: that phone may be a team member's, so it gets no relay, no list of customers, nothing.
+        if ($business->isPausedForLostPhone()) {
+            return;
+        }
+
         if ($business->isOwnerWhatsApp($this->from) || $member !== null) {
             $this->relayOwnerReply($business, $evolution, $member?->isAgent() ? $member : null);
 
@@ -200,8 +205,8 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
                 // The one exception to the silence: a consent yes is sealed and
                 // thanked — in a paused business too, where it was lost.
-                // A suspended business sends nothing at all, not even the thanks.
-                if ($optInYes && ! $business->isSuspended()) {
+                // A suspended business, or one paused for a lost phone, sends nothing at all, not even the thanks.
+                if ($optInYes && ! $business->isSuspended() && ! $business->isPausedForLostPhone()) {
                     $this->sealOptIn($conversation, $customer, $evolution);
                 }
 
@@ -516,7 +521,7 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
         (new Panel($business, [], PlanUsageHigh::class, [$used, $plan->conversationsPerMonth]))->send();
 
-        if ($business->fallback_whatsapp_number === null) {
+        if ($business->ownerWhatsAppDigits() === '') {
             return;
         }
 

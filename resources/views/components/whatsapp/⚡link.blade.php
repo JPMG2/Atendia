@@ -80,7 +80,8 @@ new class extends Component
     {
         $business = $this->business;
 
-        if ($business === null || $this->connected) {
+        // Paused for a lost phone: the way back is the password first, never a QR.
+        if ($business === null || $this->connected || $business->isPausedForLostPhone()) {
             return;
         }
 
@@ -107,6 +108,13 @@ new class extends Component
         $business = $this->business?->refresh();
 
         if ($business === null) {
+            return;
+        }
+
+        // A tab left on the QR when the pause fell stops renewing it.
+        if ($business->isPausedForLostPhone()) {
+            $this->cancel();
+
             return;
         }
 

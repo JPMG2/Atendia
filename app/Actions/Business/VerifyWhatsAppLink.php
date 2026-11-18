@@ -56,6 +56,13 @@ class VerifyWhatsAppLink
 
     private function markConnected(Business $business): WhatsAppLinkState
     {
+        // Paused for a lost phone: a socket that came back (or a stale QR scanned) is unlinked again, never stamped.
+        if ($business->isPausedForLostPhone()) {
+            rescue(fn () => $this->evolution->logout((string) $business->whatsapp_instance), report: true);
+
+            return WhatsAppLinkState::Disconnected;
+        }
+
         if (! $business->isConnected()) {
             $business->update(['whatsapp_connected_at' => now()]);
 

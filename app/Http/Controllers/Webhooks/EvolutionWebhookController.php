@@ -10,6 +10,7 @@ use App\Messaging\Channels\Panel;
 use App\Messaging\Panel\WhatsAppDisconnected;
 use App\Models\Business;
 use App\Models\WhatsAppLinkEvent;
+use App\Services\EvolutionApi;
 use App\Services\PlatformWhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -178,6 +179,13 @@ class EvolutionWebhookController extends Controller
         }
 
         $state = (string) $request->input('data.state', '');
+
+        // Paused for a lost phone: whatever paired is unlinked again instead of stamped.
+        if ($state === 'open' && $business->isPausedForLostPhone()) {
+            rescue(fn () => app(EvolutionApi::class)->logout((string) $business->whatsapp_instance), report: true);
+
+            return true;
+        }
 
         if ($state === 'open' && ! $business->isConnected()) {
             $business->update(['whatsapp_connected_at' => now()]);
