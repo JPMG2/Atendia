@@ -16,11 +16,20 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Display the login view. The lost-phone way in marks its visit with
+     * `?robo=1`; reaching the login any other way drops that destination,
+     * so neither its notice nor its detour outlives the visit.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('auth.login');
+        $lostPhoneEntry = session('url.intended') === route('lost-phone');
+
+        if ($lostPhoneEntry && ! $request->boolean('robo')) {
+            session()->forget('url.intended');
+            $lostPhoneEntry = false;
+        }
+
+        return view('auth.login', ['lostPhoneEntry' => $lostPhoneEntry]);
     }
 
     /**

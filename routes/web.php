@@ -133,7 +133,7 @@ Route::get('/perdi-mi-telefono', function () {
     if ($user === null) {
         session()->put('url.intended', route('lost-phone'));
 
-        return redirect()->route('login');
+        return redirect()->route('login', ['robo' => 1]);
     }
 
     return $user->business !== null && $user->can('manage-business')

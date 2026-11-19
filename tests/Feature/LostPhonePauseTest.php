@@ -340,8 +340,8 @@ it('tells the admin board while a business is paused, and closes the line when i
 });
 
 it('takes the login link straight to the pause card, and an agent home instead of a 403', function (): void {
-    $this->get(route('lost-phone'))->assertRedirect(route('login'));
-    $this->get(route('login'))->assertSee(__('auth.login.lost_phone_note'))->assertDontSee('data-testid="lost-phone-link"', false);
+    $this->get(route('lost-phone'))->assertRedirect(route('login', ['robo' => 1]));
+    $this->get(route('login', ['robo' => 1]))->assertSee(__('auth.login.lost_phone_note'))->assertDontSee('data-testid="lost-phone-link"', false);
 
     $owner = lostPhoneOwner();
     $this->actingAs($owner)->get(route('lost-phone'))->assertRedirect(route('whatsapp').'#perdi-el-telefono');
@@ -349,6 +349,17 @@ it('takes the login link straight to the pause card, and an agent home instead o
     $agent = User::factory()->create(['business_id' => $owner->business_id]);
     $agent->syncRoles('agent');
     $this->actingAs($agent)->get(route('lost-phone'))->assertRedirect($agent->panelHome());
+});
+
+it('forgets the lost-phone detour when the login is reached another way', function (): void {
+    $this->get(route('lost-phone'));
+
+    // Back at the login by another door: the notice is gone, the link is back, and so is the normal landing.
+    $this->get(route('login'))
+        ->assertDontSee(__('auth.login.lost_phone_note'))
+        ->assertSee('data-testid="lost-phone-link"', false);
+
+    expect(session('url.intended'))->toBeNull();
 });
 
 it('offers the lost-phone link on a plain login', function (): void {

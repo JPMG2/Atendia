@@ -19,7 +19,7 @@
     @endif
 
     {{-- Came through "¿Te robaron el teléfono?": says where the login leads. --}}
-    @if (session('url.intended') === route('lost-phone'))
+    @if ($lostPhoneEntry ?? false)
         <x-ui.alert variant="warning" icon="shield-alert" class="mb-6" data-testid="lost-phone-entry">
             {{ __('auth.login.lost_phone_note') }}
         </x-ui.alert>
@@ -105,7 +105,7 @@
         </x-ui.button>
     </form>
 
-    @unless (session('url.intended') === route('lost-phone'))
+    @unless ($lostPhoneEntry ?? false)
         <p class="mt-6 text-center" style="font-size: var(--text-sm)">
             <a
                 href="{{ route('lost-phone') }}"
