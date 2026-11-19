@@ -92,6 +92,9 @@ return [
                 'preheader' => 'Nada sale por tu número hasta que lo reactives.',
                 'alert' => 'Cuando recuperes tu número, entrá a tu panel, reactivá con la contraseña nueva y volvé a escanear el código QR.',
             ],
+            'paused_by_staff' => [
+                'alert' => 'Tu contraseña anterior dejó de servir. Elegí una nueva con el botón y, cuando recuperes tu número, reactivá desde tu panel y volvé a escanear el código QR.',
+            ],
             'resumed' => [
                 'preheader' => 'Si fuiste vos, solo falta escanear el código QR.',
                 'body' => 'Si fuiste vos, escaneá el código QR desde tu teléfono y tu asistente vuelve a atender.',

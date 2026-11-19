@@ -12,6 +12,7 @@ use App\Mail\LostPhonePauseChanged;
 use App\Messaging\Channels\Email;
 use App\Models\Business;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -41,32 +42,80 @@ class PauseForLostPhone
             return true;
         }
 
-        $business->forceFill([
-            'lost_phone_paused_at' => now(),
-            'lost_phone_paused_by' => $by->id,
-            'lost_phone_cut_sessions' => $this->cutSessions($business, $by, $keepFingerprint),
-        ])->save();
+        $cut = $this->cutSessions($business, $by, $keepFingerprint);
+        $this->stamp($business, $by->id, $cut);
 
         $this->changePassword->handle($by, $newPassword, false, '');
+        $unlinked = $this->silence($business);
+
+        (new Email($by, [$by->email], LostPhonePauseChanged::class, [true, $cut]))->send();
+
+        return $unlinked;
+    }
+
+    /**
+     * The owner wrote to support with no way to sign in (the phone held her
+     * session or her codes). Staff cannot choose her new password, so every
+     * owner's password is replaced by one nobody knows: the one saved on the
+     * stolen phone dies, and the mail sends her to pick a new one.
+     *
+     * @return bool Whether the bridge confirmed the unlink; the pause holds either way.
+     */
+    public function byStaff(Business $business): bool
+    {
+        if ($business->isPausedForLostPhone()) {
+            return true;
+        }
+
+        $cut = $this->cutSessions($business, null, null);
+        $this->stamp($business, null, $cut);
+
+        $owners = $business->users()->role('client')->get();
+
+        foreach ($owners as $owner) {
+            $owner->forceFill(['password' => Hash::make(Str::password(40))])->save();
+        }
+
+        $unlinked = $this->silence($business);
+
+        foreach ($owners as $owner) {
+            (new Email($owner, [$owner->email], LostPhonePauseChanged::class, [true, $cut, true]))->send();
+        }
+
+        return $unlinked;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $cut
+     */
+    private function stamp(Business $business, ?int $byId, array $cut): void
+    {
+        $business->forceFill([
+            'lost_phone_paused_at' => now(),
+            'lost_phone_paused_by' => $byId,
+            'lost_phone_cut_sessions' => $cut,
+        ])->save();
+    }
+
+    /** Everything after the stamp that both doors share: access cut, the board told, the number unlinked. */
+    private function silence(Business $business): bool
+    {
         $this->endEveryOtherAccess($business);
 
         app(RaisePlatformEvent::class)->handle(PlatformEventKind::LostPhonePaused, $business->id);
         // One fact, one line: a "disconnected" one asking to rescan would contradict the pause.
         app(ResolvePlatformEvent::class)->ofKind(PlatformEventKind::WhatsAppDisconnected, $business->id);
 
-        $unlinked = true;
-
         try {
             // Even when the stamp says "down": a dropped socket can come back on its own.
             $this->unlink->handle($business);
         } catch (Throwable $failure) {
             report($failure);
-            $unlinked = false;
+
+            return false;
         }
 
-        (new Email($by, [$by->email], LostPhonePauseChanged::class, [true]))->send();
-
-        return $unlinked;
+        return true;
     }
 
     /**
@@ -78,7 +127,7 @@ class PauseForLostPhone
      *
      * @return list<array{name: string, device: string, app: bool, mobile: bool, current: bool, last_login_at: string|null}>
      */
-    private function cutSessions(Business $business, User $by, ?string $keepFingerprint): array
+    private function cutSessions(Business $business, ?User $by, ?string $keepFingerprint): array
     {
         $cut = [];
         $since = now()->subDays(self::RECENT_DAYS);
@@ -98,7 +147,7 @@ class PauseForLostPhone
                     'device' => $device->label(),
                     'app' => $app,
                     'mobile' => $app || $device->isMobile(),
-                    'current' => $member->is($by) && $keepFingerprint !== null && $device->fingerprint === $keepFingerprint,
+                    'current' => $by !== null && $member->is($by) && $keepFingerprint !== null && $device->fingerprint === $keepFingerprint,
                     'last_login_at' => $device->last_login_at?->toIso8601String(),
                 ];
             }

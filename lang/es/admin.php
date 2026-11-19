@@ -956,6 +956,13 @@ return [
         'history' => '{0} Ver historial|[1,*] Ver historial (:count)',
         'lost_phone' => [
             'tag' => 'WhatsApp en pausa',
+            'title' => 'Robo o pérdida del teléfono',
+            'hint' => 'Solo si la dueña te lo pidió y no puede entrar. Pausa su WhatsApp, cierra todas las sesiones y la app, y cambia su contraseña por una que nadie conoce: le llega un correo para elegir una nueva.',
+            'action' => 'Pausar su WhatsApp',
+            'confirm' => '¿Pausar el WhatsApp de :name? Su asistente deja de atender, se desvincula el número, se cierran todas las sesiones y su contraseña deja de servir hasta que elija una nueva desde el correo.',
+            'accept' => 'Pausar su WhatsApp',
+            'done' => 'Listo. Su WhatsApp quedó en pausa y le enviamos el correo para elegir una contraseña nueva.',
+            'done_not_unlinked' => 'Su WhatsApp quedó en pausa y le enviamos el correo, pero el número no se pudo desvincular ahora: que lo quite desde Dispositivos vinculados cuando lo recupere.',
             'since' => 'Pausó su WhatsApp por robo o pérdida del teléfono el :date. Su asistente no responde hasta que lo reactive; el cobro sigue igual.',
         ],
         'cancel' => [

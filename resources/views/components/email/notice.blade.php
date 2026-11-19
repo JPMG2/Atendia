@@ -6,6 +6,8 @@
     'chip' => null,
     'body' => null,
     'alert' => null,
+    'listTitle' => null,
+    'lines' => [],
     'primaryUrl' => null,
     'primaryLabel' => null,
     'secondaryUrl' => null,
@@ -129,6 +131,32 @@ mail only says its words, so a tweak here reaches every one of them. --}}
                 >
                     {{ $body }}
                 </p>
+            @endif
+            @if ($lines !== [])
+                <p
+                    style="
+                        margin: 14px 0 4px;
+                        font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #12201c;
+                    "
+                >
+                    {{ $listTitle }}
+                </p>
+                @foreach ($lines as $line)
+                    <p
+                        style="
+                            margin: 2px 0 0;
+                            font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+                            font-size: 13px;
+                            line-height: 1.6;
+                            color: #3d4c47;
+                        "
+                    >
+                        {{ $line }}
+                    </p>
+                @endforeach
             @endif
             @if ($alert)
                 <p

@@ -369,6 +369,58 @@ it('shows the pause on the admin directory row and on its ficha', function (): v
         ->assertSeeHtml('data-testid="biz-lost-phone-'.$owner->business_id.'"');
 });
 
+it('lets the admin pause for an owner who cannot sign in, killing her password and mailing her the way to a new one', function (): void {
+    $owner = lostPhoneOwner();
+    LoginDevice::factory()->for($owner)->create(['fingerprint' => LoginDevice::fingerprintFor(PHONE_AGENT), 'user_agent' => PHONE_AGENT, 'last_login_at' => now()]);
+    bridgeUnlinks();
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+    $this->actingAs($admin->refresh());
+
+    livewire('admin.businesses.index')
+        ->call('toggle', $owner->business_id)
+        ->assertSeeHtml('data-testid="biz-pause-'.$owner->business_id.'"')
+        ->call('pauseForLostPhone', $owner->business_id)
+        ->assertDispatched('notify', fn (string $name, array $params): bool => $params['message'] === __('admin.businesses.lost_phone.done'));
+
+    $business = $owner->business->fresh();
+    expect($business->isPausedForLostPhone())->toBeTrue()
+        ->and($business->lost_phone_paused_by)->toBeNull()
+        ->and(Hash::check(OLD_PASSWORD, $owner->fresh()->password))->toBeFalse()
+        ->and(PlatformEvent::query()->where('kind', PlatformEventKind::LostPhonePaused->value)->count())->toBe(1);
+    Mail::assertQueued(LostPhonePauseChanged::class, fn (LostPhonePauseChanged $mail): bool => $mail->byStaff
+        && $mail->hasTo($owner->email)
+        && str_contains($mail->render(), route('password.request'))
+        && str_contains($mail->render(), 'Chrome · Android'));
+});
+
+it('keeps support, who may only look at businesses, from pausing one', function (): void {
+    $owner = lostPhoneOwner();
+    $support = User::factory()->create(['email_verified_at' => now()]);
+    $support->assignRole('support');
+    $this->actingAs($support->refresh());
+
+    livewire('admin.businesses.index')
+        ->call('toggle', $owner->business_id)
+        ->assertDontSeeHtml('data-testid="biz-pause-'.$owner->business_id.'"')
+        ->call('pauseForLostPhone', $owner->business_id)
+        ->assertForbidden();
+
+    expect($owner->business->fresh()->isPausedForLostPhone())->toBeFalse();
+});
+
+it('mails the owner who paused the list of what the pause cut', function (): void {
+    $owner = lostPhoneOwner();
+    LoginDevice::factory()->for($owner)->create(['fingerprint' => LoginDevice::fingerprintFor(PHONE_AGENT), 'user_agent' => PHONE_AGENT, 'last_login_at' => now()]);
+    bridgeUnlinks();
+
+    app(PauseForLostPhone::class)->handle($owner->business, $owner, NEW_PASSWORD);
+
+    Mail::assertQueued(LostPhonePauseChanged::class, fn (LostPhonePauseChanged $mail): bool => ! $mail->byStaff
+        && str_contains($mail->render(), __('whatsapp.lost_phone.cut_title'))
+        && str_contains($mail->render(), 'Chrome · Android'));
+});
+
 it('swaps the QR of the signup WhatsApp step for the paused banner', function (): void {
     $owner = lostPhoneOwner();
     pausedBusinessOf($owner);

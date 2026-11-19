@@ -4,6 +4,7 @@ use App\Actions\Admin\ReleaseBridgeInstance;
 use App\Actions\Admin\RemoveBusiness;
 use App\Actions\Admin\RestoreBusiness;
 use App\Actions\Billing\CancelSubscription;
+use App\Actions\Business\PauseForLostPhone;
 use App\Classes\Main\BusinessLedger;
 use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
@@ -164,6 +165,29 @@ new class extends Component
         return $items === []
             ? __('admin.businesses.remove.frees_nothing')
             : __('admin.businesses.remove.frees', ['items' => implode(', ', $items)]);
+    }
+
+    /**
+     * The owner asked support to pause a stolen phone she cannot sign in to.
+     * The lock is here, not only on the hidden button: it takes an account's password away.
+     */
+    public function pauseForLostPhone(int $id): void
+    {
+        abort_unless(auth()->user()?->can('businesses.manage'), 403);
+
+        $business = Business::ledger($id);
+
+        if ($business === null || $business->trashed() || $business->isPausedForLostPhone()) {
+            return;
+        }
+
+        $unlinked = app(PauseForLostPhone::class)->byStaff($business);
+        unset($this->ledger, $this->ficha);
+
+        $this->dispatchNotification(new NotificationDto(
+            __($unlinked ? 'admin.businesses.lost_phone.done' : 'admin.businesses.lost_phone.done_not_unlinked'),
+            $unlinked ? NotificationType::Success : NotificationType::Warning,
+        ));
     }
 
     public function restore(int $id): void
@@ -475,6 +499,18 @@ new class extends Component
             @endif
 
             @can('businesses.manage')
+                @unless ($this->ficha->isPausedForLostPhone())
+                    <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.lost_phone.title') }}</h2></div>
+                    <p class="bp-card-sub">{{ __('admin.businesses.lost_phone.hint') }}</p>
+                    <x-ui.button
+                        variant="secondary"
+                        size="sm"
+                        icon="shield-alert"
+                        x-on:click="confirmLostPhone({{ $this->ficha->id }}, {{ Illuminate\Support\Js::from($this->ficha->name) }})"
+                        data-testid="biz-pause-{{ $this->ficha->id }}"
+                    >{{ __('admin.businesses.lost_phone.action') }}</x-ui.button>
+                @endunless
+
                 <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.remove.title') }}</h2></div>
                 <p class="bp-card-sub" data-testid="biz-frees-{{ $this->ficha->id }}">{{ $this->frees }} {{ __('admin.businesses.remove.hint') }}</p>
                 <x-ui.button
@@ -574,6 +610,20 @@ new class extends Component
                 }
 
                 await this.$wire.releaseOrphan(instance);
+            },
+
+            async confirmLostPhone(id, name) {
+                // Reversible (she lifts it with a new password and a QR), so a warning, not danger.
+                if (!(await dialog.confirm({
+                    title: @js(__('admin.businesses.lost_phone.title')),
+                    message: @js(__('admin.businesses.lost_phone.confirm')).replace(':name', name),
+                    accept: @js(__('admin.businesses.lost_phone.accept')),
+                    type: 'warning',
+                }))) {
+                    return;
+                }
+
+                await this.$wire.pauseForLostPhone(id);
             },
 
             async confirmRemove(id, name, frees) {

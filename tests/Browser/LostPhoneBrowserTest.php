@@ -167,6 +167,34 @@ test('the admin directory marks a paused number on its row and its ficha', funct
         ->screenshot(filename: 'lost-phone-admin-ficha-'.$width.'-'.($dark ? 'dark' : 'light'));
 })->with([[1280, false], [390, true]]);
 
+test('the admin pauses for an owner who asked support', function (int $width, bool $dark): void {
+    Http::fake(fn () => Http::response(['instance' => ['state' => 'close']]));
+    Company::factory()->create(['brand_name' => 'Aliadito']);
+    $business = Business::factory()->create(['name' => 'Taller Luna', 'whatsapp_instance' => 'business-7', 'whatsapp_connected_at' => now()]);
+    $owner = User::factory()->create(['business_id' => $business->id]);
+    $owner->assignRole('client');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+    $this->actingAs($admin->refresh());
+
+    $page = visit(route('admin.businesses', ['negocio' => $business->id]))->resize($width, 900);
+
+    if ($dark) {
+        $page->click('@theme-toggle');
+    }
+
+    $page->assertPresent('[data-testid="biz-pause-'.$business->id.'"]')
+        ->screenshot(filename: 'lost-phone-admin-pause-'.$width.'-'.($dark ? 'dark' : 'light'))
+        ->click('[data-testid="biz-pause-'.$business->id.'"]')
+        ->assertSee(__('admin.businesses.lost_phone.accept'))
+        ->screenshot(filename: 'lost-phone-admin-pause-ask-'.$width.'-'.($dark ? 'dark' : 'light'))
+        ->click('[x-ref="accept"]')
+        ->assertPresent('[data-testid="biz-lost-phone-'.$business->id.'"]')
+        ->assertNoJavaScriptErrors();
+
+    expect($business->fresh()->isPausedForLostPhone())->toBeTrue();
+})->with([[1280, true], [390, false]]);
+
 test('the signup WhatsApp step shows the pause instead of a QR', function (): void {
     $user = User::factory()->create([
         'business_id' => Business::factory()->create(['lost_phone_paused_at' => now()])->id,

@@ -308,6 +308,15 @@ return [
                 'alert' => 'Cuando recuperes tu número, entra a tu panel, reactiva con la contraseña nueva y vuelve a escanear el código QR.',
                 'cta' => 'Ir a mi WhatsApp',
             ],
+            'paused_by_staff' => [
+                'subject' => 'Pausamos tu WhatsApp en :brand',
+                'preheader' => 'A tu pedido: nada sale por tu número hasta que lo reactives.',
+                'title' => 'Pausamos tu WhatsApp',
+                'intro' => 'Hola :name, a tu pedido pausamos tu WhatsApp por robo o pérdida del teléfono el :time (UTC).',
+                'body' => 'Tu asistente no responde, no sale ningún mensaje ni recordatorio por tu número, se cerraron todas las sesiones y la app, y los códigos de acceso te llegan a este correo. Tu plan y tus fechas de cobro siguen igual.',
+                'alert' => 'Tu contraseña anterior dejó de servir. Elige una nueva con el botón y, cuando recuperes tu número, reactiva desde tu panel y vuelve a escanear el código QR.',
+                'cta' => 'Elegir una contraseña nueva',
+            ],
             'resumed' => [
                 'subject' => 'Reactivaste tu WhatsApp en :brand',
                 'preheader' => 'Si fuiste tú, solo falta escanear el código QR.',
