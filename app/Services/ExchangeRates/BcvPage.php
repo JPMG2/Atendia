@@ -21,10 +21,11 @@ class BcvPage
     public const string URL = 'https://www.bcv.org.ve/';
 
     /**
-     * The site serves the wrong intermediate certificate, so the right one
-     * ships with the code and verification stays on.
+     * The site serves the wrong intermediate certificate, so the right ones
+     * ship with the code and verification stays on. Both Sectigo R36 issuers
+     * are kept: on 2026-11-19 the BCV moved from DV to OV and the read broke.
      */
-    public const string INTERMEDIATE = 'certs/sectigo-dv-r36.pem';
+    public const string INTERMEDIATE = 'certs/sectigo-r36.pem';
 
     /** @throws RuntimeException when the page does not answer or no longer looks the way it is read */
     public function read(): ExchangeRateReadingDto
