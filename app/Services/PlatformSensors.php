@@ -217,17 +217,45 @@ class PlatformSensors
      */
     private function backup(): SensorReadingDto
     {
-        $path = storage_path('app/backup-status.json');
+        // Every nightly backup is watched, and the board shows the worst one:
+        // on 19/11/2026 the full bundle failed for hours and nothing looked at it.
+        $readings = array_map(fn (string $which): SensorReadingDto => $this->backupOf($which), self::BACKUPS);
+
+        usort($readings, fn (SensorReadingDto $a, SensorReadingDto $b): int => $b->status->weight() <=> $a->status->weight());
+
+        return $readings[0];
+    }
+
+    /** The database dump, the full bundle (WhatsApp sessions, .env, config, memory) and Eloquent's. */
+    private const array BACKUPS = ['database', 'full', 'eloquent'];
+
+    /**
+     * One backup's status file: `at` is the last success; a `failed_at` newer
+     * than it turns the sensor red at once, instead of a day later by age.
+     */
+    private function backupOf(string $which): SensorReadingDto
+    {
+        $name = __('platform_events.detail.backup_kinds.'.$which);
+        $path = storage_path('app/'.($which === 'database' ? 'backup-status.json' : 'backup-'.$which.'-status.json'));
 
         if (! is_file($path)) {
-            return new SensorReadingDto('backup', 'system', Status::Unknown, null, __('platform_events.detail.backup_none'));
+            return new SensorReadingDto('backup', 'system', Status::Unknown, null, __('platform_events.detail.backup_none_of', ['name' => $name]));
         }
 
         $status = json_decode((string) file_get_contents($path), true);
         $at = isset($status['at']) ? Carbon::parse((string) $status['at']) : null;
+        $failedAt = isset($status['failed_at']) ? Carbon::parse((string) $status['failed_at']) : null;
+
+        if ($failedAt !== null && ($at === null || $failedAt->greaterThan($at))) {
+            return new SensorReadingDto('backup', 'system', Status::Crit, __('platform_events.detail.backup_failed_short'), __('platform_events.detail.backup_failed', [
+                'name' => $name,
+                'age' => $this->ago($failedAt),
+                'step' => (string) ($status['step'] ?? '—'),
+            ]));
+        }
 
         if ($at === null) {
-            return new SensorReadingDto('backup', 'system', Status::Unknown, null, __('platform_events.detail.backup_none'));
+            return new SensorReadingDto('backup', 'system', Status::Unknown, null, __('platform_events.detail.backup_none_of', ['name' => $name]));
         }
 
         $hours = (int) $at->diffInHours(now());
@@ -237,7 +265,8 @@ class PlatformSensors
             default => Status::Crit,
         };
 
-        return new SensorReadingDto('backup', 'system', $state, $state === Status::Ok ? 'OK' : $this->ago($at), __('platform_events.detail.backup_last', [
+        return new SensorReadingDto('backup', 'system', $state, $state === Status::Ok ? 'OK' : $this->ago($at), __('platform_events.detail.backup_last_of', [
+            'name' => $name,
             'age' => $this->ago($at),
             'size' => number_format(((int) ($status['bytes'] ?? 0)) / 1_048_576, 1),
         ]));
