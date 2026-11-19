@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Classes\Main\LlmsTxt;
+use App\Classes\Main\Releases;
 use App\Http\Controllers\Billing\PaymentReceiptController;
 use App\Http\Controllers\Booking\CalendarFileController;
 use App\Http\Controllers\Conversations\MessageMediaController;
@@ -216,6 +217,9 @@ Route::get('/borrar-cuenta', fn () => view('account-deletion'))->name('account.d
 
 // Public on purpose: Google Play requires a privacy policy URL anyone can open.
 Route::get('/privacidad', fn () => view('privacy'))->name('privacy');
+
+// «Novedades»: what each version brought. Public, so a prospect sees the product grow too.
+Route::get('/novedades', fn () => view('releases', ['releases' => new Releases]))->name('releases');
 
 // Help: the answers before a ticket. Reachable by an invited agent too — they
 // hit the same problems and the articles hold no business data.

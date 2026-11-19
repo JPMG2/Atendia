@@ -142,6 +142,13 @@
     >
         <span>© {{ date('Y') }} {{ $company?->legal_name ?: \App\Models\Company::brand() }}. {{ $company?->text_copyright ?: __('landing.footer.copyright') }}</span>
         <span class="flex items-center gap-3.5">
+            @php($version = (new \App\Classes\Main\Releases)->current)
+            <a
+                href="{{ route('releases') }}"
+                class="text-subtle hover:text-brand font-mono transition"
+                aria-label="{{ __('releases.link_label', ['version' => $version]) }}"
+                data-testid="footer-version"
+            >{{ __('releases.link', ['version' => $version]) }}</a>
             {{-- Brings the cookie banner back so the choice can be changed. --}}
             @if (filled(config('atendia.analytics.measurement_id')))
                 <button

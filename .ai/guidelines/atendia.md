@@ -8,7 +8,6 @@
 - `trustProxies` confía solo en la red privada (Traefik), no en `'*'`: con `'*'` la IP la elige
   quien escribe `X-Forwarded-For` y todo límite por IP se esquiva. Y no se quita: sin proxy
   confiable los assets salen en http.
-- Tras tocar Blade o CSS: `view:clear` + `npm run build`, dentro del contenedor.
 
 ## Código
 - Comentarios, PHPDoc, excepciones, logs y mensajes de commit: en INGLÉS (`comentarios.md`).
@@ -16,6 +15,9 @@
 - Tests en Pest v4 funcional, descripciones en inglés (`make:test --pest`, nunca `--phpunit`).
   Corren sobre `atendia_testing`; jamás sobre `atendia` (`migraciones-seguras.md`).
 - Si se tocó PHP: `vendor/bin/pint --dirty --format agent` antes de cerrar.
+- Todo commit de código decide la versión que ve el cliente (`config/releases.php` + sus palabras
+  en `lang/es/releases.php`): `patch` arregla lo que ya tenía, `minor` le da algo nuevo, `major`
+  solo si ella lo decide, `none` si el cliente no lo ve (solo admin, pruebas, scripts).
 
 ## Estas guías
 - Un tema por archivo, en imperativo, sin historia. El porqué, las fechas y los

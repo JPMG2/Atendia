@@ -219,5 +219,17 @@ new class extends Component
                 </x-ui.button>
             </div>
         @endif
+
+        {{-- Both panels: the version they run, a door to what each one brought. --}}
+        @php($version = (new \App\Classes\Main\Releases)->current)
+        <a
+            href="{{ route('releases') }}"
+            class="sidebar-version"
+            aria-label="{{ __('releases.link_label', ['version' => $version]) }}"
+            data-testid="sidebar-version"
+        >
+            <span class="font-mono">{{ __('releases.link', ['version' => $version]) }}</span>
+            <span>· {{ __('releases.title') }}</span>
+        </a>
     </div>
 </nav>
