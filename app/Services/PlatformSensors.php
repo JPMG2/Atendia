@@ -101,12 +101,15 @@ class PlatformSensors
 
         $check = (array) Cache::get(FetchExchangeRate::LAST_CHECK, []);
 
+        // Her rule (19/11/2026): the admin worries only when no automatic source
+        // brings the dollar and it has to be typed by hand. One source down
+        // while the other answers is the chain doing its job, so it stays green.
         if (($check['bcv'] ?? null) !== null && ($check['dolarapi'] ?? null) !== null) {
-            return new SensorReadingDto('exchange_rate', 'system', Status::Warn, $value, __('platform_events.detail.rate_sources_down', ['date' => $date]));
+            return new SensorReadingDto('exchange_rate', 'system', Status::Crit, $value, __('platform_events.detail.rate_sources_down', ['date' => $date]));
         }
 
         if (($check['bcv'] ?? null) !== null) {
-            return new SensorReadingDto('exchange_rate', 'system', Status::Warn, $value, __('platform_events.detail.rate_bcv_down', ['date' => $date, 'source' => $charging->source->label()]));
+            return new SensorReadingDto('exchange_rate', 'system', Status::Ok, $value, __('platform_events.detail.rate_bcv_down', ['date' => $date, 'source' => $charging->source->label()]));
         }
 
         return new SensorReadingDto('exchange_rate', 'system', Status::Ok, $value, __('platform_events.detail.rate_ok', ['date' => $date, 'source' => $charging->source->label()]));

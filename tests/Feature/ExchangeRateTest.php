@@ -144,7 +144,8 @@ test('when the BCV page fails the official number of dolarapi charges, never the
     expect($check['bcv'])->not->toBeNull()
         ->and($rate->source)->toBe(ExchangeRateSource::DolarApi)
         ->and((float) $rate->official)->toBe(889.5754)
-        ->and(rateSensor()->status)->toBe(PlatformSensorStatus::Warn);
+        // Her rule: one source down while the other answers needs nothing from her.
+        ->and(rateSensor()->status)->toBe(PlatformSensorStatus::Ok);
 });
 
 test('when both fail nothing is written and the last rate keeps charging', function (): void {
@@ -155,7 +156,8 @@ test('when both fail nothing is written and the last rate keeps charging', funct
 
     expect(ExchangeRate::count())->toBe(1)
         ->and((float) ExchangeRate::charging()->official)->toBe(885.0)
-        ->and(rateSensor()->status)->toBe(PlatformSensorStatus::Warn)
+        // No automatic source brought the dollar: the one moment she has to act.
+        ->and(rateSensor()->status)->toBe(PlatformSensorStatus::Crit)
         ->and(rateSensor()->detail)->toContain('03/11');
 });
 
