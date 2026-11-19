@@ -125,6 +125,22 @@ Route::get('/productos', fn () => view('my-products'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])
     ->name('my-products');
 
+// "¿Te robaron el teléfono?" from the login: straight to the pause card once
+// signed in. A team member who cannot pause lands on their own home instead of a 403.
+Route::get('/perdi-mi-telefono', function () {
+    $user = auth()->user();
+
+    if ($user === null) {
+        session()->put('url.intended', route('lost-phone'));
+
+        return redirect()->route('login');
+    }
+
+    return $user->business !== null && $user->can('manage-business')
+        ? redirect(route('whatsapp').'#perdi-el-telefono')
+        : redirect($user->panelHome());
+})->middleware('throttle:30,1')->name('lost-phone');
+
 // Linking the WhatsApp number the assistant answers through.
 Route::get('/whatsapp', fn () => view('whatsapp'))
     ->middleware(['auth', 'verified', 'permission:access-client-app', 'permission:manage-business'])

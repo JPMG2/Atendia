@@ -26,8 +26,9 @@ class ReconcilePlatformEvents
     {
         $real = Business::query();
 
-        $this->align(PlatformEventKind::WhatsAppDisconnected, (clone $real)->whereNotNull('whatsapp_instance')->whereNull('whatsapp_connected_at')->pluck('id')->all());
+        $this->align(PlatformEventKind::WhatsAppDisconnected, (clone $real)->whereNotNull('whatsapp_instance')->whereNull('whatsapp_connected_at')->whereNull('lost_phone_paused_at')->pluck('id')->all());
         $this->align(PlatformEventKind::BusinessSuspended, (clone $real)->whereNotNull('suspended_at')->pluck('id')->all());
+        $this->align(PlatformEventKind::LostPhonePaused, (clone $real)->whereNotNull('lost_phone_paused_at')->pluck('id')->all());
         $this->align(PlatformEventKind::PaymentLate, $this->businessesIn(SubscriptionStatus::PastDue));
         $this->align(PlatformEventKind::PaymentPaused, $this->businessesIn(SubscriptionStatus::Paused));
 

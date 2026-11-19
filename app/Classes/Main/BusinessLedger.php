@@ -131,6 +131,8 @@ class BusinessLedger
             'state' => $state,
             'state_label' => __('admin.businesses.states.'.$state),
             'bad' => in_array($state, self::BAD, true),
+            // Beside the billing state, not one of them: a paused number keeps paying.
+            'paused' => $business->isPausedForLostPhone() ? __('admin.businesses.lost_phone.tag') : null,
             'due' => $subscription?->periodEndsAt()?->format('d/m/Y') ?? '—',
             // Zero is not the same sentence as nothing owed: a dash says there is nothing to collect, not that it measured 0.
             'owes' => $business->owes() > 0 ? 'USD '.number_format($business->owes(), 2, ',', '.') : '—',
@@ -179,6 +181,9 @@ class BusinessLedger
             ],
             // What the plan row says about leaving, as a fact. The buttons that act on it are a later delivery.
             'note' => $this->noteOf($business),
+            'paused' => $business->isPausedForLostPhone() ? __('admin.businesses.lost_phone.since', [
+                'date' => $business->lost_phone_paused_at->toImmutable()->setTimezone($business->localTimezone())->format('d/m/Y H:i'),
+            ]) : null,
             'payments' => [
                 'title' => __('admin.businesses.card.payments'),
                 'empty' => __('admin.businesses.card.payments_empty'),

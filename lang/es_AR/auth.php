@@ -26,6 +26,7 @@ return [
         'sub' => 'Ingresá para seguir atendiendo con tu asistente.',
         'no_account' => '¿Todavía no tenés cuenta?',
         'register_cta' => 'Empezá gratis',
+        'lost_phone_note' => 'Ingresá con tu contraseña y te llevamos directo a pausar tu WhatsApp.',
     ],
 
     'forgot' => [

@@ -17,7 +17,7 @@ return [
     ],
 
     'lost_phone' => [
-        'body' => 'Pausá tu WhatsApp y nadie podrá usarlo a través de :brand hasta que lo reactives con tu contraseña nueva. No es dar de baja: no se borra nada.',
+        'body' => 'Pausá tu WhatsApp y nadie puede usarlo a través de :brand hasta que lo reactives con tu contraseña nueva. No es dar de baja: no se borra nada.',
         'effects' => [
             'Tu asistente deja de responder y no sale ningún mensaje ni recordatorio por tu número.',
             'El número se desvincula: cuando lo recuperes, lo volvés a vincular con el código QR.',
@@ -28,6 +28,8 @@ return [
         'paused_not_unlinked' => 'Tu WhatsApp quedó en pausa y nada sale por tu número, pero no pudimos desvincularlo ahora. Quitalo también desde Dispositivos vinculados cuando recuperes tu número.',
         'resume_body' => 'Escribí la contraseña que elegiste al pausar para reactivarlo. Después escaneá el código QR desde el teléfono con tu número y tu asistente vuelve a atender.',
         'resumed' => 'Listo. Ahora escaneá el código QR para que tu asistente vuelva a atender.',
+        'cut_hint' => 'Quedaron fuera al pausar: la app y los navegadores de tu equipo que entraron en los últimos :days días. Tu contraseña ya cambió; si no reconocés un dispositivo de alguien de tu equipo, pedile que cambie la suya.',
+        'app_resume' => 'Para reactivarlo, entrá a la web, en WhatsApp, con la contraseña nueva.',
     ],
 
     'connect' => [

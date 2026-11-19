@@ -108,5 +108,15 @@
         </div>
     @endif
 
+    @if ($supportEmail)
+        <p class="text-muted mt-4 text-center" style="font-size: var(--text-sm)" data-testid="challenge-support">
+            {{ __('security.challenge.no_phone') }}
+            <a
+                href="mailto:{{ $supportEmail }}?subject={{ rawurlencode(__('security.challenge.no_phone_subject')) }}"
+                class="text-brand font-semibold hover:underline"
+            >{{ __('security.challenge.no_phone_cta') }}</a>
+        </p>
+    @endif
+
     <p class="text-muted mt-4 text-center" style="font-size: var(--text-xs)">{{ __($copy.'.hint') }}</p>
 </x-guest-layout>

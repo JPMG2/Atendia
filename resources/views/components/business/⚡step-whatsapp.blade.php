@@ -167,7 +167,12 @@ new class extends Component
     <h3 class="wizard-subhead">{{ __('wizard.whatsapp.link_heading') }}</h3>
     <p class="lead">{{ __('wizard.whatsapp.link_lead') }}</p>
 
-    <livewire:whatsapp.link />
+    {{-- Paused for a lost phone: no QR here either, the same banner as the panel and its way back. --}}
+    @if (auth()->user()?->business?->isPausedForLostPhone())
+        <x-whatsapp.lost-phone-banner />
+    @else
+        <livewire:whatsapp.link />
+    @endif
 </div>
 
 @script

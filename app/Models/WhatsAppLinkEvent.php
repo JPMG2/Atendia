@@ -124,6 +124,11 @@ class WhatsAppLinkEvent extends Model
             return;
         }
 
+        // A lost-phone pause unlinks on purpose: its own line says so, and "rescan" would be wrong advice.
+        if ($business->isPausedForLostPhone()) {
+            return;
+        }
+
         app(RaisePlatformEvent::class)->handle(PlatformEventKind::WhatsAppDisconnected, $business->id, $reason);
     }
 }

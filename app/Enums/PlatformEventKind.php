@@ -19,6 +19,7 @@ enum PlatformEventKind: string
     case WhatsAppDisconnected = 'whatsapp_disconnected';
     case BusinessCancelled = 'business_cancelled';
     case MentionAccepted = 'mention_accepted';
+    case LostPhonePaused = 'lost_phone_paused';
 
     // Money.
     case ReceiptReceived = 'receipt_received';
@@ -45,7 +46,8 @@ enum PlatformEventKind: string
         return match ($this) {
             self::BusinessSuspended, self::PaymentPaused, self::SystemDown => PlatformEventSeverity::Critical,
             self::BusinessJoined, self::ReceiptReceived, self::PaymentLate, self::AppealReceived,
-            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled, self::MentionAccepted, self::AppBrandStale => PlatformEventSeverity::Important,
+            self::ContentToReview, self::WhatsAppDisconnected, self::SystemDegraded, self::BusinessCancelled, self::MentionAccepted, self::AppBrandStale,
+            self::LostPhonePaused => PlatformEventSeverity::Important,
             self::PaymentApproved, self::PlanChanged => PlatformEventSeverity::Info,
         };
     }
@@ -54,7 +56,7 @@ enum PlatformEventKind: string
     public function area(): string
     {
         return match ($this) {
-            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::MentionAccepted => 'customers',
+            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::MentionAccepted, self::LostPhonePaused => 'customers',
             self::ReceiptReceived, self::PaymentApproved, self::PlanChanged, self::PaymentLate, self::PaymentPaused => 'money',
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => 'compliance',
             self::SystemDown, self::SystemDegraded, self::AppBrandStale => 'system',
@@ -87,7 +89,7 @@ enum PlatformEventKind: string
             self::BusinessSuspended, self::AppealReceived, self::ContentToReview => $businessId === null
                 ? ['route' => 'admin.compliance', 'query' => []]
                 : ['route' => 'admin.compliance', 'query' => ['negocio' => $businessId]],
-            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::PlanChanged => $businessId === null
+            self::BusinessJoined, self::WhatsAppDisconnected, self::BusinessCancelled, self::PlanChanged, self::LostPhonePaused => $businessId === null
                 ? null
                 : ['route' => 'admin.businesses', 'query' => ['negocio' => $businessId]],
             self::SystemDown, self::SystemDegraded => null,
@@ -110,6 +112,7 @@ enum PlatformEventKind: string
             self::ContentToReview => 'shield-alert',
             self::SystemDown, self::SystemDegraded => 'triangle-alert',
             self::AppBrandStale => 'smartphone',
+            self::LostPhonePaused => 'shield-alert',
         };
     }
 
@@ -120,7 +123,7 @@ enum PlatformEventKind: string
     public function resolvesItself(): bool
     {
         return match ($this) {
-            self::WhatsAppDisconnected, self::PaymentLate, self::PaymentPaused, self::BusinessSuspended,
+            self::WhatsAppDisconnected, self::PaymentLate, self::PaymentPaused, self::BusinessSuspended, self::LostPhonePaused,
             self::SystemDown, self::SystemDegraded => true,
             default => false,
         };

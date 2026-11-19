@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Services\DeviceChallenge;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,9 @@ class DeviceChallengeController extends Controller
             'destination' => $viaWhatsApp ? $user?->maskedSecondFactorPhone() : $user?->maskedEmail(),
             'whatsAppFailed' => DeviceChallenge::whatsAppFailed(),
             'canUseRecovery' => $user !== null && $user->sendsLoginCodesByWhatsApp() && $user->recoveryCodesLeft() > 0,
+            // Phone gone and no backup codes: a person checks it is her. The code never
+            // falls back to e-mail on request, or password + mailbox would skip the second step.
+            'supportEmail' => $viaWhatsApp ? Company::contact()['email'] : null,
         ]);
     }
 

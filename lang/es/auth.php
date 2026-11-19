@@ -61,6 +61,8 @@ return [
         'submit' => 'Ingresar',
         'no_account' => '¿Todavía no tienes cuenta?',
         'register_cta' => 'Empieza gratis',
+        'lost_phone' => '¿Te robaron o perdiste el teléfono?',
+        'lost_phone_note' => 'Ingresa con tu contraseña y te llevamos directo a pausar tu WhatsApp.',
     ],
 
     'register' => [

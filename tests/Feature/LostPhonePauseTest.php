@@ -2,14 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Actions\Admin\ReconcilePlatformEvents;
 use App\Actions\Business\PauseForLostPhone;
+use App\Actions\Business\ResumeAfterLostPhone;
+use App\Enums\PlatformEventKind;
+use App\Enums\PlatformEventState;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\ProcessIncomingWhatsAppMessage;
 use App\Mail\AccountPasswordChanged;
 use App\Mail\LostPhonePauseChanged;
 use App\Models\Business;
 use App\Models\LoginDevice;
+use App\Models\PlatformEvent;
 use App\Models\User;
+use App\Models\WhatsAppLinkEvent;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
@@ -275,4 +281,123 @@ it('keeps the paused banner on every client screen of a session that saw the pau
         ->assertOk()
         ->assertSee(__('whatsapp.lost_phone.banner_title'))
         ->assertSee(route('whatsapp'));
+});
+
+it('lists the recent team devices whose access was cut, marks the one that paused, and forgets them on resume', function (): void {
+    $owner = lostPhoneOwner();
+    $agent = User::factory()->create(['business_id' => $owner->business_id, 'name' => 'Lucía Agente']);
+    $agent->syncRoles('agent');
+    bridgeUnlinks();
+    $desk = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36';
+    LoginDevice::factory()->for($owner)->create(['fingerprint' => LoginDevice::fingerprintFor($desk), 'user_agent' => $desk, 'last_login_at' => now()]);
+    LoginDevice::factory()->for($owner)->create(['fingerprint' => LoginDevice::fingerprintFor(PHONE_AGENT), 'user_agent' => PHONE_AGENT, 'last_login_at' => now()->subHour()]);
+    // A browser not seen for a year had no session to cut.
+    LoginDevice::factory()->for($owner)->create(['fingerprint' => 'old', 'user_agent' => 'Mozilla/5.0 (Windows NT 10.0) Gecko/20100101 Firefox/120.0', 'last_login_at' => now()->subYear()]);
+    appInstallToken($agent, 'agent-phone');
+
+    app(PauseForLostPhone::class)->handle($owner->business, $owner, NEW_PASSWORD, LoginDevice::fingerprintFor($desk));
+
+    $cut = collect($owner->business->fresh()->lost_phone_cut_sessions);
+    expect($cut)->toHaveCount(3)
+        ->and($cut->firstWhere('device', 'Chrome · Android'))->toMatchArray(['name' => $owner->name, 'app' => false, 'mobile' => true, 'current' => false])
+        ->and($cut->firstWhere('device', 'Chrome · Windows'))->toMatchArray(['name' => $owner->name, 'current' => true])
+        ->and($cut->firstWhere('name', 'Lucía Agente'))->toMatchArray(['app' => true, 'mobile' => true])
+        ->and($cut->pluck('device'))->not->toContain('Firefox · Windows');
+
+    $this->actingAs($owner)
+        ->withSession(['lost_phone_pause_seen' => $owner->business->fresh()->lost_phone_paused_at->getTimestamp()])
+        ->withHeader('User-Agent', $desk)
+        ->get(route('whatsapp'))
+        ->assertSee(__('whatsapp.lost_phone.cut_title'))
+        ->assertSee('Chrome · Android')
+        ->assertSee(__('whatsapp.lost_phone.cut_current'))
+        ->assertSeeInOrder(['Lucía Agente', __('whatsapp.lost_phone.cut_app')]);
+
+    app(ResumeAfterLostPhone::class)->handle($owner->business->fresh(), $owner);
+
+    expect($owner->business->fresh()->lost_phone_cut_sessions)->toBeNull();
+});
+
+it('tells the admin board while a business is paused, and closes the line when it lifts', function (): void {
+    $owner = lostPhoneOwner();
+    bridgeUnlinks();
+
+    app(PauseForLostPhone::class)->handle($owner->business, $owner, NEW_PASSWORD);
+
+    $line = PlatformEvent::query()->where('kind', PlatformEventKind::LostPhonePaused->value)->sole();
+    expect($line->about_business_id)->toBe($owner->business_id)
+        ->and($line->state)->toBe(PlatformEventState::Open)
+        ->and(PlatformEventKind::LostPhonePaused->target($owner->business_id))->toBe(['route' => 'admin.businesses', 'query' => ['negocio' => $owner->business_id]]);
+
+    // One fact, one line: the unlink it caused raises no "rescan" line, now or on the hourly reconcile.
+    WhatsAppLinkEvent::record($owner->business->fresh(), false, 'owner_unlinked');
+    app(ReconcilePlatformEvents::class)->handle();
+    expect(PlatformEvent::query()->active()->where('kind', PlatformEventKind::WhatsAppDisconnected->value)->count())->toBe(0);
+
+    app(ResumeAfterLostPhone::class)->handle($owner->business->fresh(), $owner);
+
+    expect($line->fresh()->state)->toBe(PlatformEventState::Resolved);
+});
+
+it('takes the login link straight to the pause card, and an agent home instead of a 403', function (): void {
+    $this->get(route('lost-phone'))->assertRedirect(route('login'));
+    $this->get(route('login'))->assertSee(__('auth.login.lost_phone_note'))->assertDontSee('data-testid="lost-phone-link"', false);
+
+    $owner = lostPhoneOwner();
+    $this->actingAs($owner)->get(route('lost-phone'))->assertRedirect(route('whatsapp').'#perdi-el-telefono');
+
+    $agent = User::factory()->create(['business_id' => $owner->business_id]);
+    $agent->syncRoles('agent');
+    $this->actingAs($agent)->get(route('lost-phone'))->assertRedirect($agent->panelHome());
+});
+
+it('offers the lost-phone link on a plain login', function (): void {
+    $this->get(route('login'))->assertSee('data-testid="lost-phone-link"', false)->assertSee(route('lost-phone'))->assertDontSee(__('auth.login.lost_phone_note'));
+});
+
+it('shows the pause on the admin directory row and on its ficha', function (): void {
+    $owner = lostPhoneOwner();
+    pausedBusinessOf($owner);
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+    $this->actingAs($admin->refresh());
+
+    livewire('admin.businesses.index')
+        ->assertSeeHtml('data-testid="biz-paused-'.$owner->business_id.'"')
+        ->assertSee(__('admin.businesses.lost_phone.tag'))
+        ->call('toggle', $owner->business_id)
+        ->assertSeeHtml('data-testid="biz-lost-phone-'.$owner->business_id.'"');
+});
+
+it('swaps the QR of the signup WhatsApp step for the paused banner', function (): void {
+    $owner = lostPhoneOwner();
+    pausedBusinessOf($owner);
+    $this->actingAs($owner);
+
+    livewire('business.step-whatsapp')
+        ->assertSee(__('whatsapp.lost_phone.banner_title'))
+        ->assertDontSeeHtml('wire:poll');
+});
+
+it('hands the phone app the paused card and the home banner in the web words', function (): void {
+    $owner = lostPhoneOwner();
+    $owner->business->subscription->forceFill(['status' => SubscriptionStatus::Active, 'current_period_ends_at' => now()->addDays(20)])->save();
+    $token = appInstallToken($owner, 'owner-new-phone');
+    $this->withHeaders(apiDeviceHeaders('owner-new-phone'));
+
+    $this->withToken($token)->getJson('/api/v1/whatsapp')->assertOk()->assertJsonPath('data.paused', null);
+    $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.profile.home.lost_phone', null);
+
+    pausedBusinessOf($owner);
+    // A fresh request would read the user afresh; the test reuses the guard's copy.
+    $this->app['auth']->forgetGuards();
+
+    $this->withToken($token)->getJson('/api/v1/whatsapp')
+        ->assertOk()
+        ->assertJsonPath('data.paused.title', __('whatsapp.lost_phone.paused_title'))
+        ->assertJsonPath('data.paused.effects', __('whatsapp.lost_phone.effects'))
+        ->assertJsonPath('data.paused.resume', __('whatsapp.lost_phone.app_resume'));
+    $this->withToken($token)->getJson('/api/v1/me')
+        ->assertOk()
+        ->assertJsonPath('data.profile.home.lost_phone.title', __('whatsapp.lost_phone.banner_title'));
 });

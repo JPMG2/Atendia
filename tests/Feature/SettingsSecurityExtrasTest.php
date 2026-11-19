@@ -14,6 +14,7 @@ use App\Mail\AccountPasswordReset;
 use App\Mail\AccountTwoFactorChanged;
 use App\Mail\DeviceChallengeCode;
 use App\Models\Business;
+use App\Models\Company;
 use App\Models\LoginDevice;
 use App\Models\User;
 use App\Services\SignedLink;
@@ -269,6 +270,44 @@ test('with two-step on, a new device gets its code by whatsapp instead of mail',
 
     $this->post('/codigo-de-acceso', ['code' => $code]);
     $this->assertAuthenticatedAs($user);
+});
+
+test('a code sent by whatsapp offers support for a lost phone, never a switch to mail', function (): void {
+    Http::fake(['http://evolution.test/*' => Http::response(['status' => 'PENDING'])]);
+    Company::factory()->create(['email' => 'ayuda@plataforma.test']);
+    $user = ownerWithPhone();
+    $user->forceFill(['two_factor_whatsapp_at' => now()])->save();
+    LoginDevice::factory()->for($user)->create();
+
+    $this->withHeader('User-Agent', 'Unknown Browser 9.0')
+        ->post('/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertRedirect(route('device.challenge'));
+
+    $this->get(route('device.challenge'))
+        ->assertSee(__('security.challenge.no_phone'))
+        ->assertSee('mailto:ayuda@plataforma.test', false);
+    Mail::assertNotQueued(DeviceChallengeCode::class);
+});
+
+test('support can take a business owner second step away from the server, as the lost-phone line promises', function (): void {
+    $user = ownerWithPhone();
+    $user->forceFill(['two_factor_whatsapp_at' => now()])->save();
+
+    $this->artisan('atendia:two-factor-reset', ['email' => $user->email])->assertSuccessful();
+
+    expect($user->refresh()->sendsLoginCodesByWhatsApp())->toBeFalse();
+});
+
+test('a code sent by mail does not offer the lost-phone way out', function (): void {
+    Company::factory()->create(['email' => 'ayuda@plataforma.test']);
+    $user = ownerWithPhone();
+    LoginDevice::factory()->for($user)->create();
+
+    $this->withHeader('User-Agent', 'Unknown Browser 9.0')
+        ->post('/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertRedirect(route('device.challenge'));
+
+    $this->get(route('device.challenge'))->assertDontSee(__('security.challenge.no_phone'));
 });
 
 test('turning two-step off re-asks the password', function (): void {

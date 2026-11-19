@@ -51,6 +51,9 @@ return [
         'recovery_cta' => 'Entrar con el código de respaldo',
         'wrong_recovery' => 'Ese código de respaldo no es válido o ya se usó.',
         'whatsapp_failed' => 'WhatsApp no respondió, así que esta vez te mandamos el código por correo.',
+        'no_phone' => '¿Perdiste el teléfono y no tienes tus códigos de respaldo?',
+        'no_phone_cta' => 'Escríbenos y te ayudamos a entrar',
+        'no_phone_subject' => 'Ayuda para entrar a mi cuenta sin mi teléfono',
     ],
 
     // Login codes that go by WhatsApp once two-step verification is on.

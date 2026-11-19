@@ -9,6 +9,7 @@ use App\Dto\NotificationDto;
 use App\Enums\NotificationType;
 use App\Http\Middleware\EndSessionsBeforeLostPhonePause;
 use App\Livewire\Forms\BaseForm;
+use App\Models\LoginDevice;
 use App\Traits\ConfirmsCurrentPassword;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
@@ -47,7 +48,7 @@ class LostPhonePauseForm extends BaseForm
         $this->confirmCurrentPassword($this->current_password);
 
         $notification = $this->tryAction(function () use ($business, $user, $validated): NotificationDto {
-            $unlinked = app(PauseForLostPhone::class)->handle($business, $user, $validated['password']);
+            $unlinked = app(PauseForLostPhone::class)->handle($business, $user, $validated['password'], LoginDevice::fingerprintFor(request()->userAgent()));
             EndSessionsBeforeLostPhonePause::admit($business->refresh());
 
             return new NotificationDto(

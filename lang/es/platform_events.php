@@ -55,6 +55,10 @@ return [
             'label' => 'Un negocio aceptó que lo mencionemos',
             'hint' => 'Comprueba que sigue nuestra cuenta y publícalo desde Menciones.',
         ],
+        'lost_phone_paused' => [
+            'label' => 'WhatsApp en pausa por robo o pérdida',
+            'hint' => 'Le robaron o perdió el teléfono: su asistente no responde hasta que lo reactive. Escríbele por correo, no a ese número.',
+        ],
         'business_cancelled' => [
             'label' => 'Cliente dado de baja',
             'hint' => 'Pidió irse o cerró su cuenta. Escríbele para saber el motivo: es lo que más enseña.',

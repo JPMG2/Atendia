@@ -954,6 +954,10 @@ return [
         ],
 
         'history' => '{0} Ver historial|[1,*] Ver historial (:count)',
+        'lost_phone' => [
+            'tag' => 'WhatsApp en pausa',
+            'since' => 'Pausó su WhatsApp por robo o pérdida del teléfono el :date. Su asistente no responde hasta que lo reactive; el cobro sigue igual.',
+        ],
         'cancel' => [
             'title' => 'Baja',
             'hint' => 'Sigue andando hasta el :date, que es lo que ya pagó.',

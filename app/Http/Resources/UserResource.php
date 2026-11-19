@@ -53,6 +53,11 @@ class UserResource extends JsonResource
                     'greeting' => __('client.home.greeting', ['name' => $this->name]),
                     'sub' => ($this->business?->conversations()->exists() ?? false) ? __('client.home.sub_active') : __('client.home.sub_new'),
                     'disconnected' => __('client.home.disconnected'),
+                    // The web's banner over every screen, while the number is paused for a lost phone.
+                    'lost_phone' => ! $staff && ($this->business?->isPausedForLostPhone() ?? false) ? [
+                        'title' => __('whatsapp.lost_phone.banner_title'),
+                        'body' => __('whatsapp.lost_phone.banner_body'),
+                    ] : null,
                 ],
                 'password' => [
                     'title' => __('settings.password.title'),

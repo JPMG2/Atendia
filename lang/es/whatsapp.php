@@ -33,7 +33,7 @@ return [
 
     'lost_phone' => [
         'title' => '¿Te robaron o perdiste el teléfono?',
-        'body' => 'Pausa tu WhatsApp y nadie podrá usarlo a través de :brand hasta que lo reactives con tu contraseña nueva. No es dar de baja: no se borra nada.',
+        'body' => 'Pausa tu WhatsApp y nadie puede usarlo a través de :brand hasta que lo reactives con tu contraseña nueva. No es dar de baja: no se borra nada.',
         'effects' => [
             'Tu asistente deja de responder y no sale ningún mensaje ni recordatorio por tu número.',
             'El número se desvincula: cuando lo recuperes, lo vuelves a vincular con el código QR.',
@@ -59,6 +59,13 @@ return [
         'banner_title' => 'Tu WhatsApp está en pausa por robo o pérdida.',
         'banner_body' => 'Tu asistente no responde y nada sale por tu número hasta que lo reactives.',
         'banner_cta' => 'Reactivar',
+        'cut_title' => 'Accesos que se cortaron',
+        'cut_hint' => 'Quedaron fuera al pausar: la app y los navegadores de tu equipo que entraron en los últimos :days días. Tu contraseña ya cambió; si no reconoces un dispositivo de alguien de tu equipo, pídele que cambie la suya.',
+        'cut_none' => 'No había dispositivos de tu equipo con acceso en los últimos :days días.',
+        'cut_current' => 'Este equipo o uno igual',
+        'cut_app' => 'App',
+        'cut_last' => 'Último ingreso',
+        'app_resume' => 'Para reactivarlo, entra a la web, en WhatsApp, con la contraseña nueva.',
     ],
 
     'history' => [

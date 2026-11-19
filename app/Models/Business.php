@@ -109,6 +109,7 @@ class Business extends Model
             'suspended_at' => 'datetime',
             'appealed_at' => 'datetime',
             'lost_phone_paused_at' => 'datetime',
+            'lost_phone_cut_sessions' => 'array',
             'deleted_at' => 'datetime',
         ];
     }

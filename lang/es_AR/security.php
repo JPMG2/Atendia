@@ -11,6 +11,8 @@ return [
         'hint' => 'El código vence en 10 minutos. Si no llega, revisá el correo no deseado.',
         'wrong_code' => 'Ese código no es. Revisá el correo e intentá de nuevo.',
         'use_recovery' => '¿Sin acceso a tu WhatsApp? Usá un código de respaldo',
+        'no_phone' => '¿Perdiste el teléfono y no tenés tus códigos de respaldo?',
+        'no_phone_cta' => 'Escribinos y te ayudamos a entrar',
     ],
 
     'challenge_whatsapp' => [

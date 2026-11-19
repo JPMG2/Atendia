@@ -57,7 +57,7 @@ new class extends Component
 };
 ?>
 
-<div data-testid="lost-phone">
+<div id="perdi-el-telefono" class="scroll-mt-24" data-testid="lost-phone">
     @if ($this->business?->isPausedForLostPhone())
         <x-ui.card class="p-5">
             <div class="flex items-start gap-4">
@@ -90,6 +90,36 @@ new class extends Component
                         @endforeach
                     </ul>
                     <p class="text-muted text-sm">{{ __('whatsapp.lost_phone.billing') }}</p>
+
+                    <div class="bd-subtle space-y-2 border-t pt-4" data-testid="lost-phone-cut">
+                        <h3 class="font-display text-strong text-base">{{ __('whatsapp.lost_phone.cut_title') }}</h3>
+                        @php($recentDays = \App\Actions\Business\PauseForLostPhone::RECENT_DAYS)
+                        @if (empty($this->business->lost_phone_cut_sessions))
+                            <p class="text-muted text-sm">{{ __('whatsapp.lost_phone.cut_none', ['days' => $recentDays]) }}</p>
+                        @else
+                            <p class="text-muted text-sm">{{ __('whatsapp.lost_phone.cut_hint', ['days' => $recentDays]) }}</p>
+                            <ul class="bd-subtle divide-y divide-[color:var(--border-subtle)] rounded-xl border">
+                                @foreach ($this->business->lost_phone_cut_sessions as $cut)
+                                    <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm" wire:key="cut-{{ $loop->index }}">
+                                        <span class="text-muted flex-none"><x-icon :name="($cut['mobile'] ?? $cut['app']) ? 'smartphone' : 'monitor'" :size="16" /></span>
+                                        <span class="text-strong font-semibold">{{ $cut['name'] }}</span>
+                                        <span class="text-body">
+                                            {{ $cut['device'] }}@if ($cut['app']) · {{ __('whatsapp.lost_phone.cut_app') }}@endif
+                                        </span>
+                                        @if ($cut['current'] ?? false)
+                                            <span class="status-tag is-info">{{ __('whatsapp.lost_phone.cut_current') }}</span>
+                                        @endif
+                                        @if ($cut['last_login_at'])
+                                            <span class="text-muted ml-auto">
+                                                {{ __('whatsapp.lost_phone.cut_last') }}
+                                                <span class="font-mono">{{ \Carbon\CarbonImmutable::parse($cut['last_login_at'])->inBusinessTime()->format('d/m/Y H:i') }}</span>
+                                            </span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
 
                     <div class="bd-subtle space-y-3 border-t pt-4">
                         <h3 class="font-display text-strong text-base">{{ __('whatsapp.lost_phone.resume_title') }}</h3>

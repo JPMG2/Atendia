@@ -341,6 +341,9 @@ new class extends Component
                                         'status-tag',
                                         'is-danger' => $row['bad'],
                                     ])>{{ $row['state_label'] }}</span>
+                                    @if ($row['paused'])
+                                        <span class="status-tag is-warning" data-testid="biz-paused-{{ $row['id'] }}">{{ $row['paused'] }}</span>
+                                    @endif
                                 </td>
                                 <td class="font-mono col-aux" data-label="{{ $labels['due'] }}">
                                     {{ $row['due'] }}
@@ -416,6 +419,13 @@ new class extends Component
                     >{{ $card['sub'] }}</x-ui.stat-card>
                 @endforeach
             </div>
+
+            @if ($fichaData['paused'])
+                <div class="pay-banner mt-3" role="status" data-testid="biz-lost-phone-{{ $this->ficha->id }}">
+                    <x-icon name="shield-alert" :size="20" />
+                    <p class="pay-banner-text">{{ $fichaData['paused'] }}</p>
+                </div>
+            @endif
 
             @if ($this->ficha->isErased())
                 <div class="bp-card-head mt-3"><h2>{{ __('admin.businesses.erased.title') }}</h2></div>

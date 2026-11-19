@@ -64,6 +64,7 @@ return new class extends Migration
             $table->timestamp('appealed_at')->nullable()->comment('Cuándo apeló: una apelación por suspensión');
             $table->timestamp('lost_phone_paused_at')->nullable()->comment('Pausa por robo o pérdida del teléfono: nada sale por su WhatsApp hasta que el negocio la levanta con su contraseña; el cobro sigue igual');
             $table->foreignId('lost_phone_paused_by')->nullable()->constrained('users')->nullOnDelete()->comment('Quién la pausó');
+            $table->jsonb('lost_phone_cut_sessions')->nullable()->comment('Al pausar: los dispositivos del equipo a los que se les cortó el acceso (persona, dispositivo, último ingreso); se borra al reactivar');
             $table->timestamps();
 
             $table->index('is_active');

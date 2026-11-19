@@ -18,6 +18,13 @@
         <x-ui.alert variant="info" icon="clock" class="mb-6"> {{ __('errors.expired_alert') }} </x-ui.alert>
     @endif
 
+    {{-- Came through "¿Te robaron el teléfono?": says where the login leads. --}}
+    @if (session('url.intended') === route('lost-phone'))
+        <x-ui.alert variant="warning" icon="shield-alert" class="mb-6" data-testid="lost-phone-entry">
+            {{ __('auth.login.lost_phone_note') }}
+        </x-ui.alert>
+    @endif
+
     {{-- Session status, such as the password-reset confirmation. --}}
     @if (session('status'))
         <x-ui.alert variant="success" icon="message-circle" class="mb-6"> {{ session('status') }} </x-ui.alert>
@@ -97,6 +104,16 @@
             {{ __('auth.login.submit') }}
         </x-ui.button>
     </form>
+
+    @unless (session('url.intended') === route('lost-phone'))
+        <p class="mt-6 text-center" style="font-size: var(--text-sm)">
+            <a
+                href="{{ route('lost-phone') }}"
+                class="text-muted inline-flex items-center gap-1.5 font-semibold hover:underline"
+                data-testid="lost-phone-link"
+            ><x-icon name="shield-alert" :size="16" />{{ __('auth.login.lost_phone') }}</a>
+        </p>
+    @endunless
 
     @if (Route::has('register'))
         <p class="text-muted mt-8 text-center" style="font-size: var(--text-sm)">

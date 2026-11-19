@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Business;
 
+use App\Actions\Admin\ResolvePlatformEvent;
+use App\Enums\PlatformEventKind;
 use App\Mail\LostPhonePauseChanged;
 use App\Messaging\Channels\Email;
 use App\Models\Business;
@@ -22,7 +24,9 @@ class ResumeAfterLostPhone
             return;
         }
 
-        $business->forceFill(['lost_phone_paused_at' => null, 'lost_phone_paused_by' => null])->save();
+        $business->forceFill(['lost_phone_paused_at' => null, 'lost_phone_paused_by' => null, 'lost_phone_cut_sessions' => null])->save();
+
+        app(ResolvePlatformEvent::class)->ofKind(PlatformEventKind::LostPhonePaused, $business->id);
 
         (new Email($by, [$by->email], LostPhonePauseChanged::class, [false]))->send();
     }
