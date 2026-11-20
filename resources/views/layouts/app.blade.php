@@ -220,7 +220,8 @@ Livewire overlay with the stack trace is the useful thing to see). --}}
                             class="topbar-user-dropdown"
                             x-show="open"
                             x-cloak
-                            x-transition
+                            {{-- It grows out of the avatar it hangs from, at the brand's quick pace. --}}
+                            x-transition.origin.top.right.duration.140ms
                             @click.outside="open = false"
                         >
                             @if (! $onAdminPanel && auth()->user()?->business_id !== null)

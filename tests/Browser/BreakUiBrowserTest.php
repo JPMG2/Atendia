@@ -97,6 +97,23 @@ test('with a mouse a tile still lifts on hover', function (): void {
     $page->screenshot(filename: 'hover-tile-1280');
 });
 
+test('a switch knob lands where it always did, moved by transform', function (): void {
+    $user = payingUser();
+    $user->assignRole('client');
+    $this->actingAs($user);
+
+    $page = visit('/dashboard')->resize(1280, 900);
+    $page->script('document.body.insertAdjacentHTML("beforeend", \'<label class="switch" id="probe-on"><input type="checkbox" checked><span class="switch-track"></span></label><label class="switch" id="probe-off"><input type="checkbox"><span class="switch-track"></span></label>\')');
+    $page->wait(0.5);
+
+    // On, the knob sits 20px right of its 3px start: 3px from the end of a 46px track, as with `left:23px`.
+    $offset = fn (string $id): int => (int) $page->script("Math.round(new DOMMatrix(getComputedStyle(document.querySelector('#{$id} .switch-track'), '::after').transform).m41)");
+
+    expect($offset('probe-on'))->toBe(20)
+        ->and($offset('probe-off'))->toBe(0)
+        ->and((string) $page->script("getComputedStyle(document.querySelector('#probe-on .switch-track'), '::after').transitionProperty"))->toBe('transform');
+});
+
 test('a name with no spaces never runs over the time in the bell', function (): void {
     $business = Business::factory()->create();
     $user = User::factory()->create();

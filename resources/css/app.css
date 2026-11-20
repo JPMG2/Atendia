@@ -705,7 +705,7 @@
   .combo-control.is-loading .field-input,
   .combo-control.is-loading .combo-toggle { cursor:wait; }
   .combo-spinner { display:inline-flex; color:var(--brand);
-                   animation:combo-spin 900ms linear infinite; }
+                   animation:combo-spin 600ms linear infinite; }
   @keyframes combo-spin { to { transform:rotate(360deg); } }
 
   .combo-list { position:absolute; z-index:40; left:0; right:0; top:calc(100% + 6px);
@@ -750,17 +750,18 @@
   }
   .switch-track::after {
     content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
-    background:#fff; box-shadow:var(--shadow-sm); transition:left var(--dur-base) var(--ease-spring);
+    /* The knob travels by transform: animating `left` laid the page out again on every frame. */
+    background:#fff; box-shadow:var(--shadow-sm); transition:transform var(--dur-base) var(--ease-spring);
   }
   .switch input:checked + .switch-track { background:var(--brand); }
-  .switch input:checked + .switch-track::after { left:23px; }
+  .switch input:checked + .switch-track::after { transform:translateX(20px); }
   /* A group switch with only some of its screens on sits halfway. */
   .switch input:indeterminate + .switch-track { background:color-mix(in srgb, var(--brand) 55%, var(--border-strong)); }
-  .switch input:indeterminate + .switch-track::after { left:13px; }
+  .switch input:indeterminate + .switch-track::after { transform:translateX(10px); }
   .switch input:focus-visible + .switch-track { box-shadow:0 0 0 4px var(--focus-ring); }
   .switch-track.switch-sm { width:36px; height:20px; }
   .switch-track.switch-sm::after { width:14px; height:14px; }
-  .switch input:checked + .switch-track.switch-sm::after { left:19px; }
+  .switch input:checked + .switch-track.switch-sm::after { transform:translateX(16px); }
   .switch-label { font-size:var(--text-sm); font-weight:var(--weight-medium); color:var(--text-body); }
 
   /* ---- Checkbox ---- */
@@ -946,8 +947,10 @@
     .dialog-foot { grid-column:1; flex-direction:column-reverse; }
     .dialog-foot .btn { width:100%; }
   }
+  /* Fewer motions, not none: the fade stays, the rise and the growth go. */
   @media (prefers-reduced-motion:reduce) {
-    .dialog, .dialog-backdrop { transition:none; }
+    .dialog { transition:opacity var(--dur-fast) var(--ease-out); }
+    .dialog-off { transform:none; }
   }
 
   /* El tramo del nombre que coincide con la búsqueda de una lista (gemelo
@@ -983,7 +986,7 @@
   @keyframes slide-over-in { from { transform:translateX(60px); opacity:0; } }
   @keyframes slide-over-fade { from { opacity:0; } }
   @media (prefers-reduced-motion:reduce) {
-    .slide-over, .slide-over-backdrop { animation:none; }
+    .slide-over, .slide-over-backdrop { animation:slide-over-fade var(--dur-fast) var(--ease-out); }
   }
 
   .toast-stack {
@@ -1023,6 +1026,8 @@
 
   /* Transición de entrada/salida (Alpine aplica las clases) */
   .toast-trans { transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+  /* Leaving is quicker than arriving: the reader is done with it. */
+  .toast-leave { transition-duration:var(--dur-fast); }
   .toast-off { opacity:0; transform:translateY(16px) scale(.96); }
   .toast-on  { opacity:1; transform:translateY(0) scale(1); }
 
@@ -1033,7 +1038,7 @@
   }
 
   @media (prefers-reduced-motion:reduce) {
-    .toast-trans { transition-duration:1ms; }
+    .toast-trans { transition:opacity var(--dur-fast) var(--ease-out); }
     .toast-off { transform:none; }
   }
 
@@ -1072,11 +1077,12 @@
    its conversation pops in like a real chat coming alive. */
 @keyframes hero-rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
 .hero-enter { animation:hero-rise .55s var(--ease-out) backwards; }
-.hero-enter-1 { animation-delay:.05s; }
-.hero-enter-2 { animation-delay:.13s; }
-.hero-enter-3 { animation-delay:.21s; }
-.hero-enter-4 { animation-delay:.29s; }
-.hero-enter-5 { animation-delay:.37s; }
+/* Gaps that shrink as the sequence goes: an even beat reads mechanical. */
+.hero-enter-1 { animation-delay:0s; }
+.hero-enter-2 { animation-delay:.07s; }
+.hero-enter-3 { animation-delay:.12s; }
+.hero-enter-4 { animation-delay:.16s; }
+.hero-enter-5 { animation-delay:.19s; }
 /* Wealthfront-style arrival: the phone glides in from the right edge. */
 @keyframes hero-phone-in { from { opacity:0; transform:translateX(72px); } to { opacity:1; transform:none; } }
 .hero-phone-enter { animation:hero-phone-in .7s var(--ease-out) .25s backwards; }
@@ -1085,16 +1091,18 @@
 .phone-bubble-2 { animation-delay:.95s; }
 .phone-bubble-3 { animation-delay:1.25s; }
 .phone-bubble-4 { animation-delay:1.55s; }
-.hero-enter-6 { animation-delay:.45s; }
+.hero-enter-6 { animation-delay:.21s; }
 
 /* Anchor landings clear the frosted navbar (sticky, ~68px tall): without
    this the section title arrives hidden underneath it. */
 #funciones, #como-funciona, #casos, #precios, #clientes { scroll-margin-top:88px; }
 
-/* Scroll reveal: each section rises as the visitor reaches it. hero.js arms
-   it (adds .reveal-pending) only when it can animate — JS off = page at rest. */
-.reveal-pending { opacity:0; transform:translateY(18px); }
-.reveal-in { animation:hero-rise .6s var(--ease-out); }
+/* Scroll reveal: each section fades in as the visitor reaches it. hero.js arms
+   it (adds .reveal-pending) only when it can animate — JS off = page at rest.
+   A fade without the rise: the same climb on every section stops being news by the third. */
+@keyframes reveal-fade { from { opacity:0; } }
+.reveal-pending { opacity:0; }
+.reveal-in { animation:reveal-fade var(--dur-base) var(--ease-out); }
 
 /* The "en línea" dot breathes; the primary CTA's zap gives one springy
    wink on hover — micro-interactions only, calm everywhere else. */
@@ -1613,24 +1621,34 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .recent-card { margin-top:24px; }
 
   /* --- Transición SPA del panel: solo el contenido, el shell queda quieto --- */
+  /* A fade and no travel: it runs on every menu click, dozens of times a day, and a moving
+     page that often reads as slowness. The drawer and reduced motion skip it entirely. */
   @keyframes navigate-out {
-    to { opacity:0; transform:translateY(-0.4rem); }
+    to { opacity:0; }
   }
   @keyframes navigate-in {
-    from { opacity:0; transform:translateY(0.4rem); }
+    from { opacity:0; }
   }
   html:active-view-transition-type(navigate)::view-transition-old(livewire-navigate) {
-    animation:navigate-out 140ms var(--ease-out) both;
+    animation:navigate-out var(--dur-fast) var(--ease-out) both;
   }
   html:active-view-transition-type(navigate)::view-transition-new(livewire-navigate) {
-    animation:navigate-in 200ms var(--ease-out) both;
+    animation:navigate-in var(--dur-fast) var(--ease-out) both;
+  }
+  @media (prefers-reduced-motion:reduce) {
+    html:active-view-transition-type(navigate)::view-transition-old(livewire-navigate),
+    html:active-view-transition-type(navigate)::view-transition-new(livewire-navigate) { animation:none; }
+  }
+  @media (max-width:860px) and (prefers-reduced-motion:reduce) {
+    .sidebar { transition:none; }
   }
 
   /* --- Mi negocio: maqueta viva del perfil del negocio --- */
   .bp-head { display:flex; align-items:flex-start; gap:10px; }
   .bp-back { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
              margin-top:4px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);
-             color:var(--text-muted); flex-shrink:0; transition:all var(--dur-fast) var(--ease-out); }
+             color:var(--text-muted); flex-shrink:0;
+             transition:background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
   .bp-back:hover { background:var(--surface-sunken); color:var(--text-strong); }
   .bp-layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:12px; align-items:start; }
   .bp-rail { position:sticky; top:20px; display:flex; flex-direction:column; gap:12px; }
@@ -1680,7 +1698,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .ag-slots { display:flex; flex-wrap:wrap; gap:8px; }
   .ag-slot { font-size:var(--text-sm); font-weight:600; padding:6px 12px; border-radius:var(--radius-pill);
     border:1px solid var(--brand-border); background:var(--brand-soft); color:var(--brand-soft-text); cursor:pointer;
-    transition:background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+    transition:background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+               transform var(--dur-fast) var(--ease-out); }
   .ag-slot:hover { background:var(--brand); color:var(--text-on-brand); border-color:var(--brand); }
   .ag-slot:active { transform:scale(.97); }
   .ag-slot.is-picked { background:var(--brand); color:var(--text-on-brand); border-color:var(--brand); }
@@ -2210,7 +2229,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* --- Responsive: sidebar → drawer --- */
   @media (max-width:860px) {
     .sidebar { position:fixed; left:0; top:0; transform:translateX(-100%);
-               transition:transform .26s var(--ease-out); }
+               transition:transform var(--dur-base) var(--ease-out); }
     .sidebar.sidebar-open { transform:translateX(0); box-shadow:var(--shadow-xl); }
     .sidebar-scrim { display:block; position:fixed; inset:0; background:var(--surface-overlay); z-index:70; }
     .topbar-burger { display:inline-flex; }
@@ -3024,10 +3043,11 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .presence-toggle.is-away .presence-dot { background:var(--text-muted); }
   .presence-switch { position:relative; margin-left:auto; width:32px; height:18px; border-radius:var(--radius-pill);
     background:var(--brand); transition:background var(--dur-fast) var(--ease-out); }
-  .presence-switch::after { content:""; position:absolute; top:2px; left:16px; width:14px; height:14px;
-    border-radius:var(--radius-pill); background:var(--surface-card); transition:left var(--dur-fast) var(--ease-spring); }
+  .presence-switch::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px;
+    border-radius:var(--radius-pill); background:var(--surface-card); transform:translateX(14px);
+    transition:transform var(--dur-fast) var(--ease-spring); }
   .presence-toggle.is-away .presence-switch { background:var(--border-strong); }
-  .presence-toggle.is-away .presence-switch::after { left:2px; }
+  .presence-toggle.is-away .presence-switch::after { transform:none; }
   .presence-hint { margin-top:6px; font-size:var(--text-xs); line-height:1.4; color:var(--text-muted); }
   .dropdown-item { display:flex; align-items:center; gap:10px; width:100%; padding:9px 10px; border:none;
                    background:transparent; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none;
@@ -3827,7 +3847,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .wizard-tab { flex:1; min-width:128px; text-align:left; padding-top:8px;
                 border-top:3px solid var(--border-default); color:var(--text-subtle);
                 font-size:var(--text-sm); font-weight:var(--weight-semibold); white-space:nowrap;
-                transition:all var(--dur-fast) var(--ease-out); }
+                transition:border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
   .wizard-tab .n { font-family:var(--font-mono); font-weight:var(--weight-bold); margin-right:6px; }
   .wizard-tab.is-active { border-top-color:var(--brand); color:var(--text-strong); }
   .wizard-tab.is-done { border-top-color:var(--jade-300); color:var(--brand-soft-text); }
@@ -3858,7 +3878,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .wizard-chips { display:flex; flex-wrap:wrap; gap:8px; }
   .wizard-chip { border:1px solid var(--border-default); border-radius:var(--radius-pill);
                  padding:7px 14px; font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text-body);
-                 background:var(--surface-card); transition:all var(--dur-fast) var(--ease-out); }
+                 background:var(--surface-card);
+                 transition:border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+                            color var(--dur-fast) var(--ease-out); }
   /* Hover is border-only so the jade WASH belongs to selected alone: the
      owner found solid jade too loud, and hover ≡ selected was unreadable. */
   .wizard-chip:hover { border-color:var(--brand); }
@@ -4019,7 +4041,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
                  font-size:var(--text-sm); color:var(--text-muted); }
   .wizard-todo .box { width:18px; height:18px; border-radius:50%; border:2px solid var(--border-default);
                       flex:none; display:grid; place-items:center; color:var(--ink-0);
-                      transition:all var(--dur-base) var(--ease-out); }
+                      transition:border-color var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out); }
   .wizard-todo .box svg { display:none; }
   .wizard-todo.done { color:var(--text-body); }
   .wizard-todo.done .box { background:var(--success); border-color:var(--success); }

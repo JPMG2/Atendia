@@ -31,7 +31,7 @@ new class extends Component {};
             x-transition:enter="toast-trans"
             x-transition:enter-start="toast-off"
             x-transition:enter-end="toast-on"
-            x-transition:leave="toast-trans"
+            x-transition:leave="toast-trans toast-leave"
             x-transition:leave-start="toast-on"
             x-transition:leave-end="toast-off"
         >

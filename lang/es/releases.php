@@ -27,6 +27,14 @@ return [
     ],
 
     'entries' => [
+        '1.2.5' => [
+            'title' => 'Movimientos más ágiles',
+            'items' => [
+                'El cambio entre pantallas del panel es un fundido breve, sin desplazamientos.',
+                'Los interruptores, los avisos y el menú de la cuenta responden con más fluidez.',
+                'Con «reducir movimiento» activado en el teléfono o la computadora, el panel solo usa fundidos suaves.',
+            ],
+        ],
         '1.2.4' => [
             'title' => 'Más fácil de leer',
             'items' => [
