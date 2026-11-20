@@ -535,7 +535,7 @@ new class extends Component
                     <p class="text-muted px-4 py-6 text-center text-sm">{{ __('client.conversations.no_results') }}</p>
                 @endif
 
-                <div class="max-h-[65vh] overflow-y-auto">
+                <div class="max-h-[65dvh] overflow-y-auto overscroll-contain">
                 <ul>
                     @foreach ($rows as $row)
                         <li wire:key="row-{{ $row->id }}">

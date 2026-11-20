@@ -66,6 +66,25 @@ test('a figure in bolivars stays inside its tile on a phone', function (bool $da
     $page->screenshot(filename: 'break-stat-390-'.($dark ? 'dark' : 'light'));
 })->with([false, true]);
 
+test('on a phone the panel tells the browser its theme, follows the real screen height and keeps scrolls in their panel', function (): void {
+    $user = payingUser();
+    $user->assignRole('client');
+    $this->actingAs($user);
+
+    $page = visit('/dashboard')->resize(390, 844);
+    $page->click('@sidebar-toggle');
+    $style = fn (string $selector, string $property): string => (string) $page->script("getComputedStyle(document.querySelector('{$selector}')).{$property}");
+
+    expect($style('html', 'colorScheme'))->toBe('light')
+        ->and($style('.sidebar', 'overscrollBehaviorY'))->toBe('contain')
+        // The drawer is exactly as tall as the visible screen, toolbar or not.
+        ->and((int) $page->script('Math.round(document.querySelector(".sidebar").getBoundingClientRect().height - window.innerHeight)'))->toBe(0);
+
+    $page->script("document.documentElement.classList.add('dark')");
+    expect($style('html', 'colorScheme'))->toBe('dark');
+    $page->screenshot(filename: 'phone-drawer-390-dark');
+});
+
 test('a name with no spaces never runs over the time in the bell', function (): void {
     $business = Business::factory()->create();
     $user = User::factory()->create();

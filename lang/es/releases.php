@@ -27,6 +27,15 @@ return [
     ],
 
     'entries' => [
+        '1.2.2' => [
+            'title' => 'El panel, más cómodo en el teléfono',
+            'items' => [
+                'El menú ocupa justo la pantalla visible: su final ya no queda bajo la barra del navegador.',
+                'Los toques responden al instante, sin el destello gris del navegador.',
+                'Al desplazar un panel o una lista hasta el final, la página de atrás se queda quieta.',
+                'En el tema oscuro, las barras de desplazamiento y el autocompletado también son oscuros.',
+            ],
+        ],
         '1.2.1' => [
             'title' => 'Datos largos, siempre en su lugar',
             'items' => [

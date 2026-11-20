@@ -10,6 +10,7 @@ declare(strict_types=1);
 */
 
 return [
+    ['version' => '1.2.2', 'date' => '2026-11-20', 'kind' => 'patch'],
     ['version' => '1.2.1', 'date' => '2026-11-20', 'kind' => 'patch'],
     ['version' => '1.2.0', 'date' => '2026-11-20', 'kind' => 'minor'],
     ['version' => '1.1.0', 'date' => '2026-11-20', 'kind' => 'minor'],
