@@ -85,6 +85,18 @@ test('on a phone the panel tells the browser its theme, follows the real screen 
     $page->screenshot(filename: 'phone-drawer-390-dark');
 });
 
+test('with a mouse a tile still lifts on hover', function (): void {
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->syncRoles('admin');
+    $this->actingAs($admin);
+
+    $page = visit('/admin')->resize(1280, 900);
+    $page->hover('.stat-card.is-link >> nth=0')->wait(0.3);
+
+    expect((string) $page->script('getComputedStyle(document.querySelector(".stat-card.is-link")).transform'))->not->toBe('none');
+    $page->screenshot(filename: 'hover-tile-1280');
+});
+
 test('a name with no spaces never runs over the time in the bell', function (): void {
     $business = Business::factory()->create();
     $user = User::factory()->create();

@@ -27,6 +27,12 @@ return [
     ],
 
     'entries' => [
+        '1.2.3' => [
+            'title' => 'Tarjetas que no se quedan levantadas',
+            'items' => [
+                'En el teléfono, una tarjeta tocada ya no se queda levantada: el efecto de elevarse queda para el mouse.',
+            ],
+        ],
         '1.2.2' => [
             'title' => 'El panel, más cómodo en el teléfono',
             'items' => [
