@@ -34,6 +34,7 @@ class PlatformSettingSeeder extends Seeder
             // before the admin desk calls it a failure.
             ['key' => 'incidents.unanswered_minutes', 'group' => 'analysis', 'type' => 'integer', 'default_value' => '15', 'min' => 5, 'max' => 240, 'sort_order' => 2],
             ['key' => 'incidents.digest_time', 'group' => 'sends', 'type' => 'time', 'default_value' => '20:00', 'sort_order' => 7],
+            ['key' => 'releases.mail_owners', 'group' => 'sends', 'type' => 'integer', 'default_value' => '1', 'min' => 0, 'max' => 1, 'sort_order' => 8],
 
             // Handing a chat to a person, and getting it back.
             ['key' => 'handoff.reminder_minutes', 'group' => 'handoff', 'type' => 'integer', 'default_value' => '20', 'min' => 5, 'max' => 240, 'sort_order' => 1],

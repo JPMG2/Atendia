@@ -6,6 +6,7 @@ use App\Classes\Main\Releases;
 use App\Console\Commands\AnnounceRelease;
 use App\Enums\PanelNotificationType;
 use App\Jobs\SendBellPush;
+use App\Mail\ReleaseNews;
 use App\Models\Business;
 use App\Models\PanelNotification;
 use Database\Seeders\MenuSeeder;
@@ -13,6 +14,7 @@ use Database\Seeders\PlanSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -100,6 +102,44 @@ test('a suspended business is not told what is new', function (): void {
     $this->artisan('atendia:announce-release');
 
     expect(PanelNotification::query()->pluck('business_id')->all())->toBe([$open->id]);
+});
+
+test('each business gets the news by mail once, with what the version brings', function (): void {
+    Mail::fake();
+    Business::factory()->create(['billing_email' => 'dueña@negocio.test']);
+    Business::factory()->create(['billing_email' => '']);
+    shipVersion('1.1.0', 'minor');
+
+    $this->artisan('atendia:announce-release');
+    Cache::forget(AnnounceRelease::ANNOUNCED_KEY);
+    $this->artisan('atendia:announce-release');
+
+    Mail::assertQueuedCount(1);
+    Mail::assertQueued(ReleaseNews::class, fn (ReleaseNews $mail): bool => $mail->hasTo('dueña@negocio.test')
+        && $mail->release['version'] === '1.1.0');
+});
+
+test('the mail stays off when she turns it off in the admin', function (): void {
+    Mail::fake();
+    config(['atendia.releases.mail_owners' => 0]);
+    Business::factory()->create(['billing_email' => 'dueña@negocio.test']);
+    shipVersion('1.1.0', 'minor');
+
+    $this->artisan('atendia:announce-release');
+
+    Mail::assertNothingQueued();
+    expect(PanelNotification::query()->count())->toBe(1);
+});
+
+test('the mail lists every line of the version and leads to «Novedades»', function (): void {
+    $business = Business::factory()->create();
+    $mail = new ReleaseNews($business, ['version' => '1.1.0', 'title' => 'Algo nuevo', 'items' => ['Primera línea', 'Segunda línea']]);
+
+    $mail->assertSeeInHtml('Algo nuevo')
+        ->assertSeeInHtml('Primera línea')
+        ->assertSeeInHtml('Segunda línea')
+        ->assertSeeInHtml(route('releases'))
+        ->assertSeeInText('Segunda línea');
 });
 
 test('without news the bell gets nothing', function (): void {

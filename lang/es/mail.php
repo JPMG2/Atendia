@@ -103,6 +103,16 @@ return [
         'reason' => 'Recibes este correo porque tu plan incluye el resumen semanal de :business.',
     ],
 
+    // Sin imperativo en segunda persona: así no necesita override de voseo en es_AR.
+    'release_news' => [
+        'subject' => 'Novedades de :brand: versión :version',
+        'preheader' => 'Lo que trae la versión nueva para tu negocio.',
+        'eyebrow' => 'Versión :version',
+        'intro' => 'Ya está disponible en el panel de :business, sin hacer nada.',
+        'cta' => 'Ver todas las novedades',
+        'reason' => 'Recibes este correo porque :business usa :brand.',
+    ],
+
     'referral_link' => [
         'subject' => 'Tu enlace para ganar con :brand',
         'preheader' => 'Compártelo con otros negocios y gana descuentos en tu factura.',

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Classes\Main\Releases;
+use App\Mail\ReleaseNews;
+use App\Models\Business;
 use App\Models\Company;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -76,6 +78,44 @@ test('both panels show the version at the foot of the menu', function (string $p
     'admin wide dark' => ['admin', 1280, true],
     'client phone dark' => ['client', 390, true],
 ]);
+
+test('«Novedades» marks what came out since this browser last opened it', function (int $width, bool $dark): void {
+    config(['releases' => [
+        ['version' => '1.1.0', 'date' => '2026-12-01', 'kind' => 'minor'],
+        ['version' => '1.0.0', 'date' => '2026-11-19', 'kind' => 'major'],
+    ]]);
+
+    $page = visit('/novedades')->resize($width, 900);
+    // A first visit has nothing to compare with: nothing is marked.
+    $page->assertMissing('@release-new-1.1.0');
+
+    $page->script("localStorage.setItem('".Releases::SEEN_KEY."', '1.0.0')");
+
+    if ($dark) {
+        $page->script("localStorage.setItem('atendia-theme', 'dark')");
+    }
+
+    $page->navigate('/novedades')
+        ->assertVisible('@release-new-1.1.0')
+        ->assertMissing('@release-new-1.0.0')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: true, filename: 'releases-since-'.$width.'-'.($dark ? 'dark' : 'light'));
+
+    // The visit itself is now the last one: coming back marks nothing.
+    $page->navigate('/novedades')->assertMissing('@release-new-1.1.0');
+})->with([[1280, false], [390, true]]);
+
+test('the release mail reads well in a mail client width', function (): void {
+    $html = (new ReleaseNews(Business::factory()->create(['name' => 'Peluquería Ana']), [
+        'version' => '1.1.0',
+        'title' => __('releases.entries')['1.1.0']['title'],
+        'items' => __('releases.entries')['1.1.0']['items'],
+    ]))->render();
+
+    $page = visit('/novedades')->resize(640, 900);
+    $page->script('document.open(); document.write('.json_encode($html).'); document.close();');
+    $page->assertSee('Peluquería Ana')->screenshot(fullPage: true, filename: 'releases-mail');
+});
 
 test('a version with news lights «Nuevo» and the bell until «Novedades» is opened', function (int $width, bool $dark): void {
     config(['releases' => [

@@ -19,6 +19,7 @@ return [
     'link_label' => 'Versión :version: ver las novedades',
     'current' => 'Actual',
     'new' => 'Nuevo',
+    'new_since' => 'Nuevo desde tu última visita',
     'kinds' => [
         'major' => 'Versión mayor',
         'minor' => 'Novedades',
@@ -26,6 +27,13 @@ return [
     ],
 
     'entries' => [
+        '1.2.0' => [
+            'title' => 'Lo nuevo, a la vista',
+            'items' => [
+                'Novedades marca lo que salió desde la última visita.',
+                'Un correo con lo que trae cada versión con novedades.',
+            ],
+        ],
         '1.1.0' => [
             'title' => 'Las novedades llegan solas',
             'items' => [

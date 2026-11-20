@@ -394,6 +394,11 @@ return [
         'invitation_days' => env('TEAM_INVITATION_DAYS', 7),
     ],
 
+    // A version with news also goes by mail to each business, with its words (Admin > Ajustes): 1 = on, 0 = off.
+    'releases' => [
+        'mail_owners' => 1,
+    ],
+
     'bell' => [
         // Days a panel notice stays in the inbox before it is pruned. Past it
         // the row is history: what it pointed at was solved or is long gone.

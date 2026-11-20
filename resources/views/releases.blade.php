@@ -3,11 +3,17 @@
 <x-guest-layout>
     <x-slot:title>{{ __('releases.title') }} · {{ $brand }}</x-slot:title>
 
-    {{-- Opening this page is what turns off the «Nuevo» beside «Novedades» in the panel menu. --}}
+    {{-- The version this browser saw last is read BEFORE the visit overwrites it: what came out
+    since then is marked. A first visit has nothing to compare with and marks nothing. Opening
+    the page is also what turns off the «Nuevo» beside «Novedades» in the panel menu. --}}
     <div
         class="flex flex-col gap-6"
         data-testid="releases"
-        x-data
+        x-data="{
+            versions: @js(array_column($releases->entries, 'version')),
+            seen: (() => { try { return localStorage.getItem('{{ \App\Classes\Main\Releases::SEEN_KEY }}') } catch (e) { return null } })(),
+            isNew(version) { const last = this.versions.indexOf(this.seen); return last > 0 && this.versions.indexOf(version) < last },
+        }"
         x-init="(() => { try { localStorage.setItem('{{ \App\Classes\Main\Releases::SEEN_KEY }}', @js($releases->current)) } catch (e) {} })()"
     >
         <header class="flex flex-col gap-2">
@@ -30,6 +36,14 @@
                     @if ($loop->first)
                         <span class="status-tag is-brand"><span class="dot"></span>{{ __('releases.current') }}</span>
                     @endif
+                    <span
+                        class="status-tag is-success"
+                        x-show="isNew(@js($release['version']))"
+                        x-cloak
+                        data-testid="release-new-{{ $release['version'] }}"
+                    >
+                        {{ __('releases.new_since') }}
+                    </span>
                     <span class="status-tag">{{ $release['kind_label'] }}</span>
                     <span class="text-muted font-mono text-sm">{{ $release['date']->format('d/m/Y') }}</span>
                 </div>

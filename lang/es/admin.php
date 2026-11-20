@@ -653,6 +653,12 @@ return [
                     'hint' => 'A qué hora te llega por correo la lista del día de «Qué salió mal». Va con la hora de :city, la de la plataforma, no la de cada negocio.',
                 ],
             ],
+            'releases' => [
+                'mail_owners' => [
+                    'label' => 'Correo de novedades',
+                    'hint' => '1 = cuando sale una versión con novedades, cada negocio recibe además un correo con lo que trae (la campana avisa siempre). 0 = solo la campana.',
+                ],
+            ],
             'schedule' => [
                 'birthday_greetings' => [
                     'label' => 'Saludo de cumpleaños',
