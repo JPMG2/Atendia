@@ -64,3 +64,24 @@ test('the topics table reads the month and offers the fix per topic', function (
         ->assertNoJavaScriptErrors()
         ->screenshot(fullPage: true, filename: 'statistics-topics');
 });
+
+test('chart labels stay readable from a phone to a desktop', function (int $width): void {
+    $business = Business::factory()->create();
+    $business->subscription->update(['plan' => 'premium', 'trial_ends_at' => null]);
+    foreach ([1, 2, 2, 3, 5, 9] as $daysAgo) {
+        $thread = Conversation::factory()->create(['business_id' => $business->id]);
+        ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $thread->id, 'created_at' => now()->subDays($daysAgo)]);
+    }
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]));
+
+    $page = visit('/estadisticas')->resize($width, 900);
+
+    // Text inside the scaled SVG measured 9px on a phone and 16px at 900px; the labels must not scale.
+    $rendered = fn (string $selector): float => (float) $page->script("(() => { const t = document.querySelector('{$selector}'); const svg = t.closest('svg'); const scale = svg ? svg.getBoundingClientRect().width / svg.viewBox.baseVal.width : 1; return parseFloat(getComputedStyle(t).fontSize) * scale; })()");
+
+    expect($rendered('.stats-chart-tick'))->toBe(12.0)
+        ->and($rendered('.stats-chart-value'))->toBe(12.0);
+
+    $page->script('document.querySelector(".stats-chart").scrollIntoView({block: "center"})');
+    $page->screenshot(filename: 'statistics-chart-'.$width);
+})->with([390, 900, 1280]);

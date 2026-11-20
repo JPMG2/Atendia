@@ -2425,9 +2425,13 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .stats-hero b { font-family:var(--font-mono); font-weight:700; }
   .stats-insight { font-size:var(--text-sm); color:var(--text-muted); margin-bottom:12px; }
   .stats-empty { font-size:var(--text-sm); color:var(--text-subtle); }
+  .stats-chart-plot { position:relative; padding-top:20px; }
   .stats-chart svg { display:block; width:100%; height:auto; }
-  .stats-chart-tick { font-size:9px; fill:var(--text-subtle); font-family:var(--font-sans); }
-  .stats-chart-value { font-size:10px; font-weight:700; fill:var(--text-strong); font-family:var(--font-mono); }
+  .stats-chart-ticks { position:relative; height:18px; margin-top:4px; }
+  .stats-chart-tick { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap;
+    font-size:var(--text-xs); line-height:1.4; color:var(--text-muted); font-family:var(--font-sans); }
+  .stats-chart-value { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap;
+    font-size:var(--text-xs); line-height:1.4; font-weight:700; color:var(--text-strong); font-family:var(--font-mono); }
   .stats-top { display:flex; flex-direction:column; gap:12px; }
   .stats-top-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:4px; }
   .stats-top-text { font-size:var(--text-sm); color:var(--text-body); }

@@ -19,52 +19,54 @@ table so the data never lives in color alone. --}}
     $width = count($series) * $slot;
 @endphp
 
+{{-- Labels are HTML laid over the SVG, not SVG text: the SVG scales with its
+card, so text inside it went from 9px on a phone to 16px at 900px. --}}
 <div class="stats-chart">
-    <svg
-        viewBox="0 0 {{ $width }} {{ $chartHeight + 18 }}"
-        role="img"
-        aria-label="{{ $tableLabel }}"
-        preserveAspectRatio="none"
-    >
-        @foreach ($series as $index => $point)
-            @php
-                $height = $point['count'] > 0 ? max(3, (int) round($point['count'] / $max * $chartHeight)) : 2;
-                $x = $index * $slot + ($slot - $barWidth) / 2;
-                $isPeak = $index === $peak && $point['count'] > 0;
-            @endphp
-            <rect
-                x="{{ $x }}"
-                y="{{ $chartHeight - $height }}"
-                width="{{ $barWidth }}"
-                height="{{ $height }}"
-                rx="2"
-                fill="var(--brand)"
-                fill-opacity="{{ $isPeak ? '1' : ($point['count'] > 0 ? '0.45' : '0.14') }}"
+    <div class="stats-chart-plot">
+        <svg
+            viewBox="0 0 {{ $width }} {{ $chartHeight }}"
+            role="img"
+            aria-label="{{ $tableLabel }}"
+            preserveAspectRatio="none"
+        >
+            @foreach ($series as $index => $point)
+                @php
+                    $height = $point['count'] > 0 ? max(3, (int) round($point['count'] / $max * $chartHeight)) : 2;
+                    $x = $index * $slot + ($slot - $barWidth) / 2;
+                    $isPeak = $index === $peak && $point['count'] > 0;
+                @endphp
+                <rect
+                    x="{{ $x }}"
+                    y="{{ $chartHeight - $height }}"
+                    width="{{ $barWidth }}"
+                    height="{{ $height }}"
+                    rx="2"
+                    fill="var(--brand)"
+                    fill-opacity="{{ $isPeak ? '1' : ($point['count'] > 0 ? '0.45' : '0.14') }}"
+                >
+                    <title>{{ $point['label'] }}: {{ $point['count'] }}</title>
+                </rect>
+            @endforeach
+        </svg>
+        @if ($peak !== false && $series[$peak]['count'] > 0)
+            <span
+                class="stats-chart-value"
+                style="left: {{ ($peak + 0.5) / count($series) * 100 }}%"
+                aria-hidden="true"
             >
-                <title>{{ $point['label'] }}: {{ $point['count'] }}</title>
-            </rect>
-            @if ($isPeak)
-                <text
-                    x="{{ $x + $barWidth / 2 }}"
-                    y="{{ max(9, $chartHeight - $height - 5) }}"
-                    text-anchor="middle"
-                    class="stats-chart-value"
-                >
-                    {{ $point['count'] }}
-                </text>
-            @endif
+                {{ $series[$peak]['count'] }}
+            </span>
+        @endif
+    </div>
+    <div class="stats-chart-ticks" aria-hidden="true">
+        @foreach ($series as $index => $point)
             @if ($index % $labelEvery === 0)
-                <text
-                    x="{{ $x + $barWidth / 2 }}"
-                    y="{{ $chartHeight + 13 }}"
-                    text-anchor="middle"
-                    class="stats-chart-tick"
-                >
+                <span class="stats-chart-tick" style="left: {{ ($index + 0.5) / count($series) * 100 }}%">
                     {{ $point['label'] }}
-                </text>
+                </span>
             @endif
         @endforeach
-    </svg>
+    </div>
 
     <table class="sr-only">
         <caption>

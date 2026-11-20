@@ -27,6 +27,12 @@ return [
     ],
 
     'entries' => [
+        '1.2.6' => [
+            'title' => 'Gráficos más legibles',
+            'items' => [
+                'Las fechas, las horas y los meses de los gráficos de Estadísticas se leen igual de bien en el teléfono que en la computadora.',
+            ],
+        ],
         '1.2.5' => [
             'title' => 'Movimientos más ágiles',
             'items' => [
