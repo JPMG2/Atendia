@@ -55,8 +55,11 @@
 
   --border-subtle:var(--ink-100); --border-default:var(--ink-200); --border-strong:var(--ink-300);
 
-  --text-strong:var(--ink-900); --text-body:var(--ink-700); --text-muted:var(--ink-500);
-  --text-subtle:var(--ink-400); --text-inverse:var(--ink-0); --text-on-brand:#FFFFFF;
+  /* Measured on white / page / sunken: muted 4.56:1 at worst (ink-500 alone gave 4.08 on sunken),
+     subtle 3.4:1 (ink-400 gave 2.46). Subtle is for hints and separators; a datum goes muted. */
+  --text-strong:var(--ink-900); --text-body:var(--ink-700);
+  --text-muted:color-mix(in srgb, var(--ink-500) 75%, var(--ink-600));
+  --text-subtle:color-mix(in srgb, var(--ink-400) 40%, var(--ink-500)); --text-inverse:var(--ink-0); --text-on-brand:#FFFFFF;
 
   --brand:var(--jade-500); --brand-hover:var(--jade-600); --brand-active:var(--jade-700);
   --brand-soft:var(--jade-50); --brand-soft-hover:var(--jade-100); --brand-soft-text:var(--jade-700);
@@ -80,7 +83,8 @@
   --font-sans:"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --text-2xs:.6875rem; --text-xs:.75rem; --text-sm:.875rem; --text-base:1rem; --text-lg:1.125rem;
+  /* 12px is the floor for a label or a tag: 2xs used to be 11px and read as a smudge on a phone. */
+  --text-2xs:.75rem; --text-xs:.75rem; --text-sm:.875rem; --text-base:1rem; --text-lg:1.125rem;
   --text-xl:1.25rem; --text-2xl:1.5rem; --text-3xl:1.875rem; --text-4xl:2.25rem; --text-5xl:3rem;
   --text-6xl:3.75rem; --text-7xl:4.75rem;
 
@@ -151,7 +155,8 @@
   --border-subtle:rgba(255,255,255,.07); --border-default:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.18);
 
   --text-strong:var(--ink-50); --text-body:var(--ink-300); --text-muted:var(--ink-400);
-  --text-subtle:var(--ink-500); --text-inverse:var(--ink-900); --text-on-brand:#052A21;
+  /* ink-500 alone gave 3.68:1 on a raised surface; this mix gives 4.71. */
+  --text-subtle:color-mix(in srgb, var(--ink-500) 60%, var(--ink-400)); --text-inverse:var(--ink-900); --text-on-brand:#052A21;
 
   --brand:var(--jade-400); --brand-hover:var(--jade-300); --brand-active:var(--jade-300);
   --brand-soft:rgba(37,196,144,.14); --brand-soft-hover:rgba(37,196,144,.22);
@@ -332,7 +337,7 @@
   .export-option[aria-checked="true"] { border-color:var(--brand); background:var(--brand-soft); }
   .export-option b { display:flex; align-items:center; gap:6px; font-size:var(--text-sm); color:var(--text-strong); }
   .export-option > span { font-size:var(--text-xs); color:var(--text-muted); }
-  .export-tag { padding:1px 7px; border-radius:var(--radius-pill); background:var(--brand); color:var(--text-on-brand); font-size:10px; font-weight:700; }
+  .export-tag { padding:1px 7px; border-radius:var(--radius-pill); background:var(--brand); color:var(--text-on-brand); font-size:var(--text-xs); font-weight:700; }
   .export-format { display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:var(--radius-md); text-decoration:none;
                    transition:background var(--dur-fast) var(--ease-out); }
   .export-format:hover, .export-format:focus-visible { background:var(--brand-soft); outline:none; }
@@ -1133,7 +1138,7 @@
 .pricing-ai-head { display:flex; align-items:center; gap:10px; }
 .pricing-ai-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
                    border-radius:50%; background:var(--brand); color:var(--text-on-brand); }
-.pricing-ai-eyebrow { font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); }
+.pricing-ai-eyebrow { font-size:var(--text-xs); font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); }
 .pricing-ai-title { margin-top:10px; font-family:var(--font-display); font-weight:800; font-size:var(--text-2xl);
                     line-height:1.1; letter-spacing:-0.02em; color:var(--brand-soft-text); }
 .pricing-ai-text { margin-top:6px; font-size:var(--text-sm); line-height:1.45; color:var(--text-body); }
@@ -1193,7 +1198,7 @@
 .calc-side { display:flex; flex-direction:column; gap:4px; padding:16px; border:1px solid; border-radius:var(--radius-lg); }
 .calc-side-today { background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 30%, transparent); }
 .calc-side-with { background:var(--brand-soft); border-color:var(--brand-border); }
-.calc-tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.calc-tag { font-size:var(--text-xs); font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
 .calc-side-today .calc-tag { color:var(--accent-soft-text); }
 .calc-side-with .calc-tag { color:var(--brand-soft-text); }
 .calc-big { font-size:var(--text-4xl); font-weight:700; line-height:1.1; color:var(--text-strong); }
@@ -1498,7 +1503,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
 
   .sidebar-nav { display:flex; flex-direction:column; gap:4px; flex:1; min-height:0; overflow-y:auto; }
   .sidebar-nav-bottom { margin-top:auto; padding-top:8px; }
-  .menu-section { font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  .menu-section { font-size:var(--text-xs); font-weight:800; letter-spacing:.1em; text-transform:uppercase;
                   color:var(--text-subtle); padding:8px 12px 4px; }
 
   /* --- Menú recursivo --- */
@@ -1527,7 +1532,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .menu-caret-open { transform:rotate(180deg); }
   .menu-badge { flex-shrink:0; min-width:20px; text-align:center; padding:1px 8px;
                 border-radius:var(--radius-pill); background:var(--border-default); color:var(--text-muted);
-                font-family:var(--font-mono); font-size:11px; font-weight:700; }
+                font-family:var(--font-mono); font-size:var(--text-xs); font-weight:700; }
   .menu-item[data-current] .menu-badge { background:var(--brand); color:var(--text-on-brand); }
 
   /* --- Topbar --- */
@@ -2996,7 +3001,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .bell-mark { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
                width:28px; height:28px; border-radius:var(--radius-sm); }
   .bell-text { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
-  .bell-time { flex-shrink:0; padding-top:1px; font-size:var(--text-xs); color:var(--text-subtle); }
+  .bell-time { flex-shrink:0; padding-top:1px; font-size:var(--text-xs); color:var(--text-muted); }
 
   /* Menú de usuario (dropdown con cerrar sesión) */
   .topbar-user-menu { position:relative; }
@@ -3438,7 +3443,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   .catalog-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:16px 20px;
                      border-bottom:1px solid var(--border-subtle); }
   .catalog-toolbar .field { flex:1 1 auto; max-width:360px; }
-  .catalog-count { flex:none; margin-left:auto; font-size:var(--text-xs); color:var(--text-subtle);
+  .catalog-count { flex:none; margin-left:auto; font-size:var(--text-xs); color:var(--text-muted);
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
   /* The one-tap filter of a master (a country): it wraps, never scrolls sideways. */
   .catalog-filter { display:flex; flex-wrap:wrap; gap:8px; padding:12px 20px;
@@ -3610,6 +3615,9 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
      formulario: algo tiene que llevarse el resto, y el maestro decide qué. */
   .catalog-table .catalog-col-fill,
   .catalog-table .catalog-cell-fill { width:100%; white-space:normal; }
+  /* A second cell that may wrap without taking the rest of the row: a free-length value such as
+     a week's schedule, which on one line pushed the table past its box at 1280. */
+  .catalog-table tbody td.catalog-cell-wrap { white-space:normal; min-width:10rem; }
   /* Selector completo a propósito: `.catalog-table tbody td` es más específico,
      así que un `.catalog-table-empty` suelto perdía y el vacío quedaba con el
      alto de una fila normal en vez de respirar. */
@@ -3999,7 +4007,7 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* Tip por paso: el único toque coral de la vista. */
   .wizard-tip { border-radius:var(--radius-lg); padding:16px 18px; background:var(--surface-card);
                 border:1px solid var(--border-subtle); box-shadow:var(--shadow-sm); }
-  .wizard-tip .tag { display:inline-block; font-size:.625rem; font-weight:var(--weight-extra);
+  .wizard-tip .tag { display:inline-block; font-size:var(--text-xs); font-weight:var(--weight-extra);
                      letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
   .wizard-tip p { font-size:var(--text-sm); line-height:var(--leading-normal); color:var(--text-body); }
   .wizard-tip p b { color:var(--text-strong); }

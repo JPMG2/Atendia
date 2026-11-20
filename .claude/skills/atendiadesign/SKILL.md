@@ -69,7 +69,11 @@ Helpers de Tailwind ya definidos en `app.css` para no hardcodear:
 - **Cuerpo/UI — Plus Jakarta Sans** (400–700): todo lo legible. Es `font-sans` (default).
 - **Mono — JetBrains Mono:** precios, teléfonos, IDs, códigos, horarios y toda cifra que se
   compara de a varias en columna. Clase `font-mono`. **Nunca** texto corrido.
-- Escala rem `--text-xs … --text-7xl`. **Mínimo UI: 14px (`--text-sm`).**
+- Escala rem `--text-xs … --text-7xl`. **Piso doble:** lo que se LEE (texto, botones, campos,
+  filas, menú) va en 14px (`--text-sm`) o más; rótulos en mayúsculas, etiquetas, horas y
+  contadores, en 12px (`--text-xs`) y nunca menos. Debajo de 12 solo las miniaturas que
+  ilustran una pantalla (`pm-*`, `mini-*`, el teléfono del wizard) y el número dentro del
+  punto de la campana. Un dato nunca va en `--text-subtle` (pistas y separadores): va en `--text-muted`.
 
 ## 3. Forma, espaciado, sombras, motion
 

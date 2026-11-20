@@ -134,7 +134,7 @@ new class extends Component
             </td>
             {{-- "Hereda" comes worded from the model, greyed by the key the phone also reads. --}}
             <td class="catalog-cell-sym" x-bind:class="row.phone_inherits ? 'text-muted' : ''" x-text="row.phone_shown"></td>
-            <td class="catalog-cell-sym" x-bind:class="row.hours_inherits ? 'text-muted' : ''" x-text="row.hours_shown"></td>
+            <td class="catalog-cell-sym catalog-cell-wrap" x-bind:class="row.hours_inherits ? 'text-muted' : ''" x-text="row.hours_shown"></td>
             <td>
                 {{-- Switched on and inside its dates are different things, and only the second one is what the
                 visitor is reading right now; when grey, the model's word says which one is missing (the phone reads it too). --}}

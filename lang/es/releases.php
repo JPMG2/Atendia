@@ -27,6 +27,13 @@ return [
     ],
 
     'entries' => [
+        '1.2.4' => [
+            'title' => 'Más fácil de leer',
+            'items' => [
+                'Los textos grises tienen más contraste, en el tema claro y en el oscuro.',
+                'Las horas, los conteos y las etiquetas más pequeñas se leen mejor en el teléfono.',
+            ],
+        ],
         '1.2.3' => [
             'title' => 'Tarjetas que no se quedan levantadas',
             'items' => [

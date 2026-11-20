@@ -561,7 +561,7 @@ new class extends Component
                                         @elseif ($row->status === ConversationStatus::Team)
                                             <x-ui.badge variant="accent">{{ __('client.conversations.status_team_chip') }}</x-ui.badge>
                                         @endif
-                                        <span class="text-subtle flex-none font-mono text-xs">
+                                        <span class="text-muted flex-none font-mono text-xs">
                                             {{ $row->last_message_at?->inBusinessTime()->isToday() ? $row->last_message_at->inBusinessTime()->format('H:i') : $row->last_message_at?->inBusinessTime()->format('d/m') }}
                                         </span>
                                     </span>
