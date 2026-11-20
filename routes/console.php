@@ -54,6 +54,9 @@ Schedule::command('atendia:exchange-rate')
     ->when(fn (): bool => Company::isNowBetween((string) config('atendia.exchange_rate.first_check'), (string) config('atendia.exchange_rate.last_check')))
     ->withoutOverlapping(10);
 
+// A deploy that brings a new version reaches every bell within the quarter hour.
+Schedule::command('atendia:announce-release')->everyFifteenMinutes()->withoutOverlapping(15);
+
 // Nightly, off the busy hours: the bell's inbox drops what aged out of its
 // window (config atendia.bell.keep_days). Nobody empties it by hand.
 Schedule::command('model:prune', ['--model' => [PanelNotification::class]])->dailyAt('04:20');

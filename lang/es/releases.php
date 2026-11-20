@@ -18,6 +18,7 @@ return [
     'link' => 'v:version',
     'link_label' => 'Versión :version: ver las novedades',
     'current' => 'Actual',
+    'new' => 'Nuevo',
     'kinds' => [
         'major' => 'Versión mayor',
         'minor' => 'Novedades',
@@ -25,6 +26,13 @@ return [
     ],
 
     'entries' => [
+        '1.1.0' => [
+            'title' => 'Las novedades llegan solas',
+            'items' => [
+                'Aviso en la campana cuando sale una versión con novedades, con el enlace para verlas.',
+                'Marca «Nuevo» junto a Novedades en el menú hasta abrirlas.',
+            ],
+        ],
         '1.0.0' => [
             'title' => 'La primera versión',
             'items' => [

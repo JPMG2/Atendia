@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Classes\Main\Releases;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,12 @@ class BrandController extends Controller
             // The words the phone used to keep its own copy of, read from the web's text in the
             // caller's variant: a change on the web reaches the app without a new install.
             'copy' => collect((array) config('atendia.app.copy'))->map(fn (string $key): string => __($key))->all(),
+            // The version the customers run, as the panel menu prints it, with the door to what it brought.
+            'release' => [
+                'version' => $version = (new Releases)->current,
+                'label' => __('releases.link', ['version' => $version]).' · '.__('releases.title'),
+                'url' => route('releases'),
+            ],
         ]]);
     }
 }

@@ -23,6 +23,7 @@ enum PanelNotificationType: string
     case PlanUsageHigh = 'plan_usage_high';
     case ClosureNoticeHeld = 'closure_notice_held';
     case ReminderHeld = 'reminder_held';
+    case ReleaseAvailable = 'release_available';
 
     /** The row's glyph, from the central registry. */
     public function icon(): string
@@ -37,6 +38,7 @@ enum PanelNotificationType: string
             self::SupportResolved => 'life-buoy',
             self::PlanUsageHigh => 'gem',
             self::ClosureNoticeHeld, self::ReminderHeld => 'phone',
+            self::ReleaseAvailable => 'sparkles',
         };
     }
 
@@ -53,7 +55,7 @@ enum PanelNotificationType: string
         [$background, $glyph] = match ($this) {
             self::CustomerWaiting, self::WhatsAppDisconnected, self::MentionNeedsFollow, self::PlanUsageHigh, self::ClosureNoticeHeld, self::ReminderHeld => ['var(--warning-soft)', 'var(--warning)'],
             self::HandedToTeam, self::TaughtByTeammate => ['var(--info-soft)', 'var(--info)'],
-            self::AppointmentBooked, self::SupportResolved, self::MentionOffered, self::MentionPublished => ['var(--success-soft)', 'var(--success)'],
+            self::AppointmentBooked, self::SupportResolved, self::MentionOffered, self::MentionPublished, self::ReleaseAvailable => ['var(--success-soft)', 'var(--success)'],
         };
 
         return "background:{$background};color:{$glyph};";

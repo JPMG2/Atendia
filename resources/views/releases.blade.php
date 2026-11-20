@@ -3,7 +3,13 @@
 <x-guest-layout>
     <x-slot:title>{{ __('releases.title') }} · {{ $brand }}</x-slot:title>
 
-    <div class="flex flex-col gap-6" data-testid="releases">
+    {{-- Opening this page is what turns off the «Nuevo» beside «Novedades» in the panel menu. --}}
+    <div
+        class="flex flex-col gap-6"
+        data-testid="releases"
+        x-data
+        x-init="(() => { try { localStorage.setItem('{{ \App\Classes\Main\Releases::SEEN_KEY }}', @js($releases->current)) } catch (e) {} })()"
+    >
         <header class="flex flex-col gap-2">
             <p class="eyebrow">{{ $brand }}</p>
             <h1

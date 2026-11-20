@@ -221,7 +221,8 @@ new class extends Component
         @endif
 
         {{-- Both panels: the version they run, a door to what each one brought. --}}
-        @php($version = (new \App\Classes\Main\Releases)->current)
+        @php($releases = new \App\Classes\Main\Releases)
+        @php($version = $releases->current)
         <a
             href="{{ route('releases') }}"
             class="sidebar-version"
@@ -230,6 +231,16 @@ new class extends Component
         >
             <span class="font-mono">{{ __('releases.link', ['version' => $version]) }}</span>
             <span>· {{ __('releases.title') }}</span>
+            {{-- Lit until this browser opens «Novedades» for this version; that page writes the mark. --}}
+            @if ($releases->news !== null)
+                <span
+                    class="sidebar-version-new"
+                    data-testid="sidebar-version-new"
+                    x-data="{ unseen: (() => { try { return localStorage.getItem('{{ \App\Classes\Main\Releases::SEEN_KEY }}') !== @js($version) } catch (e) { return false } })() }"
+                    x-show="unseen"
+                    x-cloak
+                >{{ __('releases.new') }}</span>
+            @endif
         </a>
     </div>
 </nav>

@@ -13,12 +13,26 @@ use Carbon\CarbonImmutable;
  */
 class Releases
 {
+    /** The browser's mark of the last version whose «Novedades» it opened. */
+    public const string SEEN_KEY = 'atendia-release-seen';
+
     /** @var list<array{version: string, date: CarbonImmutable, kind: string, kind_label: string, title: string, items: list<string>}>|null */
     private ?array $read = null;
 
     /** @var string The version running today: the newest row. */
     public string $current {
         get => $this->entries[0]['version'];
+    }
+
+    /**
+     * The newest version when it is worth telling the customers about: it adds
+     * something (minor or major) and it is not the first one, which every
+     * customer already started on. Null otherwise.
+     *
+     * @var array{version: string, date: CarbonImmutable, kind: string, kind_label: string, title: string, items: list<string>}|null
+     */
+    public ?array $news {
+        get => count($this->entries) > 1 && $this->entries[0]['kind'] !== 'patch' ? $this->entries[0] : null;
     }
 
     /** @var list<array{version: string, date: CarbonImmutable, kind: string, kind_label: string, title: string, items: list<string>}> */

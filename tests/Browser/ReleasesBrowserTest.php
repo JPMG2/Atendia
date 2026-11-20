@@ -76,3 +76,47 @@ test('both panels show the version at the foot of the menu', function (string $p
     'admin wide dark' => ['admin', 1280, true],
     'client phone dark' => ['client', 390, true],
 ]);
+
+test('a version with news lights «Nuevo» and the bell until «Novedades» is opened', function (int $width, bool $dark): void {
+    config(['releases' => [
+        ['version' => '1.1.0', 'date' => '2026-12-01', 'kind' => 'minor'],
+        ['version' => '1.0.0', 'date' => '2026-11-19', 'kind' => 'major'],
+    ]]);
+    $user = payingUser();
+    $user->assignRole('client');
+    $this->actingAs($user->refresh());
+    $this->artisan('atendia:announce-release');
+
+    $page = visit('/dashboard')->resize($width, 900);
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    $page->click('@bell')
+        ->assertSee(__('bell.lines.release_available', ['version' => '1.1.0']))
+        ->screenshot(filename: 'releases-bell-'.$width.'-'.($dark ? 'dark' : 'light'));
+
+    $page->navigate('/dashboard');
+
+    if ($dark) {
+        $page->script("document.documentElement.classList.add('dark')");
+    }
+
+    if ($width < 900) {
+        $page->click('@sidebar-toggle');
+    }
+
+    $page->script("document.querySelector('[data-testid=\"sidebar-version\"]').scrollIntoView({block: 'center'})");
+    $page->assertVisible('@sidebar-version-new')
+        ->screenshot(filename: 'releases-new-'.$width.'-'.($dark ? 'dark' : 'light'));
+
+    // Opening the page is what turns the mark off.
+    $page->navigate('/novedades')->assertSee('1.1.0')->navigate('/dashboard');
+
+    if ($width < 900) {
+        $page->click('@sidebar-toggle');
+    }
+
+    $page->assertMissing('@sidebar-version-new')->assertNoJavaScriptErrors();
+})->with([[1280, false], [390, true]]);
