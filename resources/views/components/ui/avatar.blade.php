@@ -10,10 +10,12 @@
     $dim = ['xs' => 24, 'sm' => 32, 'md' => 40, 'lg' => 52, 'xl' => 72][$size] ?? 40;
     $fontSize = $dim <= 24 ? 10 : ($dim <= 32 ? 12 : ($dim <= 40 ? 15 : ($dim <= 52 ? 19 : 26)));
 
+    // Only words that start with a letter give initials: a contact known by its phone drew «+4».
+    // With none, the fallback is a person glyph instead.
     $initials = collect(explode(' ', trim($name)))
-        ->filter()->take(2)
+        ->filter(fn ($w) => preg_match('/^\p{L}/u', $w) === 1)->take(2)
         ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
-        ->implode('') ?: '?';
+        ->implode('');
 
     // Tint palette (same tokens → light/dark for free).
     $tints = [
@@ -38,7 +40,7 @@
         <span
             class="avatar-fallback"
             style="width:{{ $dim }}px;height:{{ $dim }}px;background:{{ $bg }};color:{{ $fg }};font-size:{{ $fontSize }}px;"
-        >{{ $initials }}</span>
+        >@if ($initials !== ''){{ $initials }}@else<x-icon name="user" :size="(int) round($dim * 0.5)" />@endif</span>
     @endif
     @if ($statusColor)
         <span

@@ -145,6 +145,13 @@ test('the avatar falls back to initials and is deterministic per name', function
     expect($a)->toContain('avatar-fallback')->toContain('CV')->toBe($b);
 });
 
+test('a contact known only by its phone gets a person glyph, not «+4»', function (): void {
+    $phone = Blade::render('<x-ui.avatar name="+58 412 5550199" />');
+
+    expect($phone)->toContain('<svg')->not->toContain('>+4<')
+        ->and(Blade::render('<x-ui.avatar name="María +58" />'))->toContain('>M<');
+});
+
 test('the avatar renders a status dot when given a status', function (): void {
     expect(Blade::render('<x-ui.avatar name="Ana" status="online" />'))
         ->toContain('avatar-status')

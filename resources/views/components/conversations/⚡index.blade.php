@@ -551,7 +551,8 @@ new class extends Component
                                 <x-ui.avatar :name="$row->contact_name ?? $row->contact_phone" size="sm" />
                                 <span class="min-w-0 flex-1">
                                     <span class="flex items-baseline justify-between gap-2">
-                                        <span class="text-strong truncate text-sm font-semibold">
+                                        {{-- Cut to keep the row one line high; the whole name stays one hover away. --}}
+                                        <span class="text-strong truncate text-sm font-semibold" title="{{ $row->contact_name ?? __('client.conversations.anonymous') }}">
                                             <x-ui.match :text="$row->contact_name ?? __('client.conversations.anonymous')" :needle="$search" />
                                         </span>
                                         {{-- A marked thread is always with the team: one chip says both, and the name keeps its room. --}}
@@ -597,7 +598,7 @@ new class extends Component
                         </span>
                         <x-ui.avatar :name="$this->thread->contact_name ?? $this->thread->contact_phone" size="sm" />
                         <div class="min-w-[9rem] flex-1">
-                            <p class="text-strong truncate text-sm font-semibold">
+                            <p class="text-strong truncate text-sm font-semibold" title="{{ $this->customer?->displayName() ?? $this->thread->contact_name ?? __('client.conversations.anonymous') }}">
                                 {{ $this->customer?->displayName() ?? $this->thread->contact_name ?? __('client.conversations.anonymous') }}
                             </p>
                             <p class="text-muted font-mono text-xs">{{ $this->thread->contact_phone }}</p>

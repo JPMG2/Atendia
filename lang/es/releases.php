@@ -27,6 +27,14 @@ return [
     ],
 
     'entries' => [
+        '1.2.1' => [
+            'title' => 'Datos largos, siempre en su lugar',
+            'items' => [
+                'Un correo o una dirección muy larga se acomoda en su renglón, en las notificaciones y en las tablas.',
+                'Un cliente que aparece solo con su teléfono muestra un ícono de persona en lugar de letras sueltas.',
+                'El nombre completo de un contacto se lee al pasar el mouse cuando no entra en la lista.',
+            ],
+        ],
         '1.2.0' => [
             'title' => 'Lo nuevo, a la vista',
             'items' => [
