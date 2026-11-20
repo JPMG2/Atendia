@@ -135,6 +135,7 @@ new class extends Component
                         <x-statistics.bar-chart
                             :series="$this->stats->dailySeries()"
                             :labelEvery="7"
+                            :todayLast="true"
                             :tableLabel="__('statistics.daily.title')"
                         />
                     @else

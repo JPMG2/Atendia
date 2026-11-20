@@ -85,3 +85,34 @@ test('chart labels stay readable from a phone to a desktop', function (int $widt
     $page->script('document.querySelector(".stats-chart").scrollIntoView({block: "center"})');
     $page->screenshot(filename: 'statistics-chart-'.$width);
 })->with([390, 900, 1280]);
+
+test('the daily chart names today, shadows the month before and answers a tap', function (): void {
+    $business = Business::factory()->create();
+    $business->subscription->update(['plan' => 'premium', 'trial_ends_at' => null]);
+    foreach ([1, 1, 2, 31, 31, 31] as $daysAgo) {
+        $thread = Conversation::factory()->create(['business_id' => $business->id]);
+        ConversationMessage::factory()->create(['business_id' => $business->id, 'conversation_id' => $thread->id, 'created_at' => now()->subDays($daysAgo)]);
+    }
+    $this->actingAs(User::factory()->create(['business_id' => $business->id]));
+
+    $page = visit('/estadisticas')->resize(390, 900);
+
+    $page->assertSee('Hoy')
+        ->assertSee('Los 30 días anteriores')
+        ->assertNoJavaScriptErrors();
+
+    // Yesterday (two conversations) sat over the same day a month before (three).
+    expect((int) $page->script('document.querySelectorAll(".stats-chart .stats-chart-ghost").length'))->toBe(1);
+
+    $page->script('document.querySelector(".stats-chart").scrollIntoView({block: "center"})');
+    $page->script('document.querySelectorAll(".stats-chart .stats-chart-hit")[28].click()');
+    $page->wait(0.3);
+
+    expect((string) $page->script('document.querySelector(".stats-chart .stats-chart-tip").textContent'))
+        ->toBe(now()->subDay()->format('d/m').' · 2 (antes: 3)');
+
+    $page->screenshot(filename: 'statistics-chart-tap-390');
+    $page->script("document.documentElement.classList.add('dark')");
+    $page->wait(0.3);
+    $page->screenshot(filename: 'statistics-chart-tap-390-dark');
+});

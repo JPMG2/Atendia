@@ -29,6 +29,13 @@ return [
     'daily' => [
         'title' => 'Conversaciones por día',
         'insight' => 'Tu mejor día fue el :day, con :count conversaciones.',
+        'current' => 'Últimos 30 días',
+        'previous' => 'Los 30 días anteriores',
+    ],
+
+    'chart' => [
+        'today' => 'Hoy',
+        'previous' => 'antes: :count',
     ],
 
     'topics' => [

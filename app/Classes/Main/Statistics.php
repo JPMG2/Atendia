@@ -94,16 +94,17 @@ class Statistics
 
     /**
      * Active conversations per day, zero-filled so the chart never lies by
-     * skipping quiet days.
+     * skipping quiet days. `previous` is the same slot of the window before,
+     * drawn as a shadow so the owner compares without reading two charts.
      *
-     * @return list<array{date: string, label: string, count: int}>
+     * @return list<array{date: string, label: string, count: int, previous: int}>
      */
     public function dailySeries(int $days = 30): array
     {
         $from = $this->now()->startOfDay()->subDays($days - 1);
 
         $rows = $this->inbound()
-            ->where('created_at', '>=', $from->utc())
+            ->where('created_at', '>=', $from->subDays($days)->utc())
             ->selectRaw('date('.$this->local('created_at').') as day, count(distinct conversation_id) as total')
             ->groupBy('day')
             ->pluck('total', 'day');
@@ -116,6 +117,7 @@ class Statistics
                 'date' => $date->toDateString(),
                 'label' => $date->format('d/m'),
                 'count' => (int) ($rows[$date->toDateString()] ?? 0),
+                'previous' => (int) ($rows[$date->subDays($days)->toDateString()] ?? 0),
             ];
         }
 

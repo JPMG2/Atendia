@@ -27,6 +27,14 @@ return [
     ],
 
     'entries' => [
+        '1.3.0' => [
+            'title' => 'Gráficos que responden',
+            'items' => [
+                'Toca o pasa el mouse sobre una barra de Estadísticas y ves su cifra exacta.',
+                'El gráfico de conversaciones por día marca dónde está hoy.',
+                'Una sombra punteada muestra los 30 días anteriores, para comparar de un vistazo.',
+            ],
+        ],
         '1.2.6' => [
             'title' => 'Gráficos más legibles',
             'items' => [
