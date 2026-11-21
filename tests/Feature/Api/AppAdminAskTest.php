@@ -353,7 +353,9 @@ describe('an e-mail it drafts', function (): void {
         $token = adminAskToken();
         $conversation = adminAskCall($token, 'POST', 'admin/ask', ['question' => 'Escribile'])->json('data.conversation');
 
-        // The faked gateway runs no tool, as a run that broke before the channel: nothing was handed over.
+        // The approved tool does run, so the mail service itself is down: the channel hands nothing over.
+        Mail::shouldReceive('to')->andThrow(new RuntimeException('smtp down'));
+
         adminAskCall($token, 'POST', 'admin/ask/draft', ['conversation' => $conversation, 'draft' => 'call_mail_1', 'send' => true, 'subject' => 'Hola', 'message' => 'Texto'])
             ->assertOk()
             ->assertJsonPath('data.outcome', 'failed')

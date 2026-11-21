@@ -67,7 +67,9 @@ test('a task that made no calls has no cost, not a cost of zero', function (): v
 });
 
 test('a model that runs without a catalog price is flagged on its row', function (): void {
-    // The audio task runs on the package's default, which the catalog does not price.
+    // Pinned here: the package's own default moves between releases and may already have a price.
+    config()->set('ai.providers.openai.models.transcription.default', 'transcriptor-sin-precio');
+
     Livewire::test('admin.ai.index')->assertSee('Sin precio');
 });
 
