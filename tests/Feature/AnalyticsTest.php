@@ -31,7 +31,10 @@ test('with no measurement id the landing draws no banner, loads no script and op
 
     $response = $this->get('/')->assertOk();
 
-    $response->assertDontSee('data-consent', false)
+    // The banner's own attributes, not the bare name: the sales chat's script looks the banner up by it.
+    $response->assertDontSee('data-consent="', false)
+        ->assertDontSee('data-consent-accept', false)
+        ->assertDontSee('data-consent-open', false)
         ->assertDontSee('analytics-consent', false)
         ->assertDontSee('Preferencias de cookies');
 

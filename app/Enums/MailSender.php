@@ -26,6 +26,7 @@ use App\Mail\DeviceChallengeCode;
 use App\Mail\FirstPaymentReceived;
 use App\Mail\HolidayBridgeNotice;
 use App\Mail\IncidentsDigest;
+use App\Mail\LostPhonePauseChanged;
 use App\Mail\ModerationAlert;
 use App\Mail\ModerationAppeal;
 use App\Mail\NewBusinessJoined;
@@ -34,6 +35,7 @@ use App\Mail\NewDeviceLogin;
 use App\Mail\PlatformAlertMail;
 use App\Mail\PlatformLetter;
 use App\Mail\ReferralLink;
+use App\Mail\ReleaseNews;
 use App\Mail\StaffTwoFactorDeadline;
 use App\Mail\StalledAdoptionReport;
 use App\Mail\SupportTicketAnswered;
@@ -123,12 +125,14 @@ enum MailSender: string
                 FirstPaymentReceived::class,
                 HolidayBridgeNotice::class,
                 IncidentsDigest::class,
+                LostPhonePauseChanged::class,
                 ModerationAlert::class,
                 ModerationAppeal::class,
                 NewBusinessJoined::class,
                 NewCompany::class,
                 NewDeviceLogin::class,
                 PlatformAlertMail::class,
+                ReleaseNews::class,
                 StaffTwoFactorDeadline::class,
                 StalledAdoptionReport::class,
                 TeamInvitationMail::class,

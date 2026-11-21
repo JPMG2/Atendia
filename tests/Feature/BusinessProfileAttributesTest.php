@@ -23,6 +23,8 @@ test('the dto mirrors every column of the businesses table, so a profile slice c
         ->diff(['referral_code', 'referred_by_business_id', 'booking_code'])
         // Only content moderation writes the suspension, and only the admin lifts it.
         ->diff(['suspended_at', 'suspension_reason', 'appeal_message', 'appealed_at'])
+        // Only the lost-phone pause and its resume write these.
+        ->diff(['lost_phone_paused_at', 'lost_phone_paused_by', 'lost_phone_cut_sessions'])
         // The platform decides what is a demo of its own landing, never the
         // business: on the profile it would be a switch for leaving the books.
         ->diff(['is_demo']);

@@ -23,6 +23,9 @@ uses(RefreshDatabase::class);
 */
 
 beforeEach(function (): void {
+    // The sample lines are dated: on the real clock they age past the retention and get pruned.
+    $this->travelTo('2026-10-20 12:00:00');
+
     $this->logDir = sys_get_temp_dir().'/atendia-ingest-'.uniqid();
     mkdir($this->logDir);
 
