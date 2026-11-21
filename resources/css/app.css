@@ -1914,6 +1914,8 @@ div.flatpickr-calendar::before, div.flatpickr-calendar::after { display:none; }
   /* A column of figures is read down, not across: right-aligned so the digits
   line up by place value, and the heading follows its own data. */
   .pay-table th.is-num, .pay-table td.is-num { text-align:right; white-space:nowrap; }
+  /* The figures never break; a two-word heading may, only when the card is short of room. */
+  .pay-table thead th.is-num { white-space:normal; }
   /* A note under a figure is a short mark, not a sentence: left to `nowrap`
   it widened its column by half and pushed the table off the card, and left to
   wrap it stacked one word per line and trebled the row. */
